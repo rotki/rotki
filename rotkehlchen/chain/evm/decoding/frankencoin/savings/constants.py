@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.types import ChecksumEvmAddress
 
-SAVINGS_CONTRACT_ADDRESS: Final[dict[ChainID, ChecksumEvmAddress]] = {
+SUPPORTED_ZCHF_SAVINGS_CHAINS: Final[dict[ChainID, ChecksumEvmAddress]] = {
     ChainID.ETHEREUM: string_to_evm_address('0x27d9AD987BdE08a0d083ef7e0e4043C857A17B38'),
     ChainID.ARBITRUM_ONE: string_to_evm_address('0xb41715e54e9f0827821A149AE8eC1aF70aa70180'),
     ChainID.BASE: string_to_evm_address('0x6426324Af1b14Df3cd03b2d500529083c5ea61BC'),

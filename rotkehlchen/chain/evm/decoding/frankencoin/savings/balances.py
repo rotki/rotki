@@ -14,7 +14,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-from .constants import SAVINGS_CONTRACT_ABI, SAVINGS_CONTRACT_ADDRESS
+from .constants import SAVINGS_CONTRACT_ABI, SUPPORTED_ZCHF_SAVINGS_CHAINS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
@@ -41,7 +41,7 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
             },
         )
         self.savings_contract = EvmContract(
-            address=SAVINGS_CONTRACT_ADDRESS[evm_inquirer.chain_id],
+            address=SUPPORTED_ZCHF_SAVINGS_CHAINS[evm_inquirer.chain_id],
             abi=SAVINGS_CONTRACT_ABI,
             deployed_block=0,  # not used for calls
         )

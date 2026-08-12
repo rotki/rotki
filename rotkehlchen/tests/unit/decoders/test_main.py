@@ -82,7 +82,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Eth2',
         'FirebirdFinance',
         'Fluence',
-        'Frankencoinsavings',
+        'FrankencoinSavings',
         'Gearbox',
         'Gitcoin',
         'Gitcoinv2',

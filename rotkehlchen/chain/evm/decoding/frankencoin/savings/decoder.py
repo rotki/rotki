@@ -11,7 +11,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import (
     INTEREST_COLLECTED_TOPIC,
     SAVED_TOPIC,
-    SAVINGS_CONTRACT_ADDRESS,
+    SUPPORTED_ZCHF_SAVINGS_CHAINS,
     WITHDRAWN_TOPIC,
 )
 
@@ -38,8 +38,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        # Select the deployment belonging to the decoder's current chain.
-        self.savings = SAVINGS_CONTRACT_ADDRESS[evm_inquirer.chain_id]
+        self.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[evm_inquirer.chain_id]
         self.zchf = self.base.get_or_create_evm_token(address=ZCHF_ADDRESS[evm_inquirer.chain_id])
 
     def _get_transfer_party(
@@ -67,7 +66,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
         from_address = bytes_to_address(transfer_log.topics[1])
         to_address = bytes_to_address(transfer_log.topics[2])
         if (
-            self.savings not in (from_address, to_address) or
+            self.savings_address not in (from_address, to_address) or
             token_normalized_value_decimals(
                 token_amount=int.from_bytes(transfer_log.data),
                 token_decimals=self.zchf.decimals,
@@ -75,7 +74,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
         ):
             return None
 
-        return to_address if from_address == self.savings else from_address
+        return to_address if from_address == self.savings_address else from_address
 
     def _decode_savings_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Turn raw savings logs/transfers into rotki history events."""
@@ -104,7 +103,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.amount == amount and
-                event.address == self.savings and
+                event.address == self.savings_address and
                 event.asset == self.zchf
             ):
                 event.event_type = HistoryEventType.DEPOSIT
@@ -125,7 +124,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.amount == amount and
-                    event.address == self.savings and
+                    event.address == self.savings_address and
                     event.asset == self.zchf
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
@@ -173,7 +172,7 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                         location_label=user_address,
                         notes=notes,
                         counterparty=CPT_FRANKENCOIN,
-                        address=self.savings,
+                        address=self.savings_address,
                         extra_data=extra_data,
                     ))
 
@@ -194,11 +193,11 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
                 location_label=user_address,
                 notes=f'Received {amount} zCHF as interests in Frankencoin Savings Module',
                 counterparty=CPT_FRANKENCOIN,
-                address=self.savings,
+                address=self.savings_address,
             ))
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         """Run the savings decoder only for logs emitted by this chain's deployment."""
-        return {self.savings: (self._decode_savings_event,)}
+        return {self.savings_address: (self._decode_savings_event,)}

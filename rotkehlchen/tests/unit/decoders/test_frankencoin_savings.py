@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.frankencoin.constants import (
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
     INTEREST_COLLECTED_TOPIC,
     SAVED_TOPIC,
-    SAVINGS_CONTRACT_ADDRESS,
+    SUPPORTED_ZCHF_SAVINGS_CHAINS,
     WITHDRAWN_TOPIC,
 )
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.decoder import (
@@ -47,7 +47,7 @@ def _make_savings_decoder(*, tracked: bool) -> FrankencoinSavingsCommonDecoder:
     decoder = object.__new__(FrankencoinSavingsCommonDecoder)
     decoder.base = MagicMock()
     decoder.base.is_tracked.return_value = tracked
-    decoder.savings = SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM]
+    decoder.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]
     decoder.zchf = MagicMock(
         decimals=18,
         evm_address=ZCHF_ADDRESS[ChainID.ETHEREUM],
@@ -64,7 +64,7 @@ def _make_context(
     tx_log = EvmTxReceiptLog(
         log_index=1,
         data=(10**18).to_bytes(32),
-        address=SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM],
+        address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM],
         topics=[topic, bytes.fromhex('00' * 12 + '11' * 20)],
     )
     return DecoderContext(
@@ -137,7 +137,7 @@ def test_savings_event_handles_invalid_preceding_log():
         'location_label': '0x1111111111111111111111111111111111111111',
         'notes': 'Withdraw 1 zCHF from Frankencoin Savings Module',
         'counterparty': CPT_FRANKENCOIN,
-        'address': decoder.savings,
+        'address': decoder.savings_address,
         'extra_data': None,
     }
 
@@ -159,7 +159,7 @@ def test_savings_event_attributes_existing_transfer_to_owner(
         event_type=initial_type,
         event_subtype=HistoryEventSubType.NONE,
         amount=FVal(1),
-        address=decoder.savings,
+        address=decoder.savings_address,
         asset=decoder.zchf,
         location_label=(party_address := make_evm_address()),
     )
@@ -184,7 +184,7 @@ def test_savings_event_rejects_unrelated_preceding_transfer():
         topics=[
             ERC20_OR_ERC721_TRANSFER,
             bytes.fromhex('00' * 12 + '22' * 20),
-            bytes.fromhex('00' * 12 + decoder.savings[2:]),
+            bytes.fromhex('00' * 12 + decoder.savings_address[2:]),
         ],
     ))
     decoder.base.make_event_from_transaction.return_value = expected_event = MagicMock()
@@ -212,7 +212,7 @@ def test_interest_collection_subtracts_referral_fee():
         'location_label': '0x1111111111111111111111111111111111111111',
         'notes': 'Received 1.5 zCHF as interests in Frankencoin Savings Module',
         'counterparty': CPT_FRANKENCOIN,
-        'address': decoder.savings,
+        'address': decoder.savings_address,
     }
 
 
@@ -220,7 +220,9 @@ def test_savings_decoder_metadata():
     decoder = _make_savings_decoder(tracked=True)
 
     assert decoder.counterparties() == (FRANKENCOIN_COUNTERPARTY_DETAILS,)
-    assert decoder.addresses_to_decoders() == {decoder.savings: (decoder._decode_savings_event,)}
+    assert decoder.addresses_to_decoders() == {
+        decoder.savings_address: (decoder._decode_savings_event,),
+    }
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -255,7 +257,7 @@ def test_self_funded_deposit(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Received {interest_amount} zCHF as interests in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=(savings_address := SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM]),
+            address=(savings_address := SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=210,
@@ -293,7 +295,7 @@ def test_deposit_for_another_owner(ethereum_inquirer, ethereum_accounts):
         notes=f'Deposit {deposit_amount} zCHF in Frankencoin Savings Module paid by '
               f'{(payer_address := "0xef91ECd0142aE4C5163B2CF060c0563d49188C82")}',
         counterparty=CPT_FRANKENCOIN,
-        address=SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM],
+        address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM],
         extra_data={'payer': payer_address},
     )]
 
@@ -330,7 +332,7 @@ def test_withdrawal_to_owner(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Received {interest_amount} zCHF as interests in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=(savings_address := SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM]),
+            address=(savings_address := SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=36,
@@ -381,7 +383,7 @@ def test_withdrawal_to_another_address(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {withdrawal_amount} zCHF from Frankencoin Savings Module sent to '
                   f'{(receiver_address := "0x841FcB6309bD7BDE43890B7bE7E55E3eE86ABc39")}',
             counterparty=CPT_FRANKENCOIN,
-            address=SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM],
+            address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM],
             extra_data={'receiver': receiver_address},
         ),
     ]
@@ -419,7 +421,7 @@ def test_interest_collection(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Received {interest_amount} zCHF as interests in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=(savings_address := SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM]),
+            address=(savings_address := SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=344,
@@ -469,7 +471,7 @@ def test_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
             location_label=user_address,
             notes=f'Deposit {deposit_amount} zCHF in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=SAVINGS_CONTRACT_ADDRESS[ChainID.ARBITRUM_ONE],
+            address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ARBITRUM_ONE],
         ),
     ]
 
@@ -510,7 +512,7 @@ def test_deposit_base(base_inquirer, base_accounts):
             location_label=user_address,
             notes=f'Deposit {deposit_amount} zCHF in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=SAVINGS_CONTRACT_ADDRESS[ChainID.BASE],
+            address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.BASE],
         ),
     ]
 
@@ -548,7 +550,7 @@ def test_deposit_optimism(optimism_inquirer, optimism_accounts):
             location_label=user_address,
             notes=f'Deposit {deposit_amount} zCHF in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=SAVINGS_CONTRACT_ADDRESS[ChainID.OPTIMISM],
+            address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.OPTIMISM],
         ),
     ]
 
@@ -585,7 +587,7 @@ def test_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             location_label=user_address,
             notes=f'Deposit {deposit_amount} zCHF in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=SAVINGS_CONTRACT_ADDRESS[ChainID.POLYGON_POS],
+            address=SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.POLYGON_POS],
         ),
     ]
 
@@ -632,7 +634,7 @@ def test_deposit_gnosis(gnosis_inquirer, gnosis_accounts):
             location_label=user_address,
             notes=f'Received {interest_amount} zCHF as interests in Frankencoin Savings Module',
             counterparty=CPT_FRANKENCOIN,
-            address=(savings_address := SAVINGS_CONTRACT_ADDRESS[ChainID.GNOSIS]),
+            address=(savings_address := SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.GNOSIS]),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=14,

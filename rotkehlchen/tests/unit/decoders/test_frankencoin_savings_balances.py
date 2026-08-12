@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
 )
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
-    SAVINGS_CONTRACT_ADDRESS,
+    SUPPORTED_ZCHF_SAVINGS_CHAINS,
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID
 
 
-@pytest.mark.parametrize('chain_id', SAVINGS_CONTRACT_ADDRESS)
+@pytest.mark.parametrize('chain_id', SUPPORTED_ZCHF_SAVINGS_CHAINS)
 def test_frankencoin_savings_balances_registration(chain_id):
     assert FrankencoinSavingsBalances in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]
 
@@ -51,7 +51,7 @@ def test_frankencoin_savings_balances_initialization():
     assert module.counterparty == CPT_FRANKENCOIN
     assert module.evm_inquirer is evm_inquirer
     assert module.tx_decoder is tx_decoder
-    assert module.savings_contract.address == SAVINGS_CONTRACT_ADDRESS[ChainID.ETHEREUM]
+    assert module.savings_contract.address == SUPPORTED_ZCHF_SAVINGS_CHAINS[ChainID.ETHEREUM]
     assert module.zchf is zchf
     get_token.assert_called_once_with(
         userdb=evm_inquirer.database,
