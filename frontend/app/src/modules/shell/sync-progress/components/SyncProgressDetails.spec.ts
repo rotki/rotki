@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AddressStatus, AddressSubtype, type ChainProgress, type DecodingProgress, type LocationProgress, LocationStatus, type ProtocolCacheProgress } from '../types';
+import { AddressStatus, type ChainProgress, type DecodingProgress, type LocationProgress, LocationStatus, type ProtocolCacheProgress } from '../types';
 import SyncProgressDetails from './SyncProgressDetails.vue';
 
 vi.mock('@/modules/assets/api/use-asset-icon-api', () => ({
@@ -62,7 +62,6 @@ describe('modules/sync-progress/components/SyncProgressDetails', () => {
       addresses: Array.from({ length: total }, (_, i) => ({
         address: `0x${i.toString().padStart(40, '0')}`,
         status: i < completed ? AddressStatus.COMPLETE : AddressStatus.PENDING,
-        subtype: AddressSubtype.EVM,
       })),
       cancelled: 0,
       chain,

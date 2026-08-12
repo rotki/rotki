@@ -70,8 +70,8 @@ const statusText = computed<string>(() => {
   return t('sync_progress.status.pending');
 });
 
-// Keyed on the period itself rather than the subtype: bitcoin carries none today, and renders the
-// same range as everything else once the backend sends one.
+// Keyed on the period itself rather than the subtype, so a chain renders a range as soon as it
+// sends one and nothing has to be taught which subtypes carry periods. Bitcoin now does.
 const hasPeriod = computed<boolean>(() => get(isQuerying) && !!address.period);
 
 // Current position is period[1], show "Beginning" if current is 0 or equals start (hasn't progressed)

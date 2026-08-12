@@ -407,8 +407,10 @@ describe('useChainProgress', () => {
     });
   });
 
-  describe('subtype handling', () => {
-    it('should handle bitcoin subtype correctly', () => {
+  describe('period handling', () => {
+    // The progress bar is driven by the period alone, so an entry that carries none must produce
+    // neither a period nor a progress value rather than defaulting to one.
+    it('should leave period and progress unset for an entry without a period', () => {
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createBitcoinStatusData('bc1q...', 'btc', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       });
@@ -416,20 +418,8 @@ describe('useChainProgress', () => {
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      expect(chains[0].addresses[0].subtype).toBe('bitcoin');
       expect(chains[0].addresses[0].period).toBeUndefined();
       expect(chains[0].addresses[0].periodProgress).toBeUndefined();
-    });
-
-    it('should handle evm subtype correctly', () => {
-      const queryStatus = ref<Record<string, TxQueryStatusData>>({
-        key1: createEvmStatusData('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      });
-
-      const result = useChainProgress(queryStatus);
-      const chains = get(result);
-
-      expect(chains[0].addresses[0].subtype).toBe('evm');
     });
   });
 

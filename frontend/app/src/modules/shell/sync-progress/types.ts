@@ -9,15 +9,6 @@ export const AddressStatus = {
 
 export type AddressStatus = (typeof AddressStatus)[keyof typeof AddressStatus];
 
-export const AddressSubtype = {
-  BITCOIN: 'bitcoin',
-  EVM: 'evm',
-  EVMLIKE: 'evmlike',
-  SOLANA: 'solana',
-} as const;
-
-export type AddressSubtype = (typeof AddressSubtype)[keyof typeof AddressSubtype];
-
 export const AddressStep = {
   INTERNAL: 'internal',
   TOKENS: 'tokens',
@@ -34,7 +25,6 @@ export interface AddressProgress {
   originalPeriodEnd?: number;
   originalPeriodStart?: number;
   periodProgress?: number;
-  subtype: AddressSubtype;
 }
 
 export interface ChainProgress {
