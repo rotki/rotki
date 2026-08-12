@@ -1,21 +1,23 @@
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import NewlyDetectedAssetToolbar from '@/modules/assets/detection/NewlyDetectedAssetToolbar.vue';
-import { NewDetectedTokenKind } from '@/modules/assets/detection/types';
 
 interface Props {
   allSelected?: boolean;
   selectedCount?: number;
   found?: number;
+  fields?: FieldDef[];
 }
 
 function mountToolbar(props: Props = {}): VueWrapper<InstanceType<typeof NewlyDetectedAssetToolbar>> {
   return mount(NewlyDetectedAssetToolbar, {
     props: {
       allSelected: false,
+      fields: [],
+      filters: {},
       found: 3,
       selectedCount: 1,
-      tokenKindOptions: [{ title: 'EVM', value: NewDetectedTokenKind.EVM }],
       ...props,
     },
   });

@@ -177,6 +177,7 @@ export type CexMapping = z.infer<typeof CexMapping>;
 
 export interface CexMappingRequestPayload extends PaginationRequestPayload<CexMapping> {
   location?: string;
+  locationSymbol?: string;
 }
 
 export const CexMappingCollectionResponse = CollectionCommonFields.extend({

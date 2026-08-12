@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-filter';
 import type { CexMapping } from '@/modules/assets/types';
 import type { MissingMapping } from '@/modules/user-data/schemas';
-import ExchangeMappingFilter from '@/modules/assets/admin/cex-mapping/ExchangeMappingFilter.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
-import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
+import { type MissingMappingsRequestPayload, useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
+import { useMissingMappingsFields } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-fields';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const mapping = ref<CexMapping>();
-const location = ref<string>();
-const symbol = ref<string>('');
 
 const { t } = useI18n({ useScope: 'global' });
+const pillLabels = usePillBarLabels();
 
 const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
   align: 'center',
@@ -41,23 +43,17 @@ const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
 
 const { getData, remove } = useMissingMappingsDB();
 
+const fields = useMissingMappingsFields();
+
 const {
   collection: mappings,
+  filter,
   pagination,
   refetch,
   sort,
-} = useServerTable<MissingMapping>({
+} = useServerTable<MissingMapping, MissingMappingsRequestPayload, Filters>({
   fetch: getData,
-  params: [{
-    // Stays 'both' despite this table having no urlState: the page-1 reset watcher
-    // only observes 'both' sources, so narrowing this to 'request' would silently
-    // stop resetting the page when the symbol/location filter changes.
-    to: 'both',
-    values: computed(() => ({
-      identifier: get(symbol),
-      location: get(location),
-    })),
-  }],
+  fields,
   sort: {
     default: {
       column: 'location',
@@ -96,10 +92,12 @@ onMounted(async () => {
     class="lg:!-mt-5"
   >
     <RuiCard>
-      <div class="mb-4 flex justify-end">
-        <ExchangeMappingFilter
-          v-model:location="location"
-          v-model:symbol="symbol"
+      <div class="mb-4 flex">
+        <PillFilterBar
+          v-model:matches="filter"
+          class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+          :fields="fields"
+          :labels="pillLabels"
         />
       </div>
 

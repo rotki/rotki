@@ -11,6 +11,13 @@ export const CustomRuleHandling = {
 
 export type CustomRuleHandling = typeof CustomRuleHandling[keyof typeof CustomRuleHandling];
 
+const customRuleHandlings: string[] = Object.values(CustomRuleHandling);
+
+/** Whether a raw value (a url the user can write by hand) names a handling the backend takes. */
+export function isCustomRuleHandling(value: string): value is CustomRuleHandling {
+  return customRuleHandlings.includes(value);
+}
+
 /**
  * The rule a deep link names. Every field is optional on the wire — the link is written by other
  * pages (an event asking for the rule that governs it), so the schema defaults rather than throws

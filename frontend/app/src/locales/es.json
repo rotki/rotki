@@ -314,8 +314,6 @@
       "delete_error": "No se ha podido eliminar la asignación: {message}",
       "edit_error": "No se ha podido editar la asignación: {message}",
       "edit_title": "Editar la asignación",
-      "filter_by_exchange": "Filtrar por bolsa",
-      "filter_by_location_symbol": "Filtrar por símbolo de activo",
       "form": {
         "asset_non_empty": "El campo activo reconocido no puede estar vacío",
         "location_non_empty": "El campo ubicación no puede estar vacío",
@@ -390,7 +388,6 @@
     },
     "actions_text": "Comportamiento",
     "address": "Dirección",
-    "all": "Todos",
     "amount": "Cantidad",
     "asset": "Activo",
     "assets": "Activos",

@@ -671,8 +671,6 @@
       "delete_error": "无法删除映射： {message}",
       "edit_error": "无法编辑映射： {message}",
       "edit_title": "编辑映射",
-      "filter_by_exchange": "按交易所筛选",
-      "filter_by_location_symbol": "按资产符号筛选",
       "form": {
         "asset_non_empty": "确认的资产字段不能为空",
         "location_non_empty": "位置字段不能为空",
@@ -1012,7 +1010,6 @@
     },
     "actions_text": "动作",
     "address": "地址",
-    "all": "全部",
     "amount": "金额",
     "asset": "资产",
     "assets": "资产",

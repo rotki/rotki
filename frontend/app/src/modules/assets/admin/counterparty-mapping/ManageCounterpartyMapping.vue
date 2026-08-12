@@ -5,6 +5,8 @@ import ManageCounterpartyMappingFormDialog
   from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
+import { useCounterpartyMappingFields } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-fields';
+import { type CounterpartyMappingFilterKey, CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { firstQueryValue } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
@@ -17,43 +19,33 @@ const route = useRoute();
 
 const { deleteCounterpartyMapping, fetchAllCounterpartyMapping } = useCounterpartyMappingApi();
 
-const selectedCounterparty = ref<string>('');
-const selectedSymbol = ref<string>('');
 const editMode = ref<boolean>(false);
 
 const modelValue = ref<CounterpartyMapping>();
 
-const extraParams = computed(() => {
-  const counterparty = get(selectedCounterparty);
-  const symbol = get(selectedSymbol);
-  const data: { counterparty?: string; counterpartySymbol?: string } = {};
-  if (counterparty)
-    data.counterparty = counterparty;
-  if (symbol)
-    data.counterpartySymbol = symbol;
-  return data;
-});
+const fields = useCounterpartyMappingFields();
 
 const {
   collection,
+  filter,
   isLoading: loading,
   pagination,
   refetch,
 } = useServerTable<
   CounterpartyMapping,
-  CounterpartyMappingRequestPayload
+  CounterpartyMappingRequestPayload,
+  Filters
 >({
   fetch: fetchAllCounterpartyMapping,
-  params: [{
-    fromQuery(query): void {
-      set(selectedCounterparty, query.counterparty || '');
-      set(selectedSymbol, query.counterpartySymbol || '');
-    },
-    to: 'both',
-    values: extraParams,
-  }],
+  fields,
   urlState: { mode: 'route' },
 });
+
+/** The bag types every value as one-or-many; both of these fields are single-valued. */
+function filterValue(key: CounterpartyMappingFilterKey): string {
+  const picked = get(filter)[key];
+  return (Array.isArray(picked) ? picked[0] : picked)?.toString() ?? '';
+}
 
 onMounted(async () => {
   const { query } = get(route);
@@ -68,11 +60,13 @@ onMounted(async () => {
   await refetch();
 });
 
+// A new mapping starts from whatever the bar is narrowed to, so adding one while filtered to a
+// counterparty does not make the user pick it again.
 function add(payload?: Partial<CounterpartyMapping>) {
   set(modelValue, {
     asset: '',
-    counterparty: get(selectedCounterparty) || '',
-    counterpartySymbol: get(selectedSymbol) || '',
+    counterparty: filterValue(CounterpartyMappingFilterKeys.COUNTERPARTY),
+    counterpartySymbol: filterValue(CounterpartyMappingFilterKeys.COUNTERPARTY_SYMBOL),
     ...payload,
   });
   set(editMode, false);
@@ -129,10 +123,10 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
     </template>
     <RuiCard>
       <ManageCounterpartyMappingTable
-        v-model:counterparty="selectedCounterparty"
-        v-model:symbol="selectedSymbol"
+        v-model:filters="filter"
         v-model:pagination="pagination"
         :collection="collection"
+        :fields="fields"
         :loading="loading"
         @refresh="refetch()"
         @edit="edit($event)"

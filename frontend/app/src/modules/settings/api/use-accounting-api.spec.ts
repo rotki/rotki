@@ -2,6 +2,7 @@ import { assert } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
 import { useAccountingApi } from './use-accounting-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -83,7 +84,7 @@ describe('useAccountingApi', () => {
         eventTypes: ['trade', 'deposit'],
         eventSubtypes: ['spend', 'receive'],
         counterparties: ['uniswap', null],
-        customRuleHandling: true,
+        customRuleHandling: CustomRuleHandling.ONLY,
         eventIds: [1, 2, 3],
         identifiers: [10, 20],
       });
@@ -94,7 +95,7 @@ describe('useAccountingApi', () => {
         event_types: ['trade', 'deposit'],
         event_subtypes: ['spend', 'receive'],
         counterparties: ['uniswap', null],
-        custom_rule_handling: true,
+        custom_rule_handling: 'only',
         event_ids: [1, 2, 3],
         identifiers: [10, 20],
       });

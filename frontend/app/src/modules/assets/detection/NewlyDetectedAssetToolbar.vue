@@ -1,24 +1,22 @@
 <script setup lang="ts">
-import type { NewDetectedTokenKind } from './types';
+import type { Filters } from '@/modules/assets/detection/use-newly-detected-filter';
+import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 
-interface TokenKindOption {
-  title: string;
-  value: NewDetectedTokenKind | undefined;
-}
-
-const tokenKindFilter = defineModel<NewDetectedTokenKind>();
+const filtersModel = defineModel<Filters>('filters', { required: true });
 
 const {
   allSelected,
   selectedCount,
   found,
-  tokenKindOptions,
+  fields,
 } = defineProps<{
   allSelected: boolean;
   selectedCount: number;
   found: number;
-  tokenKindOptions: TokenKindOption[];
+  fields: FieldDef[];
 }>();
 
 const emit = defineEmits<{
@@ -28,6 +26,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const pillLabels = usePillBarLabels();
 </script>
 
 <template>
@@ -102,18 +101,17 @@ const { t } = useI18n({ useScope: 'global' });
       </HintMenuIcon>
     </div>
 
-    <!-- Filters -->
-    <div class="flex gap-4 items-center">
-      <RuiMenuSelect
-        v-model="tokenKindFilter"
-        :options="tokenKindOptions"
-        :label="t('asset_table.newly_detected.token_type')"
-        key-attr="value"
-        text-attr="title"
-        variant="outlined"
-        dense
-        hide-details
-        class="max-w-[180px]"
+    <!-- Filters. Absent when there is nothing to narrow by, which is every user tracking no
+         solana account: the field list is empty and the bar draws nothing. -->
+    <div
+      v-if="fields.length > 0"
+      class="flex gap-4 items-center"
+    >
+      <PillFilterBar
+        v-model:matches="filtersModel"
+        class="flex-1 min-w-[12rem] md:min-w-[24rem]"
+        :fields="fields"
+        :labels="pillLabels"
       />
     </div>
   </div>

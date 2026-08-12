@@ -3,6 +3,7 @@ import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
 import type { Collection } from '@/modules/core/common/collection';
+import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/modules/assets/admin/managed/ManagedAssetActions.vue';
@@ -19,11 +20,6 @@ import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
-interface IgnoredFilter {
-  onlyShowOwned: boolean;
-  onlyShowWhitelisted: boolean;
-  ignoredAssetsHandling: IgnoredAssetsHandlingType;
-}
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
 const sortModel = defineModel<DataTableSortData<SupportedAsset>>('sort', { required: true });
@@ -32,13 +28,15 @@ const selected = defineModel<string[]>('selected', { required: true });
 
 const filtersModel = defineModel<Filters>('filters', { required: true });
 
-const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: true });
+const pillParams = defineModel<PillParams>('pillParams', { required: true });
 
 const expanded = defineModel<SupportedAsset[]>('expanded', { required: true });
 
-const { collection, loading = false } = defineProps<{
+const { collection, ignoredHandling, loading = false } = defineProps<{
   collection: Collection<SupportedAsset>;
   fields: FieldDef[];
+  /** Read-only here: it decides whether an ignore action needs the table re-fetched. */
+  ignoredHandling: IgnoredAssetsHandlingType;
   loading?: boolean;
 }>();
 
@@ -63,7 +61,7 @@ const {
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
-} = useManagedAssetOperations(() => emit('refresh'), ignoredFilter, selected);
+} = useManagedAssetOperations(() => emit('refresh'), () => ignoredHandling, selected);
 
 const { cols, data, expand, isExpanded } = useManagedAssetTable(
   paginationModel,
@@ -108,9 +106,10 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
 <template>
   <div data-testid="managed-assets-table">
     <ManagedAssetActions
-      v-model:ignored-filter="ignoredFilter"
+      v-model:pill-params="pillParams"
       v-model:selected="selected"
       v-model:matches="filtersModel"
+      :ignored-handling="ignoredHandling"
       :fields="fields"
       :spam-disabled="spamDisabled"
       @ignore="massIgnore($event)"

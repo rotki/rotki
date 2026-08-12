@@ -17,6 +17,7 @@ export type CounterpartyMapping = z.infer<typeof CounterpartyMapping>;
 
 export interface CounterpartyMappingRequestPayload extends PaginationRequestPayload<CounterpartyMapping> {
   counterparty?: string;
+  counterpartySymbol?: string;
 }
 
 export const CounterpartyMappingCollectionResponse = CollectionCommonFields.extend({

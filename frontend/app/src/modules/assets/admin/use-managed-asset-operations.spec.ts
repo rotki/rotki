@@ -56,9 +56,8 @@ function setup(handling: IgnoredAssetsHandlingType, selectedIds: string[] = []):
   selected: Ref<string[]>;
 } {
   const onRefresh = vi.fn();
-  const ignoredFilter = ref({ ignoredAssetsHandling: handling, onlyShowOwned: false, onlyShowWhitelisted: false });
   const selected = ref<string[]>(selectedIds);
-  const ops = useManagedAssetOperations(onRefresh, ignoredFilter, selected);
+  const ops = useManagedAssetOperations(onRefresh, handling, selected);
   return { onRefresh, ops, selected };
 }
 

@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
+import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import IgnoreButtons from '@/modules/history/IgnoreButtons.vue';
 
-interface IgnoredFilter {
-  onlyShowOwned: boolean;
-  onlyShowWhitelisted: boolean;
-  ignoredAssetsHandling: IgnoredAssetsHandlingType;
-}
-
-const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: true });
+/**
+ * The bar's param bag, owned by the page: it is one face of the same refs the request and the url
+ * read, so bridging it here would be a second adapter onto them.
+ */
+const pillParams = defineModel<PillParams>('pillParams', { required: true });
 const selected = defineModel<string[]>('selected', { required: true });
 const filtersModel = defineModel<Filters>('matches', { required: true });
 
-const { spamDisabled = false } = defineProps<{
+const { ignoredHandling, spamDisabled = false } = defineProps<{
   fields: FieldDef[];
+  /** Read-only here: which ignore actions apply, and when the ignored list needs re-fetching. */
+  ignoredHandling: IgnoredAssetsHandlingType;
   spamDisabled?: boolean;
 }>();
 
@@ -31,39 +32,10 @@ const { t } = useI18n({ useScope: 'global' });
 
 const pillLabels = usePillBarLabels();
 
-const disabledIgnoreActions = computed<{ ignore: boolean; unIgnore: boolean }>(() => {
-  const { ignoredAssetsHandling } = get(ignoredFilter);
-  return {
-    ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
-    unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
-  };
-});
-
-// The owned, whitelisted and ignored filters are param-bound pills in the bar (paramKeys
-// `showUserOwnedAssetsOnly`, `showWhitelistedAssetsOnly`, `ignoredAssetsHandling`). Bridge the
-// bar's param bag to the model backing them, so the bar drives the same source the status dropdown
-// used to. An absent param clears its part of the model: removing the pill is how the filter is
-// turned off, and for the ignored handling "off" is the table's default, `exclude`.
-const pillParams = computed<Record<string, string | string[] | boolean>>({
-  get(): Record<string, string | string[] | boolean> {
-    const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
-    return {
-      ...(onlyShowOwned ? { showUserOwnedAssetsOnly: true } : {}),
-      ...(onlyShowWhitelisted ? { showWhitelistedAssetsOnly: true } : {}),
-      ...(ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE ? {} : { ignoredAssetsHandling }),
-    };
-  },
-  set(value: Record<string, string | string[] | boolean>): void {
-    const handling = value.ignoredAssetsHandling;
-    set(ignoredFilter, {
-      ignoredAssetsHandling: typeof handling === 'string' && isIgnoredAssetsHandling(handling)
-        ? handling
-        : IgnoredAssetHandlingType.EXCLUDE,
-      onlyShowOwned: value.showUserOwnedAssetsOnly === true,
-      onlyShowWhitelisted: value.showWhitelistedAssetsOnly === true,
-    });
-  },
-});
+const disabledIgnoreActions = computed<{ ignore: boolean; unIgnore: boolean }>(() => ({
+  ignore: ignoredHandling === IgnoredAssetHandlingType.SHOW_ONLY,
+  unIgnore: ignoredHandling === IgnoredAssetHandlingType.EXCLUDE,
+}));
 
 function clearSelection() {
   set(selected, []);
@@ -80,7 +52,7 @@ function handleMarkSpam(): void {
 // The ignored list is what the "only ignored" filter shows, and it is only fetched on demand, so
 // asking for it has to be what refreshes it. The radio group used to say so itself; now the pill
 // does, and the request follows from the value rather than from the control that set it.
-watch(() => get(ignoredFilter).ignoredAssetsHandling, (handling) => {
+watch(() => ignoredHandling, (handling) => {
   if (handling === IgnoredAssetHandlingType.SHOW_ONLY)
     emit('refresh:ignored');
 });
