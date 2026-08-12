@@ -52,6 +52,7 @@ const e2eDir = path.join(appDir, '.e2e');
 const templateDir = path.join(e2eDir, 'template');
 const blobDir = path.join(e2eDir, 'blob-report');
 const reportDir = path.join(appDir, 'playwright-report');
+// Also read by `e2e-reset-global-db.ts`, which gives the unsharded run the same clean start.
 const packagedGlobalDb = path.join(appDir, '..', '..', 'rotkehlchen', 'data', 'global.db');
 
 interface RunOptions {
