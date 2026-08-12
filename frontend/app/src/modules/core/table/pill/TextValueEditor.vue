@@ -2,6 +2,7 @@
 import { isValidEthAddress } from '@rotki/common';
 import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
 import { operatorsFor } from '@/modules/core/table/pill/core/operators';
+import { resolveOptionalText, resolveText } from '@/modules/core/table/pill/core/text';
 import { type ActiveFilter, DisplayKinds, type FieldDef, type FilterOp } from '@/modules/core/table/pill/core/types';
 import { useScramble } from '@/modules/settings/use-scramble';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
@@ -69,7 +70,7 @@ const errorMessages = computed<string[]>(() => {
   if (get(duplicate))
     return [t('transactions.filter.duplicate_value')];
   if (get(invalid))
-    return [field.invalidHint ?? t('transactions.filter.invalid_value')];
+    return [resolveOptionalText(field.invalidHint) ?? t('transactions.filter.invalid_value')];
   return [];
 });
 
@@ -197,7 +198,7 @@ onBeforeUnmount(() => {
       variant="outlined"
       :error-messages="errorMessages"
       :hide-details="errorMessages.length === 0"
-      :label="field.label"
+      :label="resolveText(field.label)"
       :placeholder="field.multiple ? t('common.actions.add') : undefined"
       data-testid="text-input"
       @keydown.enter="onEnter()"

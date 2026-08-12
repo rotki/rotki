@@ -1,3 +1,4 @@
+import type { FieldText } from '@/modules/core/table/pill/core/text';
 import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 
@@ -17,7 +18,7 @@ export interface AccountFieldOptions {
 
 /** Where an account field's picked addresses are transported, which differs per table. */
 export interface AccountFieldBinding {
-  readonly label: string;
+  readonly label: FieldText;
   readonly paramKey: string;
   readonly to: 'request' | 'url' | 'both';
 }

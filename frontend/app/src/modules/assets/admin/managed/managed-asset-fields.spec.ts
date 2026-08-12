@@ -8,6 +8,7 @@ import {
   toAssetWhitelistedField,
   toManagedAssetFields,
 } from '@/modules/assets/admin/managed/managed-asset-fields';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import { routeSchemaFromFields } from '@/modules/core/table/route';
 
 const t = (key: string): string => key;
@@ -49,7 +50,7 @@ describe('toManagedAssetFields', () => {
   });
 
   it('should give every field its short pill label', () => {
-    expect(fields().map(field => field.label)).toStrictEqual([
+    expect(fields().map(field => resolveText(field.label))).toStrictEqual([
       'assets.filter_field_labels.identifier',
       'assets.filter_field_labels.asset_type',
       'assets.filter_field_labels.asset_flag',

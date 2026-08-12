@@ -30,7 +30,7 @@ export function toTagsField(t: Translate, tags: () => TagFieldOption[]): FieldDe
 
   return toParamFieldDef({
     key: 'tags',
-    label: t('common.tags'),
+    label: (): string => t('common.tags'),
     multiple: true,
     paramKey: 'tags',
     resolveSwatch: (value: string): ValueSwatch | undefined => get(byName).get(value)?.swatch,

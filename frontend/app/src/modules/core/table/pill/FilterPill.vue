@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
 import { pillOperator, pillValueCaption, pillValueSummary } from '@/modules/core/table/pill/core/format';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import { type ActiveFilter, DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
@@ -85,7 +86,7 @@ function valueLabel(value: string): string {
         class="flex items-center gap-1.5 px-2 font-medium text-rui-text-secondary"
         :class="{ 'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800': !disabled }"
       >
-        {{ field.label }}
+        {{ resolveText(field.label) }}
         <span
           v-if="operator"
           class="text-rui-primary font-semibold"

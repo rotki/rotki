@@ -44,9 +44,8 @@ const PANEL_FILTER_KEYS: readonly string[] = [
   DataIssuesFilterKeys.ASSET,
   DataIssuesFilterKeys.ACCOUNT,
 ];
-const fields = useDataIssueFields();
-const panelFields = computed<FieldDef[]>(() =>
-  get(fields).filter(field => PANEL_FILTER_KEYS.includes(field.key)));
+const panelFields: FieldDef[] = useDataIssueFields()
+  .filter(field => PANEL_FILTER_KEYS.includes(field.key));
 const pillLabels = usePillBarLabels();
 const panelFilters = ref<Filters>({});
 const hasPanelFilters = computed<boolean>(() => Object.keys(get(panelFilters)).length > 0);

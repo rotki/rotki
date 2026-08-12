@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 
 const { fields, searchPlaceholder = '', emptyText = '' } = defineProps<{
   /** The fields offered to add (typically the ones without an active filter). */
@@ -34,7 +35,7 @@ const filtered = computed<FieldDef[]>(() => {
   const query = get(search).toLowerCase().trim();
   if (!query)
     return fields;
-  return fields.filter(field => field.label.toLowerCase().includes(query));
+  return fields.filter(field => resolveText(field.label).toLowerCase().includes(query));
 });
 
 // Keep the highlight in range as the list narrows while typing.
@@ -137,7 +138,7 @@ function onKeydown(event: KeyboardEvent): void {
         @click="emit('select', field)"
       >
         <span class="flex-1 truncate">
-          {{ field.label }}
+          {{ resolveText(field.label) }}
         </span>
         <span
           v-if="metaFor(field)"

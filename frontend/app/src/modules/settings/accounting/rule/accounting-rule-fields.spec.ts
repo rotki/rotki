@@ -1,5 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 import { routeSchemaFromFields } from '@/modules/core/table/route';
 import { type AccountingRuleFieldOptions, toAccountingRuleFields } from '@/modules/settings/accounting/rule/accounting-rule-fields';
@@ -55,7 +56,7 @@ describe('toAccountingRuleFields', () => {
   });
 
   it('should give each field its short pill label', () => {
-    expect(fields().map(field => field.label)).toStrictEqual([
+    expect(fields().map(field => resolveText(field.label))).toStrictEqual([
       'accounting_settings.rule.filter_field_labels.event_type',
       'accounting_settings.rule.filter_field_labels.event_subtype',
       'accounting_settings.rule.filter_field_labels.counterparty',

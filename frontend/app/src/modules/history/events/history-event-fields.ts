@@ -99,7 +99,7 @@ function boundsFields(resolvers: HistoryFieldResolvers, options: HistoryEventFie
   const period = options.disabled.period
     ? []
     : [toPeriodField(
-        t('transactions.filter_field_labels.period'),
+        (): string => t('transactions.filter_field_labels.period'),
         {
           // The one table here whose timestamp column is milliseconds: the backend scales both
           // bounds by 1000 (`HistoryBaseEntryFilterQuery`), so an equal pair asks for the single
@@ -115,20 +115,20 @@ function boundsFields(resolvers: HistoryFieldResolvers, options: HistoryEventFie
     ...period,
     toAssetField({
       key: HistoryEventFilterKeys.ASSET,
-      label: t('transactions.filter_field_labels.asset'),
+      label: (): string => t('transactions.filter_field_labels.asset'),
       searchAsset: options.searchAsset,
     }, resolvers),
     // The backend matches a substring of the notes, so what the user writes is the value.
     toMatchFieldDef({
       freeText: true,
       key: HistoryEventFilterKeys.NOTES,
-      label: t('transactions.filter_field_labels.notes'),
+      label: (): string => t('transactions.filter_field_labels.notes'),
       multiple: false,
       validate: (notes: string): boolean => !!notes,
     }),
     toRangeFieldDef({
       key: 'amount',
-      label: t('transactions.filter_field_labels.amount'),
+      label: (): string => t('transactions.filter_field_labels.amount'),
       lowerKey: HistoryEventFilterKeys.MIN_AMOUNT,
       upperKey: HistoryEventFilterKeys.MAX_AMOUNT,
     }),
@@ -148,7 +148,7 @@ function venueFields(
     fields.push(decorateSharedField(
       toMatchFieldDef({
         key: HistoryEventFilterKeys.PROTOCOL,
-        label: t('transactions.filter_field_labels.protocol'),
+        label: (): string => t('transactions.filter_field_labels.protocol'),
         multiple: true,
         suggest: options.counterparties,
       }),
@@ -161,7 +161,7 @@ function venueFields(
     fields.push(decorateSharedField(
       toMatchFieldDef({
         key: HistoryEventFilterKeys.LOCATION,
-        label: t('transactions.filter_field_labels.location'),
+        label: (): string => t('transactions.filter_field_labels.location'),
         multiple: false,
         suggest: options.locations,
       }),
@@ -191,7 +191,7 @@ function classificationFields(
         // `{ behaviour, values }`, which is what lets a type be filtered out rather than in.
         allowExclusion: true,
         key: HistoryEventFilterKeys.ENTRY_TYPE,
-        label: t('transactions.filter_field_labels.entry_type'),
+        label: (): string => t('transactions.filter_field_labels.entry_type'),
         multiple: true,
         suggest: (): string[] => entryTypes ?? Object.values(HistoryEventEntryType),
       }),
@@ -204,7 +204,7 @@ function classificationFields(
     fields.push(toMatchFieldDef({
       excludes: EXCLUDES_ACTION,
       key: HistoryEventFilterKeys.EVENT_TYPE,
-      label: t('transactions.filter_field_labels.event_type'),
+      label: (): string => t('transactions.filter_field_labels.event_type'),
       multiple: true,
       // Looked up in mappings no other table carries, so a pill reads as its rows do.
       resolveLabel: resolvers.resolveEventTypeName,
@@ -220,7 +220,7 @@ function classificationFields(
       admits: values => options.subtypesFor(values[HistoryEventFilterKeys.EVENT_TYPE] ?? []),
       excludes: EXCLUDES_ACTION,
       key: HistoryEventFilterKeys.EVENT_SUBTYPE,
-      label: t('transactions.filter_field_labels.event_subtype'),
+      label: (): string => t('transactions.filter_field_labels.event_subtype'),
       multiple: true,
       resolveLabel: resolvers.resolveEventSubTypeName,
       suggest: options.eventSubtypes,
@@ -244,9 +244,9 @@ function traceFields(
     fields.push(
       decorateSharedField(
         toMatchFieldDef({
-          invalidHint: t('transactions.filter.invalid_tx_hash'),
+          invalidHint: (): string => t('transactions.filter.invalid_tx_hash'),
           key: HistoryEventFilterKeys.TX_HASHES,
-          label: t('transactions.filter_field_labels.tx_hash'),
+          label: (): string => t('transactions.filter_field_labels.tx_hash'),
           multiple: true,
           // A signature counts too, which is why this is not the shared hex check.
           validate: (txHash: string): boolean => isValidTxHashOrSignature(txHash),
@@ -257,9 +257,9 @@ function traceFields(
       // The address kind carries the typing, the shortening and the validation.
       decorateSharedField(
         toMatchFieldDef({
-          invalidHint: t('transactions.filter.invalid_address'),
+          invalidHint: (): string => t('transactions.filter.invalid_address'),
           key: HistoryEventFilterKeys.ADDRESSES,
-          label: t('transactions.filter_field_labels.address'),
+          label: (): string => t('transactions.filter_field_labels.address'),
           multiple: true,
         }),
         SharedFieldKinds.ADDRESS,
@@ -271,9 +271,9 @@ function traceFields(
   if (included.validatorIndex && !options.disabled.validators) {
     fields.push(toMatchFieldDef({
       freeText: true,
-      invalidHint: t('transactions.filter.invalid_validator_index'),
+      invalidHint: (): string => t('transactions.filter.invalid_validator_index'),
       key: HistoryEventFilterKeys.VALIDATOR_INDICES,
-      label: t('transactions.filter_field_labels.validator_index'),
+      label: (): string => t('transactions.filter_field_labels.validator_index'),
       multiple: true,
       validate: (validatorIndex: string): boolean => /^\d+$/.test(validatorIndex),
     }));
@@ -323,7 +323,7 @@ export function toHistoryStateField(
 ): FieldDef {
   return toParamFieldDef({
     key: 'state',
-    label: t('transactions.filter_field_labels.state'),
+    label: (): string => t('transactions.filter_field_labels.state'),
     multiple: true,
     paramKey: 'stateMarkers',
     resolveIcon,
@@ -341,7 +341,7 @@ export function toHistoryStateField(
 export function toHistoryIgnoredField(t: Translate): FieldDef {
   return toParamFieldDef({
     key: 'ignored',
-    label: t('transactions.filter_field_labels.show_ignored'),
+    label: (): string => t('transactions.filter_field_labels.show_ignored'),
     multiple: false,
     paramKey: 'showIgnoredAssets',
     to: 'both',
@@ -377,7 +377,7 @@ export function toHistoryActionField(t: Translate, actions: () => ActionFieldOpt
   return toParamFieldDef({
     excludes: [HistoryEventFilterKeys.EVENT_TYPE, HistoryEventFilterKeys.EVENT_SUBTYPE],
     key: 'action',
-    label: t('transactions.filter_field_labels.action'),
+    label: (): string => t('transactions.filter_field_labels.action'),
     multiple: false,
     paramKey: 'action',
     resolveIcon: (value: string): ValueIcon | undefined => get(byVerb).get(value)?.icon,
@@ -392,7 +392,7 @@ export function toHistoryActionField(t: Translate, actions: () => ActionFieldOpt
  */
 export function toHistoryAccountField(t: Translate, accounts: AccountFieldOptions): FieldDef {
   return toAccountField(
-    { label: t('transactions.filter_field_labels.account'), paramKey: 'locationLabels', to: 'request' },
+    { label: (): string => t('transactions.filter_field_labels.account'), paramKey: 'locationLabels', to: 'request' },
     accounts,
   );
 }

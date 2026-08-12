@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import {
   toAssetIgnoredField,
@@ -19,7 +19,7 @@ import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use
 export function useManagedAssetFields(
   assetTypes: MaybeRefOrGetter<string[]>,
   ignoredCount: MaybeRefOrGetter<number>,
-): ComputedRef<FieldDef[]> {
+): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
   // Chain and asset-type resolution is the same for every table filtering on them, so it comes
   // from one place rather than being restated here.
@@ -40,9 +40,7 @@ export function useManagedAssetFields(
     ? t('assets.filter_field_labels.ignored_only', { count: toValue(ignoredCount) })
     : t('assets.filter_field_labels.ignored_all');
 
-  // Built inside the computed so every label tracks the locale: a field built once at setup keeps
-  // the language it was created in until the component remounts.
-  return computed<FieldDef[]>(() => [
+  return [
     ...toManagedAssetFields(shared, t, {
       assetTypes: (): string[] => toValue(assetTypes),
       chains,
@@ -50,5 +48,5 @@ export function useManagedAssetFields(
     toAssetOwnedField(t),
     toAssetWhitelistedField(t),
     toAssetIgnoredField(t, resolveIgnoredLabel),
-  ]);
+  ];
 }

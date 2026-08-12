@@ -5,14 +5,13 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
-import type { Filters } from '@/modules/accounts/address-book/use-address-book-filter';
 import AddressBookFormDialog from '@/modules/accounts/address-book/AddressBookFormDialog.vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';
 import AddressBookTable from '@/modules/accounts/address-book/AddressBookTable.vue';
 import EthNamesHint from '@/modules/accounts/address-book/EthNamesHint.vue';
 import { useAddressBookFields } from '@/modules/accounts/address-book/use-address-book-fields';
+import { addressBookChainParams, type Filters } from '@/modules/accounts/address-book/use-address-book-filter';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
-import { arrayify } from '@/modules/core/common/data/array';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
@@ -36,6 +35,8 @@ const { getAddressBook } = useAddressBookOperations();
 const fields = useAddressBookFields();
 const pillLabels = usePillBarLabels();
 
+const { pillParams, source: chainSource } = addressBookChainParams(selectedChain, strictBlockchain);
+
 const {
   collection: state,
   filter: filters,
@@ -50,13 +51,7 @@ const {
 >({
   fetch: filter => getAddressBook(get(location), get(filter)),
   fields,
-  params: [{
-    to: 'both',
-    values: computed<Record<string, unknown>>(() => ({
-      blockchain: get(selectedChain),
-      strictBlockchain: get(strictBlockchain),
-    })),
-  }],
+  params: [chainSource],
   sort: {
     default: [{
       column: 'name',
@@ -70,21 +65,6 @@ const {
 // backing them — the same refs the standalone selector and checkbox used to write, and the ones the
 // request/url param source reads. An absent param clears its ref: removing the pill is how the
 // filter is turned off.
-const pillParams = computed<Record<string, string | string[] | boolean>>({
-  get(): Record<string, string | string[] | boolean> {
-    const chain = get(selectedChain);
-    return {
-      ...(chain ? { blockchain: chain } : {}),
-      ...(get(strictBlockchain) ? { strictBlockchain: true } : {}),
-    };
-  },
-  set(value: Record<string, string | string[] | boolean>): void {
-    const chain = value.blockchain;
-    set(selectedChain, typeof chain === 'boolean' ? undefined : arrayify(chain ?? []).at(0));
-    set(strictBlockchain, value.strictBlockchain === true);
-  },
-});
-
 function add() {
   set(editableItem, null);
   set(openDialog, true);
@@ -124,31 +104,36 @@ watchImmediate(location, async () => {
     </template>
 
     <RuiCard>
-      <PillFilterBar
-        v-model:matches="filters"
-        v-model:params="pillParams"
-        :fields="fields"
-        :labels="pillLabels"
-      />
-
-      <div class="flex items-center gap-2 my-3">
-        <RuiTabs
-          v-model="tab"
-          color="primary"
-          class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
-          data-testid="address-book-scope-tabs"
-        >
-          <RuiTab
-            v-for="loc in locations"
-            :key="loc"
-            class="capitalize"
-            data-testid="address-book-scope-tab"
-            :data-key="loc"
+      <!-- The tabs are the scope the bar filters within, so they come first and share its row: the
+           bar used to sit above them, which read as filtering the tab strip itself. -->
+      <div class="flex flex-wrap items-center gap-4 mb-3">
+        <div class="flex items-center gap-2">
+          <RuiTabs
+            v-model="tab"
+            color="primary"
+            class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+            data-testid="address-book-scope-tabs"
           >
-            {{ loc }}
-          </RuiTab>
-        </RuiTabs>
-        <EthNamesHint with-header />
+            <RuiTab
+              v-for="loc in locations"
+              :key="loc"
+              class="capitalize"
+              data-testid="address-book-scope-tab"
+              :data-key="loc"
+            >
+              {{ loc }}
+            </RuiTab>
+          </RuiTabs>
+          <EthNamesHint with-header />
+        </div>
+
+        <PillFilterBar
+          v-model:matches="filters"
+          v-model:params="pillParams"
+          class="flex-1"
+          :fields="fields"
+          :labels="pillLabels"
+        />
       </div>
 
       <RuiTabItems v-model="tab">

@@ -22,7 +22,7 @@ export function toAddressBookChainField(
   return decorateSharedField(
     toParamFieldDef({
       key: 'blockchain',
-      label: t('address_book.filter_field_labels.chain'),
+      label: (): string => t('address_book.filter_field_labels.chain'),
       multiple: false,
       paramKey: 'blockchain',
       suggest: chains,
@@ -42,9 +42,9 @@ export function toAddressBookChainField(
  */
 export function toAddressBookStrictField(t: Translate): FieldDef {
   return toParamFieldDef({
-    hint: t('address_book.strict_blockchain_filter.hint'),
+    hint: (): string => t('address_book.strict_blockchain_filter.hint'),
     key: 'strictBlockchain',
-    label: t('address_book.strict_blockchain_filter.label'),
+    label: (): string => t('address_book.strict_blockchain_filter.label'),
     multiple: false,
     paramKey: 'strictBlockchain',
     to: 'both',
@@ -60,13 +60,13 @@ export function toAddressBookFields(
   return [
     // A substring search over names the user wrote, which is what the backend does with it
     // (`name_substring`).
-    toNameField(AddressBookFilterKeys.NAME, t('address_book.filter_field_labels.name')),
+    toNameField(AddressBookFilterKeys.NAME, (): string => t('address_book.filter_field_labels.name')),
     // The address kind carries the shortening, the scrambling and the validation, so an incomplete
     // address is neither offered nor applied.
     decorateSharedField(
       toMatchFieldDef({
         key: AddressBookFilterKeys.ADDRESS,
-        label: t('address_book.filter_field_labels.address'),
+        label: (): string => t('address_book.filter_field_labels.address'),
         multiple: true,
       }),
       SharedFieldKinds.ADDRESS,

@@ -8,10 +8,10 @@ type Translate = (key: string) => string;
 /** The pill-bar fields for the custom assets table: a written name and a picked type. */
 export function toCustomAssetFields(types: () => string[], t: Translate): FieldDef[] {
   return [
-    toNameField(CustomAssetFilterKeys.NAME, t('assets.filter_field_labels.name')),
+    toNameField(CustomAssetFilterKeys.NAME, (): string => t('assets.filter_field_labels.name')),
     toMatchFieldDef({
       key: CustomAssetFilterKeys.CUSTOM_ASSET_TYPE,
-      label: t('assets.filter_field_labels.type'),
+      label: (): string => t('assets.filter_field_labels.type'),
       multiple: false,
       // The types the user has actually created, which is also what a typed value is checked
       // against so a type that does not exist is never applied.

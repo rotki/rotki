@@ -1,6 +1,7 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
 import { toAccountChainField } from '@/modules/accounts/blockchain-account-fields';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 
 const t = (key: string): string => key;
 
@@ -23,9 +24,9 @@ describe('toAccountChainField', () => {
     expect(field).toMatchObject({
       binding: { kind: 'param', paramKey: 'chain', to: 'both' },
       key: 'chain',
-      label: 'account_balances.filter_field_labels.chain',
       multiple: true,
     });
+    expect(resolveText(field.label)).toBe('account_balances.filter_field_labels.chain');
   });
 
   it('should draw a chain with its logo and display name', () => {

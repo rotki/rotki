@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NarrowSuggestion } from '@/modules/core/table/pill/core/narrowing';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 
@@ -103,7 +104,7 @@ watch(() => highlighted, (index) => {
         v-if="suggestion.kind !== 'field'"
         class="text-xs text-rui-text-secondary shrink-0"
       >
-        {{ suggestion.field.label }}
+        {{ resolveText(suggestion.field.label) }}
       </span>
     </button>
     <!-- Announced: asset rows are appended when a remote search returns, so without a live region

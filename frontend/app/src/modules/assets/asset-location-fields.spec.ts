@@ -1,6 +1,10 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
-import { type AssetLocationFieldOptions, toAssetLocationFields } from '@/modules/assets/asset-location-fields';
+import {
+  type AssetLocationFieldOptions,
+  assetLocationParams,
+  toAssetLocationFields,
+} from '@/modules/assets/asset-location-fields';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 
 const t = (key: string): string => key;
@@ -86,5 +90,50 @@ describe('toAssetLocationFields', () => {
       expect(field.allowExclusion).toBe(false);
       expect(field.operators).not.toContain('is_not');
     }
+  });
+});
+
+describe('assetLocationParams', () => {
+  it('should draw a pill for each key that is set', () => {
+    const addresses = ref<string[]>(['0xabc']);
+    const location = ref<string>('kraken');
+    const tags = ref<string[]>(['a']);
+
+    expect(get(assetLocationParams(addresses, location, tags))).toStrictEqual({
+      addresses: ['0xabc'],
+      location: 'kraken',
+      tags: ['a'],
+    });
+  });
+
+  // Removing a pill is how a filter is turned off, so nothing picked means no key at all.
+  it('should draw no pill for a key at its default', () => {
+    expect(get(assetLocationParams(ref<string[]>([]), ref<string>(''), ref<string[]>([]))))
+      .toStrictEqual({});
+  });
+
+  it('should write the models back from the bar\'s bag', () => {
+    const addresses = ref<string[]>([]);
+    const location = ref<string>('');
+    const tags = ref<string[]>([]);
+    const pillParams = assetLocationParams(addresses, location, tags);
+
+    set(pillParams, { addresses: ['0xabc', '0xdef'], location: 'kraken', tags: ['a'] });
+
+    expect(get(addresses)).toStrictEqual(['0xabc', '0xdef']);
+    expect(get(location)).toBe('kraken');
+    expect(get(tags)).toStrictEqual(['a']);
+  });
+
+  it('should clear every model when the pills are removed', () => {
+    const addresses = ref<string[]>(['0xabc']);
+    const location = ref<string>('kraken');
+    const tags = ref<string[]>(['a']);
+
+    set(assetLocationParams(addresses, location, tags), {});
+
+    expect(get(addresses)).toStrictEqual([]);
+    expect(get(location)).toBe('');
+    expect(get(tags)).toStrictEqual([]);
   });
 });

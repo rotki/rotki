@@ -26,7 +26,7 @@ export function toInternalTxConflictFields(
       toMatchFieldDef({
         key: InternalTxConflictFilterKeys.CHAIN,
         // The pill says what the column says.
-        label: t('internal_tx_conflicts.columns.chain'),
+        label: (): string => t('internal_tx_conflicts.columns.chain'),
         multiple: false,
         suggest: chains,
         // Checked against the same list it offers, so a chain the backend does not know is never
@@ -37,7 +37,7 @@ export function toInternalTxConflictFields(
       resolvers,
     ),
     toPeriodField(
-      t('internal_tx_conflicts.filter.period'),
+      (): string => t('internal_tx_conflicts.filter.period'),
       {
         lowerKey: InternalTxConflictFilterKeys.FROM_TIMESTAMP,
         upperKey: InternalTxConflictFilterKeys.TO_TIMESTAMP,

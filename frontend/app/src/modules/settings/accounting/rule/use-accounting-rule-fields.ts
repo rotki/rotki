@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
@@ -8,15 +8,13 @@ import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-hi
 import { toAccountingRuleFields } from '@/modules/settings/accounting/rule/accounting-rule-fields';
 
 /**
- * The pill-bar fields for the accounting rules table. Built inside a computed so the labels track
- * the locale: fields built once at setup keep the language they were created in until the component
- * remounts.
+ * The pill-bar fields for the accounting rules table.
  *
  * Reads the table's filter bag because the subtype field narrows by the picked event types, which
  * is why the caller owns the bag rather than leaving it to `useServerTable`. Read-only: the bar
  * prunes what a narrowing no longer admits, through the field's own `admits`.
  */
-export function useAccountingRuleFields(filters: MaybeRefOrGetter<Filters>): ComputedRef<FieldDef[]> {
+export function useAccountingRuleFields(filters: MaybeRefOrGetter<Filters>): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
   // Protocol resolution is the same for every table filtering on one, so it comes from one place
   // rather than being restated here.
@@ -45,12 +43,12 @@ export function useAccountingRuleFields(filters: MaybeRefOrGetter<Filters>): Com
     return (Array.isArray(picked) ? picked : [picked]).map(entry => entry.toString());
   });
 
-  return computed<FieldDef[]>(() => toAccountingRuleFields(shared, t, {
+  return toAccountingRuleFields(shared, t, {
     counterparties: (): string[] => get(counterparties),
     eventSubtypeName: getHistoryEventSubTypeName,
     eventSubtypes: (): string[] => subtypesFor(get(selectedEventTypes)),
     eventTypeName: getHistoryEventTypeName,
     eventTypes: (): string[] => get(historyEventTypes),
     subtypesFor,
-  }));
+  });
 }

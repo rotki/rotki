@@ -49,9 +49,9 @@ export function toManagedAssetFields(
     // has always carried several, so the field offers several rather than only the first.
     toMatchFieldDef({
       freeText: true,
-      hint: t('assets.filter.identifier_hint'),
+      hint: (): string => t('assets.filter.identifier_hint'),
       key: AssetFilterKeys.IDENTIFIER,
-      label: t('assets.filter_field_labels.identifier'),
+      label: (): string => t('assets.filter_field_labels.identifier'),
       multiple: true,
     }),
     // A backend asset type is already spaced words (`evm token`), so it only needs its casing fixed.
@@ -59,7 +59,7 @@ export function toManagedAssetFields(
       toMatchFieldDef({
         excludes: EXCLUDES_CHAIN,
         key: AssetFilterKeys.ASSET_TYPE,
-        label: t('assets.filter_field_labels.asset_type'),
+        label: (): string => t('assets.filter_field_labels.asset_type'),
         multiple: false,
         suggest: options.assetTypes,
       }),
@@ -68,9 +68,9 @@ export function toManagedAssetFields(
     ),
     decorateSharedField(
       toMatchFieldDef({
-        hint: t('assets.filter.asset_flag_hint'),
+        hint: (): string => t('assets.filter.asset_flag_hint'),
         key: AssetFilterKeys.ASSET_FLAG,
-        label: t('assets.filter_field_labels.asset_flag'),
+        label: (): string => t('assets.filter_field_labels.asset_flag'),
         multiple: false,
         suggest: (): string[] => assetFlags,
         validate: (flag: string): boolean => assetFlags.includes(flag),
@@ -80,14 +80,14 @@ export function toManagedAssetFields(
     ),
     toMatchFieldDef({
       freeText: true,
-      hint: t('assets.filter.symbol_hint'),
+      hint: (): string => t('assets.filter.symbol_hint'),
       key: AssetFilterKeys.SYMBOL,
-      label: t('assets.filter_field_labels.symbol'),
+      label: (): string => t('assets.filter_field_labels.symbol'),
       multiple: false,
     }),
     {
-      ...toNameField(AssetFilterKeys.NAME, t('assets.filter_field_labels.name')),
-      hint: t('assets.filter.name_hint'),
+      ...toNameField(AssetFilterKeys.NAME, (): string => t('assets.filter_field_labels.name')),
+      hint: (): string => t('assets.filter.name_hint'),
     },
     // The values are evm chain *names* (`ethereum`, `polygon_pos`) rather than chain ids, which both
     // the shared name resolver and the chain icon accept.
@@ -95,7 +95,7 @@ export function toManagedAssetFields(
       toMatchFieldDef({
         excludes: EXCLUDES_ASSET_TYPE,
         key: AssetFilterKeys.CHAIN,
-        label: t('assets.filter_field_labels.chain'),
+        label: (): string => t('assets.filter_field_labels.chain'),
         multiple: false,
         suggest: options.chains,
       }),
@@ -104,9 +104,9 @@ export function toManagedAssetFields(
     ),
     toMatchFieldDef({
       freeText: true,
-      hint: t('assets.filter.address_hint'),
+      hint: (): string => t('assets.filter.address_hint'),
       key: AssetFilterKeys.ADDRESS,
-      label: t('assets.filter_field_labels.address'),
+      label: (): string => t('assets.filter_field_labels.address'),
       multiple: false,
       // An address typed into the bar is shown truncated: a contract address is forty-two
       // characters and would swamp the pill. Unlike an account address it is not an identity, so it
@@ -123,7 +123,7 @@ export function toManagedAssetFields(
 export function toAssetOwnedField(t: Translate): FieldDef {
   return toParamFieldDef({
     key: 'owned',
-    label: t('assets.filter_field_labels.owned'),
+    label: (): string => t('assets.filter_field_labels.owned'),
     multiple: false,
     paramKey: 'showUserOwnedAssetsOnly',
     to: 'both',
@@ -135,7 +135,7 @@ export function toAssetOwnedField(t: Translate): FieldDef {
 export function toAssetWhitelistedField(t: Translate): FieldDef {
   return toParamFieldDef({
     key: 'whitelisted',
-    label: t('assets.filter_field_labels.whitelisted'),
+    label: (): string => t('assets.filter_field_labels.whitelisted'),
     multiple: false,
     paramKey: 'showWhitelistedAssetsOnly',
     to: 'both',
@@ -155,7 +155,7 @@ export function toAssetWhitelistedField(t: Translate): FieldDef {
 export function toAssetIgnoredField(t: Translate, resolveLabel: (value: string) => string): FieldDef {
   return toParamFieldDef({
     key: 'ignored',
-    label: t('assets.filter_field_labels.ignored'),
+    label: (): string => t('assets.filter_field_labels.ignored'),
     multiple: false,
     paramKey: 'ignoredAssetsHandling',
     resolveLabel,

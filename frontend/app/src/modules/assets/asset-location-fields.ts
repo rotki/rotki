@@ -1,8 +1,10 @@
+import type { Ref, WritableComputedRef } from 'vue';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { type AccountFieldOptions, toAccountField } from '@/modules/core/table/filters/shared/account-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { type TagFieldOption, toTagsField } from '@/modules/core/table/filters/shared/tag-field';
+import { listParam, type PillParams, stringParam, toPillParams } from '@/modules/core/table/param-refs';
 import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
 type Translate = (key: string) => string;
@@ -55,4 +57,23 @@ export function toAssetLocationFields(
     ),
     toTagsField(t, options.tags),
   ];
+}
+
+/**
+ * The three keys the asset locations bar carries, declared the same way a table's params are.
+ *
+ * This table filters what it already holds, so they reach the models and no request. Declaring them
+ * anyway means a key that later has to ride one needs no second spelling, and the bar's bag is not
+ * a hand-written adapter onto the same three refs.
+ */
+export function assetLocationParams(
+  addresses: Ref<string[]>,
+  location: Ref<string>,
+  tags: Ref<string[]>,
+): WritableComputedRef<PillParams> {
+  return toPillParams({
+    addresses: listParam(addresses),
+    location: stringParam(location),
+    tags: listParam(tags),
+  });
 }

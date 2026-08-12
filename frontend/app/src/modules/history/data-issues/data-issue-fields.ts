@@ -42,7 +42,7 @@ export function toDataIssueFields(
   return [
     toMatchFieldDef({
       key: DataIssuesFilterKeys.STATE,
-      label: t('data_issues.filter.state'),
+      label: (): string => t('data_issues.filter.state'),
       multiple: true,
       resolveIcon: resolution.resolveStateIcon,
       resolveLabel: resolution.resolveStateLabel,
@@ -51,7 +51,7 @@ export function toDataIssueFields(
     }),
     toMatchFieldDef({
       key: DataIssuesFilterKeys.KIND,
-      label: t('data_issues.filter.kind'),
+      label: (): string => t('data_issues.filter.kind'),
       multiple: true,
       resolveIcon: resolution.resolveKindIcon,
       resolveLabel: resolution.resolveKindLabel,
@@ -60,7 +60,7 @@ export function toDataIssueFields(
     }),
     toAssetField({
       key: DataIssuesFilterKeys.ASSET,
-      label: t('data_issues.filter.asset'),
+      label: (): string => t('data_issues.filter.asset'),
       searchAsset: resolution.searchAsset,
     }, resolvers),
     {
@@ -77,7 +77,7 @@ export function toDataIssueFields(
       // exchange's own logo for an account held there, which is what the table draws too.
       ...toMatchFieldDef({
         key: DataIssuesFilterKeys.ACCOUNT,
-        label: t('data_issues.filter.account'),
+        label: (): string => t('data_issues.filter.account'),
         multiple: false,
         // Any non-empty label, as the matcher had it. Not checked against the option list: that
         // list is fetched when the bar is first built, so a value restored from the URL can arrive
@@ -87,7 +87,7 @@ export function toDataIssueFields(
       ...resolution.account,
     },
     toPeriodField(
-      t('data_issues.filter.period'),
+      (): string => t('data_issues.filter.period'),
       { lowerKey: DataIssuesFilterKeys.START, upperKey: DataIssuesFilterKeys.END },
       resolvers,
     ),

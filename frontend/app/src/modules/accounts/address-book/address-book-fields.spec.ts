@@ -5,6 +5,7 @@ import {
   toAddressBookFields,
   toAddressBookStrictField,
 } from '@/modules/accounts/address-book/address-book-fields';
+import { resolveOptionalText } from '@/modules/core/table/pill/core/text';
 import { DisplayKinds } from '@/modules/core/table/pill/core/types';
 import { routeSchemaFromFields } from '@/modules/core/table/route';
 
@@ -101,6 +102,6 @@ describe('toAddressBookStrictField', () => {
   });
 
   it('should carry the explanation the checkbox used to show', () => {
-    expect(toAddressBookStrictField(t).hint).toBe('address_book.strict_blockchain_filter.hint');
+    expect(resolveOptionalText(toAddressBookStrictField(t).hint)).toBe('address_book.strict_blockchain_filter.hint');
   });
 });
