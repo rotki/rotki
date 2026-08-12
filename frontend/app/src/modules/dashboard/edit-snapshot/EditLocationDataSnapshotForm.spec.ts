@@ -123,7 +123,7 @@ describe('edit-snapshot/EditLocationDataSnapshotForm.vue', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // `useFormStateWatcher` only arms its watcher after a 500ms delay.
+    // Settle the mounted work first, so what follows is the only edit in play.
     await vi.advanceTimersByTimeAsync(600);
 
     await wrapper.find('[data-testid=edit-location-value] input').setValue('6000');

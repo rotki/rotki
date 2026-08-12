@@ -188,9 +188,23 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
       .toBe('dashboard.snapshot.edit.dialog.balances.rules.location_insufficient');
   });
 
+  // The price machine rewrites the value on mount, so a dirty check over the whole entry would
+  // arm the dialog's unsaved-changes prompt before the user has touched anything.
+  it('should not flag stateUpdated for the price fetched on mount', async () => {
+    const model = baseModel();
+    // Seed a value the mounted price fetch will overwrite (1.5 * 2000 = 3000), so this fails if the
+    // dirty check covers the fetched value rather than the fields the user edits.
+    model.usdValue = '1';
+    wrapper = createWrapper(model);
+    await vi.advanceTimersByTimeAsync(600);
+
+    const updates = wrapper.emitted<[BalanceSnapshotPayloadAndLocation]>('update:modelValue');
+    expect(updates?.at(-1)?.[0].usdValue).toBe('3000');
+    expect(wrapper.emitted('update:stateUpdated')?.flat() ?? []).not.toContain(true);
+  });
+
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // `useFormStateWatcher` only arms its watcher after a 500ms delay.
     await vi.advanceTimersByTimeAsync(600);
 
     wrapper.findComponent(EditBalancesSnapshotLocationSelector).vm.$emit('update:modelValue', 'kraken');
