@@ -30,7 +30,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const isWinVersionUnsupported = shallowRef<boolean>(false);
 
   const isDevelopment = checkIfDevelopment();
-  const { getStartupError, setupListeners } = useInterop();
+  const { getStartupError, setDataDirectory, setupListeners } = useInterop();
   const { restartBackend } = useBackendManagement();
   const { start: startMonitoring, stop: stopMonitoring } = useMonitorService();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
@@ -39,7 +39,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
   const { stopConnectionAttempts } = useBackendConnection();
-  const { connectionEnabled } = storeToRefs(useMainStore());
+  const { connected, connectionEnabled, dataDirectory } = storeToRefs(useMainStore());
   const { startQuitting } = useAppQuitting();
 
   /**
@@ -87,6 +87,16 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
       set(oauthCallbackHandlers, newHandlers);
     }
   }
+
+  /**
+   * Keep the main process pointed at the data directory the connected backend
+   * reported, so the help menu can open it. The directory is only known once
+   * `/api/1/info` answers, and it changes when the backend restarts into another
+   * one, so the menu entry follows the connection rather than being set once.
+   */
+  watchImmediate([connected, dataDirectory], ([isConnected, directory]) => {
+    setDataDirectory(isConnected ? directory : '');
+  });
 
   onBeforeMount(() => {
     // 1. First, synchronously check for any startup error that occurred before mount.

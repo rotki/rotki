@@ -22,6 +22,7 @@ interface Callbacks {
   quit: () => Promise<void>;
   updateTray: (trayUpdate: TrayUpdate) => void;
   updatePremiumMenu: (isPremium: boolean) => void;
+  setDataDirectory: (dataDirectory: string) => void;
   restartSubprocesses: (options: Partial<BackendOptions>) => Promise<void>;
   terminateSubprocesses: (update?: boolean) => Promise<void>;
   updateDownloadProgress: (progress: number) => void;
@@ -156,6 +157,9 @@ export class IpcManager {
     });
     this.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
       this.systemHandlers.updateTray(trayUpdate);
+    });
+    this.on(IpcCommands.SET_DATA_DIRECTORY, (_event, dataDirectory: string) => {
+      callbacks.setDataDirectory(dataDirectory);
     });
 
     // Backend handlers

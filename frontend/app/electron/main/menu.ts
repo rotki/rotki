@@ -10,11 +10,21 @@ interface MenuManagerListener {
   onDisplayTrayChanged: (displayTray: boolean) => void;
 }
 
+const DATA_DIRECTORY_ID = 'DATA_DIRECTORY';
+
 export class MenuManager {
   private menu: Menu | null = null;
   private listener: MenuManagerListener | null = null;
   private readonly separator: MenuItemConstructorOptions = { type: 'separator' };
   private isPremium: boolean = false;
+  /**
+   * The data directory the running backend resolved, empty until the renderer
+   * reports it. Electron only passes `--data-dir` when the user picked one, so
+   * the platform default is starling's to compute and only it knows the answer
+   * (see `shared/starling/starling-args.ts`). The menu entry stays disabled
+   * rather than guessing a path that would be wrong for dev/nightly builds.
+   */
+  private dataDirectory: string = '';
 
   constructor(
     private readonly logger: LogService,
@@ -37,6 +47,19 @@ export class MenuManager {
   updatePremiumStatus(isPremium: boolean): void {
     this.isPremium = isPremium;
     this.updateMenu();
+  }
+
+  /**
+   * Point the data directory entry at the directory the backend is using, or
+   * pass an empty string when the backend goes away to disable it again. Only
+   * the entry's enabled state changes, so the menu is not rebuilt: a rebuild on
+   * every connect and disconnect would collapse any open menu.
+   */
+  setDataDirectory(dataDirectory: string): void {
+    this.dataDirectory = dataDirectory;
+    const item = this.menu?.getMenuItemById(DATA_DIRECTORY_ID);
+    if (item)
+      item.enabled = !!dataDirectory;
   }
 
   private updateMenu(): void {
@@ -103,6 +126,12 @@ export class MenuManager {
         {
           label: 'Logs Directory',
           click: () => this.openPath(app.getPath('logs')),
+        },
+        {
+          id: DATA_DIRECTORY_ID,
+          label: 'Data Directory',
+          enabled: !!this.dataDirectory,
+          click: () => this.openPath(this.dataDirectory),
         },
         this.separator,
         {
