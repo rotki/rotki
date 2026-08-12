@@ -107,7 +107,6 @@
     "dotenv": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",
-    "electron-store": "catalog:",
     "fake-indexeddb": "catalog:",
     "flush-promises": "catalog:",
     "happy-dom": "catalog:",

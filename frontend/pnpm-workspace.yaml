@@ -80,7 +80,6 @@ catalog:
   echarts: 6.1.0
   electron: 43.2.0
   electron-builder: 26.15.3
-  electron-store: 11.0.2
   electron-updater: 6.8.9
   electron-window-state: 5.0.3
   es-toolkit: 1.50.0
