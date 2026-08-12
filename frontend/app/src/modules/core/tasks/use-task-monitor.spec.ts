@@ -79,8 +79,14 @@ describe('useTaskMonitor', () => {
     await monitor.monitor();
 
     expect(get(store.taskById)[2]).toBeUndefined();
+    // 🔴 `result` is asserted, not just `message`: `objectContaining` ignores the field, and
+    // anything but `null` sends the handler down its success branch — see the end-to-end case in
+    // `use-task-handler.spec.ts`.
     expect(mockHandleResult).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('Task 2 not found') }),
+      {
+        message: expect.stringContaining('Task 2 not found'),
+        result: null,
+      },
       2,
     );
   });

@@ -4,10 +4,14 @@ import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCancelAsyncTask = vi.fn();
+const mockQueryTasks = vi.fn();
+const mockQueryTaskResult = vi.fn();
 
 vi.mock('@/modules/core/tasks/use-task-api', () => ({
   useTaskApi: vi.fn().mockReturnValue({
     cancelAsyncTask: (...args: unknown[]): unknown => mockCancelAsyncTask(...args),
+    queryTaskResult: (...args: unknown[]): unknown => mockQueryTaskResult(...args),
+    queryTasks: (...args: unknown[]): unknown => mockQueryTasks(...args),
   }),
 }));
 
@@ -144,6 +148,38 @@ describe('useTaskHandler', () => {
       assert(isErr(outcome));
       assert(hasTag(outcome.error, 'TaskFailed'));
       expect(outcome.error.message).toBe('something went wrong');
+    });
+
+    /**
+     * The monitor and the handler are only wrong *together*, so this drives the real pair rather
+     * than a mocked `handleResult`: the monitor's 404 payload once carried `result: {}`, which is
+     * not `null`, so the handler took its success branch and resolved the producer `ok({})` for a
+     * task the backend had forgotten — silently, since the message was dropped with it.
+     *
+     * `useTaskHandler` and `useTaskMonitor` are both `createSharedComposable`, so importing the
+     * monitor here (no `resetModules` since `beforeEach`) hands it the same handler instance.
+     */
+    it('should resolve TaskFailed when the backend no longer knows the task', async () => {
+      const { TaskNotFoundError } = await import('@/modules/core/tasks/types');
+      const { useTaskMonitor } = await import('@/modules/core/tasks/use-task-monitor');
+      const monitor = useTaskMonitor();
+      const taskFn = vi.fn().mockResolvedValue({ taskId: 30 });
+
+      const promise = handler.runTask<string>(taskFn, 'Forgotten task');
+      await nextTick();
+
+      mockQueryTasks.mockResolvedValue({ completed: [30], pending: [] });
+      mockQueryTaskResult.mockRejectedValue(new TaskNotFoundError('Task 30 not found'));
+
+      await monitor.monitor();
+
+      const outcome = await promise;
+
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      // Carries the reason rather than dropping it: `terminalStatus` maps TaskFailed to FAILED.
+      expect(outcome.error.message).toContain('Task 30 not found');
+      expect(get(store.taskById)[30]).toBeUndefined();
     });
 
     it('should resolve each concurrent task from its own handler', async () => {
