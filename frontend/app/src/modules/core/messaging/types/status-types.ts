@@ -84,9 +84,14 @@ const EvmTransactionStatusData = z.object({
   subtype: z.literal('evm').or(z.literal('evmlike')),
 });
 
+/**
+ * Batched: one message covers every address of a chain. `period` is optional only because the
+ * backend does not send it yet; downstream is wired for it either way.
+ */
 const BitcoinTransactionStatusData = z.object({
   addresses: z.array(z.string()),
   chain: z.string(),
+  period: z.tuple([z.number(), z.number()]).optional(),
   status: z.enum(TransactionsQueryStatus),
   subtype: z.literal('bitcoin'),
 });

@@ -40,7 +40,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
-  const { filterDisabledChainAccounts } = useHistoryTransactionAccounts();
+  const { filterDisabledChainAccounts, getTransactionTypeFromChain } = useHistoryTransactionAccounts();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
   const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, resumeDecodingSyncProgress, stopDecodingSyncProgress } = useDecodingStatusStore();
@@ -82,7 +82,13 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       return;
     }
 
-    initializeQueryStatus(targets.decodableAccounts, { extend: continuation });
+    // ⚠️ Seeded from `accounts`, the same set `syncTransactionsByChains` queries — not from
+    // `decodableAccounts`, which drops bitcoin by definition and so kept every bitcoin chain out of
+    // the sync panel while its addresses were being queried.
+    initializeQueryStatus(
+      targets.accounts.map(account => ({ ...account, subtype: getTransactionTypeFromChain(account.chain) })),
+      { extend: continuation },
+    );
 
     if (continuation) {
       // ⚠️ Re-arm, do not reset. The decode section is gated by a single flag that the previous

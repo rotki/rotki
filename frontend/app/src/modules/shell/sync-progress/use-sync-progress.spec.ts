@@ -72,7 +72,7 @@ describe('useSyncProgress', () => {
     // First initialize with addresses
     const addresses = statuses
       .filter((s): s is UnifiedTransactionStatusData & { address: string } => 'address' in s)
-      .map(s => ({ address: s.address, chain: s.chain }));
+      .map(s => ({ address: s.address, chain: s.chain, subtype: s.subtype }));
     txStore.initializeQueryStatus(addresses);
     // Then update each status
     for (const status of statuses) {

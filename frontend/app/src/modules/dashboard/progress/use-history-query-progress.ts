@@ -7,7 +7,7 @@ import {
   TransactionsQueryStatus,
 } from '@/modules/core/messaging/types';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
-import { type TxQueryStatusData, useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
+import { isTxQueryStatusFinished, type TxQueryStatusData, useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 
 interface HistoryQueryProgressOperationData {
   type: HistoryQueryProgressType;
@@ -72,20 +72,7 @@ function isTransactionActive(status: TxQueryStatusData): boolean {
   if (isTerminal(status))
     return false;
 
-  if (status.subtype === 'bitcoin') {
-    return status.status !== TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
-  }
-  return status.status !== TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
-}
-
-function isTransactionFinished(status: TxQueryStatusData): boolean {
-  if (isTerminal(status))
-    return true;
-
-  if (status.subtype === 'bitcoin') {
-    return status.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
-  }
-  return status.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+  return !isTxQueryStatusFinished(status);
 }
 
 function createTransactionProgress(
@@ -133,7 +120,7 @@ function calculateProgressMetrics(
   txStatuses: TxQueryStatusData[],
   eventStatuses: HistoryEventsQueryData[],
 ): { completedSteps: number; totalItems: number; percentage: number } {
-  const finishedTxItems = txStatuses.filter(isTransactionFinished).length;
+  const finishedTxItems = txStatuses.filter(isTxQueryStatusFinished).length;
   const finishedEventItems = eventStatuses.filter(isEventFinished).length;
 
   const completedSteps = finishedTxItems + finishedEventItems;

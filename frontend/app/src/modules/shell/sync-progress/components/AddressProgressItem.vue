@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { type AddressProgress, AddressStatus, AddressStep, AddressSubtype } from '../types';
+import { type AddressProgress, AddressStatus, AddressStep } from '../types';
 
 const { address } = defineProps<{
   address: AddressProgress;
@@ -70,9 +70,9 @@ const statusText = computed<string>(() => {
   return t('sync_progress.status.pending');
 });
 
-const hasPeriod = computed<boolean>(() =>
-  get(isQuerying) && !!address.period && address.subtype !== AddressSubtype.BITCOIN,
-);
+// Keyed on the period itself rather than the subtype: bitcoin carries none today, and renders the
+// same range as everything else once the backend sends one.
+const hasPeriod = computed<boolean>(() => get(isQuerying) && !!address.period);
 
 // Current position is period[1], show "Beginning" if current is 0 or equals start (hasn't progressed)
 const showBeginning = computed<boolean>(() => {
@@ -83,7 +83,7 @@ const showBeginning = computed<boolean>(() => {
 });
 
 const hasPeriodProgress = computed<boolean>(() =>
-  get(isQuerying) && address.periodProgress !== undefined && address.subtype !== AddressSubtype.BITCOIN,
+  get(isQuerying) && address.periodProgress !== undefined,
 );
 </script>
 

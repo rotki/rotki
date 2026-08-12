@@ -71,9 +71,9 @@ describe('useHistoryQueryProgress', () => {
     expect(value?.percentage).toBe(0);
   });
 
-  it('should treat bitcoin as finished only at DECODING_TRANSACTIONS_FINISHED', () => {
+  it('should treat bitcoin as active while it is decoding', () => {
     setTxStatuses({
-      a: bitcoinTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      a: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED),
       b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
     });
 
@@ -84,6 +84,23 @@ describe('useHistoryQueryProgress', () => {
     expect(value?.currentStep).toBe(1);
     expect(value?.totalSteps).toBe(2);
     expect(value?.percentage).toBe(50);
+  });
+
+  // The backend skips the decode messages when the query came back empty, so requiring them kept
+  // this indicator spinning over addresses the sync panel already showed as complete.
+  it('should treat bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED', () => {
+    setTxStatuses({
+      a: bitcoinTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
+    });
+
+    const { progress } = useHistoryQueryProgress();
+    const value = get(progress);
+
+    expect(value?.currentOperation).toBeNull();
+    expect(value?.currentStep).toBe(2);
+    expect(value?.totalSteps).toBe(2);
+    expect(value?.percentage).toBe(100);
   });
 
   it('should treat non-bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED', () => {

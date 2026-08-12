@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
 import { type TxQueryStatusData, useTxQueryStatusStore } from './use-tx-query-status-store';
 
@@ -34,8 +34,8 @@ describe('store/history/query-status/tx-query-status', () => {
     it('should initialize status for multiple accounts', () => {
       const store = useTxQueryStatusStore();
       const accounts = [
-        { address: '0x123', chain: 'eth' },
-        { address: '0x456', chain: 'optimism' },
+        { address: '0x123', chain: 'eth', subtype: 'evm' as const },
+        { address: '0x456', chain: 'optimism', subtype: 'evm' as const },
       ];
 
       store.initializeQueryStatus(accounts);
@@ -53,10 +53,10 @@ describe('store/history/query-status/tx-query-status', () => {
     it('should reset existing status before initializing', () => {
       const store = useTxQueryStatusStore();
 
-      store.initializeQueryStatus([{ address: '0x123', chain: 'eth' }]);
+      store.initializeQueryStatus([{ address: '0x123', chain: 'eth', subtype: 'evm' }]);
       expect(Object.keys(get(store.queryStatus))).toHaveLength(1);
 
-      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism' }]);
+      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism', subtype: 'evm' }]);
       expect(Object.keys(get(store.queryStatus))).toHaveLength(1);
       expect(get(store.queryStatus)['0x123eth']).toBeUndefined();
     });
@@ -64,8 +64,8 @@ describe('store/history/query-status/tx-query-status', () => {
     it('should keep the earlier entries when extending', () => {
       const store = useTxQueryStatusStore();
 
-      store.initializeQueryStatus([{ address: '0x123', chain: 'eth' }]);
-      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism' }], { extend: true });
+      store.initializeQueryStatus([{ address: '0x123', chain: 'eth', subtype: 'evm' }]);
+      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism', subtype: 'evm' }], { extend: true });
 
       const status = get(store.queryStatus);
       expect(Object.keys(status)).toHaveLength(2);
@@ -75,7 +75,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should not walk a finished address back to ACCOUNT_CHANGE when extending', () => {
       const store = useTxQueryStatusStore();
-      const account = { address: '0x123', chain: 'eth' };
+      const account = { address: '0x123', chain: 'eth', subtype: 'evm' as const };
 
       store.initializeQueryStatus([account]);
       store.setUnifiedTxQueryStatus({
@@ -91,13 +91,24 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(get(store.queryStatus)['0x123eth'].status).toBe(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED);
     });
 
+    it('should seed a bitcoin account without a synthetic period', () => {
+      const store = useTxQueryStatusStore();
+
+      store.initializeQueryStatus([{ address: 'bc1abc', chain: 'btc', subtype: 'bitcoin' }]);
+
+      const entry = get(store.queryStatus).bc1abcbtc;
+      expect(entry).toMatchObject({ address: 'bc1abc', chain: 'btc', subtype: 'bitcoin' });
+      // A seeded period would render a progress bar over a range nobody queried.
+      expect(entry).not.toHaveProperty('period');
+    });
+
     it('should resume syncing when extending', () => {
       const store = useTxQueryStatusStore();
 
-      store.initializeQueryStatus([{ address: '0x123', chain: 'eth' }]);
+      store.initializeQueryStatus([{ address: '0x123', chain: 'eth', subtype: 'evm' }]);
       store.stopSyncing();
 
-      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism' }], { extend: true });
+      store.initializeQueryStatus([{ address: '0x456', chain: 'optimism', subtype: 'evm' }], { extend: true });
 
       expect(get(store.syncing)).toBe(true);
     });
@@ -156,6 +167,79 @@ describe('store/history/query-status/tx-query-status', () => {
         chain: 'btc',
         subtype: 'bitcoin',
       });
+    });
+
+    it('should track a bitcoin period the same way as every other subtype', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'bitcoin',
+      });
+
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        period: [0, 600],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'bitcoin',
+      });
+
+      expect(get(store.queryStatus).bc1abcbtc).toMatchObject({
+        originalPeriodEnd: 1000,
+        originalPeriodStart: 600,
+        period: [0, 600],
+        subtype: 'bitcoin',
+      });
+    });
+
+    it('should keep a bitcoin period when a later message omits it', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'bitcoin',
+      });
+
+      // `period` is optional on this subtype alone, so a message without one must not erase what an
+      // earlier message established, or the progress bar appears and then vanishes mid-query.
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'bitcoin',
+      });
+
+      expect(get(store.queryStatus).bc1abcbtc).toMatchObject({
+        originalPeriodEnd: 1000,
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+      });
+    });
+
+    it('should leave a bitcoin entry period-less when the message carries none', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'bitcoin',
+      });
+
+      const entry = get(store.queryStatus).bc1abcbtc;
+      assert(entry.subtype === 'bitcoin');
+      expect(entry.period).toBeUndefined();
+      expect(entry.originalPeriodEnd).toBeUndefined();
     });
 
     it('should set originalPeriodEnd from period[1] on STARTED status', () => {
@@ -576,8 +660,8 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
 
       store.initializeQueryStatus([
-        { address: '0x123', chain: 'eth' },
-        { address: '0x456', chain: 'optimism' },
+        { address: '0x123', chain: 'eth', subtype: 'evm' },
+        { address: '0x456', chain: 'optimism', subtype: 'evm' },
       ]);
 
       store.removeQueryStatus({ address: '0x123', chain: 'eth' });
@@ -635,24 +719,39 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(get(store.isAllFinished)).toBe(false);
     });
 
-    it('should use DECODING_FINISHED for bitcoin status', () => {
+    it('should settle bitcoin on DECODING_FINISHED', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
         chain: 'BTC',
-        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED,
+        status: TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED,
         subtype: 'bitcoin',
       });
 
-      // Bitcoin uses DECODING_TRANSACTIONS_FINISHED as the finished status
       expect(get(store.isAllFinished)).toBe(false);
 
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
         chain: 'BTC',
         status: TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED,
+        subtype: 'bitcoin',
+      });
+
+      expect(get(store.isAllFinished)).toBe(true);
+    });
+
+    it('should settle bitcoin on QUERYING_FINISHED when no decode follows', () => {
+      const store = useTxQueryStatusStore();
+      store.syncing = true;
+
+      // The empty-result path: the backend stops at QUERYING_TRANSACTIONS_FINISHED and never sends
+      // the decode pair, so requiring the decode left the address querying forever.
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED,
         subtype: 'bitcoin',
       });
 
@@ -682,8 +781,8 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
 
       store.initializeQueryStatus([
-        { address: '0x123', chain: 'eth' },
-        { address: '0x456', chain: 'optimism' },
+        { address: '0x123', chain: 'eth', subtype: 'evm' },
+        { address: '0x456', chain: 'optimism', subtype: 'evm' },
       ]);
 
       expect(Object.keys(get(store.queryStatus))).toHaveLength(2);
