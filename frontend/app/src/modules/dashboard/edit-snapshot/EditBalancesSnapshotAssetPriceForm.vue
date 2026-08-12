@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import type { ZodType } from 'zod';
+import { useForm } from '@/modules/core/form/use-form';
+import {
+  type AssetPriceFormState,
+  assetPriceSchema,
+} from '@/modules/dashboard/edit-snapshot/snapshot-forms';
 import { useSnapshotAssetPrice } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-price';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
@@ -21,6 +24,26 @@ const { disableAsset = false, nft = false, timestamp } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const schema = computed<ZodType>(() => assetPriceSchema({
+  amount: t('dashboard.snapshot.edit.dialog.balances.rules.amount'),
+  asset: t('dashboard.snapshot.edit.dialog.balances.rules.asset'),
+  value: t('dashboard.snapshot.edit.dialog.balances.rules.value'),
+}));
+
+/**
+ * Display only: this form exposes no `validate`, so nothing it reports can stop a save. The gate is
+ * EditBalancesSnapshotForm's, over the category and location. Submitting here is a no-op too - the
+ * price is persisted through `submitPrice`, not the form core.
+ */
+const form = useForm<AssetPriceFormState, AssetPriceFormState>({
+  initial: (): AssetPriceFormState => ({ amount: get(amount), asset: get(asset), usdValue: get(usdValue) }),
+  schema,
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): AssetPriceFormState => ({ ...state }),
+});
+
+// The price state machine writes back to the fields it derives, so it is given the form's state to
+// drive rather than the parent's models, and the two are mirrored below.
 const {
   modelAssetToFiatPrice,
   modelAssetToUsdPrice,
@@ -31,31 +54,25 @@ const {
   isCurrentCurrencyUsd,
   reset,
   submitPrice,
-} = useSnapshotAssetPrice({ amount, asset, timestamp: () => timestamp, usdValue });
+} = useSnapshotAssetPrice({
+  amount: toRef(form.state, 'amount'),
+  asset: toRef(form.state, 'asset'),
+  timestamp: () => timestamp,
+  usdValue: toRef(form.state, 'usdValue'),
+});
 
-const rules = {
-  amount: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.amount'), required),
-  },
-  asset: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.asset'), required),
-  },
-  usdValue: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.value'), required),
-  },
-};
+// Both directions write the value they were handed, so an echo settles rather than looping.
+watchImmediate([amount, asset, usdValue], ([nextAmount, nextAsset, nextUsdValue]) => {
+  form.state.amount = nextAmount;
+  form.state.asset = nextAsset;
+  form.state.usdValue = nextUsdValue;
+});
 
-const v$ = useVuelidate(
-  rules,
-  {
-    amount,
-    asset,
-    usdValue,
-  },
-  {
-    $autoDirty: true,
-  },
-);
+watch(() => form.state, (state) => {
+  set(amount, state.amount);
+  set(asset, state.asset);
+  set(usdValue, state.usdValue);
+}, { deep: true });
 
 defineExpose({
   reset,
@@ -65,45 +82,42 @@ defineExpose({
 
 <template>
   <div>
-    <div
-      v-if="v$"
-      class="grid md:grid-cols-2 gap-4 mb-4"
-    >
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
       <AssetSelect
         v-if="!nft"
-        v-model="asset"
+        v-model="form.state.asset"
         outlined
         :disabled="disableAsset"
         show-ignored
         data-testid="asset"
-        :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
-        @blur="v$.asset.$touch()"
+        :error-messages="disableAsset ? [''] : form.errors('asset')"
+        @blur="form.touch('asset')"
       />
       <RuiTextField
         v-else
-        v-model="asset"
+        v-model="form.state.asset"
         :label="t('common.asset')"
         variant="outlined"
         color="primary"
         :disabled="disableAsset"
         class="mb-1.5"
-        :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
+        :error-messages="disableAsset ? [''] : form.errors('asset')"
         :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
-        @blur="v$.asset.$touch()"
+        @blur="form.touch('asset')"
       />
       <AmountInput
-        v-model="amount"
+        v-model="form.state.amount"
         variant="outlined"
         data-testid="amount"
         :label="t('common.amount')"
-        :error-messages="toMessages(v$.amount)"
-        @blur="v$.amount.$touch()"
+        :error-messages="form.errors('amount')"
+        @blur="form.touch('amount')"
       />
     </div>
     <TwoFieldsAmountInput
       v-if="isCurrentCurrencyUsd"
       v-model:primary-value="modelAssetToUsdPrice"
-      v-model:secondary-value="usdValue"
+      v-model:secondary-value="form.state.usdValue"
       class="mb-5"
       :loading="fetching"
       :disabled="fetching"
@@ -116,8 +130,8 @@ defineExpose({
         }),
       }"
       :error-messages="{
-        primary: toMessages(v$.usdValue),
-        secondary: toMessages(v$.usdValue),
+        primary: form.errors('usdValue'),
+        secondary: form.errors('usdValue'),
       }"
       :hint="t('transactions.events.form.asset_price.hint')"
       @update:reversed="modelFiatValueFocused = $event"
