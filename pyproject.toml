@@ -210,6 +210,7 @@ module = [
     "rotkehlchen.tests.api.*",
     "rotkehlchen.tests.benchmarks.*",
     "rotkehlchen.tests.data_migrations.*",
+    "rotkehlchen.tests.profiling.*",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true

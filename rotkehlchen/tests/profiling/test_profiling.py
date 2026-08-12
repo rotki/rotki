@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 import requests
 
@@ -8,6 +10,10 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_tasks,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.types import ChecksumEvmAddress
+
 
 @pytest.mark.skipif(True, reason='This is for profiling only. Comment out to run')
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -17,9 +23,9 @@ from rotkehlchen.tests.utils.api import (
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_query_decode_history_profiling(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Profile querying transactions and decoding them for a number of addresses
 
     For how to see the flamegraph of this check:
