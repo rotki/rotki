@@ -1,8 +1,9 @@
 import type { BackendOptions } from '@shared/ipc';
 import { LogLevel } from '@shared/log-level';
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import {
   backendDefaultsState,
+  backendNumericSchema,
   type BackendOptionsFormFields,
   diffBackendOptions,
   hasBackendOptionChanges,
@@ -126,6 +127,50 @@ describe('hasBackendOptionChanges', () => {
   it('should be false when a numeric field changes only in formatting', (): void => {
     // Both parse to 300, so nothing is actually different.
     expect(hasBackendOptionChanges(fields({ maxLogSize: '300.4' }), initial)).toBe(false);
+  });
+});
+
+describe('backendNumericSchema', () => {
+  const messages = { min: 'min-0', nonEmpty: 'non-empty' };
+  const schema = backendNumericSchema(messages);
+
+  function messagesFor(value: string): string[] {
+    const result = schema.safeParse({ maxLogFiles: '3', maxLogSize: value, sqliteInstructions: '5000' });
+    if (result.success)
+      return [];
+
+    return result.error.issues.filter(issue => issue.path.join('.') === 'maxLogSize').map(issue => issue.message);
+  }
+
+  // The table measured from vuelidate's `and(numeric, minValue(0))` + `required`,
+  // which this schema replaces. Every row, including the message order of the
+  // last one, is the behaviour that shipped.
+  it.each([
+    ['0', []],
+    ['300', []],
+    // numeric allows a fractional part; parseValue truncates it on save.
+    ['1.5', []],
+    ['', ['non-empty']],
+    ['-1', ['min-0']],
+    ['+1', ['min-0']],
+    ['1e5', ['min-0']],
+    ['abc', ['min-0']],
+    ['1.', ['min-0']],
+    // Unreachable through a type="number" input, but vuelidate reported both
+    // rules in this order: not digits, and empty once trimmed.
+    ['  ', ['min-0', 'non-empty']],
+  ])('should report %j as %j', (value, expected): void => {
+    expect(messagesFor(value)).toEqual(expected);
+  });
+
+  it('should apply the same rule to all three fields', (): void => {
+    const result = schema.safeParse({ maxLogFiles: '-1', maxLogSize: '', sqliteInstructions: '5000' });
+    assert(!result.success);
+
+    expect(result.error.issues.map(issue => [issue.path.join('.'), issue.message])).toEqual([
+      ['maxLogFiles', 'min-0'],
+      ['maxLogSize', 'non-empty'],
+    ]);
   });
 });
 
