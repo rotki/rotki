@@ -213,7 +213,7 @@ module = [
     "rotkehlchen.tests.data_migrations.*",
     "rotkehlchen.tests.fixtures.exchanges.*",
     "rotkehlchen.tests.integration.*",
-    "rotkehlchen.tests.mcp.tools.*",
+    "rotkehlchen.tests.mcp.*",
     "rotkehlchen.tests.profiling.*",
     "rotkehlchen.tests.pylint.*",
     "rotkehlchen.tests.test_no_missing_init",

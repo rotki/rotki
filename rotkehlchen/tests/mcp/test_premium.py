@@ -33,7 +33,7 @@ def reset_cache() -> Generator[None]:
     premium.reset_premium_cache()
 
 
-def _mock_tier(monkeypatch, tier: str) -> list[str]:
+def _mock_tier(monkeypatch: pytest.MonkeyPatch, tier: str) -> list[str]:
     """Patch requests.get to return the given premium tier, tracking each call."""
     calls: list[str] = []
 
@@ -47,31 +47,40 @@ def _mock_tier(monkeypatch, tier: str) -> list[str]:
 
 
 @pytest.mark.parametrize('tier', ['Basic', 'Advanced'])
-def test_has_mcp_access_should_be_true_for_basic_and_up(monkeypatch, tier: str) -> None:
+def test_has_mcp_access_should_be_true_for_basic_and_up(
+        monkeypatch: pytest.MonkeyPatch,
+        tier: str,
+) -> None:
     _mock_tier(monkeypatch, tier)
     assert premium.has_mcp_access() is True
 
 
 @pytest.mark.parametrize('tier', ['Free', 'Supporter'])
-def test_has_mcp_access_should_be_false_for_free_and_supporter(monkeypatch, tier: str) -> None:
+def test_has_mcp_access_should_be_false_for_free_and_supporter(
+        monkeypatch: pytest.MonkeyPatch,
+        tier: str,
+) -> None:
     _mock_tier(monkeypatch, tier)
     assert premium.has_mcp_access() is False
 
 
-def test_has_mcp_access_should_cache_result(monkeypatch) -> None:
+def test_has_mcp_access_should_cache_result(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = _mock_tier(monkeypatch, 'Advanced')
     assert premium.has_mcp_access() is True
     assert premium.has_mcp_access() is True
     assert len(calls) == 1  # second call served from the cache, no extra backend hit
 
 
-def test_premium_gate_should_allow_basic_backend(monkeypatch) -> None:
+def test_premium_gate_should_allow_basic_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     _mock_tier(monkeypatch, 'Basic')
     assert premium.premium_gate() is None
 
 
 @pytest.mark.parametrize('tier', ['Free', 'Supporter'])
-def test_premium_gate_should_block_free_and_supporter(monkeypatch, tier: str) -> None:
+def test_premium_gate_should_block_free_and_supporter(
+        monkeypatch: pytest.MonkeyPatch,
+        tier: str,
+) -> None:
     _mock_tier(monkeypatch, tier)
     error = premium.premium_gate()
     assert error is not None
@@ -79,7 +88,9 @@ def test_premium_gate_should_block_free_and_supporter(monkeypatch, tier: str) ->
     assert error['upgrade_url'] == premium.UPGRADE_URL
 
 
-def test_premium_gate_should_fail_closed_when_backend_unreachable(monkeypatch) -> None:
+def test_premium_gate_should_fail_closed_when_backend_unreachable(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def mock_get(url: str, **kwargs: Any) -> MockResponse:
         raise requests.exceptions.ConnectionError('connection refused')
 

@@ -42,7 +42,9 @@ def test_configure_backend_should_update_config() -> None:
     assert backend_config.timeout == 5
 
 
-def test_request_api_should_raise_query_error_on_connection_failure(monkeypatch) -> None:
+def test_request_api_should_raise_query_error_on_connection_failure(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def mock_get(url: str, **kwargs: Any) -> MockResponse:
         raise requests.exceptions.ConnectionError('connection refused')
 
@@ -52,7 +54,7 @@ def test_request_api_should_raise_query_error_on_connection_failure(monkeypatch)
         request_api(base_url='http://backend/api/1', endpoint='ping', timeout=5)
 
 
-def test_request_api_should_return_payload(monkeypatch) -> None:
+def test_request_api_should_return_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_get(url: str, **kwargs: Any) -> MockResponse:
         return MockResponse({'result': True, 'message': ''})
 
@@ -64,7 +66,9 @@ def test_request_api_should_return_payload(monkeypatch) -> None:
     }
 
 
-def test_request_api_should_delegate_bearer_with_internal_proof(monkeypatch) -> None:
+def test_request_api_should_delegate_bearer_with_internal_proof(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     captured: dict[str, Any] = {}
     session_key = b'session-key'
 
@@ -98,7 +102,7 @@ def test_request_api_should_delegate_bearer_with_internal_proof(monkeypatch) -> 
     }
 
 
-def test_request_api_should_post_json_body(monkeypatch) -> None:
+def test_request_api_should_post_json_body(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, Any] = {}
 
     def mock_post(url: str, **kwargs: Any) -> MockResponse:
@@ -123,7 +127,7 @@ def test_request_api_should_post_json_body(monkeypatch) -> None:
     assert captured['json'] == {'limit': 10}
 
 
-def test_aggregate_flag_should_only_be_sent_when_set(monkeypatch) -> None:
+def test_aggregate_flag_should_only_be_sent_when_set(monkeypatch: pytest.MonkeyPatch) -> None:
     """The default request body must stay byte-identical to before the flag existed."""
     captured: dict[str, Any] = {}
 
@@ -141,7 +145,7 @@ def test_aggregate_flag_should_only_be_sent_when_set(monkeypatch) -> None:
     assert captured['json']['aggregate_by_group_ids'] is True
 
 
-def test_query_settings_should_return_main_currency(monkeypatch) -> None:
+def test_query_settings_should_return_main_currency(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         requests,
         'get',
@@ -152,7 +156,7 @@ def test_query_settings_should_return_main_currency(monkeypatch) -> None:
     assert query_settings()['main_currency'] == 'EUR'
 
 
-def test_query_settings_should_reject_non_dict_result(monkeypatch) -> None:
+def test_query_settings_should_reject_non_dict_result(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         requests,
         'get',
@@ -164,7 +168,9 @@ def test_query_settings_should_reject_non_dict_result(monkeypatch) -> None:
         query_settings()
 
 
-def test_historical_prices_should_always_send_only_cache_period(monkeypatch) -> None:
+def test_historical_prices_should_always_send_only_cache_period(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """``only_cache_period`` is what confines the endpoint to rotki's stored prices. Without
     it the backend falls through to ``query_multiple_prices`` and hits remote oracles, which
     the MCP must never do on an agent's behalf.

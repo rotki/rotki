@@ -19,7 +19,7 @@ from rotkehlchen.mcp.auth import MCP_SCOPE, SessionTokenVerifier
 from rotkehlchen.mcp.constants import SERVICE_NAME
 
 
-def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
+def test_setup_server_should_register_discovered_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     tools = []
     init_args: dict[str, object] = {}
 
@@ -85,7 +85,10 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
     assert tools[0][2] is not fake_tool
 
 
-def test_setup_server_should_enable_bearer_authentication(monkeypatch, tmp_path: Path) -> None:
+def test_setup_server_should_enable_bearer_authentication(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+) -> None:
     init_args: dict[str, object] = {}
 
     class MockFastMCP:
@@ -115,7 +118,7 @@ def test_setup_server_should_enable_bearer_authentication(monkeypatch, tmp_path:
 
 
 def test_streamable_http_should_authenticate_before_protocol_handling(
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
         tmp_path: Path,
 ) -> None:
     session_db = tmp_path / 'session.db'
@@ -204,7 +207,7 @@ def test_streamable_http_should_authenticate_before_protocol_handling(
         store.close()
 
 
-def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
+def test_setup_server_should_gate_premium_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     """A premium-gated tool is wrapped so it can't run without an active subscription."""
     tools = []
 
@@ -275,7 +278,7 @@ def test_privacy_mode_should_not_be_exposed_as_an_mcp_tool() -> None:
     assert 'change_privacy_mode' not in tool_names
 
 
-def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
+def test_run_server_should_use_streamable_http_transport(monkeypatch: pytest.MonkeyPatch) -> None:
     setup_kwargs = {}
     transports = []
 
@@ -312,7 +315,7 @@ def test_run_server_should_use_streamable_http_transport(monkeypatch) -> None:
     assert transports == ['streamable-http']
 
 
-def test_run_server_should_use_stdio_transport(monkeypatch) -> None:
+def test_run_server_should_use_stdio_transport(monkeypatch: pytest.MonkeyPatch) -> None:
     server_mock = MagicMock()
     monkeypatch.setattr(server, 'setup_server', MagicMock(return_value=server_mock))
 
@@ -326,7 +329,7 @@ def test_run_server_should_use_stdio_transport(monkeypatch) -> None:
     server_mock.run.assert_called_once_with(transport='stdio')
 
 
-def test_main_should_forward_cli_arguments(monkeypatch) -> None:
+def test_main_should_forward_cli_arguments(monkeypatch: pytest.MonkeyPatch) -> None:
     run_server_mock = MagicMock()
     monkeypatch.setattr(mcp_main, 'run_server', run_server_mock)
     monkeypatch.setenv('ROTKI_SESSION_KEY', 'session-key')
@@ -368,7 +371,7 @@ def test_validate_loopback_host_should_reject_network_exposure(host: str) -> Non
         server.validate_loopback_host(host)
 
 
-def test_main_should_reject_non_loopback_http_host(monkeypatch) -> None:
+def test_main_should_reject_non_loopback_http_host(monkeypatch: pytest.MonkeyPatch) -> None:
     run_server_mock = MagicMock()
     monkeypatch.setattr(mcp_main, 'run_server', run_server_mock)
 
@@ -379,7 +382,10 @@ def test_main_should_reject_non_loopback_http_host(monkeypatch) -> None:
     run_server_mock.assert_not_called()
 
 
-def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) -> None:
+def test_rotkehlchen_main_should_report_mcp_startup_errors(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+) -> None:
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
     monkeypatch.setattr(mcp_main, 'main', MagicMock(side_effect=OSError('address already in use')))
 
@@ -392,7 +398,10 @@ def test_rotkehlchen_main_should_report_mcp_startup_errors(monkeypatch, capsys) 
     )
 
 
-def test_rotkehlchen_main_should_report_mcp_server_exit(monkeypatch, capsys) -> None:
+def test_rotkehlchen_main_should_report_mcp_server_exit(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+) -> None:
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
     monkeypatch.setattr(mcp_main, 'main', MagicMock(side_effect=SystemExit(1)))
 
@@ -403,7 +412,10 @@ def test_rotkehlchen_main_should_report_mcp_server_exit(monkeypatch, capsys) -> 
     assert capsys.readouterr().err.endswith('Failed to start rotki MCP server\n')
 
 
-def test_rotkehlchen_main_should_preserve_mcp_argument_errors(monkeypatch, capsys) -> None:
+def test_rotkehlchen_main_should_preserve_mcp_argument_errors(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+) -> None:
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
     monkeypatch.setattr(mcp_main, 'main', MagicMock(side_effect=SystemExit(2)))
 
@@ -414,7 +426,7 @@ def test_rotkehlchen_main_should_preserve_mcp_argument_errors(monkeypatch, capsy
     assert 'Failed to start rotki MCP server' not in capsys.readouterr().err
 
 
-def test_rotkehlchen_main_should_dispatch_mcp_arguments(monkeypatch) -> None:
+def test_rotkehlchen_main_should_dispatch_mcp_arguments(monkeypatch: pytest.MonkeyPatch) -> None:
     mcp_main_mock = MagicMock()
     monkeypatch.setattr(rotkehlchen_main, 'is_mcp_command', True)
     monkeypatch.setattr(mcp_main, 'main', mcp_main_mock)

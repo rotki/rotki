@@ -24,7 +24,9 @@ ADDRESS = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
 TX_HASH = '0x' + 'ab' * 32
 
 
-def test_sync_privacy_mode_should_clear_data_only_when_mode_changes(monkeypatch) -> None:
+def test_sync_privacy_mode_should_clear_data_only_when_mode_changes(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     session = analytics.get_analytics_session()
     clear = Mock(wraps=session.clear)
@@ -39,7 +41,9 @@ def test_sync_privacy_mode_should_clear_data_only_when_mode_changes(monkeypatch)
     clear.assert_called_once_with()
 
 
-def test_sync_privacy_mode_should_reject_invalid_backend_value(monkeypatch) -> None:
+def test_sync_privacy_mode_should_reject_invalid_backend_value(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'invalid'})
 
     with pytest.raises(analytics.BackendQueryError, match='invalid MCP privacy mode'):
@@ -262,11 +266,11 @@ def test_validate_sql(sql: str, valid: bool) -> None:
     assert (_validate_sql(sql) is None) is valid
 
 
-def _mock_history_pages(monkeypatch, entries: list[Any]) -> None:
+def _mock_history_pages(monkeypatch: pytest.MonkeyPatch, entries: list[Any]) -> None:
     """``entries`` may hold plain event dicts or, as the real endpoint returns for grouped
     swaps and matched movements, sub-lists of them.
     """
-    def fake_page(limit, offset, **kwargs):
+    def fake_page(limit: int, offset: int, **kwargs: Any) -> dict[str, Any]:
         page = entries[offset:offset + limit]
         return {
             'entries': page,
@@ -277,7 +281,7 @@ def _mock_history_pages(monkeypatch, entries: list[Any]) -> None:
     monkeypatch.setattr(analytics, 'query_history_events_page', fake_page)
 
 
-def test_session_refresh_then_query_sql_roundtrip(monkeypatch) -> None:
+def test_session_refresh_then_query_sql_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         {'identifier': 1, 'asset': 'ETH', 'amount': '2', 'event_type': 'spend', 'notes': 'a'},
@@ -304,7 +308,9 @@ def test_session_refresh_then_query_sql_roundtrip(monkeypatch) -> None:
     assert result['result_truncated'] is False
 
 
-def test_session_should_support_cross_thread_refresh_and_query(monkeypatch) -> None:
+def test_session_should_support_cross_thread_refresh_and_query(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         {'identifier': 1, 'asset': 'ETH', 'amount': '2', 'event_type': 'spend'},
@@ -329,7 +335,7 @@ def test_session_should_support_cross_thread_refresh_and_query(monkeypatch) -> N
     assert result['rows'] == [{'count': 1}]
 
 
-def test_refresh_should_load_without_blocking_queries(monkeypatch) -> None:
+def test_refresh_should_load_without_blocking_queries(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'event_type': 'receive'},
@@ -378,7 +384,9 @@ def test_refresh_should_load_without_blocking_queries(monkeypatch) -> None:
     )['rows'] == [{'asset': 'BTC', 'amount_float': 2.0}]
 
 
-def test_refresh_should_not_publish_data_if_privacy_mode_changes(monkeypatch) -> None:
+def test_refresh_should_not_publish_data_if_privacy_mode_changes(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='raw')
     started = Event()
     proceed = Event()
@@ -411,7 +419,9 @@ def test_refresh_should_not_publish_data_if_privacy_mode_changes(monkeypatch) ->
     )
 
 
-def test_overlapping_refreshes_should_not_publish_out_of_order(monkeypatch) -> None:
+def test_overlapping_refreshes_should_not_publish_out_of_order(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     started = Event()
     proceed = Event()
@@ -448,7 +458,9 @@ def test_overlapping_refreshes_should_not_publish_out_of_order(monkeypatch) -> N
     )['rows'] == [{'asset': 'NEW'}]
 
 
-def test_history_events_promote_entry_and_scrub_auto_notes(monkeypatch) -> None:
+def test_history_events_promote_entry_and_scrub_auto_notes(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The API wraps fields in an ``entry`` envelope; columns must read as ``timestamp``/
     ``location`` (not ``entry_timestamp``), and ``auto_notes`` stays readable in balanced
     mode with any embedded identifier scrubbed.
@@ -484,14 +496,20 @@ def test_history_events_promote_entry_and_scrub_auto_notes(monkeypatch) -> None:
     assert ADDRESS not in str(row)
 
 
-def test_refresh_accepts_millisecond_timestamps(monkeypatch) -> None:
+def test_refresh_accepts_millisecond_timestamps(monkeypatch: pytest.MonkeyPatch) -> None:
     """An LLM passing ms (the unit of the timestamp column) must not silently load 0 rows:
     ms bounds are normalized to the seconds the backend filter expects.
     """
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     captured: dict[str, Any] = {}
 
-    def fake_page(limit, offset, from_timestamp=None, to_timestamp=None, **kwargs):
+    def fake_page(
+            limit: int,
+            offset: int,
+            from_timestamp: int | None = None,
+            to_timestamp: int | None = None,
+            **kwargs: Any,
+    ) -> dict[str, Any]:
         captured['from_timestamp'] = from_timestamp
         captured['to_timestamp'] = to_timestamp
         return {'entries': [], 'entries_found': 0, 'entries_total': 0, 'entries_limit': -1}
@@ -507,7 +525,9 @@ def test_refresh_accepts_millisecond_timestamps(monkeypatch) -> None:
     assert captured['to_timestamp'] == 1735689600
 
 
-def test_load_is_uncapped_by_default_and_respects_max_events(monkeypatch) -> None:
+def test_load_is_uncapped_by_default_and_respects_max_events(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Complete data by default; --max-events only caps when explicitly set."""
     entries = [
         {'identifier': i, 'asset': 'ETH', 'amount': str(i), 'event_type': 'spend'}
@@ -550,7 +570,7 @@ def _valued_event(identifier: int, asset: str, amount: str, timestamp: int) -> d
     }
 
 
-def test_include_values_off_should_not_query_prices(monkeypatch) -> None:
+def test_include_values_off_should_not_query_prices(monkeypatch: pytest.MonkeyPatch) -> None:
     """Valuation costs minutes on a real history, so it must never happen implicitly."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [_valued_event(1, 'ETH', '2', 1614556800000)])
@@ -570,7 +590,9 @@ def test_include_values_off_should_not_query_prices(monkeypatch) -> None:
     assert names.isdisjoint({'value', 'price', 'price_missing'})
 
 
-def test_include_values_should_multiply_amount_by_cached_price(monkeypatch) -> None:
+def test_include_values_should_multiply_amount_by_cached_price(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         _valued_event(1, 'ETH', '2', 1614556800000),    # priced: 2 * 1500
@@ -611,7 +633,7 @@ def test_include_values_should_multiply_amount_by_cached_price(monkeypatch) -> N
     ]
 
 
-def test_unpriced_events_should_be_null_never_zero(monkeypatch) -> None:
+def test_unpriced_events_should_be_null_never_zero(monkeypatch: pytest.MonkeyPatch) -> None:
     """A 0 would silently understate every total an agent sums over ``value``."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [_valued_event(1, 'DOGE', '100', 1614556800000)])
@@ -626,7 +648,7 @@ def test_unpriced_events_should_be_null_never_zero(monkeypatch) -> None:
     )['rows'] == [{'total': None, 'priced': 0}]
 
 
-def test_null_results_should_stay_json_serializable(monkeypatch) -> None:
+def test_null_results_should_stay_json_serializable(monkeypatch: pytest.MonkeyPatch) -> None:
     """A NULL in a numeric result column must reach the agent as ``null``. Reading results
     back through a DataFrame turned it into NaN, which ``json.dumps`` emits as a bare ``NaN``
     token -- invalid JSON, so the whole tool response fails to parse on the client.
@@ -646,7 +668,7 @@ def test_null_results_should_stay_json_serializable(monkeypatch) -> None:
     assert 'NaN' not in json.dumps(result)  # strict JSON has no NaN literal
 
 
-def test_price_lookups_should_dedupe_into_hour_buckets(monkeypatch) -> None:
+def test_price_lookups_should_dedupe_into_hour_buckets(monkeypatch: pytest.MonkeyPatch) -> None:
     """100 events in one asset-hour cost exactly one lookup, not 100."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
@@ -668,7 +690,7 @@ def test_price_lookups_should_dedupe_into_hour_buckets(monkeypatch) -> None:
     assert loaded['source']['priced_rows'] == 100  # all 100 rows still get the bucket's price
 
 
-def test_price_lookups_should_chunk_at_500_pairs(monkeypatch) -> None:
+def test_price_lookups_should_chunk_at_500_pairs(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         # 1200 distinct asset-hours -> 500 + 500 + 200
@@ -687,7 +709,7 @@ def test_price_lookups_should_chunk_at_500_pairs(monkeypatch) -> None:
     assert loaded['source']['lookup_count'] == 1200
 
 
-def test_valuation_should_not_block_queries(monkeypatch) -> None:
+def test_valuation_should_not_block_queries(monkeypatch: pytest.MonkeyPatch) -> None:
     """Price resolution takes minutes; it must run outside the connection lock so the
     previous snapshot stays queryable, exactly like the event paging above it.
     """
@@ -699,7 +721,11 @@ def test_valuation_should_not_block_queries(monkeypatch) -> None:
 
     started, proceed = Event(), Event()
 
-    def blocking_prices(asset_timestamps, target_asset, max_seconds_distance):
+    def blocking_prices(
+            asset_timestamps: list[tuple[str, int]],
+            target_asset: str,
+            max_seconds_distance: int,
+    ) -> dict[str, Any]:
         started.set()
         assert proceed.wait(timeout=5)
         return {'assets': {'ETH': {'1614556800': '1500'}}, 'target_asset': target_asset}
@@ -733,7 +759,7 @@ def test_valuation_should_not_block_queries(monkeypatch) -> None:
     ]
 
 
-def test_grouped_sublist_entries_should_not_be_dropped(monkeypatch) -> None:
+def test_grouped_sublist_entries_should_not_be_dropped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Without aggregate_by_group_ids the API nests each EVM/Solana swap and each matched
     asset movement in a sub-list, so a page mixes dicts with lists of dicts. Keeping only the
     dicts silently lost every on-chain swap -- exactly the trades an agent asks about.
@@ -761,11 +787,16 @@ def test_grouped_sublist_entries_should_not_be_dropped(monkeypatch) -> None:
     )['rows'] == [{'asset': 'BTC'}, {'asset': 'ETH'}, {'asset': 'USDC'}]
 
 
-def test_aggregate_by_group_ids_should_be_opt_in(monkeypatch) -> None:
+def test_aggregate_by_group_ids_should_be_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     captured: list[Any] = []
 
-    def fake_page(limit, offset, aggregate_by_group_ids=False, **kwargs):
+    def fake_page(
+            limit: int,
+            offset: int,
+            aggregate_by_group_ids: bool = False,
+            **kwargs: Any,
+    ) -> dict[str, Any]:
         captured.append(aggregate_by_group_ids)
         return {'entries': [] if offset else [
             {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'grouped_events_num': 3},
@@ -789,9 +820,9 @@ def test_aggregate_by_group_ids_should_be_opt_in(monkeypatch) -> None:
     )['rows'] == [{'grouped_events_num': 3}]
 
 
-def _paged_backend(monkeypatch, pages: list[list[dict[str, Any]]], entries_found: int) -> None:
+def _paged_backend(monkeypatch: pytest.MonkeyPatch, pages: list[list[dict[str, Any]]], entries_found: int) -> None:  # noqa: E501
     """Serve pre-baked pages by offset, so a page can be empty mid-range."""
-    def fake_page(limit, offset, **kwargs):
+    def fake_page(limit: int, offset: int, **kwargs: Any) -> dict[str, Any]:
         index = offset // limit
         return {
             'entries': pages[index] if index < len(pages) else [],
@@ -807,7 +838,7 @@ def _event(identifier: int) -> dict[str, Any]:
     return {'identifier': identifier, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend'}
 
 
-def test_complete_load_should_report_completeness(monkeypatch) -> None:
+def test_complete_load_should_report_completeness(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _paged_backend(monkeypatch, [[_event(1), _event(2)], [_event(3)]], entries_found=3)
 
@@ -820,7 +851,7 @@ def test_complete_load_should_report_completeness(monkeypatch) -> None:
     assert source['backend_metadata']['entries_found'] == 3
 
 
-def test_empty_middle_page_should_not_end_the_load(monkeypatch) -> None:
+def test_empty_middle_page_should_not_end_the_load(monkeypatch: pytest.MonkeyPatch) -> None:
     """Pages come back short and a whole window can filter out, so stopping at the first
     empty page silently truncated the load while still reporting it as complete.
     """
@@ -839,7 +870,7 @@ def test_empty_middle_page_should_not_end_the_load(monkeypatch) -> None:
     assert source['completeness'] == 'complete'
 
 
-def test_persistently_empty_pages_should_stop_and_say_so(monkeypatch) -> None:
+def test_persistently_empty_pages_should_stop_and_say_so(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _paged_backend(monkeypatch, [[_event(1), _event(2)]], entries_found=1000)
 
@@ -851,7 +882,7 @@ def test_persistently_empty_pages_should_stop_and_say_so(monkeypatch) -> None:
     assert source['completeness'] == 'stopped_early'  # never claim complete coverage
 
 
-def test_max_events_cap_should_report_truncation(monkeypatch) -> None:
+def test_max_events_cap_should_report_truncation(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, max_events=3)
     _paged_backend(
         monkeypatch,
@@ -872,7 +903,9 @@ def _described(session: AnalyticsSession, table: str = 'history_events') -> dict
     return {column['name']: column for column in session.describe_table(table)['columns']}
 
 
-def test_describe_should_report_sqlite_type_beside_pandas_dtype(monkeypatch) -> None:
+def test_describe_should_report_sqlite_type_beside_pandas_dtype(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The pandas dtype is not what SQL sees; reporting it alone misled every query."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
@@ -895,7 +928,9 @@ def test_describe_should_report_sqlite_type_beside_pandas_dtype(monkeypatch) -> 
     )['rows'] == [{'has_auto_notes': 0, 'count': 1}, {'has_auto_notes': 1, 'count': 1}]
 
 
-def test_describe_should_list_enum_values_and_null_fractions(monkeypatch) -> None:
+def test_describe_should_list_enum_values_and_null_fractions(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'event_type': 'spend'},
@@ -919,7 +954,7 @@ def test_describe_should_list_enum_values_and_null_fractions(monkeypatch) -> Non
 
 
 def test_describe_should_list_counterparty_values_beyond_the_general_scan_cap(
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """describe_table documents counterparty as one of the columns it lists values for, but
     every real account has far more than the general cap, so it never got a listing at all.
@@ -942,7 +977,7 @@ def test_describe_should_list_counterparty_values_beyond_the_general_scan_cap(
 
 
 def test_describe_should_not_list_values_of_a_column_where_nothing_repeats(
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A sparse column holding a distinct amount per row is not an enum. Listing its "top
     values" put per-row financial data in what is meant to be a schema summary.
@@ -962,7 +997,7 @@ def test_describe_should_not_list_values_of_a_column_where_nothing_repeats(
     assert _described(session)['event_type']['top_values'] == [{'value': 'spend', 'rows': 28}]
 
 
-def test_describe_should_never_emit_hashed_values(monkeypatch) -> None:
+def test_describe_should_never_emit_hashed_values(monkeypatch: pytest.MonkeyPatch) -> None:
     """Listing anon_ values would be noise at best and defeats the point at worst."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
@@ -982,7 +1017,7 @@ def test_describe_should_never_emit_hashed_values(monkeypatch) -> None:
     assert columns['ens_name_hash']['hashed_reason'] == 'unrecognized'
 
 
-def test_direction_column_should_use_rotki_resolution(monkeypatch) -> None:
+def test_direction_column_should_use_rotki_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
     """The serialized event carries no direction, so it is derived locally -- otherwise the
     "aggregate on direction" guidance refers to a column that does not exist.
     """
@@ -1008,7 +1043,9 @@ def test_direction_column_should_use_rotki_resolution(monkeypatch) -> None:
     ]
 
 
-def test_event_group_should_separate_income_from_returned_principal(monkeypatch) -> None:
+def test_event_group_should_separate_income_from_returned_principal(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The whole point of the column: every row below is event_type "staking" and direction
     "in", so nothing else on the row tells earnings apart from principal coming back.
     """
@@ -1036,7 +1073,9 @@ def test_event_group_should_separate_income_from_returned_principal(monkeypatch)
     ]
 
 
-def test_partial_beacon_withdrawal_should_be_income_but_exit_should_not(monkeypatch) -> None:
+def test_partial_beacon_withdrawal_should_be_income_but_exit_should_not(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """rotki files both under staking/remove asset, so only is_exit tells them apart. A
     partial withdrawal is a skim of the balance above 32 ETH and therefore pure reward.
     """
@@ -1065,7 +1104,7 @@ def test_partial_beacon_withdrawal_should_be_income_but_exit_should_not(monkeypa
     ]
 
 
-def test_unparsable_event_should_not_fail_the_load(monkeypatch) -> None:
+def test_unparsable_event_should_not_fail_the_load(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [
         {'identifier': 1, 'asset': 'ETH', 'amount': '1', 'location': 'ethereum',
@@ -1079,7 +1118,7 @@ def test_unparsable_event_should_not_fail_the_load(monkeypatch) -> None:
     ]
 
 
-def test_every_shipped_recipe_should_execute(monkeypatch) -> None:
+def test_every_shipped_recipe_should_execute(monkeypatch: pytest.MonkeyPatch) -> None:
     """Doubles as regression coverage: a recipe breaks the moment the schema drifts."""
     configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
     _mock_history_pages(monkeypatch, [

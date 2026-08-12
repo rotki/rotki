@@ -9,6 +9,7 @@ from rotkehlchen.mcp import usage_analytics
 from rotkehlchen.mcp.backend import BackendQueryError, configure_backend
 
 if TYPE_CHECKING:
+    import pytest
     from mcp.server.session import ServerSession
 
 
@@ -80,7 +81,9 @@ async def _track_models(
     await asyncio.sleep(0)
 
 
-def test_mcp_usage_analytics_tracker_deduplicates_per_session_and_model(monkeypatch) -> None:
+def test_mcp_usage_analytics_tracker_deduplicates_per_session_and_model(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(asyncio, 'to_thread', to_thread_mock := AsyncMock())
     client_params = InitializeRequestParams.model_validate({
         'protocolVersion': '2025-06-18',
@@ -94,7 +97,7 @@ def test_mcp_usage_analytics_tracker_deduplicates_per_session_and_model(monkeypa
     assert to_thread_mock.await_count == 3
 
 
-def test_submit_mcp_usage_analytics(monkeypatch) -> None:
+def test_submit_mcp_usage_analytics(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=3)
     monkeypatch.setattr(usage_analytics, 'is_production', lambda: True)
     monkeypatch.setattr(
@@ -126,7 +129,9 @@ def test_submit_mcp_usage_analytics(monkeypatch) -> None:
     assert kwargs['json'][0]['payload']['data'] == data
 
 
-def test_submit_mcp_usage_analytics_uses_development_website(monkeypatch) -> None:
+def test_submit_mcp_usage_analytics_uses_development_website(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     configure_backend(base_url='http://backend/api/1', timeout=3)
     monkeypatch.setattr(usage_analytics, 'is_production', lambda: False)
     monkeypatch.setattr(
@@ -147,7 +152,7 @@ def test_submit_mcp_usage_analytics_uses_development_website(monkeypatch) -> Non
     )
 
 
-def test_submit_mcp_usage_analytics_respects_opt_out(monkeypatch) -> None:
+def test_submit_mcp_usage_analytics_respects_opt_out(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(usage_analytics, 'is_production', production_mock := MagicMock())
     monkeypatch.setattr(
         usage_analytics,
@@ -165,7 +170,7 @@ def test_submit_mcp_usage_analytics_respects_opt_out(monkeypatch) -> None:
     production_mock.assert_not_called()
 
 
-def test_submit_mcp_usage_analytics_ignores_failures(monkeypatch) -> None:
+def test_submit_mcp_usage_analytics_ignores_failures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(usage_analytics, 'is_production', lambda: True)
     monkeypatch.setattr(
         usage_analytics,
