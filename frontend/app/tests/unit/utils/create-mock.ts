@@ -15,12 +15,22 @@ export type DeepPartial<T> = T extends (...args: infer A) => infer R
 // the mock look thenable (so `await mock` hangs), and the inspection hooks would
 // break `console.log(mock)` / util.inspect. Returning undefined for them keeps
 // the proxy inert to the runtime.
+//
+// The `__v_*` entries are Vue's reactivity markers. `toRaw` follows `__v_raw`
+// until it is undefined, so auto-materialising it hands back another proxy with
+// its own `__v_raw` and the unwrap never terminates — which is what happens the
+// moment a mocked pinia store reaches Vue.
 const passthroughUndefined = new Set<PropertyKey>([
   'then',
   'catch',
   'finally',
   'asymmetricMatch',
   'inspect',
+  '__v_raw',
+  '__v_isRef',
+  '__v_isReactive',
+  '__v_isReadonly',
+  '__v_skip',
   Symbol.iterator,
   Symbol.asyncIterator,
   Symbol.toPrimitive,
