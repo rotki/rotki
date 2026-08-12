@@ -9,7 +9,7 @@ from rotkehlchen.mcp.backend import BackendQueryError, configure_backend
 from rotkehlchen.mcp.tools import assets
 
 
-def test_query_asset_details_should_query_globaldb_assets(monkeypatch) -> None:
+def test_query_asset_details_should_query_globaldb_assets(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, Any] = {}
     expected_result = {
         'entries': [{
@@ -48,7 +48,7 @@ def test_query_asset_details_should_require_an_identifier() -> None:
 
 @pytest.mark.parametrize('result', [None, [], {}, {'entries': None}])
 def test_query_asset_details_should_reject_unexpected_response(
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
         result: Any,
 ) -> None:
     monkeypatch.setattr(
@@ -61,7 +61,7 @@ def test_query_asset_details_should_reject_unexpected_response(
         backend.query_asset_details(['BTC'])
 
 
-def test_get_asset_details_should_run_query_in_thread(monkeypatch) -> None:
+def test_get_asset_details_should_run_query_in_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     expected_result = {
         'entries': [{'identifier': 'BTC', 'name': 'Bitcoin', 'symbol': 'BTC'}],
         'entries_found': 1,

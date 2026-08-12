@@ -1,12 +1,15 @@
 import asyncio
 import selectors
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import requests
 
 from rotkehlchen.mcp.backend import configure_backend
 from rotkehlchen.mcp.tools import info as info_tool
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class MockResponse:
@@ -24,7 +27,7 @@ class MockResponse:
         return self.payload
 
 
-def test_info_should_return_backend_info(monkeypatch) -> None:
+def test_info_should_return_backend_info(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_get_info() -> dict[str, Any]:
         return {
             'mcp': {
@@ -59,7 +62,7 @@ def test_info_should_return_backend_info(monkeypatch) -> None:
         loop.close()
 
 
-def test_get_info_should_report_unlocked_backend(monkeypatch) -> None:
+def test_get_info_should_report_unlocked_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_get(url: str, **kwargs: Any) -> MockResponse:
         if url.endswith('/ping'):
             return MockResponse({'result': True, 'message': ''})
@@ -85,7 +88,7 @@ def test_get_info_should_report_unlocked_backend(monkeypatch) -> None:
     assert isinstance(result['mcp']['version'], str)
 
 
-def test_get_info_should_report_locked_backend(monkeypatch) -> None:
+def test_get_info_should_report_locked_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_get(url: str, **kwargs: Any) -> MockResponse:
         if url.endswith('/users'):
             return MockResponse({'result': {'alice': 'loggedout'}, 'message': ''})
@@ -103,7 +106,7 @@ def test_get_info_should_report_locked_backend(monkeypatch) -> None:
     )
 
 
-def test_get_info_should_report_connection_failure(monkeypatch) -> None:
+def test_get_info_should_report_connection_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_get(url: str, **kwargs: Any) -> MockResponse:
         raise requests.exceptions.ConnectionError('connection refused')
 

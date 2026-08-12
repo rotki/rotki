@@ -9,7 +9,9 @@ from rotkehlchen.mcp.backend import BackendQueryError, configure_backend
 from rotkehlchen.mcp.tools import prices
 
 
-def test_query_historical_prices_should_query_cached_prices(monkeypatch) -> None:
+def test_query_historical_prices_should_query_cached_prices(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
     captured: dict[str, Any] = {}
     expected_result = {
         'assets': {
@@ -66,7 +68,7 @@ def test_query_historical_prices_should_validate_arguments() -> None:
     [None, [], {}, {'assets': None, 'target_asset': 'USD'}, {'assets': {}, 'target_asset': None}],
 )
 def test_query_historical_prices_should_reject_unexpected_response(
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
         result: Any,
 ) -> None:
     monkeypatch.setattr(
@@ -83,7 +85,7 @@ def test_query_historical_prices_should_reject_unexpected_response(
         )
 
 
-def test_get_historical_prices_should_run_query_in_thread(monkeypatch) -> None:
+def test_get_historical_prices_should_run_query_in_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     expected_result = {
         'assets': {'BTC': {'1579543935': '30000'}},
         'target_asset': 'USD',
