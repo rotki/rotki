@@ -3,9 +3,9 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { assetLocationParams } from '@/modules/assets/asset-location-fields';
 import { useAssetLocationFields } from '@/modules/assets/use-asset-location-fields';
 import { type AssetLocation, useAssetLocationsData } from '@/modules/assets/use-asset-locations-data';
-import { arrayify } from '@/modules/core/common/data/array';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -51,30 +51,7 @@ const {
 const fields = useAssetLocationFields(assetLocations);
 const pillLabels = usePillBarLabels();
 
-// Every pill here is param-bound, and this table filters what it already holds, so the bar's params
-// are bridged straight to the three models instead of a request. An absent param clears its model:
-// removing the pill is how the filter is turned off.
-function toList(value: string | string[] | boolean | undefined): string[] {
-  return value === undefined || typeof value === 'boolean' ? [] : arrayify(value);
-}
-
-const pillParams = computed<Record<string, string | string[] | boolean>>({
-  get(): Record<string, string | string[] | boolean> {
-    const location = get(locationFilter);
-    const picked = get(addresses);
-    const tags = get(onlyTags);
-    return {
-      ...(picked.length > 0 ? { addresses: picked } : {}),
-      ...(location ? { location } : {}),
-      ...(tags.length > 0 ? { tags } : {}),
-    };
-  },
-  set(value: Record<string, string | string[] | boolean>): void {
-    set(addresses, toList(value.addresses));
-    set(locationFilter, toList(value.location)[0] ?? '');
-    set(onlyTags, toList(value.tags));
-  },
-});
+const pillParams = assetLocationParams(addresses, locationFilter, onlyTags);
 
 function getPercentage(value: BigNumber): string {
   const percentage = get(totalValue).isZero() ? 0 : value.div(get(totalValue)).multipliedBy(100);

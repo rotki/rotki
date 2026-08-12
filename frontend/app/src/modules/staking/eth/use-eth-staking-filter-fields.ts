@@ -24,8 +24,9 @@ const selectableStatuses = validStatuses.filter(status => status !== 'all');
  * The pill-bar fields for the eth staking page: the two date matchers collapsed into one `period`
  * pill, and the validator status.
  *
- * Built inside a computed so the labels track the locale: fields built once at setup keep the
- * language they were created in until the component remounts.
+ * The one field list here that is genuinely reactive rather than only locale-dependent: which
+ * fields exist turns on `disableStatus`, so this keeps a computed where the other tables no longer
+ * need one.
  *
  * @param disableStatus when validators are picked by hand, a status filter cannot narrow anything
  * further, so the field is not offered at all.
@@ -38,32 +39,32 @@ export function useEthStakingFilterFields(
 
   // No serializer of its own: the bounds are stored as the unix seconds they are sent as, and the
   // date editor reads and writes them through `formatBound`/`parseBound`.
-  const periodField = computed<FieldDef>(() => toDateFieldDef({
+  const periodField: FieldDef = toDateFieldDef({
     formatBound: dateDeserializer(dateInputFormat),
     key: 'period',
-    label: t('common.filter.period'),
+    label: (): string => t('common.filter.period'),
     lowerKey: EthStakingFilterValueKeys.START,
     parseBound: dateBoundParser(dateInputFormat),
     upperKey: EthStakingFilterValueKeys.END,
-  }));
+  });
 
   // Declared rather than derived from a matcher: a matcher describes a field to the old text bar,
   // and this one only ever feeds the pill bar.
-  const statusField = computed<FieldDef>(() => ({
+  const statusField: FieldDef = {
     allowExclusion: false,
     binding: { kind: 'filter' },
     key: EthStakingFilterValueKeys.STATUS,
     // `eth_validator_combined_filter.status` is the long "filter by the status of the validator"
     // hint the old bar showed; a pill wants the noun.
-    label: t('common.status'),
+    label: (): string => t('common.status'),
     multiple: false,
     operators: [FilterOps.IS],
     resolveLabel: (value: string): string => toHumanReadable(value, 'sentence'),
     suggest: (): string[] => [...selectableStatuses],
     valueType: FilterValueTypes.ENUM,
-  }));
+  };
 
   return computed<FieldDef[]>(() => (
-    toValue(disableStatus) ? [get(periodField)] : [get(periodField), get(statusField)]
+    toValue(disableStatus) ? [periodField] : [periodField, statusField]
   ));
 }

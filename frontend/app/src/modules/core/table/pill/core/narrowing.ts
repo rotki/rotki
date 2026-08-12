@@ -2,6 +2,7 @@ import type { OperatorLabels } from '@/modules/core/table/pill/core/operators';
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { pillOperator, pillValueSummary } from '@/modules/core/table/pill/core/format';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 
 /** Offers the field itself: picking it adds an empty pill and opens its value editor. */
 interface FieldSuggestion {
@@ -134,7 +135,7 @@ function typedFilterMatches(field: FieldDef, typed: string, operatorLabels: Oper
  * than an empty state.
  */
 export function fieldSuggestions(fields: FieldDef[]): NarrowSuggestion[] {
-  return fields.map(field => ({ field, kind: 'field', label: field.label }));
+  return fields.map(field => ({ field, kind: 'field', label: resolveText(field.label) }));
 }
 
 /**
@@ -156,8 +157,9 @@ interface Ranked {
 
 /** The field itself, when its label matches. */
 function fieldMatch(field: FieldDef, needle: string): Ranked | undefined {
-  const rank = rankOf(field.label, needle, RANK_FIELD_PREFIX, RANK_FIELD_SUBSTRING);
-  return rank === undefined ? undefined : { rank, suggestion: { field, kind: 'field', label: field.label } };
+  const label = resolveText(field.label);
+  const rank = rankOf(label, needle, RANK_FIELD_PREFIX, RANK_FIELD_SUBSTRING);
+  return rank === undefined ? undefined : { rank, suggestion: { field, kind: 'field', label } };
 }
 
 /**

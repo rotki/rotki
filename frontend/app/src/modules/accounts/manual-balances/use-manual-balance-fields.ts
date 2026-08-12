@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { Filters } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { TagFieldOption } from '@/modules/core/table/filters/shared/tag-field';
@@ -9,15 +9,11 @@ import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { useTagFieldOptions } from '@/modules/core/table/filters/shared/use-tag-field-options';
 
-/**
- * The pill-bar fields for the manual balances table. Built inside a computed so the labels track
- * the locale: fields built once at setup keep the language they were created in until the component
- * remounts.
- */
+/** The pill-bar fields for the manual balances table. */
 export function useManualBalanceFields(
   locations: MaybeRefOrGetter<string[]>,
   filters: MaybeRefOrGetter<Filters>,
-): ComputedRef<FieldDef[]> {
+): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
   // Asset and location resolution is the same for every table filtering on them, so it comes from
   // one place rather than being restated here.
@@ -40,9 +36,9 @@ export function useManualBalanceFields(
   const search = computed(() => assetSuggestions(assetSearch, get(location)));
   const searchAsset = async (value: string): Promise<AssetsWithId> => get(search)(value);
 
-  return computed<FieldDef[]>(() => toManualBalanceFields(shared, t, {
+  return toManualBalanceFields(shared, t, {
     locations: (): string[] => toValue(locations),
     searchAsset,
     tags: (): TagFieldOption[] => get(tagOptions),
-  }));
+  });
 }

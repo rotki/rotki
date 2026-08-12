@@ -43,7 +43,7 @@ export function toAccountingRuleFields(
   return [
     toMatchFieldDef({
       key: AccountingRuleFilterKeys.EVENT_TYPE,
-      label: t('accounting_settings.rule.filter_field_labels.event_type'),
+      label: (): string => t('accounting_settings.rule.filter_field_labels.event_type'),
       multiple: true,
       resolveLabel: options.eventTypeName,
       suggest: options.eventTypes,
@@ -54,7 +54,7 @@ export function toAccountingRuleFields(
       // narrows what can be added and drops what stops being admitted, both off one lookup.
       admits: values => options.subtypesFor(values[AccountingRuleFilterKeys.EVENT_TYPE] ?? []),
       key: AccountingRuleFilterKeys.EVENT_SUBTYPE,
-      label: t('accounting_settings.rule.filter_field_labels.event_subtype'),
+      label: (): string => t('accounting_settings.rule.filter_field_labels.event_subtype'),
       multiple: true,
       resolveLabel: options.eventSubtypeName,
       suggest: options.eventSubtypes,
@@ -63,7 +63,7 @@ export function toAccountingRuleFields(
     decorateSharedField(
       toMatchFieldDef({
         key: AccountingRuleFilterKeys.COUNTERPARTY,
-        label: t('accounting_settings.rule.filter_field_labels.counterparty'),
+        label: (): string => t('accounting_settings.rule.filter_field_labels.counterparty'),
         multiple: true,
         suggest: options.counterparties,
       }),

@@ -32,17 +32,17 @@ export function toOraclePriceFields(
   return [
     toAssetField({
       key: OraclePriceFilterKeys.FROM_ASSET,
-      label: t('oracle_prices.filter_field_labels.from_asset'),
+      label: (): string => t('oracle_prices.filter_field_labels.from_asset'),
       searchAsset,
     }, resolvers),
     toAssetField({
       key: OraclePriceFilterKeys.TO_ASSET,
-      label: t('oracle_prices.filter_field_labels.to_asset'),
+      label: (): string => t('oracle_prices.filter_field_labels.to_asset'),
       searchAsset,
     }, resolvers),
     toMatchFieldDef({
       key: OraclePriceFilterKeys.SOURCE,
-      label: t('oracle_prices.filter_field_labels.source'),
+      label: (): string => t('oracle_prices.filter_field_labels.source'),
       multiple: false,
       // A raw oracle id (`cryptocompare`) is not what the table calls it, and the pill has to read
       // the same as the source chip in the row it filters to.
@@ -51,7 +51,7 @@ export function toOraclePriceFields(
       validate: (value: string): boolean => sources().includes(value),
     }),
     toPeriodField(
-      t('oracle_prices.filter_field_labels.period'),
+      (): string => t('oracle_prices.filter_field_labels.period'),
       { lowerKey: OraclePriceFilterKeys.START, upperKey: OraclePriceFilterKeys.END },
       resolvers,
     ),

@@ -1,6 +1,7 @@
+import type { Ref, WritableComputedRef } from 'vue';
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
-import z from 'zod';
-import { CommaSeparatedStringSchema } from '@/modules/core/table/route';
+import type { ParamSource } from '@/modules/core/table/param-sources';
+import { listParam, type PillParams, refParams, toPillParams } from '@/modules/core/table/param-refs';
 
 /** The wire keys the manual balances table filters on, which the URL carries too. */
 export const ManualBalanceFilterKeys = {
@@ -13,6 +14,22 @@ export type ManualBalanceFilterKey = typeof ManualBalanceFilterKeys[keyof typeof
 
 export type Filters = MatchedKeyword<ManualBalanceFilterKey>;
 
-export const ManualBalancesFilterSchema = z.object({
-  tags: CommaSeparatedStringSchema,
-});
+/**
+ * The tags key, which is not part of the filter bag above: tags ride a param, to the request and to
+ * the url alike, which is what lets the bar absorb the standalone tag selector this table used to
+ * carry.
+ *
+ * Declared once here so the request, the url and the bar's own bag come off one statement. The url
+ * carries them comma-joined, which is what an array stringifies to.
+ */
+export function manualBalanceTagsParams(tags: Ref<string[]>): {
+  source: ParamSource;
+  pillParams: WritableComputedRef<PillParams>;
+} {
+  const spec = { tags: listParam(tags, { separator: ',' }) };
+
+  return {
+    pillParams: toPillParams(spec),
+    source: refParams(spec, { to: 'both' }),
+  };
+}

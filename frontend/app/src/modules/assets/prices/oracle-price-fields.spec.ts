@@ -2,6 +2,7 @@ import type { AssetsWithId } from '@/modules/assets/types';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
 import { toOraclePriceFields } from '@/modules/assets/prices/oracle-price-fields';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 
 const t = (key: string): string => key;
 
@@ -60,7 +61,7 @@ describe('toOraclePriceFields', () => {
   it('should read a source the way the row it filters to does', () => {
     const source = fields()[2];
 
-    expect(source.label).toBe('oracle_prices.filter_field_labels.source');
+    expect(resolveText(source.label)).toBe('oracle_prices.filter_field_labels.source');
     expect(source.resolveLabel?.('coingecko')).toBe('CoinGecko');
     expect(source.suggest?.()).toStrictEqual(['coingecko', 'defillama']);
   });

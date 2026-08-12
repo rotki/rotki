@@ -1,3 +1,4 @@
+import type { FieldText } from '@/modules/core/table/pill/core/text';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
@@ -12,7 +13,7 @@ import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
  * The label stays with the table: the same field is "name" in one and "label" in another, and that
  * is what the column beside it says.
  */
-export function toNameField(key: string, label: string): FieldDef {
+export function toNameField(key: string, label: FieldText): FieldDef {
   return toMatchFieldDef({
     freeText: true,
     key,

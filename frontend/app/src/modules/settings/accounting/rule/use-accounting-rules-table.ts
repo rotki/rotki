@@ -4,15 +4,16 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/modules/settings/types/accounting';
+import { enumParam, refParams } from '@/modules/core/table/param-refs';
 import { useServerTable } from '@/modules/core/table/use-server-table';
-import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
+import { CustomRuleHandling, isCustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';
 import { useAccountingRuleFields } from '@/modules/settings/accounting/rule/use-accounting-rule-fields';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 
 interface UseAccountingRulesTableReturn {
   collection: Ref<Collection<AccountingRuleEntry>>;
   /** The pill-bar fields, built here because the table's url shape is read off them. */
-  fields: ComputedRef<FieldDef[]>;
+  fields: FieldDef[];
   filter: WritableComputedRef<Filters>;
   isLoading: Ref<boolean>;
   /** Which half of the rules is shown; a tab, and a request/url param. */
@@ -46,12 +47,9 @@ export function useAccountingRulesTable(): UseAccountingRulesTableReturn {
     fetch: getAccountingRules,
     fields,
     filters: modelFilters,
-    params: [{
-      to: 'both',
-      values: computed<Record<string, unknown>>(() => ({
-        customRuleHandling: get(modelCustomRuleHandling),
-      })),
-    }],
+    params: [refParams({
+      customRuleHandling: enumParam(modelCustomRuleHandling, isCustomRuleHandling, CustomRuleHandling.EXCLUDE),
+    }, { to: 'both' })],
     urlState: { mode: 'route' },
   });
 

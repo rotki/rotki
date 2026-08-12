@@ -1,4 +1,5 @@
 import type { AssetsWithId } from '@/modules/assets/types';
+import type { FieldText } from '@/modules/core/table/pill/core/text';
 import type { FieldDef, FilterOp, FilterValueType, TypedFilterDraft } from '@/modules/core/table/pill/core/types';
 import { FilterOps, FilterValueTypes } from '@/modules/core/table/filtering';
 import { DEFAULT_OPERATORS } from '@/modules/core/table/pill/core/operators';
@@ -18,13 +19,18 @@ export type EditorKind = 'enum' | 'range' | 'date' | 'boolean' | 'asset' | 'text
  */
 export interface ParamFieldSpec {
   readonly key: string;
-  readonly label: string;
+  readonly label: FieldText;
   readonly paramKey: string;
   readonly to: 'request' | 'url' | 'both';
   readonly valueType?: FilterValueType;
   readonly operators?: readonly FilterOp[];
   readonly multiple?: boolean;
-  readonly hint?: string;
+  /**
+   * Typed rather than picked, the same as on a filter-bound field: a param-bound table can filter
+   * on a keyword it has no list to offer for (the blockchain balances search over asset names).
+   */
+  readonly freeText?: boolean;
+  readonly hint?: FieldText;
   readonly display?: FieldDef['display'];
   readonly excludes?: FieldDef['excludes'];
   readonly resolveIcon?: FieldDef['resolveIcon'];
@@ -52,7 +58,7 @@ export interface ParamFieldSpec {
  */
 export interface MatchFieldSpec {
   readonly key: string;
-  readonly label: string;
+  readonly label: FieldText;
   readonly admits?: FieldDef['admits'];
   readonly valueType?: FilterValueType;
   readonly operators?: readonly FilterOp[];
@@ -60,9 +66,9 @@ export interface MatchFieldSpec {
   readonly allowExclusion?: boolean;
   /** Typed rather than picked: the value is whatever the user writes. */
   readonly freeText?: boolean;
-  readonly hint?: string;
+  readonly hint?: FieldText;
   /** Shown when `validate` rejects what was typed, in place of the generic message. */
-  readonly invalidHint?: string;
+  readonly invalidHint?: FieldText;
   readonly validate?: (value: string) => boolean;
   readonly suggest?: () => string[];
   readonly searchAsset?: (value: string) => Promise<AssetsWithId>;
@@ -78,10 +84,10 @@ export interface MatchFieldSpec {
 
 export interface BoundsFieldSpec {
   readonly key: string;
-  readonly label: string;
+  readonly label: FieldText;
   readonly lowerKey: string;
   readonly upperKey: string;
-  readonly hint?: string;
+  readonly hint?: FieldText;
   readonly operators?: readonly FilterOp[];
 }
 
@@ -186,6 +192,7 @@ export function toParamFieldDef(spec: ParamFieldSpec): FieldDef {
     binding: { kind: 'param', paramKey: spec.paramKey, to: spec.to },
     display: spec.display,
     excludes: spec.excludes,
+    freeText: spec.freeText,
     hint: spec.hint,
     key: spec.key,
     label: spec.label,

@@ -1,5 +1,6 @@
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
+import type { FieldText } from '@/modules/core/table/pill/core/text';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
@@ -8,7 +9,7 @@ import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 /** What an asset field needs from its table: which wire key it writes, and how to search. */
 export interface AssetFieldSpec {
   readonly key: string;
-  readonly label: string;
+  readonly label: FieldText;
   /** The async asset search backing the picker, debounced by the table that supplies it. */
   readonly searchAsset: (value: string) => Promise<AssetsWithId>;
   /** Whether the endpoint takes more than one asset. Most take exactly one. */

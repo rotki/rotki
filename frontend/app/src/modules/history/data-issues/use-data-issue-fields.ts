@@ -1,5 +1,4 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef } from 'vue';
 import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
@@ -28,14 +27,14 @@ function toValueIcon(meta: { color: string; icon: RuiIcons }): ValueIcon {
 }
 
 /**
- * The pill-bar fields for the data issues table. Built inside a computed so the labels track the
- * locale: fields built once at setup keep the language they were created in until the component
- * remounts.
+ * The pill-bar fields for the data issues table.
  *
  * State and kind are looked up through maps built from the enums rather than resolved per call: a
  * resolver runs once per candidate value while the bar narrows, so it must not rebuild anything.
+ * The two label maps stay computeds because they hold translated text; the resolvers read them at
+ * call time, so the field list itself does not have to be rebuilt when the locale changes.
  */
-export function useDataIssueFields(): ComputedRef<FieldDef[]> {
+export function useDataIssueFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
   // Asset, address and date resolution is the same for every table filtering on them, so it comes
   // from one place rather than being restated here.
@@ -61,14 +60,14 @@ export function useDataIssueFields(): ComputedRef<FieldDef[]> {
     Object.entries(KIND_META).map(([kind, meta]) => [kind, toValueIcon(meta)]),
   );
 
-  const resolution = computed<DataIssueFieldResolution>(() => ({
+  const resolution: DataIssueFieldResolution = {
     account,
     resolveKindIcon: (value: string): ValueIcon | undefined => kindIcons.get(value),
     resolveKindLabel: (value: string): string => get(kindLabels).get(value) ?? value,
     resolveStateIcon: (value: string): ValueIcon | undefined => stateIcons.get(value),
     resolveStateLabel: (value: string): string => get(stateLabels).get(value) ?? value,
     searchAsset,
-  }));
+  };
 
-  return computed<FieldDef[]>(() => toDataIssueFields(shared, t, get(resolution)));
+  return toDataIssueFields(shared, t, resolution);
 }

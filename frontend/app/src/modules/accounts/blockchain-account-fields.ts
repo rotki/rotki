@@ -22,7 +22,7 @@ export function toAccountChainField(
   return decorateSharedField(
     toParamFieldDef({
       key: 'chain',
-      label: t('account_balances.filter_field_labels.chain'),
+      label: (): string => t('account_balances.filter_field_labels.chain'),
       multiple: true,
       paramKey: 'chain',
       suggest: chains,

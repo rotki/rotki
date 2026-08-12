@@ -4,6 +4,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { FilterBehaviours } from '@/modules/core/table/filtering';
 import { transformFilters } from '@/modules/core/table/param-sources';
+import { resolveOptionalText, resolveText } from '@/modules/core/table/pill/core/text';
 import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
 import { type HistoryEventFieldOptions, toHistoryAccountField, toHistoryActionField, toHistoryEventFields, toHistoryIgnoredField, toHistoryStateField } from '@/modules/history/events/history-event-fields';
 
@@ -104,11 +105,12 @@ describe('toHistoryEventFields', () => {
   });
 
   it('should send the two amount bounds as one range field', () => {
-    expect(fieldOf('amount')).toMatchObject({
+    const amount = fieldOf('amount');
+    expect(amount).toMatchObject({
       bounds: { lower: 'minAmount', upper: 'maxAmount' },
-      label: 'transactions.filter_field_labels.amount',
       valueType: 'range',
     });
+    expect(resolveText(amount!.label)).toBe('transactions.filter_field_labels.amount');
   });
 
   it('should send the two date bounds as one period field', () => {
@@ -183,9 +185,9 @@ describe('toHistoryEventFields', () => {
   });
 
   it('should give every field its short pill label', () => {
-    expect(fieldOf('counterparties')?.label).toBe('transactions.filter_field_labels.protocol');
-    expect(fieldOf('notesSubstring')?.label).toBe('transactions.filter_field_labels.notes');
-    expect(fieldOf('validatorIndices')?.label).toBe('transactions.filter_field_labels.validator_index');
+    expect(resolveText(fieldOf('counterparties')!.label)).toBe('transactions.filter_field_labels.protocol');
+    expect(resolveText(fieldOf('notesSubstring')!.label)).toBe('transactions.filter_field_labels.notes');
+    expect(resolveText(fieldOf('validatorIndices')!.label)).toBe('transactions.filter_field_labels.validator_index');
   });
 
   it('should offer the lists its table knows', () => {
@@ -242,7 +244,7 @@ describe('toHistoryEventFields', () => {
   it('should apply a transaction reference only when it is one', () => {
     expect(fieldOf('txRefs')?.validate?.(`0x${'a'.repeat(64)}`)).toBe(true);
     expect(fieldOf('txRefs')?.validate?.('0xnope')).toBe(false);
-    expect(fieldOf('txRefs')?.invalidHint).toBe('transactions.filter.invalid_tx_hash');
+    expect(resolveOptionalText(fieldOf('txRefs')?.invalidHint)).toBe('transactions.filter.invalid_tx_hash');
   });
 
   it('should apply a validator index only when it is a number', () => {
@@ -267,10 +269,10 @@ describe('toHistoryStateField', () => {
     expect(field).toMatchObject({
       binding: { kind: 'param', paramKey: 'stateMarkers', to: 'both' },
       key: 'state',
-      label: 'transactions.filter_field_labels.state',
       multiple: true,
       valueType: 'enum',
     });
+    expect(resolveText(field.label)).toBe('transactions.filter_field_labels.state');
     expect(field.suggest?.()).toStrictEqual(states);
     expect(field.resolveLabel?.('matched')).toBe('state:matched');
   });
@@ -301,9 +303,9 @@ describe('toHistoryActionField', () => {
     expect(field).toMatchObject({
       binding: { kind: 'param', paramKey: 'action', to: 'url' },
       key: 'action',
-      label: 'transactions.filter_field_labels.action',
       multiple: false,
     });
+    expect(resolveText(field.label)).toBe('transactions.filter_field_labels.action');
     expect(field.suggest?.()).toStrictEqual(['pay_fee', 'receive']);
     expect(field.resolveLabel?.('receive')).toBe('Receive');
     expect(field.resolveIcon?.('pay_fee')).toStrictEqual({ color: 'error', icon: 'lu-flame' });
@@ -335,10 +337,10 @@ describe('toHistoryIgnoredField', () => {
     expect(field).toMatchObject({
       binding: { kind: 'param', paramKey: 'showIgnoredAssets', to: 'both' },
       key: 'ignored',
-      label: 'transactions.filter_field_labels.show_ignored',
       multiple: false,
       valueType: 'boolean',
     });
+    expect(resolveText(field.label)).toBe('transactions.filter_field_labels.show_ignored');
     expect(field.suggest).toBeUndefined();
     expect(field.operators).toStrictEqual(['is']);
   });

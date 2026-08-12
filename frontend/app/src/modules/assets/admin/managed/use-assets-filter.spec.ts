@@ -1,151 +1,111 @@
-import type { SupportedAsset } from '@rotki/common';
-import type { MaybeRef } from 'vue';
-import type * as Vue from 'vue';
-import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
-import type { AssetRequestPayload } from '@/modules/assets/types';
-import type { Collection } from '@/modules/core/common/collection';
-import { startPromise } from '@shared/utils';
-import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { useServerTable } from '@/modules/core/table/use-server-table';
+import { describe, expect, it } from 'vitest';
+import { managedAssetStatusParams } from '@/modules/assets/admin/managed/use-assets-filter';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 
-vi.mock('vue', async () => {
-  const mod = await vi.importActual<typeof Vue>('vue');
-
-  return {
-    ...mod,
-    onBeforeMount: vi.fn().mockImplementation((fn: () => void) => fn()),
+function setup(
+  handling: IgnoredAssetsHandlingType = IgnoredAssetHandlingType.EXCLUDE,
+  owned = false,
+  whitelisted = false,
+): {
+  status: { ignoredAssetsHandling: Ref<IgnoredAssetsHandlingType>; onlyShowOwned: Ref<boolean>; onlyShowWhitelisted: Ref<boolean> };
+  params: ReturnType<typeof managedAssetStatusParams>;
+} {
+  const status = {
+    ignoredAssetsHandling: ref<IgnoredAssetsHandlingType>(handling),
+    onlyShowOwned: ref<boolean>(owned),
+    onlyShowWhitelisted: ref<boolean>(whitelisted),
   };
-});
+  return { params: managedAssetStatusParams(status), status };
+}
 
-describe('useAssetsFilter', () => {
-  let fetchAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
-  const mainPage = ref<boolean>(false);
-  const router = useRouter();
-  const route = useRoute();
+describe('managedAssetStatusParams', () => {
+  // `AssetRequestPayload` declares both flags as booleans; they used to reach the request as the
+  // strings `'true'`/`'false'`.
+  it('should send the two flags to the request as booleans', () => {
+    const { params } = setup(IgnoredAssetHandlingType.EXCLUDE, true, false);
 
-  beforeEach(async () => {
-    // Fresh pinia per test plus a reset of the shared vue-router mock route ref. The mock's
-    // route query is a module-level singleton that useRouter().push mutates, so the query set
-    // by the "modify filters" test would otherwise leak into whichever test runs next under
-    // shuffle and override the default sort. A fresh useRouter() has its own push mock, so
-    // this reset does not inflate any push-spy the tests assert on.
-    setActivePinia(createPinia());
-    fetchAssets = useAssetManagementApi().queryAllAssets;
-    await useRouter().push({ query: {} });
+    expect(toValue(params.source.values)).toStrictEqual({
+      ignoredAssetsHandling: IgnoredAssetHandlingType.EXCLUDE,
+      showUserOwnedAssetsOnly: true,
+      showWhitelistedAssetsOnly: false,
+    });
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
+  // The backend needs the handling stated even when no pill says it, which is the one way the
+  // source and the bar's bag differ.
+  it('should state the default handling in the request', () => {
+    const { params } = setup();
+
+    expect(toValue(params.source.values)).toHaveProperty(
+      'ignoredAssetsHandling',
+      IgnoredAssetHandlingType.EXCLUDE,
+    );
   });
 
-  describe('default', () => {
-    beforeEach(() => {
-      set(mainPage, true);
+  it('should draw no pill for anything at its default', () => {
+    const { params } = setup();
+
+    expect(get(params.pillParams)).toStrictEqual({});
+  });
+
+  it('should draw a pill for each departure from the default', () => {
+    const { params } = setup(IgnoredAssetHandlingType.SHOW_ONLY, true, true);
+
+    expect(get(params.pillParams)).toStrictEqual({
+      ignoredAssetsHandling: IgnoredAssetHandlingType.SHOW_ONLY,
+      showUserOwnedAssetsOnly: true,
+      showWhitelistedAssetsOnly: true,
+    });
+  });
+
+  it('should write the refs back from the bar\'s bag', () => {
+    const { params, status } = setup();
+
+    set(params.pillParams, {
+      ignoredAssetsHandling: IgnoredAssetHandlingType.SHOW_ONLY,
+      showUserOwnedAssetsOnly: true,
     });
 
-    it('should initialize composable correctly', async () => {
-      const { markUserIntent, filter, sort, collection, refetch, isLoading } = useServerTable<
-        SupportedAsset,
-        AssetRequestPayload,
-        Filters
-      >({
-        fetch: fetchAssets,
-        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        sort: {
-          default: [{
-            column: 'symbol',
-            direction: 'asc',
-          }],
-        },
-      });
-      expect(get(isLoading)).toBe(false);
-      expect(get(filter)).toStrictEqual({});
-      expect(get(sort)).toStrictEqual([{
-        column: 'symbol',
-        direction: 'asc',
-      }]);
-      expect(get(collection).data).toHaveLength(0);
-      expect(get(collection).total).toBe(0);
-      markUserIntent();
-      await nextTick();
-      startPromise(refetch());
-      expect(get(isLoading)).toBe(true);
-      await flushPromises();
-      await flushPromises();
-      expect(get(isLoading)).toBe(false);
-      expect(get(collection).total).toBe(210);
+    expect(get(status.ignoredAssetsHandling)).toBe(IgnoredAssetHandlingType.SHOW_ONLY);
+    expect(get(status.onlyShowOwned)).toBe(true);
+    expect(get(status.onlyShowWhitelisted)).toBe(false);
+  });
+
+  // Removing a pill is how a filter is turned off, and for the handling "off" is the default.
+  it('should return to the defaults when the pills are cleared', () => {
+    const { params, status } = setup(IgnoredAssetHandlingType.SHOW_ONLY, true, true);
+
+    set(params.pillParams, {});
+
+    expect(get(status.ignoredAssetsHandling)).toBe(IgnoredAssetHandlingType.EXCLUDE);
+    expect(get(status.onlyShowOwned)).toBe(false);
+    expect(get(status.onlyShowWhitelisted)).toBe(false);
+  });
+
+  it('should restore all three from the url', () => {
+    const { params, status } = setup();
+
+    params.source.fromQuery?.({
+      ignoredAssetsHandling: IgnoredAssetHandlingType.SHOW_ONLY,
+      showUserOwnedAssetsOnly: 'true',
+      showWhitelistedAssetsOnly: 'false',
     });
 
-    it('should return correct types', () => {
-      const { isLoading, collection, filter } = useServerTable<
-        SupportedAsset,
-        AssetRequestPayload,
-        Filters
-      >({
-        fetch: fetchAssets,
-        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-      });
+    expect(get(status.ignoredAssetsHandling)).toBe(IgnoredAssetHandlingType.SHOW_ONLY);
+    expect(get(status.onlyShowOwned)).toBe(true);
+    expect(get(status.onlyShowWhitelisted)).toBe(false);
+  });
 
-      expect(get(isLoading)).toBe(false);
+  // A url is anyone's to write, and the handling reaches the request and the pill's label alike.
+  it('should fall back on a handling the backend does not take', () => {
+    const { params, status } = setup(IgnoredAssetHandlingType.SHOW_ONLY);
 
-      expectTypeOf(get(collection)).toEqualTypeOf<Collection<SupportedAsset>>();
-      expectTypeOf(get(collection).data).toEqualTypeOf<SupportedAsset[]>();
-      expectTypeOf(get(collection).found).toEqualTypeOf<number>();
-      expectTypeOf(get(filter)).toEqualTypeOf<Filters>();
-    });
+    params.source.fromQuery?.({ ignoredAssetsHandling: 'nonsense' });
 
-    it('should modify filters and fetch data correctly', async () => {
-      const pushSpy = vi.spyOn(router, 'push');
-      const query = { sort: ['category'], sortOrder: ['desc'] };
+    expect(get(status.ignoredAssetsHandling)).toBe(IgnoredAssetHandlingType.EXCLUDE);
+  });
 
-      const { isLoading, collection, sort } = useServerTable<
-        SupportedAsset,
-        AssetRequestPayload,
-        Filters
-      >({
-        fetch: fetchAssets,
-        urlState: get(mainPage) ? { mode: 'route' } : { mode: 'none' },
-        sort: {
-          default: [{
-            column: 'symbol',
-            direction: 'asc',
-          }],
-        },
-      });
-
-      expect(get(sort)).toStrictEqual([{
-        column: 'symbol',
-        direction: 'asc',
-      }]);
-
-      await router.push({
-        query,
-      });
-
-      await nextTick();
-
-      expect(pushSpy).toHaveBeenCalledOnce();
-      expect(pushSpy).toHaveBeenCalledWith({ query });
-      expect(get(route).query).toEqual(query);
-      expect(get(isLoading)).toBe(true);
-      await flushPromises();
-      expect(get(isLoading)).toBe(false);
-
-      assertType<Collection<SupportedAsset>>(get(collection));
-      assertType<SupportedAsset[]>(get(collection).data);
-      assertType<number>(get(collection).found);
-
-      expect(get(collection).data).toHaveLength(10);
-      expect(get(collection).found).toBe(210);
-      expect(get(collection).limit).toBe(-1);
-      expect(get(collection).total).toBe(210);
-
-      expect(get(sort)).toStrictEqual([{
-        column: 'category',
-        direction: 'desc',
-      }]);
-    });
+  it('should ride both the request and the url', () => {
+    expect(setup().params.source.to).toBe('both');
   });
 });

@@ -17,7 +17,7 @@ interface UseEthValidatorDataReturn {
   cols: ComputedRef<DataTableColumn<EthereumValidator>[]>;
   ethStakingValidators: ComputedRef<EthereumValidator[]>;
   /** The pill-bar fields, built here because the table's url shape is read off them. */
-  fields: ComputedRef<FieldDef[]>;
+  fields: FieldDef[];
   fetchData: () => Promise<void>;
   filters: WritableComputedRef<Filters>;
   pagination: Ref<TablePaginationData>;

@@ -1,12 +1,13 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
-import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
+import { type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
+import { enumParam, refParams } from '@/modules/core/table/param-refs';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
@@ -50,10 +51,6 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
 
   const modelIgnoredAssetsHandling = shallowRef<IgnoredAssetsHandlingType>('exclude');
 
-  const extraParams = computed<Record<string, unknown>>(() => ({
-    ignoredAssetsHandling: get(modelIgnoredAssetsHandling),
-  }));
-
   const { useIsActive } = useTaskCenter();
   const sectionLoading = useIsActive(ActivityKind.NFT_BALANCES);
 
@@ -69,13 +66,9 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     NonFungibleBalancesRequestPayload
   >({
     fetch: fetchNonFungibleBalances,
-    params: [{
-      fromQuery(query): void {
-        set(modelIgnoredAssetsHandling, query.ignoredAssetsHandling ?? 'exclude');
-      },
-      to: 'both',
-      values: extraParams,
-    }],
+    params: [refParams({
+      ignoredAssetsHandling: enumParam(modelIgnoredAssetsHandling, isIgnoredAssetsHandling, 'exclude'),
+    }, { to: 'both' })],
     sort: {
       default: [{
         column: 'price',

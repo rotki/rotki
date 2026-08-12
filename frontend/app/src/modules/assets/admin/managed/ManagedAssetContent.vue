@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { Nullable, SupportedAsset } from '@rotki/common';
-import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
-import { isEqual, keyBy } from 'es-toolkit';
+import { keyBy } from 'es-toolkit';
 import ManagedAssetFormDialog from '@/modules/assets/admin/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/modules/assets/admin/managed/ManagedAssetTable.vue';
+import { type Filters, managedAssetStatusParams } from '@/modules/assets/admin/managed/use-assets-filter';
 import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { type AssetRequestPayload, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
+import { type AssetRequestPayload, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -26,14 +26,17 @@ const { identifier = null, mainPage = false } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const mergeTool = ref<boolean>(false);
-const ignoredFilter = ref<{
-  onlyShowOwned: boolean;
-  onlyShowWhitelisted: boolean;
-  ignoredAssetsHandling: IgnoredAssetsHandlingType;
-}>({
-  ignoredAssetsHandling: IgnoredAssetHandlingType.EXCLUDE,
-  onlyShowOwned: false,
-  onlyShowWhitelisted: false,
+
+// The three filters the status dropdown used to hold, each its own ref so each is one declaration
+// feeding the request, the url and the bar's own bag alike.
+const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>(IgnoredAssetHandlingType.EXCLUDE);
+const onlyShowOwned = ref<boolean>(false);
+const onlyShowWhitelisted = ref<boolean>(false);
+
+const { pillParams, source: statusSource } = managedAssetStatusParams({
+  ignoredAssetsHandling,
+  onlyShowOwned,
+  onlyShowWhitelisted,
 });
 
 const modelValue = ref<SupportedAsset>();
@@ -42,15 +45,6 @@ const assetTypes = ref<string[]>([]);
 const openAction = ref<boolean>(false);
 
 const { expanded, selected } = useCommonTableProps<SupportedAsset>();
-
-const extraParams = computed(() => {
-  const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
-  return {
-    ignoredAssetsHandling,
-    showUserOwnedAssetsOnly: onlyShowOwned.toString(),
-    showWhitelistedAssetsOnly: onlyShowWhitelisted.toString(),
-  };
-});
 
 const router = useRouter();
 const route = useRoute();
@@ -78,23 +72,7 @@ const {
 >({
   fetch: queryAllAssets,
   fields,
-  params: [{
-    fromQuery(query): void {
-      // A url is anyone's to write, and the handling reaches both the request and the ignored
-      // pill's label. An unrecognised one would be sent on while the pill claimed something else,
-      // so it falls back to the default rather than being trusted.
-      const handling = query.ignoredAssetsHandling;
-      set(ignoredFilter, {
-        ignoredAssetsHandling: typeof handling === 'string' && isIgnoredAssetsHandling(handling)
-          ? handling
-          : IgnoredAssetHandlingType.EXCLUDE,
-        onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
-        onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
-      });
-    },
-    to: 'both',
-    values: extraParams,
-  }],
+  params: [statusSource],
   sort: {
     default: {
       column: 'symbol',
@@ -187,11 +165,6 @@ watch(() => identifier, async (assetId) => {
   await editAsset(assetId);
 });
 
-watch(ignoredFilter, (oldValue, newValue) => {
-  if (!isEqual(oldValue, newValue))
-    setPage(1);
-});
-
 onBeforeMount(async () => {
   try {
     set(assetTypes, await getAssetTypes());
@@ -275,11 +248,12 @@ onBeforeMount(async () => {
 
       <ManagedAssetTable
         v-model:filters="filter"
-        v-model:ignored-filter="ignoredFilter"
+        v-model:pill-params="pillParams"
         v-model:expanded="expanded"
         v-model:selected="selectedRows"
         v-model:pagination="pagination"
         v-model:sort="sort"
+        :ignored-handling="ignoredAssetsHandling"
         :collection="assets"
         :loading="loading"
         :change="!loading"

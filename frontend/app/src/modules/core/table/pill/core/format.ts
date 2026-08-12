@@ -2,6 +2,7 @@ import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill
 import { FilterOps, FilterValueTypes, type MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { stateFromMatches } from '@/modules/core/table/pill/core/codec';
 import { isDefaultOp, type OperatorLabels } from '@/modules/core/table/pill/core/operators';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 
 /** The operator to show on a pill, or `undefined` when it is the field's default (hidden). */
 export function pillOperator(field: FieldDef, filter: ActiveFilter): FilterOp | undefined {
@@ -85,7 +86,8 @@ export function pillStateSummary(
         return '';
       const op = pillOperator(field, filter);
       const value = pillValueSummary(field, filter);
-      const name = op ? `${field.label} ${operatorLabels[op]}` : field.label;
+      const label = resolveText(field.label);
+      const name = op ? `${label} ${operatorLabels[op]}` : label;
       // A boolean field has no value of its own: being present is the whole filter.
       return value ? `${name}: ${value}` : name;
     })

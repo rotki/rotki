@@ -1,4 +1,5 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
+import type { FieldText } from '@/modules/core/table/pill/core/text';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toDateFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
@@ -30,7 +31,7 @@ export interface PeriodFieldBounds {
  * Deliberately no serializer: a table's own date serializers belong to the old text bar, where the
  * user typed a formatted date and it had to be converted on the way in.
  */
-export function toPeriodField(label: string, bounds: PeriodFieldBounds, resolvers: SharedFieldResolvers): FieldDef {
+export function toPeriodField(label: FieldText, bounds: PeriodFieldBounds, resolvers: SharedFieldResolvers): FieldDef {
   return toDateFieldDef({
     allowEqualBounds: bounds.allowEqual ?? true,
     formatBound: resolvers.formatDate,

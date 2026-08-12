@@ -1,6 +1,7 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { FilterOp, FilterValueType } from '@/modules/core/table/filtering';
+import type { FieldText } from '@/modules/core/table/pill/core/text';
 
 export type { FilterOp, FilterValueType };
 
@@ -73,7 +74,11 @@ export type FieldBinding =
  */
 export interface FieldDef {
   readonly key: string;
-  readonly label: string;
+  /**
+   * What the bar calls this field. A {@link FieldText} getter rather than a plain string is what
+   * lets a table build its fields once and still have them follow the locale.
+   */
+  readonly label: FieldText;
   readonly valueType: FilterValueType;
   /** Allowed operators, most-default first (never empty). */
   readonly operators: readonly FilterOp[];
@@ -109,7 +114,7 @@ export interface FieldDef {
    * enum (its typed string values), so the wire form is unchanged.
    */
   readonly freeText?: boolean;
-  readonly hint?: string;
+  readonly hint?: FieldText;
   /**
    * How a value renders in the option list / pill: a `counterparty`/`location` icon, an
    * `asset` icon+symbol, or an `account` avatar+name, resolved from the value string. Absent =
@@ -212,11 +217,11 @@ export interface FieldDef {
    */
   readonly parseTyped?: (query: string) => TypedFilterDraft[];
   /**
-   * Already-translated message shown when `validate` rejects what was typed. Says what the field
-   * wants ("Enter a valid transaction hash"), which a generic "Invalid value" cannot. Absent =
-   * the editor's generic message.
+   * Message shown when `validate` rejects what was typed. Says what the field wants ("Enter a
+   * valid transaction hash"), which a generic "Invalid value" cannot. Absent = the editor's
+   * generic message.
    */
-  readonly invalidHint?: string;
+  readonly invalidHint?: FieldText;
   /** Value serializer for the wire form (string matcher). */
   readonly serializer?: (value: string) => string;
   /** Value deserializer from the wire form (string matcher). */

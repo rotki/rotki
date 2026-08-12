@@ -6,7 +6,7 @@ import ManualBalanceMissingAssetWarning
   from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
-import { type Filters, ManualBalancesFilterSchema } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
+import { type Filters, manualBalanceTagsParams } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
@@ -33,6 +33,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const tags = ref<string[]>([]);
 
+const { pillParams, source: tagsSource } = manualBalanceTagsParams(tags);
+
 const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
@@ -58,17 +60,7 @@ const {
   fetch,
   fields,
   filters: modelFilters,
-  params: [{
-    fromQuery(query): void {
-      const schema = ManualBalancesFilterSchema.parse(query);
-      if (schema.tags)
-        set(tags, schema.tags);
-    },
-    to: 'both',
-    values: computed<Record<string, unknown>>(() => ({
-      tags: get(tags),
-    })),
-  }],
+  params: [tagsSource],
   sort: {
     default: [
       {
@@ -78,23 +70,6 @@ const {
     ],
   },
   urlState: { mode: 'route' },
-});
-
-// The tags pill is param-bound, so the bar's param bag is bridged to the ref backing it — the same
-// ref the standalone tag selector used to write, and the one the request/url param source reads.
-// An absent param clears it: removing the pill is how the filter is turned off.
-const pillParams = computed<Record<string, string | string[] | boolean>>({
-  get(): Record<string, string | string[] | boolean> {
-    const selected = get(tags);
-    return selected.length > 0 ? { tags: selected } : {};
-  },
-  set(value: Record<string, string | string[] | boolean>): void {
-    const next = value.tags;
-    if (next === undefined || typeof next === 'boolean')
-      set(tags, []);
-    else
-      set(tags, Array.isArray(next) ? next : [next]);
-  },
 });
 
 function edit(balance: ManualBalanceWithPrice): void {
@@ -176,11 +151,12 @@ watchDebounced(
             :tooltip="t('manual_balances_table.refresh.tooltip')"
             @refresh="refresh()"
           />
-          <div class="grow" />
+          <!-- No spacer before the bar: pushed right it left a dead gap after the lone refresh
+               button, and the bar is what should take the width the row has left. -->
           <PillFilterBar
             v-model:matches="filters"
             v-model:params="pillParams"
-            class="flex-1 min-w-full md:min-w-[40rem]"
+            class="flex-1 min-w-[16rem]"
             :fields="fields"
             :labels="pillLabels"
           />

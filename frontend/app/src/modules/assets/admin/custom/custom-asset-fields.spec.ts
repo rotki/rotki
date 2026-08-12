@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toCustomAssetFields } from '@/modules/assets/admin/custom/custom-asset-fields';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import { routeSchemaFromFields } from '@/modules/core/table/route';
 
 const t = (key: string): string => key;
@@ -8,7 +9,7 @@ const types = (): string[] => ['vehicle'];
 
 describe('toCustomAssetFields', () => {
   it('should give both fields their short pill label', () => {
-    expect(toCustomAssetFields(types, t).map(field => field.label)).toStrictEqual([
+    expect(toCustomAssetFields(types, t).map(field => resolveText(field.label))).toStrictEqual([
       'assets.filter_field_labels.name',
       'assets.filter_field_labels.type',
     ]);

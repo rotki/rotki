@@ -36,7 +36,7 @@ export function toManualBalanceFields(
     decorateSharedField(
       toMatchFieldDef({
         key: ManualBalanceFilterKeys.LOCATION,
-        label: t('common.location'),
+        label: (): string => t('common.location'),
         multiple: false,
         suggest: locations,
         // Checked against the same list it offers, so a location the user has no balance in is
@@ -46,10 +46,10 @@ export function toManualBalanceFields(
       SharedFieldKinds.LOCATION,
       resolvers,
     ),
-    toNameField(ManualBalanceFilterKeys.LABEL, t('common.label')),
+    toNameField(ManualBalanceFilterKeys.LABEL, (): string => t('common.label')),
     toAssetField({
       key: ManualBalanceFilterKeys.ASSET,
-      label: t('common.asset'),
+      label: (): string => t('common.asset'),
       searchAsset,
     }, resolvers),
     toTagsField(t, tags),

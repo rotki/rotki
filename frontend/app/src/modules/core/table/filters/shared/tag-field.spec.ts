@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type TagFieldOption, toTagsField } from '@/modules/core/table/filters/shared/tag-field';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 
 const t = (key: string): string => key;
 
@@ -9,12 +10,13 @@ const tags: TagFieldOption[] = [
 
 describe('toTagsField', () => {
   it('should bind the tags field to the tags param', () => {
-    expect(toTagsField(t, () => tags)).toMatchObject({
+    const field = toTagsField(t, () => tags);
+    expect(field).toMatchObject({
       binding: { kind: 'param', paramKey: 'tags', to: 'both' },
       key: 'tags',
-      label: 'common.tags',
       multiple: true,
     });
+    expect(resolveText(field.label)).toBe('common.tags');
   });
 
   it('should offer every tag as a value', () => {

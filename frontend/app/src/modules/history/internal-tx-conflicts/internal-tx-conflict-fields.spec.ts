@@ -1,5 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { describe, expect, it } from 'vitest';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 import { toInternalTxConflictFields } from '@/modules/history/internal-tx-conflicts/internal-tx-conflict-fields';
 
@@ -37,7 +38,7 @@ describe('toInternalTxConflictFields', () => {
     const [chain] = fields();
 
     expect(chain.display).toBe(DisplayKinds.CHAIN);
-    expect(chain.label).toBe('internal_tx_conflicts.columns.chain');
+    expect(resolveText(chain.label)).toBe('internal_tx_conflicts.columns.chain');
     expect(chain.resolveLabel?.('optimism')).toBe('Optimism');
     expect(chain.suggest?.()).toStrictEqual(['optimism']);
   });
