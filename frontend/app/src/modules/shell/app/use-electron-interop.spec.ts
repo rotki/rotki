@@ -27,6 +27,7 @@ function makeInterop(overrides?: DeepPartial<Interop>): Interop {
     openUrl: vi.fn().mockResolvedValue(undefined),
     premiumUserLoggedIn: vi.fn(),
     restartBackend: vi.fn().mockResolvedValue(true),
+    setDataDirectory: vi.fn(),
     setListeners: vi.fn(),
     setLogLevel: vi.fn(),
     setSelectedTheme: vi.fn().mockResolvedValue(true),
@@ -234,6 +235,15 @@ describe('useInterop', () => {
       interop.updateTray({ up: true });
       expect(mock.updateTray).toHaveBeenNthCalledWith(1, {});
       expect(mock.updateTray).toHaveBeenNthCalledWith(2, { up: true });
+    });
+
+    it('should forward the data directory, including the empty one that disables the menu entry', async () => {
+      const mock = makeInterop();
+      const interop = await loadInterop(mock);
+      interop.setDataDirectory('/data');
+      interop.setDataDirectory('');
+      expect(mock.setDataDirectory).toHaveBeenNthCalledWith(1, '/data');
+      expect(mock.setDataDirectory).toHaveBeenNthCalledWith(2, '');
     });
 
     it('should forward logging and listener registration', async () => {

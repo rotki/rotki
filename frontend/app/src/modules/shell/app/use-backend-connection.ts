@@ -4,6 +4,7 @@ import { defaultApiUrl } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger, setLevel } from '@/modules/core/common/logging/logging';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useInfoApi } from '@/modules/shell/app/use-info-api';
 
 interface UseBackendConnectionReturn {
@@ -31,6 +32,7 @@ export function useBackendConnection(): UseBackendConnectionReturn {
   } = storeToRefs(store);
 
   const { info, ping } = useInfoApi();
+  const interop = useInterop();
 
   const getVersion = async (): Promise<void> => {
     const { version: appVersion } = await info(true);
@@ -53,6 +55,13 @@ export function useBackendConnection(): UseBackendConnectionReturn {
     } = await info(false);
 
     set(dataDirectory, appDataDirectory);
+    // Point the menu entry at the directory this answer just reported, rather
+    // than watching the store: `connected` turns true before this call returns,
+    // so a watcher would re-arm the entry with the previous backend's directory
+    // for the length of the round trip. Only a backend this app started runs on
+    // this machine; against a custom url the path belongs to another host, so
+    // there is nothing local to open.
+    interop.setDataDirectory(interop.appSession ? appDataDirectory : '');
     set(logLevel, level);
     set(unauthenticatedApiAccepted, acceptUnauthenticatedApi);
     set(sessionAuthEnabled, sessionAuth);

@@ -1,6 +1,7 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
+import fs from 'node:fs';
 import { IpcCommands } from '@electron/ipc-commands';
 import { assert } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
@@ -10,11 +11,33 @@ interface MenuManagerListener {
   onDisplayTrayChanged: (displayTray: boolean) => void;
 }
 
+const DATA_DIRECTORY_ID = 'DATA_DIRECTORY';
+
+function isDirectory(path: string): boolean {
+  if (!path)
+    return false;
+
+  try {
+    return fs.statSync(path).isDirectory();
+  }
+  catch {
+    return false;
+  }
+}
+
 export class MenuManager {
   private menu: Menu | null = null;
   private listener: MenuManagerListener | null = null;
   private readonly separator: MenuItemConstructorOptions = { type: 'separator' };
   private isPremium: boolean = false;
+  /**
+   * The data directory the running backend resolved, empty until the renderer
+   * reports it. Electron only passes `--data-dir` when the user picked one, so
+   * the platform default is starling's to compute and only it knows the answer
+   * (see `shared/starling/starling-args.ts`). The menu entry stays disabled
+   * rather than guessing a path that would be wrong for dev/nightly builds.
+   */
+  private dataDirectory: string = '';
 
   constructor(
     private readonly logger: LogService,
@@ -39,6 +62,21 @@ export class MenuManager {
     this.updateMenu();
   }
 
+  /**
+   * Point the data directory entry at the directory the backend is using, or
+   * pass an empty string when the backend goes away to disable it again. Only
+   * the entry's enabled state changes, so the menu is not rebuilt: a rebuild on
+   * every connect and disconnect would collapse any open menu.
+   */
+  setDataDirectory(dataDirectory: string): void {
+    // `shell.openPath` runs whatever the path names, a file as readily as a
+    // folder, so the entry only ever points at a directory that exists here.
+    this.dataDirectory = isDirectory(dataDirectory) ? dataDirectory : '';
+    const item = this.menu?.getMenuItemById(DATA_DIRECTORY_ID);
+    if (item)
+      item.enabled = !!this.dataDirectory;
+  }
+
   private updateMenu(): void {
     this.menu = Menu.buildFromTemplate(this.getMenuTemplate());
     Menu.setApplicationMenu(this.menu);
@@ -49,7 +87,15 @@ export class MenuManager {
   }
 
   private openPath(path: string): void {
-    shell.openPath(path).catch(error => this.logger.error(error));
+    // `openPath` reports a failure by resolving with a non-empty message rather
+    // than by rejecting, so a bare `catch` would let a path that never opened
+    // pass silently.
+    shell.openPath(path)
+      .then((error) => {
+        if (error)
+          this.logger.error(`could not open ${path}: ${error}`);
+      })
+      .catch(error => this.logger.error(error));
   }
 
   private getMenuTemplate(): MenuItemConstructorOptions[] {
@@ -103,6 +149,12 @@ export class MenuManager {
         {
           label: 'Logs Directory',
           click: () => this.openPath(app.getPath('logs')),
+        },
+        {
+          id: DATA_DIRECTORY_ID,
+          label: 'Data Directory',
+          enabled: !!this.dataDirectory,
+          click: () => this.openPath(this.dataDirectory),
         },
         this.separator,
         {

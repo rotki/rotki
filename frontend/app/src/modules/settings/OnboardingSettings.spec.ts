@@ -28,6 +28,9 @@ vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> 
     isPackaged: true,
     openDirectory: openDirectoryMock,
     restartBackend: vi.fn(),
+    // Restarting the backend reconnects, and `getInfo` reports the directory it
+    // finds to the main process.
+    setDataDirectory: vi.fn(),
     setLogLevel: setLogLevelMock,
     // `config(false)` is what the config FILE pins (and disables in the UI);
     // `config(true)` is the defaults. Returning the same object for both pinned

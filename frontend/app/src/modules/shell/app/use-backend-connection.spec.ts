@@ -5,6 +5,17 @@ import '@test/i18n';
 
 const mockInfo = vi.fn();
 const mockPing = vi.fn();
+const mockSetDataDirectory = vi.fn<(dataDirectory: string) => void>();
+let appSession = true;
+
+vi.mock('@/modules/shell/app/use-electron-interop', () => ({
+  useInterop: vi.fn(() => ({
+    get appSession(): boolean {
+      return appSession;
+    },
+    setDataDirectory: mockSetDataDirectory,
+  })),
+}));
 
 vi.mock('@/modules/shell/app/use-info-api', () => ({
   useInfoApi: vi.fn(() => ({
@@ -110,6 +121,28 @@ describe('useBackendConnection', () => {
       expect(get(store.logLevel)).toBe('DEBUG');
       expect(get(store.unauthenticatedApiAccepted)).toBe(true);
       expect(get(store.sessionAuthEnabled)).toBe(true);
+    });
+
+    it('should report the data directory to the main process', async () => {
+      appSession = true;
+      mockInfo.mockResolvedValue({ dataDirectory: '/data', logLevel: 'DEBUG' });
+
+      const { useBackendConnection } = await importModule();
+      const { getInfo } = scope.run(() => useBackendConnection())!;
+      await getInfo();
+
+      expect(mockSetDataDirectory).toHaveBeenCalledWith('/data');
+    });
+
+    it('should report no data directory when the backend is not the one the app started', async () => {
+      appSession = false;
+      mockInfo.mockResolvedValue({ dataDirectory: '/remote/data', logLevel: 'DEBUG' });
+
+      const { useBackendConnection } = await importModule();
+      const { getInfo } = scope.run(() => useBackendConnection())!;
+      await getInfo();
+
+      expect(mockSetDataDirectory).toHaveBeenCalledWith('');
     });
   });
 

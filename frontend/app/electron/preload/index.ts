@@ -75,6 +75,7 @@ contextBridge.exposeInMainWorld('interop', {
   openPath: async (path: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_PATH, path),
   config: async (defaults: boolean) => ipcRenderer.invoke(IpcCommands.INVOKE_CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) => ipcRenderer.send(IpcCommands.TRAY_UPDATE, trayUpdate),
+  setDataDirectory: (dataDirectory: string) => ipcRenderer.send(IpcCommands.SET_DATA_DIRECTORY, dataDirectory),
   logToFile: (level: LogLevel, message: string) => {
     ipcRenderer.send(IpcCommands.LOG_TO_FILE, level, message);
   },

@@ -30,7 +30,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const isWinVersionUnsupported = shallowRef<boolean>(false);
 
   const isDevelopment = checkIfDevelopment();
-  const { getStartupError, setupListeners } = useInterop();
+  const { getStartupError, setDataDirectory, setupListeners } = useInterop();
   const { restartBackend } = useBackendManagement();
   const { start: startMonitoring, stop: stopMonitoring } = useMonitorService();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
@@ -39,7 +39,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
   const { stopConnectionAttempts } = useBackendConnection();
-  const { connectionEnabled } = storeToRefs(useMainStore());
+  const { connected, connectionEnabled } = storeToRefs(useMainStore());
   const { startQuitting } = useAppQuitting();
 
   /**
@@ -87,6 +87,16 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
       set(oauthCallbackHandlers, newHandlers);
     }
   }
+
+  /**
+   * Disarm the data directory menu entry as soon as the backend goes away, so a
+   * restart into a different directory cannot leave the old one clickable. The
+   * arming half lives in `getInfo`, which is where the directory becomes known.
+   */
+  watch(connected, (isConnected) => {
+    if (!isConnected)
+      setDataDirectory('');
+  });
 
   onBeforeMount(() => {
     // 1. First, synchronously check for any startup error that occurred before mount.

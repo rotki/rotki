@@ -152,6 +152,11 @@ export interface Interop {
   isMac: () => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   updateTray: (trayUpdate: TrayUpdate) => void;
+  /**
+   * Report the data directory the backend resolved, so the help menu can offer to
+   * open it. An empty string means no backend is connected and disables the entry.
+   */
+  setDataDirectory: (dataDirectory: string) => void;
   logToFile: (level: LogLevel, message: string) => void;
   setLogLevel: (level: LogLevel) => void;
   storePassword: (credentials: Credentials) => Promise<boolean>;

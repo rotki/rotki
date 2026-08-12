@@ -25,6 +25,11 @@ interface UseInteropReturn {
   isMac: () => Promise<boolean>;
   resetTray: () => void;
   updateTray: (update: TrayUpdate) => void;
+  /**
+   * Tell the main process which data directory the backend resolved, so the help
+   * menu can open it. Pass an empty string when the backend is gone.
+   */
+  setDataDirectory: (dataDirectory: string) => void;
   storePassword: (username: string, password: string) => Promise<boolean | undefined>;
   getPassword: (username: string) => Promise<string | undefined>;
   clearPassword: () => Promise<void>;
@@ -184,6 +189,10 @@ const interop: UseInteropReturn = {
   restartBackend: async (options: Partial<BackendOptions>, forceRestart = false): Promise<boolean> => {
     assert(window.interop);
     return window.interop.restartBackend(options, forceRestart);
+  },
+
+  setDataDirectory: (dataDirectory: string): void => {
+    window.interop?.setDataDirectory(dataDirectory);
   },
 
   setSelectedTheme: async (selectedTheme: Theme): Promise<void> => {
