@@ -1,9 +1,11 @@
 import type { EffectScope, MaybeRef, Ref } from 'vue';
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { LocationQuery } from '@/modules/core/table/route';
+import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, type Mock, vi } from 'vitest';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
@@ -55,9 +57,9 @@ vi.mock('@/modules/core/api', () => ({
       this.name = 'RequestCancelledError';
     }
   },
-  api: {
+  api: createMock<RotkiApi>({
     cancelByTag: (tag: string): void => cancelByTagSpy(tag),
-  },
+  }),
 }));
 
 vi.mock('vue-router', () => ({

@@ -1,3 +1,5 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type EffectScope, nextTick } from 'vue';
 import { BALANCE_HYDRATION_TAG } from '@/modules/balances/api/use-blockchain-balances-api';
@@ -45,7 +47,7 @@ vi.mock('@/modules/shell/app/store-plugins', () => ({
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: { cancelByTag: (tag: string): void => cancelByTag(tag) },
+  api: createMock<RotkiApi>({ cancelByTag: (tag: string): void => cancelByTag(tag) }),
 }));
 
 describe('useSessionStateCleaner', () => {

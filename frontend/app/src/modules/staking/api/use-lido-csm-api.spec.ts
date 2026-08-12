@@ -1,4 +1,6 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   VALID_STATUS_CODES,
@@ -16,12 +18,12 @@ const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
 
 vi.mock('@/modules/core/api', async importOriginal => ({
   ...await importOriginal<typeof import('@/modules/core/api')>(),
-  api: {
+  api: createMock<RotkiApi>({
     delete: mockDelete,
     get: mockGet,
     post: mockPost,
     put: mockPut,
-  },
+  }),
 }));
 
 function operator(): LidoCsmNodeOperator {

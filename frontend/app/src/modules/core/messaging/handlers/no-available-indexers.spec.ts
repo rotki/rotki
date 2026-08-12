@@ -1,5 +1,7 @@
+import type { Router } from 'vue-router';
 import { assert, type Notification, type NotificationAction, NotificationGroup } from '@rotki/common';
 import { mockT } from '@test/i18n';
+import { createMock } from '@test/utils/create-mock';
 import { mockUseSupportedChains } from '@test/utils/mocks/supported-chains';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -21,7 +23,8 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 vi.mock('@/modules/core/common/use-supported-chains', () =>
   mockUseSupportedChains({ getChainName: (chain: string): string => chain.toUpperCase() }));
 
-const router = { push: vi.fn() };
+const push = vi.fn<Router['push']>();
+const router = createMock<Router>({ push });
 
 describe('createNoAvailableIndexersHandler', () => {
   beforeEach(() => {
@@ -73,7 +76,7 @@ describe('createNoAvailableIndexersHandler', () => {
 
     await configureAction.action();
 
-    expect(router.push).toHaveBeenCalledWith({ name: '/settings/chains/', hash: '#indexer' });
+    expect(push).toHaveBeenCalledWith({ name: '/settings/chains/', hash: '#indexer' });
   });
 
   it('should return null when the chain is in the suppression list', async () => {

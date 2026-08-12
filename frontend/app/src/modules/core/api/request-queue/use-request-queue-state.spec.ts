@@ -1,4 +1,6 @@
+import type { RotkiApi } from '../rotki-api';
 import type { QueueState } from './types';
+import { createMock } from '@test/utils/create-mock';
 import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { reactive } from 'vue';
@@ -13,11 +15,11 @@ const mockQueueState = reactive<QueueState>({
 });
 
 vi.mock('../rotki-api', () => ({
-  api: {
+  api: createMock<RotkiApi>({
     get queueState(): QueueState {
       return mockQueueState;
     },
-  },
+  }),
 }));
 
 vi.mock('vue-i18n', () => ({

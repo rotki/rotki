@@ -1,3 +1,5 @@
+import type { RotkiApi } from '@/modules/core/api/rotki-api';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 
@@ -12,12 +14,12 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
-  api: {
+  api: createMock<RotkiApi>({
     delete: spies.delete,
     get: spies.get,
     post: spies.post,
     put: spies.put,
-  },
+  }),
 }));
 
 vi.mock('@/modules/core/tasks/use-task-api', () => ({
