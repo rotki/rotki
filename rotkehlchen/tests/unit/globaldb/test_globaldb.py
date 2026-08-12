@@ -69,6 +69,7 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     Location,
+    Price,
     Timestamp,
     TimestampMS,
     TokenKind,
@@ -76,8 +77,11 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from enum import Enum
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 selfkey_address = string_to_evm_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
@@ -114,12 +118,12 @@ A_yDAI = Asset('eip155:1/erc20:0x19D3364A399d251E894aC732651be8B0E4e85001')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_get_ethereum_token_identifier(globaldb):
+def test_get_ethereum_token_identifier(globaldb: GlobalDBHandler) -> None:
     user_tokens = create_initial_globaldb_test_tokens()
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_evm_token_identifier(
             cursor=cursor,
-            address='0xnotexistingaddress',
+            address=string_to_evm_address('0xnotexistingaddress'),
             chain_id=ChainID.ETHEREUM,
         ) is None
         token_0_id = globaldb.get_evm_token_identifier(
@@ -130,7 +134,11 @@ def test_get_ethereum_token_identifier(globaldb):
     assert token_0_id == user_tokens[0].identifier
 
 
-def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, messages_aggregator):  # noqa: E501
+def test_open_new_globaldb_with_old_rotki(
+        tmpdir_factory: pytest.TempdirFactory,
+        sql_vm_instructions_cb: int,
+        messages_aggregator: MessagesAggregator,
+) -> None:
     """Test for https://github.com/rotki/rotki/issues/2781"""
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -153,7 +161,7 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_add_edit_token_with_wrong_swapped_for(globaldb):
+def test_add_edit_token_with_wrong_swapped_for(globaldb: GlobalDBHandler) -> None:
     """Test that giving a non-existing swapped_for token in the DB raises InputError
 
     This can only be unit tested since via the API, marshmallow checks for Asset existence already
@@ -181,7 +189,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
             address=make_evm_address(),
             chain_id=ChainID.ETHEREUM,
             token_kind=TokenKind.ERC20,
-            swapped_for=asset_to_delete,
+            swapped_for=asset_to_delete,  # type: ignore[arg-type]  # intentionally wrong type, testing the runtime guard
         ))
 
     # now edit a new token with swapped_for pointing to a non existing token in the DB
@@ -195,7 +203,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         name=resolved_bat.name,
         symbol=resolved_bat.symbol,
         started=resolved_bat.started,
-        swapped_for=asset_to_delete,
+        swapped_for=asset_to_delete,  # type: ignore[arg-type]  # intentionally wrong type, testing the runtime guard
         coingecko=resolved_bat.coingecko,
         cryptocompare=resolved_bat.cryptocompare,
         protocol=None,
@@ -206,13 +214,13 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_check_asset_exists(globaldb):
+def test_check_asset_exists(globaldb: GlobalDBHandler) -> None:
     globaldb.add_asset(CryptoAsset.initialize(
         identifier='1',
         asset_type=AssetType.OWN_CHAIN,
         name='Lolcoin',
         symbol='LOLZ',
-        started=0,
+        started=Timestamp(0),
     ))
     globaldb.add_asset(FiatAsset.initialize(
         identifier='2',
@@ -224,7 +232,7 @@ def test_check_asset_exists(globaldb):
         asset_type=AssetType.OMNI_TOKEN,
         name='Lolcoin',
         symbol='LOLZ',
-        started=0,
+        started=Timestamp(0),
     ))
     assert not globaldb.check_asset_exists(CryptoAsset.initialize(identifier='foo', asset_type=AssetType.TRON_TOKEN, name='foo', symbol='FOO'))  # noqa: E501
     assert not globaldb.check_asset_exists(CryptoAsset.initialize(identifier='foo', asset_type=AssetType.TRON_TOKEN, name='Lolcoin', symbol='LOLZ'))  # noqa: E501
@@ -240,7 +248,7 @@ def test_check_asset_exists(globaldb):
     assert globaldb.check_asset_exists(FiatAsset.initialize(identifier='mieur', name='Euro', symbol='EUR')) == ['EUR', '4']  # noqa: E501
 
 
-def test_check_existence_caches_db_lookups(globaldb):
+def test_check_existence_caches_db_lookups(globaldb: GlobalDBHandler) -> None:
     """check_existence should hit the globaldb only once per asset and reuse the
     cache afterwards. This is the per-event-row hot path during deserialization, so
     repeated/identical identifiers must not re-query the globaldb."""
@@ -268,7 +276,7 @@ def test_check_existence_caches_db_lookups(globaldb):
     )
 
 
-def test_bulk_collection_main_assets_match_scalar(globaldb) -> None:
+def test_bulk_collection_main_assets_match_scalar(globaldb: GlobalDBHandler) -> None:
     """Scalar and bulk lookups must agree, including for assets in multiple collections."""
     eth_cbbtc = 'eip155:1/erc20:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'
     for asset_id, expected in (
@@ -281,7 +289,7 @@ def test_bulk_collection_main_assets_match_scalar(globaldb) -> None:
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_get_asset_with_symbol(globaldb):
+def test_get_asset_with_symbol(globaldb: GlobalDBHandler) -> None:
     # both categories of assets
     asset_data = globaldb.get_assets_with_symbol('KEY')
     bihukey_address = string_to_evm_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
@@ -317,7 +325,7 @@ def test_get_asset_with_symbol(globaldb):
     # only non-ethereum token
     assert globaldb.get_assets_with_symbol('MOBI') == [mobi_asset]
     # only ethereum token
-    expected_assets = [
+    expected_evm_assets = [
         Asset('eip155:1/erc20:0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9').resolve_to_evm_token(),
         Asset('eip155:137/erc20:0xD6DF932A45C0f255f85145f286eA0b292B21C90B').resolve_to_evm_token(),
         Asset('eip155:56/erc20:0xfb6115445Bff7b52FeB98650C87f44907E58f802').resolve_to_evm_token(),
@@ -327,7 +335,7 @@ def test_get_asset_with_symbol(globaldb):
         Asset('eip155:250/erc20:0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B').resolve_to_evm_token(),
         Asset('eip155:8453/erc20:0x63706e401c06ac8513145b7687A14804d17f814b').resolve_to_evm_token(),
     ]
-    assert globaldb.get_assets_with_symbol('AAVE') == expected_assets
+    assert globaldb.get_assets_with_symbol('AAVE') == expected_evm_assets
     # finally non existing asset
     assert globaldb.get_assets_with_symbol('DASDSADSDSDSAD') == []
 
@@ -335,7 +343,7 @@ def test_get_asset_with_symbol(globaldb):
     expected_renbtc = [EvmToken.initialize(
         name='renBTC',
         symbol='renBTC',
-        started=1585090944,
+        started=Timestamp(1585090944),
         forked=None,
         swapped_for=None,
         address=renbtc_address,
@@ -351,7 +359,7 @@ def test_get_asset_with_symbol(globaldb):
         started=None,
         forked=None,
         swapped_for=None,
-        address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+        address=string_to_evm_address('0xDBf31dF14B66535aF65AaC99C32e9eA844e14501'),
         chain_id=ChainID.POLYGON_POS,
         token_kind=TokenKind.ERC20,
         decimals=8,
@@ -361,10 +369,10 @@ def test_get_asset_with_symbol(globaldb):
     ), EvmToken.initialize(
         name='renBTC',
         symbol='renBTC',
-        started=1605069649,
+        started=Timestamp(1605069649),
         forked=None,
         swapped_for=None,
-        address='0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
+        address=string_to_evm_address('0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c'),
         chain_id=ChainID.BINANCE_SC,
         token_kind=TokenKind.ERC20,
         decimals=8,
@@ -384,7 +392,11 @@ def test_get_asset_with_symbol(globaldb):
     (AssetType, 'asset_types'),
     (HistoricalPriceOracle, 'price_history_source_types'),
 ])
-def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
+def test_enum_values_are_present_in_global_db(
+        globaldb: GlobalDBHandler,
+        enum_class: type[Enum],
+        table_name: str,
+) -> None:
     """
     Check that all enum classes have the same number of possible values
     in the class definition as in the database
@@ -397,7 +409,7 @@ def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
         assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
 
 
-def test_globaldb_pragma_foreign_keys(globaldb):
+def test_globaldb_pragma_foreign_keys(globaldb: GlobalDBHandler) -> None:
     """
     This tests verifies the behaviour of sqlite at the moment of
     activating and deactivating PRAGMA foreign_keys. As per what
@@ -455,7 +467,7 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     assert cursor.fetchone()[0] == 1
 
 
-def test_global_db_restore(globaldb, database):
+def test_global_db_restore(globaldb: GlobalDBHandler, database: DBHandler) -> None:
     """
     Check that the user can recreate assets information from the packaged
     database with rotki (hard reset). The test adds a new asset, restores
@@ -482,11 +494,11 @@ def test_global_db_restore(globaldb, database):
         decimals=18,
         name='Not a scam',
         symbol='NSCM',
-        started=0,
+        started=Timestamp(0),
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
             token_kind=TokenKind.ERC20,
-            weight=1,
+            weight=FVal(1),
         )],
     )
     globaldb.add_asset(with_underlying)
@@ -496,7 +508,7 @@ def test_global_db_restore(globaldb, database):
         asset_type=AssetType.OWN_CHAIN,
         name='Lolcoin',
         symbol='LOLZ',
-        started=0,
+        started=Timestamp(0),
     ))
     # Add asset that is not a token
     globaldb.add_asset(CryptoAsset.initialize(
@@ -504,11 +516,11 @@ def test_global_db_restore(globaldb, database):
         asset_type=AssetType.OWN_CHAIN,
         name='Lolcoin2',
         symbol='LOLZ2',
-        started=0,
+        started=Timestamp(0),
     ))
     with database.user_write() as write_cursor:
-        database.add_asset_identifiers(write_cursor, '1')
-        database.add_asset_identifiers(write_cursor, '2')
+        database.add_asset_identifiers(write_cursor, ['1'])
+        database.add_asset_identifiers(write_cursor, ['2'])
 
     # Try to reset DB it if we have a trade that uses a custom asset
     with database.user_write() as write_cursor:
@@ -577,7 +589,7 @@ def test_global_db_restore(globaldb, database):
     conn.close()
 
 
-def test_global_db_reset(globaldb, database):
+def test_global_db_reset(globaldb: GlobalDBHandler, database: DBHandler) -> None:
     """
     Check that the user can recreate assets information from the packaged
     database with rotki (soft reset). The test adds a new asset, restores
@@ -604,11 +616,11 @@ def test_global_db_reset(globaldb, database):
         decimals=18,
         name='Not a scam',
         symbol='NSCM',
-        started=0,
+        started=Timestamp(0),
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
             token_kind=TokenKind.ERC20,
-            weight=1,
+            weight=FVal(1),
         )],
     )
     globaldb.add_asset(with_underlying)
@@ -618,11 +630,11 @@ def test_global_db_reset(globaldb, database):
         asset_type=AssetType.OWN_CHAIN,
         name='Lolcoin',
         symbol='LOLZ',
-        started=0,
+        started=Timestamp(0),
     ))
     # Edit one token
     one_inch_update = EvmToken.initialize(
-        address='0x111111111117dC0aa78b770fA6A738034120C302',
+        address=string_to_evm_address('0x111111111117dC0aa78b770fA6A738034120C302'),
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC20,
         name='1inch boi',
@@ -637,8 +649,8 @@ def test_global_db_reset(globaldb, database):
         from_asset=A_ETH,
         to_asset=A_DAI,
         source=HistoricalPriceOracle.COINGECKO,
-        timestamp=1337,
-        price=ONE,
+        timestamp=Timestamp(1337),
+        price=Price(ONE),
     )
     GlobalDBHandler.add_single_historical_price(historical_price)
     GlobalDBHandler.add_user_owned_assets([A_ETH, A_DAI, A_CRV])
@@ -752,7 +764,7 @@ def test_global_db_reset(globaldb, database):
     conn.close()
 
 
-def test_add_user_owned_asset_nft(globaldb):
+def test_add_user_owned_asset_nft(globaldb: GlobalDBHandler) -> None:
     """
     Test that adding an NFT user owned asset does not make it into the global DB.
     Otherwise a foreign key error will occur.
@@ -775,9 +787,9 @@ def test_add_user_owned_asset_nft(globaldb):
     assert all(not x.startswith(NFT_DIRECTIVE) for x in new_assets)
 
 
-def test_asset_deletion(globaldb):
+def test_asset_deletion(globaldb: GlobalDBHandler) -> None:
     """This test checks that deletion of both evm token and normal asset works as expected"""
-    def check_tables(asset_id: str, expected_count: int, also_eth: bool):
+    def check_tables(asset_id: str, expected_count: int, also_eth: bool) -> None:
         """Util function to check that data in the tables is correct. Checks that provided
         `asset_id` either exists or doesn't exist in all tables by comparing number of found
         entries with `expected_count` which should be either 1 or 0 respectively. If `also_eth`
@@ -851,7 +863,7 @@ def test_asset_deletion(globaldb):
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
-def test_general_cache(globaldb):
+def test_general_cache(globaldb: GlobalDBHandler) -> None:
     """
     Test that cache in the globaldb works properly. Tests insertion, deletion and reading.
 
@@ -918,6 +930,7 @@ def test_general_cache(globaldb):
             key_parts=[CacheType.CURVE_POOL_TOKENS, '123'],
             value='xyz',
         )
+        assert last_queried_ts_0 is not None
         assert ts_test_end >= last_queried_ts_0 >= ts_test_start
         last_queried_ts_1 = globaldb_get_general_cache_last_queried_ts(
             cursor=cursor,
@@ -928,7 +941,7 @@ def test_general_cache(globaldb):
 
 
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
-def test_unique_cache(globaldb):
+def test_unique_cache(globaldb: GlobalDBHandler) -> None:
     """
     Test that the added unique cache table in the globaldb works properly.
     Tests insertion, deletion and reading.
@@ -974,6 +987,7 @@ def test_unique_cache(globaldb):
             cursor=cursor,
             key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
         )
+        assert last_queried_ts_0 is not None
         assert ts_test_end >= last_queried_ts_0 >= ts_test_start
         last_queried_ts_1 = globaldb_get_unique_cache_last_queried_ts_by_key(
             cursor=cursor,
@@ -994,7 +1008,7 @@ def test_unique_cache(globaldb):
         assert values_3 == 'def'
 
 
-def test_edit_token_with_missing_information(database):
+def test_edit_token_with_missing_information(database: DBHandler) -> None:
     """
     Test that editing a token that already exists with missing information doesn't
     raise any error and the information is updated
@@ -1035,7 +1049,7 @@ def test_edit_token_with_missing_information(database):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_packaged_db_check_for_constant_assets(globaldb: GlobalDBHandler):
+def test_packaged_db_check_for_constant_assets(globaldb: GlobalDBHandler) -> None:
     """Check that UnknownAsset & WrongAssetType is not raised for an asset in CONSTANT_ASSETS"""
     # delete one entry in `CONSTANT_ASSETS`
     with globaldb.conn.write_ctx() as cursor:
@@ -1082,7 +1096,7 @@ def test_packaged_db_check_for_constant_assets(globaldb: GlobalDBHandler):
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.EVM_TOKEN
 
 
-def test_get_assets_missing_information_by_symbol(globaldb):
+def test_get_assets_missing_information_by_symbol(globaldb: GlobalDBHandler) -> None:
     """
     Verify that querying assets by symbol doesn't raise error if any of the
     assets have missing information
@@ -1187,7 +1201,7 @@ def test_for_spam_tokens(database: DBHandler, ethereum_inquirer: EthereumInquire
     ) is False
 
 
-def test_get_evm_tokens(globaldb):
+def test_get_evm_tokens(globaldb: GlobalDBHandler) -> None:
     tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS)
     assert tokens and not any(token.protocol == SPAM_PROTOCOL for token in tokens)
     assert all(token.chain_id == ChainID.POLYGON_POS for token in tokens)
@@ -1198,12 +1212,12 @@ def test_get_evm_tokens(globaldb):
     assert tokens and all(token.protocol == CPT_COMPOUND for token in tokens)
     tokens_without_exception = len(tokens)
     exception_address = tokens[0].evm_address
-    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND, exceptions=(exception_address,))  # noqa: E501
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND, exceptions={exception_address})  # noqa: E501
     assert len(tokens) == tokens_without_exception - 1
     assert not any(token.evm_address == exception_address for token in tokens)
 
 
-def test_assets_in_same_collection(globaldb: GlobalDBHandler):
+def test_assets_in_same_collection(globaldb: GlobalDBHandler) -> None:
     """Check that we get the expected related assets when querying assets in a collection"""
     wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
     related_assets = globaldb.get_assets_in_same_collection(identifier=wsteth.identifier)
@@ -1235,7 +1249,7 @@ def test_check_wal_mode_of_package_db(globaldb: GlobalDBHandler) -> None:
     assert journal_mode == 'delete'
 
 
-def test_error_bad_underlying_token(globaldb: GlobalDBHandler):
+def test_error_bad_underlying_token(globaldb: GlobalDBHandler) -> None:
     """Test that we raise error if we try to add a token as its own underlying token"""
     a_lusd = A_LUSD.resolve_to_evm_token()
     with (
@@ -1250,7 +1264,10 @@ def test_error_bad_underlying_token(globaldb: GlobalDBHandler):
         )
 
 
-def test_solana_token_query_produces_no_deserialization_warnings(globaldb: GlobalDBHandler, caplog) -> None:  # noqa: E501
+def test_solana_token_query_produces_no_deserialization_warnings(
+        globaldb: GlobalDBHandler,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test that querying solana tokens by symbol doesn't log TokenKind deserialization warnings."""  # noqa: E501
     globaldb.get_assets_with_symbol(
        symbol='BONK',  # any solana token symbol works

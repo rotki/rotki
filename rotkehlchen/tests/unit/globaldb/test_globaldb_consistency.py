@@ -94,7 +94,7 @@ class DBToken:
 def test_asset_updates_consistency_with_packaged_db(
         tmpdir_factory: pytest.TempdirFactory,
         messages_aggregator: MessagesAggregator,
-):
+) -> None:
     """Test that the globalDB updates are consistent with the packaged one.
     - All assets are present in both cases.
     - All details of these assets are the same in both cases.
@@ -423,7 +423,7 @@ def test_asset_updates_consistency_with_packaged_db(
         pytest.fail('Found entries that are missing in remote updates:\n' + '\n'.join(missing_in_updates))  # noqa: E501
 
 
-def test_oracle_ids_in_asset_collections(globaldb: GlobalDBHandler):
+def test_oracle_ids_in_asset_collections(globaldb: GlobalDBHandler) -> None:
     """Test that for each asset in a collection, their oracle IDs are same."""
     with globaldb.conn.read_ctx() as cursor:
         assets = {
@@ -482,7 +482,7 @@ def test_remote_updates_consistency_with_packaged_db(
         tmpdir_factory: pytest.TempdirFactory,
         messages_aggregator: MessagesAggregator,
         data_updater: RotkiDataUpdater,
-):
+) -> None:
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
     - Counterparty asset mappings

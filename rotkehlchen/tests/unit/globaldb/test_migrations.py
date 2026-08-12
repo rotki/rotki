@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
-def test_migration1(globaldb: GlobalDBHandler):
+def test_migration1(globaldb: GlobalDBHandler) -> None:
     """Test for the 1st globalDB data migration"""
     # Check state before migration
     with globaldb.conn.read_ctx() as cursor:
@@ -52,7 +52,7 @@ def test_migration1(globaldb: GlobalDBHandler):
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v8_global.db'])
-def test_migration2(globaldb: GlobalDBHandler):
+def test_migration2(globaldb: GlobalDBHandler) -> None:
     """Test for the 1st globalDB data migration"""
     # Check state before migration
     ethereum_yearn_cache_key = compute_cache_key((

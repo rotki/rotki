@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
-def test_checksummed_values(globaldb: GlobalDBHandler):
+def test_checksummed_values(globaldb: GlobalDBHandler) -> None:
     """Test that addresses and identifiers have checksummed addresses"""
     cursor = globaldb.conn.cursor()
     cursor.execute(
@@ -32,7 +32,7 @@ def test_checksummed_values(globaldb: GlobalDBHandler):
 
 
 @requires_env([TestEnvironment.NIGHTLY])  # sweeps the whole packaged db, and it rarely changes
-def test_packaged_db_addresses_are_checksummed(globaldb: GlobalDBHandler):
+def test_packaged_db_addresses_are_checksummed(globaldb: GlobalDBHandler) -> None:
     """Test that every evm address the packaged globaldb ships is checksummed.
 
     Asset identifiers are compared exactly, so an identifier built around a non canonical

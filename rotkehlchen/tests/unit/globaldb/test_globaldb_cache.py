@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 from contextlib import suppress
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, _Call, call, patch
 
 import pytest
@@ -75,10 +75,19 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from freezegun.api import FrozenDateTimeFactory
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 logger = logging.getLogger(__name__)
@@ -217,7 +226,7 @@ BALANCER_SOME_EXPECTED_POOLS = {string_to_evm_address('0xf01b0684C98CD7aDA480BFD
 BALANCER_SOME_EXPECTED_GAUGES = {string_to_evm_address('0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C')}  # noqa: E501
 
 
-def get_velodrome_addressbook_entries(optimism_inquirer):
+def get_velodrome_addressbook_entries(optimism_inquirer: OptimismInquirer) -> list[AddressbookEntry]:  # noqa: E501
     with GlobalDBHandler().conn.read_ctx() as cursor:
         return DBAddressbook(optimism_inquirer.database).get_addressbook_entries(
             cursor=cursor,
@@ -225,7 +234,7 @@ def get_velodrome_addressbook_entries(optimism_inquirer):
         )[0]
 
 
-def address_in_addressbook(address, cursor):
+def address_in_addressbook(address: str, cursor: DBCursor) -> bool:
     return cursor.execute('SELECT address FROM address_book WHERE address=?', (address,)).fetchone() is not None  # noqa: E501
 
 
@@ -244,7 +253,7 @@ def make_call_object(protocol: str, chain: ChainID, processed: int, total: int) 
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_velodrome_cache(optimism_inquirer):
+def test_velodrome_cache(optimism_inquirer: OptimismInquirer) -> None:
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that velodrome cache is clear of expected pools and gauges
         for pool in VELODROME_SOME_EXPECTED_POOLS | VELODROME_SOME_EXPECTED_GAUGES:
@@ -262,7 +271,12 @@ def test_velodrome_cache(optimism_inquirer):
     call_count = 0
 
     def make_mock_call_contract(force_refresh: bool) -> Callable:
-        def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
+        def mock_call_contract(
+                contract: EvmContract,
+                node_inquirer: EvmNodeInquirer,
+                method_name: str,
+                **kwargs: Any,
+        ) -> Any:
             """Limit pool query to only the first five pools"""
             nonlocal call_count
             if method_name == 'all':
@@ -330,7 +344,7 @@ def test_velodrome_cache_with_no_symbol(
 
 
 @pytest.mark.vcr
-def test_convex_cache(ethereum_inquirer):
+def test_convex_cache(ethereum_inquirer: EthereumInquirer) -> None:
     """Test convex pools querying and caching mechanism"""
     convex_expected_pools = {  # some expected pools
         string_to_evm_address('0x49Dd6BCf56ABBE00DbB816EF6664c4cf5bdd81A1'): 'dYFIETH-f',
@@ -357,9 +371,13 @@ def test_convex_cache(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('use_curve_api', [True, False])
-def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
-    global_cursor = globaldb.conn.cursor()
+def test_curve_cache(
+        rotkehlchen_instance: Rotkehlchen,
+        use_curve_api: bool,
+        globaldb: GlobalDBHandler,
+) -> None:
     """Test curve pools fetching mechanism"""
+    global_cursor = globaldb.conn.cursor()
     # Set initial cache data to check that it is gone after the cache update
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # Make sure that curve cache is clear of ethereum pools, gauges, coins and
@@ -394,7 +412,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
         assert pool not in pools
     assert len(gauges & CURVE_EXPECTED_GAUGES) == 0
     assert GlobalDBHandler().get_evm_token(
-        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+        address=string_to_evm_address('0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811'),
         chain_id=ChainID.ETHEREUM,
     ) is None
 
@@ -404,7 +422,12 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     ethereum_inquirer = rotkehlchen_instance.chains_aggregator.ethereum.node_inquirer
     curve_address_provider = ethereum_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
 
-    def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
+    def mock_call_contract(
+            contract: EvmContract,
+            node_inquirer: EvmNodeInquirer,
+            method_name: str,
+            **kwargs: Any,
+    ) -> Any:
         if use_curve_api is True:
             assert contract != curve_address_provider, 'There should be no calls to curve on-chain contracts if api is used'  # noqa: E501
         if method_name == 'pool_count':
@@ -423,7 +446,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
 
     requests_get = requests.get
 
-    def mock_requests_get(url, timeout):  # pylint: disable=unused-argument
+    def mock_requests_get(url: str, timeout: int) -> MockResponse:  # pylint: disable=unused-argument
         """Mock requests.get.
         requests.get in this test should be used only for curve api queries.
         If use_curve_api is False, return success: False so that curve cache query fallbacks to
@@ -455,12 +478,12 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
         assert pool in pools
     for pool, pool_coins in CURVE_EXPECTED_POOL_COINS.items():
-        assert pools.get(pool) == pool_coins
+        assert pools.get(string_to_evm_address(pool)) == pool_coins
     assert len(gauges & CURVE_EXPECTED_GAUGES) == 2
 
     # Token should not be created during cache refresh
     token = GlobalDBHandler().get_evm_token(
-        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+        address=string_to_evm_address('0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811'),
         chain_id=ChainID.ETHEREUM,
     )
     assert token is None
@@ -479,7 +502,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
+def test_gearbox_cache(ethereum_inquirer: EthereumInquirer) -> None:
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that gearbox cache is clear of expected pools and gauges
         for pool in GEARBOX_SOME_EXPECTED_POOLS:
@@ -492,7 +515,7 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
     pools, = read_gearbox_data_from_cache(ChainID.ETHEREUM)
     assert not pools.keys() & GEARBOX_SOME_EXPECTED_POOLS
 
-    def mock_gearbox_pool_tokens(*args, **kwargs):
+    def mock_gearbox_pool_tokens(*args: Any, **kwargs: Any) -> list[ChecksumEvmAddress] | None:
         if (tokens := get_gearbox_pool_tokens(*args, **kwargs)) is None:
             return None
         return sorted(tokens)  # sorted for determinism in VCR
@@ -561,7 +584,7 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
 
 @pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
+def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer: FrozenDateTimeFactory) -> None:  # noqa: E501
     """Ensure that if we don't have new data the cache for curve updates the last queried ts"""
     freezer.move_to(
         datetime.datetime(year=2024, month=9, day=25, hour=15, minute=30, tzinfo=datetime.UTC),
@@ -593,7 +616,7 @@ def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_balancer_cache(ethereum_inquirer):
+def test_balancer_cache(ethereum_inquirer: EthereumInquirer) -> None:
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that balancer cache is clear of expected pools and gauges
         for pool in BALANCER_SOME_EXPECTED_POOLS | BALANCER_SOME_EXPECTED_GAUGES:
@@ -629,7 +652,7 @@ def test_balancer_cache(ethereum_inquirer):
 
 
 @pytest.mark.vcr
-def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer, allow_gnosis_etherscan):
+def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer: GnosisInquirer, allow_gnosis_etherscan: None) -> None:  # noqa: E501
     """Test that query_balancer_data correctly sets the protocol version for tokens."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE address=?', (pool_address := string_to_evm_address('0xBc2acf5E821c5c9f8667A36bB1131dAd26Ed64F9'),)).fetchone()[0] == 0  # noqa: E501
@@ -658,7 +681,7 @@ def test_query_beefy_legacy_boosts(ethereum_inquirer: EthereumInquirer) -> None:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE protocol=?', (CPT_BEEFY_FINANCE,)).fetchone()[0] == 0  # noqa: E501
 
-    def mock_request_get(url: str, *args, **kwargs):
+    def mock_request_get(url: str, *args: Any, **kwargs: Any) -> dict | list:
         if 'vaults/all/1' in url:
             return []
         elif 'boosts/ethereum' in url:
@@ -690,7 +713,7 @@ def test_query_beefy_legacy_boosts(ethereum_inquirer: EthereumInquirer) -> None:
         ).fetchone()[0] == 0
 
 
-def test_superfluid_cache(ethereum_inquirer: EthereumInquirer):
+def test_superfluid_cache(ethereum_inquirer: EthereumInquirer) -> None:
     """Test that the superfluid super tokens are created correctly"""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_general_cache_values(
@@ -698,7 +721,7 @@ def test_superfluid_cache(ethereum_inquirer: EthereumInquirer):
             key_parts=(CacheType.SUPERFLUID_SUPER_TOKENS, str(ChainID.ETHEREUM.serialize_for_db())),  # noqa: E501
         ) == []
 
-    def mock_request_get(url: str, *args, **kwargs):
+    def mock_request_get(url: str, *args: Any, **kwargs: Any) -> dict | list:
         if 'superfluid-org/tokenlist' in url:
             return json.loads('{"name":"Superfluid Token List","timestamp":"2025-11-04T19:21:20.148Z","version":{"major":5,"minor":35,"patch":0},"tokens":[{"chainId":1,"address":"0x1ba8603da702602a8657980e825a6daa03dee93a","name":"Super USD Coin","symbol":"USDCx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/usdc.svg","tags":["supertoken"],"extensions":{"orderingScore":380,"superTokenInfo":{"type":"Wrapper","underlyingTokenAddress":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"}}},{"chainId":1,"address":"0xc22bea0be9872d8b7b3933cec70ece4d53a900da","name":"Super ETH","symbol":"ETHx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/eth.svg","tags":["supertoken"],"extensions":{"orderingScore":319,"superTokenInfo":{"type":"Native Asset"}}},{"chainId":56,"address":"0x529a4116f160c833c61311569d6b33dff41fd657","name":"Super BNB","symbol":"BNBx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/bnb.svg","tags":["supertoken"],"extensions":{"orderingScore":429,"superTokenInfo":{"type":"Native Asset"}}},{"chainId":1,"address":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","name":"USD Coin","symbol":"USDC","decimals":6,"logoURI":"https://tokenlist.superfluid.org/icons/usdc.svg","tags":["underlying"]}]}')  # noqa: E501
 
@@ -727,9 +750,10 @@ def test_superfluid_cache(ethereum_inquirer: EthereumInquirer):
 
 
 @requires_env([TestEnvironment.NIGHTLY])
-def test_superfluid_remote_data_is_as_expected():
+def test_superfluid_remote_data_is_as_expected() -> None:
     """Nightly test to check that the Superfluid token list contains the expected data."""
-    _, token_data_list = get_superfluid_token_list()
+    assert (result := get_superfluid_token_list()) is not None
+    _, token_data_list = result
     for token_data in token_data_list:
         tags = token_data.get('tags', [])
         assert (

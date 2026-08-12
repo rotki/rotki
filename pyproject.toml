@@ -220,6 +220,7 @@ module = [
     "rotkehlchen.tests.test_users",
     "rotkehlchen.tests.unit.accounting.*",
     "rotkehlchen.tests.unit.events.*",
+    "rotkehlchen.tests.unit.globaldb.*",
     "rotkehlchen.tests.unit.solana.*",
     "rotkehlchen.tests.unit.solana_decoders.*",
     "rotkehlchen.tests.websocketsapi.*",

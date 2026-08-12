@@ -24,6 +24,8 @@ from rotkehlchen.types import ChainID, HyperliquidTokenAddress, Timestamp, Token
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.user_messages import MessagesAggregator
+
 VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "ETH");
     *
     INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "BTC");
@@ -40,7 +42,10 @@ INSERT INTO assets(identifier, name, type) VALUES("solana/token:4gTPeh9YBmu8ZpJq
 
 
 @pytest.fixture(name='assets_updater')
-def fixture_assets_updater(messages_aggregator, globaldb):
+def fixture_assets_updater(
+        messages_aggregator: MessagesAggregator,
+        globaldb: GlobalDBHandler,
+) -> AssetsUpdater:
     return AssetsUpdater(
         globaldb=globaldb,
         msg_aggregator=messages_aggregator,
@@ -56,7 +61,7 @@ def get_mock_github_assets_response(
     Each of the boolean parameters indicates if the mocked response should return
     corresponding update files' content or 404 error."""
 
-    def mocked_response_fn(url, timeout):  # pylint: disable=unused-argument
+    def mocked_response_fn(url: str, timeout: int) -> MockResponse:  # pylint: disable=unused-argument
         if 'mappings' in url:
             return MockResponse(200, VALID_ASSET_MAPPINGS) if mappings_exists else MockResponse(404, '')  # noqa: E501
         if 'collections' in url:
@@ -360,7 +365,7 @@ def test_parse_full_insert_assets(
         text: str,
         expected_data: AssetData | None,
         error_msg: str,
-        globaldb,
+        globaldb: GlobalDBHandler,
 ) -> None:
     text = text.replace('\n', '')
     if expected_data is not None:
@@ -484,7 +489,7 @@ INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-2', 'name4', 'B'); 
 
 
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
+def test_updates_assets_collections_errors(assets_updater: AssetsUpdater) -> None:
     """
     Check that assets collections can be created and edited correctly.
 
@@ -552,7 +557,7 @@ def test_asset_update(
         update_assets: bool,
         update_collections: bool,
         update_mappings: bool,
-):
+) -> None:
     """
     Check that globaldb updates work properly when getting information from github
     and assets collections are applied correctly in the process
@@ -592,7 +597,7 @@ def test_asset_update(
 
 
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandler):
+def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandler) -> None:
     """Test that the logic doesn't add duplicates for assets that were inserted twice
     in the globaldb assets updates. Also test a bug in asset updates where the foreign key entries
     are removed when an asset update conflict is resolved through 'remote' option.
