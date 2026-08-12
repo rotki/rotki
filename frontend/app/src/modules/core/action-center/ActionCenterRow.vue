@@ -1,26 +1,26 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
-import type { HistoryEventIssue, HistoryIssueSeverity } from '@/modules/history/events/actions-center/use-history-event-issues';
+import { type ActionItem, ActionSeverity } from '@/modules/core/action-center/types';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
-const { issue } = defineProps<{
-  issue: HistoryEventIssue;
+const { item } = defineProps<{
+  item: ActionItem<TTarget>;
 }>();
 
 const emit = defineEmits<{
-  action: [issue: HistoryEventIssue];
+  action: [item: ActionItem<TTarget>];
 }>();
 
-const SEVERITY_COLORS: Record<HistoryIssueSeverity, ContextColorsType | undefined> = {
-  info: 'info',
-  muted: undefined,
-  warning: 'warning',
+const SEVERITY_COLORS: Record<ActionSeverity, ContextColorsType | undefined> = {
+  [ActionSeverity.INFO]: 'info',
+  [ActionSeverity.MUTED]: undefined,
+  [ActionSeverity.WARNING]: 'warning',
 };
 
-const SEVERITY_ICON_CLASSES: Record<HistoryIssueSeverity, string> = {
-  info: 'bg-rui-info/10 text-rui-info',
-  muted: 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary',
-  warning: 'bg-rui-warning/10 text-rui-warning',
+const SEVERITY_ICON_CLASSES: Record<ActionSeverity, string> = {
+  [ActionSeverity.INFO]: 'bg-rui-info/10 text-rui-info',
+  [ActionSeverity.MUTED]: 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary',
+  [ActionSeverity.WARNING]: 'bg-rui-warning/10 text-rui-warning',
 };
 
 const MUTED_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-disabled';
@@ -28,28 +28,28 @@ const MUTED_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-dis
 const { t } = useI18n({ useScope: 'global' });
 const { href, linkTarget, onLinkClick } = useLinks();
 
-const color = computed<ContextColorsType | undefined>(() => issue.locked ? undefined : SEVERITY_COLORS[issue.severity]);
+const color = computed<ContextColorsType | undefined>(() => item.locked ? undefined : SEVERITY_COLORS[item.severity]);
 
-const iconClass = computed<string>(() => issue.locked ? MUTED_ICON_CLASS : SEVERITY_ICON_CLASSES[issue.severity]);
+const iconClass = computed<string>(() => item.locked ? MUTED_ICON_CLASS : SEVERITY_ICON_CLASSES[item.severity]);
 
-const lockedHint = computed<string>(() => issue.minimumTier
-  ? t('transactions.alerts.locked_hint', { tier: issue.minimumTier })
-  : t('transactions.alerts.locked_hint_generic'));
+const lockedHint = computed<string>(() => item.minimumTier
+  ? t('action_center.locked_hint', { tier: item.minimumTier })
+  : t('action_center.locked_hint_generic'));
 </script>
 
 <template>
   <div
     class="flex items-center gap-3 py-3"
-    :class="{ 'opacity-60': issue.locked }"
+    :class="{ 'opacity-60': item.locked }"
     data-testid="actions-center-row"
-    :data-key="issue.id"
+    :data-key="item.id"
   >
     <div
       class="shrink-0 rounded-full p-2"
       :class="iconClass"
     >
       <RuiIcon
-        :name="issue.icon"
+        :name="item.icon"
         size="18"
       />
     </div>
@@ -58,9 +58,9 @@ const lockedHint = computed<string>(() => issue.minimumTier
       <div class="flex items-center gap-2 flex-wrap">
         <span
           class="font-medium"
-          :class="issue.locked ? 'text-rui-text-secondary' : 'text-rui-text'"
+          :class="item.locked ? 'text-rui-text-secondary' : 'text-rui-text'"
         >
-          {{ issue.title }}
+          {{ item.title }}
         </span>
         <RuiChip
           size="sm"
@@ -69,16 +69,16 @@ const lockedHint = computed<string>(() => issue.minimumTier
           class="!h-5 !px-1.5 tabular-nums"
           data-testid="actions-center-row-count"
         >
-          {{ issue.count }}
+          {{ item.count }}
         </RuiChip>
       </div>
       <p class="text-caption text-rui-text-secondary">
-        {{ issue.locked ? lockedHint : issue.description }}
+        {{ item.locked ? lockedHint : item.description }}
       </p>
     </div>
 
     <RuiTooltip
-      v-if="issue.locked"
+      v-if="item.locked"
       :popper="{ placement: 'top' }"
       :open-delay="400"
     >
@@ -99,7 +99,7 @@ const lockedHint = computed<string>(() => issue.minimumTier
               size="14"
             />
           </template>
-          {{ t('transactions.alerts.locked') }}
+          {{ t('action_center.locked') }}
         </RuiButton>
       </template>
       {{ lockedHint }}
@@ -108,13 +108,13 @@ const lockedHint = computed<string>(() => issue.minimumTier
     <RuiButton
       v-else
       size="sm"
-      :variant="issue.severity === 'muted' ? 'text' : 'outlined'"
+      :variant="item.severity === ActionSeverity.MUTED ? 'text' : 'outlined'"
       :color="color"
       class="shrink-0"
       data-testid="actions-center-row-action"
-      @click="emit('action', issue)"
+      @click="emit('action', item)"
     >
-      {{ issue.actionLabel }}
+      {{ item.actionLabel }}
       <template #append>
         <RuiIcon
           name="lu-chevron-right"

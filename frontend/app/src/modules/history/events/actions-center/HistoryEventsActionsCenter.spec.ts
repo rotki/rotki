@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import HistoryEventsActionsCenter from '@/modules/history/events/actions-center/HistoryEventsActionsCenter.vue';
-import HistoryEventsActionsList from '@/modules/history/events/actions-center/HistoryEventsActionsList.vue';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
 import { PinnedNames, toPinned } from '@/modules/session/types';
 
@@ -16,22 +15,21 @@ const state = {
   categoryCount: ref(0),
   checking: ref(false),
   fetchUndecodedTransactionsBreakdown: vi.fn<() => Promise<void>>(),
-  hasIssues: ref(false),
-  push: vi.fn(),
+  push: vi.fn<(to: unknown) => Promise<void>>(),
   refreshAll: vi.fn<() => Promise<void>>(),
 };
 
 vi.mock('@/modules/history/events/actions-center/use-history-event-issues', () => ({
   useHistoryEventIssues: (): object => ({
-    activeIssues: computed(() => []),
+    activeItems: computed(() => []),
     categoryCount: state.categoryCount,
     checking: state.checking,
-    clearedIssues: computed(() => []),
-    hasIssues: state.hasIssues,
-    lockedIssues: computed(() => []),
+    clearedItems: computed(() => []),
+    hasItems: computed(() => get(state.categoryCount) > 0),
+    lockedItems: computed(() => []),
     refreshAll: state.refreshAll,
     refreshing: computed(() => false),
-    reviewIssues: computed(() => []),
+    reviewItems: computed(() => []),
   }),
 }));
 
@@ -65,12 +63,14 @@ function mountCenter(): VueWrapper<InstanceType<typeof HistoryEventsActionsCente
 // itself would: through the v-model the center binds to it.
 async function openMenu(
   wrapper: VueWrapper<InstanceType<typeof HistoryEventsActionsCenter>>,
-): Promise<VueWrapper<InstanceType<typeof HistoryEventsActionsList>>> {
+): Promise<VueWrapper> {
   wrapper.findComponent({ name: 'RuiMenu' }).vm.$emit('update:modelValue', true);
   await flushPromises();
-  // the menu teleports its content, which lands a tick or two after it opens
+  // the menu teleports its content, which lands a tick or two after it opens.
+  // Found by name rather than by component: a generic SFC does not resolve as a
+  // constructor, so `findComponent(ActionCenterList)` types as a DOM wrapper.
   return vi.waitFor(() => {
-    const list = wrapper.findComponent<typeof HistoryEventsActionsList>(HistoryEventsActionsList);
+    const list = wrapper.findComponent({ name: 'ActionCenterList' });
     expect(list.exists()).toBe(true);
     return list;
   });
@@ -81,20 +81,19 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     setActivePinia(createCustomPinia());
     vi.clearAllMocks();
     state.fetchUndecodedTransactionsBreakdown.mockResolvedValue();
+    state.push.mockResolvedValue();
     state.refreshAll.mockResolvedValue();
     set(state.categoryCount, 0);
     set(state.checking, false);
-    set(state.hasIssues, false);
   });
 
   it('should show the category count when there is something to act on', () => {
-    set(state.hasIssues, true);
     set(state.categoryCount, 3);
 
     const wrapper = mountCenter();
 
     expect(wrapper.find('[data-testid=actions-center-button-count]').text()).toBe('3');
-    expect(wrapper.text()).toContain('transactions.alerts.button');
+    expect(wrapper.text()).toContain('action_center.button');
   });
 
   it('should stay countless and quiet while the counts are still pending', () => {
@@ -103,14 +102,14 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     const wrapper = mountCenter();
 
     expect(wrapper.find('[data-testid=actions-center-button-count]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('transactions.alerts.button_checking');
+    expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('action_center.button_checking');
   });
 
   it('should report all clear once a scan has landed with nothing to do', () => {
     const wrapper = mountCenter();
 
     expect(wrapper.find('[data-testid=actions-center-button-count]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('transactions.alerts.button_clear');
+    expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('action_center.button_clear');
   });
 
   it('should hang the menu off the trigger and start closed', () => {
@@ -177,5 +176,16 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
         groupIdentifiers: 'a,b',
       },
     });
+  });
+
+  it('should navigate on a plain route target', async () => {
+    const wrapper = mountCenter();
+    const list = await openMenu(wrapper);
+
+    list.vm.$emit('open', { kind: 'route', to: { name: '/balances/blockchain/' } });
+    await nextTick();
+
+    expect(state.push).toHaveBeenCalledWith({ name: '/balances/blockchain/' });
+    expect(wrapper.emitted('show:dialog')).toBeUndefined();
   });
 });

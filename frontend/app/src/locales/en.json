@@ -303,6 +303,22 @@
       "title": "Trade Settings"
     }
   },
+  "action_center": {
+    "button": "Actions needed",
+    "button_checking": "Checking for actions",
+    "button_clear": "All clear",
+    "cleared": "Checked:",
+    "locked": "Premium",
+    "locked_hint": "This requires the {tier} tier.",
+    "locked_hint_generic": "This requires a premium subscription.",
+    "rescan": "Re-scan",
+    "subtitle": "{count} category needs your attention | {count} categories need your attention",
+    "subtitle_checking": "Checking for anything that needs your attention.",
+    "subtitle_clear": "Everything has been checked.",
+    "title": "Actions needed",
+    "title_checking": "Checking for actions",
+    "title_clear": "No actions needed"
+  },
   "actions": {
     "accounting_rules": {
       "export": {
@@ -6276,10 +6292,6 @@
       "redecode_with_options": "Redecode with options"
     },
     "alerts": {
-      "button": "Actions needed",
-      "button_checking": "Checking for actions",
-      "button_clear": "All clear",
-      "cleared": "Checked:",
       "ignored_description": "Nothing left to match. Open to restore anything you ignored.",
       "issues": {
         "auto_fix_duplicates": {
@@ -6302,6 +6314,11 @@
           "description": "Duplicated customized events that need your decision.",
           "title": "Duplicates needing review"
         },
+        "no_tracked_accounts": {
+          "action": "Add an account",
+          "description": "rotki has nothing to work from until you add a blockchain account or connect an exchange.",
+          "title": "Tracked accounts"
+        },
         "undecoded": {
           "action": "View status",
           "description": "Missing from your history and reports until they are decoded.",
@@ -6318,17 +6335,9 @@
           "title": "Unmatched asset movements"
         }
       },
-      "locked": "Premium",
-      "locked_hint": "Matching these requires the {tier} tier.",
-      "locked_hint_generic": "Matching these requires a premium subscription.",
-      "rescan": "Re-scan",
       "review_ignored": "Review ignored",
-      "subtitle": "{count} category needs your attention | {count} categories need your attention",
       "subtitle_checking": "Waiting for the history sync to finish.",
-      "subtitle_clear": "Everything in your history has been checked.",
-      "title": "Actions needed",
-      "title_checking": "Checking for actions",
-      "title_clear": "No actions needed"
+      "subtitle_clear": "Everything in your history has been checked."
     },
     "dialog": {
       "add_tx": "Add transaction by tx hash",
