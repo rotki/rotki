@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
-import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import {
   type AccountManageState,
   createNewBlockchainAccount,
@@ -9,6 +8,7 @@ import {
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BlockchainBalanceFilter from '@/modules/balances/BlockchainBalanceFilter.vue';
 import BlockchainBalanceRefreshBehaviourMenu from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
@@ -91,28 +91,11 @@ onMounted(() => {
               </template>
             </SummaryCardRefreshMenu>
           </div>
-          <div class="order-3 xl:order-1 flex flex-wrap md:flex-nowrap grow justify-end w-full xl:w-auto items-center gap-2 overflow-hidden pt-1.5 -mt-1 xl:pl-6">
-            <ChainSelect
-              v-model="chainsFilter"
-              class="w-full xl:w-[30rem]"
-              dense
-              hide-details
-              clearable
-              chips
-            />
-            <RuiTextField
-              v-model="search"
-              variant="outlined"
-              color="primary"
-              dense
-              prepend-icon="lu-search"
-              :label="t('common.actions.search')"
-              hide-details
-              clearable
-              class="w-full xl:w-[16rem]"
-              @click:clear="search = ''"
-            />
-          </div>
+          <BlockchainBalanceFilter
+            v-model:chains="chainsFilter"
+            v-model:search="search"
+            class="order-3 xl:order-1 grow w-full xl:w-auto xl:ml-6"
+          />
           <VisibleColumnsSelector
             class="order-2"
             :group="tableType"

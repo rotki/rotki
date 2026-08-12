@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type {
   Airdrop,
   Airdrops,
   PoapDeliveryDetails,
 } from '@/modules/airdrops/airdrops';
-import { type BigNumber, Blockchain, Zero } from '@rotki/common';
+import { type BigNumber, Zero } from '@rotki/common';
 import { msg } from '@/message-key';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
-import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/modules/airdrops/PoapDeliveryAirdrops.vue';
+import { airdropParams, useAirdropFields } from '@/modules/airdrops/use-airdrop-fields';
 import { useAirdrops } from '@/modules/airdrops/use-airdrops';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
@@ -27,8 +27,6 @@ definePage({
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 
-type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
-const ETH = Blockchain.ETH;
 const { t } = useI18n({ useScope: 'global' });
 const { airdrops, fetchAirdrops, loading } = useAirdrops();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
@@ -36,16 +34,9 @@ const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', fa
 const sort = ref<DataTableSortData<AirdropWithIndex>>([]);
 
 const expanded = ref<AirdropWithIndex[]>([]);
-const status = ref<Statuses>('');
+const status = ref<string>('');
 const pagination = ref<TablePaginationData>();
-const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
-const statusFilters = ref<{ text: string; value: Statuses }[]>([
-  { text: t('common.all'), value: '' },
-  { text: t('common.unknown'), value: 'unknown' },
-  { text: t('common.unclaimed'), value: 'unclaimed' },
-  { text: t('common.claimed'), value: 'claimed' },
-  { text: t('common.missed'), value: 'missed' },
-]);
+const selectedAddresses = ref<string[]>([]);
 
 const refreshTooltip = computed<string>(() =>
   t('helpers.refresh_header.tooltip', {
@@ -55,9 +46,12 @@ const refreshTooltip = computed<string>(() =>
 
 const airdropAddresses = computed<string[]>(() => Object.keys(get(airdrops)));
 
+const fields = useAirdropFields(airdropAddresses);
+const pillLabels = usePillBarLabels();
+const pillParams = airdropParams(selectedAddresses, status);
+
 const rows = computed<AirdropWithIndex[]>(() => {
-  const addresses = get(selectedAccounts).map(account => getAccountAddress(account));
-  const data = filterByAddress(get(airdrops), addresses);
+  const data = filterByAddress(get(airdrops), get(selectedAddresses));
   return data
     .filter((airdrop) => {
       const currentStatus = get(status);
@@ -157,7 +151,7 @@ onMounted(async () => {
   await fetchAirdrops();
 });
 
-watch([status, selectedAccounts], () => {
+watch([status, selectedAddresses], () => {
   set(pagination, { ...get(pagination), page: 1 });
 });
 </script>
@@ -186,27 +180,12 @@ watch([status, selectedAccounts], () => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-col md:flex-row flex-wrap items-start gap-4 mb-4">
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          class="w-full flex-1 !shadow-none !border-none !p-0"
-          dense
-          outlined
-          :chains="[ETH]"
-          :usable-addresses="airdropAddresses"
-        />
-        <RuiMenuSelect
-          v-model="status"
-          :options="statusFilters"
-          class="w-full flex-1"
-          data-testid="airdrop-status-filter"
-          key-attr="value"
-          text-attr="text"
-          dense
-          hide-details
-          variant="outlined"
-        />
-      </div>
+      <PillFilterBar
+        v-model:params="pillParams"
+        class="mb-4"
+        :fields="fields"
+        :labels="pillLabels"
+      />
 
       <RuiAlert
         v-if="!hideUnknownAlert && status === 'unknown'"
