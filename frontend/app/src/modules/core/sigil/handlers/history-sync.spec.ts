@@ -1,9 +1,11 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetchHistoryEvents = vi.fn();
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: mockFetchHistoryEvents,
   })),
 }));

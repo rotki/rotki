@@ -1,5 +1,7 @@
 import type { EffectScope } from 'vue';
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HighlightTargetTypes, type HistoryEventNavigationRequest } from './use-history-event-navigation';
 
@@ -17,7 +19,7 @@ vi.mock('vue-router', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
     getHistoryEventGroupPosition: mockGetHistoryEventGroupPosition,
   })),
 }));

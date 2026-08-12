@@ -1,6 +1,8 @@
 import type { CollectionResponse } from '@/modules/core/common/collection';
 import type { CustomizedEventDuplicates, CustomizedEventDuplicatesFixResult } from '@/modules/history/api/events/use-customized-event-duplicates-api';
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 
@@ -27,7 +29,7 @@ vi.mock('@/modules/history/api/events/use-customized-event-duplicates-api', () =
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: (): object => ({
+  useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: spies.fetchHistoryEvents,
   }),
 }));

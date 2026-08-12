@@ -1,3 +1,5 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,10 +34,7 @@ vi.mock('@/modules/history/events/tx/use-exchange-events-refresh', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
-    queryExchangeEvents: vi.fn(),
-    queryOnlineHistoryEvents: vi.fn(),
-  })),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
 }));
 
 vi.mock('@/modules/history/use-events-query-status-store', () => ({

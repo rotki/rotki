@@ -1,4 +1,6 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
+import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -43,7 +45,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({ fetchTransactionsTask: vi.fn() })),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
 }));
 
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({

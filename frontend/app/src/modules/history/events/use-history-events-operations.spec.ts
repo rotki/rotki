@@ -1,3 +1,4 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
@@ -35,7 +36,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({ getChain: spies.getChain }),
 }));
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: (): object => ({ deleteTransactions: spies.deleteTransactions }),
+  useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({ deleteTransactions: spies.deleteTransactions }),
 }));
 vi.mock('@/modules/history/api/events/use-asset-movement-matching-api', () => ({
   useAssetMovementMatchingApi: (): object => ({ unlinkAssetMovement: spies.unlinkAssetMovement }),

@@ -1,4 +1,6 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { NotificationGroup } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { spies } = vi.hoisted(() => ({
@@ -29,7 +31,7 @@ vi.mock('@/modules/history/api/events/use-bridge-matching-api', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: (): object => ({
+  useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: spies.fetchHistoryEvents,
   }),
 }));

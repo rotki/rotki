@@ -1,4 +1,6 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
@@ -23,7 +25,7 @@ const mockStore: { pendingSuggestions: PendingSuggestion[]; showSuggestionsDialo
 const mockRepo: { frontend: FrontendSettings } = { frontend: getDefaultFrontendSettings() };
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: mockFetchHistoryEvents,
   })),
 }));

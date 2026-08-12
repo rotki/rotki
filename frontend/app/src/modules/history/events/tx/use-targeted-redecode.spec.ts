@@ -1,3 +1,5 @@
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,7 +31,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
     pullAndRecodeEthBlockEventRequest: mocks.pullAndRecodeEthBlockEventRequest,
     pullAndRecodeTransactionRequest: mocks.pullAndRecodeTransactionRequest,
   })),

@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { createMock } from '@test/utils/create-mock';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
@@ -32,9 +33,9 @@ vi.mock('@/modules/history/api/events/use-history-events-api', async (importOrig
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    useHistoryEventsApi: vi.fn().mockReturnValue({
+    useHistoryEventsApi: vi.fn().mockReturnValue(createMock<ReturnType<typeof useHistoryEventsApi>>({
       lookupEvmTransaction: vi.fn().mockResolvedValue({ taskId: 1 }),
-    }),
+    })),
   };
 });
 

@@ -1,4 +1,6 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -25,9 +27,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
-    queryExchangeEvents: vi.fn(),
-  })),
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>()),
 }));
 
 vi.mock('@/modules/history/use-events-query-status-store', () => ({

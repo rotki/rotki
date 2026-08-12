@@ -1,5 +1,7 @@
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, EffectScope, Ref } from 'vue';
+import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,7 +21,7 @@ vi.mock('vue-router', () => ({
 }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: vi.fn(() => ({
+  useHistoryEventsApi: vi.fn(() => createMock<ReturnType<typeof useHistoryEventsApi>>({
     getHistoryEventGroupPosition: mockGetHistoryEventGroupPosition,
   })),
 }));
