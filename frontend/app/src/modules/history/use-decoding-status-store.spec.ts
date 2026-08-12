@@ -1,6 +1,21 @@
 import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDecodingStatusStore } from './use-decoding-status-store';
+
+// Stands in for the real resolver, which indexes every chain under its id, its name and its
+// evmChainName. Without it `matchChain` finds nothing and the store's lowercase fallback would
+// carry these tests, proving none of the canonicalisation.
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: vi.fn().mockReturnValue({
+    matchChain: (location: string): string | undefined => ({
+      bitcoin: 'btc',
+      btc: 'btc',
+      eth: 'eth',
+      ethereum: 'eth',
+      optimism: 'optimism',
+    })[location.toLowerCase()],
+  }),
+}));
 
 describe('useDecodingStatusStore', () => {
   beforeEach(() => {
@@ -11,6 +26,70 @@ describe('useDecodingStatusStore', () => {
     chain,
     processed,
     total,
+  });
+
+  describe('canonical chain keys', () => {
+    it('should key an uppercase SupportedBlockchain value under the canonical chain id', () => {
+      const store = useDecodingStatusStore();
+      // The shape bitcoin decoding progress arrives in: `chain` is the enum value, not the id.
+      store.setUndecodedTransactionsStatus(createStatus('BTC', 1, 1));
+
+      expect(get(store.undecodedTransactionsStatus)).toEqual({
+        btc: { chain: 'btc', processed: 1, total: 1 },
+      });
+    });
+
+    it('should key the EVM decoder chain name under the canonical chain id', () => {
+      const store = useDecodingStatusStore();
+      // The EVM decoder reports ChainID.to_name(), which is not the frontend's chain id.
+      store.setUndecodedTransactionsStatus(createStatus('ethereum', 100, 50));
+
+      expect(Object.keys(get(store.undecodedTransactionsStatus))).toEqual(['eth']);
+    });
+
+    it('should collapse different spellings of one chain into a single entry', () => {
+      const store = useDecodingStatusStore();
+      store.setUndecodedTransactionsStatus(createStatus('ethereum', 100, 50));
+      store.setUndecodedTransactionsStatus(createStatus('eth', 100, 80));
+
+      // Two entries would mean two rows in the sync panel and double weight in the progress bar.
+      const status = get(store.undecodedTransactionsStatus);
+      expect(Object.keys(status)).toHaveLength(1);
+      expect(status.eth.processed).toBe(80);
+    });
+
+    it('should cancel a decode addressed by the canonical id after progress arrived under another spelling', () => {
+      const store = useDecodingStatusStore();
+      store.resetDecodingSyncProgress();
+      store.setUndecodedTransactionsStatus(createStatus('ethereum', 100, 50));
+
+      // `markDecodingCancelled` is called with the frontend's own chain id. Keyed raw, it looked up
+      // 'eth' against an entry stored as 'ethereum' and the cancellation was silently dropped.
+      store.markDecodingCancelled('eth');
+
+      expect(get(store.decodingSyncProgress).eth.cancelled).toBe(true);
+    });
+
+    it('should not file an unrecognised chain under ethereum', () => {
+      const store = useDecodingStatusStore();
+      // `getChain` defaults to ETH for anything it cannot match, which would misattribute the row.
+      store.setUndecodedTransactionsStatus(createStatus('Unknownchain', 10, 5));
+
+      expect(Object.keys(get(store.undecodedTransactionsStatus))).toEqual(['unknownchain']);
+    });
+
+    it('should canonicalise the keys of a bulk breakdown update', () => {
+      const store = useDecodingStatusStore();
+      store.updateUndecodedTransactionsStatus({
+        BTC: createStatus('BTC', 4, 1),
+        ethereum: createStatus('ethereum', 100, 50),
+      });
+
+      const status = get(store.undecodedTransactionsStatus);
+      expect(Object.keys(status).sort()).toEqual(['btc', 'eth']);
+      expect(status.btc.chain).toBe('btc');
+      expect(status.eth.chain).toBe('eth');
+    });
   });
 
   describe('setUndecodedTransactionsStatus', () => {

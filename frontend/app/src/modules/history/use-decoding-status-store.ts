@@ -1,10 +1,33 @@
 import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 export interface DecodingStatusEntry extends EvmUnDecodedTransactionsData {
   cancelled?: boolean;
 }
 
 export const useDecodingStatusStore = defineStore('history/decoding-status', () => {
+  const { matchChain } = useSupportedChains();
+
+  /**
+   * Resolve a chain identifier to the canonical id everything else in the app uses.
+   *
+   * ⚠️ Producers disagree on spelling: the EVM decoder reports `ChainID.to_name()` (`ethereum`),
+   * a chain reporting through `SupportedBlockchain` sends the enum value (`BTC`), and the frontend
+   * itself uses the chain id (`eth`, `btc`). Keyed raw, one chain occupies several entries — a row
+   * each in the sync panel and multiplied weight in the progress bar — and `markDecodingCancelled`,
+   * called with the frontend's own id, misses the entry it means to cancel.
+   *
+   * ⚠️ `matchChain`, not `getChain`: the latter answers `Blockchain.ETH` for anything it does not
+   * recognise, which would file that chain's progress under Ethereum and send Ethereum's id to the
+   * decode endpoint. Not hypothetical — `chainTokenLookup` skips any chain absent from the
+   * frontend's `Blockchain` enum, so a chain the backend ships first is always unmatched. Such a
+   * chain keeps a stable lowercase key of its own instead, which is also what the backend calls it.
+   *
+   * The lookup is built from the supported-chain list, which `use-session-ready.ts` awaits before
+   * navigating, so it is populated well before any decode can report progress.
+   */
+  const canonicalChain = (chain: string): string => matchChain(chain) ?? chain.toLowerCase();
+
   const undecodedTransactionsStatus = shallowRef<Record<string, EvmUnDecodedTransactionsData>>({});
   const decodingSyncProgress = shallowRef<Record<string, DecodingStatusEntry>>({});
   const decodingSyncing = shallowRef<boolean>(false);
@@ -18,28 +41,38 @@ export const useDecodingStatusStore = defineStore('history/decoding-status', () 
   );
 
   const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData): void => {
+    const key = canonicalChain(data.chain);
+    const entry: EvmUnDecodedTransactionsData = { ...data, chain: key };
+
     set(undecodedTransactionsStatus, {
       ...get(undecodedTransactionsStatus),
-      [data.chain]: data,
+      [key]: entry,
     });
 
     if (!get(decodingSyncing))
       return;
 
     const currentSync = get(decodingSyncProgress);
-    if (currentSync[data.chain]?.cancelled)
+    if (currentSync[key]?.cancelled)
       return;
 
     set(decodingSyncProgress, {
       ...currentSync,
-      [data.chain]: data,
+      [key]: entry,
     });
   };
 
   const updateUndecodedTransactionsStatus = (data: Record<string, EvmUnDecodedTransactionsData>): void => {
+    const canonical = Object.fromEntries(
+      Object.entries(data).map(([chain, status]) => {
+        const key = canonicalChain(chain);
+        return [key, { ...status, chain: key }];
+      }),
+    );
+
     set(undecodedTransactionsStatus, {
       ...get(undecodedTransactionsStatus),
-      ...data,
+      ...canonical,
     });
 
     if (!get(decodingSyncing))
@@ -49,7 +82,7 @@ export const useDecodingStatusStore = defineStore('history/decoding-status', () 
     const updatedSyncProgress = { ...currentSyncProgress };
     let hasChanges = false;
 
-    for (const [chain, status] of Object.entries(data)) {
+    for (const [chain, status] of Object.entries(canonical)) {
       const existing = currentSyncProgress[chain];
       if (existing?.cancelled)
         continue;
@@ -65,12 +98,13 @@ export const useDecodingStatusStore = defineStore('history/decoding-status', () 
   };
 
   const markDecodingCancelled = (chain: string): void => {
+    const key = canonicalChain(chain);
     const current = get(decodingSyncProgress);
-    const existing = current[chain];
+    const existing = current[key];
     if (existing) {
       set(decodingSyncProgress, {
         ...current,
-        [chain]: { ...existing, cancelled: true },
+        [key]: { ...existing, cancelled: true },
       });
     }
   };
