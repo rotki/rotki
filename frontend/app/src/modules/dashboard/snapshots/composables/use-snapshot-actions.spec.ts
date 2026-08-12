@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
@@ -32,7 +34,7 @@ vi.mock('@/modules/auth/use-logout', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): { getPath: typeof getPath } => ({ getPath }),
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({ getPath }),
 }));
 
 vi.mock('@/modules/settings/api/use-snapshot-api', () => ({

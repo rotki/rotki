@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LogLevelSetting from '@/modules/settings/backend/LogLevelSetting.vue';
@@ -13,10 +15,10 @@ vi.mock('@/modules/core/common/logging/logging', async (): Promise<Record<string
 
 const { setLogLevelMock } = vi.hoisted(() => ({ setLogLevelMock: vi.fn() }));
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
-  useInterop: vi.fn().mockReturnValue({
+  useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>({
     isPackaged: true,
     setLogLevel: setLogLevelMock,
-  }),
+  })),
 }));
 
 const { updateBackendConfigurationMock, updateColibriConfigurationMock } = vi.hoisted(() => ({

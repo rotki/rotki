@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { none, some } from 'plainfp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStoredCredentials } from './use-stored-credentials';
@@ -16,7 +18,7 @@ const { getPassword, isPackagedRef, lastLoginRef, savedRememberPasswordRef } = v
 vi.mock('@/modules/auth/account-management', () => ({ lastLogin: lastLoginRef }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: vi.fn(() => ({ getPassword, isPackaged: isPackagedRef.value })),
+  useInterop: vi.fn(() => createMock<ReturnType<typeof useInterop>>({ getPassword, isPackaged: isPackagedRef.value })),
 }));
 
 vi.mock('@/modules/auth/use-remember-settings', () => ({

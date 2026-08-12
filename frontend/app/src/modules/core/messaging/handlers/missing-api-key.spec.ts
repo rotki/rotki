@@ -1,4 +1,5 @@
 import type { Router } from 'vue-router';
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert, type Notification, type NotificationAction, NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
@@ -11,7 +12,7 @@ const mockSuppressList = ref<string[]>([]);
 const mockPush = vi.fn();
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: vi.fn(() => ({
+  useInterop: vi.fn(() => createMock<ReturnType<typeof useInterop>>({
     openUrl: mockOpenUrl,
   })),
 }));

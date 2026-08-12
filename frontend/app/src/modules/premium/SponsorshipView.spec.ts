@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -5,7 +7,7 @@ import { useMainStore } from '@/modules/core/common/use-main-store';
 import SponsorshipView from '@/modules/premium/SponsorshipView.vue';
 
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
-  useInterop: (): { isPackaged: boolean; openUrl: ReturnType<typeof vi.fn> } => ({
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({
     isPackaged: false,
     openUrl: vi.fn(),
   }),

@@ -1,9 +1,11 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const checkForUpdates = vi.fn();
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): { checkForUpdates: typeof checkForUpdates } => ({ checkForUpdates }),
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({ checkForUpdates }),
 }));
 
 async function loadComposable(): Promise<typeof import('./use-update-checker')['useUpdateChecker']> {
