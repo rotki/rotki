@@ -1,8 +1,10 @@
 import type { useControl as UseControl } from '@/modules/core/control/use-control';
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert } from '@rotki/common';
 import { StarlingServiceStatus } from '@shared/ipc';
 import { StarlingService } from '@shared/starling/starling-protocol';
 import { server } from '@test/setup-files/server';
+import { createMock } from '@test/utils/create-mock';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): Record<string, unknown> => ({ ...mocks }),
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({ ...mocks }),
 }));
 
 const CONTROL_URL = 'http://localhost:3000/_control';

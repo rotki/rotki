@@ -1,11 +1,13 @@
 import type { UseSingleTabReturn } from './use-single-tab';
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const isPackaged = ref<boolean>(false);
 const reload = vi.fn();
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): object => ({
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({
     get isPackaged(): boolean {
       return get(isPackaged);
     },

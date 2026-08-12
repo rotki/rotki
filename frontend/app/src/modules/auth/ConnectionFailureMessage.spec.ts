@@ -1,5 +1,7 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
+import { createMock } from '@test/utils/create-mock';
 import { type DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,7 +41,7 @@ vi.mock('@/modules/shell/app/use-backend-management', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): object => interop,
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>(interop),
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({

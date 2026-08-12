@@ -1,3 +1,5 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLoginRememberOptions } from './use-login-remember-options';
 
@@ -8,7 +10,7 @@ const { clearPassword, interop, storePassword } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): Record<string, unknown> => ({
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({
     clearPassword,
     get isPackaged(): boolean {
       return interop.isPackaged;

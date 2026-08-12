@@ -1,5 +1,7 @@
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert } from '@rotki/common';
 import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
+import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,13 +13,15 @@ import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { McpPrivacyMode } from '@/modules/settings/types/mcp';
 
 const mocks = vi.hoisted(() => ({
-  generateMcpToken: vi.fn(),
   getMcpServerStatus: vi.fn(),
   isPackaged: true,
   setMcpAutoStart: vi.fn(),
   startMcpServer: vi.fn(),
   stopMcpServer: vi.fn(),
 }));
+
+/** Token minting is an API call, not an interop member. */
+const mcpApi = vi.hoisted(() => ({ generateMcpToken: vi.fn() }));
 
 /**
  * The component drives the supervisor through the control client, never through
@@ -33,12 +37,12 @@ const control = vi.hoisted(() => ({
 
 vi.mock('@/modules/settings/api/use-mcp-api', () => ({
   useMcpApi: (): Record<string, unknown> => ({
-    generateMcpToken: mocks.generateMcpToken,
+    generateMcpToken: mcpApi.generateMcpToken,
   }),
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
-  useInterop: (): Record<string, unknown> => ({
+  useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({
     ...mocks,
   }),
 }));
@@ -166,7 +170,7 @@ describe('mcpServerSetting', () => {
       async (_service: string, running: boolean) =>
         (running ? StarlingServiceStatus.READY : StarlingServiceStatus.IDLE),
     );
-    mocks.generateMcpToken.mockResolvedValue({
+    mcpApi.generateMcpToken.mockResolvedValue({
       accessToken: 'generated-mcp-token',
       expiresAt: 1_800_000_000,
       tokenType: 'Bearer',
@@ -401,7 +405,7 @@ describe('mcpServerSetting', () => {
     await wrapper.find('[data-testid="mcp-generate-token"]').trigger('click');
     await flushPromises();
 
-    expect(mocks.generateMcpToken).toHaveBeenCalledOnce();
+    expect(mcpApi.generateMcpToken).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid="mcp-token"]').text()).toBe('••••••••••••••••');
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.token_expiry_hint');
 
@@ -413,7 +417,7 @@ describe('mcpServerSetting', () => {
     vi.stubEnv('VITE_DOCKER', 'true');
     mocks.isPackaged = false;
     controlAvailable(false);
-    mocks.generateMcpToken.mockRejectedValueOnce(new Error('token failed'));
+    mcpApi.generateMcpToken.mockRejectedValueOnce(new Error('token failed'));
 
     const wrapper = createWrapper();
     await flushPromises();

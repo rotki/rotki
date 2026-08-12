@@ -1,4 +1,6 @@
 import type { TransactionParams } from './types';
+import type { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { WALLET_MODES } from './constants';
@@ -44,7 +46,7 @@ vi.mock('./use-transaction-manager', () => ({ useTransactionManager: (): Fake =>
 vi.mock('./send/use-trade-api', () => ({ useTradeApi: (): Fake => mocks.state.tradeApi }));
 vi.mock('./use-wallet-connect', () => ({ useWalletConnect: (): Fake => mocks.state.walletConnect }));
 vi.mock('./bridge/use-injected-wallet', () => ({ useInjectedWallet: (): Fake => mocks.state.injectedWallet }));
-vi.mock('@/modules/shell/app/use-electron-interop', () => ({ useInterop: (): Fake => ({ isPackaged: mocks.state.isPackaged }) }));
+vi.mock('@/modules/shell/app/use-electron-interop', () => ({ useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({ isPackaged: mocks.state.isPackaged }) }));
 vi.mock('@/modules/wallet/use-wallet-helper', () => ({ useWalletHelper: (): Fake => mocks.state.walletHelper }));
 vi.mock('@/modules/core/common/use-supported-chains', () => ({ useSupportedChains: (): Fake => mocks.state.supportedChains }));
 
@@ -92,7 +94,9 @@ describe('modules/wallet/use-wallet-store', () => {
 
     mocks.state = {
       injectedWallet: makeInjectedWallet(),
-      isPackaged: ref<boolean>(false),
+      // A plain boolean, as the real interop exposes it. The store reads it once
+      // at construction, so a test must set it before `getStore()`.
+      isPackaged: false,
       supportedChains: { getEvmChainName: vi.fn(() => 'ethereum') },
       tradeApi: { prepareERC20Transfer: vi.fn(), prepareNativeTransfer: vi.fn() },
       transactionManager: {
@@ -175,7 +179,7 @@ describe('modules/wallet/use-wallet-store', () => {
     });
 
     it('should set up the proxy when running packaged', async () => {
-      set(mocks.state.isPackaged, true);
+      mocks.state.isPackaged = true;
       const store = await getStore();
       await store.connect();
       expect(mocks.state.walletProxy.setupProxy).toHaveBeenCalledTimes(1);
