@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -14,13 +15,22 @@ from rotkehlchen.tests.utils.accounting import (
 )
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import AssetAmount, Location, TimestampMS
+from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.tests.fixtures.google import GoogleService
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_ETC], []])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
-def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_service):
+def test_buying_selling_eth_before_daofork(
+        accountant: Accountant,
+        ignored_assets: list[Asset],
+        google_service: GoogleService | None,
+) -> None:
     history3 = create_swap_events(
         timestamp=TimestampMS(1446979735000),  # 11/08/2015
         location=Location.EXTERNAL,
@@ -49,7 +59,7 @@ def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_se
         receive=AssetAmount(asset=A_EUR, amount=FVal('7.45') * FVal(10)),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.12')),
     )
-    accounting_history_process(accountant, 1436979735, 1495751688, history3)
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1495751688), history3)
     no_message_errors(accountant.msg_aggregator)
     expected_etc_amount = FVal(850) if len(ignored_assets) == 0 else None
     # make sure that the intermediate ETH sell before the fork reduced our ETC if not ignored
@@ -71,7 +81,7 @@ def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_se
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
-def test_buying_selling_btc_before_bchfork(accountant, google_service):
+def test_buying_selling_btc_before_bchfork(accountant: Accountant, google_service: GoogleService | None) -> None:  # noqa: E501
     history = create_swap_events(
         timestamp=TimestampMS(1491593374000),  # 04/07/2017
         location=Location.EXTERNAL,
@@ -102,7 +112,7 @@ def test_buying_selling_btc_before_bchfork(accountant, google_service):
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),
     )
 
-    accounting_history_process(accountant, 1436979735, 1519693374, history)
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1519693374), history)
     no_message_errors(accountant.msg_aggregator)
     amount_bch = FVal(3.9)
     amount_btc = FVal(4.8)
@@ -123,7 +133,7 @@ def test_buying_selling_btc_before_bchfork(accountant, google_service):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
-def test_buying_selling_bch_before_bsvfork(accountant, google_service):
+def test_buying_selling_bch_before_bsvfork(accountant: Accountant, google_service: GoogleService | None) -> None:  # noqa: E501
     history = create_swap_events(  # 6.5 BTC 6.5 BCH 6.5 BSV
         timestamp=TimestampMS(1491593374000),  # 04/07/2017
         location=Location.EXTERNAL,
@@ -180,7 +190,7 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),
     )
 
-    accounting_history_process(accountant, 1436979735, 1569693374, history)
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1569693374), history)
     no_message_errors(accountant.msg_aggregator)
     amount_btc = FVal(4.8)
     amount_bch = FVal(4.1)

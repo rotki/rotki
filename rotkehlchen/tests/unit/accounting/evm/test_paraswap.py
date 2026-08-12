@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     {'include_fees_in_cost_basis': True},
     {'include_fees_in_cost_basis': False},
 ])
-def test_paraswap_swap_with_fee(accountant: Accountant, db_settings: dict):
+def test_paraswap_swap_with_fee(accountant: Accountant, db_settings: dict) -> None:
     """Test that the fee in paraswap is handled correctly during accounting"""
     tx_hash, user_address, contract_address, acquired_from_address, swap_amount_str, fee_amount_str, receive_amount_str = make_evm_tx_hash(), make_evm_address(), make_evm_address(), make_evm_address(), '1', '1', '100'  # noqa: E501
     events = [EvmEvent(  # this event is to create cost basis for wBTC

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EvmToken
@@ -40,6 +40,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.tests.fixtures.google import GoogleService
 
 
 @pytest.mark.parametrize(('db_settings', 'expected_pnls'), [
@@ -60,8 +61,12 @@ if TYPE_CHECKING:
 ])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_simple_accounting(accountant, google_service, expected_pnls):
-    accounting_history_process(accountant, 1436979735, 1495751688, history1)
+def test_simple_accounting(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+        expected_pnls: PnlTotals,
+) -> None:
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1495751688), history1)
     no_message_errors(accountant.msg_aggregator)
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -84,7 +89,11 @@ def test_simple_accounting(accountant, google_service, expected_pnls):
     ),
 ])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_pnl_totals):
+def test_selling_crypto_bought_with_crypto(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+        expected_pnl_totals: PnlTotals,
+) -> None:
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
@@ -124,7 +133,7 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_buy_event_creation(accountant):
+def test_buy_event_creation(accountant: Accountant) -> None:
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1476979735000),
@@ -158,7 +167,10 @@ def test_buy_event_creation(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_no_corresponding_buy_for_sell(accountant, google_service):
+def test_no_corresponding_buy_for_sell(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
     history = create_swap_events(
         timestamp=TimestampMS(1476979735000),
@@ -183,8 +195,11 @@ def test_no_corresponding_buy_for_sell(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_accounting_works_for_empty_history(accountant, google_service):
-    history = []
+def test_accounting_works_for_empty_history(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
+    history: list[AccountingEventMixin] = []
     accounting_history_process(
         accountant=accountant,
         start_ts=Timestamp(1436979735),
@@ -201,7 +216,10 @@ def test_accounting_works_for_empty_history(accountant, google_service):
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_sell_fiat_for_crypto(accountant, google_service):
+def test_sell_fiat_for_crypto(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """
     Test for https://github.com/rotki/rotki/issues/2993
     Make sure that selling fiat for crypto does not give warnings due to
@@ -251,7 +269,10 @@ def test_sell_fiat_for_crypto(accountant, google_service):
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_direct_profit_currency_fiat_trades(accountant, google_service):
+def test_direct_profit_currency_fiat_trades(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """Test that buying crypto with fiat and then selling crypto for fiat takes the
     trade rate as is, if it's the chosen profit currency
     """
@@ -290,7 +311,10 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_other_currency_fiat_trades(accountant, google_service):
+def test_other_currency_fiat_trades(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """Test that buying crypto with fiat and then selling crypto for fiat takes the
     price from the fiat part.
     """
@@ -328,7 +352,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_asset_and_price_not_found_in_history_processing(accountant):
+def test_asset_and_price_not_found_in_history_processing(accountant: Accountant) -> None:
     """
     Make sure that in history processing if no price is found for a trade it's added to a
     `missing_prices` list and no error is logged.
@@ -375,7 +399,10 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('force_no_price_found_for', [[(A_COMP, 1446979735)]])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_acquisition_price_not_found(accountant, google_service):
+def test_acquisition_price_not_found(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """Test that if for an acquisition the price is not found, price of
     zero is taken and asset is not ignored and no missing acquisition is counted"""
     history = [
@@ -408,7 +435,7 @@ def test_acquisition_price_not_found(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_no_fiat_missing_acquisitions(accountant):
+def test_no_fiat_missing_acquisitions(accountant: Accountant) -> None:
     history = [
         *create_swap_events(
             timestamp=TimestampMS(1459024920000),
@@ -431,7 +458,7 @@ def test_no_fiat_missing_acquisitions(accountant):
     assert missing_acquisitions == []
 
 
-def test_all_chains_have_explorers(accountant: Accountant):
+def test_all_chains_have_explorers(accountant: Accountant) -> None:
     """Test that all chain in the csv exporter have a valid explorer url"""
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:
         assert chain in accountant.csvexporter.transaction_explorers
@@ -439,7 +466,7 @@ def test_all_chains_have_explorers(accountant: Accountant):
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_non_history_event_in_history_iterator(accountant):
+def test_non_history_event_in_history_iterator(accountant: Accountant) -> None:
     """Test that the PnL report does not fail if a non-history event follows a swap
 
     Regression test for: https://github.com/rotki/rotki/issues/7009

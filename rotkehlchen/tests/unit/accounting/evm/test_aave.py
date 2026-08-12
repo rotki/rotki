@@ -33,7 +33,7 @@ HASH1, HASH2 = make_evm_tx_hash(), make_evm_tx_hash()
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_v2_withdraw(accountant: Accountant):
+def test_v2_withdraw(accountant: Accountant) -> None:
     pot = accountant.pots[0]
     events_iterator = peekable([EvmEvent(
         tx_ref=HASH1,
@@ -161,7 +161,7 @@ def test_v2_withdraw(accountant: Accountant):
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_v2_payback(accountant: Accountant):
+def test_v2_payback(accountant: Accountant) -> None:
     pot = accountant.pots[0]
     events_iterator = peekable([EvmEvent(
         tx_ref=HASH1,

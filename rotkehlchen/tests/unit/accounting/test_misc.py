@@ -31,12 +31,17 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.tests.fixtures.google import GoogleService
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('dont_mock_price_for', [[A_KFEE]])
-def test_kfee_price_in_accounting(accountant, google_service):
+def test_kfee_price_in_accounting(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """Test that KFEEs are correctly handled during accounting
     KFEE price is fixed at $0.01
 
@@ -86,7 +91,10 @@ def test_kfee_price_in_accounting(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_fees_count_in_cost_basis(accountant, google_service):
+def test_fees_count_in_cost_basis(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """Make sure that asset amounts used in fees are reduced."""
     history = [*create_swap_events(
         timestamp=TimestampMS(1609537953000),
@@ -133,7 +141,10 @@ def test_fees_count_in_cost_basis(accountant, google_service):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
-def test_fees_in_received_asset(accountant, google_service):
+def test_fees_in_received_asset(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+) -> None:
     """
     Test the sell trade where the fee is nominated in the asset received. We had a bug
     where the PnL report said that there was no documented acquisition.
@@ -170,7 +181,8 @@ def test_fees_in_received_asset(accountant, google_service):
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
-    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_USDT).is_close('19.90')
+    assert (usdt_amount := get_calculated_asset_amount(accountant.pots[0].cost_basis, A_USDT)) is not None  # noqa: E501
+    assert usdt_amount.is_close('19.90')
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('8.3929')),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.059826'), free=ZERO),
@@ -409,7 +421,7 @@ def test_get_prices_for_swap_fiat_price_unavailable(accountant: Accountant) -> N
     pot, ts = accountant.pots[0], Timestamp(1609537953)
     eth_price, call_count = Price(FVal('598.26')), 0
 
-    def mock_get_rate(asset, timestamp):
+    def mock_get_rate(asset: Asset, timestamp: Timestamp) -> Price:
         """Mock price fetcher that simulates failures based on call_count.
 
         - call_count 0-1: Fails for EUR (fiat), succeeds for ETH

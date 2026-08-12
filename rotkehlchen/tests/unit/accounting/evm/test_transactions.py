@@ -1,4 +1,5 @@
 """This file should probably be split into basic & per protocol accounting test files if too big"""
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -17,9 +18,14 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.tests.fixtures.google import GoogleService
+
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_receiving_value_from_tx(accountant, google_service):
+def test_receiving_value_from_tx(accountant: Accountant, google_service: GoogleService | None) -> None:  # noqa: E501
     """
     Test that receiving a transaction that provides value works fine
     """
@@ -29,7 +35,7 @@ def test_receiving_value_from_tx(accountant, google_service):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=Timestamp(1569924574000),
+            timestamp=TimestampMS(1569924574000),
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
@@ -53,7 +59,7 @@ def test_receiving_value_from_tx(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_gas_fees_after_year(accountant, google_service):
+def test_gas_fees_after_year(accountant: Accountant, google_service: GoogleService | None) -> None:
     """
     Test that for an expense like gas fees after year the "selling" part is tax free
     PnL, and the expense part is taxable pnl.
@@ -98,7 +104,11 @@ def test_gas_fees_after_year(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_ignoring_transaction_from_accounting(accountant, google_service, database):
+def test_ignoring_transaction_from_accounting(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+        database: DBHandler,
+) -> None:
     """
     Test that ignoring a transaction from accounting does not include it in the PnL
 

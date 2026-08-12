@@ -35,6 +35,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.tests.fixtures.google import GoogleService
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -53,16 +54,21 @@ if TYPE_CHECKING:
         [FVal('0.09452788191'), FVal('0.09206375805')],
     ),
 ])
-def test_kraken_staking_events(accountant, google_service, event_start_timestamp, expected_pnls):
+def test_kraken_staking_events(
+        accountant: Accountant,
+        google_service: GoogleService | None,
+        event_start_timestamp: TimestampMS,
+        expected_pnls: list[FVal],
+) -> None:
     """
     Test that staking events from kraken are correctly processed
     """
     ts_addition = 3854824000
     history = [
         HistoryEvent(
-            group_identifier=b'XXX',
+            group_identifier='XXX',
             sequence_index=0,
-            timestamp=event_start_timestamp + ts_addition,
+            timestamp=TimestampMS(event_start_timestamp + ts_addition),
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
@@ -71,7 +77,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
         ), HistoryEvent(
-            group_identifier=b'YYY',
+            group_identifier='YYY',
             sequence_index=0,
             timestamp=event_start_timestamp,
             location=Location.KRAKEN,
@@ -85,12 +91,12 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
     _, events = accounting_history_process(
         accountant,
         start_ts=ts_ms_to_sec(event_start_timestamp),
-        end_ts=ts_ms_to_sec(event_start_timestamp + 2 * ts_addition),
+        end_ts=ts_ms_to_sec(TimestampMS(event_start_timestamp + 2 * ts_addition)),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls_csv = PnlTotals({
-        AccountingEventType.STAKING: PNL(taxable=sum(expected_pnls), free=ZERO),
+        AccountingEventType.STAKING: PNL(taxable=sum(expected_pnls, ZERO), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls_csv, google_service)
     assert len(events) == sum(1 for x in expected_pnls if x != ZERO)
