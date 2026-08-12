@@ -408,6 +408,26 @@ describe('useChainProgress', () => {
   });
 
   describe('period handling', () => {
+    // The store parks the cursor at the range start on STARTED, so the bar must read 0 there and
+    // climb from the later cursors. Read raw, STARTED compares the target end against itself and
+    // reports 100 before anything has been queried.
+    it('should report evm progress from the cursor, starting at zero', () => {
+      const cases: [period: [number, number], expected: number][] = [
+        [[0, 0], 0],
+        [[0, 250], 25],
+        [[0, 500], 50],
+        [[0, 1000], 100],
+      ];
+
+      for (const [period, expected] of cases) {
+        const queryStatus = ref<Record<string, TxQueryStatusData>>({
+          key1: createEvmStatusData('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS, period, 1000),
+        });
+
+        expect(get(useChainProgress(queryStatus))[0].addresses[0].periodProgress).toBe(expected);
+      }
+    });
+
     // The progress bar is driven by the period alone, so an entry that carries none must produce
     // neither a period nor a progress value rather than defaulting to one.
     it('should leave period and progress unset for an entry without a period', () => {

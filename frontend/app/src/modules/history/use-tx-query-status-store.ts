@@ -6,6 +6,13 @@ import {
   type UnifiedTransactionStatusData,
 } from '@/modules/core/messaging/types';
 import { createQueryStatusState } from '@/modules/history/create-query-status-state';
+import {
+  bitcoinPeriodFields,
+  determineOriginalPeriodEnd,
+  determineOriginalPeriodStart,
+  type PeriodTracking,
+  periodWithCursorAtStart,
+} from '@/modules/history/tx-query-status-period';
 
 type EvmlikeStatusStep = 'started' | 'finished';
 
@@ -19,13 +26,6 @@ interface BaseTxQueryStatusData {
   address: string;
   chain: string;
   status: TransactionsQueryStatus;
-}
-
-/** The queried range and the boundaries progress is measured against. */
-interface PeriodTracking {
-  period: [number, number];
-  originalPeriodEnd?: number;
-  originalPeriodStart?: number;
 }
 
 interface EvmTxQueryStatusData extends BaseTxQueryStatusData, PeriodTracking {
@@ -57,51 +57,6 @@ function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQ
 }
 
 /**
- * Determines the original period end value for progress tracking.
- * For STARTED status, captures the period[1] as the end boundary.
- * For subsequent updates, preserves the existing value.
- */
-function determineOriginalPeriodEnd(
-  status: TransactionsQueryStatus,
-  period: [number, number],
-  existing?: TxQueryStatusData,
-): number | undefined {
-  if (status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED) {
-    return period[1];
-  }
-  if (existing && 'originalPeriodEnd' in existing) {
-    return existing.originalPeriodEnd;
-  }
-  return undefined;
-}
-
-/**
- * Determines the original period start value for progress tracking.
- * - If period[0] > 0, uses that as the actual start
- * - If period[0] is 0 (beginning of time), captures the first non-zero period[1] as the effective start
- * - Preserves existing originalPeriodStart for subsequent updates
- * - Does not capture from STARTED status (where period[1] is the end boundary, not progress)
- */
-function determineOriginalPeriodStart(
-  status: TransactionsQueryStatus,
-  period: [number, number],
-  existing?: TxQueryStatusData,
-): number | undefined {
-  const [periodStart, periodCurrent] = period;
-
-  if (periodStart > 0) {
-    return periodStart;
-  }
-  if (existing && 'originalPeriodStart' in existing && existing.originalPeriodStart !== undefined) {
-    return existing.originalPeriodStart;
-  }
-  if (periodCurrent > 0 && status !== TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED) {
-    return periodCurrent;
-  }
-  return undefined;
-}
-
-/**
  * Whether an address will report no further progress.
  *
  * ⚠️ The single source of truth: the sync panel and the dashboard indicator both read this. Separate
@@ -126,32 +81,6 @@ export function isTxQueryStatusFinished(item: TxQueryStatusData): boolean {
   }
 
   return item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
-}
-
-/**
- * Period tracking for a bitcoin message, which is the one subtype whose `period` is optional.
- *
- * ⚠️ Carries `existing`'s values when the message has none: the entry is rebuilt from scratch per
- * message, so a period-less update would otherwise erase what an earlier one established and make
- * the progress bar vanish mid-query.
- */
-function bitcoinPeriodFields(
-  data: Extract<UnifiedTransactionStatusData, { subtype: 'bitcoin' }>,
-  existing?: TxQueryStatusData,
-): Partial<PeriodTracking> {
-  if (data.period === undefined) {
-    return {
-      originalPeriodEnd: existing?.originalPeriodEnd,
-      originalPeriodStart: existing?.originalPeriodStart,
-      period: existing?.period,
-    };
-  }
-
-  return {
-    originalPeriodEnd: determineOriginalPeriodEnd(data.status, data.period, existing),
-    originalPeriodStart: determineOriginalPeriodStart(data.status, data.period, existing),
-    period: data.period,
-  };
 }
 
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
@@ -257,7 +186,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
         chain,
         originalPeriodEnd: determineOriginalPeriodEnd(data.status, data.period, existing),
         originalPeriodStart: determineOriginalPeriodStart(data.status, data.period, existing),
-        period: data.period,
+        period: periodWithCursorAtStart(data.status, data.period),
         status: data.status,
         subtype: data.subtype,
       };

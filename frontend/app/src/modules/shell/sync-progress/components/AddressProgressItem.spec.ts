@@ -172,6 +172,34 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
       expect(wrapper.find('[data-testid="progress"]').exists()).toBe(false);
     });
 
+    // What the STARTED message looks like once the store parks the cursor at the range start. Read
+    // raw it would be `[from, to]`, rendering the target end on both sides of the arrow as though
+    // the whole range had already been covered.
+    it('should render the range as "Beginning" while the cursor sits at the start', () => {
+      const address = createAddress(AddressStatus.QUERYING, {
+        period: [100, 100],
+        originalPeriodEnd: 1000,
+        periodProgress: 0,
+      });
+      wrapper = createWrapper(address);
+
+      expect(wrapper.text()).toContain('sync_progress.period.beginning');
+      // One date remains: the target end on the right of the arrow.
+      expect(wrapper.findAllComponents({ name: 'DateDisplay' })).toHaveLength(1);
+    });
+
+    it('should render the cursor date once the query has advanced', () => {
+      const address = createAddress(AddressStatus.QUERYING, {
+        period: [100, 600],
+        originalPeriodEnd: 1000,
+        periodProgress: 55,
+      });
+      wrapper = createWrapper(address);
+
+      expect(wrapper.text()).not.toContain('sync_progress.period.beginning');
+      expect(wrapper.findAllComponents({ name: 'DateDisplay' })).toHaveLength(2);
+    });
+
     it('should not show progress bar in compact mode', () => {
       const address = createAddress(AddressStatus.QUERYING, {
         period: [0, 500],
