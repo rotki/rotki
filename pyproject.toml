@@ -211,6 +211,7 @@ module = [
     "rotkehlchen.tests.benchmarks.*",
     "rotkehlchen.tests.data_migrations.*",
     "rotkehlchen.tests.profiling.*",
+    "rotkehlchen.tests.pylint.*",
     "rotkehlchen.tests.websocketsapi.*",
 ]
 check_untyped_defs = true

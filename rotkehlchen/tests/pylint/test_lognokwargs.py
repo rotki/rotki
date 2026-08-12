@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 import astroid
 
 from tools.pylint import LogNokwargsChecker
 from tools.pylint.log_checker import LOGNOKWARGS_SYMBOL
 
+if TYPE_CHECKING:
+    from pylint.testutils.unittest_linter import UnittestLinter
 
-def test_simple_logger_with_kwargs(pylint_test_linter):
+
+def test_simple_logger_with_kwargs(pylint_test_linter: UnittestLinter) -> None:
     """Test that we can detect the usage of kwargs in a normal logging call
 
     But that we also allow it for RotkehlchenLogsAdapter
@@ -18,8 +23,8 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
         logger.{method_name}('foo', a=1) #@
         """)
 
-        checker.visit_call(node)
-        messages = checker.linter.release_messages()
+        checker.visit_call(node)  # type: ignore[no-untyped-call]  # tools.pylint is not typed
+        messages = pylint_test_linter.release_messages()
         assert len(messages) == 2
         for m in messages:
             assert m.msg_id == LOGNOKWARGS_SYMBOL
@@ -35,12 +40,12 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
         log.{method_name}('foo', a=1) #@
         """)
 
-        checker.visit_call(node)
-        messages = checker.linter.release_messages()
+        checker.visit_call(node)  # type: ignore[no-untyped-call]  # tools.pylint is not typed
+        messages = pylint_test_linter.release_messages()
         assert len(messages) == 0
 
 
-def test_works_for_nodes_without_kwargs(pylint_test_linter):
+def test_works_for_nodes_without_kwargs(pylint_test_linter: UnittestLinter) -> None:
     """Test that the custom checker also works for nodes without kwargs"""
     checker = LogNokwargsChecker(linter=pylint_test_linter)
     # Check that simple loggers with kwargs raise the checker's error
@@ -50,6 +55,6 @@ def test_works_for_nodes_without_kwargs(pylint_test_linter):
     logger.info('foo') #@
     """)
 
-    checker.visit_call(node)
-    messages = checker.linter.release_messages()
+    checker.visit_call(node)  # type: ignore[no-untyped-call]  # tools.pylint is not typed
+    messages = pylint_test_linter.release_messages()
     assert len(messages) == 0
