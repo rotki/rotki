@@ -1,11 +1,9 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { ProgressInfo } from 'electron-builder';
+import type { AppUpdater } from 'electron-updater';
 import { IpcCommands } from '@electron/ipc-commands';
 import { startPromise } from '@shared/utils';
-import electronUpdater from 'electron-updater';
-
-const { autoUpdater } = electronUpdater;
 
 interface UpdateHandlersCallbacks {
   terminateSubprocesses: (update?: boolean) => Promise<void>;
@@ -14,14 +12,13 @@ interface UpdateHandlersCallbacks {
 
 export class UpdateHandlers {
   private callbacks: UpdateHandlersCallbacks | null = null;
+  private updater?: Promise<AppUpdater>;
   private static readonly updateTimeout = 5000;
 
   constructor(
     private readonly logger: LogService,
     private readonly config: AppConfig,
-  ) {
-    this.setupAutoUpdater();
-  }
+  ) {}
 
   initialize(callbacks: UpdateHandlersCallbacks): void {
     this.callbacks = callbacks;
@@ -35,7 +32,18 @@ export class UpdateHandlers {
     return callbacks;
   }
 
-  private setupAutoUpdater(): void {
+  /**
+   * electron-updater and its dependencies are ~290 KB that only an update check needs, so it is
+   * imported on first use rather than at startup. The promise is memoized, not the resolved
+   * updater, so concurrent callers share one import and one setup.
+   */
+  private async getAutoUpdater(): Promise<AppUpdater> {
+    this.updater ??= this.loadAutoUpdater();
+    return this.updater;
+  }
+
+  private async loadAutoUpdater(): Promise<AppUpdater> {
+    const { autoUpdater } = (await import('electron-updater')).default;
     autoUpdater.autoDownload = false;
     autoUpdater.logger = {
       error: (message?: any) => this.logger.error(message),
@@ -43,6 +51,7 @@ export class UpdateHandlers {
       debug: (message: string) => this.logger.debug(message),
       warn: (message?: any) => this.logger.warn(message),
     };
+    return autoUpdater;
   }
 
   checkForUpdates = async (): Promise<boolean> => {
@@ -50,6 +59,8 @@ export class UpdateHandlers {
       console.warn('Running in development skipping auto-updater check');
       return false;
     }
+
+    const autoUpdater = await this.getAutoUpdater();
 
     return new Promise<boolean>((resolve) => {
       autoUpdater.once('update-available', () => resolve(true));
@@ -71,6 +82,8 @@ export class UpdateHandlers {
       event.sender.send(IpcCommands.DOWNLOAD_PROGRESS, progress.percent);
       this.requireCallbacks.updateDownloadProgress(progress.percent);
     };
+
+    const autoUpdater = await this.getAutoUpdater();
 
     return new Promise<boolean>((resolve) => {
       autoUpdater.on('download-progress', progress);
@@ -111,6 +124,7 @@ export class UpdateHandlers {
   };
 
   private async quitAndInstallUpdates(): Promise<void> {
+    const autoUpdater = await this.getAutoUpdater();
     await this.requireCallbacks.terminateSubprocesses(true);
     autoUpdater.quitAndInstall();
   }
