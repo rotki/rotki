@@ -3,6 +3,7 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { arrayify } from '@/modules/core/common/data/array';
 import { uniqueStrings } from '@/modules/core/common/data/data';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { WORD_PROCESSORS, type WordProcessorContext, type WordProcessorResult } from './note-processors';
 
@@ -182,9 +183,19 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
     index: number,
   ): WordProcessorResult | undefined {
     for (const processor of WORD_PROCESSORS) {
-      const result = processor({ ...ctx, word, index });
-      if (result)
-        return result;
+      try {
+        const result = processor({ ...ctx, word, index });
+        if (result)
+          return result;
+      }
+      catch (error: unknown) {
+        // ⚠️ Notes are arbitrary text and this runs inside a computed, so a processor that throws
+        // on one odd word takes down far more than that word: the throw escapes mid-render, Vue
+        // abandons the patch with vnodes left unmounted, and every later patch then dies on them
+        // (`Cannot read properties of null (reading 'emitsOptions')`), which is what left a
+        // history group rendering its header with none of its events. Degrade to plain text.
+        logger.error(`note word processor failed for "${word}"`, error);
+      }
     }
     return undefined;
   }

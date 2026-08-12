@@ -11,6 +11,18 @@ import {
 } from '@rotki/common';
 import { type NoteFormat, NoteType } from './use-history-event-note';
 
+/** Sentinel for "this word is not a number", so `bigNumberify` returns instead of throwing. */
+const NOT_A_NUMBER = bigNumberify(Number.NaN);
+
+/**
+ * A word is a candidate amount only if it is numeric end to end.
+ *
+ * ⚠️ Anchored on purpose. Notes routinely carry dates and times next to amounts (`Lock expires at
+ * 09/09/2026 15:04:56 CEST`), and any test that accepts a numeric *prefix* takes those for amounts:
+ * `parseFloat('09/09/2026')` is 9 and `parseFloat('15:04:56')` is 15.
+ */
+const NUMERIC_WORD = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/;
+
 // Word processor types
 export interface WordProcessorContext {
   word: string;
@@ -102,12 +114,22 @@ const processAmount: WordProcessor = ({
   getCleanWord,
 }) => {
   const wordUsed = word.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
-  const isAmount = (amountArr.length > 0 || shouldFormatAllAmount) && !isNaN(parseFloat(wordUsed));
 
-  if (!isAmount)
+  if (amountArr.length === 0 && !shouldFormatAllAmount)
     return undefined;
 
-  const bigNumber = bigNumberify(wordUsed);
+  if (!NUMERIC_WORD.test(wordUsed))
+    return undefined;
+
+  // ⚠️ The fallback stays even with the shape already checked: since bignumber.js 11 an input
+  // BigNumber rejects throws rather than yielding NaN, and a throw here does not stay local. It
+  // escapes the `formatNotes` computed mid-render, Vue abandons the patch with vnodes left
+  // unmounted, and every later patch dies on them, which is what made a history group render its
+  // header with none of its events. Nothing about a note's text is worth that.
+  const bigNumber = bigNumberify(wordUsed, NOT_A_NUMBER);
+
+  if (bigNumber.isNaN())
+    return undefined;
   const isIncluded = amountArr.some(item => item.eq(bigNumber)) || shouldFormatAllAmount;
 
   if (!isIncluded || !bigNumber.gt(0))
