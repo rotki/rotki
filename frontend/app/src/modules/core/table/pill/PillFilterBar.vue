@@ -301,8 +301,10 @@ function focusInput(event: MouseEvent): void {
 </script>
 
 <template>
+  <!-- py-1 rather than py-1.5: the bar sits next to buttons on most of its screens, and at 43px it
+       was the tallest control in every one of those rows. -->
   <div
-    class="flex flex-wrap items-center gap-1.5 px-2 py-1.5 rounded-md border transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary"
+    class="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md border transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary"
     :class="{ 'opacity-50': disabled }"
     data-testid="pill-bar"
     @click="focusInput($event)"
@@ -409,10 +411,14 @@ function focusInput(event: MouseEvent): void {
       :disabled="disabled"
     />
 
+    <!-- `flex` on the menu root: its activator wrapper is `inline-flex`, so in a block root it sits
+         on the text baseline and the descender makes this one child a pixel taller than the button
+         inside it, which reads as "Add filter" and "Clear all" being off by a pixel. -->
     <RuiMenu
       v-model="addMenuOpen"
       :disabled="disabled || availableFields.length === 0"
       :options="{ placement: 'bottom-start' }"
+      class="flex"
     >
       <template #activator="{ attrs }">
         <RuiButton

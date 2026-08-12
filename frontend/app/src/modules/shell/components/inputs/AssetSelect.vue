@@ -3,6 +3,7 @@ import type { NftAsset } from '@/modules/assets/nfts';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import { useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
 
 defineOptions({
@@ -21,6 +22,7 @@ const asset = defineModel<AssetInfoWithId | NftAsset | undefined>('asset');
 const {
   chain,
   clearable = false,
+  dense = false,
   disabled = false,
   errorMessages = [],
   excludes = [],
@@ -48,6 +50,12 @@ const {
   hideDetails?: boolean;
   includeNfts?: boolean;
   chain?: string;
+  /**
+   * Declared rather than left to `$attrs` so the asset itself draws dense too: it used to reach
+   * `RuiAutoComplete` and shrink the field while the picked asset stayed at its full size, which is
+   * what made the row taller than the input asked for.
+   */
+  dense?: boolean;
 }>();
 
 defineSlots<{
@@ -115,9 +123,10 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
     :hide-details="hideDetails"
     :hide-no-data="loading || !modelSearch || !!error"
     auto-select-first
+    :dense="dense"
     :loading="loading"
     :variant="outlined ? 'outlined' : 'default'"
-    :item-height="50"
+    :item-height="dense ? 44 : 50"
     v-bind="$attrs"
     no-filter
   >
@@ -126,9 +135,26 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
         <NftDetails
           v-if="item.assetType === 'nft'"
           :identifier="item.identifier"
-          size="36px"
+          :size="dense ? '24px' : '36px'"
           class="overflow-hidden text-sm -my-2"
         />
+        <!-- A dense field draws its own compact selection: `AssetDetailsBase` stacks the symbol over
+             the asset name, and those two lines are 40px however small the field is told to be, so
+             the field grew back to 52px the moment something was picked. -->
+        <div
+          v-else-if="dense"
+          class="flex items-center gap-2 min-w-0 pl-1"
+        >
+          <AssetIcon
+            :identifier="item.identifier"
+            size="20px"
+            show-chain
+            flat
+          />
+          <span class="truncate text-sm text-rui-text">
+            {{ item.isCustomAsset ? item.name : item.symbol }}
+          </span>
+        </div>
         <AssetDetailsBase
           v-else
           class="!py-0 pl-1"
@@ -141,14 +167,17 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
       <NftDetails
         v-if="item.assetType === 'nft'"
         :identifier="item.identifier"
-        size="36px"
+        :size="dense ? '28px' : '36px'"
         class="overflow-hidden text-sm -my-2"
       />
+      <!-- Dense keeps both lines — the name is how one DAI is told from another — but drops the
+           negative margin the roomy variant uses, or the rows sit flush against each other. -->
       <AssetDetailsBase
         v-else
         :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"
-        class="!py-0 -my-1"
+        :class="dense ? '!py-0 -my-0.5' : '!py-0 -my-1'"
         :asset="item"
+        :dense="dense"
         hide-menu
       />
     </template>

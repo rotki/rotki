@@ -142,6 +142,7 @@ onMounted(async () => {
         <AssetSelect
           v-model="filter"
           class="max-w-[360px]"
+          dense
           outlined
           include-nfts
           :label="t('price_management.from_asset')"
