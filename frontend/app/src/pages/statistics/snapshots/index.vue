@@ -12,12 +12,12 @@ import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { applyPaginationDefaults, parseQueryPagination } from '@/modules/core/table/pagination-filter-utils';
 import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
 import SnapshotImportDialog from '@/modules/dashboard/SnapshotImportDialog.vue';
+import SnapshotListFilter from '@/modules/dashboard/snapshots/components/SnapshotListFilter.vue';
 import SnapshotListTable from '@/modules/dashboard/snapshots/components/SnapshotListTable.vue';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { type SnapshotListFilters, type SnapshotListRow, useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
-import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -79,16 +79,6 @@ watch([
   (): number => get(pagination).page,
   (): number => get(pagination).limit,
 ], writeQuery);
-
-const fromTimestamp = computed<number | undefined>({
-  get: () => get(filters).fromTimestamp,
-  set: (value: number | undefined) => set(filters, { ...get(filters), fromTimestamp: value }),
-});
-
-const toTimestamp = computed<number | undefined>({
-  get: () => get(filters).toTimestamp,
-  set: (value: number | undefined) => set(filters, { ...get(filters), toTimestamp: value }),
-});
 
 // When the list is empty, tell apart a genuinely empty account from a range
 // filter that excludes everything.
@@ -203,18 +193,10 @@ function confirmTakeSnapshot(): void {
     </template>
 
     <RuiCard>
-      <div class="flex flex-wrap items-center gap-4 mb-4">
-        <DateTimeRangePicker
-          v-model:start="fromTimestamp"
-          v-model:end="toTimestamp"
-          allow-empty
-          dense
-          class="w-full sm:w-auto"
-          max-end-date="now"
-          :start-label="t('dashboard.snapshot.list.range.from')"
-          :end-label="t('dashboard.snapshot.list.range.to')"
-        />
-      </div>
+      <SnapshotListFilter
+        v-model="filters"
+        class="mb-4"
+      />
 
       <SnapshotListTable
         v-model:pagination="pagination"

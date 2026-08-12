@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
@@ -6,12 +7,15 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
-import { type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import SnapshotEditorToolbar from '@/modules/dashboard/snapshots/components/SnapshotEditorToolbar.vue';
 import SnapshotLocationsDrawer from '@/modules/dashboard/snapshots/components/SnapshotLocationsDrawer.vue';
 import SnapshotSummary from '@/modules/dashboard/snapshots/components/SnapshotSummary.vue';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
+import {
+  type Filters,
+  isolateZeroValue,
+} from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 import { useSnapshotDraft } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import { useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { useSnapshotStore } from '@/modules/dashboard/snapshots/use-snapshot-store';
@@ -44,7 +48,7 @@ const exportDialog = ref<boolean>(false);
 const locationsDrawer = ref<boolean>(false);
 // Owned here so the summary's zero-value warning can isolate those rows in the
 // balances table below it.
-const zeroValueFilter = ref<ZeroValueFilter>(ZeroValueFilter.HIDE);
+const balanceFilters = ref<Filters>({});
 
 const { fetchSnapshot, persist, remove } = useSnapshotStore();
 // `rows` (and the prev/next order + deltas derived from them) come from the cached
@@ -340,11 +344,11 @@ useEventListener(window, 'beforeunload', (event: BeforeUnloadEvent) => {
         :previous="previous"
         @edit-locations="locationsDrawer = true"
         @reconcile-locations="reconcileLocations($event)"
-        @show-zero-value="zeroValueFilter = ZeroValueFilter.ONLY"
+        @show-zero-value="balanceFilters = isolateZeroValue(balanceFilters)"
       />
 
       <SnapshotBalancesTable
-        v-model:zero-value-filter="zeroValueFilter"
+        v-model:filters="balanceFilters"
         :snapshot="draft"
         :timestamp="timestamp"
         :locked="!!mismatch"
