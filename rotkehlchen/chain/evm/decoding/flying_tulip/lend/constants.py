@@ -17,8 +17,11 @@ class FlyingTulipLendDeployment(NamedTuple):
     # when filling leverage orders. Events they drive are position-internal
     # rebalancing, not wallet-level lending activity, and are skipped.
     engines: frozenset[ChecksumEvmAddress]
-    # entry points for direct and session (relayed) lending actions, used to
+    # Entry points for direct and session (relayed) lending actions, used to
     # trigger the post-decoding rule when a transaction is sent through them
+    # and to recognize relayed transfers that carry a relayer fee. This list
+    # has to track the protocol's deployments: positions manager events in a
+    # transaction routed through an entry point missing here are not decoded.
     meta_actions: frozenset[ChecksumEvmAddress]
 
 
