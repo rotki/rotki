@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 def test_openocean_swap_token_to_token(
         polygon_pos_inquirer: PolygonPOSInquirer,
         polygon_pos_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4c335999c657e3d6f4dfe875d50911a844580c42a667d6952211459c0eae587d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, spend_amount, receive_amount, approve_amount = polygon_pos_accounts[0], TimestampMS(1735222115000), '0.245916524062468656', '10000', '433.966123379781075037', '115792089237316195423570985008687907853269984665640564039457584007893003.638699'  # noqa: E501
@@ -107,7 +107,7 @@ def test_openocean_swap_token_to_token(
 def test_openocean_swap_eth_to_token(
         base_inquirer: BaseInquirer,
         base_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe45c138f3086f821c6598b24999c9cc0ca9ed95ecccc08b57f751d7146fd01ca')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, spend_amount, receive_amount = base_accounts[0], TimestampMS(1735074071000), '0.000005051509746809', '0.0031', '1013.977585253488605008'  # noqa: E501
@@ -158,7 +158,7 @@ def test_openocean_swap_eth_to_token(
 def test_openocean_swap_token_to_eth(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x076fdb84e51d17d2f9727c34f4b73cc1ffcd3671165764a0a287fe09a0cab36e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, spend_amount, receive_amount, approve_amount = optimism_accounts[0], TimestampMS(1735203855000), '0.000002907634681445', '5', '0.001484145603280848', '115792089237316195423570985008687907853269984665640564039457584007913121.115067'  # noqa: E501
@@ -221,7 +221,7 @@ def test_openocean_swap_token_to_eth(
 def test_openocean_swap_uniswap_with_swapped_log(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf882a6a323bdc7ac05e78e2c346fddb489249afc04e68f09b1858ab357c8ede0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, spend_amount, receive_amount, approve_amount = arbitrum_one_accounts[0], TimestampMS(1702485949000), '0.0005537799', '3000', '3412.773848', '99999999999999999999996999'  # noqa: E501
@@ -283,7 +283,7 @@ def test_openocean_swap_uniswap_with_swapped_log(
 def test_openocean_swap_uniswapv2(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x497acb2385e7d7bc39160097348bd6423ecfe50f616dd2841cecd25a6561fae2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, spend_amount, receive_amount = ethereum_accounts[0], TimestampMS(1735206827000), '0.00072231082663302', '7500', '0.02494511741519721'  # noqa: E501
@@ -333,7 +333,7 @@ def test_openocean_swap_uniswapv2(
 def test_openocean_swap_uniswapv3(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb8caa647073e36ea91c2c22e57b49ddd1721c6c8b18ef51c3043adaa2950251b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, spend_amount, receive_amount = ethereum_accounts[0], TimestampMS(1735071359000), '0.0006813857721462', '0.02515', '800.247565502385530038'  # noqa: E501
@@ -445,7 +445,7 @@ def test_openocean_swap_xdai_to_token(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x806a840fd2c7ed43eefb2069a3a1d1921b668f3762a3ec6928549055d5b65453')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, spend_amount, receive_amount = gnosis_accounts[0], TimestampMS(1741275975000), '0.000389004', '18.7', '18.651429'  # noqa: E501
@@ -495,7 +495,7 @@ def test_openocean_swap_xdai_to_token(
 def test_openocean_distribution(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xaaa23c4ce149a1c72159816e4fa4cd820143a9e0a933b10fd4c78c78884370ff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [

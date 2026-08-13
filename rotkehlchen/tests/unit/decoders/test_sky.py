@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -23,7 +25,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfb10EFE8d84E73061ABDfa5F87f26aFC1f0a98f5']])
-def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
+def test_migrate_dai(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xda915701a7634628d8301d44a4e122599f05a1281286ab416f5101c79a24e408')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount, migrated_amount = '0.001933756075256005', '10086.448037727051859359'
@@ -71,7 +73,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xAe289D2618CcFA247645Dd8e89326c91acEF62e0']])
-def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
+def test_migrate_sdai_susds(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5d4d8d4c9480ad603c91cd7a7e90fdf6faa2327728602e10b55620b18e642a91')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -120,7 +122,7 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x11365778D2cC21aD47286073e6f764d862CA0cb1']])
-def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
+def test_migrate_dai_susds(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd29f7d1aa194dae5fa2dcccaeef0acf37390bc847f51a6eb2e8bdcf4df32dc45')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -168,7 +170,7 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4Bb80Ba800f39b9237ce6e05a338962885d5F474']])
-def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
+def test_migrate_maker(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xbfa0b5489a1f4b28c416d0ef8cbcbbc9d7d4fea8c3f1d53830b2cd5f78252b79')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount, migrated_amount, received_amount = '0.00127609766341068', '0.75001216', '18000.29184'  # noqa: E501
@@ -216,7 +218,7 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x66AE6A0591c6Fb84Fe1fD27F4976dDEC6430d805']])
-def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
+def test_downgrade_usds_dai(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2cf64d3e95e39e77dd3e02c458ddb1e22b5aea38f8d93f64cf79174f601ddc20')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -263,7 +265,7 @@ def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1170313034adD8c24389550711E86c902cacfB33']])
-def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
+def test_migrate_dai_usds(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Migrate DAI to USDS through the migration actions contract"""
     tx_hash = deserialize_evm_tx_hash('0xeafdd9789b99498466d9afffdb2087adaaba419b62c0adbcda17ff4c2e239a85')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -311,7 +313,7 @@ def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x55c41E8D26EFFCD7bA922310d264ae09B025E525']])
-def test_direct_psm_swap(ethereum_inquirer, ethereum_accounts):
+def test_direct_psm_swap(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xce4944ffef9e76eafdb28b2729426ef0bae0bd3ebe0021725ead1b14c51cc068')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(

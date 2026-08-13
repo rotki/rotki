@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -24,7 +26,10 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xbF79b07d1311DF96CdDC53C71397271Ae8a2B0E9']])
-def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_accounts):
+def test_llamazip_optimism_swap_token_to_eth(
+        optimism_inquirer: Any,
+        optimism_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa6271df026c97691148b0bcd53096cdbec91394b74f93e6e86ab046852f4a115')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -71,7 +76,10 @@ def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_account
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xa521E425f37aCC731651565B41Ce3E5022274F4F']])
-def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_accounts):
+def test_llamazip_optimism_swap_eth_to_token(
+        optimism_inquirer: Any,
+        optimism_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6caae7d1a32abecf9dcc23c89e11fecfb9fccd2b21e718c0f62c6f001eb7a626')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -118,7 +126,10 @@ def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_account
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x1D84C9Ab259372Ab07BEE9549a6aCF28DC111001']])
-def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accounts):
+def test_llamazip_optimism_swap_token_to_token(
+        optimism_inquirer: Any,
+        optimism_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92e9af072a20b74d730037b80a96bf7ab02168679624bc87de8b3427e88882fd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -164,7 +175,10 @@ def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accou
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x635Cb8149C292Ff96F71a1a49120D04053c7eE7A']])
-def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_llamazip_arbitrum_swap_token_to_eth(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5a3e6748dd62b943918508a7495df0dc481a054af9dc607a7b85f167a9cc54c2')),  # noqa: E501
@@ -225,7 +239,10 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x5Ef3D4F41791f0B9f1CEe6D739d77748f81FCa3A']])
-def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_llamazip_arbitrum_swap_eth_to_token(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd75a0b795e0748dffdedc80b731710e9596f6af5fbc77274482cc785ed4c1cd3')),  # noqa: E501
@@ -273,7 +290,10 @@ def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9fAe1b2Be0A8D7e64780fd740F8AD05188E8170A']])
-def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_llamazip_arbitrum_swap_token_to_token(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb1f65779afe9b92edd791af3b95ea36c46d6a6e8f8cc60f4740bb11b79993a92')),  # noqa: E501
@@ -334,7 +354,10 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xa716c2ef62B60cF82B8119947030ea7E26A39908']])
-def test_llamazip_arbitrum_swap_eth_to_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_llamazip_arbitrum_swap_eth_to_arb(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf9d2cb0f7593181f3a296647205a184f820dcba36273a4e8486cad545ad1bf39')),  # noqa: E501

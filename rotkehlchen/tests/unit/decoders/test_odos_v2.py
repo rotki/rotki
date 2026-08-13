@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd1AcFE3854229682ff38fc6bbdFa81211020DaB8']])
-def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0efcdf00cf582b5befb367e4527bcde302c3bb078aa7683c51b3a14df5ae2e1e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -90,7 +90,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3097eCF8195aBc13dA5a56a16D686Fc3166EB056']])
-def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf2e7b37c24428631dad93b436019aa1602dbc4315f06a231a87b75b33f2f3491')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -144,7 +144,7 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd68f1ee4e3f7c54295F296B9a579664767784a2c']])
-def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
+def test_swap_eth_to_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3bd3fa946e7da66914bd0c90deccea9ed41fd19e6f7b34e23e7a971eaffa48d8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -189,7 +189,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB3dB8a7fB7f35CD64A46d5F06992DF99F815e67d']])
-def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
+def test_swap_multi_to_single(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xedc73ef9cec8f60630a509d87038e8826f6ca334443ffc025e03d212ffa9e267')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -286,7 +286,7 @@ def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x62975846Ad2401b4dD9d65D7aE5BD40B4239CB23']])
-def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
+def test_swap_single_to_multi(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa331b8a62ccf8a62960a6a4edda43f3b835c0a76b5c6365691936077787a5507')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -372,7 +372,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd0392C8cE1b658f1f3D5dFcbacA159F90625E87F']])
-def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
+def test_swap_multi_to_multi(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2ae9298c00c76fc63df4112a7924a5deb908f095cb9d41d284e890aee31ca114')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -483,7 +483,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x437AD8a22CeeD33cBC4e661f8ef33D57a390d287']])
-def test_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_swap_on_arbitrum_one(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xab0ca6d2749425e0e45a60dc66daa5059276bf2b97db5939949e24564dff9826')),  # noqa: E501
@@ -543,7 +543,7 @@ def test_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19B43787fbC106d427Be3ca3307d4Fb0A73D83Dc']])
-def test_swap_on_base(base_inquirer, base_accounts):
+def test_swap_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2029ab1ad9985a21c8a064be8384b531d55864f37f16a1716a00da8577891aab')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -601,7 +601,7 @@ def test_swap_on_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x1a8C829cA8F9525AB2bc812460BE4Ba8f32B586E']])
-def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
+def test_swap_on_optimism(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc7c9b85ba66e6d262a5bf23afd75a49ffb6c079979587d5bbc1dddd647afc906')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -686,7 +686,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xB14cF335808931BDED4B232c6d01C65e5E73237F']])
-def test_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
+def test_swap_on_polygon(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x82bd45bcf1faf80f4b2e0d12b3e45c5801d1065a7e6a7daf68cd35a3a33c5fc7')),  # noqa: E501
@@ -745,7 +745,11 @@ def test_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x0a32d140700edb28165C88D1000A910c247dFDCA']])
-def test_swap_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
+def test_swap_on_scroll(
+        scroll_inquirer: Any,
+        scroll_accounts: Any,
+        allow_scroll_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x442e968d8a5c6adb81bf087041ed3dd19dc2f20725044c7f9c435bf6234d9992')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(

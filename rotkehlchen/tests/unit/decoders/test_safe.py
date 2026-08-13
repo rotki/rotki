@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
         '0x7ac712ec4C58dEd138CC4e63e0fd59F697cC6963',
     ],
 ])
-def test_added_owner(ethereum_inquirer, ethereum_accounts):
+def test_added_owner(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2702bb7cf56d012b9bc85d66428a361d560172a5e519384e7c507db22d07090f')  # noqa: E501
     user_address = ethereum_accounts[0]
     multisig_address = ethereum_accounts[1]
@@ -89,7 +89,7 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
         '0x7ac712ec4C58dEd138CC4e63e0fd59F697cC6963',
     ],
 ])
-def test_removed_owner(ethereum_inquirer, ethereum_accounts):
+def test_removed_owner(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x868a3c64eb7e68a0c0fde4ec94f7825f1400ebba9aeefc284771b0136cbd72dd')  # noqa: E501
     user_address = ethereum_accounts[0]
     multisig_address = ethereum_accounts[1]
@@ -132,7 +132,7 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
         '0x7ac712ec4C58dEd138CC4e63e0fd59F697cC6963',
     ],
 ])
-def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
+def test_changed_threshold(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8332c637f98362dea0885f744f121d09ac5c548603f833b9d0bd9513fa637c52')  # noqa: E501
     user_address = ethereum_accounts[0]
     multisig_address = ethereum_accounts[1]
@@ -169,14 +169,14 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_execution_success(ethereum_inquirer, ethereum_accounts):
+def test_execution_success(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     Test that a successful safe transaction execution shows something if the executor is tracked
     """
     tx_hash = deserialize_evm_tx_hash('0x7bfaa362453a9320243d7f604b7ffff10c31964a62e779a8cd280987b203875f')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    multisig_address = '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52'
+    multisig_address = string_to_evm_address('0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -209,14 +209,14 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0Cec743b8CE4Ef8802cAc0e5df18a180ed8402A7']])
-def test_execution_failure(ethereum_inquirer, ethereum_accounts):
+def test_execution_failure(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     Test that a failed safe transaction execution shows something if the executor is tracked
     """
     tx_hash = deserialize_evm_tx_hash('0xf4b387bac0e6fa05b811098fb747297bdb9ce06152aa9e841750a85ed4d4bece')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    multisig_address = '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52'
+    multisig_address = string_to_evm_address('0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -264,7 +264,7 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
     '0x8De14E014402C0677B075A69122F94C0425Cc179',
     '0x0BeBD2FcA9854F657329324aA7dc90F656395189',
 ]])
-def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
+def test_safe_mastercopy_upgrade_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x37d530d1347e3d0903bcb2c8650bd223b39259ba22af373ba70a3cb064ac46b4')  # noqa: E501
     transactions = BaseTransactions(base_inquirer, base_inquirer.database)
     transactions.single_address_query_transactions(  # temporary hack at the time of writing get_decoded_events_of_transaction does not respect the `evm_indexers_order` so we do this here to use the given order  # noqa: E501
@@ -305,7 +305,7 @@ def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x96399Ddb62d833029fbEf774d1FE044AF33E98Ef']])
-def test_safe_creation(ethereum_inquirer, ethereum_accounts):
+def test_safe_creation(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test that creation of new safes is tracked"""
     tx_hash = deserialize_evm_tx_hash('0xa9e3c581f39403a0a2eb5a3e604be715c0a4ee8aa4bcc9bddece5c268b47e233')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -342,14 +342,14 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # yabir.eth  # noqa: E501
-def test_safe_spam(polygon_pos_inquirer, polygon_pos_accounts):
+def test_safe_spam(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     """Test that a safe transaction if from an unrelated account, does not appear in events"""
     user_address = polygon_pos_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xefb07f4d166d6887eada96e61fd6821bfdf889d5435d75ab44d4ca0fa7627396')),  # noqa: E501
     )
-    spam_contract = '0xC63c477465a792537D291ADb32Ed15c0095E106B'
+    spam_contract = string_to_evm_address('0xC63c477465a792537D291ADb32Ed15c0095E106B')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -372,7 +372,7 @@ def test_safe_spam(polygon_pos_inquirer, polygon_pos_accounts):
     '0x4a24fe31b4D7215e7643f738058130054f9b3F3A',
     '0xF2961617C402404A4BB0Cd3d83992b5B4C8090eE',
 ]])
-def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
+def test_safe_vesting_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc831d94b43be533e83562da9bc10b38b4bab6ce6046c3a9baf76c5359634625a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1717404395000), '0.00123180896602807', '20549.221611721611721612'  # noqa: E501
@@ -424,7 +424,7 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
     '0x663aD41156a9B2Da7Ead2edC6494E102c9b36184',
     '0xA76C44d0adD77F9403715D8B6F47AD4e6515EC8c',
 ]])
-def test_safe_lock(ethereum_inquirer, ethereum_accounts):
+def test_safe_lock(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xad3d976ae02cf82f109cc2d2f3e8f2f10df6a00a4825e3f04cf0e1b7e68a06b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1719926867000), '0.00072087801264352', '5115.763372'  # noqa: E501
@@ -500,7 +500,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
     '0xdfDA7181EB27A69d897E82cF96C5BcbdC3c059B0',
     '0x51C40354119dd14C02d8ab24ed72C12D29f8cdA4',
 ]])
-def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
+def test_safe_unlock(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x51d4c06ff00be729fe5bc79215253e45e65ce4c8531cd249633c6e76754c89d0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721101211000), '0.0003433', '1026.126150242296748346'  # noqa: E501
@@ -552,7 +552,7 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
     '0xf901C093edC3AB68c796eD29253E8EAf3349663f',
     '0xd90c2DC41d97c62585841A8b6E0d500A5217B9Ab',
 ]])
-def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
+def test_safe_withdraw_unlocked(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9520c7e117225afc930d1092bf35c17e6726c6564ed4e757eeb6a3c29d10304b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721130791000), '0.00095328952396285', '2404.451820314008697626'  # noqa: E501
@@ -601,7 +601,7 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xdD3B1AA220A65428AB96Db2C8C02890CC513aa07']])
-def test_safenet_stake(ethereum_inquirer, ethereum_accounts):
+def test_safenet_stake(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test a SafeNet staking deposit done through a Safe multisig"""
     tx_hash = deserialize_evm_tx_hash('0xe2d848c50e978d10c9079c6468d81c5e427d81e729b91647a596e5aa27420a66')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -662,7 +662,7 @@ def test_safenet_stake(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe7FBc1925605AdF4fAF09e6614d7eeb9713467f5']])
-def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
+def test_safenet_withdrawal_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test claiming a SafeNet staking withdrawal directly from the staking contract"""
     tx_hash = deserialize_evm_tx_hash('0xd24ecc3fdf26e48d66184868e9fb78cbc8271a26dc32d038ba8a082153822331')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -701,7 +701,7 @@ def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
     '0xd52623EE9A40402A5a9ED82Bb0417e04d88A778C',
     '0x89C5d54C979f682F40b73a9FC39F338C88B434c6',
 ]])
-def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
+def test_safepass_start_vesting_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xfd07173651763370557d8300a8f5891d26ec7055238d6daf4f53c3f060d0f42d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1735818059000), '0.00149046414099075'  # noqa: E501
@@ -753,7 +753,7 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
     '0xe27b39aFeb8FeAE954195881a2BB13E5363393cD',
     '0x8E755608d135D2e7a6e99f6CD4eECdBED85542DF',
 ]])
-def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
+def test_safepass_vesting_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x26eb93c73ca61ab2a8df16ce5ce861142fb21b67e5aa466a13c4a0ca7744fe5c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1765106423000), '0.000143501926752041', '829'  # noqa: E501
@@ -805,7 +805,11 @@ def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
     '0x97c599819C95Aaf1BBC9063f4c743cCfCE7bc591',
     '0xEbfbf7A3006104fB1D3b68529A7B1b584acf4203',
 ]])
-def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_safe_added_owner_indexed(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x42536687dbc0c93d6b18c451c458def1e9d78476f610c8909be31bf2ffd56a69')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas = gnosis_accounts[0], gnosis_accounts[1], TimestampMS(1747908200000), '0.000097393118048512'  # noqa: E501
@@ -891,7 +895,11 @@ def test_safe_execute_tx_with_hash_in_topics(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7CE490534D78F1Ee54b20F7D03A99d5e3162e02B']])
-def test_safe_gnosisdao_distribution_claim(gnosis_inquirer, gnosis_accounts: list[ChecksumEvmAddress], allow_gnosis_etherscan: None) -> None:  # noqa: E501
+def test_safe_gnosisdao_distribution_claim(
+        gnosis_inquirer: Any,
+        gnosis_accounts: list[ChecksumEvmAddress],
+        allow_gnosis_etherscan: None,
+) -> None:
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0xef79b799e909545cd16528bf218894957a1a39857141c76794fc7d2121542649')))  # noqa: E501
     assert events == [EvmEvent(
         tx_ref=tx_hash,

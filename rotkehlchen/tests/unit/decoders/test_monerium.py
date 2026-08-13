@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -27,10 +27,10 @@ A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab70
 
 
 def test_monerium_decoder_initializes_without_api(
-        database,
+        database: Any,
         arbitrum_one_inquirer: ArbitrumOneInquirer,
-        arbitrum_one_transactions,
-        load_global_caches,
+        arbitrum_one_transactions: Any,
+        load_global_caches: Any,
 ) -> None:
     """Test that basic monerium decoding is available without the API instance."""
     with patch_decoder_reload_data(load_global_caches):
@@ -52,7 +52,7 @@ def test_monerium_decoder_initializes_without_api(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da']])
-def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
+def test_minting_monerium_on_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(val='0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -74,7 +74,7 @@ def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x99a0618B846D43E29C15ac468Eae06d03C9243C7']])
-def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
+def test_burning_monerium_on_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -96,7 +96,7 @@ def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x762e5f511c219823eeC73C743C8245807A53E123']])
-def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
+def test_minting_monerium_on_matic(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0xb240acc158fb2cdcdebc7321ca4a96f71b371379e2a78a9a7f27d0718a2e3735')),  # noqa: E501
@@ -120,7 +120,7 @@ def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x0A251dF99A88A20a93876205Fb7f5Faf2E85A481']])
-def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
+def test_burning_monerium_on_matic(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0xeaed8e3e862a9b41189e9039c825ee57fb80385801b8ac5c3ed70339baf243e5')),  # noqa: E501
@@ -144,7 +144,11 @@ def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x9566E3e6F55D4378243E55DE8e037Ee8E6e4de7E']])
-def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_minting_monerium_on_gnosis(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0x31183d757f530f799872600e6fe8644e3c20a1f90d02de9e89d0463454b400fa')),  # noqa: E501
@@ -168,7 +172,11 @@ def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnos
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0xAf31992307AcBb6Ad8795261EeA31494e62A8e40']])
-def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_burning_monerium_on_gnosis(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash(val='0xae087f309231e4dc1fa84927888deb6c56b9980e63f9cc049cbe2d7d2bc503e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -190,7 +198,11 @@ def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnos
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x39c185721fbe8b350363e6B49801305d32485A45']])
-def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_burnfrom_monerium_on_gnosis(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash(val='0xf04a5d84e6749828ff63991fb3323944472346c3b2c421e51d9999283d18f1fd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -216,7 +228,7 @@ def test_mint_v2_eure(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0x859af3a118c2f2503dca9aba17421cfe46bfe1b9e2585988cded6cc3da0dc0f4')),  # noqa: E501
@@ -242,7 +254,7 @@ def test_burn_v2_eure_gnosis(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0xeaf8521348335bce75863507c48dd48c36ebbd43e2f774524a0d5b3cfa5d594e')),  # noqa: E501
@@ -269,7 +281,7 @@ def test_burn_v2_eure_gnosis(
 def test_mint_eure_on_arbitrum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x792faaede6cd025d0a630669bf8fde06f51cc16aceebb67a09430536fea25109')),  # noqa: E501
@@ -294,7 +306,7 @@ def test_mint_eure_on_arbitrum(
 def test_burn_eure_on_arbitrum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd403cb41ddb6ae65fbfea44e1f8be8edb20ac5bc2252d69387b16bae3c5f7694')),  # noqa: E501
@@ -316,7 +328,10 @@ def test_burn_eure_on_arbitrum(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4A551b4ADddB4CDBA24612bCbb543c9aD4DAE4B6']])
-def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer, allow_gnosis_etherscan: None):
+def test_monerium_token_migration(
+        gnosis_inquirer: GnosisInquirer,
+        allow_gnosis_etherscan: None,
+) -> None:
     """Test that mints on the v1 to v2 migration are skipped correctly"""
     tx_hash = deserialize_evm_tx_hash('0x6241b6ef81b50e87585741362247852e6b325eb4401e5bde83e6c52ef9f2f097')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
@@ -336,9 +351,9 @@ def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer, allow_gnosis_
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xfFd0E4eF79c0C7B427D5CA3C455DB0eBCfa2aE4D']])
 def test_monerium_post_processing_handles_remote_error(
-        arbitrum_one_transaction_decoder,
+        arbitrum_one_transaction_decoder: Any,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-        caplog,
+        caplog: Any,
         start_with_valid_premium: bool,
 ) -> None:
     decoder = arbitrum_one_transaction_decoder.decoders['Monerium']

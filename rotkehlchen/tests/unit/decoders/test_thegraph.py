@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -39,7 +39,7 @@ ADDY_USER_3_ARB = string_to_evm_address('0xBe79986821637afD1406BF9278DA55cf9085c
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER]])
-def test_thegraph_delegate(ethereum_inquirer):
+def test_thegraph_delegate(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6ed3377db652151fb8e4794dd994a921a2d029ad317bd3f2a2916af239490fec')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     delegate_amount, delegate_tax, gas_fees = '998.98', '5.02', '0.002150596408306665'
@@ -104,7 +104,7 @@ def test_thegraph_delegate(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
-def test_thegraph_contract_deposit_gas(ethereum_inquirer):
+def test_thegraph_contract_deposit_gas(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf254ac1bbfbf07ca21042edd3ff78dad7c3158c8218598b5359b6e415e0977b7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas, deposit_amount = '0.000626151499903872', '0.001135647343563552'
@@ -142,7 +142,7 @@ def test_thegraph_contract_deposit_gas(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
-def test_thegraph_contract_transfer_approval(ethereum_inquirer):
+def test_thegraph_contract_transfer_approval(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -177,7 +177,7 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
-def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer):
+def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas, delegation_amount = '0.0034549683606123', '199846.719749385820105919'
@@ -220,7 +220,7 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER_2, ADDY_ROTKI]])
-def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
+def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xed80711e4cb9c428790f0d9b51f79473bf5253d5d03c04d958d411e7fa34a92e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     eth_amount, gas, delegation_amount = '0.000255709530674816', '0.002540860890653745', '39243.651715794449516669'  # noqa: E501
@@ -272,7 +272,7 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER]])
-def test_thegraph_undelegate(ethereum_inquirer):
+def test_thegraph_undelegate(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5ca5244868d9c0d8c30a1cad0feaf137bd28acd9c3f669a09a3a199fd75ad25a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_fee, undelegate_amount, lock_time = '0.00307607001551556', '1003.70342593701668535', '983'
@@ -309,7 +309,7 @@ def test_thegraph_undelegate(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER]])
-def test_thegraph_delegated_withdrawn(ethereum_inquirer):
+def test_thegraph_delegated_withdrawn(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x49307751de5ba4cf98fccbdd1ab8387fd60a7ce120800212c216bf0a6a04acfa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_fees, withdrawn_amount = '0.000651667321615926', '1003.70342593701668535'
@@ -346,7 +346,7 @@ def test_thegraph_delegated_withdrawn(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_USER_1_ARB]])
-def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
+def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3c846f305330969fb0ddb87c5ae411b4e9692f451a7ff3237b6f71020030c7d1')),  # noqa: E501
@@ -412,7 +412,7 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_USER_2_ARB]])
-def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
+def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc66ea685db10809b1765e8381175ada7b021b5a40f57572e220a8b94235c1f72')),  # noqa: E501
@@ -466,7 +466,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_USER_3_ARB]])
-def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
+def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd6847bc02b65891118caaa8a2882cf5db6e0938c909db112e4fa6930929d8c39')),  # noqa: E501

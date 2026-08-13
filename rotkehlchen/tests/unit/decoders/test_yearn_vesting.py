@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 def test_vesting_escrow_creation(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test the funder side decoding of a v0.3.0 factory vesting escrow deployment"""
     tx_hash = deserialize_evm_tx_hash('0x4a95c820e82f7677a33298c1ecba4079e8a94ce8ad2f260e8fba5708dd1cdf83')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -132,7 +132,7 @@ def test_vesting_escrow_creation(
 def test_vesting_escrow_claim(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test decoding a claim of vested tokens from a v0.3.0 vesting escrow"""
     tx_hash = deserialize_evm_tx_hash('0xdbd01f5255ebdeffe7e609c9437a648c875d545b3f2ebfe9d74ed3e8cb384c8a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -170,7 +170,7 @@ def test_vesting_escrow_claim(
 def test_vesting_escrow_claim_v1(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test decoding a claim from a v0.1.0 vesting escrow (YFI contributor vesting),
     which uses the older vyper forwarder proxy format.
     """
@@ -211,7 +211,7 @@ def test_vesting_escrow_claim_v1(
 def test_vesting_escrow_rug_pull(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test decoding a rug pull of a v0.2.0 vesting escrow clawing back unvested YFI"""
     tx_hash = deserialize_evm_tx_hash('0x6c6eb67ad97dc06490bc9038c20ae40d0e6f13bfdda1e8d5bdb50e9a13b905fe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -252,7 +252,7 @@ def test_vesting_escrow_rug_pull(
 def test_vesting_escrow_revoked(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test decoding a v0.3.0 vesting escrow revocation clawing back unvested GTC"""
     tx_hash = deserialize_evm_tx_hash('0xf3d7b596a889aa93f4f0b06ea5875a9022441a7b6de9a3e211ee865fdfd19aee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -279,7 +279,7 @@ def test_vesting_escrow_revoked(
 def test_vesting_escrow_set_open_claim(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test decoding a v0.3.0 escrow open claim toggle along a claim in the same
     transaction, by a recipient that is a safe multisig.
     """
@@ -322,7 +322,7 @@ def test_vesting_escrow_set_open_claim(
 def test_vesting_escrow_disown(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test decoding a standalone renouncement of the revocation right of a v0.3.0
     escrow, done in the same transaction that deploys its replacement escrow.
     """
@@ -404,7 +404,7 @@ def test_vesting_escrow_disown(
 def test_vesting_escrow_grant(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test that the recipient of a newly deployed vesting escrow gets a grant event"""
     tx_hash = deserialize_evm_tx_hash('0x4a95c820e82f7677a33298c1ecba4079e8a94ce8ad2f260e8fba5708dd1cdf83')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -431,7 +431,7 @@ def test_vesting_escrow_grant(
 def test_vesting_escrow_clawback(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test that the recipient of a revoked vesting escrow gets a clawback loss event"""
     tx_hash = deserialize_evm_tx_hash('0xf3d7b596a889aa93f4f0b06ea5875a9022441a7b6de9a3e211ee865fdfd19aee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
