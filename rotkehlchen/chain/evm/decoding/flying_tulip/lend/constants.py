@@ -17,6 +17,9 @@ class FlyingTulipLendDeployment(NamedTuple):
     # when filling leverage orders. Events they drive are position-internal
     # rebalancing, not wallet-level lending activity, and are skipped.
     engines: frozenset[ChecksumEvmAddress]
+    # entry points for direct and session (relayed) lending actions, used to
+    # trigger the post-decoding rule when a transaction is sent through them
+    meta_actions: frozenset[ChecksumEvmAddress]
 
 
 FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] = {
@@ -26,6 +29,10 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
         engines=frozenset((
             string_to_evm_address('0x8263a07504d93cB95e0a74f3627bb15faaf140e2'),  # LeverageRfqEngine  # noqa: E501
             string_to_evm_address('0xEB00B335Ca52216Fb60fdFFA361397367C39Dc32'),  # RfqEngine
+        )),
+        meta_actions=frozenset((
+            string_to_evm_address('0x3633EB60D08756674472e2D34d6fFb5f4c1c29f2'),  # MetaActions
+            string_to_evm_address('0x4f83aC5c8A79986D0916a8849730d9CEF63a3497'),  # MetaSessionActions  # noqa: E501
         )),
     ),
 }
