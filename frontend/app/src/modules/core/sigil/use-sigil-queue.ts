@@ -1,6 +1,7 @@
 import type { SigilBatchEntry, SigilQueueEntry } from '@/modules/core/sigil/types';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/modules/core/common/logging/logging';
+import { getCurrentClientId } from '@/modules/core/sigil/use-sigil-identity';
 
 const DB_NAME = 'sigil';
 const STORE_NAME = 'events';
@@ -119,11 +120,23 @@ function toBatchEntry(entry: SigilQueueEntry): SigilBatchEntry {
     referrer: '',
   };
 
+  // Identify carries the linkage on the session, so page views are covered without a name, which
+  // event data would need: upstream drops data on a nameless entry.
+  if (entry.kind === 'identify') {
+    payload.id = entry.clientId;
+    payload.data = entry.data;
+    return { type: 'identify', payload };
+  }
+
   if (entry.name)
     payload.name = entry.name;
 
   if (entry.data)
     payload.data = entry.data;
+
+  // Every entry carries it, as the upstream tracker does: it is stored per row, and the identify
+  // alone only links the session, which is shared by every account used on that machine that day.
+  payload.id = getCurrentClientId();
 
   return { type: 'event', payload };
 }
@@ -140,8 +153,9 @@ async function flush(): Promise<void> {
 
     const batch = entries.map(toBatchEntry);
 
+    // stringified: the logger joins its args, so an object would only ever print as [object Object]
     if (SIGIL_DEBUG)
-      logger.debug('[sigil] flushing batch', batch);
+      logger.debug(`[sigil] flushing batch ${JSON.stringify(batch, null, 2)}`);
 
     try {
       const response = await fetch(BATCH_ENDPOINT, {

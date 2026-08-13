@@ -46,6 +46,7 @@ export const frontendRegistry = {
   autoRerunOnEdit: frontend('autoRerunOnEdit'),
   balanceValueThreshold: frontend('balanceValueThreshold'),
   blockchainRefreshButtonBehaviour: frontend('blockchainRefreshButtonBehaviour'),
+  clientId: frontend('clientId', { userFacing: false }),
   currencyLocation: frontend('currencyLocation', {
     anchor: SettingsHighlightIds.CURRENCY_LOCATION,
     search: { category: SettingsCategoryIds.AMOUNT, titleKey: msg.$t('general_settings.amount.label.currency_location') },

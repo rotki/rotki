@@ -1,5 +1,7 @@
 import type { EffectScope } from 'vue';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { SigilEventMap, SigilQueueEntry } from '@/modules/core/sigil/types';
+import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
@@ -50,16 +52,52 @@ const mockLogged = ref<boolean>(false);
 const mockSubmitUsageAnalytics = ref<boolean>(false);
 const mockIsDevelop = ref<boolean>(false);
 
+const mockUsername = ref<string>('bob');
+
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     $id: 'session/auth',
     logged: mockLogged,
+    username: mockUsername,
   })),
 }));
 
+const mockClientId = ref<string>('');
+
 vi.mock('@/modules/settings/use-setting', () => ({
-  useSetting: vi.fn(() => mockSubmitUsageAnalytics),
+  useSetting: vi.fn((key: string) => (key === 'clientId' ? mockClientId : mockSubmitUsageAnalytics)),
 }));
+
+const mockUpdateFrontendSetting = vi
+  .fn<(payload: FrontendSettingsPayload) => Promise<ActionStatus>>()
+  .mockResolvedValue({ success: true });
+
+vi.mock('@/modules/settings/use-frontend-settings-writer', () => ({
+  useFrontendSettingsWriter: vi.fn(() => ({
+    updateFrontendSetting: async (payload: FrontendSettingsPayload): Promise<ActionStatus> =>
+      mockUpdateFrontendSetting(payload),
+  })),
+}));
+
+const mockCacheClientId = vi.fn<(username: string, id: string) => void>();
+const mockReadCachedClientId = vi.fn<(username: string) => string | undefined>();
+
+const mockSetCurrentClientId = vi.fn<(id: string) => void>();
+const mockClearCurrentClientId = vi.fn();
+
+vi.mock('@/modules/core/sigil/use-sigil-identity', () => ({
+  cacheClientId: (username: string, id: string): void => mockCacheClientId(username, id),
+  clearCurrentClientId: (): void => mockClearCurrentClientId(),
+  createClientId: (): string => 'minted-id',
+  getInstanceId: (): string => 'instance-1',
+  readCachedClientId: (username: string): string | undefined => mockReadCachedClientId(username),
+  setCurrentClientId: (id: string): void => mockSetCurrentClientId(id),
+}));
+
+/** The identify entries the composable queued, in order. */
+function identifyEntries(): Omit<SigilQueueEntry, 'id'>[] {
+  return mockEnqueue.mock.calls.map(call => call[0]).filter(entry => entry.kind === 'identify');
+}
 
 vi.mock('@/modules/core/common/use-main-store', () => ({
   useMainStore: vi.fn(() => ({
@@ -107,6 +145,14 @@ describe('useSigil', () => {
     mockStartQueue.mockClear();
     mockStopQueue.mockClear();
     mockRemoveHook.mockClear();
+    mockUpdateFrontendSetting.mockClear();
+    mockUpdateFrontendSetting.mockResolvedValue({ success: true });
+    mockCacheClientId.mockClear();
+    mockReadCachedClientId.mockReset();
+    mockSetCurrentClientId.mockClear();
+    mockClearCurrentClientId.mockClear();
+    set(mockClientId, '');
+    set(mockUsername, 'bob');
     set(mockLogged, false);
     set(mockSubmitUsageAnalytics, false);
     set(mockIsDevelop, false);
@@ -195,6 +241,158 @@ describe('useSigil', () => {
       await nextTick();
 
       expect(mockRemoveHook).toHaveBeenCalled();
+    });
+  });
+
+  describe('client id', () => {
+    it('should adopt the stored value without writing', async () => {
+      set(mockClientId, 'existing-id');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(identifyEntries()).toHaveLength(1);
+      expect(identifyEntries()[0].clientId).toBe('existing-id');
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+    });
+
+    it('should mint and persist one when neither the settings nor the cache have one', async () => {
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ clientId: 'minted-id' });
+      expect(identifyEntries()[0].clientId).toBe('minted-id');
+    });
+
+    it('should recover the cached value rather than mint when the settings lost it', async () => {
+      mockReadCachedClientId.mockReturnValue('earlier-id');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(mockReadCachedClientId).toHaveBeenCalledWith('bob');
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ clientId: 'earlier-id' });
+      expect(identifyEntries()[0].clientId).toBe('earlier-id');
+    });
+
+    it('should let the settings beat a disagreeing cache, and refresh it', async () => {
+      set(mockClientId, 'settings-id');
+      mockReadCachedClientId.mockReturnValue('stale-id');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(identifyEntries()[0].clientId).toBe('settings-id');
+      expect(mockCacheClientId).toHaveBeenCalledWith('bob', 'settings-id');
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+    });
+
+    it('should cache under the account that resolved it', async () => {
+      set(mockUsername, 'alice');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(mockCacheClientId).toHaveBeenCalledWith('alice', 'minted-id');
+    });
+
+    it('should not cache a value the write failed to persist', async () => {
+      mockUpdateFrontendSetting.mockResolvedValue({ success: false, message: 'nope' });
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(mockCacheClientId).not.toHaveBeenCalled();
+    });
+
+    it('should not identify with a value the write failed to persist', async () => {
+      mockUpdateFrontendSetting.mockResolvedValue({ success: false, message: 'nope' });
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(identifyEntries()).toHaveLength(0);
+    });
+
+    it('should not resolve one while the gate is closed', async () => {
+      set(mockClientId, 'existing-id');
+      set(mockLogged, true);
+      set(mockSubmitUsageAnalytics, false);
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(identifyEntries()).toHaveLength(0);
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('identify entry', () => {
+    it('should carry the instance value as session data', async () => {
+      set(mockClientId, 'existing-id');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(identifyEntries()[0].data).toEqual({ instance_id: 'instance-1' });
+    });
+
+    /** Upstream classifies by name, so a named identify would be recorded as a custom event. */
+    it('should not be named', async () => {
+      set(mockClientId, 'existing-id');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(identifyEntries()[0].name).toBeUndefined();
+    });
+
+    it('should set the value events are stamped with', async () => {
+      set(mockClientId, 'existing-id');
+      activateSigil();
+
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      expect(mockSetCurrentClientId).toHaveBeenCalledWith('existing-id');
+    });
+
+    it('should drop that value on deactivate, before the queue drains', async () => {
+      set(mockClientId, 'existing-id');
+      activateSigil();
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      set(mockLogged, false);
+      await nextTick();
+
+      expect(mockClearCurrentClientId).toHaveBeenCalled();
+      expect(mockClearCurrentClientId.mock.invocationCallOrder[0])
+        .toBeLessThan(mockStopQueue.mock.invocationCallOrder[0]);
+    });
+
+    it('should be queued before the events of that session', async () => {
+      set(mockClientId, 'existing-id');
+      activateSigil();
+      scope.run(() => useSigil());
+      await flushPromises();
+
+      sigilBus.emit('session:ready');
+      await flushPromises();
+
+      const kinds = mockEnqueue.mock.calls.map(call => call[0].kind ?? 'event');
+      expect(kinds[0]).toBe('identify');
+      expect(kinds).toContain('event');
     });
   });
 
