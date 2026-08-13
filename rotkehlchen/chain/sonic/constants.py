@@ -8,7 +8,7 @@ from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 SONIC_GENESIS: Final = Timestamp(1733011200)
 SONIC_MULTICALL_ADDRESS: Final = string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')  # noqa: E501
 
-ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x5b6932a2446a2a4d225c0dddd9b96f4835091cd6')  # noqa: E501
+ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x5b6932A2446a2a4d225c0dDdd9b96f4835091cd6')  # noqa: E501
 ARCHIVE_NODE_CHECK_BLOCK: Final = 100000
 ARCHIVE_NODE_CHECK_EXPECTED_BALANCE: Final = FVal('9.934439076382809')
 

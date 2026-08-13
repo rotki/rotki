@@ -52,11 +52,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             base_tools: BaseEvmDecoderTools,
             msg_aggregator: MessagesAggregator,
             counterparty: str = CPT_BALANCER_V2,
-            label: str = BALANCER_LABEL,
-            image: str = 'balancer.svg',
     ) -> None:
-        self._label = label
-        self._image = image
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -218,9 +214,10 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {self.counterparty: [(0, self._handle_post_decoding)]}
 
-    def counterparties(self) -> tuple[CounterpartyDetails, ...]:
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
-            identifier=self.counterparty,
-            label=self._label,
-            image=self._image,
+            identifier=CPT_BALANCER_V2,
+            label=BALANCER_LABEL,
+            image='balancer.svg',
         ),)
