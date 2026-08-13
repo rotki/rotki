@@ -121,6 +121,15 @@ describe('edit-snapshot/EditLocationDataSnapshotForm.vue', () => {
       .toBe('dashboard.snapshot.edit.dialog.location_data.rules.value');
   });
 
+  // The other side of the flag: a dialog the user has not touched must not prompt about unsaved
+  // changes on close, which is what any state the form writes for itself on open would cause.
+  it('should not flag stateUpdated before anything is edited', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(wrapper.emitted('update:stateUpdated')?.flat() ?? []).not.toContain(true);
+  });
+
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
     // Settle the mounted work first, so what follows is the only edit in play.
