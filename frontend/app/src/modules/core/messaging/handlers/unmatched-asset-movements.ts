@@ -37,7 +37,7 @@ export function createUnmatchedAssetMovementsHandler(
           persist: true,
         },
         category: NotificationCategory.DEFAULT,
-        display: true,
+        display: false,
         group: NotificationGroup.UNMATCHED_ASSET_MOVEMENTS,
         message: t('notification_messages.unmatched_asset_movements.message', {
           count: data.count,

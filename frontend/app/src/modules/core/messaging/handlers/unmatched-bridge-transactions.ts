@@ -38,7 +38,7 @@ export function createUnmatchedBridgeTransactionsHandler(
           persist: true,
         },
         category: NotificationCategory.DEFAULT,
-        display: true,
+        display: false,
         group: NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS,
         message: t('notification_messages.unmatched_bridge_transactions.message', {
           count: data.count,

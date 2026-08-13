@@ -62,7 +62,7 @@ describe('createUnmatchedBridgeTransactionsHandler', () => {
 
     expect(result).toMatchObject({
       category: NotificationCategory.DEFAULT,
-      display: true,
+      display: false,
       group: NotificationGroup.UNMATCHED_BRIDGE_TRANSACTIONS,
       priority: Priority.ACTION,
       severity: Severity.WARNING,
