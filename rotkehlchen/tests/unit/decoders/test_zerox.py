@@ -33,7 +33,13 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 A_AI: Final = Asset(strethaddress_to_identifier('0x2598c30330D5771AE9F983979209486aE26dE875'))
 A_DRGN: Final = Asset(strethaddress_to_identifier('0x419c4dB4B9e25d6Db2AD9691ccb832C8D9fDA05E'))
@@ -61,7 +67,10 @@ A_BULL: Final = Asset('eip155:137/erc20:0x9f95e17b2668AFE01F8fbD157068b0a4405Cc0
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xaE84961b9FA7412fEAEf209fD8f50C4F8Ef4D8fD']])
-def test_sell_to_uniswap(ethereum_inquirer, ethereum_accounts):
+def test_sell_to_uniswap(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb9827174e182a1b8df3507d13c5cedccdc974c4edd5d66f59355f7e9758b9006')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '12.425145745058641', '646.553802069266414457', '0.018008266883477871'  # noqa: E501
@@ -107,7 +116,10 @@ def test_sell_to_uniswap(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc2aAd9386835C90deC9d669e35c128461E6102CA']])
-def test_sell_eth_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
+def test_sell_eth_for_token_to_uniswap_v3(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5b7719016f7d7d3d8ed9d4d86afd0e0079551d0a7795f70f01764ce5eaa44478')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '0.2882978462709', '85192.182824334037015387', '0.007717607607009392'  # noqa: E501
@@ -153,7 +165,10 @@ def test_sell_eth_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xed288d0261421C7cf36a56f23297cD5F4635A089']])
-def test_sell_token_for_eth_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
+def test_sell_token_for_eth_to_uniswap_v3(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x68416e19252c678cdf67ae9b7adff742d78f95cea3c3f0582d3dc930340e5bdf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '150000', '1.446309922122136822', '0.013066559749685724'  # noqa: E501
@@ -199,7 +214,10 @@ def test_sell_token_for_eth_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xCCD54C835d7199ceEE2AedA4722C69eeeA6E606D']])
-def test_sell_token_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
+def test_sell_token_for_token_to_uniswap_v3(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6efe8a18de9ca3183bdb319be445f1b0b9041c0e8208fa04a58ee276b54574dd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '26035459.499107021225491254', '6627.784156933620641174', '0.011785737692958302'  # noqa: E501
@@ -245,7 +263,10 @@ def test_sell_token_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xddb143606305559e6b69843c1f53f2689D2aB605']])
-def test_multiplex_batch_sell_eth_for_token(ethereum_inquirer, ethereum_accounts):
+def test_multiplex_batch_sell_eth_for_token(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa151bc4f1c69591598386eaa65761cefd706cbfe0a1a340d8856dbfe2c3bd8c5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '1.160624381328078', '155577.466855002838240404', '0.0083327194970355'  # noqa: E501
@@ -291,7 +312,10 @@ def test_multiplex_batch_sell_eth_for_token(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xdf0093104D66509B35411815d7b29c40C16c9578']])
-def test_multiplex_batch_sell_token_for_eth(ethereum_inquirer, ethereum_accounts):
+def test_multiplex_batch_sell_token_for_eth(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf9b40a3bbbd92fe72099cff45564e099782fc9b0b4bd40c2d87484b43735b3b1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '13438.664993496960137988', '2.669421884825430502', '0.01627396521423088'  # noqa: E501
@@ -337,7 +361,10 @@ def test_multiplex_batch_sell_token_for_eth(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF6a17316821eD254EC0DFa270c6F9f0D3317f706']])
-def test_multiplex_batch_sell_token_for_token(ethereum_inquirer, ethereum_accounts):
+def test_multiplex_batch_sell_token_for_token(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0f422be6e6904700181c3effb0600a8ed7e1616e70e6587d383b29290d6a7c1d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '125.156732374288853661', '43405.98545005', '0.018050672959219548'  # noqa: E501
@@ -383,7 +410,10 @@ def test_multiplex_batch_sell_token_for_token(ethereum_inquirer, ethereum_accoun
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA5a81a7Bf4A737dAbCd8a4C5fc2A36598c1943bF']])
-def test_multiplex_multihop_sell_token_for_token(ethereum_inquirer, ethereum_accounts):
+def test_multiplex_multihop_sell_token_for_token(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xceccb105d312df00105eca2560b8da4cd0e791bb0f0da4cebeb17ca46abf2ce4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '64666', '143469.489576604990799103', '0.03327224673453317'  # noqa: E501
@@ -429,7 +459,10 @@ def test_multiplex_multihop_sell_token_for_token(ethereum_inquirer, ethereum_acc
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x773E123A1F1d5495a8Eaf4556a9f4e8aFDd9989C']])
-def test_0x415565b0_eth_to_token(ethereum_inquirer, ethereum_accounts):
+def test_0x415565b0_eth_to_token(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test ETH to Token swaps done through 0x415565b0 method ID via the 0x protocol router contract."""  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x56dd5341b27b744e3ef3a2f356a6db48cb811397495a4cb9e8924c8232ef9abc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -476,7 +509,10 @@ def test_0x415565b0_eth_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x61Ead4d3e373332c2099e2DC63F916Dbe99f4B0c']])
-def test_0x415565b0_token_to_eth(ethereum_inquirer, ethereum_accounts):
+def test_0x415565b0_token_to_eth(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test Token to ETH swaps done through 0x415565b0 method ID via the 0x protocol router contract."""  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xc4bab35f7499def296e9ccb08eebd8933ad8c37ff2701f2750027600f9050c55')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -523,7 +559,10 @@ def test_0x415565b0_token_to_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x85A28E964FCF12E0a6db44B3432794B08aD2426d']])
-def test_0x415565b0_token_to_token(ethereum_inquirer, ethereum_accounts):
+def test_0x415565b0_token_to_token(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test Token to Token swaps done through 0x415565b0 method ID via the 0x protocol router contract."""  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x29bd536ecd4cacec3495b02f6375ab7465be64fff015916484746cd18da7a37d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -570,7 +609,10 @@ def test_0x415565b0_token_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xE4BeF064c912BC95C404850019909efe8D357716']])
-def test_execute_meta_transaction_v2(ethereum_inquirer, ethereum_accounts):
+def test_execute_meta_transaction_v2(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test meta transaction swaps done via the 0x protocol router contract."""
     tx_hash = deserialize_evm_tx_hash('0xb77f8e36a86517928f890296a263cafafa48ef01c6cc424a838b59b4401bf314')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -617,7 +659,10 @@ def test_execute_meta_transaction_v2(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3951970BA92CBFff00496e8C5Ebd675cEB614773']])
-def test_execute_meta_transaction_v2_multiplex(ethereum_inquirer, ethereum_accounts):
+def test_execute_meta_transaction_v2_multiplex(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test meta transaction multiplex swaps done via the 0x protocol router contract."""
     tx_hash = deserialize_evm_tx_hash('0x48f48d62b9829152c5963716acaed198320595859093cfc8a117742287f5a5eb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -664,7 +709,10 @@ def test_execute_meta_transaction_v2_multiplex(ethereum_inquirer, ethereum_accou
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2dcd7947973cb5CBf20e3dBF0663F566D1De9CdA']])
-def test_execute_meta_transaction_v2_flash(ethereum_inquirer, ethereum_accounts):
+def test_execute_meta_transaction_v2_flash(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test meta transaction swaps done via the 0x protocol using its flash contract."""
     tx_hash = deserialize_evm_tx_hash('0xf0be288974b275768725e7322c66d4086bd9b70bac4427af394966d333c0c807')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -711,7 +759,10 @@ def test_execute_meta_transaction_v2_flash(ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x701D5a3344C98765b36014A8a71941f499A2Bc75']])
-def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
+def test_swap_on_polygon_pos(
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8e7c52d519d1ca0d1dfd8c8c21a2d2c34574e2bdada0ae7faafd49c1ddb8e8a6')),  # noqa: E501
@@ -759,7 +810,10 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x5C4A221Ff04efE54efB9985dC7dE95C20fe371BF']])
-def test_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
+def test_swap_on_binance_sc(
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xea3ec21b6e96e4972dbe734b10c417f451d5dc2b193aed37d5e9c28b4460a529')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
     expected_events = [EvmEvent(
@@ -804,7 +858,10 @@ def test_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xf06cc31757760CC9B8235C868ED90789f9c1E883']])
-def test_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_swap_arbitrum_one(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x355c18ab70fb5d17098b6bc8fd527ce00f0b25c8220d6fe29522a1fb64b711bc')),  # noqa: E501
@@ -853,7 +910,10 @@ def test_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4Ea754349AcE5303c82f0d1D491041e042f2ad22']])
-def test_swap_optimism(optimism_inquirer, optimism_accounts):
+def test_swap_optimism(
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6b2b2d8c0cf2e27bb9e6c8309fd9887a066f9b72139acfe13d7ca5c29ae6c0ff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, meta_tx_fees = '1.181244', '1.180785', '0.818756'
@@ -900,7 +960,10 @@ def test_swap_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xF68D2BfCecd7895BBa05a7451Dd09A1749026454']])
-def test_swap_base(base_inquirer, base_accounts):
+def test_swap_base(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4a5eb8fac7ef1d6637ff1d54e67791e4a5a49effb141f30e5af90f5aba5d48a5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, meta_tx_fees = '688.271588', '1726.46678822133419734', '4.288419'
@@ -946,7 +1009,10 @@ def test_swap_base(base_inquirer, base_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA26B29a299c65D0F63A8568BA5663028347f5571']])
-def test_swap_on_pancakeswap(ethereum_inquirer, ethereum_accounts):
+def test_swap_on_pancakeswap(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcfb3b1587bb4d24a06d0f543493098ab285ae3763a489911da5bbea99bcb3499')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '10.414111669423209', '36912.012249', '0.017837784148433769'  # noqa: E501
@@ -992,7 +1058,10 @@ def test_swap_on_pancakeswap(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x74882149e6a43b8E69cAC6Aef92D753e96054B78']])
-def test_swap_on_curve(ethereum_inquirer, ethereum_accounts):
+def test_swap_on_curve(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x12d794e7ced93da02978aa9b46b59f27ceab49724fdb1b0c39963792af68fdf0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '458480.413', '459177.562744', '0.03000569702410494'
@@ -1038,7 +1107,10 @@ def test_swap_on_curve(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfD1F67fDbA4F0C1952861345237463b39228F1C6']])
-def test_swap_on_sushiswap(ethereum_inquirer, ethereum_accounts):
+def test_swap_on_sushiswap(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x802f7d1c4b2f1b7ef48e5c3af92a3a166a91624b89e736f85b90df3dd7ce9d73')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees = '50', '68.557872437267381014', '0.007767959110971294'
@@ -1084,7 +1156,10 @@ def test_swap_on_sushiswap(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xb3Dd5Cdb7F73acD1177c96409412e0b326E9C457']])
-def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
+def test_swap_on_quickswap(
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x7b1bef89b8890e060787924a279e040ce8d50aedd35337747af6d56024ce269e')),  # noqa: E501
@@ -1133,7 +1208,10 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
+def test_swap_optimism_with_return(
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Check that a swap with an amount returned is decoded correctly.
     Regression test for https://github.com/rotki/rotki/issues/9122
     """
@@ -1181,7 +1259,10 @@ def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x43F9A40200310CE535EdF5EA0eb71afB53779BA4']])
-def test_swap_anon_event(ethereum_inquirer: EthereumInquirer, ethereum_accounts):
+def test_swap_anon_event(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """zerox has a special contract for swaps that emits an anonymous event that causes the
     logic of some post decoding rules to fail. This is a regression test for this contract.
     """
@@ -1228,7 +1309,10 @@ def test_swap_anon_event(ethereum_inquirer: EthereumInquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x24519D3972C663516d80b4EB86c737E29A1c01fa']])
-def test_swap_settler_eth_token_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_swap_settler_eth_token_ethereum(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """
     Check that a swap eth to token via settler is decoded correctly for the 1.7 settler version.
     """
@@ -1276,7 +1360,10 @@ def test_swap_settler_eth_token_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x44b04E97676D99FF69e165Fa0a28D5057fc405a1']])
-def test_swap_settler_token_eth_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_swap_settler_token_eth_ethereum(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """
     Check that a swap token to eth via settler is decoded correctly for the 1.7 settler version.
     """
@@ -1336,7 +1423,10 @@ def test_swap_settler_token_eth_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x67b427Ed763893302BE8A94Ac8F3a09793458772']])
-def test_swap_settler_token_token_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_swap_settler_token_token_ethereum(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """
     Check that a swap token to token via settler is decoded correctly for the 1.7 settler version.
     """
@@ -1384,7 +1474,10 @@ def test_swap_settler_token_token_ethereum(ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x34a303aDf91883f7D07759E7f7159944500277e5']])
-def test_swap_via_settler_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_swap_via_settler_on_arbitrum_one(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4b83d2533c76e1840851e3fe7bd49eded1e3c40e81267850601850ab21afbf96')   # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)   # noqa: E501
     user_address, timestamp, gas_amount, swap_amount, received_amount, settler_address = arbitrum_one_accounts[0], TimestampMS(1742464356000), '0.00000279049', '0.000324', '0.645954', '0xB254ee265261675528bdDb0796741c0C65a4C158'  # noqa: E501
@@ -1430,7 +1523,10 @@ def test_swap_via_settler_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_ac
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xD72029dD66179cE316dAbd42E9DfCA63725dcE92']])
-def test_swap_via_settler_on_base(base_inquirer, base_accounts):
+def test_swap_via_settler_on_base(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xdcb2ea00e5c31a2c6a9ac8cd507e07ff9a76c0b42652c5c550bee69f7425bea3')   # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, swap_amount, received_amount, settler_address = base_accounts[0], TimestampMS(1742471249000), '0.000000540469180772', '0.00052', '1.026401', '0x5C9bdC801a600c006c388FC032dCb27355154cC9'  # noqa: E501
@@ -1475,7 +1571,10 @@ def test_swap_via_settler_on_base(base_inquirer, base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xEa7D26292C68033E7535988936637d77495aDa1e']])
-def test_swap_via_settler_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
+def test_swap_via_settler_on_binance_sc(
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x265b58104dba6237018416376611c1d0f170722b19c2949178127f6af496bac7')   # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, swap_amount, received_amount, settler_address = binance_sc_accounts[0], TimestampMS(1742451687000), '0.000168127', '1.156691259384', '904876.73552827873791536', '0x4C6F446dD88fD1be8B80D2940806002777dc12a2'  # noqa: E501
@@ -1521,7 +1620,10 @@ def test_swap_via_settler_on_binance_sc(binance_sc_inquirer, binance_sc_accounts
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xBa41b0e948d681e4dDE13e4B153d89b611e33163']])
-def test_swap_via_settler_on_optimism(optimism_inquirer, optimism_accounts):
+def test_swap_via_settler_on_optimism(
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8b5e0f8a9fa216fad3687ec221c2044a7f6755f299e185e5655c762ce9689ddb')   # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, swap_amount, received_amount, settler_address = optimism_accounts[0], TimestampMS(1742482043000), '0.000000261927407492', '0.00145', '3.213355834788683529', '0x402867B638339ad8Bec6e5373cfa95Da0b462c85'  # noqa: E501
@@ -1566,7 +1668,10 @@ def test_swap_via_settler_on_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xd5c6952b0d57830118Ac3F32b6b31E8288bEF9BB']])
-def test_swap_via_settler_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
+def test_swap_via_settler_on_polygon_pos(
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf09d96ecf300948b70c60ec1804202f4a30d20b4ee4de51a8a327c884e053f16')   # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, swap_amount, received_amount, settler_address = polygon_pos_accounts[0], TimestampMS(1742477082000), '0.013230960026020888', '11.42', '2.42409', '0x7f20a7A526D1BAB092e3Be0733D96287E93cEf59'  # noqa: E501
@@ -1657,7 +1762,10 @@ def test_swap_via_another_settler_on_base(base_inquirer, base_accounts) -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
-def test_farcaster_zerox_swap(base_inquirer, base_accounts):
+def test_farcaster_zerox_swap(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+) -> None:
     """It uses a new version of the zerox settler contract"""
     tx_hash = deserialize_evm_tx_hash('0x0f9229bfaeadac5c6e8b7f6525b8e713ac848149be2ee0d98ee19732879ec14d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)

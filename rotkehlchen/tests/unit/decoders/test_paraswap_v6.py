@@ -44,7 +44,10 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
+def test_swap_amount_in(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x04df701a75c3dc3f1283c6a26e668bec4bd92cf7f02e9963c3c887f5376c590e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp = ethereum_accounts[0], TimestampMS(1734128975000)
@@ -118,7 +121,7 @@ def test_gnosis_swap_amount_in(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x421c23d305703a57ea0b64cfc75e8f13b6db2ef30fba321ae19eecd1b91695bc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp = gnosis_accounts[0], TimestampMS(1735672410000)
@@ -229,7 +232,7 @@ def test_binance_sc_swap_amount_in(
 def test_swap_amount_in_on_balancer_v2(
         base_inquirer: BaseInquirer,
         base_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x552ccefc137388007e6e6299f2c93f94852ca7bf838b2385b4f6f21cf1009bd3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp = base_accounts[0], TimestampMS(1735294971000)
@@ -291,7 +294,7 @@ def test_swap_amount_in_on_balancer_v2(
 def test_swap_amount_in_on_curve_v1(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf9a632e9cdf86b0af99d38b3bb83d8e73c115c181ca111b917f189851b7e0191')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp = arbitrum_one_accounts[0], TimestampMS(1735558953000)
@@ -366,7 +369,7 @@ def test_swap_amount_in_on_curve_v1(
 def test_swap_amount_in_on_curve_v2(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6f3b9fae41f83f880f21e704962fb01de8f9b8be0e61fe6165c0bca3d8113492')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp = arbitrum_one_accounts[0], TimestampMS(1735343468000)
@@ -429,7 +432,7 @@ def test_swap_amount_in_on_curve_v2(
 def test_swap_amount_in_on_uniswap_v2(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x85ec582768ad89edd4541a73ff00b8f8cb51fdc0544f27f57b3452c9992f50d7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp = optimism_accounts[0], TimestampMS(1735562523000)
@@ -479,7 +482,7 @@ def test_swap_amount_in_on_uniswap_v2(
 def test_swap_amount_in_on_uniswap_v3(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd3cbe70512bcc026a29aa2baaa5d8466b44589b2ec212e46504312b15ec1aa58')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp = optimism_accounts[0], TimestampMS(1735645113000)
@@ -540,7 +543,7 @@ def test_swap_amount_in_on_uniswap_v3(
 def test_swap_amount_out(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x50cf628b1214b6c2a2bdd044c9b8c406e556d0772146b367b9a05cace0eb63ee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp = ethereum_accounts[0], TimestampMS(1735636607000)
@@ -601,7 +604,7 @@ def test_swap_amount_out(
 def test_swap_amount_out_on_balancer_v2(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x46b617b4b4ac2cc4955f5da9542ed7da98559d12effef704dc86dc4986330693')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp = ethereum_accounts[0], TimestampMS(1735560491000)
@@ -662,7 +665,7 @@ def test_swap_amount_out_on_balancer_v2(
 def test_swap_amount_out_on_uniswap_v2(
         polygon_pos_inquirer: PolygonPOSInquirer,
         polygon_pos_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x730cb91f140a8574978f76dd22b1b84318cc73b762f22ec2db1c5673bfb976ad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp = polygon_pos_accounts[0], TimestampMS(1734927359000)
@@ -711,7 +714,7 @@ def test_swap_amount_out_on_uniswap_v2(
 def test_swap_amount_out_on_uniswap_v3(
         polygon_pos_inquirer: PolygonPOSInquirer,
         polygon_pos_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xae411965ab6c572be23f62438e9d57e04be369d37a661a58e5d1cce9545c0ac9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp = polygon_pos_accounts[0], TimestampMS(1735668540000)
@@ -773,7 +776,7 @@ def test_swap_amount_out_on_uniswap_v3(
 def test_swap_on_augustus_rfq(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa86ff8176bce4b6a392b6a325a0d642f4514741f1ee7dedd6a0119289238ce55')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp = ethereum_accounts[0], TimestampMS(1735677155000)
@@ -823,7 +826,7 @@ def test_eure_receive_swap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     """Regression test for a bug where swaps in Gnosis receiving EURe were not decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x81130d4e9695b1e03c5960e51864740a7d6a3c3cab7b708f717dc5f18caad079')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

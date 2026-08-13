@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -123,7 +123,7 @@ def fixture_yearn_yvcurve_upyfi_gauge(database: DBHandler) -> EvmToken:
 def test_deposit_yearn_v3(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa622b53ffa01e0f843d42464a0cb3b3ef192229522fa523139a15c08940dd213')  # noqa: E501
     get_or_create_evm_token(
         userdb=ethereum_inquirer.database,
@@ -204,7 +204,7 @@ def test_deposit_yearn_v3(
 def test_withdraw_yearn_v3(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x18a1d6b96e3c561c593bf3604a0fa21f6b760b58231d5921933661c7ee5f856e')  # noqa: E501
     get_or_create_evm_token(
         userdb=ethereum_inquirer.database,
@@ -708,7 +708,7 @@ def test_withdraw_yearn_v1(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8']])
-def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
+def test_deposit_yearn_full_amount(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     In the case of deposits and withdrawals for yearn there are two different signatures for
     the functions used. If no amount is provided all the available amount is deposited/withdrawn.
@@ -914,7 +914,7 @@ def test_yearn_v3_curve_savings_withdraw(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
         curve_savings_vault: EvmToken,
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1d5db358dfdec9f554e81dedf0395b857db30fdca838c36c05cceaae00768cad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(

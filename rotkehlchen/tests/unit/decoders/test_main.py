@@ -291,10 +291,10 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']])
 def test_no_logs_and_zero_eth(
-        database,
-        ethereum_accounts,
-        ethereum_transaction_decoder,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0x9a95424c48d36bb2f60fb7684a1068c08ec643c64144e7cdfbe5fb3fc820aa7f
@@ -354,14 +354,14 @@ def test_no_logs_and_zero_eth(
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d'], '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', ChainID.OPTIMISM),  # noqa: E501
 ])
 def test_simple_erc20_transfer(
-        database,
-        ethereum_accounts,
-        optimism_accounts,
-        ethereum_transaction_decoder,
-        optimism_transaction_decoder,
-        tether_address,
-        chain,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        optimism_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        optimism_transaction_decoder: object,
+        tether_address: ChecksumEvmAddress,
+        chain: ChainID,
+) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0xbb58b36ddc027a1070131e68b915e5f0dca37767b020ed164eda681725b5ca4e
@@ -446,10 +446,10 @@ def test_simple_erc20_transfer(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_decode_skips_db_query_for_known_tx_id(
-        database,
-        ethereum_accounts,
-        ethereum_transaction_decoder,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
     """When the transaction's db_id is already resolved (the normal path, since the caller
     resolves it before decoding), _decode_transaction must not open a read transaction to
     re-query it. Regression test for the db_id==-1 guard.
@@ -511,10 +511,10 @@ def test_decode_skips_db_query_for_known_tx_id(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_token_resolved_only_for_transfer_logs(
-        database,
-        ethereum_accounts,
-        ethereum_transaction_decoder,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
     """Only transfer/approval logs should trigger the per-log token resolution (get_evm_token).
     Other logs (e.g. a pool Swap event) must not, since their decoding rules never use the token
     and the lookup would be a wasted uncached global-DB miss for the non-token emitter.
@@ -586,13 +586,13 @@ def test_token_resolved_only_for_transfer_logs(
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC'], ChainID.OPTIMISM),  # noqa: E501
 ])
 def test_eth_transfer(
-        database,
-        ethereum_accounts,
-        optimism_accounts,
-        ethereum_transaction_decoder,
-        optimism_transaction_decoder,
-        chain,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        optimism_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        optimism_transaction_decoder: object,
+        chain: ChainID,
+) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65
@@ -670,13 +670,13 @@ def test_eth_transfer(
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26'], ChainID.OPTIMISM),
 ])
 def test_eth_spend(
-        database,
-        ethereum_accounts,
-        optimism_accounts,
-        ethereum_transaction_decoder,
-        optimism_transaction_decoder,
-        chain,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        optimism_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        optimism_transaction_decoder: object,
+        chain: ChainID,
+) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65
@@ -750,10 +750,10 @@ def test_eth_spend(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xa4A6A282A7fC7F939e01D62D884355d79f5046C1']])
 def test_eth_deposit(
-        database,
-        ethereum_accounts,
-        ethereum_transaction_decoder,
-):
+        database: object,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0x8f91a9b98a856282cdad74d9b8a683504c13e3c9d810e4e22bd0ca2eb9d71800
@@ -1022,7 +1022,11 @@ def test_maybe_reshuffle_events():
     '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
 ]])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
-def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
+def test_genesis_transaction(
+        database: object,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test that decoding a genesis transaction is handled correctly"""
     transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)
     user_address_1, user_address_2 = ethereum_accounts
@@ -1078,7 +1082,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_WITHOUT_GENESIS_TX]])
-def test_genesis_transaction_no_address(ethereum_inquirer):
+def test_genesis_transaction_no_address(ethereum_inquirer: EthereumInquirer) -> None:
     """
     Test that decoding a genesis transaction is handled correctly when there is no address tracked
     with a genesis transaction.
@@ -1092,7 +1096,10 @@ def test_genesis_transaction_no_address(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_phishing_zero_transfers(database, ethereum_inquirer):
+def test_phishing_zero_transfers(
+        database: object,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
     """Checks that zero transfer phishing transactions are marked as ignored."""
     tx_hex = '0xb45ef1a202a8d9e983cf59129d28f79057969bb822f62e4b7d9f1ac8853d23ed'
     events, _ = get_decoded_events_of_transaction(
@@ -1116,7 +1123,11 @@ def test_phishing_zero_transfers(database, ethereum_inquirer):
     assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hex}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
 
-def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transactions):
+def test_error_at_decoder_initialization(
+        database: object,
+        ethereum_inquirer: EthereumInquirer,
+        eth_transactions: EthereumTransactions,
+) -> None:
     """Regression test for https://github.com/rotki/rotki/issues/7039"""
     faulty_get_or_create_evm_token = patch(
         'rotkehlchen.chain.ethereum.modules.lockedgno.decoder.get_or_create_evm_token',
@@ -1135,7 +1146,10 @@ def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transa
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
+def test_failed_transaction(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Checks that a failed transaction is understood as failed"""
     tx_hash = deserialize_evm_tx_hash('0xfbfd35db096d0acb26a988895841d786baafe08f6cf55265338e0b5db58350ee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -1156,7 +1170,10 @@ def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_transaction_to_self_event(ethereum_inquirer, ethereum_accounts):
+def test_transaction_to_self_event(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe950eb35f96ff99ba56504783c0b6f5e66f6b651c847e5cf7e8032b60cbb88d1')  # noqa: E501
     transaction, _ = ethereum_inquirer.get_transaction_by_hash(tx_hash=tx_hash)
     assert transaction.to_address == transaction.from_address
@@ -1242,9 +1259,9 @@ def test_onchain_message_failed_call(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_post_decoding_rules_break_on_new_event(
-        ethereum_accounts,
-        ethereum_transaction_decoder,
-):
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
     """Regression test for https://github.com/rotki/rotki/pull/10982"""
     user_address = ethereum_accounts[0]
     transaction = EvmTransaction(
