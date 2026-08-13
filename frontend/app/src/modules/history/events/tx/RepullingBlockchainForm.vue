@@ -1,17 +1,15 @@
 <script lang="ts" setup>
+import type { ZodType } from 'zod';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
 import { hasAccountAddress } from '@/modules/accounts/account-helpers';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useModelForm } from '@/modules/core/form/use-model-form';
+import { type RepullingBlockchainFormState, repullingBlockchainSchema } from '@/modules/history/events/tx/repulling-forms';
 import { useRepullingTransactionForm } from '@/modules/history/events/tx/use-repulling-transaction-form';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 
@@ -21,28 +19,32 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const { t } = useI18n({ useScope: 'global' });
 
-const chain = useRefPropVModel(modelValue, 'chain');
-const address = useRefPropVModel(modelValue, 'address');
-const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
-const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
-
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { chainOptions, getUsableChains } = useRepullingTransactionForm();
 
+const schema = computed<ZodType>(() => repullingBlockchainSchema(t('transactions.repulling.validation.date_non_empty')));
+
+const form = useModelForm<RepullingBlockchainFormState>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+});
+
 const hasNoAccounts = computed<boolean>(() => get(chainOptions).length === 0);
 
-const usableChains = computed<string[]>(() => getUsableChains(get(chain)));
+const usableChains = computed<string[]>(() => getUsableChains(form.state.chain));
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({
   get: () => {
-    const model = get(modelValue);
+    const { address, chain } = form.state;
     const accountFound = Object.values(get(accountsPerChain))
       .flatMap(x => x)
       .filter(hasAccountAddress)
       .find(
         item =>
-          getAccountAddress(item) === model.address
-          && (!model.chain || model.chain === 'all' || model.chain === item.chain),
+          getAccountAddress(item) === address
+          && (!chain || chain === 'all' || chain === item.chain),
       );
 
     if (accountFound) {
@@ -53,48 +55,17 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
   },
   set: (value: BlockchainAccount<AddressData>[]) => {
     const account = value[0];
-    const addr = account
-      ? getAccountAddress(account)
-      : '';
-
-    set(modelValue, {
-      ...get(modelValue),
-      address: addr,
-    });
+    form.state.address = account ? getAccountAddress(account) : '';
+    form.touch('address');
   },
 });
-
-const rules = {
-  address: { externalServerValidation: () => true },
-  chain: {},
-  fromTimestamp: { required },
-  toTimestamp: { required },
-};
-
-const states = {
-  address,
-  chain,
-  fromTimestamp,
-  toTimestamp,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errors,
-  },
-);
-
-useFormStateWatcher(states, stateUpdated);
 
 onBeforeUnmount(() => {
   set(errors, {});
 });
 
 defineExpose({
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -126,10 +97,11 @@ defineExpose({
     <template v-else>
       <div class="flex gap-2">
         <ChainSelect
-          v-model="chain"
+          v-model="form.state.chain"
           class="max-w-[20rem]"
           :items="chainOptions"
-          :error-messages="toMessages(v$.chain)"
+          :error-messages="form.errors('chain')"
+          @update:model-value="form.touch('chain')"
         />
         <BlockchainAccountSelector
           v-model="accounts"
@@ -142,18 +114,20 @@ defineExpose({
           unique
           :custom-hint="t('transactions.repulling.address_hint')"
           :label="t('common.address')"
-          :error-messages="toMessages(v$.address)"
+          :error-messages="form.errors('address')"
           :no-data-text="t('transactions.form.account.no_address_found')"
         />
       </div>
 
       <DateTimeRangePicker
-        v-model:start="fromTimestamp"
-        v-model:end="toTimestamp"
+        v-model:start="form.state.fromTimestamp"
+        v-model:end="form.state.toTimestamp"
         allow-empty
         max-end-date="now"
-        :start-error-messages="toMessages(v$.fromTimestamp)"
-        :end-error-messages="toMessages(v$.toTimestamp)"
+        :start-error-messages="form.errors('fromTimestamp')"
+        :end-error-messages="form.errors('toTimestamp')"
+        @update:start="form.touch('fromTimestamp')"
+        @update:end="form.touch('toTimestamp')"
       />
     </template>
   </div>

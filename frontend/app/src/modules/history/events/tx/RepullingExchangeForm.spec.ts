@@ -4,17 +4,21 @@ import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import RepullingExchangeForm from '@/modules/history/events/tx/RepullingExchangeForm.vue';
 import '@test/i18n';
 
 const KRAKEN: Exchange = { location: 'kraken', name: 'my kraken' };
+/** One of the exchanges that reports no date range, so the picker is hidden for it. */
+const BITMEX: Exchange = { location: 'bitmex', name: 'my bitmex' };
 
 vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: (): Record<string, unknown> => ({
-    syncingExchanges: computed<Exchange[]>(() => [KRAKEN]),
+    syncingExchanges: computed<Exchange[]>(() => [KRAKEN, BITMEX]),
   }),
 }));
+
+type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function stub(name: string, props: string[]): Record<string, unknown> {
   return {
@@ -64,9 +68,12 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     });
   }
 
-  async function chooseExchange(): Promise<void> {
-    const select: VueWrapper<ComponentPublicInstance> = harness.wrapper.findComponent({ name: 'RuiAutoComplete' });
-    select.vm.$emit('update:modelValue', KRAKEN);
+  function autocomplete(): VueWrapper<StubInstance> {
+    return harness.wrapper.findComponent<StubInstance>({ name: 'RuiAutoComplete' });
+  }
+
+  async function chooseExchange(exchange: Exchange = KRAKEN): Promise<void> {
+    autocomplete().vm.$emit('update:modelValue', exchange);
     await vi.advanceTimersToNextTimerAsync();
   }
 
@@ -84,6 +91,77 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     await chooseExchange();
 
     expect(await harness.validate()).toBe(true);
+  });
+
+  it.each([
+    ['fromTimestamp'],
+    ['toTimestamp'],
+  ] as const)('should reject a payload with no %s once an exchange is chosen', async (key) => {
+    harness = createWrapper({ ...basePayload(), [key]: undefined });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await chooseExchange();
+
+    expect(await harness.validate()).toBe(false);
+  });
+
+  // Kraken reports no date range, so the picker is hidden and its rules go with it.
+  it('should accept a missing range for an exchange that has no picker', async () => {
+    harness = createWrapper({ ...basePayload(), fromTimestamp: undefined, toTimestamp: undefined });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await chooseExchange(BITMEX);
+
+    expect(await harness.validate()).toBe(true);
+  });
+
+  it('should clear a range carried over when the picker goes away', async () => {
+    harness = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    await chooseExchange(BITMEX);
+
+    expect(harness.model().fromTimestamp).toBeUndefined();
+    expect(harness.model().toTimestamp).toBeUndefined();
+  });
+
+  it('should show the message for a missing exchange once validate runs', async () => {
+    harness = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    await harness.validate();
+    await vi.advanceTimersToNextTimerAsync();
+
+    const value: unknown = autocomplete().props('errorMessages');
+    assert(Array.isArray(value));
+    // The text, not just its presence: a schema that rejects a missing key rather than an empty
+    // value reports zod's own wording here and would pass a non-empty check.
+    expect(value).toEqual(['transactions.repulling.validation.exchange_non_empty']);
+  });
+
+  it('should not arm the close prompt before anything is edited', async () => {
+    harness = createWrapper();
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(harness.stateUpdated()).toBe(false);
+  });
+
+  it('should arm the close prompt once an exchange is chosen', async () => {
+    harness = createWrapper();
+    await vi.advanceTimersByTimeAsync(600);
+
+    await chooseExchange();
+
+    expect(harness.stateUpdated()).toBe(true);
+  });
+
+  it('should tell the dialog which exchange was chosen', async () => {
+    harness = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    await chooseExchange();
+
+    expect(harness.wrapper.findComponent(RepullingExchangeForm).vm.getExchangeData()).toEqual(KRAKEN);
   });
 
   /*
