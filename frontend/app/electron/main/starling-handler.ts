@@ -151,6 +151,10 @@ export class StarlingHandler {
       colibriPort,
       mcpPort,
       proxyPort,
+      // Only set when `pnpm dev` started the premium dev-proxy, which then sits
+      // between starling and core. The renderer keeps addressing the proxy origin
+      // set above either way.
+      coreUpstreamPort: this.config.ports.coreUpstreamPort,
       apiHost: API_HOST,
       logsDir,
       options,

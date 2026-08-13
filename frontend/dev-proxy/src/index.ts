@@ -120,8 +120,11 @@ function onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: Server
     // The rewritten payload has its own length, and is never chunked.
     copyHeaders(proxyRes, res, ['content-length', 'transfer-encoding']);
     res.setHeader('content-length', payload.byteLength.toString());
+    // Deliberately unlogged: the task poll runs on a timer, so a line per
+    // rewrite is one every couple of seconds and drowns everything else. What is
+    // worth seeing already logs itself — a mock task appearing and completing,
+    // and each renderer bundle served.
     res.end(payload);
-    consola.info('Handled request:', req.method, req.url);
   });
 }
 

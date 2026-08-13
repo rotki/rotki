@@ -30,6 +30,15 @@ function instancePort(envKey: string, fallback: number): number {
   return Number.isFinite(port) && port > 0 ? port : fallback;
 }
 
+/** A port that is meaningful only by its presence, so absence stays undefined. */
+function optionalPort(envKey: string): number | undefined {
+  const raw = process.env[envKey];
+  if (!raw)
+    return undefined;
+  const port = Number.parseInt(raw, 10);
+  return Number.isFinite(port) && port > 0 ? port : undefined;
+}
+
 export class Application {
   private readonly window: WindowManager;
   private readonly tray: TrayManager;
@@ -48,6 +57,9 @@ export class Application {
       corePort: instancePort('ROTKI_INSTANCE_CORE_PORT', DEFAULT_PORT),
       mcpPort: instancePort('ROTKI_INSTANCE_MCP_PORT', DEFAULT_MCP_PORT),
       proxyPort: instancePort('ROTKI_INSTANCE_PROXY_PORT', DEFAULT_PROXY_PORT),
+      // No fallback: absent means no dev-proxy, and starling must then be left
+      // pointing at core.
+      coreUpstreamPort: optionalPort('ROTKI_DEV_CORE_UPSTREAM_PORT'),
     },
   };
 
