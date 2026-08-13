@@ -216,8 +216,8 @@ def test_protocol_data_refresh(rotkehlchen_api_server: APIServer) -> None:
             (ProtocolsWithCache.ETH_VALIDATORS_DATA, patched_eth_validators_cache, 1),
             (ProtocolsWithCache.CUSTOMIZED_EVENTS, patched_eth_validators_cache, 1),
             (ProtocolsWithCache.BALANCER_V1, patched_balancer_query, 3),  # supported on 3 chains
-            (ProtocolsWithCache.BALANCER_V2, patched_balancer_query, 6),  # supported on 6 chains
-            (ProtocolsWithCache.BALANCER_V3, patched_balancer_query, 5),  # supported on 5 chains
+            (ProtocolsWithCache.BALANCER_V2, patched_balancer_query, 7),  # supported on 7 chains
+            (ProtocolsWithCache.BALANCER_V3, patched_balancer_query, 6),  # supported on 6 chains
             (ProtocolsWithCache.MERKL, patched_globaldb_handler, 1),
             (ProtocolsWithCache.BEEFY_FINANCE, patched_globaldb_handler, 1),
         ):

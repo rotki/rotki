@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import (
     A_KSM,
     A_MON,
     A_POL,
+    A_S,
     A_SOL,
     A_XDAI,
 )
@@ -36,6 +37,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.BASE: A_ETH,
         SupportedBlockchain.HYPERLIQUID: A_HYPE,
         SupportedBlockchain.MONAD: A_MON,
+        SupportedBlockchain.SONIC: A_S,
         SupportedBlockchain.GNOSIS: A_XDAI,
         SupportedBlockchain.SCROLL: A_ETH,
         SupportedBlockchain.BINANCE_SC: A_BSC_BNB,
