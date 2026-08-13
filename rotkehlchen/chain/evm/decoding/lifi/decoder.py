@@ -304,11 +304,12 @@ class LifiDecoder(EvmDecoderInterface):
             expected_asset = self.node_inquirer.native_token
         else:
             expected_asset = self.base.get_or_create_evm_token(address=sending_asset)
-        expected_source_asset = (
-            self.base.get_or_create_evm_token(address=source_asset)
-            if source_asset is not None and source_asset != sending_asset
-            else None
-        )
+        if source_asset is None or source_asset == sending_asset:
+            expected_source_asset = None
+        elif source_asset in (ZERO_ADDRESS, ETH_SPECIAL_ADDRESS):
+            expected_source_asset = self.node_inquirer.native_token
+        else:
+            expected_source_asset = self.base.get_or_create_evm_token(address=source_asset)
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and

@@ -419,3 +419,49 @@ def test_lifi_swap(gnosis_inquirer, gnosis_accounts):
         counterparty=CPT_LIFI,
         address=router,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xA29b0D2F3b4555359A1bF684d700753b1b06cBc4']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_lifi_squid_bridge_native_asset(optimism_inquirer, optimism_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(
+            '0x58a9e5facbd5966078c810dae216973fc082ff329265dbc96eff5004772aaa28',
+        )),
+    )
+    router = string_to_evm_address('0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1773394767000),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.000000008857686724'),
+        location_label=(user_address := optimism_accounts[0]),
+        notes='Burn 0.000000008857686724 ETH for gas',
+        counterparty='gas',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(1773394767000),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=FVal('0.003099292774392937'),
+        location_label=user_address,
+        notes='Bridge 0.003099292774392937 ETH from Optimism to Ethereum via LI.FI',
+        counterparty=CPT_LIFI,
+        address=router,
+        extra_data={'bridge': {
+            'from_chain': 10,
+            'to_chain': 1,
+            'from_address': user_address,
+            'to_address': user_address,
+            'transfer_id': '362d33fde44bfd20c46f3f4e02f4b54a42c56f130cb08adf0b458ec14cc6c5b5',
+        }},
+    )]
