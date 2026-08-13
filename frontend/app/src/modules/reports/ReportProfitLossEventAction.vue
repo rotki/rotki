@@ -1,33 +1,65 @@
 <script setup lang="ts">
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { ProfitLossEvent } from '@/modules/reports/report-types';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import { z, type ZodType } from 'zod';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { requiredField } from '@/modules/core/form/fields';
+import { useForm } from '@/modules/core/form/use-form';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
+
+interface PriceState {
+  price: string;
+}
 
 const { event, currency } = defineProps<{
   event: ProfitLossEvent;
   currency: string;
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const { resetHistoricalPricesData } = useHistoricPriceCache();
 const { getHistoricPrice } = usePriceTaskManager();
 const { addHistoricalPrice } = useAssetPricesApi();
+const { setMessage } = useMessageStore();
 
 const fetchingPrice = ref<boolean>(false);
 const showDialog = ref<boolean>(false);
-const price = ref<string>('');
 
-async function openEditHistoricPriceDialog() {
+const schema = computed<ZodType>(() => z.object({
+  price: requiredField(t('price_form.price_non_empty')),
+}));
+
+const form = useForm<PriceState, HistoricalPriceFormPayload>({
+  initial: (): PriceState => ({ price: '' }),
+  schema,
+  submit: async (payload: HistoricalPriceFormPayload): Promise<{ message?: string; success: boolean }> => {
+    try {
+      await addHistoricalPrice(payload);
+      resetHistoricalPricesData([payload]);
+      return { success: true };
+    }
+    catch (error: unknown) {
+      return { message: getErrorMessage(error), success: false };
+    }
+  },
+  transform: (state): HistoricalPriceFormPayload => ({
+    fromAsset: event.assetIdentifier,
+    price: state.price,
+    sourceType: PriceOracle.MANUAL,
+    timestamp: event.timestamp,
+    toAsset: currency,
+  }),
+});
+
+async function openEditHistoricPriceDialog(): Promise<void> {
   set(showDialog, true);
   set(fetchingPrice, true);
   const { assetIdentifier, timestamp } = event;
@@ -36,57 +68,20 @@ async function openEditHistoricPriceDialog() {
     timestamp,
     toAsset: currency,
   });
-  set(price, historicPrice.isPositive() ? historicPrice.toFixed() : '0');
+  form.state.price = historicPrice.isPositive() ? historicPrice.toFixed() : '0';
   set(fetchingPrice, false);
 }
 
-const { t } = useI18n({ useScope: 'global' });
-
-const rules = {
-  price: {
-    required: helpers.withMessage(t('price_form.price_non_empty'), required),
-  },
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    price,
-  },
-  { $autoDirty: true },
-);
-
-const { setMessage } = useMessageStore();
-
-async function savePrice(payload: HistoricalPriceFormPayload) {
-  await addHistoricalPrice(payload);
-  resetHistoricalPricesData([payload]);
-}
-
-async function updatePrice() {
-  if (!(await get(v$).$validate()))
-    return;
-
-  const payload: HistoricalPriceFormPayload = {
-    fromAsset: event.assetIdentifier,
-    price: get(price),
-    sourceType: PriceOracle.MANUAL,
-    timestamp: event.timestamp,
-    toAsset: currency,
-  };
-
-  try {
-    await savePrice(payload);
+async function updatePrice(): Promise<void> {
+  const result = await form.submit();
+  if (result.outcome === 'success') {
     set(showDialog, false);
   }
-  catch (error: unknown) {
-    const values = { message: getErrorMessage(error) };
-    const title = t('price_management.add.error.title');
-    const description = t('price_management.add.error.description', values);
+  else if (result.outcome === 'error') {
     setMessage({
-      description,
+      description: t('price_management.add.error.description', { message: result.message ?? '' }),
       success: false,
-      title,
+      title: t('price_management.add.error.title'),
     });
   }
 }
@@ -154,13 +149,14 @@ async function updatePrice() {
               :label="t('common.datetime')"
             />
             <AmountInput
-              v-model="price"
+              v-model="form.state.price"
               variant="outlined"
               :loading="fetchingPrice"
               :disabled="fetchingPrice"
               :label="t('common.price')"
-              :error-messages="toMessages(v$.price)"
+              :error-messages="form.errors('price')"
               data-testid="edit-historic-price-value"
+              @blur="form.touch('price')"
             />
           </div>
 
