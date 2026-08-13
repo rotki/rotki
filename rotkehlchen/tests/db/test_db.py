@@ -154,6 +154,7 @@ TABLES_AT_INIT = [
     'blockchain_accounts',
     'blockchain_balances_cache',
     'calendar',
+    'evm_account_proxies',
     'evm_accounts_details',
     'multisettings',
     'evm_transactions',

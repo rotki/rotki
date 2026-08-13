@@ -3370,6 +3370,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         'bitcointx_address_mappings',
         'data_issues',
         'event_metrics',
+        'evm_account_proxies',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
@@ -4535,6 +4536,13 @@ def test_upgrade_db_52_to_53(
     airdrops_dir.mkdir(parents=True)
     (airdrop_parquet_path := airdrops_dir / 'obsolete.parquet').touch()
     (airdrop_csv_path := airdrops_dir / 'current.csv.gz').touch()
+    proxy_owner = make_evm_address()
+    proxy_address = make_evm_address()
+    with db_v52.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_accounts_details(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            (proxy_owner, ChainID.ETHEREUM.serialize_for_db(), 'proxies', f'ds:{proxy_address}'),
+        )
 
     db_v52.logout()
     db = _init_db_with_target_version(
@@ -4802,6 +4810,19 @@ def test_upgrade_db_52_to_53(
             "SELECT value FROM settings WHERE name='address_name_priority'",
         ).fetchone()[0]) == expected_address_name_priority
         assert db.get_setting(cursor, 'version') == 53
+        assert table_exists(cursor=cursor, name='evm_account_proxies')
+        assert index_exists(cursor=cursor, name='idx_evm_account_proxies_chain_account')
+        assert cursor.execute(
+            'SELECT account, chain_id, proxy_type, proxy_address FROM evm_account_proxies',
+        ).fetchall() == [(
+            proxy_owner,
+            ChainID.ETHEREUM.serialize_for_db(),
+            'ds',
+            proxy_address,
+        )]
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM evm_accounts_details WHERE key='proxies'",
+        ).fetchone()[0] == 0
 
     assert airdrop_parquet_path.exists() is False
     assert airdrop_csv_path.exists() is True

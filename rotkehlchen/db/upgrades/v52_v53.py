@@ -705,4 +705,33 @@ ON bitcointx_address_mappings(address, tx_id);
             'ON timed_balances(currency, timestamp, category, usd_value)',
         )
 
+    @progress_step(description='Create and migrate EVM account proxy mappings.')
+    def _create_evm_account_proxies_table(write_cursor: DBCursor) -> None:
+        # `proxies` was stored as `<proxy_type>:<proxy_address>` in evm_accounts_details.
+        # Keep this upgrade self-contained so later schema changes cannot affect it.
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS evm_account_proxies (
+    account VARCHAR[42] NOT NULL,
+    chain_id INTEGER NOT NULL,
+    proxy_type TEXT NOT NULL,
+    proxy_address VARCHAR[42] NOT NULL,
+    PRIMARY KEY (account, chain_id, proxy_type, proxy_address)
+);
+""")
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_evm_account_proxies_chain_account '
+            'ON evm_account_proxies(chain_id, account)',
+        )
+        write_cursor.execute("""
+INSERT OR IGNORE INTO evm_account_proxies(account, chain_id, proxy_type, proxy_address)
+SELECT
+    account,
+    chain_id,
+    substr(value, 1, instr(value, ':') - 1),
+    substr(value, instr(value, ':') + 1)
+FROM evm_accounts_details
+WHERE key = 'proxies' AND instr(value, ':') > 1;
+""")
+        write_cursor.execute("DELETE FROM evm_accounts_details WHERE key = 'proxies';")
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)
