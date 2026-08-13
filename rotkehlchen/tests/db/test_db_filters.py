@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.types import AssetFlag
@@ -39,7 +41,7 @@ def test_asset_flag_filter() -> None:
     assert bindings == [AssetFlag.REBASING.value, '%ether%']
 
 
-def test_ethereum_transaction_filter():
+def test_ethereum_transaction_filter() -> None:
     address = make_evm_address()
     filter_query = EvmTransactionsFilterQuery.make(
         limit=10,
@@ -64,7 +66,7 @@ def test_ethereum_transaction_filter():
     (True, True, False),
     (True, False, False),
 ])
-def test_filter_arguments(and_op, order_by, pagination):
+def test_filter_arguments(and_op: Any, order_by: Any, pagination: Any) -> None:
     """This one is just like the ethereum transactions filter test, but also using
     it as a testbed to test combinations of arguments"""
     accounts = [EvmAccount(make_evm_address()), EvmAccount(make_evm_address())]
@@ -103,7 +105,7 @@ def test_filter_arguments(and_op, order_by, pagination):
     ]
 
 
-def test_column_order_by_only_accepts_column_names():
+def test_column_order_by_only_accepts_column_names() -> None:
     """A column ordering attribute is spliced into ORDER BY as an identifier, so prepare()
     only accepts plain (optionally table-qualified) column names and refuses anything else."""
     for attribute in ('name', 'last_update_timestamp', 'accounting_rules.identifier'):
@@ -123,7 +125,7 @@ def test_column_order_by_only_accepts_column_names():
             DBFilterOrder(rules=[(attribute, True)], case_sensitive=True).prepare()
 
 
-def test_timestamp_proximity_order_binds_anchor():
+def test_timestamp_proximity_order_binds_anchor() -> None:
     """The proximity ordering emits a fixed expression with the anchor as a bound parameter,
     so no caller-supplied value is ever spliced into the query."""
     anchor = TimestampMS(1510000000000)
@@ -137,7 +139,7 @@ def test_timestamp_proximity_order_binds_anchor():
     ).prepare() == ('ORDER BY ABS(timestamp - ?) DESC', [anchor])
 
 
-def test_filter_query_threads_order_bindings_after_filters():
+def test_filter_query_threads_order_bindings_after_filters() -> None:
     """A proximity order routed through DBFilterQuery.prepare contributes its anchor as a
     bound parameter placed after the WHERE filter bindings, matching the placeholder order."""
     anchor = TimestampMS(1700000000000)
@@ -155,12 +157,12 @@ def test_filter_query_threads_order_bindings_after_filters():
     assert bindings == [time_filter.from_ts, time_filter.to_ts, anchor]
 
 
-def test_invalid_filter_is_input_error():
+def test_invalid_filter_is_input_error() -> None:
     """InvalidFilter subclasses InputError so the API maps it to a 400, not a 500."""
     assert issubclass(InvalidFilter, InputError)
 
 
-def test_ignored_assets(database):
+def test_ignored_assets(database: Any) -> None:
     """Test that the ignored asset filter works fine in all 4 cases"""
     clean_ignored_assets(database)
     # Test NOT IN with no ignored assets

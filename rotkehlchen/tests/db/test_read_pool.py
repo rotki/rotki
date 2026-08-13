@@ -4,7 +4,7 @@ from write commits on the same DB (WAL mode). See DBConnection.enable_read_pool.
 import threading
 import time
 from contextlib import suppress
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import Mock
 
 import pytest
@@ -23,7 +23,7 @@ USER_DB_PASSWORD: Final = '123'
 
 
 @pytest.fixture(name='conn')
-def fixture_conn(tmp_path: Path):
+def fixture_conn(tmp_path: Path) -> Any:
     """A file-backed WAL-mode global-type connection with the read pool enabled,
     mirroring how configure_globaldb sets up the real global DB connection"""
     conn = DBConnection(
@@ -41,7 +41,7 @@ def fixture_conn(tmp_path: Path):
     conn.close()
 
 
-def test_write_through_read_cursor_raises(conn: DBConnection):
+def test_write_through_read_cursor_raises(conn: DBConnection) -> None:
     """Pooled readers are opened with mode=ro so a write through read_ctx fails loudly"""
     with conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
@@ -49,7 +49,7 @@ def test_write_through_read_cursor_raises(conn: DBConnection):
             cursor.execute('INSERT INTO t(a) VALUES (2)')
 
 
-def test_read_pool_grows_lazily_and_reuses_last_reader(conn: DBConnection):
+def test_read_pool_grows_lazily_and_reuses_last_reader(conn: DBConnection) -> None:
     """Enabling the pool opens nothing until needed, grows only with concurrent
     demand and keeps sequential reads on the most recently used warm connection."""
     assert conn._readers_num == 0
@@ -72,7 +72,7 @@ def test_read_pool_grows_lazily_and_reuses_last_reader(conn: DBConnection):
         assert conn._borrowed_reader.reader is borrowed_second
 
 
-def test_transient_reader_setup_failure_keeps_pool_enabled(conn: DBConnection):
+def test_transient_reader_setup_failure_keeps_pool_enabled(conn: DBConnection) -> None:
     """Cancellation during lazy setup releases the reserved slot and lets a later read retry."""
     conn.disable_read_pool()
     reader_setup = Mock(side_effect=(TaskCancelledError('cancelled'), None))
@@ -90,7 +90,7 @@ def test_transient_reader_setup_failure_keeps_pool_enabled(conn: DBConnection):
     assert reader_setup.call_count == 2
 
 
-def test_own_uncommitted_data_stays_visible(conn: DBConnection):
+def test_own_uncommitted_data_stays_visible(conn: DBConnection) -> None:
     """The thread holding the write transaction or savepoint stack must keep
     reading its own uncommitted data, so its read_ctx uses the write connection"""
     with conn.write_ctx() as write_cursor:
@@ -104,7 +104,7 @@ def test_own_uncommitted_data_stays_visible(conn: DBConnection):
             assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (3,)
 
 
-def test_readers_are_isolated_from_write_commits(conn: DBConnection):
+def test_readers_are_isolated_from_write_commits(conn: DBConnection) -> None:
     """The reason the pool exists: another thread's commit must neither reset an
     in-flight read statement nor leak uncommitted data into it"""
     with conn.write_ctx() as write_cursor:
@@ -139,7 +139,7 @@ def test_readers_are_isolated_from_write_commits(conn: DBConnection):
         assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (15,)
 
 
-def test_uncommitted_data_invisible_to_other_threads(conn: DBConnection):
+def test_uncommitted_data_invisible_to_other_threads(conn: DBConnection) -> None:
     """A pooled reader on another thread sees only committed data while a write
     transaction is open"""
     seen_count = 0
@@ -155,7 +155,7 @@ def test_uncommitted_data_invisible_to_other_threads(conn: DBConnection):
     assert seen_count == 1
 
 
-def test_nested_read_ctx_reuses_borrowed_reader(tmp_path: Path):
+def test_nested_read_ctx_reuses_borrowed_reader(tmp_path: Path) -> None:
     """Nested read_ctx calls on one thread reuse the thread's borrowed reader.
     With a pool of one reader and several nesting threads this would otherwise
     deadlock, each thread holding a reader while waiting for another."""
@@ -185,7 +185,7 @@ def test_nested_read_ctx_reuses_borrowed_reader(tmp_path: Path):
     conn.close()
 
 
-def test_enable_read_pool_is_noop_for_memory_db():
+def test_enable_read_pool_is_noop_for_memory_db() -> None:
     """In-memory DBs (used by the globaldb test fixture) cannot use WAL and have
     no file to open read-only, so read_ctx keeps using the write connection"""
     conn = DBConnection(
@@ -201,7 +201,7 @@ def test_enable_read_pool_is_noop_for_memory_db():
     conn.close()
 
 
-def test_close_with_borrowed_reader(conn: DBConnection):
+def test_close_with_borrowed_reader(conn: DBConnection) -> None:
     """Closing the connection while a reader is borrowed closes that reader when
     it is returned instead of leaking it"""
     with conn.read_ctx() as cursor:
@@ -216,7 +216,7 @@ def test_close_with_borrowed_reader(conn: DBConnection):
 def test_disable_read_pool_interrupts_borrowed_reader(
         conn: DBConnection,
         monkeypatch: pytest.MonkeyPatch,
-):
+) -> None:
     """A reader still executing a statement when the drain wait expires gets it
     interrupted, so the disabling caller proceeds without a reader holding the
     file open instead of only logging a warning"""
@@ -253,7 +253,7 @@ def test_disable_read_pool_interrupts_borrowed_reader(
         borrowed[0].cursor()
 
 
-def test_borrowed_reader_is_not_returned_to_replacement_pool(conn: DBConnection):
+def test_borrowed_reader_is_not_returned_to_replacement_pool(conn: DBConnection) -> None:
     """A reader from a disabled pool must be closed rather than returned into a
     replacement pool, where it may have stale connection setup such as an old key."""
     with conn.read_ctx():
@@ -269,7 +269,7 @@ def test_borrowed_reader_is_not_returned_to_replacement_pool(conn: DBConnection)
 
 
 @pytest.fixture(name='user_conn')
-def fixture_user_conn(tmp_path: Path):
+def fixture_user_conn(tmp_path: Path) -> Any:
     """A keyed sqlcipher user-type connection with the read pool enabled,
     mirroring how DBHandler sets up the user DB connection"""
     conn = DBConnection(
@@ -295,7 +295,7 @@ def fixture_user_conn(tmp_path: Path):
     conn.close()
 
 
-def test_user_db_keyed_pooled_reads(user_conn: DBConnection):
+def test_user_db_keyed_pooled_reads(user_conn: DBConnection) -> None:
     """Pooled sqlcipher readers are keyed by reader_setup and read-only"""
     with user_conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
@@ -308,7 +308,7 @@ def test_user_db_keyed_pooled_reads(user_conn: DBConnection):
             assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (2,)
 
 
-def test_user_db_rekey_rebuilds_pool(user_conn: DBConnection):
+def test_user_db_rekey_rebuilds_pool(user_conn: DBConnection) -> None:
     """The change_password flow: readers keyed with the old password are closed
     before the rekey and a fresh pool is keyed with the new one"""
     user_conn.disable_read_pool()
@@ -324,7 +324,7 @@ def test_user_db_rekey_rebuilds_pool(user_conn: DBConnection):
         assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
 
 
-def test_user_db_failed_reader_setup_cleans_up(user_conn: DBConnection):
+def test_user_db_failed_reader_setup_cleans_up(user_conn: DBConnection) -> None:
     """A reader_setup failure (e.g. wrong key) closes created readers, propagates
     and leaves the pool disabled so read_ctx falls back to the write connection"""
     user_conn.disable_read_pool()
@@ -341,14 +341,14 @@ def test_user_db_failed_reader_setup_cleans_up(user_conn: DBConnection):
         assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
 
 
-def test_user_db_integrity_check_on_pooled_reader(user_conn: DBConnection):
+def test_user_db_integrity_check_on_pooled_reader(user_conn: DBConnection) -> None:
     """PRAGMA integrity_check is a pure read and must work on pooled readers,
     since db_integrity_check runs it through read_ctx"""
     with user_conn.read_ctx() as cursor:
         assert cursor.execute('PRAGMA integrity_check;').fetchall() == [('ok',)]
 
 
-def test_concurrent_readers_and_writers_soak(conn: DBConnection):
+def test_concurrent_readers_and_writers_soak(conn: DBConnection) -> None:
     """Many readers and writers interleave without cursor resets or stale locks"""
     def writer(worker: int) -> None:
         for _ in range(20):

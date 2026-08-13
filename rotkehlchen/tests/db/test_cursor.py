@@ -1,11 +1,13 @@
 """Tests for DBCursor semantics that the prefetch buffer must preserve"""
+from typing import Any
+
 import pytest
 
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 
 
 @pytest.fixture(name='conn')
-def fixture_conn():
+def fixture_conn() -> Any:
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.GLOBAL,
@@ -19,7 +21,7 @@ def fixture_conn():
 
 
 @pytest.mark.parametrize('size', [0, -2])
-def test_fetchmany_nonpositive_size_returns_remaining(conn: DBConnection, size: int):
+def test_fetchmany_nonpositive_size_returns_remaining(conn: DBConnection, size: int) -> None:
     """The underlying drivers treat a non-positive fetchmany size as no limit
     and return all remaining rows -- the prefetch buffer must mirror that
     instead of returning nothing"""
@@ -36,7 +38,7 @@ def test_fetchmany_nonpositive_size_returns_remaining(conn: DBConnection, size: 
 def test_fetchmany_mixes_prefetched_and_remaining_rows(
         conn: DBConnection,
         monkeypatch: pytest.MonkeyPatch,
-):
+) -> None:
     """A fetchmany larger than the prefetch buffer serves the buffered rows
     first and completes from the underlying cursor"""
     monkeypatch.setattr('rotkehlchen.db.drivers.sqlite.CURSOR_PREFETCH_ROWS', 2)

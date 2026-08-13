@@ -1,3 +1,4 @@
+from typing import Any
 
 import pytest
 
@@ -51,13 +52,13 @@ from rotkehlchen.types import SUPPORTED_EVM_EVMLIKE_CHAINS, SupportedBlockchain
     ],
 )
 def test_form_query_to_filter_timestamps(
-        query_in,
-        timestamp_attribute,
-        from_ts,
-        to_ts,
-        expected_query_out,
-        expected_bindings,
-):
+        query_in: Any,
+        timestamp_attribute: Any,
+        from_ts: Any,
+        to_ts: Any,
+        expected_query_out: Any,
+        expected_bindings: Any,
+) -> None:
     query_out, bindings = form_query_to_filter_timestamps(
         query=query_in,
         timestamp_attribute=timestamp_attribute,
@@ -78,7 +79,7 @@ def _tuple_to_balance(data: tuple) -> SingleDBAssetBalance:
     )
 
 
-def test_combine_asset_balances():
+def test_combine_asset_balances() -> None:
     a = [
         _tuple_to_balance((1, 1, 1)),
         _tuple_to_balance((2, 1, 1)),
@@ -187,7 +188,7 @@ def test_combine_asset_balances():
         ('what', 'ever'), 'invalid_db_tuple_type', None,
     )],
 )
-def test_db_tuple_to_str(data, tuple_type, expected_str):
+def test_db_tuple_to_str(data: Any, tuple_type: Any, expected_str: Any) -> None:
     if expected_str:
         assert db_tuple_to_str(data, tuple_type) == expected_str
     else:
@@ -199,11 +200,11 @@ def test_db_tuple_to_str(data, tuple_type, expected_str):
     ({'evmchains_to_skip_detection': []}, set(SUPPORTED_EVM_EVMLIKE_CHAINS)),
     ({'evmchains_to_skip_detection': [SupportedBlockchain.POLYGON_POS, SupportedBlockchain.BASE, SupportedBlockchain.ARBITRUM_ONE]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL, SupportedBlockchain.BINANCE_SC, SupportedBlockchain.ZKSYNC_LITE, SupportedBlockchain.HYPERLIQUID, SupportedBlockchain.MONAD}),  # noqa: E501
 ])
-def test_get_chains_to_detect_evm_accounts(database, expected_chains):
+def test_get_chains_to_detect_evm_accounts(database: Any, expected_chains: Any) -> None:
     assert set(database.get_chains_to_detect_evm_accounts()) == expected_chains
 
 
-def test_update_table_schema_rejects_pk_renumber(database):
+def test_update_table_schema_rejects_pk_renumber(database: Any) -> Any:
     """update_table_schema must refuse to silently renumber an existing INTEGER PRIMARY KEY,
     since that orphans external references (e.g. tag_mappings.object_reference). It is allowed
     only when the id is preserved, or explicitly opted into via allow_pk_renumber."""

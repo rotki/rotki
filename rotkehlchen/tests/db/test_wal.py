@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 import pytest
 
@@ -6,15 +7,16 @@ from rotkehlchen.concurrency import spawn, wait
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [1])
-def test_wal_checkpoint_lock(database):
+def test_wal_checkpoint_lock(database: Any) -> None:
     """Test that verifies the fix for issue #5038.
 
     It reproduces the actual scenario where multiple concurrent readers during a WAL checkpoint
     can lead to a database locked error
     """
-    errors, attempts, max_attempts = [], 0, 50
+    errors: list[Exception] = []
+    attempts, max_attempts = 0, 50
 
-    def db_reader():
+    def db_reader() -> None:
         """Simulate continuous global DB operations that trigger progress callbacks"""
         while attempts < max_attempts and len(errors) == 0:
             # These operations will trigger progress callbacks frequently
@@ -28,7 +30,7 @@ def test_wal_checkpoint_lock(database):
 
             time.sleep(0)
 
-    def checkpoint_worker():
+    def checkpoint_worker() -> None:
         """Perform WAL checkpoint operations that should trigger the bug without the fix"""
         nonlocal attempts, errors
 

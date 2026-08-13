@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.db.calendar import CalendarEntry, DBCalendar, ReminderEntry
@@ -5,7 +7,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import Timestamp
 
 
-def test_update_nonexistent_calendar_entry_raises(database) -> None:
+def test_update_nonexistent_calendar_entry_raises(database: Any) -> None:
     db_calendar = DBCalendar(database)
 
     with pytest.raises(InputError, match='non existent calendar entry'):
@@ -22,7 +24,7 @@ def test_update_nonexistent_calendar_entry_raises(database) -> None:
         ))
 
 
-def test_update_nonexistent_reminder_entry_raises(database) -> None:
+def test_update_nonexistent_reminder_entry_raises(database: Any) -> None:
     db_calendar = DBCalendar(database)
 
     with pytest.raises(InputError, match='non existent reminder'):

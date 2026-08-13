@@ -1,9 +1,10 @@
+from typing import Any
+
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS1,
     ETH_ADDRESS2,
@@ -22,7 +23,7 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
+def test_add_get_evm_transactions(data_dir: Any, username: Any, sql_vm_instructions_cb: Any) -> None:  # noqa: E501
     """Test that adding and retrieving evm transactions from the DB works fine.
 
     Also duplicates should be ignored and an error returned
@@ -48,10 +49,10 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         block_number=1,
         from_address=ETH_ADDRESS1,
         to_address=ETH_ADDRESS3,
-        value=FVal('2000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=2000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
@@ -62,10 +63,10 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         block_number=3,
         from_address=ETH_ADDRESS2,
         to_address=ETH_ADDRESS3,
-        value=FVal('4000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=4000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
@@ -76,10 +77,10 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         block_number=5,
         from_address=ETH_ADDRESS3,
         to_address=ETH_ADDRESS1,
-        value=FVal('1000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=1000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=3,
     )
@@ -113,7 +114,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         # try transaction query by tx_hash
         result = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=tx2_hash, chain_id=ChainID.ETHEREUM))  # noqa: E501
         assert result == [tx2], 'querying transaction by hash in bytes failed'
-        result = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=b'dsadsad', chain_id=ChainID.ETHEREUM))  # noqa: E501
+        result = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=deserialize_evm_tx_hash(b'dsadsad'), chain_id=ChainID.ETHEREUM))  # noqa: E501
         assert result == []
 
         # Now try transaction by relevant addresses
@@ -128,7 +129,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instructions_cb):
+def test_query_also_internal_evm_transactions(data_dir: Any, username: Any, sql_vm_instructions_cb: Any) -> None:  # noqa: E501
     """Test that querying transactions for an address also returns the parent
     transaction of any internal transactions the address was involved in.
     """
@@ -156,10 +157,10 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         block_number=1,
         from_address=ETH_ADDRESS1,
         to_address=ETH_ADDRESS3,
-        value=FVal('2000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=2000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
@@ -170,10 +171,10 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         block_number=3,
         from_address=ETH_ADDRESS2,
         to_address=make_evm_address(),
-        value=FVal('4000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=4000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
@@ -184,10 +185,10 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         block_number=5,
         from_address=ETH_ADDRESS3,
         to_address=ETH_ADDRESS1,
-        value=FVal('1000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=1000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=3,
     )
@@ -198,10 +199,10 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         block_number=6,
         from_address=ETH_ADDRESS1,
         to_address=make_evm_address(),
-        value=FVal('1000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=1000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=55,
     )
@@ -212,10 +213,10 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         block_number=7,
         from_address=ETH_ADDRESS1,
         to_address=make_evm_address(),
-        value=FVal('1000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
+        value=1000000,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
         input_data=MOCK_INPUT_DATA,
         nonce=55,
     )

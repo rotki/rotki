@@ -6,6 +6,7 @@ in phase 3 of the gevent removal migration (docs/designs/gevent_to_asyncio.md),
 running on real preemptive threads since the phase-6 flip.
 """
 import time
+from typing import Any
 
 import pytest
 
@@ -17,7 +18,7 @@ ITERATIONS = 20
 
 
 @pytest.fixture(name='conn')
-def fixture_conn():
+def fixture_conn() -> Any:
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.GLOBAL,
@@ -29,7 +30,7 @@ def fixture_conn():
     conn.close()
 
 
-def test_concurrent_writers_savepoints_and_readers(conn: DBConnection):
+def test_concurrent_writers_savepoints_and_readers(conn: DBConnection) -> None:
     """Soak the transaction slot: writers, savepoint stacks with partial rollbacks
     and readers all interleave and the connection state stays consistent"""
     def writer(worker: int) -> None:

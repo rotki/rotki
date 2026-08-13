@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -10,7 +12,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import SupportedBlockchain
 
 
-def _add_eth_account(database, address) -> None:
+def _add_eth_account(database: Any, address: Any) -> None:
     with database.user_write() as cursor:
         database.add_blockchain_accounts(
             write_cursor=cursor,
@@ -21,7 +23,7 @@ def _add_eth_account(database, address) -> None:
         )
 
 
-def test_lido_csm_db_operations(database) -> None:
+def test_lido_csm_db_operations(database: Any) -> None:
     db = DBLidoCsm(database)
 
     # Happy path add/list

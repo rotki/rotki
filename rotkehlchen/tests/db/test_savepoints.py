@@ -1,5 +1,6 @@
 import time
 from contextlib import suppress
+from typing import Any
 
 import pytest
 import rsqlite
@@ -14,7 +15,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 
 
 @pytest.fixture(name='conn')
-def fixture_conn():
+def fixture_conn() -> Any:
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.GLOBAL,
@@ -24,7 +25,7 @@ def fixture_conn():
     conn.close()
 
 
-def test_unnamed_savepoints(conn: DBConnection):
+def test_unnamed_savepoints(conn: DBConnection) -> None:
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
 
@@ -48,7 +49,7 @@ def test_unnamed_savepoints(conn: DBConnection):
         assert cursor.execute('SELECT b FROM a').fetchall() == [(1,), (3,)]
 
 
-def test_savepoint_errors(conn: DBConnection):
+def test_savepoint_errors(conn: DBConnection) -> None:
     with pytest.raises(ContextError):
         conn.release_savepoint()
 
@@ -60,7 +61,7 @@ def test_savepoint_errors(conn: DBConnection):
         conn.rollback_savepoint('abc')
 
 
-def test_write_transaction_with_savepoint(conn: DBConnection):
+def test_write_transaction_with_savepoint(conn: DBConnection) -> None:
     """Test that opening a savepoint within a write transaction in the
     same greenlet is okay"""
     with conn.write_ctx() as write_cursor:
@@ -73,7 +74,7 @@ def test_write_transaction_with_savepoint(conn: DBConnection):
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
 
 
-def test_write_transaction_with_savepoint_other_context(conn: DBConnection):
+def test_write_transaction_with_savepoint_other_context(conn: DBConnection) -> None:
     """Test that opening a savepoint from a different task while a write
     transaction is already open from another task waits for the original to finish"""
     def other_context(conn: DBConnection, first_run: bool) -> None:
@@ -115,7 +116,7 @@ def test_write_transaction_with_savepoint_other_context(conn: DBConnection):
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other task should write to the DB'  # noqa: E501
 
 
-def test_savepoint_with_write_transaction(conn: DBConnection):
+def test_savepoint_with_write_transaction(conn: DBConnection) -> None:
     """Test that a write transaction under a savepoint can still happen by
     switching to a savepoint instead"""
     with conn.write_ctx() as write_cursor:
@@ -139,10 +140,10 @@ def test_savepoint_with_write_transaction(conn: DBConnection):
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
 
 
-def test_savepoint_with_write_transaction_other_context(conn: DBConnection):
+def test_savepoint_with_write_transaction_other_context(conn: DBConnection) -> None:
     """Test that a write transaction after a savepoint but in a different task
     does not continue the savepoint but instead waits"""
-    def other_context(conn) -> None:
+    def other_context(conn: Any) -> None:
         with conn.write_ctx() as write_cursor:
             write_cursor.execute('INSERT INTO a VALUES (4)')
 
@@ -164,10 +165,10 @@ def test_savepoint_with_write_transaction_other_context(conn: DBConnection):
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (4,)], 'other task should write to the DB'  # noqa: E501
 
 
-def test_open_savepoint_with_savepoint_other_context(conn: DBConnection):
+def test_open_savepoint_with_savepoint_other_context(conn: DBConnection) -> None:
     """Test that opening a savepoint while a savepoint queue is already open in
     another task waits until the first one is completely done"""
-    def other_context(conn, first_run) -> None:
+    def other_context(conn: Any, first_run: Any) -> None:
         with conn.savepoint_ctx() as savepoint1_cursor:
             values = (2,) if first_run else (4,)
             savepoint1_cursor.execute('INSERT INTO a VALUES (?)', values)
@@ -206,7 +207,7 @@ def test_open_savepoint_with_savepoint_other_context(conn: DBConnection):
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other task should write to the DB'  # noqa: E501
 
 
-def test_rollback_in_savepoints(conn: DBConnection):
+def test_rollback_in_savepoints(conn: DBConnection) -> None:
     """
     Test that savepoints are released when an error is raised. This verifies
     that a rollback is always followed up by a release since that is required.

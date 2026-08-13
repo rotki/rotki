@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -5,7 +7,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import SupportedBlockchain
 
 
-def test_get_last_consecutive_xpub_derived_indices(setup_db_for_xpub_tests):
+def test_get_last_consecutive_xpub_derived_indices(setup_db_for_xpub_tests: Any) -> None:
     db, xpub1, xpub2, xpub3, _ = setup_db_for_xpub_tests
     with db.conn.read_ctx() as cursor:
         receiving_idx, change_idx = db.get_last_consecutive_xpub_derived_indices(cursor, xpub1)
@@ -20,7 +22,7 @@ def test_get_last_consecutive_xpub_derived_indices(setup_db_for_xpub_tests):
     db.logout()
 
 
-def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):
+def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests: Any) -> None:
     db, xpub1, xpub2, _, all_addresses = setup_db_for_xpub_tests
     # Also add a non-existing address in there for fun
     all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
@@ -51,7 +53,7 @@ def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):
     db.logout()
 
 
-def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
+def test_delete_bitcoin_xpub(setup_db_for_xpub_tests: Any) -> None:
     """Test that bitcoin xpub deletion works fine and that also tag mappings are gone"""
     db, xpub1, xpub2, _, all_addresses = setup_db_for_xpub_tests
     # Also add a non-existing address in there for fun
@@ -80,7 +82,7 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
     db.logout()
 
 
-def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests):
+def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests: Any) -> None:
     """Test that retrieving bitcoin xpub data also returns all properly mapped tags"""
     db, xpub1, xpub2, xpub3, _ = setup_db_for_xpub_tests
     with db.conn.read_ctx() as cursor:
@@ -100,7 +102,7 @@ def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests):
     db.logout()
 
 
-def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
+def test_edit_bitcoin_xpub(setup_db_for_xpub_tests: Any) -> None:
     """Test that editing bitcoin xpub label and tags"""
     db, xpub, _, _, _ = setup_db_for_xpub_tests
 
@@ -134,7 +136,7 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
     db.logout()
 
 
-def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
+def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests: Any) -> None:
     """Test that edits bitcoin xpub label and tries to add non existing tag"""
     db, xpub, _, _, _ = setup_db_for_xpub_tests
 

@@ -4,7 +4,7 @@ import shutil
 import urllib.parse
 from contextlib import ExitStack, contextmanager, suppress
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -117,7 +117,7 @@ def assert_tx_hash_is_bytes(
 
 
 @contextmanager
-def target_patch(target_version: int):
+def target_patch(target_version: int) -> Any:
     """Patches the upgrades to stop at target_version and also sets
     ROTKEHLCHEN_DB_VERSION to the target_version"""
     a = patch(
@@ -169,7 +169,7 @@ def _init_db_with_target_version(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_26_to_27(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 26 to version 27.
 
     - Recreates balancer events, uniswap events, amm_swaps. Deletes balancer pools
@@ -215,7 +215,7 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_27_to_28(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 27 to version 28.
 
     - Adds a new column 'version' to the 'yearn_vaults_events' table
@@ -268,7 +268,7 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_28_to_29(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 28 to version 29.
 
     - Updates the primary key of blockchain accounts to take into account chain type
@@ -384,7 +384,7 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_29_to_30(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 29 to version 30.
 
     - Updates the primary key of blockchain accounts to take into account chain type
@@ -408,7 +408,7 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_30_to_31(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 30 to version 31.
 
     Also checks that this code upgrade works even if the DB is affected by
@@ -483,7 +483,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_31_to_32(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 31 to version 32.
 
     - Check that subtype is correctly updated
@@ -514,22 +514,22 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
         'staking remove asset',
     }
     # check used query ranges
-    result = cursor.execute('SELECT * from used_query_ranges').fetchall()
-    assert result == [
+    query_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert query_ranges == [
         ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
         ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
         ('kraken_asset_movements_kraken1', 0, 1634850532),
         ('gitcoingrants_0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 1, 2),
     ]
     # Check gitcoin ledger actions are there
-    result = cursor.execute('SELECT * from ledger_actions').fetchall()
-    assert result == [
+    ledger_actions = cursor.execute('SELECT * from ledger_actions').fetchall()
+    assert ledger_actions == [
         (1, 1, 'A', 'A', '1', 'ETH', None, None, None, None),
         (2, 2, 'A', '^', '1', 'ETH', None, None, None, None),
         (3, 3, 'A', '^', '1', 'ETH', None, None, None, None),
     ]
-    result = cursor.execute('SELECT * from ledger_actions_gitcoin_data').fetchall()
-    assert result == [(2, '0x1', 1, 1, 'A'), (3, '0x2', 1, 1, 'B')]
+    gitcoin_data = cursor.execute('SELECT * from ledger_actions_gitcoin_data').fetchall()
+    assert gitcoin_data == [(2, '0x1', 1, 1, 'A'), (3, '0x2', 1, 1, 'B')]
     # Check that the other gitcoin tables exist at this point
     for name in ('gitcoin_tx_type', 'ledger_actions_gitcoin_data', 'gitcoin_grant_metadata'):
         assert table_exists(cursor, name)
@@ -548,17 +548,17 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     ]
     # Check that there are invalid pairs of (event_identifier, sequence_index)
     base_entries_query = "SELECT * from history_events WHERE event_identifier='KRAKEN-REMOTE-ID3'"
-    result = cursor.execute(base_entries_query).fetchall()
-    assert len(result) == 5
-    assert len([row[2] for row in result]) == 5
-    assert len({row[2] for row in result}) == 4
-    assert len([True for event in result if event[-1] is not None]) == 2
+    remote_id3_entries = cursor.execute(base_entries_query).fetchall()
+    assert len(remote_id3_entries) == 5
+    assert len([row[2] for row in remote_id3_entries]) == 5
+    assert len({row[2] for row in remote_id3_entries}) == 4
+    assert len([True for event in remote_id3_entries if event[-1] is not None]) == 2
 
     base_entries_query = "SELECT * from history_events WHERE event_identifier='KRAKEN-REMOTE-ID4'"
-    result = cursor.execute(base_entries_query).fetchall()
-    assert len(result) == 5
-    assert len([row[2] for row in result]) == 5
-    assert len({row[2] for row in result}) == 3
+    remote_id4_entries = cursor.execute(base_entries_query).fetchall()
+    assert len(remote_id4_entries) == 5
+    assert len([row[2] for row in remote_id4_entries]) == 5
+    assert len({row[2] for row in remote_id4_entries}) == 3
 
     # check that user_credential_mappings with setting_name=PAIRS are present
     selected_binance_markets_before = cursor.execute("SELECT * from user_credentials_mappings WHERE setting_name='PAIRS'").fetchall()  # noqa: E501
@@ -590,20 +590,20 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db.conn.cursor()
     cursor.execute('SELECT subtype FROM history_events')
-    subtypes = {row[0] for row in cursor}
-    assert subtypes == {'deposit asset', 'receive wrapped', 'reward', 'fee', None, 'remove asset'}
-    result = cursor.execute('SELECT identifier FROM history_events ORDER BY identifier')
-    assert [x[0] for x in result] == list(range(1, 20)), 'identifier column should be added'
+    upgraded_subtypes = {row[0] for row in cursor}
+    assert upgraded_subtypes == {'deposit asset', 'receive wrapped', 'reward', 'fee', None, 'remove asset'}  # noqa: E501
+    upgraded_identifiers = cursor.execute('SELECT identifier FROM history_events ORDER BY identifier')  # noqa: E501
+    assert [x[0] for x in upgraded_identifiers] == list(range(1, 20)), 'identifier column should be added'  # noqa: E501
     # check used query range got delete and rest are intact
-    result = cursor.execute('SELECT * from used_query_ranges').fetchall()
-    assert result == [
+    upgraded_query_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert upgraded_query_ranges == [
         ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
         ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
         ('kraken_asset_movements_kraken1', 0, 1634850532),
     ]
     # Check that the non-gitcoin ledger action is still there
-    result = cursor.execute('SELECT * from ledger_actions').fetchall()
-    assert result == [(1, 1, 'A', 'A', '1', 'ETH', None, None, None, None)]
+    upgraded_ledger_actions = cursor.execute('SELECT * from ledger_actions').fetchall()
+    assert upgraded_ledger_actions == [(1, 1, 'A', 'A', '1', 'ETH', None, None, None, None)]
     # Check that all gitcoin tables are deleted
     for name in ('gitcoin_tx_type', 'ledger_actions_gitcoin_data', 'gitcoin_grant_metadata'):
         assert table_exists(cursor, name) is False
@@ -634,16 +634,16 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
 
     # Check that sequence indices are unique for the same event identifier
     base_entries_query = "SELECT * from history_events WHERE event_identifier='KRAKEN-REMOTE-ID3'"
-    result = cursor.execute(base_entries_query).fetchall()
-    assert len(result) == 5
-    assert len([row[2] for row in result]) == 5
-    assert len({row[2] for row in result}) == 5
+    upgraded_remote_id3_entries = cursor.execute(base_entries_query).fetchall()
+    assert len(upgraded_remote_id3_entries) == 5
+    assert len([row[2] for row in upgraded_remote_id3_entries]) == 5
+    assert len({row[2] for row in upgraded_remote_id3_entries}) == 5
 
     base_entries_query = "SELECT * from history_events WHERE event_identifier='KRAKEN-REMOTE-ID4'"
-    result = cursor.execute(base_entries_query).fetchall()
-    assert len(result) == 5
-    assert len([row[2] for row in result]) == 5
-    assert len({row[2] for row in result}) == 5
+    upgraded_remote_id4_entries = cursor.execute(base_entries_query).fetchall()
+    assert len(upgraded_remote_id4_entries) == 5
+    assert len([row[2] for row in upgraded_remote_id4_entries]) == 5
+    assert len({row[2] for row in upgraded_remote_id4_entries}) == 5
 
     ens_names_test_data = ('0xASDF123', 'TEST_ENS_NAME', 1)
     cursor.execute('INSERT INTO ens_mappings(address, ens_name, last_update) VALUES(?, ?, ?)', ens_names_test_data)  # noqa: E501
@@ -674,7 +674,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_32_to_33(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 32 to version 33.
     """
     msg_aggregator = MessagesAggregator()
@@ -789,7 +789,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_33_to_34(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 33 to version 34.
 
     - Change the combined_trades_view so a valid string is returned in the link field instead
@@ -825,7 +825,7 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_34_to_35(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 34 to version 35.
 
     - Check that expected information for the changes in timestamps exists and is correct
@@ -947,7 +947,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
-    def try_insert_mapping(cur):
+    def try_insert_mapping(cur: Any) -> None:
         # try to insert a new entry with values (except blockchain) duplicating another entry
         cur.execute(
             'INSERT INTO xpub_mappings VALUES (?, ?, ?, ?, ?, ?)',
@@ -1074,7 +1074,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_35_to_36(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 35 to version 36"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v35_rotkehlchen.db')
@@ -1374,7 +1374,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_36_to_37(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 36 to version 37"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v36_rotkehlchen.db')
@@ -1577,7 +1577,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_37_to_38(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 37 to version 38"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v37_rotkehlchen.db')
@@ -1648,8 +1648,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         for identifier, node in enumerate(DEFAULT_POLYGON_NODES_AT_V38, start=max_initial_node_id + 1)  # noqa: E501
     ]
     assert nodes_after == nodes_before + default_polygon_nodes_with_ids
-    expected_internal_txs = [tuple(x[:3]) + tuple(x[5:]) for x in expected_internal_txs]
-    assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
+    expected_internal_txs_after = [tuple(x[:3]) + tuple(x[5:]) for x in expected_internal_txs]
+    assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs_after  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key,)).fetchone()[0] == 0  # noqa: E501
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='aave_events';").fetchone()[0] == 0  # noqa: E501
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='amm_events';").fetchone()[0] == 0  # noqa: E501
@@ -1664,12 +1664,12 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_38_to_39(user_data_dir: Any) -> Any:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 38 to version 39"""
-    def get_hashchain(entry):
+    def get_hashchain(entry: Any) -> Any:
         return entry[0] + entry[1].to_bytes(4, byteorder='big')
 
-    def get_hashchainlog(entry):
+    def get_hashchainlog(entry: Any) -> Any:
         return get_hashchain(entry) + entry[2].to_bytes(4, byteorder='big')
 
     msg_aggregator = MessagesAggregator()
@@ -1855,7 +1855,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
+def test_upgrade_db_39_to_40(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test upgrading the DB from version 39 to version 40"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v39_rotkehlchen.db')
@@ -2033,7 +2033,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ),
     None,  # no setting, result should have two values replaced
 ])
-def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggregator):
+def test_upgrade_db_40_to_41(user_data_dir: Any, address_name_priority: Any, messages_aggregator: Any) -> None:  # noqa: E501
     """Test upgrading the DB from version 40 to version 41"""
     _use_prepared_db(user_data_dir, 'v40_rotkehlchen.db')
     db_v40 = _init_db_with_target_version(
@@ -2293,7 +2293,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
+def test_upgrade_db_41_to_42(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 41 to version 42"""
     _use_prepared_db(user_data_dir, 'v41_rotkehlchen.db')
     db_v41 = _init_db_with_target_version(
@@ -2413,7 +2413,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
+def test_upgrade_db_42_to_43(user_data_dir: Any, messages_aggregator: Any, data_dir: Any) -> None:
     """Test upgrading the DB from version 42 to version 43"""
     _use_prepared_db(user_data_dir, 'v42_rotkehlchen.db')
     db_v42 = _init_db_with_target_version(
@@ -2486,7 +2486,7 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
+def test_upgrade_db_43_to_44(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 43 to version 44"""
     _use_prepared_db(user_data_dir, 'v43_rotkehlchen.db')
     db_v43 = _init_db_with_target_version(
@@ -2598,7 +2598,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_44_to_45(user_data_dir, messages_aggregator):
+def test_upgrade_db_44_to_45(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 43 to version 44"""
     _use_prepared_db(user_data_dir, 'v43_rotkehlchen.db')
     db_v43 = _init_db_with_target_version(
@@ -2626,7 +2626,7 @@ def test_upgrade_db_44_to_45(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_45_to_46(user_data_dir: Path, messages_aggregator):
+def test_upgrade_db_45_to_46(user_data_dir: Path, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 45 to version 46"""
     _use_prepared_db(user_data_dir, 'v45_rotkehlchen.db')
     db_v45 = _init_db_with_target_version(
@@ -2736,10 +2736,10 @@ def test_upgrade_db_45_to_46(user_data_dir: Path, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
+def test_upgrade_db_46_to_47(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 46 to version 47. This happened in 1.38"""
 
-    def _check_tokens_existence(user_db_cursor: DBCursor, expect_removed: bool = False):
+    def _check_tokens_existence(user_db_cursor: DBCursor, expect_removed: bool = False) -> None:
         """Assert whether the tokens are in the db or not depending on `expect_removed`"""
         for table, column, count in [
             ('assets', 'identifier', 2),
@@ -3080,7 +3080,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
+def test_upgrade_db_47_to_48(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 47 to version 48"""
     _use_prepared_db(user_data_dir, 'v47_rotkehlchen.db')
     db_v47 = _init_db_with_target_version(
@@ -3297,7 +3297,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
     db.logout()
 
 
-def test_latest_upgrade_correctness(user_data_dir):
+def test_latest_upgrade_correctness(user_data_dir: Any) -> None:
     """
     This is a test that we can only do for the last upgrade.
     It tests that we know and have included addition statements for all
@@ -3330,6 +3330,8 @@ def test_latest_upgrade_correctness(user_data_dir):
         resume_from_backup=False,
     )
     cursor = db.conn.cursor()
+    assert db.conn.minimized_schema is not None
+    assert db.conn.minimized_indexes is not None
     minimized_schema = dict(db.conn.minimized_schema)
     minimized_schema.pop('evm_internal_tx_conflicts', None)  # created by data migration
     sanity_check_impl(  # do sanity check on the db schema
@@ -3353,8 +3355,8 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = set()
-    removed_views = set()
+    removed_tables: set[str] = set()
+    removed_views: set[str] = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
@@ -3376,7 +3378,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     db.logout()
 
 
-def test_steps_counted_properly_in_upgrades(user_data_dir):
+def test_steps_counted_properly_in_upgrades(user_data_dir: Any) -> None:
     """
     Tests database upgrade progress counting behaviour. Makes sure that the number of times
     `new_step()` function is called matches the expected number of total steps.
@@ -3408,7 +3410,7 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
     last_db.logout()
 
 
-def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):
+def test_db_newer_than_software_raises_error(data_dir: Any, username: Any, sql_vm_instructions_cb: Any) -> None:  # noqa: E501
     """
     If the DB version is greater than the current known version in the
     software warn the user to use the latest version of the software
@@ -3437,7 +3439,7 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     ).close()
 
 
-def test_upgrades_list_is_sane():
+def test_upgrades_list_is_sane() -> None:
     for idx, entry in enumerate(UPGRADES_LIST, start=MIN_SUPPORTED_USER_DB_VERSION):
         msg = (
             f'{idx} upgrade record was expected to have {idx} '
@@ -3448,7 +3450,7 @@ def test_upgrades_list_is_sane():
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argument
+def test_old_versions_raise_error(user_data_dir: Any) -> None:  # pylint: disable=unused-argument
     """Test that upgrading from an old version raises the expected warning"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v9_rotkehlchen.db')
@@ -3463,7 +3465,7 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_unfinished_upgrades(user_data_dir):
+def test_unfinished_upgrades(user_data_dir: Any) -> None:
     msg_aggregator = MessagesAggregator()
     for backup_version in (33, 31):  # try both with correct and wrong backup
         _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
@@ -3481,24 +3483,24 @@ def test_unfinished_upgrades(user_data_dir):
             )
         db.logout()
         # Without resume_from_backup there is a permission error
-        with pytest.raises(RotkehlchenPermissionError) as exc_info:
+        with pytest.raises(RotkehlchenPermissionError) as permission_exc_info:
             _init_db_with_target_version(
                 target_version=34,
                 user_data_dir=user_data_dir,
                 msg_aggregator=msg_aggregator,
                 resume_from_backup=False,
             )
-        assert 'The encrypted database is in a semi upgraded state' in str(exc_info.value)
+        assert 'The encrypted database is in a semi upgraded state' in str(permission_exc_info.value)  # noqa: E501
 
         # There are no backups, so it is supposed to raise an error
-        with pytest.raises(DBUpgradeError) as exc_info:
+        with pytest.raises(DBUpgradeError) as upgrade_exc_info:
             _init_db_with_target_version(
                 target_version=34,
                 user_data_dir=user_data_dir,
                 msg_aggregator=msg_aggregator,
                 resume_from_backup=True,
             )
-        assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info.value)  # noqa: E501
+        assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(upgrade_exc_info.value)  # noqa: E501
 
         # Add multiple backups
         for write_version in (backup_version, backup_version - 1):
@@ -3524,14 +3526,14 @@ def test_unfinished_upgrades(user_data_dir):
                     resume_from_backup=True,
                 )
             else:  # backups exist, but not matching the DB
-                with pytest.raises(DBUpgradeError) as exc_info:
+                with pytest.raises(DBUpgradeError) as backup_exc_info:
                     _init_db_with_target_version(
                         target_version=34,
                         user_data_dir=user_data_dir,
                         msg_aggregator=msg_aggregator,
                         resume_from_backup=True,
                     )
-                assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info.value)  # noqa: E501
+                assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(backup_exc_info.value)  # noqa: E501
                 break  # and end the test
 
         else:  # Check that there is no setting left
@@ -3549,7 +3551,7 @@ def test_unfinished_upgrades(user_data_dir):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
+def test_upgrade_db_48_to_49(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 48 to version 49"""
     _use_prepared_db(user_data_dir, 'v48_rotkehlchen.db')
     db_v48 = _init_db_with_target_version(
@@ -3662,7 +3664,7 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
+def test_upgrade_db_49_to_50(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 49 to version 50"""
     _use_prepared_db(user_data_dir, 'v49_rotkehlchen.db')
     db_v49 = _init_db_with_target_version(
@@ -3765,7 +3767,7 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
+def test_upgrade_db_50_to_51(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 50 to version 51"""
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     subtype_migration_query = (
@@ -3953,7 +3955,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
+def test_upgrade_db_51_to_52(user_data_dir: Any, messages_aggregator: Any) -> None:
     """Test upgrading the DB from version 51 to version 52."""
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     db_v51 = _init_db_with_target_version(
@@ -4170,13 +4172,13 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
     ),
 ])
 def test_upgrade_db_52_to_53(
-        user_data_dir,
-        messages_aggregator,
-        data_dir,
-        current_price_oracles,
-        address_name_priority,
-        expected_address_name_priority,
-):
+        user_data_dir: Any,
+        messages_aggregator: Any,
+        data_dir: Any,
+        current_price_oracles: Any,
+        address_name_priority: Any,
+        expected_address_name_priority: Any,
+) -> None:
     """Test upgrading the DB from version 52 to version 53."""
     lowercased_address = (checksummed_address := '0xaB19dE37aB19DE37AB19de37Ab19de37ab19de37').lower()  # noqa: E501
     both_lowercased_address = (both_checksummed_address := '0xCe37CE37ce37CE37Ce37CE37cE37Ce37CE37Ce37').lower()  # noqa: E501

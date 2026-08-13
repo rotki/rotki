@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
@@ -41,13 +41,13 @@ def setup_db_account_settings(database: DBHandler) -> tuple[DBAccountingReports,
     return dbreport, settings
 
 
-def test_report_settings(database):
+def test_report_settings(database: Any) -> None:
     dbreport, settings = setup_db_account_settings(database)
 
-    start_ts = 1
-    first_processed_timestamp = 4
-    last_processed_timestamp = 9
-    end_ts = 10
+    start_ts = Timestamp(1)
+    first_processed_timestamp = Timestamp(4)
+    last_processed_timestamp = Timestamp(9)
+    end_ts = Timestamp(10)
     report_id = dbreport.add_report(
         first_processed_timestamp=first_processed_timestamp,
         start_ts=start_ts,
@@ -88,7 +88,7 @@ def test_report_settings(database):
         assert returned_settings[x] == value
 
 
-def test_report_events_sort_by_columns(database):
+def test_report_events_sort_by_columns(database: Any) -> None:
     """Test that sorting by asset, pnl_taxable and timestamp works correctly"""
     timestamp_1_secs, timestamp_2_secs, eth_price_ts_1, eth_price_ts_2, half_amount, hundred, forty = Timestamp(1741634066), Timestamp(1741634100), FVal('2000'), FVal('2200'), FVal(0.5), FVal('100'), FVal('40')  # noqa: E501
 
@@ -185,6 +185,7 @@ def test_report_events_sort_by_columns(database):
         },
     ]
 
+    test_case: Any
     for test_case in test_cases:
         for is_ascending in (True, False):
             filter_query = ReportDataFilterQuery.make(

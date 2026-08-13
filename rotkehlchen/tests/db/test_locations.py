@@ -1,3 +1,5 @@
+from typing import Any
+
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -12,7 +14,7 @@ from rotkehlchen.types import (
 )
 
 
-def test_associated_locations(database):
+def test_associated_locations(database: Any) -> None:
     """Test that locations imported in different places are correctly stored in database"""
     # Add multiple entries for same exchange + connected exchange
     with database.user_write() as write_cursor:
