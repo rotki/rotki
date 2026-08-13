@@ -64,6 +64,10 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
         self.deployment = FLYING_TULIP_FTUSD_DEPLOYMENTS[evm_inquirer.chain_id]
         self.ftusd = self.base.get_or_create_evm_token(address=self.deployment.ftusd_token)
         self.ft_token = self.base.get_or_create_evm_token(address=self.deployment.ft_token)
+        # transfers are only matched against these protocol counterparties, so
+        # an unrelated equal-amount transfer in the same tx cannot be claimed
+        self.mint_redeem_addresses = frozenset((self.deployment.mint_and_redeem,)) | self.deployment.wrappers  # noqa: E501
+        self.payout_addresses = frozenset((self.deployment.staking_vault,)) | self.deployment.wrappers  # noqa: E501
 
     def _decode_mint_redeem(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode ftUSD mints and redemptions as swaps between collateral and ftUSD."""
@@ -102,7 +106,8 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == from_address and
                     event.asset == out_asset and
-                    event.amount == out_amount
+                    event.amount == out_amount and
+                    event.address in self.mint_redeem_addresses
             ):
                 out_event = event
             elif (
@@ -111,7 +116,8 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == to_address and
                     event.asset == in_asset and
-                    event.amount == in_amount
+                    event.amount == in_amount and
+                    event.address in self.mint_redeem_addresses
             ):
                 in_event = event
             if out_event is not None and in_event is not None:
@@ -238,7 +244,8 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == sender and
                     event.asset == self.ftusd and
-                    event.amount == assets_amount
+                    event.amount == assets_amount and
+                    event.address == context.tx_log.address  # the transfer into the vault
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
@@ -351,7 +358,8 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == owner and
                     event.asset == vault_token and
-                    event.amount == shares_amount
+                    event.amount == shares_amount and
+                    event.address == ZERO_ADDRESS  # the share burn
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.notes = f'Return {shares_amount} sftUSD to the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
@@ -363,7 +371,8 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == receiver and
                     event.asset == self.ftusd and
-                    event.amount == assets_amount
+                    event.amount == assets_amount and
+                    event.address in self.payout_addresses
             ):
                 in_event = event
             if out_event is not None and in_event is not None:
@@ -415,7 +424,8 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == receiver and
                     event.asset == self.ft_token and
-                    event.amount == paid_amount
+                    event.amount == paid_amount and
+                    event.address == context.tx_log.address  # paid out by the vault
             ):
                 # The Claimed event's paid amount is net of any relayer fee, so
                 # gross the reward up and decode the fee explicitly.
