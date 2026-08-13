@@ -5113,7 +5113,8 @@
       "failed": "Failed",
       "queued": "Queued",
       "running": "Running",
-      "skipped": "Skipped"
+      "skipped": "Skipped",
+      "with_reason": "{status}: {reason}"
     },
     "steps": "{current} of {total}"
   },

@@ -163,6 +163,7 @@ export interface RenderableRecord {
   readonly status: ActivityStatus;
   readonly steps?: ActivitySteps;
   readonly startedAt?: number;
+  readonly reason?: string;
   readonly spec: {
     readonly id: ActivityId;
     readonly kind: ActivityKind;
@@ -185,7 +186,7 @@ export interface RenderableRecord {
  * the queue, while a RUNNING one needs a handle to interrupt the work it started.
  */
 export function projectActivity(record: RenderableRecord, childSteps?: ActivitySteps): Activity {
-  const { spec, status, steps, startedAt } = record;
+  const { spec, status, steps, startedAt, reason } = record;
   return {
     cancellable: status === Status.RUNNING ? Boolean(spec.cancel) : status === Status.PENDING,
     ephemeral: spec.ephemeral,
@@ -195,6 +196,7 @@ export function projectActivity(record: RenderableRecord, childSteps?: ActivityS
     parent: spec.parent,
     percentage: percentageOf(status, steps, childSteps),
     priority: spec.priority,
+    reason,
     rerunnable: Boolean(spec.rerunnable),
     resets: spec.resets,
     source: { type: ActivitySourceType.NATIVE },

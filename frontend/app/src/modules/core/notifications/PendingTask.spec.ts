@@ -103,6 +103,28 @@ describe('pendingTask', () => {
   });
 
   /**
+   * The chip is icon-only, so the reason has to ride on the label the tooltip and `aria-label`
+   * share. A skip is the case that needs it: it raises no notification, so if the row stays a bare
+   * "Skipped" the user is never told the chain was disabled in settings.
+   */
+  it.each([
+    [ActivityStatus.FAILED, 'network unreachable after retries'],
+    [ActivityStatus.SKIPPED, 'disabled in settings'],
+  ])('should caption a %s row with the producer reason', (status, reason) => {
+    const label = outcomeLabel(createWrapper({ activity: activity({ reason, status }) }));
+
+    expect(label).toContain(reason);
+    expect(label).toContain('pending_task.status.with_reason');
+  });
+
+  /** No reason, no colon — a plain status must not grow an empty suffix. */
+  it('should leave a row without a reason on the bare status', () => {
+    const label = outcomeLabel(createWrapper({ activity: activity({ status: ActivityStatus.FAILED }) }));
+
+    expect(label).toBe('pending_task.status.failed');
+  });
+
+  /**
    * No spinner. A running row the producer never counted steps for shows a chip — the panel
    * already has rings, and the elapsed counter beside the chip is what shows it is alive.
    */
