@@ -291,7 +291,7 @@ def test_cryptocompare_query_compound_tokens(
     assert price is not None
 
 
-@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
+@pytest.mark.skip(reason='requires a live CryptoCompare API key')
 @pytest.mark.parametrize('include_cryptocompare_key', [True])
 def test_cryptocompare_query_with_api_key(cryptocompare):
     """Just try to query cryptocompare endpoints with an api key
