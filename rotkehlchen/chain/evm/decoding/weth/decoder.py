@@ -83,23 +83,47 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
         if out_event is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        in_event = self.base.make_event_next_index(
-            tx_ref=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=self.wrapped_token,
-            amount=deposited_amount,
-            location_label=out_event.location_label,
-            counterparty=self.counterparty,
-            notes=f'Receive {deposited_amount} {self.wrapped_token.symbol}',
-            address=context.transaction.to_address,
-        )
+        # Some wrapped tokens (e.g. WS on Sonic) emit an ERC20 Transfer (mint) on
+        # deposit in addition to the Deposit log, which the generic transfer decoder
+        # materializes as a plain receive. Reuse it instead of creating a duplicate.
+        created = False
+        in_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == deposited_amount and
+                event.asset == self.wrapped_token
+            ):
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = self.counterparty
+                event.notes = f'Receive {deposited_amount} {self.wrapped_token.symbol}'
+                event.address = self.wrapped_token.evm_address
+                in_event = event
+                break
+
+        if in_event is None:
+            in_event = self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                asset=self.wrapped_token,
+                amount=deposited_amount,
+                location_label=out_event.location_label,
+                counterparty=self.counterparty,
+                notes=f'Receive {deposited_amount} {self.wrapped_token.symbol}',
+                address=context.transaction.to_address,
+            )
+            created = True
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
-            events_list=context.decoded_events + [in_event],
+            events_list=context.decoded_events + ([in_event] if created else []),
         )
-        return EvmDecodingOutput(events=[in_event], matched_counterparty=self.counterparty)
+        return EvmDecodingOutput(
+            events=[in_event] if created else [],
+            matched_counterparty=self.counterparty,
+        )
 
     def _decode_withdrawal_event(self, context: DecoderContext) -> EvmDecodingOutput:
         withdrawer = bytes_to_address(context.tx_log.topics[1])
@@ -126,23 +150,48 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
             if in_event is None:
                 return DEFAULT_EVM_DECODING_OUTPUT
 
-            out_event = self.base.make_event_next_index(
-                tx_ref=context.transaction.tx_hash,
-                timestamp=context.transaction.timestamp,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-                asset=self.wrapped_token,
-                amount=withdrawn_amount,
-                location_label=withdrawer,
-                counterparty=self.counterparty,
-                notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',
-                address=context.transaction.to_address,
-            )
+            # Some wrapped tokens (e.g. WS on Sonic) emit an ERC20 Transfer (burn) on
+            # withdrawal in addition to the Withdrawal log, which the generic transfer
+            # decoder materializes as a plain spend. Reuse it instead of creating a
+            # duplicate.
+            created = False
+            out_event = None
+            for event in context.decoded_events:
+                if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.amount == withdrawn_amount and
+                    event.asset == self.wrapped_token
+                ):
+                    event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    event.counterparty = self.counterparty
+                    event.notes = f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}'
+                    event.address = self.wrapped_token.evm_address
+                    out_event = event
+                    break
+
+            if out_event is None:
+                out_event = self.base.make_event_next_index(
+                    tx_ref=context.transaction.tx_hash,
+                    timestamp=context.transaction.timestamp,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+                    asset=self.wrapped_token,
+                    amount=withdrawn_amount,
+                    location_label=withdrawer,
+                    counterparty=self.counterparty,
+                    notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',
+                    address=context.transaction.to_address,
+                )
+                created = True
             maybe_reshuffle_events(
                 ordered_events=[out_event, in_event],
-                events_list=context.decoded_events + [out_event],
+                events_list=context.decoded_events + ([out_event] if created else []),
             )
-            return EvmDecodingOutput(events=[out_event], matched_counterparty=self.counterparty)
+            return EvmDecodingOutput(
+                events=[out_event] if created else [],
+                matched_counterparty=self.counterparty,
+            )
 
         return EvmDecodingOutput(matched_counterparty=self.counterparty)
 

@@ -3,7 +3,8 @@ import pytest
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BEETS_V2, CPT_BEETS_V3
-from rotkehlchen.constants.assets import A_S
+from rotkehlchen.chain.sonic.modules.wson.constants import CPT_WSON
+from rotkehlchen.constants.assets import A_S, A_WS
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -14,6 +15,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 SONIC_JOIN_TX = '0x7a9c32f90fa234cd657c5203d4fb82d0f0f7697a610536d60e9a4e89932b1ad6'
 SONIC_EXIT_TX = '0xe9de55d23662c884d1af17cea9d1ba5893398bc031b8000dc8e7f00c13d9cc83'
+WS_ADDRESS = '0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38'
 
 BW_S25 = 'eip155:146/erc20:0x016C306e103FbF48EC24810D078C65aD13c5f11B'
 AN_S = 'eip155:146/erc20:0x0C4E186Eae8aCAA7F7de1315D5AD174BE39Ec987'
@@ -119,6 +121,106 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
         notes=f'Receive {receive_amount} wS as the result of a swap in Balancer v3',
         counterparty=CPT_BEETS_V3,
         address=pool,
+    )]
+
+
+@pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
+@pytest.mark.parametrize('sonic_accounts', [['0x5541B7D1F2f0d5A6bA921156ce48D97f9D212e02']])
+def test_wson_wrap(sonic_inquirer, sonic_accounts):
+    """Wrapping S to WS."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x86a5bbf5779febadd088a90ed51bf3f8d5aafe607575610b9153f4f31390d5fc')),  # noqa: E501
+    )
+    user = sonic_accounts[0]
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1786621087000)),
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_S,
+        amount=FVal(gas_amount := '0.0103176'),
+        location_label=user,
+        notes=f'Burn {gas_amount} S for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_S,
+        amount=FVal(wrapped_amount := '12923'),
+        location_label=user,
+        notes=f'Wrap {wrapped_amount} S in wS',
+        counterparty=CPT_WSON,
+        address=WS_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=A_WS,
+        amount=FVal(wrapped_amount),
+        location_label=user,
+        notes=f'Receive {wrapped_amount} wS',
+        counterparty=CPT_WSON,
+        address=WS_ADDRESS,
+    )]
+
+
+@pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
+@pytest.mark.parametrize('sonic_accounts', [['0xCB4fF53cfC5747611CFD2d89dA9114c243Bea3d5']])
+def test_wson_unwrap(sonic_inquirer, sonic_accounts):
+    """Unwrapping WS to S."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfde79c92224ed64a63b0cf23e7b79739d44c0c65331d7bb0d57540bc98a30540')),  # noqa: E501
+    )
+    user = sonic_accounts[0]
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1786621203000)),
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_S,
+        amount=FVal(gas_amount := '0.001908100000038162'),
+        location_label=user,
+        notes=f'Burn {gas_amount} S for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=A_WS,
+        amount=FVal(unwrapped_amount := '538.947586765268183953'),
+        location_label=user,
+        notes=f'Unwrap {unwrapped_amount} wS',
+        counterparty=CPT_WSON,
+        address=WS_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_S,
+        amount=FVal(unwrapped_amount),
+        location_label=user,
+        notes=f'Receive {unwrapped_amount} S',
+        counterparty=CPT_WSON,
+        address=WS_ADDRESS,
     )]
 
 
