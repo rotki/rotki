@@ -1,6 +1,6 @@
 import re
 from contextlib import ExitStack
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +9,9 @@ from gql.transport.exceptions import TransportQueryError
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.graph import Graph
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 RE_MULTIPLE_WHITESPACE: Final = re.compile(r'\s+')
 UNISWAP_GRAPH_ID: Final = 'A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum'
@@ -37,7 +40,7 @@ def format_query_indentation(querystr: str) -> str:
     return RE_MULTIPLE_WHITESPACE.sub(' ', querystr).strip()
 
 
-def test_exception_retries(database, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_exception_retries(database: DBHandler, add_subgraph_api_key: None) -> None:  # pylint: disable=unused-argument
     """Test an exception raised by Client.execute() triggers the retry logic.
     """
     graph = Graph(subgraph_id=UNISWAP_GRAPH_ID, database=database, label='uniswap')
@@ -69,7 +72,7 @@ def test_exception_retries(database, add_subgraph_api_key):  # pylint: disable=u
     assert 'No retries left' in str(e.value)
 
 
-def test_success_result(database, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_success_result(database: DBHandler, add_subgraph_api_key: None) -> None:  # pylint: disable=unused-argument
     """Test a successful response returns result as expected and does not
     triggers the retry logic.
     """

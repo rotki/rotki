@@ -23,10 +23,12 @@ from rotkehlchen.types import ChainID, Price, TokenKind
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.defillama import Defillama
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.inquirer import Inquirer
 
 
 @pytest.mark.vcr
-def test_kraken_query_single_current_price():
+def test_kraken_query_single_current_price() -> None:
     """A single current price query returns the last trade price from Kraken."""
     kraken = Kraken()
     price = kraken.query_current_price(
@@ -38,7 +40,7 @@ def test_kraken_query_single_current_price():
 
 
 @pytest.mark.vcr
-def test_kraken_query_multiple_current_prices():
+def test_kraken_query_multiple_current_prices() -> None:
     """Multiple assets are resolved from a single all-tickers response.
 
     GNO is listed on Kraken and is expected to return a price, while INDEX
@@ -46,24 +48,23 @@ def test_kraken_query_multiple_current_prices():
     from the result.
     """
     kraken = Kraken()
+    btc = A_BTC.resolve_to_asset_with_oracles()
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    gno = A_GNO.resolve_to_asset_with_oracles()
+    crv3 = A_3CRV.resolve_to_asset_with_oracles()
     prices = kraken.query_multiple_current_prices(
-        from_assets=[
-            A_BTC.resolve_to_asset_with_oracles(),
-            A_ETH.resolve_to_asset_with_oracles(),
-            A_GNO.resolve_to_asset_with_oracles(),
-            A_3CRV.resolve_to_asset_with_oracles(),
-        ],
+        from_assets=[btc, eth, gno, crv3],
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
-    assert A_BTC in prices
-    assert prices[A_BTC] == Price(FVal('60934.90000'))
-    assert A_ETH in prices
-    assert prices[A_ETH] == Price(FVal('1643.01000'))
+    assert btc in prices
+    assert prices[btc] == Price(FVal('60934.90000'))
+    assert eth in prices
+    assert prices[eth] == Price(FVal('1643.01000'))
     # GNO is listed on Kraken and should get a price
-    assert A_GNO in prices
-    assert prices[A_GNO] == Price(FVal('106.340000'))
+    assert gno in prices
+    assert prices[gno] == Price(FVal('106.340000'))
     # INDEX is not listed on Kraken, so no price is returned for it
-    assert A_3CRV not in prices
+    assert crv3 not in prices
 
 
 def test_kraken_mapping_lookup_is_batched() -> None:
@@ -98,7 +99,7 @@ def test_kraken_mapping_lookup_is_batched() -> None:
 
 
 @pytest.mark.vcr
-def test_kraken_tickers_cache_avoids_repeated_requests():
+def test_kraken_tickers_cache_avoids_repeated_requests() -> None:
     """A second query within the cache window must not trigger another HTTP call.
 
     The cassette for this test only contains a single ticker request; if the
@@ -119,7 +120,7 @@ def test_kraken_tickers_cache_avoids_repeated_requests():
 
 
 @pytest.mark.vcr
-def test_kraken_unsupported_asset_returns_zero_price():
+def test_kraken_unsupported_asset_returns_zero_price() -> None:
     """An asset not listed on Kraken yields no price (ZERO_PRICE) without raising."""
     kraken = Kraken()
     price = kraken.query_current_price(
@@ -130,7 +131,7 @@ def test_kraken_unsupported_asset_returns_zero_price():
 
 
 @pytest.mark.vcr
-def test_kraken_only_prices_mapped_assets_and_their_collections(globaldb):
+def test_kraken_only_prices_mapped_assets_and_their_collections(globaldb: GlobalDBHandler) -> None:
     """A token cannot impersonate a Kraken-listed asset by copying its symbol."""
     optimism_dai = EvmToken('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1')
     fake_dai = EvmToken.initialize(
@@ -148,27 +149,24 @@ def test_kraken_only_prices_mapped_assets_and_their_collections(globaldb):
             (optimism_dai.identifier, 'DAI'),
         )
 
+    dai = A_DAI.resolve_to_asset_with_oracles()
+    usdc = A_USDC.resolve_to_asset_with_oracles()
     prices = Kraken().query_multiple_current_prices(
-        from_assets=[
-            A_DAI.resolve_to_asset_with_oracles(),
-            optimism_dai,
-            fake_dai,
-            A_USDC.resolve_to_asset_with_oracles(),
-        ],
+        from_assets=[dai, optimism_dai, fake_dai, usdc],
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
 
-    assert A_DAI in prices
+    assert dai in prices
     assert optimism_dai in prices
-    assert prices[A_DAI] == prices[optimism_dai]
+    assert prices[dai] == prices[optimism_dai]
     assert fake_dai not in prices
-    assert prices[A_USDC] != ZERO_PRICE
+    assert prices[usdc] != ZERO_PRICE
 
 
 @pytest.mark.vcr
 @pytest.mark.freeze_time('2026-06-24 12:00:00 GMT')
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_kraken_eur_price_close_to_defillama(inquirer, session_defillama: Defillama):
+def test_kraken_eur_price_close_to_defillama(inquirer: Inquirer, session_defillama: Defillama) -> None:  # noqa: E501
     """Kraken EUR prices for BTC and ETH stay within 0.5% of Defillama's.
 
     Both oracles are queried for BTC -> EUR and ETH -> EUR. Defillama only
@@ -203,7 +201,7 @@ def test_kraken_eur_price_close_to_defillama(inquirer, session_defillama: Defill
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_kraken_price_close_to_coingecko(session_coingecko: Coingecko):
+def test_kraken_price_close_to_coingecko(session_coingecko: Coingecko) -> None:
     """The Kraken BTC/USD price should be in the same ballpark as CoinGecko's.
 
     Both oracles are queried for BTC -> USD and the results are compared with a

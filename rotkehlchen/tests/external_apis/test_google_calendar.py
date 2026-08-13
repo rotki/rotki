@@ -1,5 +1,6 @@
 import datetime
 import json
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -12,23 +13,26 @@ from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-from rotkehlchen.types import SupportedBlockchain, Timestamp
+from rotkehlchen.types import HexColorCode, SupportedBlockchain, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='google_calendar_api')
-def fixture_google_calendar_api(database):
+def fixture_google_calendar_api(database: DBHandler) -> GoogleCalendarAPI:
     """Create a GoogleCalendarAPI instance for testing."""
     return GoogleCalendarAPI(database)
 
 
 def _store_credentials(
-        database,
-        token='mock_token',  # noqa: S107
-        refresh_token='mock_refresh_token',  # noqa: S107
-        user_email=None,
-):
+        database: DBHandler,
+        token: str = 'mock_token',  # noqa: S107
+        refresh_token: str = 'mock_refresh_token',  # noqa: S107
+        user_email: str | None = None,
+) -> None:
     """Helper to store credentials in database."""
-    creds_data = {
+    creds_data: dict[str, str] = {
         'token': token,
         'refresh_token': refresh_token,
     }
@@ -43,12 +47,12 @@ def _store_credentials(
 
 
 def _create_mock_credentials(
-        valid=True,
-        expired=False,
-        token='mock_token',  # noqa: S107
-        refresh_token='mock_refresh_token',  # noqa: S107
-        scopes=None,
-):
+        valid: bool = True,
+        expired: bool = False,
+        token: str = 'mock_token',  # noqa: S107
+        refresh_token: str = 'mock_refresh_token',  # noqa: S107
+        scopes: list[str] | None = None,
+) -> Mock:
     """Helper to create mock credentials."""
     mock_creds = Mock()
     mock_creds.valid = valid
@@ -59,7 +63,10 @@ def _create_mock_credentials(
     return mock_creds
 
 
-def _create_mock_service(calendar_list_items=None, existing_events=None):
+def _create_mock_service(
+        calendar_list_items: list[dict[str, Any]] | None = None,
+        existing_events: list[dict[str, Any]] | None = None,
+) -> MagicMock:
     """Helper to create mock Google Calendar service."""
     mock_service = MagicMock()
     if calendar_list_items is not None:
@@ -79,7 +86,11 @@ def _create_mock_service(calendar_list_items=None, existing_events=None):
     return mock_service
 
 
-def _create_mock_response(status_code=200, json_data=None, text=''):
+def _create_mock_response(
+        status_code: int = 200,
+        json_data: dict[str, Any] | None = None,
+        text: str = '',
+) -> Mock:
     """Helper to create mock HTTP response."""
     mock_response = Mock()
     mock_response.status_code = status_code
@@ -89,19 +100,22 @@ def _create_mock_response(status_code=200, json_data=None, text=''):
     return mock_response
 
 
-def test_init(google_calendar_api, database):
+def test_init(google_calendar_api: GoogleCalendarAPI, database: DBHandler) -> None:
     """Test initialization of GoogleCalendarAPI."""
     assert google_calendar_api.db == database
     assert google_calendar_api._credentials is None
     assert google_calendar_api._service is None
 
 
-def test_is_authenticated_no_credentials(google_calendar_api):
+def test_is_authenticated_no_credentials(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test is_authenticated when no credentials are stored."""
     assert google_calendar_api.is_authenticated() is False
 
 
-def test_is_authenticated_with_valid_credentials(google_calendar_api, database):
+def test_is_authenticated_with_valid_credentials(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test is_authenticated with valid stored credentials."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -110,7 +124,10 @@ def test_is_authenticated_with_valid_credentials(google_calendar_api, database):
         assert google_calendar_api.is_authenticated() is True
 
 
-def test_is_authenticated_wrong_scope(google_calendar_api, database):
+def test_is_authenticated_wrong_scope(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test is_authenticated when credentials have wrong scope."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials(scopes=['https://www.googleapis.com/auth/gmail.readonly'])
@@ -119,19 +136,25 @@ def test_is_authenticated_wrong_scope(google_calendar_api, database):
         assert google_calendar_api.is_authenticated() is False
 
 
-def test_get_credentials_refresh_error(google_calendar_api, database):
+def test_get_credentials_refresh_error(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test _get_credentials when refresh fails."""
     _store_credentials(database, token='old_token', refresh_token='bad_refresh_token')
 
     mock_creds = _create_mock_credentials(valid=False, expired=True)
-    mock_creds.refresh.side_effect = RefreshError('Token refresh failed')
+    mock_creds.refresh.side_effect = RefreshError('Token refresh failed')  # type: ignore[no-untyped-call]  # google-auth is untyped
 
     with patch('rotkehlchen.externalapis.google_calendar.Credentials', return_value=mock_creds):
         result = google_calendar_api._get_credentials()
         assert result is None
 
 
-def test_get_credentials_json_error(google_calendar_api, database):
+def test_get_credentials_json_error(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test _get_credentials with invalid JSON in database."""
     with database.conn.write_ctx() as cursor:
         cursor.execute(
@@ -143,7 +166,10 @@ def test_get_credentials_json_error(google_calendar_api, database):
     assert result is None
 
 
-def test_get_connected_user_email_success(google_calendar_api, database):
+def test_get_connected_user_email_success(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test get_connected_user_email successful retrieval from stored data."""
     _store_credentials(database, user_email='test@example.com')
 
@@ -151,7 +177,10 @@ def test_get_connected_user_email_success(google_calendar_api, database):
     assert email == 'test@example.com'
 
 
-def test_get_connected_user_email_from_api(google_calendar_api, database):
+def test_get_connected_user_email_from_api(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test get_connected_user_email when email not in stored credentials."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -165,7 +194,10 @@ def test_get_connected_user_email_from_api(google_calendar_api, database):
         assert email == 'api@example.com'
 
 
-def test_get_connected_user_email_api_error(google_calendar_api, database):
+def test_get_connected_user_email_api_error(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test get_connected_user_email when API call fails."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -179,7 +211,7 @@ def test_get_connected_user_email_api_error(google_calendar_api, database):
         assert email is None
 
 
-def test_disconnect(google_calendar_api, database):
+def test_disconnect(google_calendar_api: GoogleCalendarAPI, database: DBHandler) -> None:
     """Test disconnect removes stored credentials."""
     # Store some data first
     _store_credentials(database)
@@ -196,13 +228,13 @@ def test_disconnect(google_calendar_api, database):
         assert count == 0
 
 
-def test_get_service_not_authenticated(google_calendar_api):
+def test_get_service_not_authenticated(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test _get_service raises AuthenticationError when not authenticated."""
     with pytest.raises(AuthenticationError, match='Google Calendar not authenticated'):
         google_calendar_api._get_service()
 
 
-def test_get_service_success(google_calendar_api, database):
+def test_get_service_success(google_calendar_api: GoogleCalendarAPI, database: DBHandler) -> None:
     """Test _get_service creates service successfully."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -219,7 +251,10 @@ def test_get_service_success(google_calendar_api, database):
         assert service2 == mock_service
 
 
-def test_get_or_create_calendar_existing(google_calendar_api, database):
+def test_get_or_create_calendar_existing(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test _get_or_create_calendar returns existing calendar_id from stored credentials."""
     # Store credentials with calendar_id already set
     creds_data = {
@@ -246,7 +281,10 @@ def test_get_or_create_calendar_existing(google_calendar_api, database):
         assert calendar_id == 'existing_rotki_cal'
 
 
-def test_get_or_create_calendar_create_new(google_calendar_api, database):
+def test_get_or_create_calendar_create_new(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test _get_or_create_calendar creates new calendar when not found."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -260,7 +298,10 @@ def test_get_or_create_calendar_create_new(google_calendar_api, database):
         assert calendar_id == 'new_rotki_cal'
 
 
-def test_get_or_create_calendar_insufficient_permissions(google_calendar_api, database):
+def test_get_or_create_calendar_insufficient_permissions(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test _get_or_create_calendar handles insufficient permissions."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -279,7 +320,7 @@ def test_get_or_create_calendar_insufficient_permissions(google_calendar_api, da
         google_calendar_api._get_or_create_calendar()
 
 
-def test_sync_events_empty_list(google_calendar_api):
+def test_sync_events_empty_list(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test sync_events with empty event list."""
     result = google_calendar_api.sync_events([])
     assert result == {
@@ -292,7 +333,7 @@ def test_sync_events_empty_list(google_calendar_api):
     }
 
 
-def test_sync_events_success(google_calendar_api, database):
+def test_sync_events_success(google_calendar_api: GoogleCalendarAPI, database: DBHandler) -> None:
     """Test sync_events creates and updates events successfully."""
     # Store credentials with calendar_id already set
     creds_data = {
@@ -326,7 +367,7 @@ def test_sync_events_success(google_calendar_api, database):
             counterparty='ENS',
             address=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
             blockchain=SupportedBlockchain.ETHEREUM,
-            color='FF0000',
+            color=HexColorCode('FF0000'),
             auto_delete=False,
         ),
         CalendarEntry(
@@ -337,7 +378,7 @@ def test_sync_events_success(google_calendar_api, database):
             counterparty='Curve',
             address=None,
             blockchain=None,
-            color='00FF00',
+            color=HexColorCode('00FF00'),
             auto_delete=True,
         ),
     ]
@@ -364,7 +405,10 @@ def test_sync_events_success(google_calendar_api, database):
     assert 'errors' not in result
 
 
-def test_sync_events_same_summary_different_times(google_calendar_api, database):
+def test_sync_events_same_summary_different_times(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Events sharing the same name but different timestamps should both sync."""
     # Store credentials with calendar_id already set
     creds_data = {
@@ -436,7 +480,10 @@ def test_sync_events_same_summary_different_times(google_calendar_api, database)
     assert result['events_updated'] == 2
 
 
-def test_sync_events_with_errors(google_calendar_api, database):
+def test_sync_events_with_errors(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test sync_events handles individual event errors gracefully."""
     _store_credentials(database)
     mock_creds = _create_mock_credentials()
@@ -451,7 +498,7 @@ def test_sync_events_with_errors(google_calendar_api, database):
             counterparty='Test',
             address=None,
             blockchain=None,
-            color='0000FF',
+            color=HexColorCode('0000FF'),
             auto_delete=False,
         ),
     ]
@@ -474,7 +521,10 @@ def test_sync_events_with_errors(google_calendar_api, database):
     assert len(result['errors']) == 1
 
 
-def test_complete_oauth_with_token_success(google_calendar_api, database):
+def test_complete_oauth_with_token_success(
+        google_calendar_api: GoogleCalendarAPI,
+        database: DBHandler,
+) -> None:
     """Test complete_oauth_with_token succeeds with valid tokens."""
     access_token = 'valid_access_token'
     refresh_token = 'valid_refresh_token'
@@ -510,7 +560,7 @@ def test_complete_oauth_with_token_success(google_calendar_api, database):
         assert creds['user_email'] == 'user@example.com'
 
 
-def test_complete_oauth_with_token_invalid_token(google_calendar_api):
+def test_complete_oauth_with_token_invalid_token(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test complete_oauth_with_token fails with invalid token."""
     mock_response = _create_mock_response(status_code=401, text='Invalid token')
 
@@ -521,7 +571,7 @@ def test_complete_oauth_with_token_invalid_token(google_calendar_api):
     assert 'Failed to validate tokens' in result['message']
 
 
-def test_complete_oauth_with_token_missing_scope(google_calendar_api):
+def test_complete_oauth_with_token_missing_scope(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test complete_oauth_with_token fails with missing scope."""
     # Mock responses
     user_response = _create_mock_response(json_data={'email': 'user@example.com'})
@@ -538,7 +588,7 @@ def test_complete_oauth_with_token_missing_scope(google_calendar_api):
     assert 'missing required scope' in result['message']
 
 
-def test_validate_access_token_success(google_calendar_api):
+def test_validate_access_token_success(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test _validate_access_token with valid token."""
     mock_response = _create_mock_response(
         json_data={'email': 'test@example.com', 'verified_email': True},
@@ -550,7 +600,7 @@ def test_validate_access_token_success(google_calendar_api):
     assert user_info['email'] == 'test@example.com'
 
 
-def test_validate_access_token_invalid(google_calendar_api):
+def test_validate_access_token_invalid(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test _validate_access_token with invalid token."""
     mock_response = _create_mock_response(status_code=401, text='Invalid token')
 
@@ -561,7 +611,7 @@ def test_validate_access_token_invalid(google_calendar_api):
         google_calendar_api._validate_access_token('invalid_token')
 
 
-def test_verify_token_scopes_success(google_calendar_api):
+def test_verify_token_scopes_success(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test _verify_token_scopes with correct scope."""
     mock_response = _create_mock_response(
         json_data={'scope': 'https://www.googleapis.com/auth/calendar.app.created openid email'},
@@ -572,7 +622,7 @@ def test_verify_token_scopes_success(google_calendar_api):
         google_calendar_api._verify_token_scopes('valid_token')
 
 
-def test_verify_token_scopes_missing_scope(google_calendar_api):
+def test_verify_token_scopes_missing_scope(google_calendar_api: GoogleCalendarAPI) -> None:
     """Test _verify_token_scopes with missing scope."""
     # Missing calendar scope
     mock_response = _create_mock_response(json_data={'scope': 'openid email'})

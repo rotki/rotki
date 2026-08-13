@@ -23,10 +23,11 @@ from rotkehlchen.types import ApiKey, ChainID, ExternalService, Timestamp, Times
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture(name='blockscout')
-def fixture_blockscout(database, messages_aggregator):
+def fixture_blockscout(database: DBHandler, messages_aggregator: MessagesAggregator) -> Blockscout:
     return Blockscout(
         database=database,
         msg_aggregator=messages_aggregator,
@@ -34,7 +35,7 @@ def fixture_blockscout(database, messages_aggregator):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_query_withdrawals(blockscout: Blockscout, database: DBHandler):
+def test_query_withdrawals(blockscout: Blockscout, database: DBHandler) -> None:
     """Test the querying logic of eth withdrawal for blockscout"""
     address = string_to_evm_address('0xE12799BC799fc024db69E118fD2A6eA293DBFF7d')
     dbevents = DBHistoryEvents(database)
@@ -76,7 +77,7 @@ def test_query_withdrawals(blockscout: Blockscout, database: DBHandler):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_hash_activity(blockscout):
+def test_hash_activity(blockscout: Blockscout) -> None:
     for chain in (
         ChainID.ETHEREUM,
         ChainID.OPTIMISM,

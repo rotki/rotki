@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -14,8 +15,15 @@ from rotkehlchen.types import (
     Timestamp,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
-def assert_coin_data_same(given, expected, compare_description=False):
+
+def assert_coin_data_same(
+        given: CoingeckoAssetData,
+        expected: CoingeckoAssetData,
+        compare_description: bool = False,
+) -> None:
     if compare_description:
         assert given == expected
 
@@ -27,7 +35,7 @@ def assert_coin_data_same(given, expected, compare_description=False):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_asset_data(session_coingecko):
+def test_asset_data(session_coingecko: Coingecko) -> None:
     expected_data = CoingeckoAssetData(
         identifier='bitcoin',
         symbol='btc',
@@ -51,18 +59,18 @@ def test_asset_data(session_coingecko):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_coingecko_historical_price(session_coingecko):
+def test_coingecko_historical_price(session_coingecko: Coingecko) -> None:
     price = session_coingecko.query_historical_price(
-        from_asset=A_ETH,
-        to_asset=A_EUR,
-        timestamp=1704135600,
+        from_asset=A_ETH.resolve_to_asset_with_oracles(),
+        to_asset=A_EUR.resolve_to_asset_with_oracles(),
+        timestamp=Timestamp(1704135600),
     )
     assert price == Price(FVal('2065.603754353392'))
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-10-11 12:00:00 GMT')
-def test_coingecko_with_api_key(database):
+def test_coingecko_with_api_key(database: DBHandler) -> None:
     with database.user_write() as write_cursor:  # add the api key to the DB
         database.add_external_service_credentials(
             write_cursor=write_cursor,
@@ -81,8 +89,8 @@ def test_coingecko_with_api_key(database):
         image_url='https://coin-images.coingecko.com/coins/images/38043/small/ZKTokenBlack.png?1718614502',
     )
     result = coingecko.query_current_price(
-        from_asset=A_ETH.resolve(),
-        to_asset=A_BTC.resolve(),
+        from_asset=A_ETH.resolve_to_asset_with_oracles(),
+        to_asset=A_BTC.resolve_to_asset_with_oracles(),
     )
     assert result == FVal('0.03950436')
 
@@ -96,7 +104,7 @@ def test_coingecko_with_api_key(database):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_coingecko_query_multiple_current_prices(session_coingecko: Coingecko):
+def test_coingecko_query_multiple_current_prices(session_coingecko: Coingecko) -> None:
     assert session_coingecko.query_multiple_current_prices(
         from_assets=[
             A_BTC.resolve_to_asset_with_oracles(),

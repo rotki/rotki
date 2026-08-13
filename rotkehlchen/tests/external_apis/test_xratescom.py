@@ -8,10 +8,11 @@ from rotkehlchen.externalapis.xratescom import (
     get_historical_xratescom_exchange_rates,
 )
 from rotkehlchen.tests.utils.constants import A_CNY
+from rotkehlchen.types import Timestamp
 
 
 @pytest.mark.vcr
-def test_get_current_xratescom_exchange_rates():
+def test_get_current_xratescom_exchange_rates() -> None:
     rates_map = get_current_xratescom_exchange_rates(A_USD.resolve_to_fiat_asset())
     for asset, price in rates_map.items():
         assert asset.is_fiat()
@@ -24,11 +25,11 @@ def test_get_current_xratescom_exchange_rates():
 
 
 @pytest.mark.vcr
-def test_get_historical_xratescom_exchange_rates():
+def test_get_historical_xratescom_exchange_rates() -> None:
 
     rates_map = get_historical_xratescom_exchange_rates(
-        from_asset=A_USD.resolve_to_asset_with_oracles(),
-        time=1459585352,
+        from_asset=A_USD.resolve_to_fiat_asset(),
+        time=Timestamp(1459585352),
     )
     for asset, price in rates_map.items():
         assert asset.is_fiat()
@@ -37,8 +38,8 @@ def test_get_historical_xratescom_exchange_rates():
             usd_cny_price = price
 
     rates_map = get_historical_xratescom_exchange_rates(
-        from_asset=A_CNY.resolve_to_asset_with_oracles(),
-        time=1459585352,
+        from_asset=A_CNY.resolve_to_fiat_asset(),
+        time=Timestamp(1459585352),
     )
     for asset, price in rates_map.items():
         assert asset.is_fiat()
@@ -50,6 +51,6 @@ def test_get_historical_xratescom_exchange_rates():
 
     with pytest.raises(RemoteError):
         get_historical_xratescom_exchange_rates(
-            from_asset=A_EUR.resolve_to_asset_with_oracles(),
-            time=512814152,
+            from_asset=A_EUR.resolve_to_fiat_asset(),
+            time=Timestamp(512814152),
         )

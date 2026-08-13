@@ -1,12 +1,13 @@
 import os
 import warnings as test_warnings
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -14,15 +15,21 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from freezegun.api import FrozenDateTimeFactory
 
-def test_query_chunks_empty_list():
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
+
+
+def test_query_chunks_empty_list() -> None:
     """Test that one of the endpoints works with empty list"""
     assert calculate_query_chunks([]) == []
 
 
 @pytest.mark.vcr(filter_headers=['authorization'])
-def test_get_eth1_validator_indices_single(beaconchain):
-    address = '0x2bCF6fE9F95Fe5eCec37f69dFE00Bfb4668ac35D'
+def test_get_eth1_validator_indices_single(beaconchain: BeaconChain) -> None:
+    address = string_to_evm_address('0x2bCF6fE9F95Fe5eCec37f69dFE00Bfb4668ac35D')
     validators = beaconchain.get_eth1_address_validators(address=address)
     if len(validators) != 1:
         msg = (
@@ -36,8 +43,8 @@ def test_get_eth1_validator_indices_single(beaconchain):
 
 
 @pytest.mark.vcr(filter_headers=['authorization'])
-def test_get_eth1_validator_indices_multiple(beaconchain):
-    address = '0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c'
+def test_get_eth1_validator_indices_multiple(beaconchain: BeaconChain) -> None:
+    address = string_to_evm_address('0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c')
     validators = beaconchain.get_eth1_address_validators(address=address)
 
     expected_results = [
@@ -63,7 +70,7 @@ def test_get_eth1_validator_indices_multiple(beaconchain):
 
 
 @pytest.mark.freeze_time('2025-03-03 17:00:00 GMT')
-def test_rate_limit(beaconchain: BeaconChain, freezer):
+def test_rate_limit(beaconchain: BeaconChain, freezer: FrozenDateTimeFactory) -> None:
     """Tests the rate limit logic ensuring that we don't retry beaconchain calls
     if we are rate limited by them.
     """
@@ -115,8 +122,8 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
 
 def test_free_trial_expired_deletes_api_key(
         beaconchain: BeaconChain,
-        database,
-        messages_aggregator,
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     api_key = ApiKey('expired-key')
 
@@ -154,7 +161,10 @@ def test_free_trial_expired_deletes_api_key(
     ]
 
 
-def test_validator_limit_error_is_cached_and_retried(beaconchain: BeaconChain, database) -> None:
+def test_validator_limit_error_is_cached_and_retried(
+        beaconchain: BeaconChain,
+        database: DBHandler,
+) -> None:
     api_key = ApiKey('legacy-key')
     with database.user_write() as write_cursor:
         database.add_external_service_credentials(write_cursor, [ExternalServiceApiCredentials(
@@ -228,7 +238,7 @@ def test_validator_limit_error_is_cached_and_retried(beaconchain: BeaconChain, d
         ) is None
 
 
-def test_validator_limit_cache_reset(database) -> None:
+def test_validator_limit_cache_reset(database: DBHandler) -> None:
     """Ensure cached beaconcha.in validator limits are cleared on key changes/removal.
 
     The limit is tied to a subscription tier/API key, so keeping it after changing or deleting

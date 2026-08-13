@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -14,10 +14,14 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     Price,
     SolanaAddress,
+    Timestamp,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.price import PriceHistorian
+    from rotkehlchen.inquirer import Inquirer
 
 
 @pytest.fixture(name='current_price_oracles_order')
@@ -40,17 +44,17 @@ defillama_mocked_historical_prices = {
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
 @pytest.mark.parametrize('mocked_price_queries', [defillama_mocked_historical_prices])
-def test_defillama_historical_price(price_historian, session_defillama):  # pylint: disable=unused-argument
-    eth = A_ETH.resolve()
-    usd = A_USD.resolve()
-    dai = A_DAI.resolve()
-    eur = A_EUR.resolve()
+def test_defillama_historical_price(price_historian: PriceHistorian, session_defillama: Defillama) -> None:  # pylint: disable=unused-argument  # noqa: E501
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    dai = A_DAI.resolve_to_asset_with_oracles()
+    eur = A_EUR.resolve_to_asset_with_oracles()
 
     # First query usd price
     price = session_defillama.query_historical_price(
         from_asset=eth,
         to_asset=usd,
-        timestamp=1597024800,
+        timestamp=Timestamp(1597024800),
     )
     assert price == Price(FVal('394.35727832860067'))
 
@@ -58,7 +62,7 @@ def test_defillama_historical_price(price_historian, session_defillama):  # pyli
     price = session_defillama.query_historical_price(
         from_asset=eth,
         to_asset=eur,
-        timestamp=1597024800,
+        timestamp=Timestamp(1597024800),
     )
     assert price == Price(FVal('394.35727832860067') * FVal('1.007'))
 
@@ -66,14 +70,14 @@ def test_defillama_historical_price(price_historian, session_defillama):  # pyli
     price = session_defillama.query_historical_price(
         from_asset=dai,
         to_asset=usd,
-        timestamp=1597024800,
+        timestamp=Timestamp(1597024800),
     )
     assert price == Price(FVal('1.0182482830027697'))
 
 
 @pytest.mark.vcr
 @pytest.mark.freeze_time('2024-10-10 12:00:00 GMT')
-def test_defillama_with_api_key(price_historian, database):  # pylint: disable=unused-argument
+def test_defillama_with_api_key(price_historian: PriceHistorian, database: DBHandler) -> None:  # pylint: disable=unused-argument
     with database.user_write() as write_cursor:  # add the api key to the DB
         database.add_external_service_credentials(
             write_cursor=write_cursor,
@@ -87,10 +91,10 @@ def test_defillama_with_api_key(price_historian, database):  # pylint: disable=u
     llama = Defillama(database=database)
     assert llama._get_api_key() == api_key
 
-    eth = A_ETH.resolve()
-    usd = A_USD.resolve()
-    dai = A_DAI.resolve()
-    eur = A_EUR.resolve()
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    dai = A_DAI.resolve_to_asset_with_oracles()
+    eur = A_EUR.resolve_to_asset_with_oracles()
 
     # Check to see query is formulated correctly for current price in pro
     result = llama.query_current_price(
@@ -102,14 +106,14 @@ def test_defillama_with_api_key(price_historian, database):  # pylint: disable=u
     result = llama.query_historical_price(
         from_asset=dai,
         to_asset=usd,
-        timestamp=1597024800,
+        timestamp=Timestamp(1597024800),
     )
     assert result == FVal('1.0182482830027697')
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_query_multiple_current_prices(session_defillama: Defillama, inquirer):
+def test_query_multiple_current_prices(session_defillama: Defillama, inquirer: Inquirer) -> None:
     assert session_defillama.query_multiple_current_prices(
         from_assets=[
             A_ARB.resolve_to_asset_with_oracles(),
@@ -121,7 +125,7 @@ def test_query_multiple_current_prices(session_defillama: Defillama, inquirer):
 
 
 @pytest.mark.vcr
-def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_defillama: Defillama):  # noqa: E501
+def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_defillama: Defillama) -> None:  # noqa: E501
     """Regression test for query_multiple_current_prices to ensure it properly handles
     exceptions and chunking without failing the entire batch. This prevents the issue where
     large requests cause "413 content too large" errors or individual problematic chunks
@@ -140,7 +144,7 @@ def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_d
     # Mock _query to fail for the first chunk but succeed for others
     original_query, call_count = session_defillama._query, 0
 
-    def mock_query(*args, **kwargs):
+    def mock_query(*args: Any, **kwargs: Any) -> Any:
         nonlocal call_count
         call_count += 1
         if call_count == 1:  # Fail the first chunk to simulate "413 content too large"

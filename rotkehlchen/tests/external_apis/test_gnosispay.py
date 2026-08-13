@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from json import dumps, loads
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def mock_unauthorized_requests_get(url, params=None, **kwargs):
+def mock_unauthorized_requests_get(url: str, params: dict[str, Any] | None = None, **kwargs: Any) -> Response:  # noqa: E501
     response = Response()
     response.status_code = HTTPStatus.UNAUTHORIZED
     response._content = b'{"message": "No authorization token was found"}'
@@ -35,7 +35,7 @@ def test_gnosis_pay_skip_refund(database: DBHandler, gnosispay_credentials: None
     gnosispay = init_gnosis_pay(database)
     assert gnosispay is not None
 
-    def mocked_api(url, *args, **kwargs):
+    def mocked_api(url: str, *args: Any, **kwargs: Any) -> MockResponse:
         if kwargs['params']['offset'] == 0:
             return MockResponse(200, """{"results": [{
                 "createdAt": "XX",
@@ -71,9 +71,10 @@ def test_gnosis_pay_skip_refund(database: DBHandler, gnosispay_credentials: None
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
+def test_gnosis_pay_unauthorized(database: DBHandler, gnosispay_credentials: None) -> None:
     """Test that gnosis pay sends the session expired message"""
     gnosispay = init_gnosis_pay(database)
+    assert gnosispay is not None
 
     # Patch to avoid requests in the Gnosis pay api
     with patch.object(
@@ -81,9 +82,9 @@ def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
         attribute='get',
         side_effect=mock_unauthorized_requests_get,
     ):
-        gnosispay.query_remote_for_tx_and_update_events(start_ts=0, end_ts=1)
+        gnosispay.query_remote_for_tx_and_update_events(start_ts=Timestamp(0), end_ts=Timestamp(1))
 
-    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(
+    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore  # pop_message exists on MockRotkiNotifier
         message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
         data={'error': 'Please sign in with GnosisPay again to refresh your data'},
     )

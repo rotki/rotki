@@ -1,5 +1,6 @@
 import datetime
 import os
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -24,6 +25,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.cryptocompare import (
     CRYPTOCOMPARE_SPECIAL_CASES_MAPPING,
+    CCApiUrl,
     Cryptocompare,
 )
 from rotkehlchen.fval import FVal
@@ -32,14 +34,20 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import A_SNGLS, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
+if TYPE_CHECKING:
+    from freezegun.api import FrozenDateTimeFactory
 
-def test_cryptocompare_query_pricehistorical(cryptocompare):
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.price import PriceHistorian
+
+
+def test_cryptocompare_query_pricehistorical(cryptocompare: Cryptocompare) -> None:
     """Test that cryptocompare price historical query works fine"""
     with patch.object(cryptocompare, '_api_query', return_value=[{'CLOSE': '0.00001234'}]):
         price = cryptocompare.query_endpoint_pricehistorical(
             from_asset=A_SNGLS.resolve_to_asset_with_oracles(),
             to_asset=A_BTC.resolve_to_asset_with_oracles(),
-            timestamp=1475413990,
+            timestamp=Timestamp(1475413990),
         )
     assert price == Price(FVal('0.00001234'))
 
@@ -61,7 +69,7 @@ def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[Histo
     return [HistoricalPrice.deserialize_from_db(x) for x in query]
 
 
-def check_cc_result(result: list, forward: bool):
+def check_cc_result(result: list[HistoricalPrice], forward: bool) -> None:
     for idx, entry in enumerate(result):
         if idx != 0:
             assert entry.timestamp == result[idx - 1].timestamp + 3600
@@ -79,12 +87,15 @@ def check_cc_result(result: list, forward: bool):
         elif entry.timestamp <= 1301544000:
             assert entry.price == Price(FVal('0.298'))
         else:
-            raise AssertionError(f'Unexpected time entry {entry.time}')
+            raise AssertionError(f'Unexpected time entry {entry.timestamp}')
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_histohour_data_going_forward(database, freezer):
+def test_cryptocompare_histohour_data_going_forward(
+        database: DBHandler,
+        freezer: FrozenDateTimeFactory,
+) -> None:
     """Test that the cryptocompare histohour data retrieval works properly
 
     This test checks that doing an additional query in the future works properly
@@ -98,7 +109,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
-        timestamp=now_ts - 3600 * 2 - 55,
+        timestamp=Timestamp(now_ts - 3600 * 2 - 55),
     )
 
     globaldb = GlobalDBHandler()
@@ -112,6 +123,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
         to_asset=A_USD,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
     )
+    assert data_range is not None
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1287964800  # that's the closest ts to now_ts cc returns
     old_cache_entries = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
@@ -122,7 +134,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
-        timestamp=now_ts - 3600 * 4 - 55,
+        timestamp=Timestamp(now_ts - 3600 * 4 - 55),
     )
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
     assert len(result) > len(old_cache_entries)
@@ -131,13 +143,17 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
         to_asset=A_USD,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
     )
+    assert data_range is not None
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1289174400  # that's the closest ts to now_ts cc returns
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_histohour_data_going_backward(database, freezer):
+def test_cryptocompare_histohour_data_going_backward(
+        database: DBHandler,
+        freezer: FrozenDateTimeFactory,
+) -> None:
     """Test that the cryptocompare histohour data retrieval works properly
 
     This test checks that doing an additional query in the past worked properly
@@ -171,11 +187,12 @@ def test_cryptocompare_histohour_data_going_backward(database, freezer):
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
-        timestamp=now_ts - 3600 * 2 - 55,
+        timestamp=Timestamp(now_ts - 3600 * 2 - 55),
     )
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
     assert len(result) > 6000  # arbitrary safe number
     data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
+    assert data_range is not None
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1301540400  # that's the closest ts to now_ts cc returns
 
@@ -190,30 +207,31 @@ def test_cryptocompare_histohour_data_going_backward(database, freezer):
 ])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_historical_data_price(
-        database,
-        from_asset,
-        to_asset,
-        timestamp,
-        price,
-):
+        database: DBHandler,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: int,
+        price: FVal,
+) -> None:
     """Test that the cryptocompare histohour data retrieval works and price is returned
 
     """
     cc = Cryptocompare(database=database)
     # Get lots of historical prices from at least 1 query after the ts we need
     cc.query_and_store_historical_data(
-        from_asset=from_asset.resolve(),
-        to_asset=to_asset.resolve(),
-        timestamp=timestamp + 2020 * 3600,
+        from_asset=from_asset.resolve_to_asset_with_oracles(),
+        to_asset=to_asset.resolve_to_asset_with_oracles(),
+        timestamp=Timestamp(timestamp + 2020 * 3600),
     )
     # Query the ts we need directly from the cached data
     price_cache_entry = GlobalDBHandler().get_historical_price(
-        from_asset=from_asset.resolve(),
-        to_asset=to_asset.resolve(),
-        timestamp=timestamp,
+        from_asset=from_asset.resolve_to_asset_with_oracles(),
+        to_asset=to_asset.resolve_to_asset_with_oracles(),
+        timestamp=Timestamp(timestamp),
         max_seconds_distance=3600,
         sources=(HistoricalPriceOracle.CRYPTOCOMPARE,),
     )
+    assert price_cache_entry is not None
     assert price_cache_entry.price == price
 
 
@@ -255,10 +273,10 @@ def test_cryptocompare_historical_data_price(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_cryptocompare_query_compound_tokens(
-        cryptocompare,
-        price_historian,  # pylint: disable=unused-argument
-        run,
-):
+        cryptocompare: Cryptocompare,
+        price_historian: PriceHistorian,  # pylint: disable=unused-argument
+        run: dict[str, Any],
+) -> None:
     """
     Test that querying cryptocompare for compound tokens works for any target asset.
 
@@ -268,24 +286,24 @@ def test_cryptocompare_query_compound_tokens(
     The test always uses a clean caching directory so requests are ALWAYS made to cryptocompare
     to test that everything works.
     """
-    usd = A_USD.resolve()
+    usd = A_USD.resolve_to_asset_with_oracles()
     asset = run['asset']
     expected_price1 = run['expected_price1']
     expected_price2 = run['expected_price2']
     price = cryptocompare.query_historical_price(
-        from_asset=asset,
+        from_asset=asset.resolve_to_asset_with_oracles(),
         to_asset=usd,
-        timestamp=1576195200,
+        timestamp=Timestamp(1576195200),
     )
     assert price == expected_price1
     price = cryptocompare.query_endpoint_pricehistorical(
-        from_asset=asset.resolve(),
+        from_asset=asset.resolve_to_asset_with_oracles(),
         to_asset=usd,
-        timestamp=1584662400,
+        timestamp=Timestamp(1584662400),
     )
     assert price == expected_price2
-    price, _ = cryptocompare.query_current_price(
-        from_asset=asset.resolve(),
+    price = cryptocompare.query_current_price(
+        from_asset=asset.resolve_to_asset_with_oracles(),
         to_asset=usd,
     )
     assert price is not None
@@ -293,16 +311,16 @@ def test_cryptocompare_query_compound_tokens(
 
 @pytest.mark.skip(reason='requires a live CryptoCompare API key')
 @pytest.mark.parametrize('include_cryptocompare_key', [True])
-def test_cryptocompare_query_with_api_key(cryptocompare):
+def test_cryptocompare_query_with_api_key(cryptocompare: Cryptocompare) -> None:
     """Just try to query cryptocompare endpoints with an api key
 
     Regression test for https://github.com/rotki/rotki/issues/2244
     """
     # call to an endpoint without any args
-    response = cryptocompare._api_query('v2/news/')
-    assert response and isinstance(response, list)
+    response = cryptocompare._api_query(CCApiUrl.COIN_LIST)
+    assert response
     # call to endpoint with args
-    price, _ = cryptocompare.query_current_price(
+    price = cryptocompare.query_current_price(
         from_asset=A_ETH.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
@@ -310,7 +328,7 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
     # call to endpoint for a special asset to go into the special asset handling
     special_asset = A_CDAI
     assert special_asset in CRYPTOCOMPARE_SPECIAL_CASES_MAPPING
-    price, _ = cryptocompare.query_current_price(
+    price = cryptocompare.query_current_price(
         from_asset=special_asset.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
@@ -361,7 +379,7 @@ def test_special_cases(cryptocompare: Cryptocompare) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_query_multiple_current_prices(cryptocompare: Cryptocompare):
+def test_query_multiple_current_prices(cryptocompare: Cryptocompare) -> None:
     assert cryptocompare.query_multiple_current_prices(
         from_assets=[
             A_BTC.resolve_to_asset_with_oracles(),
@@ -373,7 +391,7 @@ def test_query_multiple_current_prices(cryptocompare: Cryptocompare):
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_query_multiple_current_prices_handles_exceptions(cryptocompare: Cryptocompare):
+def test_query_multiple_current_prices_handles_exceptions(cryptocompare: Cryptocompare) -> None:
     """
     Regression test for query_multiple_current_prices to ensure it properly handles
     exceptions without failing the entire batch. This prevents the issue where
@@ -390,7 +408,7 @@ def test_query_multiple_current_prices_handles_exceptions(cryptocompare: Cryptoc
     # Mock _api_query to fail for the first chunk but succeed for others
     original_api_query, call_count = cryptocompare._api_query, 0
 
-    def mock_api_query(*args, **kwargs):
+    def mock_api_query(*args: Any, **kwargs: Any) -> Any:
         nonlocal call_count
         call_count += 1
 
@@ -410,7 +428,7 @@ def test_query_multiple_current_prices_handles_exceptions(cryptocompare: Cryptoc
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
-def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocompare: Cryptocompare):  # noqa: E501
+def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocompare: Cryptocompare) -> None:  # noqa: E501
     """Regression test for special case handling in query_multiple_current_prices."""
     # Include a special case asset that might fail
     from_assets = [
@@ -422,7 +440,7 @@ def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocom
     # Mock special case handling to fail for one asset
     original_special_case = cryptocompare._special_case_handling
 
-    def mock_special_case(*args, **kwargs):
+    def mock_special_case(*args: Any, **kwargs: Any) -> Any:
         if 'from_asset' in kwargs and kwargs['from_asset'] == from_assets[-1]:
             raise RemoteError('Special case handling failed')
 

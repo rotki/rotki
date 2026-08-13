@@ -1,5 +1,6 @@
 import os
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -25,6 +26,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
+    ApiKey,
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,
@@ -35,9 +37,17 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+    from rotkehlchen.user_messages import MessagesAggregator
+
 
 @pytest.fixture(name='temp_etherscan')
-def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, sql_vm_instructions_cb):  # noqa: E501
+def fixture_temp_etherscan(
+        function_scope_messages_aggregator: MessagesAggregator,
+        tmpdir_factory: pytest.TempPathFactory,
+        sql_vm_instructions_cb: int,
+) -> Etherscan:
     directory = tmpdir_factory.mktemp('someuserdata')
     db = DBHandler(
         user_data_dir=directory,
@@ -57,17 +67,17 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         db.add_external_service_credentials(
             write_cursor=write_cursor,
             credentials=[
-                ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
+                ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=ApiKey(api_key)),  # noqa: E501
             ])
 
     with patch.object(Etherscan, 'detect_api_key_tier', return_value=None):
         return Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
 
 
-def patch_etherscan(etherscan, response_msg):
+def patch_etherscan(etherscan: Etherscan, response_msg: str) -> Any:
     count = 0
 
-    def mock_requests_get(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_requests_get(*args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal count
         if count == 0:
             response = f'{{"status":"0","message":"NOTOK","result":"{response_msg}"}}'
@@ -80,7 +90,7 @@ def patch_etherscan(etherscan, response_msg):
     return patch.object(etherscan.session, 'get', wraps=mock_requests_get)
 
 
-def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disable=unused-argument
+def test_maximum_rate_limit_reached(temp_etherscan: Etherscan) -> None:
     """
     Test that we can handle etherscan's rate limit response properly
 
@@ -93,15 +103,15 @@ def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disabl
 
     with etherscan_patch:
         result = temp_etherscan.eth_call(
-            SupportedBlockchain.ETHEREUM,
-            '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
+            ChainID.ETHEREUM,
+            string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4'),
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
 
     assert result == '0x1337'
 
 
-def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disable=unused-argument
+def test_maximum_daily_rate_limit_reached(temp_etherscan: Etherscan) -> None:
     """Test that etherscan's daily rate limit raises a RemoteError"""
     etherscan_patch = patch_etherscan(
         etherscan=temp_etherscan,
@@ -110,8 +120,8 @@ def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: 
 
     with pytest.raises(RemoteError), etherscan_patch:
         temp_etherscan.eth_call(
-            SupportedBlockchain.ETHEREUM,
-            '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
+            ChainID.ETHEREUM,
+            string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4'),
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
 
@@ -141,9 +151,9 @@ def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) 
 
 
 def test_detect_api_key_tier_does_not_warn_for_missing_key(
-        function_scope_messages_aggregator,
-        tmpdir_factory,
-        sql_vm_instructions_cb,
+        function_scope_messages_aggregator: MessagesAggregator,
+        tmpdir_factory: pytest.TempPathFactory,
+        sql_vm_instructions_cb: int,
 ) -> None:
     database = DBHandler(
         user_data_dir=tmpdir_factory.mktemp('keyless-userdata'),
@@ -234,7 +244,7 @@ def test_validated_blocks_pagination(temp_etherscan: Etherscan) -> None:
         '2': [{'blockNumber': str(ETHERSCAN_PAGINATION_LIMIT)}],
     }
 
-    def mock_query(chain_id, module, action, options):  # pylint: disable=unused-argument
+    def mock_query(chain_id: ChainID, module: str, action: str, options: dict[str, str]) -> list[dict[str, str]]:  # noqa: E501  # pylint: disable=unused-argument
         assert options['offset'] == str(ETHERSCAN_PAGINATION_LIMIT)
         return pages[options['page']]
 
@@ -326,9 +336,9 @@ def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: Etherscan) -> None:
     }
 
 
-def test_deserialize_transaction_from_etherscan():
+def test_deserialize_transaction_from_etherscan() -> None:
     # Make sure that a missing to address due to contract creation is handled
-    data = {'blockNumber': 54092, 'timeStamp': 1439048640, 'hash': '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4', 'nonce': 0, 'blockHash': '0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159', 'transactionIndex': 0, 'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24', 'to': '', 'value': 11901464239480000000000000, 'gas': 2000000, 'gasPrice': 10000000000000, 'isError': 0, 'txreceipt_status': '', 'input': '0x313233', 'contractAddress': '0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae', 'cumulativeGasUsed': 1436963, 'gasUsed': 1436963, 'confirmations': 8569454}  # noqa: E501
+    data: dict[str, Any] = {'blockNumber': 54092, 'timeStamp': 1439048640, 'hash': '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4', 'nonce': 0, 'blockHash': '0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159', 'transactionIndex': 0, 'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24', 'to': '', 'value': 11901464239480000000000000, 'gas': 2000000, 'gasPrice': 10000000000000, 'isError': 0, 'txreceipt_status': '', 'input': '0x313233', 'contractAddress': '0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae', 'cumulativeGasUsed': 1436963, 'gasUsed': 1436963, 'confirmations': 8569454}  # noqa: E501
     chain_id = ChainID.ETHEREUM
     transaction, _ = deserialize_evm_transaction(
         data=data,
@@ -339,9 +349,9 @@ def test_deserialize_transaction_from_etherscan():
     assert transaction == EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(data['hash']),
         chain_id=chain_id,
-        timestamp=1439048640,
+        timestamp=Timestamp(1439048640),
         block_number=54092,
-        from_address='0x5153493bB1E1642A63A098A65dD3913daBB6AE24',
+        from_address=string_to_evm_address('0x5153493bB1E1642A63A098A65dD3913daBB6AE24'),
         to_address=None,
         value=11901464239480000000000000,
         gas=2000000,
@@ -353,7 +363,7 @@ def test_deserialize_transaction_from_etherscan():
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_etherscan_get_transactions_genesis_block(eth_transactions):
+def test_etherscan_get_transactions_genesis_block(eth_transactions: EthereumTransactions) -> None:
     """Test that the genesis transactions are correctly returned"""
     account = to_checksum_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A')
     db = eth_transactions.database
@@ -434,8 +444,8 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             chain_id=ChainID.ETHEREUM,
             timestamp=Timestamp(1443534531),
             block_number=307793,
-            from_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
-            to_address='0x2910543Af39abA0Cd09dBb2D50200b3E800A63D2',
+            from_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
+            to_address=string_to_evm_address('0x2910543Af39abA0Cd09dBb2D50200b3E800A63D2'),
             value=327400000000000000000,
             gas=50000,
             gas_price=1171602790622,
@@ -451,7 +461,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             chain_id=ChainID.ETHEREUM,
             trace_id=0,
             from_address=ZERO_ADDRESS,
-            to_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
+            to_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
             value=327600000000000000000,
             gas=0,
             gas_used=0,

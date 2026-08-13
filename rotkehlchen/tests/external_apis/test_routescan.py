@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 
 import pytest
@@ -12,9 +13,13 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
+
 
 @pytest.fixture(name='routescan')
-def fixture_routescan(database, messages_aggregator):
+def fixture_routescan(database: DBHandler, messages_aggregator: MessagesAggregator) -> Routescan:
     return Routescan(
         database=database,
         msg_aggregator=messages_aggregator,
@@ -126,7 +131,7 @@ def test_routescan_internal_by_txhash_paginate_by_page(routescan: Routescan) -> 
     parent_tx_hash = make_evm_tx_hash()
     requested_pages: list[str] = []
 
-    def mock_query(*args, **kwargs) -> list[dict[str, str]]:
+    def mock_query(*args: Any, **kwargs: Any) -> list[dict[str, str]]:
         page = kwargs['options']['page']
         requested_pages.append(page)
 

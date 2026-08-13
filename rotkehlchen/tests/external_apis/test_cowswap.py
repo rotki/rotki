@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING, Any
+
 from rotkehlchen.externalapis.cowswap import CowswapAPI, parse_order_data
 from rotkehlchen.types import SupportedBlockchain
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
-def test_get_data_from_database(database):
+
+def test_get_data_from_database(database: DBHandler) -> None:
     with database.conn.write_ctx() as write_cursor:
         write_cursor.execute("INSERT INTO cowswap_orders(identifier, order_type, raw_fee_amount) VALUES ('TEST_ORDER', 'market', 12345678)")  # noqa: E501
 
@@ -12,9 +17,9 @@ def test_get_data_from_database(database):
     ).get_order_data('TEST_ORDER') == (12345678, 'market')
 
 
-def test_handles_missing_fullappdata():
+def test_handles_missing_fullappdata() -> None:
     # Data taken from https://api.cow.fi/xdai/api/v1/orders/0x246d4707213a3d4bab8e7cae568cb458b81b3a9f05c014c1b6f7b537c788b5205089007dec8e93f891dcb908c9e2af8d9dedb72e68d95aa4
-    order_data = {
+    order_data: dict[str, Any] = {
         'creationDate': '2025-09-28T15:51:30Z',
         'owner': '0x5089007dec8e93f891dcb908c9e2af8d9dedb72e',
         'uid': '0x246d4707213a3d4bab8e7cae568cb458b81b3a9f05c014c1b6f7b537c788b5205089007dec8e93f891dcb908c9e2af8d9dedb72e68d95aa4',  # noqa: E501
