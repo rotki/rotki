@@ -1,21 +1,26 @@
 <script setup lang="ts">
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/modules/reports/report-types';
 import type { Quarter } from '@/modules/settings/types/frontend-settings';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { z, type ZodType } from 'zod';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import ReportPeriodSelector from '@/modules/reports/ReportPeriodSelector.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 
-const modelValue = defineModel<{ start: number | undefined; end: number }>({ required: true });
+interface ReportRange {
+  start: number | undefined;
+  end: number;
+}
+
+const modelValue = defineModel<ReportRange>({ required: true });
 
 const emit = defineEmits<{
   'update:valid': [valid: boolean];
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
 
 const profitLossReportPeriod = useSetting('profitLossReportPeriod');
 const { updateFrontendSetting } = useSettingsOperations();
@@ -24,15 +29,30 @@ const year = computed<string>(() => get(profitLossReportPeriod).year);
 const quarter = computed<Quarter>(() => get(profitLossReportPeriod).quarter);
 const custom = computed<boolean>(() => get(year) === 'custom');
 
-const start = useRefPropVModel(modelValue, 'start');
-const end = useRefPropVModel(modelValue, 'end');
+/**
+ * Both dates are only required while the period is custom, which is a persisted setting rather than
+ * part of the state, so the schema is rebuilt when it changes.
+ *
+ * They are numbers, so the rule catches a cleared picker and nothing else: the epoch is a date like
+ * any other, which is what vuelidate's `required` reported too.
+ */
+const schema = computed<ZodType>(() => {
+  if (!get(custom))
+    return z.object({ end: z.number().optional(), start: z.number().optional() });
 
-function input(data: { start: number | undefined; end: number }): void {
+  return z.object({
+    end: z.number({ error: t('generate.validation.empty_end_date') }),
+    start: z.number({ error: t('generate.validation.empty_start_date') }),
+  });
+});
+
+const form = useModelForm<ReportRange>({
+  model: modelValue,
+  schema,
+});
+
+function input(data: ReportRange): void {
   set(modelValue, data);
-}
-
-function updateValid(valid: boolean): void {
-  emit('update:valid', valid);
 }
 
 async function onChanged(event: SelectionChangedEvent): Promise<void> {
@@ -40,7 +60,7 @@ async function onChanged(event: SelectionChangedEvent): Promise<void> {
   // clicks inside the Custom picker land on a sane `end=now, start=undefined`
   // baseline. Doing it after `await updateFrontendSetting` opens a race where
   // a fast click on a preset gets the old year/quarter's end as the
-  // max-date constraint — see DateTimeRangePicker.applyQuickOption.
+  // max-date constraint - see DateTimeRangePicker.applyQuickOption.
   if (event.year === 'custom') {
     input({ end: dayjs().unix(), start: undefined });
   }
@@ -53,42 +73,21 @@ async function onChanged(event: SelectionChangedEvent): Promise<void> {
 function onPeriodChange(period: PeriodChangedEvent | null): void {
   const now = dayjs().unix();
   if (period === null) {
-    // Custom period — leave start undefined so the picker renders empty
-    // instead of defaulting the field to 1970-01-01 (epoch). The
-    // `requiredIf(custom)` rule in v$ catches this as a validation error
-    // until the user picks a date or hits a quick-option preset.
+    // Custom period - leave start undefined so the picker renders empty
+    // instead of defaulting the field to 1970-01-01 (epoch). The schema
+    // catches this as a validation error until the user picks a date or hits
+    // a quick-option preset.
     input({ end: now, start: undefined });
     return;
   }
 
-  const start = period.start;
-  let end = period.end;
-  end = Math.min(end, now);
-  input({ end, start });
+  input({ end: Math.min(period.end, now), start: period.start });
 }
 
-const { t } = useI18n({ useScope: 'global' });
-
-const rules = {
-  end: {
-    required: helpers.withMessage(t('generate.validation.empty_end_date'), requiredIf(custom)),
-  },
-  start: {
-    required: helpers.withMessage(t('generate.validation.empty_start_date'), requiredIf(custom)),
-  },
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    end,
-    start,
-  },
-  { $autoDirty: false },
-);
-
-watchImmediate(v$, ({ $invalid }) => {
-  updateValid(!$invalid);
+// The validity is the only thing anything consumes: no field ever renders a message, because
+// nothing touches them, which reproduces vuelidate's $autoDirty: false exactly.
+watchImmediate(form.valid, (valid) => {
+  emit('update:valid', valid);
 });
 </script>
 
@@ -102,13 +101,13 @@ watchImmediate(v$, ({ $invalid }) => {
     />
     <DateTimeRangePicker
       v-if="custom"
-      v-model:start="start"
-      v-model:end="end"
+      v-model:start="form.state.start"
+      v-model:end="form.state.end"
       class="mt-1.5"
       allow-empty
       max-end-date="now"
-      :start-error-messages="toMessages(v$.start)"
-      :end-error-messages="toMessages(v$.end)"
+      :start-error-messages="form.errors('start')"
+      :end-error-messages="form.errors('end')"
     />
   </div>
 </template>
