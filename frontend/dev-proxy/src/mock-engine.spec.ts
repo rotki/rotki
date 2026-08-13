@@ -181,6 +181,23 @@ describe('mock engine', () => {
         .toStrictEqual({ message: '', result: { completed: [taskId], pending: [] } });
     });
 
+    it('should merge into the path the app actually polls, without a trailing slash', () => {
+      // use-task-api.ts calls `/tasks`. The old code matched only `/api/1/tasks/`,
+      // so the merge never fired against the real frontend.
+      const engine = createMockEngine(mocks);
+      const taskId = taskIdOf(engine.transformResponse(request('POST', UPDATES, { async_query: true }), {}));
+
+      expect(engine.transformResponse(request('GET', '/api/1/tasks'), { message: '', result: {} }))
+        .toStrictEqual({ message: '', result: { completed: [], pending: [taskId] } });
+    });
+
+    it('should leave the non-numeric task siblings to the backend', () => {
+      const engine = createMockEngine(mocks);
+
+      expect(engine.transformResponse(request('POST', '/api/1/tasks/trigger'), { result: 'backend' })).toBeUndefined();
+      expect(engine.transformResponse(request('PUT', '/api/1/tasks/scheduler'), { result: 'backend' })).toBeUndefined();
+    });
+
     it('should still answer when the backend reports no task lists at all', () => {
       const engine = createMockEngine(mocks);
 

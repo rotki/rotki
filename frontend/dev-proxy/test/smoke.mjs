@@ -29,6 +29,7 @@ if (!hadMock) {
       GET: { message: '', result: { local_version: 2 } },
       POST: { message: '', result: { local_version: 1 } },
     },
+    '/api/1/premium/sync': { GET: { message: '', result: 'mocked' } },
   }));
 }
 
@@ -39,7 +40,13 @@ const backend = http.createServer((req, res) => {
   req.on('end', () => {
     received.push({ body: Buffer.concat(chunks).toString(), method: req.method, url: req.url });
     res.setHeader('Content-Type', 'application/json');
-    if (req.url === '/api/1/tasks/') {
+    // A mocked path that the backend rejects: the mock must not turn it into a 200.
+    if (req.url === '/api/1/premium/sync') {
+      res.statusCode = 401;
+      res.end(JSON.stringify({ message: 'not logged in', result: null }));
+      return;
+    }
+    if (req.url === '/api/1/tasks') {
       // Deliberately split across two chunks: the old res.write override parsed
       // each chunk on its own and dropped the body when it was not whole JSON.
       const payload = JSON.stringify({ message: '', result: { completed: [], pending: [1] } });
@@ -138,8 +145,12 @@ try {
   const passthrough = await request('GET', '/api/1/settings');
   check('GET passes through', JSON.parse(passthrough.body).result?.from === 'backend', passthrough.body);
 
-  const tasks = await request('GET', '/api/1/tasks/');
+  const tasks = await request('GET', '/api/1/tasks');
   check('task status keeps the backend ids, from a chunked response', JSON.parse(tasks.body).result?.pending?.includes(1), tasks.body);
+
+  const rejected = await request('GET', '/api/1/premium/sync');
+  check('a rejected request is not rewritten into a 200', rejected.status === 401, `${rejected.status} ${rejected.body}`);
+  check('a rejected request keeps the backend body', JSON.parse(rejected.body).message === 'not logged in', rejected.body);
 
   const postBody = JSON.stringify({ async_query: false, name: 'value' });
   const post = await request('POST', '/api/1/settings', postBody, { 'Content-Type': 'application/json' });
