@@ -6755,7 +6755,12 @@
       },
       "loading_tooltip": "Re-pulling is currently disabled because the transactions are still being fetched. Please wait a moment.",
       "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",
-      "no_exchanges": "You don't have any exchanges connected. Please {link} first."
+      "no_exchanges": "You don't have any exchanges connected. Please {link} first.",
+      "validation": {
+        "date_non_empty": "The date cannot be empty",
+        "entry_type_non_empty": "Please select an event type",
+        "exchange_non_empty": "Please select an exchange"
+      }
     },
     "title": "History Events",
     "unignore": "Include in Accounting"

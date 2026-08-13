@@ -1,13 +1,12 @@
 <script lang="ts" setup>
+import type { ZodType } from 'zod';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { toServerErrors } from '@/modules/core/form/server-errors';
+import { type FormApi, useForm } from '@/modules/core/form/use-form';
+import { type RepullingExchangeFormState, repullingExchangeSchema } from '@/modules/history/events/tx/repulling-forms';
 import { shouldShowDateRangePicker } from '@/modules/history/events/tx/use-repulling-transaction-form';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
@@ -18,59 +17,67 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const { t } = useI18n({ useScope: 'global' });
 
-const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
-const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
-
-const exchange = ref<Exchange>();
 const { syncingExchanges } = useExchangeData();
 
 const hasNoExchanges = computed<boolean>(() => get(syncingExchanges).length === 0);
 
-const showDateRangePicker = computed<boolean>(() => shouldShowDateRangePicker(false, get(exchange)));
-
-const rules = computed(() => {
-  const timestampRules = get(showDateRangePicker) ? { required } : {};
-  return {
-    exchange: { required },
-    fromTimestamp: timestampRules,
-    toTimestamp: timestampRules,
-  };
+/*
+ * `useForm` rather than `useModelForm`: the chosen exchange is the form's main field and is not part
+ * of the shared payload, so the state is wider than the model. Only the range is mirrored back.
+ */
+const form: FormApi<RepullingExchangeFormState, RepullingExchangeFormState> = useForm({
+  initial: (): RepullingExchangeFormState => ({
+    // Spelled out, not left off: a key the state does not carry fails the schema on its absence
+    // rather than on the rule, and reports zod's own message instead of the one below.
+    exchange: undefined,
+    fromTimestamp: get(modelValue).fromTimestamp,
+    toTimestamp: get(modelValue).toTimestamp,
+  }),
+  // A getter, not a computed over `showDateRangePicker`: that reads the state this form owns, so
+  // the two would be defined in terms of each other.
+  schema: (): ZodType => repullingExchangeSchema({
+    exchangeRequired: t('transactions.repulling.validation.exchange_non_empty'),
+    rangeRequired: t('transactions.repulling.validation.date_non_empty'),
+  }, shouldShowDateRangePicker(false, form.state.exchange)),
+  // The dialog owns the persist and reads the range off the model.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): RepullingExchangeFormState => ({ ...state }),
 });
 
-const states = {
-  exchange,
-  fromTimestamp,
-  toTimestamp,
-};
+const showDateRangePicker = computed<boolean>(() => shouldShowDateRangePicker(false, form.state.exchange));
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errors,
-  },
-);
+watch(() => [form.state.fromTimestamp, form.state.toTimestamp], ([fromTimestamp, toTimestamp]) => {
+  set(modelValue, { ...get(modelValue), fromTimestamp, toTimestamp });
+});
 
-useFormStateWatcher(states, stateUpdated);
+watchImmediate(errors, (value) => {
+  form.setServerErrors(toServerErrors(value));
+}, { deep: true });
+
+watch(form.dirty, (dirty) => {
+  set(stateUpdated, dirty);
+});
+
+// An exchange that reports no range has no picker, so anything already in it is dropped rather than
+// sent.
+watch(showDateRangePicker, (show) => {
+  if (!show) {
+    form.state.fromTimestamp = undefined;
+    form.state.toTimestamp = undefined;
+  }
+});
 
 onBeforeUnmount(() => {
   set(errors, {});
 });
 
-watch(showDateRangePicker, (show) => {
-  if (!show) {
-    set(modelValue, {
-      ...get(modelValue),
-      fromTimestamp: undefined,
-      toTimestamp: undefined,
-    });
-  }
+onUnmounted(() => {
+  set(stateUpdated, false);
 });
 
 defineExpose({
-  getExchangeData: () => get(exchange),
-  validate: () => get(v$).$validate(),
+  getExchangeData: (): Exchange | undefined => form.state.exchange,
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -101,14 +108,15 @@ defineExpose({
 
     <template v-else>
       <RuiAutoComplete
-        v-model="exchange"
+        v-model="form.state.exchange"
         :options="syncingExchanges"
         :label="t('common.exchange')"
         variant="outlined"
         auto-select-first
         :item-height="48"
         text-attr="name"
-        :error-messages="toMessages(v$.exchange)"
+        :error-messages="form.errors('exchange')"
+        @update:model-value="form.touch('exchange')"
       >
         <template #selection="{ item }">
           <div class="flex items-center gap-2 pl-1">
@@ -133,12 +141,14 @@ defineExpose({
 
       <DateTimeRangePicker
         v-if="showDateRangePicker"
-        v-model:start="fromTimestamp"
-        v-model:end="toTimestamp"
+        v-model:start="form.state.fromTimestamp"
+        v-model:end="form.state.toTimestamp"
         allow-empty
         max-end-date="now"
-        :start-error-messages="toMessages(v$.fromTimestamp)"
-        :end-error-messages="toMessages(v$.toTimestamp)"
+        :start-error-messages="form.errors('fromTimestamp')"
+        :end-error-messages="form.errors('toTimestamp')"
+        @update:start="form.touch('fromTimestamp')"
+        @update:end="form.touch('toTimestamp')"
       />
     </template>
   </div>
