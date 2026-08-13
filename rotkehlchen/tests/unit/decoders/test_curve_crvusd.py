@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import pytest
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='crvusd_controller')
-def fixture_crvusd_controller(request) -> ChecksumEvmAddress:
+def fixture_crvusd_controller(request: Any) -> ChecksumEvmAddress:
     """Fixture to set a crvUSD controller address in the GlobalDB
     so decoding works correctly in the tests.
     """
