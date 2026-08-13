@@ -207,7 +207,11 @@ def test_text_changed_old_name(database, ethereum_inquirer, ethereum_accounts, a
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-def test_set_resolver(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_set_resolver(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     tx_hash = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, ens_old_reverse_registrar = ethereum_accounts[0], TimestampMS(1660047719000), '0.001069480808983134', '0x084b1c3C81545d370f3634392De611CaaBFf8148'  # noqa: E501
@@ -256,7 +260,11 @@ def test_set_resolver(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbc2E9Df6281a8e853121dc52dBc8BCc8bBE3ed0e']])
-def test_set_attribute_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_set_attribute_v2(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     """Test that setting ens text attribute using public resolver deployed in March 2023 works"""
     tx_hash = deserialize_evm_tx_hash('0x6b354e4da21cfb06a8eb4cb5b7efd20558ae3be6a7a7c563f318e041fb3bfdd9')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -294,7 +302,11 @@ def test_set_attribute_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA3B9E4b2C18eFB1C767542e8eb9419B840881467']])
-def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_register_v2(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     """Test that registering an ens name using eth registar deployed in March 2023 works"""
     user_address = ethereum_accounts[0]
     events, decoder = get_decoded_events_of_transaction(
@@ -495,7 +507,10 @@ def test_register_v2_with_refund(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe951C14FDEea2B4E776065b36acD7d3a33e85C88']])
-def test_register_v2_spend_before_refund(ethereum_inquirer, ethereum_accounts):
+def test_register_v2_spend_before_refund(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test for the flow, where a smart account pays the ENS controller through EntryPoint,
     then receives a refund from the controller in a later internal tx"""
     events, decoder = get_decoded_events_of_transaction(
@@ -562,7 +577,11 @@ def test_register_v2_spend_before_refund(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
-def test_renewal_with_refund_old_controller(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
+def test_renewal_with_refund_old_controller(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     Check that if there was a refund during a renewal, the refund is subtracted from the
     spent amount. Check a refund using the old ENS registrar controller. That contract
@@ -608,7 +627,10 @@ def test_renewal_with_refund_old_controller(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_renewal_with_refund_new_controller(ethereum_inquirer, ethereum_accounts):
+def test_renewal_with_refund_new_controller(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """
     Check that if there was a refund during a renewal, the refund is subtracted from the
     spent amount. Check a refund using the new ENS registrar controller. That contract
@@ -654,7 +676,11 @@ def test_renewal_with_refund_new_controller(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_content_hash_changed(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_content_hash_changed(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     """Test that transactions changing the content hash of an ENS are properly decoded"""
     tx_hash = deserialize_evm_tx_hash('0x21fa4ef7a4c20f2548cc010ba00974632cca9e55edea4d50b3fb2c00c7f2080b')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -696,7 +722,13 @@ def test_content_hash_changed(ethereum_inquirer, ethereum_accounts, add_subgraph
     ('Send', ['0x4bBa290826C253BD854121346c370a9886d1bC26']),
     ('Receive', ['0x34207C538E39F2600FE672bB84A90efF190ae4C7']),
 ])
-def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
+def test_transfer_ens_name(
+        database: object,
+        ethereum_inquirer: EthereumInquirer,
+        action: str,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument  # noqa: E501
     """Test that transferring an ENS name is decoded properly for all 3 cases.
 
     Owning both addresses in the transfer, only sender or only receiver
@@ -762,7 +794,11 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x5f0eb172CaA67d45865AAd955FA77654Da33196F']])
-def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_for_truncated_labelhash(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     """Test for https://github.com/rotki/rotki/issues/6597 where some labelhashes
     had their leading 0s truncated and lead to graph failures
     """
@@ -870,7 +906,10 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x5e4D630C35ef5c23ac57cF6bf8f2267D9E3CB78F']])
-def test_extension_via_wrapper(ethereum_inquirer, ethereum_accounts):
+def test_extension_via_wrapper(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test extending an ENS name through the renewal wrapper."""
     tx_hash = deserialize_evm_tx_hash('0x8365058e30784fd8df69d7b7fc9d9f2744f75069b89362e2c8d48cd16ee9105e')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -912,7 +951,10 @@ def test_extension_via_wrapper(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_vote_cast(ethereum_inquirer, ethereum_accounts):
+def test_vote_cast(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test voting for ENS governance"""
     tx_hash = deserialize_evm_tx_hash('0x4677ffa104b011d591ae0c056ba651a978db982c0dfd131520db74c1b46ff564')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -950,7 +992,10 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_vote_cast_abstain(ethereum_inquirer, ethereum_accounts):
+def test_vote_cast_abstain(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test voting for ENS (or any) governance as abstain"""
     tx_hash = deserialize_evm_tx_hash('0xc16e94a93480fd499373283ee973b34d18525c3b67ea81b248530d8158944ff2')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -988,7 +1033,11 @@ def test_vote_cast_abstain(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_set_attribute_for_non_primary_name(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
+def test_set_attribute_for_non_primary_name(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument  # noqa: E501
     """Test that setting ens text attribute for a name that is controlled by but not
     set as the primary name of the address works correctly"""
     tx_hash = deserialize_evm_tx_hash('0x07aa7d1ac61fc03f6416a25c0d6cf96f286e2ce84e9b350dd2a9a1bd6426aef2')  # noqa: E501
@@ -1026,7 +1075,11 @@ def test_set_attribute_for_non_primary_name(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB']])
-def test_claim_airdrop(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_claim_airdrop(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     tx_hash = deserialize_evm_tx_hash('0xb892797f63943dbf75e9e8a86515e9a4a964dcb6930dad10e93b526a2a648e6d')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -1079,7 +1132,11 @@ def test_invalid_ens_name(globaldb: GlobalDBHandler):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_new_owner(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_new_owner(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     """Test assigning new owner to a subnode"""
     tx_hash = deserialize_evm_tx_hash('0x56bb5b09757fadfbb376b207fe5f340df9931f8169b2e852679d57885f9ae1c1')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -1117,7 +1174,11 @@ def test_new_owner(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key): 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_address_changed(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+def test_address_changed(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        add_subgraph_api_key: None,
+) -> None:  # pylint: disable=unused-argument
     """Test address changed for a name"""
     tx_hash = deserialize_evm_tx_hash('0x67cbfebb9027a004d341b6f57976ba970fae9af8be7f32161a93224cefbb3e83')  # noqa: E501
     user_address = ethereum_accounts[0]
