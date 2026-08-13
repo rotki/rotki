@@ -1,8 +1,8 @@
-import type { ComponentPublicInstance } from 'vue';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComponentPublicInstance, defineComponent, h, type VNode } from 'vue';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import '@test/i18n';
 
@@ -163,6 +163,66 @@ describe('premiumDeviceForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(messages()).toEqual(['taken already']);
+  });
+
+  /*
+   * A parent that holds the name in a real ref, so the write out and the echo back are both real.
+   * `mountModelForm` does not fit here: it is typed for an object payload, and this form's model is
+   * a bare string bridged through a writable computed.
+   */
+  function mountUnderParent(initial = 'desktop'): { name: () => string; parent: VueWrapper } {
+    const name = ref<string>(initial);
+    const parent = defineComponent({
+      setup(): () => VNode {
+        return () => h(PremiumDeviceForm, {
+          'device': device(),
+          'errorMessages': {} satisfies ValidationErrors,
+          'modelValue': get(name),
+          'onUpdate:modelValue': (value: string): void => set(name, value),
+        });
+      },
+    });
+
+    return {
+      name: (): string => get(name),
+      parent: mount(parent, {
+        global: {
+          stubs: {
+            DateDisplay: true,
+            RuiCard: { name: 'RuiCard', template: '<div><slot /></div>' },
+            RuiTextField: textFieldStub,
+          },
+        },
+      }),
+    };
+  }
+
+  it('should land an edit in the model the dialog holds', async () => {
+    const { name, parent } = mountUnderParent();
+    await vi.advanceTimersToNextTimerAsync();
+
+    parent.findComponent<StubInstance>('[data-testid=premium-device-name]').vm.$emit('update:modelValue', 'workstation');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The dialog saves what it reads off the model, not what the form holds.
+    expect(name()).toBe('workstation');
+
+    parent.unmount();
+  });
+
+  it('should not re-enter the value the model echoes back', async () => {
+    const { name, parent } = mountUnderParent();
+    await vi.advanceTimersToNextTimerAsync();
+
+    const field = parent.findComponent<StubInstance>('[data-testid=premium-device-name]');
+    field.vm.$emit('update:modelValue', 'workstation');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The echo travels model -> state, which is the loop the core guards with isEqual.
+    expect(field.props('modelValue')).toBe('workstation');
+    expect(name()).toBe('workstation');
+
+    parent.unmount();
   });
 
   it('should write an edit back into the model', async () => {
