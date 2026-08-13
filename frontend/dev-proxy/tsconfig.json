@@ -1,11 +1,13 @@
 {
+  "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
-    "moduleDetection": "force",
-    "module": "Preserve",
+    "tsBuildInfoFile": "../node_modules/.tmp/tsconfig.dev-proxy.tsbuildinfo",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
+    "types": ["node"],
     "allowJs": true,
-    "esModuleInterop": true,
-    "isolatedModules": true
+    "noEmit": true
   },
   "include": [
     "src/**/*"

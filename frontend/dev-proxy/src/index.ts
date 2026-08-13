@@ -1,28 +1,24 @@
-import type * as http from 'node:http';
 import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
+import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import net from 'node:net';
 import process from 'node:process';
-import * as querystring from 'node:querystring';
-import bodyParser from 'body-parser';
+import { Readable } from 'node:stream';
 import consola, { LogLevels } from 'consola';
-import express, { type Request, type Response } from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import { statistics } from './mocked-apis/statistics';
-import { enableCors } from './setup';
+import { createProxyServer } from 'httpxy';
+import { serveStatisticsRenderer, STATISTICS_RENDERER_PATH } from './mocked-apis/statistics';
+import { applyCors } from './setup';
 
 consola.level = LogLevels.debug;
 
-const server = express();
-
-const port = process.env.PORT ?? 4243;
+const port = Number.parseInt(process.env.PORT ?? '4243', 10);
 const backend = process.env.BACKEND ?? 'http://127.0.0.1:4242';
 const componentsDir = process.env.PREMIUM_COMPONENT_DIR;
 
-enableCors(server);
-
+let statisticsRendererDir: string | undefined;
 if (componentsDir && fs.existsSync(componentsDir) && fs.statSync(componentsDir).isDirectory()) {
   consola.info('Enabling statistics renderer support');
-  statistics(server, componentsDir);
+  statisticsRendererDir = componentsDir;
 }
 else {
   consola.warn('PREMIUM_COMPONENT_DIR was not a valid directory, disabling statistics renderer support.');
@@ -43,7 +39,10 @@ else {
   consola.info('async-mock.json doesnt exist. No async_query mocking is enabled');
 }
 
-function manipulateResponse(res: Response, callback: (original: any) => any): void {
+/** Bodies are read off the request stream, so they are kept here for the response handlers. */
+const requestBodies = new WeakMap<IncomingMessage, any>();
+
+function manipulateResponse(res: ServerResponse, callback: (original: any) => any): void {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
@@ -51,10 +50,12 @@ function manipulateResponse(res: Response, callback: (original: any) => any): vo
     const response = chunk.toString();
     try {
       const payload = JSON.stringify(callback(JSON.parse(response)));
-      res.header('content-length', payload.length.toString());
-      res.status(200);
+      if (!res.headersSent)
+        res.setHeader('content-length', payload.length.toString());
+
+      res.statusCode = 200;
       res.statusMessage = 'OK';
-      originalWrite.call(res, payload);
+      originalWrite.call(res, payload, 'utf8');
       return true;
     }
     catch (error: any) {
@@ -101,7 +102,7 @@ function createResult(result: unknown): Record<string, unknown> {
   };
 }
 
-function handleTasksStatus(res: Response): void {
+function handleTasksStatus(res: ServerResponse): void {
   manipulateResponse(res, (data) => {
     const result = data.result;
     if (result?.pending)
@@ -116,7 +117,7 @@ function handleTasksStatus(res: Response): void {
   });
 }
 
-function handleTaskRequest(url: string, tasks: string, res: Response): void {
+function handleTaskRequest(url: string, tasks: string, res: ServerResponse): void {
   const task = url.replace(tasks, '');
   try {
     const taskId = Number.parseInt(task);
@@ -159,7 +160,7 @@ function getCounter(baseUrl: string, method: string): number {
   return counter[baseUrl]?.[method] ?? 0;
 }
 
-function handleAsyncQuery(url: string, req: Request, res: Response): void {
+function handleAsyncQuery(url: string, req: IncomingMessage, res: ServerResponse): void {
   const mockedUrls = Object.keys(mockedAsyncCalls);
   const baseUrl = url.split('?')[0];
   const index = mockedUrls.findIndex(value => value.includes(baseUrl));
@@ -167,15 +168,16 @@ function handleAsyncQuery(url: string, req: Request, res: Response): void {
   if (index < 0)
     return;
 
-  increaseCounter(baseUrl, req.method);
+  const method = req.method ?? 'GET';
+  increaseCounter(baseUrl, method);
 
-  const response = mockedAsyncCalls[mockedUrls[index]]?.[req.method];
+  const response = mockedAsyncCalls[mockedUrls[index]]?.[method];
   if (!response)
     return;
 
   let pendingResponse: any;
   if (Array.isArray(response)) {
-    const number = getCounter(baseUrl, req.method) - 1;
+    const number = getCounter(baseUrl, method) - 1;
     if (number < response.length)
       pendingResponse = response[number];
     else pendingResponse = response.at(-1);
@@ -201,52 +203,29 @@ function handleAsyncQuery(url: string, req: Request, res: Response): void {
   }));
 }
 
-function isAsyncQuery(req: Request): boolean {
-  return (
-    req.method !== 'GET'
-    && req.rawHeaders.findIndex(h => h.toLocaleLowerCase().includes('application/json'))
-    && req.body?.async_query === true
-  );
+function isAsyncQuery(req: IncomingMessage): boolean {
+  return req.method !== 'GET' && requestBodies.get(req)?.async_query === true;
 }
 
-function isPreflight(req: Request): boolean {
+function isPreflight(req: IncomingMessage): boolean {
   const mockedUrls = Object.keys(mockedAsyncCalls);
-  const baseUrl = req.url.split('?')[0];
+  const baseUrl = (req.url ?? '').split('?')[0];
   const index = mockedUrls.findIndex(value => value.includes(baseUrl));
   return req.method === 'OPTIONS' && index >= 0;
 }
 
-function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response): void {
-  if (!req.body)
-    return;
-
-  const contentType = proxyReq.getHeader('Content-Type') ?? '';
-  const writeBody = (bodyData: string): void => {
-    proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-    proxyReq.write(bodyData);
-  };
-
-  const ct = contentType.toString().toLocaleLowerCase();
-  if (ct.startsWith('application/json'))
-    writeBody(JSON.stringify(req.body));
-
-  if (ct.startsWith('application/x-www-form-urlencoded'))
-    writeBody(querystring.stringify(req.body));
-}
-
-function mockPreflight(res: Response): void {
+function mockPreflight(res: ServerResponse): void {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
   res.write = (chunk: any): boolean => {
     try {
-      res.header('Access-Control-Allow-Origin', '*');
-      res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.status(200);
+      if (!res.headersSent)
+        applyCors(res);
+
+      res.statusCode = 200;
       res.statusMessage = 'OK';
-      originalWrite.call(res, chunk);
+      originalWrite.call(res, chunk, 'utf8');
       return true;
     }
     catch {
@@ -255,14 +234,15 @@ function mockPreflight(res: Response): void {
   };
 }
 
-function hasResponse(req: Request): boolean {
-  const mockResponse = mockedAsyncCalls[req.url];
-  return !!mockResponse && !!mockResponse[req.method];
+function hasResponse(req: IncomingMessage): boolean {
+  const mockResponse = mockedAsyncCalls[req.url ?? ''];
+  return !!mockResponse && !!mockResponse[req.method ?? 'GET'];
 }
 
-function onProxyRes(_proxyRes: http.IncomingMessage, req: Request, res: Response): void {
+function onProxyRes(req: IncomingMessage, res: ServerResponse): void {
   let handled = false;
-  const url = req.url;
+  const url = req.url ?? '';
+  const method = req.method ?? 'GET';
   const tasks = '/api/1/tasks/';
   if (url.indexOf('async_query') > 0) {
     handleAsyncQuery(url, req, res);
@@ -286,14 +266,14 @@ function onProxyRes(_proxyRes: http.IncomingMessage, req: Request, res: Response
   }
   else if (hasResponse(req)) {
     manipulateResponse(res, () => {
-      const response = mockedAsyncCalls[req.url][req.method];
+      const response = mockedAsyncCalls[url][method];
       if (Array.isArray(response)) {
-        const index = getCounter(req.url, req.method);
+        const index = getCounter(url, method);
         let responseIndex = index;
         if (index > response.length - 1)
           responseIndex = response.length - 1;
 
-        increaseCounter(req.url, req.method);
+        increaseCounter(url, method);
         return response[responseIndex];
       }
       return response;
@@ -302,21 +282,84 @@ function onProxyRes(_proxyRes: http.IncomingMessage, req: Request, res: Response
   }
 
   if (handled)
-    consola.info('Handled request:', req.method, req.url);
+    consola.info('Handled request:', method, url);
 }
 
-server.use(bodyParser.urlencoded({ extended: true }));
-server.use(bodyParser.json());
+/**
+ * Reads the request body so the mock handlers can inspect `async_query`. The raw
+ * bytes are replayed to the backend through the proxy's `buffer` option, so the
+ * forwarded request stays byte-identical to the original.
+ */
+async function readBody(req: IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
 
-server.use(createProxyMiddleware({
-  logger: consola,
-  on: {
-    proxyReq: onProxyReq,
-    proxyRes: onProxyRes,
-  },
-  target: backend,
-  ws: true,
-}));
+function parseBody(raw: Buffer, contentType: string): any {
+  if (raw.length === 0)
+    return undefined;
+
+  const type = contentType.toLocaleLowerCase();
+  if (type.startsWith('application/json')) {
+    try {
+      return JSON.parse(raw.toString());
+    }
+    catch {
+      return undefined;
+    }
+  }
+  if (type.startsWith('application/x-www-form-urlencoded'))
+    return Object.fromEntries(new URLSearchParams(raw.toString()));
+
+  return undefined;
+}
+
+const proxy = createProxyServer({ target: backend, ws: true });
+
+proxy.on('proxyRes', (_proxyRes, req, res) => {
+  onProxyRes(req, res);
+});
+
+proxy.on('error', (error) => {
+  consola.error(error);
+});
+
+const server = http.createServer((req, res) => {
+  applyCors(res);
+
+  const path = (req.url ?? '').split('?')[0];
+  if (statisticsRendererDir && req.method === 'GET' && path === STATISTICS_RENDERER_PATH) {
+    serveStatisticsRenderer(statisticsRendererDir, res);
+    return;
+  }
+
+  const method = req.method ?? 'GET';
+  if (method === 'GET' || method === 'HEAD') {
+    proxy.web(req, res).catch(error => consola.error(error));
+    return;
+  }
+
+  readBody(req)
+    .then(async (raw) => {
+      requestBodies.set(req, parseBody(raw, req.headers['content-type'] ?? ''));
+      await proxy.web(req, res, { buffer: Readable.from(raw) });
+    })
+    .catch(error => consola.error(error));
+});
+
+server.on('upgrade', (req, socket, head) => {
+  // Node types the upgrade socket as Duplex, but HTTP/1.1 upgrades are always
+  // net.Socket, which is what httpxy expects.
+  if (!(socket instanceof net.Socket)) {
+    socket.destroy();
+    return;
+  }
+  proxy.ws(req, socket, {}, head).catch((error) => {
+    consola.error(error);
+    socket.destroy();
+  });
+});
 
 server.listen(port, () => {
   consola.log(`Proxy server is running at http://127.0.0.1:${port}`);
