@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
 import pytest
@@ -70,23 +70,23 @@ from rotkehlchen.tests.utils.substrate import (
 from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Generator, Sequence
 
     from rotkehlchen.chain.evm.types import NodeName, WeightedNode
     from rotkehlchen.chain.substrate.types import SubstrateAddress
 
 
 def _initialize_and_yield_evm_inquirer_fixture(
-        parent_stack,
-        klass,
-        class_path,
-        manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-        mock_data,
-        mocked_proxies,
-):
+        parent_stack: ExitStack,
+        klass: Any,
+        class_path: str,
+        manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+        mock_data: dict[Any, Any],
+        mocked_proxies: Any,
+) -> Any:
     blockchain = SupportedBlockchain.ETHEREUM
     if klass == OptimismInquirer:
         blockchain = SupportedBlockchain.OPTIMISM
@@ -153,17 +153,17 @@ def _initialize_and_yield_evm_inquirer_fixture(
 
 
 @pytest.fixture(name='number_of_eth_accounts')
-def fixture_number_of_eth_accounts():
+def fixture_number_of_eth_accounts() -> int:
     return 4
 
 
 @pytest.fixture(name='number_of_arbitrum_one_accounts')
-def fixture_number_of_arbitrum_one_accounts():
+def fixture_number_of_arbitrum_one_accounts() -> int:
     return 0
 
 
 @pytest.fixture(name='ethereum_accounts')
-def fixture_ethereum_accounts(number_of_eth_accounts) -> list[ChecksumEvmAddress]:
+def fixture_ethereum_accounts(number_of_eth_accounts: int) -> list[ChecksumEvmAddress]:
     return [make_evm_address() for x in range(number_of_eth_accounts)]
 
 
@@ -323,19 +323,19 @@ def fixture_should_mock_web3() -> bool:
 
 
 @pytest.fixture(name='ethereum_mock_data')
-def fixture_ethereum_mock_data():
+def fixture_ethereum_mock_data() -> dict[Any, Any]:
     """Can contain mocked data for both etherscan and web3 requests"""
     return {}
 
 
 @pytest.fixture(name='optimism_mock_data')
-def fixture_optimism_mock_data():
+def fixture_optimism_mock_data() -> dict[Any, Any]:
     """Can contain mocked data for both etherscan and web3 requests"""
     return {}
 
 
 @pytest.fixture(name='mock_other_web3')
-def fixture_mock_other_web3(network_mocking, should_mock_web3):
+def fixture_mock_other_web3(network_mocking: bool, should_mock_web3: bool) -> bool:
     """Just like fixture_web3_mocking this decides but in boolean
     without yielding if web3 and related stuff should be mocked"""
     if network_mocking is False:
@@ -345,13 +345,13 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
 
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
-        ethereum_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-        ethereum_mock_data,
-        mocked_proxies,
-):
+        ethereum_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+        ethereum_mock_data: dict[Any, Any],
+        mocked_proxies: Any,
+) -> Generator[EthereumInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -367,7 +367,7 @@ def fixture_ethereum_inquirer(
 
 
 @pytest.fixture(name='ethereum_manager')
-def fixture_ethereum_manager(ethereum_inquirer):
+def fixture_ethereum_manager(ethereum_inquirer: EthereumInquirer) -> EthereumManager:
     return EthereumManager(
         node_inquirer=ethereum_inquirer,
         monerium=Monerium(database=ethereum_inquirer.database),
@@ -376,11 +376,11 @@ def fixture_ethereum_manager(ethereum_inquirer):
 
 @pytest.fixture(name='ethereum_transaction_decoder')
 def fixture_ethereum_transaction_decoder(
-        database,
-        ethereum_inquirer,
-        eth_transactions,
-        load_global_caches,
-):
+        database: Any,
+        ethereum_inquirer: EthereumInquirer,
+        eth_transactions: EthereumTransactions,
+        load_global_caches: list[str],
+) -> Generator[EthereumTransactionDecoder]:
     with patch_decoder_reload_data(load_global_caches):
         yield EthereumTransactionDecoder(
             database=database,
@@ -398,7 +398,10 @@ def fixture_have_decoders() -> bool:
 
 
 @pytest.fixture(name='eth_transactions')
-def fixture_eth_transactions(database, ethereum_inquirer):
+def fixture_eth_transactions(
+        database: Any,
+        ethereum_inquirer: EthereumInquirer,
+) -> EthereumTransactions:
     return EthereumTransactions(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
@@ -418,12 +421,12 @@ def fixture_optimism_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence
 
 @pytest.fixture(name='optimism_inquirer')
 def fixture_optimism_inquirer(
-        optimism_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-        optimism_mock_data,
-):
+        optimism_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+        optimism_mock_data: dict[Any, Any],
+) -> Generator[OptimismInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -439,12 +442,15 @@ def fixture_optimism_inquirer(
 
 
 @pytest.fixture(name='optimism_manager')
-def fixture_optimism_manager(optimism_inquirer):
+def fixture_optimism_manager(optimism_inquirer: OptimismInquirer) -> OptimismManager:
     return OptimismManager(node_inquirer=optimism_inquirer)
 
 
 @pytest.fixture(name='optimism_transactions')
-def fixture_optimism_transactions(database, optimism_inquirer):
+def fixture_optimism_transactions(
+        database: Any,
+        optimism_inquirer: OptimismInquirer,
+) -> OptimismTransactions:
     return OptimismTransactions(
         optimism_inquirer=optimism_inquirer,
         database=database,
@@ -452,7 +458,10 @@ def fixture_optimism_transactions(database, optimism_inquirer):
 
 
 @pytest.fixture(name='arbitrum_one_transactions')
-def fixture_arbitrum_one_transactions(database, arbitrum_one_inquirer):
+def fixture_arbitrum_one_transactions(
+        database: Any,
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+) -> ArbitrumOneTransactions:
     return ArbitrumOneTransactions(
         arbitrum_one_inquirer=arbitrum_one_inquirer,
         database=database,
@@ -460,7 +469,10 @@ def fixture_arbitrum_one_transactions(database, arbitrum_one_inquirer):
 
 
 @pytest.fixture(name='base_transactions')
-def fixture_base_transactions(database, base_inquirer):
+def fixture_base_transactions(
+        database: Any,
+        base_inquirer: BaseInquirer,
+) -> BaseTransactions:
     return BaseTransactions(
         base_inquirer=base_inquirer,
         database=database,
@@ -469,11 +481,11 @@ def fixture_base_transactions(database, base_inquirer):
 
 @pytest.fixture(name='optimism_transaction_decoder')
 def fixture_optimism_transaction_decoder(
-        database,
-        optimism_inquirer,
-        optimism_transactions,
-        load_global_caches,
-):
+        database: Any,
+        optimism_inquirer: OptimismInquirer,
+        optimism_transactions: OptimismTransactions,
+        load_global_caches: list[str],
+) -> Generator[OptimismTransactionDecoder]:
     with patch_decoder_reload_data(load_global_caches):
         yield OptimismTransactionDecoder(
             database=database,
@@ -484,11 +496,11 @@ def fixture_optimism_transaction_decoder(
 
 @pytest.fixture(name='base_transaction_decoder')
 def fixture_base_transaction_decoder(
-        database,
-        base_inquirer,
-        base_transactions,
-        load_global_caches,
-):
+        database: Any,
+        base_inquirer: BaseInquirer,
+        base_transactions: BaseTransactions,
+        load_global_caches: list[str],
+) -> Generator[BaseTransactionDecoder]:
     with patch_decoder_reload_data(load_global_caches):
         yield BaseTransactionDecoder(
             database=database,
@@ -500,11 +512,11 @@ def fixture_base_transaction_decoder(
 
 @pytest.fixture(name='arbitrum_one_transaction_decoder')
 def fixture_arbitrum_one_transaction_decoder(
-        database,
-        arbitrum_one_inquirer,
-        arbitrum_one_transactions,
-        load_global_caches,
-):
+        database: Any,
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_transactions: ArbitrumOneTransactions,
+        load_global_caches: list[str],
+) -> Generator[ArbitrumOneTransactionDecoder]:
     with patch_decoder_reload_data(load_global_caches):
         yield ArbitrumOneTransactionDecoder(
             database=database,
@@ -527,11 +539,11 @@ def fixture_polygon_pos_manager_connect_at_start() -> Literal['DEFAULT'] | Seque
 
 @pytest.fixture(name='polygon_pos_inquirer')
 def fixture_polygon_pos_inquirer(
-        polygon_pos_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        polygon_pos_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[PolygonPOSInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -547,7 +559,7 @@ def fixture_polygon_pos_inquirer(
 
 
 @pytest.fixture(name='polygon_pos_manager')
-def fixture_polygon_pos_manager(polygon_pos_inquirer):
+def fixture_polygon_pos_manager(polygon_pos_inquirer: PolygonPOSInquirer) -> PolygonPOSManager:
     return PolygonPOSManager(
         node_inquirer=polygon_pos_inquirer,
         monerium=Monerium(database=polygon_pos_inquirer.database),
@@ -567,11 +579,11 @@ def fixture_arbitrum_one_manager_connect_at_start() -> Literal['DEFAULT'] | Sequ
 
 @pytest.fixture(name='arbitrum_one_inquirer')
 def fixture_arbitrum_one_inquirer(
-        arbitrum_one_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        arbitrum_one_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[ArbitrumOneInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -587,7 +599,9 @@ def fixture_arbitrum_one_inquirer(
 
 
 @pytest.fixture(name='arbitrum_one_manager')
-def fixture_arbitrum_one_manager(arbitrum_one_inquirer):
+def fixture_arbitrum_one_manager(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+) -> ArbitrumOneManager:
     return ArbitrumOneManager(
         node_inquirer=arbitrum_one_inquirer,
         monerium=Monerium(database=arbitrum_one_inquirer.database),
@@ -606,11 +620,11 @@ def fixture_base_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[Nod
 
 @pytest.fixture(name='base_inquirer')
 def fixture_base_inquirer(
-        base_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        base_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[BaseInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -626,7 +640,7 @@ def fixture_base_inquirer(
 
 
 @pytest.fixture(name='base_manager')
-def fixture_base_manager(base_inquirer):
+def fixture_base_manager(base_inquirer: BaseInquirer) -> BaseManager:
     return BaseManager(
         node_inquirer=base_inquirer,
         monerium=Monerium(database=base_inquirer.database),
@@ -645,11 +659,11 @@ def fixture_hyperliquid_manager_connect_at_start() -> Literal['DEFAULT'] | Seque
 
 @pytest.fixture(name='hyperliquid_inquirer')
 def fixture_hyperliquid_inquirer(
-        hyperliquid_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        hyperliquid_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[HyperliquidInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -665,7 +679,9 @@ def fixture_hyperliquid_inquirer(
 
 
 @pytest.fixture(name='hyperliquid_manager')
-def fixture_hyperliquid_manager(hyperliquid_inquirer):
+def fixture_hyperliquid_manager(
+        hyperliquid_inquirer: HyperliquidInquirer,
+) -> HyperliquidManager:
     return HyperliquidManager(node_inquirer=hyperliquid_inquirer)
 
 
@@ -681,11 +697,11 @@ def fixture_monad_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[No
 
 @pytest.fixture(name='monad_inquirer')
 def fixture_monad_inquirer(
-        monad_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        monad_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[MonadInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -701,7 +717,7 @@ def fixture_monad_inquirer(
 
 
 @pytest.fixture(name='monad_manager')
-def fixture_monad_manager(monad_inquirer):
+def fixture_monad_manager(monad_inquirer: MonadInquirer) -> MonadManager:
     return MonadManager(node_inquirer=monad_inquirer)
 
 
@@ -717,11 +733,11 @@ def fixture_gnosis_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[N
 
 @pytest.fixture(name='gnosis_inquirer')
 def fixture_gnosis_inquirer(
-        gnosis_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        gnosis_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[GnosisInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -737,7 +753,7 @@ def fixture_gnosis_inquirer(
 
 
 @pytest.fixture(name='gnosis_manager')
-def fixture_gnosis_manager(gnosis_inquirer):
+def fixture_gnosis_manager(gnosis_inquirer: GnosisInquirer) -> GnosisManager:
     return GnosisManager(
         node_inquirer=gnosis_inquirer,
         monerium=Monerium(database=gnosis_inquirer.database),
@@ -746,9 +762,9 @@ def fixture_gnosis_manager(gnosis_inquirer):
 
 @pytest.fixture(name='gnosis_transactions')
 def fixture_gnosis_transactions(
-        database,
-        gnosis_inquirer,
-):
+        database: Any,
+        gnosis_inquirer: GnosisInquirer,
+) -> GnosisTransactions:
     return GnosisTransactions(
         gnosis_inquirer=gnosis_inquirer,
         database=database,
@@ -767,11 +783,11 @@ def fixture_scroll_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[N
 
 @pytest.fixture(name='scroll_inquirer')
 def fixture_scroll_inquirer(
-        scroll_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        scroll_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[ScrollInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -787,7 +803,7 @@ def fixture_scroll_inquirer(
 
 
 @pytest.fixture(name='scroll_manager')
-def fixture_scroll_manager(scroll_inquirer):
+def fixture_scroll_manager(scroll_inquirer: ScrollInquirer) -> ScrollManager:
     return ScrollManager(
         node_inquirer=scroll_inquirer,
         monerium=Monerium(database=scroll_inquirer.database),
@@ -806,11 +822,11 @@ def fixture_binance_sc_manager_connect_at_start() -> Literal['DEFAULT'] | Sequen
 
 @pytest.fixture(name='binance_sc_inquirer')
 def fixture_binance_sc_inquirer(
-        binance_sc_manager_connect_at_start,
-        task_supervisor,
-        database,
-        mock_other_web3,
-):
+        binance_sc_manager_connect_at_start: Any,
+        task_supervisor: Any,
+        database: Any,
+        mock_other_web3: bool,
+) -> Generator[BinanceSCInquirer]:
     with ExitStack() as stack:
         yield _initialize_and_yield_evm_inquirer_fixture(
             parent_stack=stack,
@@ -826,7 +842,9 @@ def fixture_binance_sc_inquirer(
 
 
 @pytest.fixture(name='binance_sc_manager')
-def fixture_binance_sc_manager(binance_sc_inquirer):
+def fixture_binance_sc_manager(
+        binance_sc_inquirer: BinanceSCInquirer,
+) -> BinanceSCManager:
     return BinanceSCManager(node_inquirer=binance_sc_inquirer)
 
 
@@ -851,24 +869,24 @@ def fixture_polkadot_manager_connect_at_start() -> Sequence[NodeName]:
 
 
 @pytest.fixture(name='kusama_available_node_attributes_map')
-def fixture_kusama_available_node_attributes_map():
+def fixture_kusama_available_node_attributes_map() -> dict[Any, Any]:
     return {}
 
 
 @pytest.fixture(name='polkadot_available_node_attributes_map')
-def fixture_polkadot_available_node_attributes_map():
+def fixture_polkadot_available_node_attributes_map() -> dict[Any, Any]:
     return {}
 
 
 def _make_substrate_manager(
-        messages_aggregator,
-        task_supervisor,
-        accounts,
-        chain_type,
-        rpc_endpoint,
-        available_node_attributes_map,
-        connect_at_start,
-):
+        messages_aggregator: Any,
+        task_supervisor: Any,
+        accounts: list[SubstrateAddress],
+        chain_type: Any,
+        rpc_endpoint: str | None,
+        available_node_attributes_map: dict[Any, Any],
+        connect_at_start: Any,
+) -> SubstrateManager:
     own_rpc_endpoint = (
         rpc_endpoint if rpc_endpoint is not None else KUSAMA_DEFAULT_OWN_RPC_ENDPOINT
     )
@@ -890,13 +908,13 @@ def _make_substrate_manager(
         if chain_type == SupportedBlockchain.KUSAMA:
             substrate_manager.chain_properties = SubstrateChainProperties(
                 ss58_format=KUSAMA_SS58_FORMAT,
-                token=A_KSM,
+                token=A_KSM.resolve_to_crypto_asset(),
                 token_decimals=KUSAMA_MAIN_ASSET_DECIMALS,
             )
         else:
             substrate_manager.chain_properties = SubstrateChainProperties(
                 ss58_format=POLKADOT_SS58_FORMAT,
-                token=A_DOT,
+                token=A_DOT.resolve_to_crypto_asset(),
                 token_decimals=10,
             )
 
@@ -911,13 +929,13 @@ def _make_substrate_manager(
 
 @pytest.fixture(name='kusama_manager')
 def fixture_kusama_manager(
-        messages_aggregator,
-        task_supervisor,
-        ksm_accounts,
-        ksm_rpc_endpoint,
-        kusama_available_node_attributes_map,
-        kusama_manager_connect_at_start,
-):
+        messages_aggregator: Any,
+        task_supervisor: Any,
+        ksm_accounts: list[SubstrateAddress],
+        ksm_rpc_endpoint: str | None,
+        kusama_available_node_attributes_map: dict[Any, Any],
+        kusama_manager_connect_at_start: Sequence[NodeName],
+) -> SubstrateManager:
     return _make_substrate_manager(
         messages_aggregator=messages_aggregator,
         task_supervisor=task_supervisor,
@@ -931,13 +949,13 @@ def fixture_kusama_manager(
 
 @pytest.fixture(name='polkadot_manager')
 def fixture_polkadot_manager(
-        messages_aggregator,
-        task_supervisor,
-        dot_accounts,
-        dot_rpc_endpoint,
-        polkadot_available_node_attributes_map,
-        polkadot_manager_connect_at_start,
-):
+        messages_aggregator: Any,
+        task_supervisor: Any,
+        dot_accounts: list[SubstrateAddress],
+        dot_rpc_endpoint: str | None,
+        polkadot_available_node_attributes_map: dict[Any, Any],
+        polkadot_manager_connect_at_start: Sequence[NodeName],
+) -> SubstrateManager:
     return _make_substrate_manager(
         messages_aggregator=messages_aggregator,
         task_supervisor=task_supervisor,
@@ -950,7 +968,7 @@ def fixture_polkadot_manager(
 
 
 @pytest.fixture(name='avalanche_manager')
-def fixture_avalanche_manager(messages_aggregator):
+def fixture_avalanche_manager(messages_aggregator: Any) -> AvalancheManager:
     return AvalancheManager(
         avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
         msg_aggregator=messages_aggregator,
@@ -958,7 +976,10 @@ def fixture_avalanche_manager(messages_aggregator):
 
 
 @pytest.fixture(name='zksync_lite_manager')
-def fixture_zksync_lite_manager(ethereum_inquirer, database):
+def fixture_zksync_lite_manager(
+        ethereum_inquirer: EthereumInquirer,
+        database: Any,
+) -> ZksyncLiteManager:
     return ZksyncLiteManager(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
@@ -966,12 +987,12 @@ def fixture_zksync_lite_manager(ethereum_inquirer, database):
 
 
 @pytest.fixture(name='bitcoin_manager')
-def fixture_bitcoin_manager(database):
+def fixture_bitcoin_manager(database: Any) -> BitcoinManager:
     return BitcoinManager(database=database)
 
 
 @pytest.fixture(name='bitcoin_cash_manager')
-def fixture_bitcoin_cash_manager(database):
+def fixture_bitcoin_cash_manager(database: Any) -> BitcoinCashManager:
     return BitcoinCashManager(database=database)
 
 
@@ -981,12 +1002,16 @@ def fixture_ethereum_modules() -> list[str]:
 
 
 @pytest.fixture(name='beaconchain')
-def fixture_beaconchain(database, messages_aggregator):
+def fixture_beaconchain(database: Any, messages_aggregator: Any) -> BeaconChain:
     return BeaconChain(database=database, msg_aggregator=messages_aggregator)
 
 
 @pytest.fixture(name='opensea')
-def fixture_opensea(database, messages_aggregator, ethereum_inquirer):
+def fixture_opensea(
+        database: Any,
+        messages_aggregator: Any,
+        ethereum_inquirer: EthereumInquirer,
+) -> Opensea:
     return Opensea(
         database=database,
         msg_aggregator=messages_aggregator,
@@ -995,7 +1020,7 @@ def fixture_opensea(database, messages_aggregator, ethereum_inquirer):
 
 
 @pytest.fixture(name='btc_derivation_gap_limit')
-def fixture_btc_derivation_gap_limit():
+def fixture_btc_derivation_gap_limit() -> int:
     return DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
@@ -1011,7 +1036,11 @@ def fixture_solana_nodes_connect_at_start() -> Literal['DEFAULT'] | Sequence[Wei
 
 
 @pytest.fixture(name='solana_inquirer')
-def fixture_solana_inquirer(task_supervisor, database, solana_nodes_connect_at_start):
+def fixture_solana_inquirer(
+        task_supervisor: Any,
+        database: Any,
+        solana_nodes_connect_at_start: Literal['DEFAULT'] | Sequence[WeightedNode],
+) -> Generator[SolanaInquirer]:
     solana_inquirer = SolanaInquirer(
         task_supervisor=task_supervisor,
         database=database,
@@ -1027,7 +1056,10 @@ def fixture_solana_inquirer(task_supervisor, database, solana_nodes_connect_at_s
 
 
 @pytest.fixture(name='solana_manager')
-def fixture_solana_manager(solana_inquirer, database):
+def fixture_solana_manager(
+        solana_inquirer: SolanaInquirer,
+        database: Any,
+) -> SolanaManager:
     return SolanaManager(
         node_inquirer=solana_inquirer,
         jupiter=Jupiter(database=database),
@@ -1036,36 +1068,36 @@ def fixture_solana_manager(solana_inquirer, database):
 
 @pytest.fixture(name='blockchain')
 def fixture_blockchain(
-        ethereum_manager,
-        optimism_manager,
-        polygon_pos_manager,
-        arbitrum_one_manager,
-        base_manager,
-        hyperliquid_manager,
-        monad_manager,
-        gnosis_manager,
-        scroll_manager,
-        binance_sc_manager,
-        kusama_manager,
-        polkadot_manager,
-        avalanche_manager,
-        zksync_lite_manager,
-        bitcoin_manager,
-        bitcoin_cash_manager,
-        solana_manager,
-        blockchain_accounts,
-        inquirer,  # pylint: disable=unused-argument
-        messages_aggregator,
-        task_supervisor,
-        ethereum_modules,
-        start_with_valid_premium,
-        rotki_premium_credentials,
-        database,
-        data_dir,
-        beaconchain,
-        btc_derivation_gap_limit,
-        username,
-):
+        ethereum_manager: EthereumManager,
+        optimism_manager: OptimismManager,
+        polygon_pos_manager: PolygonPOSManager,
+        arbitrum_one_manager: ArbitrumOneManager,
+        base_manager: BaseManager,
+        hyperliquid_manager: HyperliquidManager,
+        monad_manager: MonadManager,
+        gnosis_manager: GnosisManager,
+        scroll_manager: ScrollManager,
+        binance_sc_manager: BinanceSCManager,
+        kusama_manager: SubstrateManager,
+        polkadot_manager: SubstrateManager,
+        avalanche_manager: AvalancheManager,
+        zksync_lite_manager: ZksyncLiteManager,
+        bitcoin_manager: BitcoinManager,
+        bitcoin_cash_manager: BitcoinCashManager,
+        solana_manager: SolanaManager,
+        blockchain_accounts: BlockchainAccounts,
+        inquirer: Any,  # pylint: disable=unused-argument
+        messages_aggregator: Any,
+        task_supervisor: Any,
+        ethereum_modules: Any,
+        start_with_valid_premium: bool,
+        rotki_premium_credentials: Any,
+        database: Any,
+        data_dir: Any,
+        beaconchain: BeaconChain,
+        btc_derivation_gap_limit: int,
+        username: str,
+) -> ChainsAggregator:
     premium = None
     if start_with_valid_premium:
         premium = Premium(

@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -9,13 +10,17 @@ from rotkehlchen.utils.version_check import VersionCheckResult
 
 
 @pytest.fixture(name='our_version')
-def fixture_our_version():
+def fixture_our_version() -> None:
     """Allow mocking our rotki version since in CI version is 0 and hard to control"""
     return None
 
 
 @pytest.fixture(name='data_updater')
-def fixture_data_updater(messages_aggregator, database, our_version):
+def fixture_data_updater(
+        messages_aggregator: Any,
+        database: Any,
+        our_version: Any,
+) -> RotkiDataUpdater:
     """Initialize the DataUpdater object, optionally mocking our rotki version"""
     with ExitStack() as stack:
         if our_version is not None:

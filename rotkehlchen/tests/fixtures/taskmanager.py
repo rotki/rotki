@@ -1,4 +1,6 @@
 
+from typing import Any
+
 import pytest
 
 from rotkehlchen.db.updates import RotkiDataUpdater
@@ -8,7 +10,7 @@ from rotkehlchen.tasks.manager import TaskManager
 
 class MockPremiumSyncManager:
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def maybe_upload_data_to_server(self) -> None:
@@ -36,18 +38,18 @@ def fixture_enable_priority_tasks() -> bool:
 
 @pytest.fixture(name='task_manager')
 def fixture_task_manager(
-        database,
-        blockchain,
-        max_tasks_num,
-        task_supervisor,
-        api_tasks,
-        cryptocompare,
-        exchange_manager,
-        messages_aggregator,
-        use_function_scope_msg_aggregator,
-        function_scope_messages_aggregator,
-        username,
-        enable_priority_tasks,
+        database: Any,
+        blockchain: Any,
+        max_tasks_num: int,
+        task_supervisor: Any,
+        api_tasks: list[Any],
+        cryptocompare: Any,
+        exchange_manager: Any,
+        messages_aggregator: Any,
+        use_function_scope_msg_aggregator: bool,
+        function_scope_messages_aggregator: Any,
+        username: str,
+        enable_priority_tasks: bool,
 ) -> TaskManager:
     msg_aggregator = function_scope_messages_aggregator if use_function_scope_msg_aggregator else messages_aggregator  # noqa: E501
     task_manager = TaskManager(

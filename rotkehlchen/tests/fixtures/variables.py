@@ -1,6 +1,6 @@
 import re
 from itertools import count
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(scope='session', name='port_generator')
-def fixture_port_generator(request, worker_id):
+def fixture_port_generator(request: Any, worker_id: str) -> Any:
     """Generate deterministic non-overlapping ports across xdist workers."""
     worker_idx = 0
     if worker_id != 'master' and (match := re.match(r'gw(\d+)$', worker_id)) is not None:
@@ -28,12 +28,12 @@ def fixture_port_generator(request, worker_id):
 
 
 @pytest.fixture
-def db_password():
+def db_password() -> str:
     return '123'
 
 
 @pytest.fixture
-def rest_api_port(port_generator):
+def rest_api_port(port_generator: Any) -> int:
     return next(port_generator)
 
 
@@ -53,7 +53,7 @@ def added_exchanges() -> Sequence[Location]:
 
 
 @pytest.fixture
-def network_mocking(request):
+def network_mocking(request: Any) -> bool:
     """Uses the --no-network-mocking argument. By default when not passed, the network
     is mocked in all tests that are aware of it (by using this fixture).
     Once the --no-network-mocking argument is passed all tests that use this fixture

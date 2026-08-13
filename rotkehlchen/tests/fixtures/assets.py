@@ -1,4 +1,6 @@
 
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
@@ -16,12 +18,12 @@ def fixture_force_reinitialize_asset_resolver() -> bool:
 # initialized from here which would take more time
 @pytest.fixture(autouse=True)
 def asset_resolver(
-        globaldb,
-        force_reinitialize_asset_resolver,
-        use_clean_caching_directory,
-        user_ethereum_tokens,
-        generatable_user_ethereum_tokens,
-):
+        globaldb: Any,
+        force_reinitialize_asset_resolver: bool,
+        use_clean_caching_directory: bool,
+        user_ethereum_tokens: Any,
+        generatable_user_ethereum_tokens: bool,
+) -> AssetResolver:
     """Run the first initialization of the AssetResolver singleton
 
     It's an autouse fixture so that it always gets initialized
@@ -30,7 +32,7 @@ def asset_resolver(
     # (1) test asks for it
     # (2) test uses clean directory, so the previously primed DB no longer exists
     if force_reinitialize_asset_resolver or use_clean_caching_directory:
-        AssetResolver._AssetResolver__instance = None
+        AssetResolver._AssetResolver__instance = None  # type: ignore[attr-defined]
 
     resolver = AssetResolver(globaldb=globaldb, constant_assets=CONSTANT_ASSETS)
     AssetResolver.clean_memory_cache()

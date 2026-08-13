@@ -41,15 +41,17 @@ LAST_ACCOUNTING_RULES_VERSION = 5
 
 
 @pytest.fixture(name='use_clean_caching_directory')
-def fixture_use_clean_caching_directory():
+def fixture_use_clean_caching_directory() -> bool:
     """If this is set to True then a clean test user directory will be used."""
-    if sys.platform == 'win32':  # need clean data dir only in Windows TODO: Figure out why
-        return True
-    return False
+    return sys.platform == 'win32'  # TODO: Figure out why Windows needs a clean data dir.
 
 
 @pytest.fixture(name='data_dir')
-def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Generator[Path | None]:  # noqa: E501
+def fixture_data_dir(
+        use_clean_caching_directory: bool,
+        tmpdir_factory: pytest.TempPathFactory,
+        worker_id: str,
+) -> Generator[Path]:
     """The tests data dir is persistent so that we can cache global DB.
     Adjusted from old code. Not sure if it makes sense to keep. Could also just
     force clean caching directory everywhere"""
@@ -76,7 +78,7 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> 
 
 
 @pytest.fixture(name='should_mock_price_queries')
-def fixture_should_mock_price_queries():
+def fixture_should_mock_price_queries() -> bool:
     return True
 
 
@@ -93,12 +95,12 @@ def default_mock_price_value() -> FVal | None:
 
 
 @pytest.fixture
-def mocked_price_queries():
+def mocked_price_queries() -> Any:
     return defaultdict(defaultdict)
 
 
 @pytest.fixture(name='accounting_initialize_parameters')
-def fixture_accounting_initialize_parameters():
+def fixture_accounting_initialize_parameters() -> bool:
     """
     If True initialize the DB parameters of the accountant and the events
 
@@ -209,7 +211,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture(name='latest_accounting_rules', autouse=True, scope='session')
-def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Path]]:
+def fixture_download_rules(last_accounting_rules_version: int) -> list[tuple[int, Path]]:
     """
     Gets the paths to the files containing the accounting rules as the RotkiDataUpdater ingest
     them. For each update file, if the files doesn't exist it is downloaded from github. Until we
@@ -238,19 +240,19 @@ def fixture_latest_accounting_rules_data(
 
 @pytest.fixture(name='accountant')
 def fixture_accountant(
-        price_historian,  # pylint: disable=unused-argument
-        database,
-        function_scope_messages_aggregator,
-        start_with_logged_in_user,
-        accounting_initialize_parameters,
-        blockchain,
-        start_with_valid_premium,
-        rotki_premium_credentials,
-        username,
-        latest_accounting_rules,
-        latest_accounting_rules_data,
-        accountant_without_rules,
-        use_dummy_pot,
+        price_historian: Any,  # pylint: disable=unused-argument
+        database: Any,
+        function_scope_messages_aggregator: MessagesAggregator,
+        start_with_logged_in_user: bool,
+        accounting_initialize_parameters: bool,
+        blockchain: Any,
+        start_with_valid_premium: bool,
+        rotki_premium_credentials: Any,
+        username: str,
+        latest_accounting_rules: list[tuple[int, Path]],
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
+        accountant_without_rules: bool,
+        use_dummy_pot: bool,
 ) -> Accountant | None:
     if not start_with_logged_in_user:
         return None
@@ -308,7 +310,7 @@ def fixture_accountant(
 
 
 @pytest.fixture(name='should_mock_current_price_queries')
-def fixture_should_mock_current_price_queries():
+def fixture_should_mock_current_price_queries() -> bool:
     return True
 
 
@@ -319,17 +321,17 @@ def fixture_ignore_mocked_prices_for() -> list[str] | None:
 
 
 @pytest.fixture(name='mocked_current_prices')
-def fixture_mocked_current_prices():
+def fixture_mocked_current_prices() -> dict[Any, Any]:
     return {}
 
 
 @pytest.fixture(name='mocked_current_prices_with_oracles')
-def fixture_mocked_current_prices_with_oracles():
+def fixture_mocked_current_prices_with_oracles() -> dict[Any, Any]:
     return {}
 
 
 @pytest.fixture(name='current_price_oracles_order')
-def fixture_current_price_oracles_order():
+def fixture_current_price_oracles_order() -> tuple[CurrentPriceOracle, ...]:
     """Use a stable test oracle order without the default Kraken oracle."""
     return (
         CurrentPriceOracle.COINGECKO,
@@ -340,7 +342,7 @@ def fixture_current_price_oracles_order():
 
 
 @pytest.fixture(name='cryptocompare_current_price_oracles_order')
-def fixture_cryptocompare_current_price_oracles_order():
+def fixture_cryptocompare_current_price_oracles_order() -> tuple[CurrentPriceOracle, ...]:
     """CryptoCompare-first current oracle order for VCR-cassette compatibility."""
     return (
         CurrentPriceOracle.CRYPTOCOMPARE,
@@ -352,14 +354,14 @@ def fixture_cryptocompare_current_price_oracles_order():
 
 
 def _create_inquirer(
-        data_directory,
-        should_mock_current_price_queries,
-        mocked_prices,
-        mocked_current_prices_with_oracles,
-        current_price_oracles_order,
-        evm_managers,
-        add_defi_oracles,
-        ignore_mocked_prices_for=None,
+        data_directory: Any,
+        should_mock_current_price_queries: bool,
+        mocked_prices: dict[Any, Any],
+        mocked_current_prices_with_oracles: dict[Any, Any],
+        current_price_oracles_order: Any,
+        evm_managers: list[Any],
+        add_defi_oracles: bool,
+        ignore_mocked_prices_for: list[str] | None = None,
 ) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -402,31 +404,31 @@ def _create_inquirer(
         return inquirer
 
     def mock_find_prices(
-            from_assets,
-            to_asset,
+            from_assets: Any,
+            to_asset: Any,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
             skip_onchain: bool = False,  # pylint: disable=unused-argument
-    ):
+    ) -> dict[Any, Any]:
         return {
             from_asset: mocked_prices.get((from_asset, to_asset), FVal('1.5'))
             for from_asset in from_assets
         }
 
     def mock_find_usd_prices(
-            assets,
+            assets: Any,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
             skip_onchain: bool = False,  # pylint: disable=unused-argument
-    ):
+    ) -> dict[Any, Any]:
         return {
             asset: mocked_prices.get(asset, FVal('1.5'))
             for asset in assets
         }
 
     def mock_find_prices_with_oracles(
-            from_assets,
-            to_asset,
-            **kwargs,  # pylint: disable=unused-argument
-    ):
+            from_assets: Any,
+            to_asset: Any,
+            **kwargs: Any,  # pylint: disable=unused-argument
+    ) -> dict[Any, Any]:
         return {
             from_asset: (
                 mocked_current_prices_with_oracles.get((from_asset, to_asset))
@@ -436,7 +438,10 @@ def _create_inquirer(
             for from_asset in from_assets
         }
 
-    def mock_find_usd_prices_with_oracles(assets, **kwargs):  # pylint: disable=unused-argument
+    def mock_find_usd_prices_with_oracles(
+            assets: Any,
+            **kwargs: Any,  # pylint: disable=unused-argument
+    ) -> dict[Any, Any]:
         return {
             asset: (mocked_prices.get(asset, FVal('1.5')), CurrentPriceOracle.BLOCKCHAIN)
             for asset in assets
@@ -461,7 +466,7 @@ def _create_inquirer(
         Inquirer.find_usd_prices_and_oracles = inquirer.find_usd_prices_and_oracles = mock_find_usd_prices_with_oracles  # type: ignore  # noqa: E501
 
     else:
-        def get_assets_to_mock(assets):
+        def get_assets_to_mock(assets: Any) -> tuple[list[Any], list[Any]]:
             mock_assets = []
             normal_assets = []
             for asset in assets:
@@ -473,15 +478,15 @@ def _create_inquirer(
             return normal_assets, mock_assets
 
         def mock_some_prices(
-                from_assets,
-                to_asset,
-                ignore_cache=False,
-                skip_onchain=False,
-        ):
+                from_assets: Any,
+                to_asset: Any,
+                ignore_cache: bool = False,
+                skip_onchain: bool = False,
+        ) -> dict[Any, Any]:
             normal_assets, mock_assets = get_assets_to_mock(assets=from_assets)
             prices = {}
             if len(normal_assets) > 0:
-                prices.update(inquirer.find_prices_old(  # pylint: disable=no-member # dynamic attribute
+                prices.update(inquirer.find_prices_old(  # type: ignore[attr-defined]
                     from_assets=normal_assets,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
@@ -497,14 +502,14 @@ def _create_inquirer(
             return prices
 
         def mock_some_usd_prices(
-                assets,
-                ignore_cache=False,
-                skip_onchain=False,
-        ):
+                assets: Any,
+                ignore_cache: bool = False,
+                skip_onchain: bool = False,
+        ) -> dict[Any, Any]:
             normal_assets, mock_assets = get_assets_to_mock(assets=assets)
             prices = {}
             if len(normal_assets) > 0:
-                prices.update(inquirer.find_usd_prices_old(  # pylint: disable=no-member # dynamic attribute
+                prices.update(inquirer.find_usd_prices_old(  # type: ignore[attr-defined]
                     assets=normal_assets,
                     ignore_cache=ignore_cache,
                     skip_onchain=skip_onchain,
@@ -518,15 +523,15 @@ def _create_inquirer(
             return prices
 
         def mock_prices_with_oracles(
-                from_assets,
-                to_asset,
-                ignore_cache=False,
-                skip_onchain=False,
-        ):
+                from_assets: Any,
+                to_asset: Any,
+                ignore_cache: bool = False,
+                skip_onchain: bool = False,
+        ) -> dict[Any, Any]:
             normal_assets, mock_assets = get_assets_to_mock(assets=from_assets)
             prices = {}
             if len(normal_assets) > 0:
-                prices.update(inquirer.find_prices_and_oracles_old(  # pylint: disable=no-member # dynamic attribute
+                prices.update(inquirer.find_prices_and_oracles_old(  # type: ignore[attr-defined]
                     from_assets=normal_assets,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
@@ -547,11 +552,15 @@ def _create_inquirer(
                 ))
             return prices
 
-        def mock_usd_prices_with_oracles(assets, ignore_cache=False, skip_onchain=False):
+        def mock_usd_prices_with_oracles(
+                assets: Any,
+                ignore_cache: bool = False,
+                skip_onchain: bool = False,
+        ) -> dict[Any, Any]:
             normal_assets, mock_assets = get_assets_to_mock(assets=assets)
             prices = {}
             if len(normal_assets) > 0:
-                prices.update(inquirer.find_usd_prices_and_oracles_old(  # pylint: disable=no-member # dynamic attribute
+                prices.update(inquirer.find_usd_prices_and_oracles_old(  # type: ignore[attr-defined]
                     assets=normal_assets,
                     ignore_cache=ignore_cache,
                     skip_onchain=skip_onchain,
@@ -575,7 +584,7 @@ def _create_inquirer(
         inquirer.find_prices_and_oracles = Inquirer.find_prices_and_oracles = mock_prices_with_oracles  # type: ignore  # noqa: E501
         inquirer.find_usd_prices_and_oracles = Inquirer.find_usd_prices_and_oracles = mock_usd_prices_with_oracles  # type: ignore  # noqa: E501
 
-    def mock_query_fiat_pair(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_query_fiat_pair(*args: Any, **kwargs: Any) -> tuple[FVal, CurrentPriceOracle]:  # pylint: disable=unused-argument
         return (ONE, CurrentPriceOracle.FIAT)
 
     inquirer._query_fiat_pair = Inquirer._query_fiat_pair = mock_query_fiat_pair  # type: ignore
@@ -585,14 +594,14 @@ def _create_inquirer(
 
 @pytest.fixture(name='inquirer')
 def fixture_inquirer(
-        globaldb,  # pylint: disable=unused-argument  # needed for _create_inquirer
-        data_dir,
-        should_mock_current_price_queries,
-        mocked_current_prices,
-        mocked_current_prices_with_oracles,
-        current_price_oracles_order,
-        ignore_mocked_prices_for,
-):
+        globaldb: Any,  # pylint: disable=unused-argument  # needed for _create_inquirer
+        data_dir: Any,
+        should_mock_current_price_queries: bool,
+        mocked_current_prices: dict[Any, Any],
+        mocked_current_prices_with_oracles: dict[Any, Any],
+        current_price_oracles_order: Any,
+        ignore_mocked_prices_for: list[str] | None,
+) -> Inquirer:
     """This version of the inquirer doesn't make use of the defi oracles.
     To make use of the defi oracles use `inquirer_defi`. The reason is that some
     tests became really slow because they exhausted the coingecko/cc
@@ -612,20 +621,20 @@ def fixture_inquirer(
 
 @pytest.fixture(name='inquirer_defi')
 def fixture_inquirer_defi(
-        globaldb,  # pylint: disable=unused-argument  # needed for _create_inquirer
-        data_dir,
-        should_mock_current_price_queries,
-        mocked_current_prices,
-        mocked_current_prices_with_oracles,
-        current_price_oracles_order,
-        ignore_mocked_prices_for,
-        ethereum_manager,
-        polygon_pos_manager,
-        arbitrum_one_manager,
-        optimism_manager,
-        base_manager,
-        binance_sc_manager,
-):
+        globaldb: Any,  # pylint: disable=unused-argument  # needed for _create_inquirer
+        data_dir: Any,
+        should_mock_current_price_queries: bool,
+        mocked_current_prices: dict[Any, Any],
+        mocked_current_prices_with_oracles: dict[Any, Any],
+        current_price_oracles_order: Any,
+        ignore_mocked_prices_for: list[str] | None,
+        ethereum_manager: Any,
+        polygon_pos_manager: Any,
+        arbitrum_one_manager: Any,
+        optimism_manager: Any,
+        base_manager: Any,
+        binance_sc_manager: Any,
+) -> Inquirer:
     """This fixture is different from `inquirer` just in the use of defi oracles to query
     prices. If you don't need to use the defi oracles it is faster to use the `inquirer` fixture.
     """

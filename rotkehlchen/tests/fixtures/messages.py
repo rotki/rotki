@@ -61,16 +61,18 @@ def fixture_initialize_mock_rotki_notifier() -> bool:
 
 
 @pytest.fixture
-def function_scope_messages_aggregator(function_scope_initialize_mock_rotki_notifier):
-    msg_aggregator = MessagesAggregator()
+def function_scope_messages_aggregator(
+        function_scope_initialize_mock_rotki_notifier: bool,
+) -> MessagesAggregator:
+    msg_aggregator: Any = MessagesAggregator()
     if function_scope_initialize_mock_rotki_notifier is True:
         msg_aggregator.rotki_notifier = MockRotkiNotifier()
     return msg_aggregator
 
 
 @pytest.fixture(scope='session')
-def messages_aggregator(initialize_mock_rotki_notifier):
-    msg_aggregator = MessagesAggregator()
+def messages_aggregator(initialize_mock_rotki_notifier: bool) -> MessagesAggregator:
+    msg_aggregator: Any = MessagesAggregator()
     if initialize_mock_rotki_notifier is True:
         msg_aggregator.rotki_notifier = MockRotkiNotifier()
     return msg_aggregator

@@ -1,34 +1,39 @@
+from typing import TYPE_CHECKING, Any
+
 import pytest
 import requests
 
 from rotkehlchen.db.settings import CachedSettings
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 class ConfigurableSession(requests.Session):
     """A configurable requests Session that can be used anywhere"""
 
-    def __init__(self, timeout):
+    def __init__(self, timeout: Any) -> None:
         super().__init__()
         self.timeout = timeout
 
     def request(
             self,
-            method,
-            url,
-            params=None,
-            data=None,
-            headers=None,
-            cookies=None,
-            files=None,
-            auth=None,
-            timeout=None,
-            allow_redirects=True,
-            proxies=None,
-            hooks=None,
-            stream=None,
-            verify=None,
-            cert=None,
-            json=None,
+            method: Any,
+            url: Any,
+            params: Any = None,
+            data: Any = None,
+            headers: Any = None,
+            cookies: Any = None,
+            files: Any = None,
+            auth: Any = None,
+            timeout: Any = None,
+            allow_redirects: Any = True,
+            proxies: Any = None,
+            hooks: Any = None,
+            stream: Any = None,
+            verify: Any = None,
+            cert: Any = None,
+            json: Any = None,
     ) -> requests.Response:
         if timeout is None:
             timeout = self.timeout
@@ -54,17 +59,20 @@ class ConfigurableSession(requests.Session):
 
 
 @pytest.fixture(name='test_timeout')
-def fixture_test_timeout():
+def fixture_test_timeout() -> tuple[int, int]:
     return CachedSettings().get_timeout_tuple()
 
 
 @pytest.fixture(name='test_session_pool_maxsize')
-def fixture_test_session_pool_maxsize():
+def fixture_test_session_pool_maxsize() -> int:
     return 100
 
 
 @pytest.fixture(name='test_session')
-def fixture_test_session(test_timeout, test_session_pool_maxsize):
+def fixture_test_session(
+        test_timeout: tuple[int, int],
+        test_session_pool_maxsize: int,
+) -> Generator[ConfigurableSession]:
     """This is a configurable session that can be used in tests instead of pure requests
 
     What it adds over pure requests is that you get:

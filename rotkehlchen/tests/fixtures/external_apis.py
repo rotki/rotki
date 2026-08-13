@@ -1,7 +1,7 @@
 import json
 import warnings as test_warnings
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='gnosispay_credentials')
-def fixture_gnosispay_credentials(database):
+def fixture_gnosispay_credentials(database: Any) -> None:
     """Input mock monerium credentials to the DB for testing"""
     with database.user_write() as write_cursor:
         write_cursor.execute(
@@ -31,7 +31,7 @@ def fixture_gnosispay_credentials(database):
 
 
 @pytest.fixture(name='monerium_credentials')
-def fixture_monerium_credentials(database):
+def fixture_monerium_credentials(database: Any) -> None:
     """Input mock monerium credentials to the DB for testing"""
     with database.user_write() as write_cursor:
         database.set_static_cache(
@@ -49,7 +49,7 @@ def fixture_monerium_credentials(database):
 
 
 @pytest.fixture(name='allow_base_routescan')
-def fixture_allow_base_routescan():
+def fixture_allow_base_routescan() -> Iterator[None]:
     """Routescan no longer fully indexes Base, so we've removed it from its supported chains to
     avoid quietly missing new transactions. But as of 2026/02/13 Blockscout (the only other indexer
     supporting Base on free tier), is in the process of some db migrations, and internal tx queries
@@ -80,7 +80,7 @@ def _force_etherscan_indexer(chain: ChainID) -> Iterator[None]:
 
 
 @pytest.fixture(name='allow_scroll_etherscan')
-def fixture_allow_scroll_etherscan():
+def fixture_allow_scroll_etherscan() -> Iterator[None]:
     """Etherscan no longer supports Scroll, so we've removed it from its supported chains.
     Let's use this fixture to not fail old recorded tests. Can remove if we re-record
     all tests that have this fixture.
@@ -90,7 +90,7 @@ def fixture_allow_scroll_etherscan():
 
 
 @pytest.fixture(name='allow_gnosis_etherscan')
-def fixture_allow_gnosis_etherscan():
+def fixture_allow_gnosis_etherscan() -> Iterator[None]:
     """Etherscan only serves Gnosis to paid api keys now, so blockscout became the primary
     gnosis indexer. Every gnosis cassette predates that and is recorded against etherscan, so
     this fixture keeps them replayable. Can remove if we re-record all tests that have it.

@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='username')
-def fixture_username():
+def fixture_username() -> str:
     return 'testuser'
 
 
@@ -45,7 +45,7 @@ def fixture_ignored_assets() -> list[Asset] | None:
 
 
 @pytest.fixture(name='user_data_dir')
-def fixture_user_data_dir(data_dir, username) -> Path:
+def fixture_user_data_dir(data_dir: Any, username: str) -> Path:
     """Create and return the user data directory. Clean up old directory if existing"""
     user_data_dir = data_dir / USERSDIR_NAME / username
     rmtree(user_data_dir, ignore_errors=True)
@@ -146,26 +146,26 @@ def _init_database(
 
 @pytest.fixture
 def database(
-        globaldb,  # pylint: disable=unused-argument  # needed for init_database
-        user_data_dir,
-        function_scope_messages_aggregator,
-        db_password,
-        db_settings,
-        start_with_logged_in_user,
-        ignored_assets,
-        blockchain_accounts,
-        include_etherscan_key,
-        include_blockscout_key,
-        include_beaconchain_key,
-        include_cryptocompare_key,
-        tags,
-        manually_tracked_balances,
-        data_migration_version,
-        use_custom_database,
-        new_db_unlock_actions,
-        sql_vm_instructions_cb,
-        perform_upgrades_at_unlock,
-        skip_sync_globaldb_assets,
+        globaldb: Any,  # pylint: disable=unused-argument  # needed for init_database
+        user_data_dir: Any,
+        function_scope_messages_aggregator: Any,
+        db_password: str,
+        db_settings: Any,
+        start_with_logged_in_user: bool,
+        ignored_assets: Any,
+        blockchain_accounts: Any,
+        include_etherscan_key: bool,
+        include_blockscout_key: bool,
+        include_beaconchain_key: bool,
+        include_cryptocompare_key: bool,
+        tags: list[dict[str, Any]],
+        manually_tracked_balances: Any,
+        data_migration_version: int,
+        use_custom_database: str | None,
+        new_db_unlock_actions: Any,
+        sql_vm_instructions_cb: int,
+        perform_upgrades_at_unlock: bool,
+        skip_sync_globaldb_assets: bool,
 ) -> Generator[DBHandler | None]:
     if not start_with_logged_in_user:
         yield None

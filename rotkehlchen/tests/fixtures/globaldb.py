@@ -2,7 +2,7 @@ import shutil
 from contextlib import ExitStack
 from pathlib import Path
 from shutil import copyfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -23,10 +23,11 @@ from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.globaldb.migrations.manager import MigrationRecord
+    from rotkehlchen.user_messages import MessagesAggregator
     from rotkehlchen.utils.upgrades import UpgradeRecord
 
 
@@ -91,10 +92,10 @@ def fixture_use_in_memory_globaldb() -> bool:
 
 
 def create_globaldb(
-        data_directory,
-        sql_vm_instructions_cb,
-        messages_aggregator,
-        perform_assets_updates=False,
+        data_directory: Any,
+        sql_vm_instructions_cb: int,
+        messages_aggregator: MessagesAggregator,
+        perform_assets_updates: bool = False,
 ) -> GlobalDBHandler:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -110,19 +111,19 @@ def create_globaldb(
 
 
 def _initialize_fixture_globaldb(
-        custom_globaldb,
-        tmpdir_factory,
+        custom_globaldb: Any,
+        tmpdir_factory: pytest.TempPathFactory,
         sql_vm_instructions_cb: int,
-        reload_user_assets,
-        target_globaldb_version,
-        globaldb_upgrades,
-        globaldb_migrations,
-        run_globaldb_migrations,
-        empty_global_addressbook,
-        remove_global_assets,
-        load_global_caches,
-        messages_aggregator,
-        use_in_memory_globaldb,
+        reload_user_assets: bool,
+        target_globaldb_version: Any,
+        globaldb_upgrades: list[UpgradeRecord],
+        globaldb_migrations: list[MigrationRecord],
+        run_globaldb_migrations: bool,
+        empty_global_addressbook: bool,
+        remove_global_assets: list[str],
+        load_global_caches: list[str],
+        messages_aggregator: MessagesAggregator,
+        use_in_memory_globaldb: bool,
 ) -> tuple[GlobalDBHandler, Path]:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -210,20 +211,20 @@ def _initialize_fixture_globaldb(
 
 @pytest.fixture(name='globaldb')
 def fixture_globaldb(
-        custom_globaldb,
-        tmpdir_factory,
-        sql_vm_instructions_cb,
-        reload_user_assets,
-        target_globaldb_version,
-        globaldb_upgrades,
-        globaldb_migrations,
-        run_globaldb_migrations,
-        empty_global_addressbook,
-        remove_global_assets,
-        load_global_caches,
-        messages_aggregator,
-        use_in_memory_globaldb,
-):
+        custom_globaldb: Any,
+        tmpdir_factory: pytest.TempPathFactory,
+        sql_vm_instructions_cb: int,
+        reload_user_assets: bool,
+        target_globaldb_version: Any,
+        globaldb_upgrades: list[UpgradeRecord],
+        globaldb_migrations: list[MigrationRecord],
+        run_globaldb_migrations: bool,
+        empty_global_addressbook: bool,
+        remove_global_assets: list[str],
+        load_global_caches: list[str],
+        messages_aggregator: MessagesAggregator,
+        use_in_memory_globaldb: bool,
+) -> Generator[GlobalDBHandler]:
     globaldb, new_data_dir = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
         tmpdir_factory=tmpdir_factory,
@@ -251,7 +252,7 @@ def fixture_custom_globaldb() -> int | None:
 
 
 @pytest.fixture(name='historical_price_test_data')
-def fixture_historical_price_test_data(globaldb):
+def fixture_historical_price_test_data(globaldb: GlobalDBHandler) -> None:
     data = [HistoricalPrice(
         from_asset=A_BTC,
         to_asset=A_EUR,

@@ -1,8 +1,10 @@
+from typing import Any
+
 import pytest
 
 
 @pytest.fixture(name='coingecko_cache_coinlist')
-def fixture_coingecko_cache_coinlist():
+def fixture_coingecko_cache_coinlist() -> None:
     """
     # pytest-deadfixtures ignore
     ^^^ this allows our fork of pytest-deadfixtures to ignore this fixture for usage detection
@@ -12,12 +14,16 @@ def fixture_coingecko_cache_coinlist():
 
 
 @pytest.fixture(name='cryptocompare_cache_coinlist')
-def fixture_cryptocompare_cache_coinlist():
+def fixture_cryptocompare_cache_coinlist() -> None:
     return None
 
 
 @pytest.fixture(name='cache_coinlist')
-def fixture_cache_coinlist(rotkehlchen_api_server, coingecko_cache_coinlist, cryptocompare_cache_coinlist) -> None:  # noqa: E501
+def fixture_cache_coinlist(
+        rotkehlchen_api_server: Any,
+        coingecko_cache_coinlist: Any,
+        cryptocompare_cache_coinlist: Any,
+) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     if cryptocompare_cache_coinlist is not None:
         rotki.cryptocompare.cache_coinlist(cryptocompare_cache_coinlist)

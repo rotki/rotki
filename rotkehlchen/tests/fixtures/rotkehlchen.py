@@ -75,22 +75,22 @@ def maybe_clear_priority_tasks(rotki: Rotkehlchen) -> None:
 
 
 @pytest.fixture(name='should_mock_settings')
-def fixture_should_mock_settings():
+def fixture_should_mock_settings() -> bool:
     return True
 
 
 @pytest.fixture(name='start_with_logged_in_user')
-def fixture_start_with_logged_in_user():
+def fixture_start_with_logged_in_user() -> bool:
     return True
 
 
 @pytest.fixture(name='start_with_valid_premium')
-def fixture_start_with_valid_premium():
+def fixture_start_with_valid_premium() -> bool:
     return False
 
 
 @pytest.fixture(name='legacy_messages_via_websockets')
-def fixture_legacy_messages_via_websockets():
+def fixture_legacy_messages_via_websockets() -> bool:
     """Decide whether rotki notifier will be instantiated for message aggregator in tests"""
     return False
 
@@ -111,8 +111,8 @@ def fixture_premium_limits_override() -> dict[str, int]:
 
 @pytest.fixture(name='rotki_premium_object')
 def fixture_rotki_premium_object(
-        rotki_premium_credentials,
-        username,
+        rotki_premium_credentials: PremiumCredentials,
+        username: str,
         premium_limits_override: dict[str, int],
 ) -> Premium:
     """Create an active rotki premium object with valid credentials"""
@@ -147,18 +147,22 @@ def fixture_max_size_in_mb_all_logs() -> int:
 
 
 @pytest.fixture(name='cli_args')
-def fixture_cli_args(data_dir, ethrpc_endpoint, max_size_in_mb_all_logs):
+def fixture_cli_args(
+        data_dir: Any,
+        ethrpc_endpoint: str | None,
+        max_size_in_mb_all_logs: int,
+) -> Any:
     return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, max_size_in_mb_all_logs=max_size_in_mb_all_logs)  # noqa: E501
 
 
 @pytest.fixture(name='perform_upgrades_at_unlock')
-def fixture_perform_upgrades_at_unlock():
+def fixture_perform_upgrades_at_unlock() -> bool:
     """Perform user DB upgrades as normal during user unlock"""
     return True
 
 
 @pytest.fixture(name='skip_sync_globaldb_assets')
-def fixture_skip_sync_globaldb_assets():
+def fixture_skip_sync_globaldb_assets() -> bool:
     """Skip syncing globaldb assets with user db.
     Needed for tests with older dbs where the history_events `ignored` column isn't present
     and the test has to not run the DB upgrades.
@@ -167,13 +171,13 @@ def fixture_skip_sync_globaldb_assets():
 
 
 @pytest.fixture(name='add_accounts_to_db')
-def fixture_add_blockchain_accounts_to_db():
+def fixture_add_blockchain_accounts_to_db() -> bool:
     """If True, adds blockchain accounts to the db at unlock"""
     return True
 
 
 @pytest.fixture(name='new_db_unlock_actions')
-def fixture_new_db_unlock_actions():
+def fixture_new_db_unlock_actions() -> tuple[str, ...]:
     """Overwrite actions to perform at unlock of a fresh DB. None means overwrite with nothing.
 
     Otherwise it's a sequence of actions to overwrite it with. Valid actions are:
@@ -185,31 +189,31 @@ def fixture_new_db_unlock_actions():
 
 
 def patch_and_enter_before_unlock(
-        rotki,
-        stack,
-        network_mocking,
-        ethereum_modules,
-        ksm_rpc_endpoint,
-        ethereum_manager_connect_at_start,
-        optimism_manager_connect_at_start,
-        polygon_pos_manager_connect_at_start,
-        arbitrum_one_manager_connect_at_start,
-        gnosis_manager_connect_at_start,
-        base_manager_connect_at_start,
-        scroll_manager_connect_at_start,
-        binance_sc_manager_connect_at_start,
-        hyperliquid_manager_connect_at_start,
-        monad_manager_connect_at_start,
-        kusama_manager_connect_at_start,
-        have_decoders,
-        use_custom_database,
-        new_db_unlock_actions,
-        perform_upgrades_at_unlock,
-        should_mock_settings=True,
+        rotki: Rotkehlchen,
+        stack: ExitStack,
+        network_mocking: bool,
+        ethereum_modules: Any,
+        ksm_rpc_endpoint: Any,
+        ethereum_manager_connect_at_start: Any,
+        optimism_manager_connect_at_start: Any,
+        polygon_pos_manager_connect_at_start: Any,
+        arbitrum_one_manager_connect_at_start: Any,
+        gnosis_manager_connect_at_start: Any,
+        base_manager_connect_at_start: Any,
+        scroll_manager_connect_at_start: Any,
+        binance_sc_manager_connect_at_start: Any,
+        hyperliquid_manager_connect_at_start: Any,
+        monad_manager_connect_at_start: Any,
+        kusama_manager_connect_at_start: Any,
+        have_decoders: bool,
+        use_custom_database: Any,
+        new_db_unlock_actions: tuple[str] | None,
+        perform_upgrades_at_unlock: bool,
+        should_mock_settings: bool = True,
 ) -> None:
     # Do not connect to the usual nodes at start by default. Do not want to spam
     # them during our tests. It's configurable per test, with the default being nothing
-    def mock_get_rpc_nodes(blockchain, only_active):  # pylint: disable=unused-argument
+    def mock_get_rpc_nodes(blockchain: SupportedBlockchain, only_active: bool) -> Any:  # pylint: disable=unused-argument
         if network_mocking is True:
             return []
 
@@ -257,7 +261,7 @@ def patch_and_enter_before_unlock(
 
     # Mock the initial get settings to include the specified ethereum modules
     if should_mock_settings:
-        def mock_get_settings(_cursor) -> DBSettings:
+        def mock_get_settings(_cursor: Any) -> DBSettings:
             return DBSettings(
                 active_modules=ethereum_modules,
                 ksm_rpc_endpoint=ksm_rpc_endpoint,
@@ -276,7 +280,7 @@ def patch_and_enter_before_unlock(
     if new_db_unlock_actions is None:
         new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=lambda *args: None)  # noqa: E501
     else:
-        def actions_after_unlock(self) -> None:
+        def actions_after_unlock(self: Rotkehlchen) -> None:
             perform_new_db_unlock_actions(db=self.data.db, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501
 
         new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=actions_after_unlock, autospec=True)  # noqa: E501
@@ -295,7 +299,11 @@ def patch_and_enter_before_unlock(
         stack.enter_context(upgrades_patch)
 
 
-def patch_no_op_unlock(rotki, stack, should_mock_settings=True) -> None:
+def patch_no_op_unlock(
+        rotki: Rotkehlchen,
+        stack: ExitStack,
+        should_mock_settings: bool = True,
+) -> None:
     patch_and_enter_before_unlock(
         rotki=rotki,
         stack=stack,
@@ -322,53 +330,53 @@ def patch_no_op_unlock(rotki, stack, should_mock_settings=True) -> None:
 
 
 def initialize_mock_rotkehlchen_instance(
-        rotki,
-        start_with_logged_in_user,
-        start_with_valid_premium,
-        db_password,
-        rotki_premium_object,
-        username,
-        blockchain_accounts,
-        include_etherscan_key,
-        include_beaconchain_key,
-        include_cryptocompare_key,
-        include_blockscout_key,
-        should_mock_price_queries,
-        mocked_price_queries,
-        ethereum_modules,
-        db_settings,
-        ignored_assets,
-        tags,
-        manually_tracked_balances,
-        default_mock_price_value,
-        ethereum_manager_connect_at_start,
-        optimism_manager_connect_at_start,
-        polygon_pos_manager_connect_at_start,
-        arbitrum_one_manager_connect_at_start,
-        gnosis_manager_connect_at_start,
-        base_manager_connect_at_start,
-        scroll_manager_connect_at_start,
-        binance_sc_manager_connect_at_start,
-        hyperliquid_manager_connect_at_start,
-        monad_manager_connect_at_start,
-        kusama_manager_connect_at_start,
-        ksm_rpc_endpoint,
-        max_tasks_num,
-        legacy_messages_via_websockets,
-        data_migration_version,
-        use_custom_database,
-        user_data_dir,
-        perform_upgrades_at_unlock,
-        new_db_unlock_actions,
-        current_price_oracles_order,
-        network_mocking,
-        have_decoders,
-        add_accounts_to_db,
-        latest_accounting_rules,
-        latest_accounting_rules_data,
-        initialize_accounting_rules,
-        should_mock_settings=True,
-        historical_price_oracles_order=None,
+        rotki: Rotkehlchen,
+        start_with_logged_in_user: bool,
+        start_with_valid_premium: bool,
+        db_password: str,
+        rotki_premium_object: Premium,
+        username: str,
+        blockchain_accounts: Any,
+        include_etherscan_key: Any,
+        include_beaconchain_key: Any,
+        include_cryptocompare_key: Any,
+        include_blockscout_key: Any,
+        should_mock_price_queries: bool,
+        mocked_price_queries: Any,
+        ethereum_modules: Any,
+        db_settings: Any,
+        ignored_assets: Any,
+        tags: Any,
+        manually_tracked_balances: Any,
+        default_mock_price_value: Any,
+        ethereum_manager_connect_at_start: Any,
+        optimism_manager_connect_at_start: Any,
+        polygon_pos_manager_connect_at_start: Any,
+        arbitrum_one_manager_connect_at_start: Any,
+        gnosis_manager_connect_at_start: Any,
+        base_manager_connect_at_start: Any,
+        scroll_manager_connect_at_start: Any,
+        binance_sc_manager_connect_at_start: Any,
+        hyperliquid_manager_connect_at_start: Any,
+        monad_manager_connect_at_start: Any,
+        kusama_manager_connect_at_start: Any,
+        ksm_rpc_endpoint: str | None,
+        max_tasks_num: int,
+        legacy_messages_via_websockets: bool,
+        data_migration_version: int,
+        use_custom_database: Any,
+        user_data_dir: Any,
+        perform_upgrades_at_unlock: bool,
+        new_db_unlock_actions: tuple[str] | None,
+        current_price_oracles_order: Any,
+        network_mocking: bool,
+        have_decoders: bool,
+        add_accounts_to_db: bool,
+        latest_accounting_rules: Any,
+        latest_accounting_rules_data: Any,
+        initialize_accounting_rules: bool,
+        should_mock_settings: bool = True,
+        historical_price_oracles_order: Any = None,
 ) -> None:
     if not start_with_logged_in_user:
         return
@@ -381,7 +389,7 @@ def initialize_mock_rotkehlchen_instance(
             create_new: bool,
             resume_from_backup: bool,
             initial_settings: ModifiableDBSettings | None = None,
-    ):
+    ) -> Any:
         """This is an augmented_unlock for the tests where after the original data.unlock
         happening in the start of rotkehlchen.unlock_user() we also add various fixture data
         to the DB so they can be picked up by the rest of the unlock function logic"""
@@ -451,7 +459,9 @@ def initialize_mock_rotkehlchen_instance(
                 rotki.data.db.get_settings(cursor, have_premium=rotki.premium is not None),
             )
 
-    rotki.task_manager.should_schedule = True
+    task_manager = rotki.task_manager
+    assert task_manager is not None
+    task_manager.should_schedule = True
     if historical_price_oracles_order is None:
         historical_price_oracles_order = (
             HistoricalPriceOracle.COINGECKO,
@@ -467,7 +477,7 @@ def initialize_mock_rotkehlchen_instance(
         evm_managers=[rotki.chains_aggregator.ethereum],
     )
     # configure when task manager should run for tests
-    rotki.task_manager.max_tasks_num = max_tasks_num
+    task_manager.max_tasks_num = max_tasks_num
     # by now DB probably has all default rpc nodes as populating rpc nodes is the default
     # but for tests we should respect the connect_at_start fixtures
     # also populate the nodes lists to wait for connection
@@ -497,6 +507,7 @@ def initialize_mock_rotkehlchen_instance(
         rotki.premium_sync_manager.premium = rotki.premium
         rotki.chains_aggregator.premium = rotki.premium
         # Add premium to all the modules
+        module_name: Any
         for module_name in AVAILABLE_MODULES_MAP:
             module = rotki.chains_aggregator.get_module(module_name)
             if module is not None:
@@ -561,7 +572,12 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
-def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Generator[Rotkehlchen]:  # noqa: E501  # pylint: disable=unused-argument
+def fixture_uninitialized_rotkehlchen(
+        cli_args: Any,
+        inquirer: Any,
+        asset_resolver: Any,
+        globaldb: Any,
+) -> Generator[Rotkehlchen]:  # pylint: disable=unused-argument
     """A rotkehlchen instance that has only had __init__ run but is not unlocked
 
     Adding the inquirer fixture as a requirement to make sure that any mocking that
@@ -579,67 +595,67 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
 
 
 @pytest.fixture(name='mocked_proxies')
-def fixture_mocked_proxies():
+def fixture_mocked_proxies() -> None:
     return None
 
 
 @pytest.fixture(name='rotkehlchen_api_server')
 def fixture_rotkehlchen_api_server(
-        uninitialized_rotkehlchen,
-        rest_api_port,
-        start_with_logged_in_user,
-        start_with_valid_premium,
-        db_password,
-        rotki_premium_object,
-        username,
-        blockchain_accounts,
-        include_etherscan_key,
-        include_beaconchain_key,
-        include_cryptocompare_key,
-        include_blockscout_key,
-        should_mock_price_queries,
-        mocked_price_queries,
-        ethereum_modules,
-        db_settings,
-        ignored_assets,
-        tags,
-        manually_tracked_balances,
-        default_mock_price_value,
-        ethereum_manager_connect_at_start,
-        optimism_manager_connect_at_start,
-        polygon_pos_manager_connect_at_start,
-        arbitrum_one_manager_connect_at_start,
-        gnosis_manager_connect_at_start,
-        base_manager_connect_at_start,
-        scroll_manager_connect_at_start,
-        binance_sc_manager_connect_at_start,
-        hyperliquid_manager_connect_at_start,
-        monad_manager_connect_at_start,
-        kusama_manager_connect_at_start,
-        solana_nodes_connect_at_start,
-        ksm_rpc_endpoint,
-        max_tasks_num,
-        legacy_messages_via_websockets,
-        data_migration_version,
-        use_custom_database,
-        user_data_dir,
-        perform_upgrades_at_unlock,
-        new_db_unlock_actions,
-        current_price_oracles_order,
-        historical_price_oracles_order,
-        network_mocking,
-        mock_other_web3,
-        ethereum_mock_data,
-        optimism_mock_data,
-        mocked_proxies,
-        have_decoders,
-        add_accounts_to_db,
-        latest_accounting_rules,
-        latest_accounting_rules_data,
-        initialize_accounting_rules,
-        should_mock_settings,
-        enable_priority_tasks,
-):
+        uninitialized_rotkehlchen: Rotkehlchen,
+        rest_api_port: int,
+        start_with_logged_in_user: bool,
+        start_with_valid_premium: bool,
+        db_password: str,
+        rotki_premium_object: Premium,
+        username: str,
+        blockchain_accounts: Any,
+        include_etherscan_key: Any,
+        include_beaconchain_key: Any,
+        include_cryptocompare_key: Any,
+        include_blockscout_key: Any,
+        should_mock_price_queries: bool,
+        mocked_price_queries: Any,
+        ethereum_modules: Any,
+        db_settings: Any,
+        ignored_assets: Any,
+        tags: Any,
+        manually_tracked_balances: Any,
+        default_mock_price_value: Any,
+        ethereum_manager_connect_at_start: Any,
+        optimism_manager_connect_at_start: Any,
+        polygon_pos_manager_connect_at_start: Any,
+        arbitrum_one_manager_connect_at_start: Any,
+        gnosis_manager_connect_at_start: Any,
+        base_manager_connect_at_start: Any,
+        scroll_manager_connect_at_start: Any,
+        binance_sc_manager_connect_at_start: Any,
+        hyperliquid_manager_connect_at_start: Any,
+        monad_manager_connect_at_start: Any,
+        kusama_manager_connect_at_start: Any,
+        solana_nodes_connect_at_start: Any,
+        ksm_rpc_endpoint: str | None,
+        max_tasks_num: int,
+        legacy_messages_via_websockets: bool,
+        data_migration_version: int,
+        use_custom_database: Any,
+        user_data_dir: Any,
+        perform_upgrades_at_unlock: bool,
+        new_db_unlock_actions: tuple[str] | None,
+        current_price_oracles_order: Any,
+        historical_price_oracles_order: Any,
+        network_mocking: bool,
+        mock_other_web3: bool,
+        ethereum_mock_data: dict[Any, Any],
+        optimism_mock_data: dict[Any, Any],
+        mocked_proxies: Any,
+        have_decoders: bool,
+        add_accounts_to_db: bool,
+        latest_accounting_rules: Any,
+        latest_accounting_rules_data: Any,
+        initialize_accounting_rules: bool,
+        should_mock_settings: bool,
+        enable_priority_tasks: bool,
+) -> Generator[APIServer]:
     """A partially mocked rotkehlchen server instance"""
 
     api_server = create_api_server(
@@ -744,52 +760,52 @@ def fixture_rotkehlchen_api_server(
 
 @pytest.fixture
 def rotkehlchen_instance(
-        uninitialized_rotkehlchen,
-        start_with_logged_in_user,
-        start_with_valid_premium,
-        db_password,
-        rotki_premium_object,
-        username,
-        blockchain_accounts,
-        include_etherscan_key,
-        include_beaconchain_key,
-        include_cryptocompare_key,
-        include_blockscout_key,
-        should_mock_price_queries,
-        mocked_price_queries,
-        ethereum_modules,
-        db_settings,
-        ignored_assets,
-        tags,
-        manually_tracked_balances,
-        default_mock_price_value,
-        ethereum_manager_connect_at_start,
-        optimism_manager_connect_at_start,
-        polygon_pos_manager_connect_at_start,
-        arbitrum_one_manager_connect_at_start,
-        gnosis_manager_connect_at_start,
-        base_manager_connect_at_start,
-        scroll_manager_connect_at_start,
-        binance_sc_manager_connect_at_start,
-        hyperliquid_manager_connect_at_start,
-        monad_manager_connect_at_start,
-        kusama_manager_connect_at_start,
-        ksm_rpc_endpoint,
-        max_tasks_num,
-        legacy_messages_via_websockets,
-        data_migration_version,
-        use_custom_database,
-        user_data_dir,
-        perform_upgrades_at_unlock,
-        new_db_unlock_actions,
-        current_price_oracles_order,
-        network_mocking,
-        have_decoders,
-        add_accounts_to_db,
-        latest_accounting_rules,
-        latest_accounting_rules_data,
-        initialize_accounting_rules,
-        enable_priority_tasks,
+        uninitialized_rotkehlchen: Rotkehlchen,
+        start_with_logged_in_user: bool,
+        start_with_valid_premium: bool,
+        db_password: str,
+        rotki_premium_object: Premium,
+        username: str,
+        blockchain_accounts: Any,
+        include_etherscan_key: Any,
+        include_beaconchain_key: Any,
+        include_cryptocompare_key: Any,
+        include_blockscout_key: Any,
+        should_mock_price_queries: bool,
+        mocked_price_queries: Any,
+        ethereum_modules: Any,
+        db_settings: Any,
+        ignored_assets: Any,
+        tags: Any,
+        manually_tracked_balances: Any,
+        default_mock_price_value: Any,
+        ethereum_manager_connect_at_start: Any,
+        optimism_manager_connect_at_start: Any,
+        polygon_pos_manager_connect_at_start: Any,
+        arbitrum_one_manager_connect_at_start: Any,
+        gnosis_manager_connect_at_start: Any,
+        base_manager_connect_at_start: Any,
+        scroll_manager_connect_at_start: Any,
+        binance_sc_manager_connect_at_start: Any,
+        hyperliquid_manager_connect_at_start: Any,
+        monad_manager_connect_at_start: Any,
+        kusama_manager_connect_at_start: Any,
+        ksm_rpc_endpoint: str | None,
+        max_tasks_num: int,
+        legacy_messages_via_websockets: bool,
+        data_migration_version: int,
+        use_custom_database: Any,
+        user_data_dir: Any,
+        perform_upgrades_at_unlock: bool,
+        new_db_unlock_actions: tuple[str] | None,
+        current_price_oracles_order: Any,
+        network_mocking: bool,
+        have_decoders: bool,
+        add_accounts_to_db: bool,
+        latest_accounting_rules: Any,
+        latest_accounting_rules_data: Any,
+        initialize_accounting_rules: bool,
+        enable_priority_tasks: bool,
 ) -> Rotkehlchen:
     """A partially mocked rotkehlchen instance"""
 
@@ -856,7 +872,7 @@ def rotkehlchen_api_server_with_exchanges(
         okx_api_key: str,
         okx_api_secret: bytes,
         okx_passphrase: str,
-):
+) -> Generator[APIServer]:
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

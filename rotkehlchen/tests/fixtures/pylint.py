@@ -3,5 +3,5 @@ from pylint.testutils.unittest_linter import UnittestLinter
 
 
 @pytest.fixture
-def pylint_test_linter():
+def pylint_test_linter() -> UnittestLinter:
     return UnittestLinter()

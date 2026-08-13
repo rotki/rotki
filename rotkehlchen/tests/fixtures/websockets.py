@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class WebsocketReader:
 
-    def __init__(self, websocket) -> None:
+    def __init__(self, websocket: Any) -> None:
         self.messages: deque = deque()
         self.ws = websocket
         self.should_read = True
@@ -53,7 +53,7 @@ class WebsocketReader:
 
 @pytest.fixture(name='websocket_connection')
 def fixture_websocket_connection_reader(
-        rest_api_port,
+        rest_api_port: int,
 ) -> Generator[WebsocketReader]:
     ws = create_connection(f'ws://127.0.0.1:{rest_api_port}/ws/')
     websocket_reader = WebsocketReader(ws)
