@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import { z, type ZodType } from 'zod';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { requiredField } from '@/modules/core/form/fields';
+import { useForm } from '@/modules/core/form/use-form';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 
 defineOptions({
@@ -19,78 +19,89 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
+interface NodeOperatorState {
+  nodeOperatorId: string;
+  selectedAccount: BlockchainAccount<AddressData>[];
+}
+
+interface NodeOperatorPayload {
+  address: string;
+  nodeOperatorId: number;
+}
+
 const { t } = useI18n({ useScope: 'global' });
-
-const selectedAccount = ref<BlockchainAccount<AddressData>[]>([]);
-const nodeOperatorId = ref<string>('');
-const submitting = ref<boolean>(false);
-
-const rules = {
-  nodeOperatorId: {
-    required: helpers.withMessage(
-      t('staking_page.lido_csm.form.validation.non_empty_id'),
-      required,
-    ),
-    validId: helpers.withMessage(
-      t('staking_page.lido_csm.form.validation.invalid_id'),
-      (value: string) => {
-        const parsed = Number(value);
-        return Number.isInteger(parsed) && parsed >= 0;
-      },
-    ),
-  },
-  selectedAddress: {
-    required: helpers.withMessage(
-      t('staking_page.lido_csm.form.validation.non_empty_address'),
-      required,
-    ),
-  },
-};
 
 const api = useLidoCsmApi();
 const { setMessage } = useMessageStore();
 
-const selectedAddress = computed<string>(() => {
-  const account = get(selectedAccount)[0];
-  return account ? getAccountAddress(account) : '';
+/**
+ * Vuelidate validated the derived address string rather than the selection, so the rule is written
+ * over the same value: an account whose address reads blank is still a missing address.
+ */
+const schema = computed<ZodType>(() => z.object({
+  nodeOperatorId: requiredField(t('staking_page.lido_csm.form.validation.non_empty_id')).superRefine((value, ctx) => {
+    const parsed = Number(value);
+    if (!(Number.isInteger(parsed) && parsed >= 0))
+      ctx.addIssue({ code: 'custom', message: t('staking_page.lido_csm.form.validation.invalid_id') });
+  }),
+  selectedAccount: z.array(z.custom<BlockchainAccount<AddressData>>()).superRefine((accounts, ctx) => {
+    const account = accounts[0];
+    if (!account || getAccountAddress(account).trim() === '')
+      ctx.addIssue({ code: 'custom', message: t('staking_page.lido_csm.form.validation.non_empty_address') });
+  }),
+}));
+
+const form = useForm<NodeOperatorState, NodeOperatorPayload>({
+  initial: (): NodeOperatorState => ({ nodeOperatorId: '', selectedAccount: [] }),
+  schema,
+  submit: async (payload: NodeOperatorPayload): Promise<{ success: boolean }> => {
+    try {
+      const { message } = await api.addNodeOperator(payload);
+
+      if (message) {
+        setMessage({
+          description: message,
+        });
+      }
+
+      return { success: true };
+    }
+    catch (error: unknown) {
+      setMessage({
+        description: t('staking_page.lido_csm.messages.add_failed', {
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      });
+      return { success: false };
+    }
+  },
+  transform: (state): NodeOperatorPayload => {
+    const account = state.selectedAccount[0];
+    return {
+      address: account ? getAccountAddress(account) : '',
+      nodeOperatorId: Number(state.nodeOperatorId),
+    };
+  },
 });
 
-const v$ = useVuelidate(rules, { nodeOperatorId, selectedAddress }, { $autoDirty: true });
+// Destructured, because a ref reached through `form.` in the template is not unwrapped and would
+// read as permanently truthy.
+const { submitting, valid } = form;
 
 function closeDialog(): void {
   set(dialogOpen, false);
 }
 
 async function submitForm(): Promise<void> {
-  if (!(await get(v$).$validate()) || get(submitting))
+  if (get(submitting))
     return;
 
-  set(submitting, true);
-  try {
-    const { message } = await api.addNodeOperator({
-      address: get(selectedAddress),
-      nodeOperatorId: Number(get(nodeOperatorId)),
-    });
+  const result = await form.submit();
+  if (result.outcome !== 'success')
+    return;
 
-    if (message) {
-      setMessage({
-        description: message,
-      });
-    }
-
-    closeDialog();
-    emit('refresh');
-  }
-  catch (error: unknown) {
-    setMessage({
-      description: t('staking_page.lido_csm.messages.add_failed', {
-        message: error instanceof Error ? error.message : String(error),
-      }),
-    });
-  }
-  finally {
-    set(submitting, false);
-  }
+  closeDialog();
+  emit('refresh');
 }
 </script>
 
@@ -124,24 +135,28 @@ async function submitForm(): Promise<void> {
         </p>
         <div class="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <BlockchainAccountSelector
-            v-model="selectedAccount"
+            v-model="form.state.selectedAccount"
             :chains="[Blockchain.ETH]"
             outlined
             show-details
             :label="t('staking_page.lido_csm.form.address_label')"
             :custom-hint="t('staking_page.lido_csm.form.address_hint')"
-            :error-messages="toMessages(v$.selectedAddress)"
+            :error-messages="form.errors('selectedAccount')"
+            data-testid="lido-csm-address"
+            @update:model-value="form.touch('selectedAccount')"
           />
           <RuiTextField
-            v-model="nodeOperatorId"
+            v-model="form.state.nodeOperatorId"
             type="number"
             min="0"
             step="1"
             color="primary"
             :label="t('staking_page.lido_csm.form.node_operator_label')"
             :hint="t('staking_page.lido_csm.form.node_operator_hint')"
-            :error-messages="toMessages(v$.nodeOperatorId)"
+            :error-messages="form.errors('nodeOperatorId')"
             variant="outlined"
+            data-testid="lido-csm-node-operator"
+            @update:model-value="form.touch('nodeOperatorId')"
           />
         </div>
       </div>
@@ -156,7 +171,8 @@ async function submitForm(): Promise<void> {
           <RuiButton
             color="primary"
             :loading="submitting"
-            :disabled="v$.$invalid"
+            :disabled="!valid"
+            data-testid="lido-csm-submit"
             @click="submitForm()"
           >
             {{ t('staking_page.lido_csm.form.submit') }}
