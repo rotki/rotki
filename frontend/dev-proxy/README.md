@@ -136,6 +136,12 @@ Look into the `async-mock.example.json` file in this directory and copy it to
 You can put the mocked URL on the root of the JSON and under that add the
 request verb. The verb's value can either be an object or an array:
 
+A declared mock replaces the response **whatever the backend answered**, including
+a rejection: faking a premium endpoint the dev backend answers with 402, or one it
+has not implemented, is most of what this is for. The task endpoints are the
+exception — they merge into the backend's own answer, so they are left alone
+unless it returned a 2xx.
+
 - **Object** — returned every time you query the same endpoint/verb combination.
 - **Array** — each request returns the next index. The first request serves
   index `0`, the second serves `1`, etc. When the end is reached the last item
@@ -162,8 +168,13 @@ request verb. The verb's value can either be an object or an array:
   query string, then on the path alone.
 - A mocked async query reports as pending for
   `DEFAULT_TASK_COMPLETION_MS` (8s) and completed after that.
-- WebSocket forwarding is enabled (`ws: true`), so the backend's `/ws/`
-  endpoint reaches the renderer through the same proxy hop.
+- Under `pnpm dev` the proxy is an internal hop **inside** starling
+  (`frontend → starling → dev-proxy → core`), so it only ever sees `/api/1/*`.
+  `/colibri/*`, `/ws/*` and `/_control` never leave starling. WebSocket
+  forwarding (`ws: true`) and the CORS headers therefore matter only when
+  something addresses the proxy directly, as in the standalone run below.
+- A backend it cannot reach is answered with a 502 rather than left hanging,
+  which matters because every `/api/1/*` call now passes through here.
 
 ## Tests
 

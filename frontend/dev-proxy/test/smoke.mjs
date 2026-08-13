@@ -40,8 +40,16 @@ const backend = http.createServer((req, res) => {
   req.on('end', () => {
     received.push({ body: Buffer.concat(chunks).toString(), method: req.method, url: req.url });
     res.setHeader('Content-Type', 'application/json');
-    // A mocked path that the backend rejects: the mock must not turn it into a 200.
+    // A mocked path the backend rejects: the mock still applies, since faking an
+    // endpoint the dev backend refuses is most of what the mock file is for.
     if (req.url === '/api/1/premium/sync') {
+      res.statusCode = 402;
+      res.end(JSON.stringify({ message: 'no premium subscription', result: null }));
+      return;
+    }
+    // A task poll the backend rejects: NOT mocked, so the error must survive
+    // rather than being merged into a 200 that reads as "nothing running".
+    if (req.url === '/api/1/tasks/999') {
       res.statusCode = 401;
       res.end(JSON.stringify({ message: 'not logged in', result: null }));
       return;
@@ -148,9 +156,12 @@ try {
   const tasks = await request('GET', '/api/1/tasks');
   check('task status keeps the backend ids, from a chunked response', JSON.parse(tasks.body).result?.pending?.includes(1), tasks.body);
 
-  const rejected = await request('GET', '/api/1/premium/sync');
-  check('a rejected request is not rewritten into a 200', rejected.status === 401, `${rejected.status} ${rejected.body}`);
-  check('a rejected request keeps the backend body', JSON.parse(rejected.body).message === 'not logged in', rejected.body);
+  const mockedButRejected = await request('GET', '/api/1/premium/sync');
+  check('a mock applies even when the backend rejects the request', JSON.parse(mockedButRejected.body).result === 'mocked', `${mockedButRejected.status} ${mockedButRejected.body}`);
+
+  const rejectedPoll = await request('GET', '/api/1/tasks/999');
+  check('a rejected task poll is not rewritten into a 200', rejectedPoll.status === 401, `${rejectedPoll.status} ${rejectedPoll.body}`);
+  check('a rejected task poll keeps the backend body', JSON.parse(rejectedPoll.body).message === 'not logged in', rejectedPoll.body);
 
   const postBody = JSON.stringify({ async_query: false, name: 'value' });
   const post = await request('POST', '/api/1/settings', postBody, { 'Content-Type': 'application/json' });
@@ -169,6 +180,24 @@ try {
   check('preflight for a mocked path is answered locally', preflight.status === 200, String(preflight.status));
 
   check('websocket upgrade forwarded', (await upgrade()) === 101);
+
+  // The premium components exist but were never built, or a rebuild removed dist
+  // mid-run. The reads are synchronous inside the request listener, so an
+  // unhandled throw would take the whole proxy down with it.
+  fs.rmSync(path.join(componentsDir, 'dist'), { force: true, recursive: true });
+  const noDist = await request('GET', '/api/1/statistics/renderer');
+  check('a missing dist serves an empty renderer', noDist.status === 200 && JSON.parse(noDist.body).result === '', `${noDist.status} ${noDist.body}`);
+  const stillAlive = await request('GET', '/api/1/settings');
+  check('the proxy survives a missing dist', stillAlive.status === 200, String(stillAlive.status));
+
+  // Last, since it takes the stub backend down: an unreachable backend must fail
+  // fast rather than hang, now that every /api/1/* call passes through here.
+  await new Promise(resolve => backend.close(resolve));
+  const unreachable = await Promise.race([
+    request('GET', '/api/1/settings'),
+    new Promise(resolve => setTimeout(resolve, 5000, { status: 'timed out' })),
+  ]);
+  check('an unreachable backend answers 502 rather than hanging', unreachable.status === 502, String(unreachable.status));
 }
 finally {
   proxy.kill();

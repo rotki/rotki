@@ -28,13 +28,25 @@ export function pickLatestBundle(candidates: BundleCandidate[]): string | undefi
 
 export function serveStatisticsRenderer(componentsDir: string, res: ServerResponse): void {
   const dist = path.resolve(componentsDir, 'dist');
-  const candidates = fs.readdirSync(dist).map(name => ({
-    birthtimeMs: fs.statSync(path.join(dist, name)).birthtimeMs,
-    name,
-  }));
 
-  const latest = pickLatestBundle(candidates);
-  const result = latest ? fs.readFileSync(path.join(dist, latest), 'utf8') : '';
+  // Every read here is synchronous and runs inside the request listener, so an
+  // unhandled throw takes the process down — and starling now depends on this
+  // process for every `/api/1/*` request. `dist` legitimately may not exist yet
+  // (components checked out but never built) or may vanish mid-rebuild, so answer
+  // with an empty renderer instead: the app renders without premium components.
+  let result: string = '';
+  let latest: string | undefined;
+  try {
+    const candidates = fs.readdirSync(dist).map(name => ({
+      birthtimeMs: fs.statSync(path.join(dist, name)).birthtimeMs,
+      name,
+    }));
+    latest = pickLatestBundle(candidates);
+    result = latest ? fs.readFileSync(path.join(dist, latest), 'utf8') : '';
+  }
+  catch (error: any) {
+    consola.warn(`Could not read ${dist}, serving no renderer: ${error.message}`);
+  }
 
   consola.info(`Serving renderer from ${latest ?? '<nothing found>'}`);
 

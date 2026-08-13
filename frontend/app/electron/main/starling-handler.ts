@@ -134,6 +134,19 @@ export class StarlingHandler {
     this.exiting = false;
 
     const corePort = await this.resolvePort(StarlingService.CORE);
+    // The dev-proxy is handed core's port when `pnpm dev` spawns it and cannot
+    // learn a new one, so core probing upward would leave it forwarding
+    // `/api/1/*` to a dead port. Refuse rather than come up broken: the whole
+    // point of the proxy being in the chain is that it is in the chain.
+    if (this.config.ports.coreUpstreamPort !== undefined && corePort !== this.config.ports.corePort) {
+      listener.onProcessError(
+        `The dev-proxy is forwarding to port ${this.config.ports.corePort}, but that port is taken `
+        + `and core would bind ${corePort} instead. Free it, or restart without the dev-proxy `
+        + '(unset PREMIUM_COMPONENT_DIR, or pass --no-proxy).',
+        BackendCode.TERMINATED,
+      );
+      return;
+    }
     const colibriPort = await this.resolvePort(StarlingService.COLIBRI);
     const mcpPort = await this.resolvePort(StarlingService.MCP);
     const proxyPort = await this.resolvePort(StarlingService.PROXY);

@@ -4,6 +4,7 @@ import { platform } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { buildCargoEnv, STRAWBERRY_MISSING_WARNING } from '../../app/shared/cargo-env';
+import { isPortFree } from '../../app/shared/port-utils';
 import { DEFAULT_PORTS, type InstanceRuntime } from '../dev-instance';
 import { formatPort } from '../dev-instance/format';
 import { createDevLogger } from './logger';
@@ -175,6 +176,9 @@ async function startBackendForMode(
   if (!fs.existsSync(logDir))
     fs.mkdirSync(logDir);
 
+  if (opts.useProxy)
+    await assertDevProxyPortFree(devProxyPort(instance));
+
   const { env, ports } = await startStarlingSupervisor({
     logDir,
     dataDir: instance?.dir,
@@ -195,6 +199,24 @@ async function startBackendForMode(
 
 function devProxyPort(instance: InstanceRuntime | null): number {
   return instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
+}
+
+/**
+ * starling is told the dev-proxy's port at launch, before the proxy has bound it,
+ * and unlike starling's own ports it never walks upward. A leftover proxy from an
+ * earlier run still holding the port would take the new one's place silently —
+ * still pointed at that run's core — so every `/api/1/*` call would reach the
+ * wrong backend with nothing reporting it. Refuse instead.
+ */
+async function assertDevProxyPortFree(port: number): Promise<void> {
+  if (await isPortFree(port, '127.0.0.1'))
+    return;
+
+  throw new Error(
+    `The dev-proxy port ${formatPort(String(port))} is already in use, most likely by a dev-proxy `
+    + 'from an earlier run. starling would forward every /api/1/* request to it instead of to this '
+    + 'run\'s backend. Stop it, or start without the proxy (--no-proxy).',
+  );
 }
 
 function spawnProxyForBackend(instance: InstanceRuntime | null, corePort: number): void {
@@ -289,8 +311,10 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
     // `pnpm dev` leaves devPort undefined, keeping the default 8080.
     extraEnv = envForElectron(instance, useProxy);
     devPort = instance?.ports.dev;
-    if (useProxy)
+    if (useProxy) {
+      await assertDevProxyPortFree(devProxyPort(instance));
       spawnProxyForElectron(instance);
+    }
   }
 
   startDevServer({ noElectron, devPort, backendEnv, extraEnv, onExit: onChildExit });
