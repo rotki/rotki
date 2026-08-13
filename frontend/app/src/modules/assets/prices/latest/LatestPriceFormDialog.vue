@@ -27,7 +27,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const modelValue = ref<ManualPriceFormPayload>();
 const loading = ref(false);
-const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
 const stateUpdated = ref(false);
 
@@ -44,7 +43,7 @@ async function save() {
     return false;
 
   const formRef = get(form);
-  const valid = await formRef?.validate();
+  const valid = formRef?.validate();
   if (!valid)
     return false;
 
@@ -99,7 +98,6 @@ watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVa
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
-      v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
       :edit-mode="editMode ?? !!editableItem"
       :disable-from-asset="disableFromAsset"

@@ -55,7 +55,7 @@ describe('latestPriceForm', () => {
           AssetSelect: inputStub('AssetSelect'),
         },
       },
-      props: { errorMessages: {}, modelValue, ...props },
+      props: { modelValue, ...props },
     });
   }
 

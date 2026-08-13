@@ -1,9 +1,9 @@
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type Balance, type BigNumber, bigNumberify, Zero } from '@rotki/common';
 
-export function bigNumberifyFromRef(value: Ref<string | number> | WritableComputedRef<string | number>): ComputedRef<BigNumber> {
+export function bigNumberifyFromRef(value: MaybeRefOrGetter<string | number>): ComputedRef<BigNumber> {
   return computed(() => {
-    const val = get(value);
+    const val = toValue(value);
     // Cheap path for a cleared field, which is common enough not to reach it through a throw.
     if (val === '')
       return Zero;

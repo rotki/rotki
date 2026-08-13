@@ -18,7 +18,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref<boolean>(false);
-const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof HistoricPriceForm>>('form');
 const stateUpdated = ref<boolean>(false);
 
@@ -35,7 +34,7 @@ async function save() {
     return false;
 
   const formRef = get(form);
-  const valid = await formRef?.validate();
+  const valid = formRef?.validate();
   if (!valid)
     return false;
 
@@ -66,7 +65,6 @@ async function save() {
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
-      v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
       :edit-mode="editMode"
     />
