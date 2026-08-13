@@ -316,6 +316,9 @@ importers:
       husky:
         specifier: 'catalog:'
         version: 9.1.7
+      knip:
+        specifier: 'catalog:'
+        version: 6.31.0
       lint-staged:
         specifier: 'catalog:'
         version: 17.3.0
@@ -524,9 +527,6 @@ importers:
       httpxy:
         specifier: 'catalog:'
         version: 0.5.5
-      knip:
-        specifier: 'catalog:'
-        version: 6.31.0
       msw:
         specifier: 'catalog:'
         version: 2.15.0(@types/node@24.13.3)(typescript@6.0.3)
