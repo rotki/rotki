@@ -71,7 +71,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 INFURA_TEST = 'https://mainnet.infura.io/v3/a6b269b6e5ad44ed943e9fff244dfe25'
-ALCHEMY_TEST = 'https://eth-mainnet.g.alchemy.com/v2/ga1GtB7R26UgzjextaVpbaWZ49nSi2zt'
 
 PRUNED_AND_NOT_ARCHIVED_NODE = WeightedNode(
     node_info=NodeName(
@@ -92,19 +91,6 @@ ETHERSCAN_AND_INFURA_PARAMS: tuple[str, list[tuple]] = ('ethereum_manager_connec
 ])
 
 
-ETHERSCAN_AND_INFURA_AND_ALCHEMY: tuple[str, list[tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
-    # Query etherscan only
-    ((), (EVM_INDEXERS_NODE,)),
-    # For "our own" node querying use infura
-    (
-        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
-        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
-    ),
-    (
-        (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
-        (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), weight=ONE, active=True),),  # noqa: E501
-    ),
-])
 TEST_ADDR1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
 TEST_ADDR2 = string_to_evm_address('0x442068F934BE670aDAb81242C87144a851d56d16')
 
@@ -135,7 +121,6 @@ ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
         (PRUNED_AND_NOT_ARCHIVED_NODE,),
         (INFURA_ETH_NODE,),
         (EVM_INDEXERS_NODE,),
-        (ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],),
     ],
 )
 
@@ -144,7 +129,6 @@ ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED = (
     [(
         PRUNED_AND_NOT_ARCHIVED_NODE,
         INFURA_ETH_NODE,
-        ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
     )],
 )
 
