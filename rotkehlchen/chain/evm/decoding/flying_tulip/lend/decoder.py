@@ -66,6 +66,13 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             msg_aggregator=msg_aggregator,
         )
         self.deployment = FLYING_TULIP_LEND_DEPLOYMENTS[evm_inquirer.chain_id]
+        # transfers are only matched against these protocol counterparties, so
+        # an unrelated equal-amount transfer in the same tx cannot be claimed
+        self.protocol_addresses = (
+            frozenset((self.deployment.positions_manager,)) |
+            self.deployment.meta_actions |
+            self.deployment.yield_wrappers
+        )
 
     def _reconcile_spend(
             self,
@@ -96,7 +103,8 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
-                    event.location_label in allowed_labels
+                    event.location_label in allowed_labels and
+                    event.address in self.protocol_addresses
             ):
                 if event.amount == amount:
                     candidate = event
@@ -181,7 +189,8 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
-                    event.location_label == location_label
+                    event.location_label == location_label and
+                    event.address in self.protocol_addresses
             ):
                 if event.amount == amount:
                     candidate = event
@@ -327,10 +336,10 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         return decoded_events
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return dict.fromkeys(
-            (self.deployment.positions_manager, *self.deployment.meta_actions),
-            CPT_FLYING_TULIP,
-        )
+        # The yield wrappers are included so that transactions routed through
+        # an unknown entry point (a Safe, an EIP-7702 batch) still trigger the
+        # post-decoding rule through the payout transfer's counterparty.
+        return dict.fromkeys(self.protocol_addresses, CPT_FLYING_TULIP)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         # Priority 1: run after the common priority-0 rules, since this rule can

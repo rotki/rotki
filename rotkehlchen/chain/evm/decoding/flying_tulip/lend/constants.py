@@ -23,6 +23,10 @@ class FlyingTulipLendDeployment(NamedTuple):
     # has to track the protocol's deployments: positions manager events in a
     # transaction routed through an entry point missing here are not decoded.
     meta_actions: frozenset[ChecksumEvmAddress]
+    # The per-asset yield wrappers the positions manager routes funds through.
+    # They can be the direct counterparty of a payout transfer, so they both
+    # qualify transfers for matching and trigger the post-decoding rule.
+    yield_wrappers: frozenset[ChecksumEvmAddress]
 
 
 FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] = {
@@ -36,6 +40,15 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
         meta_actions=frozenset((
             string_to_evm_address('0x3633EB60D08756674472e2D34d6fFb5f4c1c29f2'),  # MetaActions
             string_to_evm_address('0x4f83aC5c8A79986D0916a8849730d9CEF63a3497'),  # MetaSessionActions  # noqa: E501
+        )),
+        yield_wrappers=frozenset((
+            string_to_evm_address('0xD2e4A5ac4B4Da102317cF7C9A1289aDF082639E2'),  # USDC
+            string_to_evm_address('0x460494aF61BcB92B59797B4e09C26A5ADecb2da2'),  # wNative
+            string_to_evm_address('0x01980BD1B58313bD3767f6adc75Af8b6464f3db7'),  # stakedNative
+            string_to_evm_address('0x28b0905d83BCe5FFA6c54651F25858828A38123B'),  # USDT
+            string_to_evm_address('0x7127BB9d9ad0f47B8dA9087e634D67F3946F840E'),  # FT
+            string_to_evm_address('0xc67D966f761e8cf13Faa0a1E774425290c8453d9'),  # ftUSD
+            string_to_evm_address('0x1A5730c71576D77048E9FdC79DD40e4B1E8Fe042'),  # wBTC
         )),
     ),
 }

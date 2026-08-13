@@ -186,3 +186,54 @@ def test_put_withdraw_ft(ethereum_inquirer, ethereum_accounts):
             address=DEPLOYMENT.put_manager,
         ),
     ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xE366d92C6fbCAE91FD20E09179AdEbb59FD9BDb6']])
+def test_put_invest_via_proxy(ethereum_inquirer, ethereum_accounts):
+    """An investment funded through an investing proxy: the user's transfer goes
+    to the proxy, which then appears as the investor while the user is the
+    position recipient."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf941d701b415cc605ddee5ac76f0af2aaa866b0e453672d987aeb36d0af779ec')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1770161519000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.000140340264682185'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=300,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=A_USDT,
+            amount=FVal(invest_amount := '1650'),
+            location_label=user_address,
+            notes=f'Invest {invest_amount} USDT in Flying Tulip put position #3150',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.put_manager,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=308,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset(f'eip155:1/erc721:{PFT_TOKEN}/3150'),
+            amount=ONE,
+            location_label=user_address,
+            notes=f'Receive Flying Tulip PUT with id 3150 from {ZERO_ADDRESS} to {user_address}',
+            address=ZERO_ADDRESS,
+        ),
+    ]
