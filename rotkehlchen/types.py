@@ -313,6 +313,7 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.SCROLL,
     ChainID.BINANCE_SC,
     ChainID.MONAD,
+    ChainID.SONIC,
 ]
 
 
@@ -464,6 +465,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     SCROLL = 'SCROLL'
     BINANCE_SC = 'BINANCE_SC'
     MONAD = 'MONAD'
+    SONIC = 'SONIC'
     ZKSYNC_LITE = 'ZKSYNC_LITE'
     SOLANA = 'SOLANA'
 
@@ -505,6 +507,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 'ETH'
         if self == SupportedBlockchain.MONAD:
             return 'MON'
+        if self == SupportedBlockchain.SONIC:
+            return 'S'
         if self == SupportedBlockchain.POLYGON_POS:
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
         if self == SupportedBlockchain.GNOSIS:
@@ -623,6 +627,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
     SupportedBlockchain.BINANCE_SC: 'binance_sc.svg',
     SupportedBlockchain.MONAD: 'monad.svg',
+    SupportedBlockchain.SONIC: 'sonic.svg',
     SupportedBlockchain.SOLANA: 'solana.svg',
 }
 
@@ -637,6 +642,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.BINANCE_SC,
     SupportedBlockchain.MONAD,
+    SupportedBlockchain.SONIC,
 ]
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
 
@@ -669,6 +675,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.SCROLL,
     ChainID.BINANCE_SC,
     ChainID.MONAD,
+    ChainID.SONIC,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -685,6 +692,7 @@ SUPPORTED_EVM_CHAINS_TYPE = Literal[
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.BINANCE_SC,
     SupportedBlockchain.MONAD,
+    SupportedBlockchain.SONIC,
 ]
 SUPPORTED_EVM_CHAINS: tuple[SUPPORTED_EVM_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVM_CHAINS_TYPE)  # noqa: E501
 
@@ -710,6 +718,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ZKSYNC_LITE,
     SupportedBlockchain.BINANCE_SC,
     SupportedBlockchain.MONAD,
+    SupportedBlockchain.SONIC,
     SupportedBlockchain.SOLANA,
 ]
 
@@ -737,6 +746,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.SCROLL: ChainID.SCROLL,
     SupportedBlockchain.BINANCE_SC: ChainID.BINANCE_SC,
     SupportedBlockchain.MONAD: ChainID.MONAD,
+    SupportedBlockchain.SONIC: ChainID.SONIC,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
@@ -815,6 +825,7 @@ class Location(DBCharEnumMixIn):
     GATE = 59
     BIT2ME = 60
     COINEX = 61
+    SONIC = 62  # on-chain Sonic events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
@@ -845,6 +856,9 @@ class Location(DBCharEnumMixIn):
         if chain_id == ChainID.MONAD:
             return Location.MONAD
 
+        if chain_id == ChainID.SONIC:
+            return Location.SONIC
+
         # else
         return Location.POLYGON_POS
 
@@ -872,6 +886,8 @@ class Location(DBCharEnumMixIn):
             return ChainID.BINANCE_SC.value
         if self == Location.MONAD:
             return ChainID.MONAD.value
+        if self == Location.SONIC:
+            return ChainID.SONIC.value
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return ChainID.POLYGON_POS.value
 
@@ -899,6 +915,8 @@ class Location(DBCharEnumMixIn):
                 return Location.BINANCE_SC
             case SupportedBlockchain.MONAD:
                 return Location.MONAD
+            case SupportedBlockchain.SONIC:
+                return Location.SONIC
             case SupportedBlockchain.ZKSYNC_LITE:
                 return Location.ZKSYNC_LITE
             case SupportedBlockchain.BITCOIN:
@@ -923,7 +941,7 @@ class Location(DBCharEnumMixIn):
         return self in BITCOIN_LOCATIONS
 
 
-EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC, Location.MONAD]  # noqa: E501
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC, Location.MONAD, Location.SONIC]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
 EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
