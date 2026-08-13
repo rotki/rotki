@@ -115,7 +115,9 @@ function calculateAmountAndUnit(seconds: number) {
   let unit: Unit = Unit.MINUTES;
   let amount = Math.floor(seconds / 60);
 
-  unitDataVal.reverse().find((item) => {
+  // Copy first: `unitData` is a cached computed, and the template binds it as the unit options, so
+  // reversing it in place reorders the dropdown as a side effect of reading a value.
+  [...unitDataVal].reverse().find((item) => {
     const tempAmount = seconds / item.seconds;
     if (tempAmount % 1 === 0) {
       unit = item.key;
