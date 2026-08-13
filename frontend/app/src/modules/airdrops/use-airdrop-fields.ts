@@ -7,7 +7,7 @@ import { listParam, type PillParams, stringParam, toPillParams } from '@/modules
 import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
 /** The keys the airdrops table filters on. Not wire keys: the page holds every airdrop already. */
-export const AirdropFilterKeys = {
+const AirdropFilterKeys = {
   ACCOUNTS: 'addresses',
   STATUS: 'status',
 } as const;

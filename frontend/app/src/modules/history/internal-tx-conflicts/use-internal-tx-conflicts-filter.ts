@@ -7,6 +7,6 @@ export const InternalTxConflictFilterKeys = {
   TO_TIMESTAMP: 'toTimestamp',
 } as const;
 
-export type InternalTxConflictFilterKey = typeof InternalTxConflictFilterKeys[keyof typeof InternalTxConflictFilterKeys];
+type InternalTxConflictFilterKey = typeof InternalTxConflictFilterKeys[keyof typeof InternalTxConflictFilterKeys];
 
 export type Filters = MatchedKeywordWithBehaviour<InternalTxConflictFilterKey>;

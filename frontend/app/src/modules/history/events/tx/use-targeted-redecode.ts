@@ -22,7 +22,7 @@ import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types'
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** What a targeted re-decode is asked for: transactions, block events, or both. */
-export type TargetedRedecodeRequest = Partial<PullLocationTransactionPayload> & Partial<PullEthBlockEventPayload>;
+type TargetedRedecodeRequest = Partial<PullLocationTransactionPayload> & Partial<PullEthBlockEventPayload>;
 
 interface UseTargetedRedecodeReturn {
   pullAndDecodeTransactionsRaw: (payload: PullTransactionPayload, parent?: ActivityId) => Promise<void>;

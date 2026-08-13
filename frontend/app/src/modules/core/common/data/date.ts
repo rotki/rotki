@@ -11,7 +11,7 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { markRaw, type Ref } from 'vue';
 import { DateFormat } from '@/modules/core/common/date-format';
 
-export function getDateInputISOFormat(format: DateFormat): string {
+function getDateInputISOFormat(format: DateFormat): string {
   return {
     [DateFormat.DateMonthYearHourMinuteSecond]: 'DD/MM/YYYY',
     [DateFormat.DateMonthYearHourMinuteSecondTimezone]: 'DD/MM/YYYY',

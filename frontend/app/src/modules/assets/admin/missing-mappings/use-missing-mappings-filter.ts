@@ -9,7 +9,7 @@ export const MissingMappingsFilterKeys = {
   LOCATION: 'location',
 } as const;
 
-export type MissingMappingsFilterKey =
+type MissingMappingsFilterKey =
   typeof MissingMappingsFilterKeys[keyof typeof MissingMappingsFilterKeys];
 
 export type Filters = MatchedKeyword<MissingMappingsFilterKey>;

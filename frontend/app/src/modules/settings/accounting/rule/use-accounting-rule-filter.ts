@@ -7,6 +7,6 @@ export const AccountingRuleFilterKeys = {
   EVENT_TYPE: 'eventTypes',
 } as const;
 
-export type AccountingRuleFilterKey = typeof AccountingRuleFilterKeys[keyof typeof AccountingRuleFilterKeys];
+type AccountingRuleFilterKey = typeof AccountingRuleFilterKeys[keyof typeof AccountingRuleFilterKeys];
 
 export type Filters = MatchedKeywordWithBehaviour<AccountingRuleFilterKey>;

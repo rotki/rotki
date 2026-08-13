@@ -150,7 +150,7 @@ export type ActivitySourceType = (typeof ActivitySourceType)[keyof typeof Activi
  * EXCHANGE_EVENTS, PROTOCOL_CACHE, BALANCE_QUERY, REQUEST_TAG, INFO) were declared for a
  * per-producer routing scheme that native migration made unnecessary, and were deleted in W0.
  */
-export interface ActivitySource {
+interface ActivitySource {
   type: typeof ActivitySourceType.NATIVE;
 }
 

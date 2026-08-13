@@ -38,7 +38,7 @@ export interface HistoryFieldResolvers extends SharedFieldResolvers {
  * page pinned to one protocol, one location, one period, one set of validators or event types has
  * nothing left to narrow there.
  */
-export interface HistoryEventFieldGates {
+interface HistoryEventFieldGates {
   readonly protocols?: boolean;
   readonly locations?: boolean;
   readonly period?: boolean;

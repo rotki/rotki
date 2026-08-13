@@ -9,7 +9,7 @@ import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/m
  * Resolved by the producer, not here: mapping a location to its chain is runtime state, and a
  * declaration that reached for it would stop being data.
  */
-export interface TargetedChainTransactions {
+interface TargetedChainTransactions {
   readonly chain: string;
   readonly txRefs: readonly string[];
 }

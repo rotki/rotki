@@ -15,7 +15,7 @@ export const AssetFilterKeys = {
   SYMBOL: 'symbol',
 } as const;
 
-export type AssetFilterKey = typeof AssetFilterKeys[keyof typeof AssetFilterKeys];
+type AssetFilterKey = typeof AssetFilterKeys[keyof typeof AssetFilterKeys];
 
 export type Filters = MatchedKeyword<AssetFilterKey>;
 

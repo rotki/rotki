@@ -8,7 +8,7 @@ export const AddressBookFilterKeys = {
   NAME: 'nameSubstring',
 } as const;
 
-export type AddressBookFilterKey = typeof AddressBookFilterKeys[keyof typeof AddressBookFilterKeys];
+type AddressBookFilterKey = typeof AddressBookFilterKeys[keyof typeof AddressBookFilterKeys];
 
 export type Filters = MatchedKeyword<AddressBookFilterKey>;
 

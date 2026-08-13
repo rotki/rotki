@@ -36,7 +36,7 @@ export interface AccountSubject {
  * part instead of shredding it into members — the same reason `redecodeFlow` joins its chains that
  * way.
  */
-export function targetKey(target: AccountTarget): string {
+function targetKey(target: AccountTarget): string {
   switch (target.kind) {
     case 'address':
       return target.address;
