@@ -32,6 +32,10 @@ export class RpcSettingsPage {
     await expect(this.page.getByTestId('add-node')).toHaveCount(0);
   }
 
+  async expectEmptyStateAddVisible(): Promise<void> {
+    await expect(this.page.getByTestId('add-simple-node')).toBeVisible();
+  }
+
   async visitWithTab(tab: string): Promise<void> {
     await this.page.goto(`/#/settings/rpc?tab=${tab}`);
     await this.page.getByTestId('rpc-settings-rail').waitFor({ state: 'visible' });

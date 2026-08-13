@@ -58,6 +58,14 @@ test.describe.serial('settings::rpc', () => {
     }
   });
 
+  test('an unset single-value endpoint can still be added from the empty state', async () => {
+    for (const label of ['Kusama', 'Polkadot']) {
+      await pageRpc.clickRailTab(label);
+      await pageRpc.expectAddNodeHidden();
+      await pageRpc.expectEmptyStateAddVisible();
+    }
+  });
+
   test('Add Node is visible on EVM chains and Solana', async () => {
     for (const label of ['Ethereum', 'Solana']) {
       await pageRpc.clickRailTab(label);
