@@ -59,6 +59,18 @@ const meta = computed<string | undefined>(() => {
 
 const outcome = computed<ActivityOutcome>(() => activityOutcome(activity.status));
 
+/**
+ * The status word, plus the producer's reason when there is one ("Skipped: disabled in settings").
+ *
+ * Used for the tooltip and the `aria-label` alike, so the reason is not sighted-hover-only — the
+ * chip is icon-only, and this is the sole place a skip's reason is ever shown.
+ */
+const outcomeText = computed<string>(() => {
+  const status = t(get(outcome).key);
+  const { reason } = activity;
+  return reason ? t('pending_task.status.with_reason', { reason, status }) : status;
+});
+
 // The ring only earns the slot when it has a real number to put in it. Everything else — including
 // a running row the producer never counted steps for — says its status in words instead.
 const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminateProgress));
@@ -128,7 +140,7 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
           tabindex="-1"
           :color="outcome.color"
           :variant="outcome.variant"
-          :aria-label="t(outcome.key)"
+          :aria-label="outcomeText"
           :class-names="{ content: '!px-1' }"
           class="shrink-0"
           data-testid="activity-outcome"
@@ -139,7 +151,7 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
           />
         </RuiChip>
       </template>
-      {{ t(outcome.key) }}
+      <span data-testid="activity-outcome-text">{{ outcomeText }}</span>
     </RuiTooltip>
 
     <RuiTooltip

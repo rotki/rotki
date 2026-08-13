@@ -176,6 +176,8 @@ export interface Activity {
   readonly subtitle?: ActivityText;
   readonly status: ActivityStatus;
   readonly steps?: ActivitySteps;
+  /** Why a FAILED or SKIPPED activity ended so, already translated. See {@link terminalReason}. */
+  readonly reason?: string;
   /** Derived 0-100; `-1` for indeterminate kinds. */
   readonly percentage: number;
   /** Whether the controller knows how to cancel this item. */

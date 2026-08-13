@@ -64,6 +64,27 @@ export function terminalStatus(cancelRequested: boolean, outcome: Result<unknown
 }
 
 /**
+ * The user-facing reason an activity ended the way it did, or `undefined` when there is nothing
+ * worth saying.
+ *
+ * Only FAILED and SKIPPED get one. A cancellation carries a message too, but the user is the one
+ * who asked for it, so repeating it on the row is noise; COMPLETE has nothing to explain.
+ *
+ * ⭐ SKIPPED is the case that needs this most. Notifications are raised per producer behind
+ * `isActionable`, which `Skipped` deliberately is not, so a skip that drops its reason here drops
+ * it everywhere — the row is the only surface it could ever have reached.
+ */
+export function terminalReason(
+  status: ActivityStatus,
+  outcome: Result<unknown, TaskError>,
+): string | undefined {
+  if (outcome.ok || (status !== Status.FAILED && status !== Status.SKIPPED))
+    return undefined;
+
+  return outcome.error.message || undefined;
+}
+
+/**
  * Run a spec's body under its declared timeout and retry policy, as a value.
  *
  * ⚠️ The catch is not defensive dressing: a producer's `ResultAsync` should never reject, and one
