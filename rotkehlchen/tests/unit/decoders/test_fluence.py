@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -16,7 +18,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc04e88de26d3466e64a243c15db181342152d0b771b0e8e224920ea9b28fe7e0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount_str, claimed_amount = '0.00203104493516988', '5000'
@@ -52,7 +54,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_swap(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1db2028d68fbdc19e770307dd968c24c8fa4211b26eb512a938223f89d11450a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def test_delegate_vested_tokens_with_vault_creation(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x50dc56b705219f9f26e1749d4dabefbac7fae4e60925f4c57cb8a42687adf703')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -61,7 +61,7 @@ def test_delegate_vested_tokens_with_vault_creation(
 def test_delegate_plans(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf5317d7926c5b3f269604ea983a8ed9a6240dfdbabcccd33a12dd135b9b2389a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -100,7 +100,7 @@ def test_delegate_plans(
 def test_redeem_plans(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb85eb3fb6496fa51ac3d43d230ea729b52593bd2781b2b9dfab638aab7011719')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]

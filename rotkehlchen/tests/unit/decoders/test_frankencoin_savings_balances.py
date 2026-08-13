@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -13,7 +15,7 @@ from rotkehlchen.types import deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbC6668371b69FD94110a9E24dCCe517CaFA2B2d1']])
-def test_frankencoin_savings_balances(ethereum_inquirer, ethereum_accounts, inquirer):
+def test_frankencoin_savings_balances(ethereum_inquirer: Any, ethereum_accounts: Any, inquirer: Any) -> None:
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=deserialize_evm_tx_hash('0xe7e484ae4bf7b2a310eb0e6b34bc3e889940fcb85b4bd074ecf8a24a1fa5af70'),

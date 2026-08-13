@@ -1,3 +1,5 @@
+from typing import Any
+
 from unittest.mock import patch
 
 import pytest
@@ -29,7 +31,7 @@ from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS, deseri
     ),
 )])
 @pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
-def test_farcaster_pro_purchase(base_inquirer, base_accounts) -> None:
+def test_farcaster_pro_purchase(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xaf0d0052eec2231428c5fbf81523c2ef833a8f02ae080a047c1abce3e2b12e83',
     )

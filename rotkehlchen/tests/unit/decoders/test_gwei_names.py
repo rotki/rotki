@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -17,7 +19,7 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_gwei_names_commit(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_commit(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x577fa8d03c70b168210bfd8e4582749b059b7a8ab092ccf558367262134bd61d')),  # noqa: E501
@@ -54,7 +56,7 @@ def test_gwei_names_commit(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_gwei_names_register(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_register(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8dbce5bb53b5a058ae38504202e025ddad273d24336014af2e10d9ed226e1b3b')),  # noqa: E501
@@ -104,7 +106,7 @@ def test_gwei_names_register(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf1B42cc7c1609445620dE4352CD7e58353C3FA74']])
-def test_gwei_names_set_address(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_set_address(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe15a16eb6a93bae8a467776f5237ff2663d17741f89f580a3f03b639608d666f')),  # noqa: E501
@@ -141,7 +143,7 @@ def test_gwei_names_set_address(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xaB583a9E164CDd1B10e474a83DF3D0F2bdF99c95']])
-def test_gwei_names_set_contenthash(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_set_contenthash(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test that setting the contenthash (website) of a gwei name is decoded properly"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -179,7 +181,7 @@ def test_gwei_names_set_contenthash(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x20309Eb9080288e31AB1161366Af6639f04d593e']])
-def test_gwei_names_set_text(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_set_text(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x7e9ab5821256d0d152eaa199c475ae1a4dd16720a1dc28151d86dd78a69373f0')),  # noqa: E501
@@ -216,7 +218,7 @@ def test_gwei_names_set_text(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9398084E888CB5B5c126240439054b57C10138E7']])
-def test_gwei_names_renew(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_renew(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x36d7e292fe72905d240399cd90728a2fae916fc11d29a8fdddfef78d3d4f5a9f')),  # noqa: E501
@@ -255,7 +257,7 @@ def test_gwei_names_renew(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC04689227Fa24785609B1174698DBe481437f1A3']])
-def test_gwei_names_set_primary_name(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_set_primary_name(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x14ad6f0582795bf40311d1f3c3666b6012a04c7a1690e97205b124df49ada82c')),  # noqa: E501
@@ -292,7 +294,7 @@ def test_gwei_names_set_primary_name(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf1B42cc7c1609445620dE4352CD7e58353C3FA74']])
-def test_gwei_names_register_subdomain(ethereum_inquirer, ethereum_accounts):
+def test_gwei_names_register_subdomain(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x12d062afac37ed4a87615caeca1ac8d30a55a976506f057493e93a8f737ffba0')),  # noqa: E501

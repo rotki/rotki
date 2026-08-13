@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def test_deposit(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2aa0a70af2347ccc4ba3d5f4eddd362c7cd8118c0f2a3617d4b4fcf78c929ea7')),  # noqa: E501
@@ -62,7 +62,7 @@ def test_deposit(
 def test_withdrawal(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe57fcce52a6b66fcf1e4435591a43bb65f87141df34756a441a7f816b6f61311')),  # noqa: E501

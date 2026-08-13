@@ -1,3 +1,4 @@
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -33,7 +34,11 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7EcB43E01425c66a783A3065F782ccF304b39B99']])
-def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_pay_cashback(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1c6f58c55ba2eeef7e08ed4725d16ae479d1b4210b39e647a9b282af6ffb9470')),  # noqa: E501
@@ -60,7 +65,11 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0xc746598C9dD7FC62EF8775445F2F375aCbaCa7AE',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_pay_referral(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc778b8c23b823d6cec199ece516ab68658c7caafb508104f2a0c9de4d0358529')),  # noqa: E501
@@ -88,11 +97,11 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
     '0xF4a1fB1689104479De1EcADfA472A9B866D08B16',  # user's gnosis pay safe
 ]])
 def test_gnosis_pay_spend(
-        gnosis_inquirer,
-        gnosis_accounts,
-        rotki_premium_object,
-        allow_gnosis_etherscan,
-):
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        rotki_premium_object: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')),  # noqa: E501
@@ -173,7 +182,7 @@ def test_gnosis_pay_spend(
         MockResponse(200, """{"results": []}"""),
     ])
 
-    def mock_gnosispay_api(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_gnosispay_api(url: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         try:
             return next(responses)
         except StopIteration as e:
@@ -206,9 +215,9 @@ def test_gnosis_pay_spend(
     '0x9E0D8c9ff04F58e8D4053b78d33e582D8aCc8c44',  # user's gnosis pay safe
 ]])
 def test_gnosis_pay_new_spender_contract(
-        gnosis_inquirer,
-        gnosis_accounts,
-        allow_gnosis_etherscan,
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -237,7 +246,11 @@ def test_gnosis_pay_new_spender_contract(
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0x49e52a677BD19E50beE3642a8050A5A08a6EC697',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_pay_refund(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5f659bbc5214b358ffa5474c4209fad0587b7a9735b5965e7475c2bcb893ad38')),  # noqa: E501
@@ -296,7 +309,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethers
     '0xc746598C9dD7FC62EF8775445F2F375aCbaCa7AE',
 ]])
 @pytest.mark.freeze_time('2023-11-14 22:30:00 GMT')
-def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
+def test_backfill_missing_gnosis_pay_events(gnosis_inquirer: Any, gnosis_accounts: Any) -> None:
     tx_hash, second_tx_hash = make_evm_tx_hash(), make_evm_tx_hash()
     second_note = 'Pay 1.4 EUR to :merchant_code:4784: AUTOPISTA R4 SEITT -2 in MADRID :country:ES:'  # noqa: E501
     gnosis_transactions = GnosisTransactions(
@@ -309,7 +322,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
         transactions=gnosis_transactions,
     )
 
-    gnosispay_decoder = gnosis_decoder.decoders.get('GnosisPay')
+    gnosispay_decoder = cast(Any, gnosis_decoder.decoders.get('GnosisPay'))
     assert gnosispay_decoder is not None
 
     with gnosis_inquirer.database.user_write() as write_cursor:

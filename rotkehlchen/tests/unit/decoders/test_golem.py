@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -13,7 +15,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xf264267DCaFC1539900bc96006879701fA053259']])
-def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
+def test_gnt_glm_migration(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x86baa45e4ab48d1db26df82da1a6f654fe96f1254ace5883b6397d7f55eb11a4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

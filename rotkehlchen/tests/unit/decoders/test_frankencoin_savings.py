@@ -1,3 +1,5 @@
+from typing import Any
+
 from unittest.mock import patch
 
 import pytest
@@ -31,7 +33,7 @@ from rotkehlchen.types import (
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbC6668371b69FD94110a9E24dCCe517CaFA2B2d1']])
-def test_self_funded_deposit(ethereum_inquirer, ethereum_accounts):
+def test_self_funded_deposit(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe7e484ae4bf7b2a310eb0e6b34bc3e889940fcb85b4bd074ecf8a24a1fa5af70')),  # noqa: E501
@@ -81,7 +83,7 @@ def test_self_funded_deposit(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x84af69b785f244DC65b2D34DeE19C76EC2D519Ac']])
-def test_deposit_for_another_owner(ethereum_inquirer, ethereum_accounts):
+def test_deposit_for_another_owner(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5ea3f06f762363b50107d73c4c785e743386f16df63111a38dd2edadd6c78237')),  # noqa: E501
@@ -105,7 +107,7 @@ def test_deposit_for_another_owner(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xec00b6Fd14Bac65f04623477e94D384aBeE740D6']])
-def test_withdrawal_to_owner(ethereum_inquirer, ethereum_accounts):
+def test_withdrawal_to_owner(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3ba56721b6d1f1e6de5e5ab120625c7c78cbb73a35fcafaba05a4aaeb2db8ad2')),  # noqa: E501
@@ -155,7 +157,7 @@ def test_withdrawal_to_owner(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x772836982736cFA684c0dF6025c0A68F56bE6EDf']])
-def test_withdrawal_to_another_address(ethereum_inquirer, ethereum_accounts):
+def test_withdrawal_to_another_address(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x156fd171d50187e2b53f3123e59d0d3c42b4b740e99ab1f0b1586d151f96ddf0')),  # noqa: E501
@@ -193,7 +195,7 @@ def test_withdrawal_to_another_address(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x982dF609675D7266Ae329100FE4c955A19966c72']])
-def test_interest_collection(ethereum_inquirer, ethereum_accounts):
+def test_interest_collection(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xba010ee7951455cebd48677e6ae9c2a65eb462df9c0b8572b3c3c5a6b82f6547')),  # noqa: E501
@@ -243,7 +245,7 @@ def test_interest_collection(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xEf5ec96BB5761853682Ac486842f59aB7E663552']])
-def test_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_deposit_arbitrum_one(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa5e84fbb22e1273b842319a089e7574363d16b06a70dc6666543c119e8b28630')),  # noqa: E501
@@ -281,7 +283,7 @@ def test_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
 @pytest.mark.parametrize('base_accounts', [['0xAAafdC589d2222cE3b794876c768Eb540230aB11']])
-def test_deposit_base(base_inquirer, base_accounts):
+def test_deposit_base(base_inquirer: Any, base_accounts: Any) -> None:
     with patch(
         'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_parent_hash',
     ):
@@ -322,7 +324,7 @@ def test_deposit_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('optimism_accounts', [['0xc35A45BcF42BeE24bB62D512b8aA08660cc8a3d3']])
-def test_deposit_optimism(optimism_inquirer, optimism_accounts):
+def test_deposit_optimism(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbe24c79aa348b94e116dd58cc14134acdb703ac1b5d8136113fa295ffd86d816')),  # noqa: E501
@@ -359,7 +361,7 @@ def test_deposit_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x726397F95bcE98505d67480457071896962f85AC']])
-def test_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
+def test_deposit_polygon_pos(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x439c5f7f120f8fce87c589b83211527085d04c0e093748511c5df63f5df9a245')),  # noqa: E501
@@ -406,7 +408,7 @@ def test_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
     weight=ONE,
 ),)])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5D0cE9De9F4a26e3999dCE56Ff62cA5Db97608e3']])
-def test_deposit_gnosis(gnosis_inquirer, gnosis_accounts):
+def test_deposit_gnosis(gnosis_inquirer: Any, gnosis_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1bf9048db6bc58f5c3b9f34656992e39111cbef83b088eeb54b49cb09189ce82')),  # noqa: E501
