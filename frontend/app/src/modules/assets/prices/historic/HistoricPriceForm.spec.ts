@@ -66,7 +66,7 @@ describe('historicPriceForm', () => {
           DateTimePicker: inputStub('DateTimePicker'),
         },
       },
-      props: { errorMessages: {}, modelValue, ...props },
+      props: { modelValue, ...props },
     });
   }
 
