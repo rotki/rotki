@@ -626,7 +626,10 @@ def assert_poloniex_balances_result(balances: dict[str, Any]) -> None:
     assert balances['ETH']['value'] is not None
 
 
-def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argument
+def mock_binance_balance_response(
+        url: str,
+        **kwargs: Any,
+) -> MockResponse:  # pylint: disable=unused-argument
     if 'futures' in url:
         return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
     if 'https://fapi' in url:
@@ -653,7 +656,11 @@ def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argu
 
 
 def patch_binance_balances_query(binance: Binance) -> _patch:
-    def mock_binance_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(
+            url: str,
+            *args: Any,
+            **kwargs: Any,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         if 'futures' in url:
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
@@ -672,7 +679,11 @@ def patch_binance_balances_query(binance: Binance) -> _patch:
 
 
 def patch_poloniex_balances_query(poloniex: Poloniex) -> _patch:
-    def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_poloniex_asset_return(
+            url: str,
+            *args: Any,
+            **kwargs: Any,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
     return patch.object(poloniex.session, 'get', side_effect=mock_poloniex_asset_return)
@@ -836,12 +847,12 @@ def create_test_bitstamp(
 
 # This function is dynamically used in rotkehlchen_api_server_with_exchanges
 def create_test_gemini(
-        api_key,
-        api_secret,
-        database,
-        msg_aggregator,
-        base_uri,
-):
+        api_key: ApiKey,
+        api_secret: ApiSecret,
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        base_uri: str,
+) -> Gemini:
     return Gemini(
         name='gemini',
         api_key=api_key,
@@ -1219,7 +1230,7 @@ def try_get_first_exchange(
     return exchanges_list[0]
 
 
-def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
+def mock_exchange_data_in_db(exchange_locations: Any, rotki: Any) -> None:
     db = rotki.data.db
     with db.user_write() as cursor:
         for exchange_location in exchange_locations:
@@ -1518,7 +1529,10 @@ TRANSACTIONS_RESPONSE = """{
 }]}"""  # noqa: E501
 
 
-def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
+def mock_normal_coinbase_query(
+        url: str,
+        **kwargs: Any,
+) -> MockResponse:  # pylint: disable=unused-argument
     if 'transactions' in url:
         assert 'order=asc' in url  # regression test for improperly ordered queries
         return MockResponse(200, TRANSACTIONS_RESPONSE)

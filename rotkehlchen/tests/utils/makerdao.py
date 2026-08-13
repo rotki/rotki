@@ -1,6 +1,6 @@
 import types
-from typing import TYPE_CHECKING, NamedTuple
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, NamedTuple
+from unittest.mock import _patch, patch
 
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import WAD
@@ -23,7 +23,7 @@ class VaultTestData(NamedTuple):
 
 
 class MockCaller:
-    def __init__(self, test_data: VaultTestData, **kwargs) -> None:
+    def __init__(self, test_data: VaultTestData, **kwargs: Any) -> None:
         self.test_data = test_data
         for attr, value in kwargs.items():
             # Set the callable given from kwarg as a bound class method
@@ -31,16 +31,16 @@ class MockCaller:
 
 
 class MockContract:
-    def __init__(self, test_data, **kwargs):
+    def __init__(self, test_data: VaultTestData, **kwargs: Any) -> None:
         self.caller = MockCaller(test_data, **kwargs)
 
 
 def mock_get_cdps_asc(
-        self,
-        cdp_manager_address,  # pylint: disable=unused-argument
-        proxy,  # pylint: disable=unused-argument
-) -> list[list]:
-    result: list[list] = [[], [], []]
+        self: MockCaller,
+        cdp_manager_address: Any,  # pylint: disable=unused-argument
+        proxy: Any,  # pylint: disable=unused-argument
+) -> list[list[Any]]:
+    result: list[list[Any]] = [[], [], []]
     for entry in self.test_data.vaults:
         result[0].append(entry.identifier)
         result[1].append(entry.urn)
@@ -54,14 +54,17 @@ def mock_get_cdps_asc(
     return result
 
 
-def mock_registry_proxies(self, address) -> ChecksumEvmAddress:
+def mock_registry_proxies(
+        self: MockCaller,
+        address: ChecksumEvmAddress,
+) -> ChecksumEvmAddress:
     return self.test_data.proxy_mappings.get(address, ZERO_ETH_ADDRESS)
 
 
 def mock_vat_urns(
-        self,
-        ilk,  # pylint: disable=unused-argument
-        urn,
+        self: MockCaller,
+        ilk: Any,  # pylint: disable=unused-argument
+        urn: ChecksumEvmAddress,
 ) -> tuple[FVal, FVal]:
     for vault in self.test_data.vaults:
         if vault.urn == urn:
@@ -73,7 +76,7 @@ def mock_vat_urns(
     raise AssertionError(f'Could not find a mock for vat urns for urn {urn}')
 
 
-def mock_vat_ilks(self, ilk) -> tuple[int, int, FVal]:
+def mock_vat_ilks(self: MockCaller, ilk: Any) -> tuple[int, int, FVal]:
     for vault in self.test_data.vaults:
         vault_ilk = bytearray(vault.collateral_type.encode())
         vault_ilk.extend(
@@ -82,7 +85,7 @@ def mock_vat_ilks(self, ilk) -> tuple[int, int, FVal]:
         )
         if vault_ilk == ilk:
             rate = 100
-            price = vault.collateral.usd_value / vault.collateral.amount
+            price = vault.collateral.value / vault.collateral.amount
             spot = (price / vault.liquidation_ratio) * RAY
             whatever = 1
             return whatever, rate, spot
@@ -90,7 +93,7 @@ def mock_vat_ilks(self, ilk) -> tuple[int, int, FVal]:
     raise AssertionError(f'Could not find a mock for vat ilks for ilk {ilk}')
 
 
-def mock_spot_ilks(self, ilk) -> tuple[int, FVal]:
+def mock_spot_ilks(self: MockCaller, ilk: Any) -> tuple[int, FVal]:
     for vault in self.test_data.vaults:
         vault_ilk = bytearray(vault.collateral_type.encode())
         vault_ilk.extend(
@@ -105,7 +108,7 @@ def mock_spot_ilks(self, ilk) -> tuple[int, FVal]:
     raise AssertionError(f'Could not find a mock for spot ilks for ilk {ilk}')
 
 
-def mock_jug_ilks(_, ilk) -> tuple[int, int]:
+def mock_jug_ilks(_: MockCaller, ilk: Any) -> tuple[int, int]:
     if 'ETH-A' in str(ilk):
         duty = 1000000000000000000000000000  # 0%
     elif 'BAT-A' in str(ilk):
@@ -117,10 +120,17 @@ def mock_jug_ilks(_, ilk) -> tuple[int, int]:
     return duty, whatever
 
 
-def create_web3_mock(web3: Web3, ethereum: EthereumInquirer, test_data: VaultTestData):
-    def mock_contract(address, abi):  # pylint: disable=unused-argument
+def create_web3_mock(
+        web3: Web3,
+        ethereum: EthereumInquirer,
+        test_data: VaultTestData,
+) -> _patch:
+    def mock_contract(
+            address: ChecksumEvmAddress,
+            abi: Any,
+    ) -> MockContract:  # pylint: disable=unused-argument
         mock_proxy_registry = (
-            address == ethereum.contracts.contract('DS_PROXY_REGISTRY').address and
+            address == string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4') and
             'ProxyRegistry' in test_data.mock_contracts
         )
         if address == string_to_evm_address('0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573') and 'GetCDPS' in test_data.mock_contracts:  # noqa: E501

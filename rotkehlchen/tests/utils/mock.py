@@ -2,18 +2,25 @@ import json
 import re
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, NamedTuple
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, NamedTuple
+from unittest.mock import _patch, patch
 
 import requests
 from hexbytes import HexBytes
 
 from rotkehlchen.types import SupportedBlockchain
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 original_requests_get = requests.get
 MOCK_WEB3_LAST_BLOCK_HEX = '0xf75bb9'
 
 MOCK_ROOT = Path(__file__).resolve().parent.parent / 'data' / 'mocks'
+
+
+class Version(NamedTuple):
+    version: int
 
 
 class MockResponse:
@@ -56,13 +63,18 @@ class MockEth:
 
 class MockMiddlewareOnion:
 
-    def inject(self, middleware, layer) -> None:
+    def inject(self, middleware: Any, layer: Any) -> None:
         pass
 
 
 class MockWeb3:
 
-    def __init__(self, providers=None, middlewares=None, ens=None):  # pylint: disable=unused-argument
+    def __init__(
+            self,
+            providers: Any = None,
+            middlewares: Any = None,
+            ens: Any = None,
+    ) -> None:  # pylint: disable=unused-argument
         self.eth = MockEth(0)
         self.middleware_onion = MockMiddlewareOnion()
 
@@ -70,18 +82,18 @@ class MockWeb3:
         return True
 
     @property
-    def net(self):
-        return NamedTuple('Version', ['version'])(version=1)
+    def net(self) -> Version:
+        return Version(version=1)
 
 
-def patch_web3_request(given_web3, test_specific_mock_data):
+def patch_web3_request(given_web3: Any, test_specific_mock_data: dict[str, Any]) -> _patch:
     """Patches all requests going to web3 through the given provider
 
     Has some pre-determined mock responses but also accepts test_specific_mock_data
     to determine certain responses per-test
     """
     counter = 0
-    method_dict = {
+    method_dict: dict[str, Any] = {
         'web3_clientVersion': 'Geth/v1.10.23-omnibus-b38477ec/linux-amd64/go1.18.5',
         'net_version': '1',
         'eth_blockNumber': MOCK_WEB3_LAST_BLOCK_HEX,
@@ -89,7 +101,7 @@ def patch_web3_request(given_web3, test_specific_mock_data):
     }
     method_dict.update(test_specific_mock_data)
 
-    def mock_web3_make_request(method: str, params: tuple):
+    def mock_web3_make_request(method: str, params: tuple[Any, ...]) -> dict[str, Any]:
         """A mock for all web3 rpc requests"""
         nonlocal counter
         final_result = None
@@ -128,7 +140,12 @@ def patch_web3_request(given_web3, test_specific_mock_data):
     )
 
 
-def _mock_etherscan_eth_call(counter, url, params, eth_call_data):
+def _mock_etherscan_eth_call(
+        counter: int,
+        url: str,
+        params: dict[str, Any],
+        eth_call_data: dict[str, Any] | None,
+) -> str:
     if (
         (contract_to := params.get('to')) is None or
         (data := params.get('data')) is None
@@ -156,7 +173,11 @@ def _mock_etherscan_eth_call(counter, url, params, eth_call_data):
     return f'{{"id": {counter}, "jsonrpc": "2.0", "result": "{result}"}}'
 
 
-def _mock_etherscan_getblocknobytime(url, params, data):
+def _mock_etherscan_getblocknobytime(
+        url: str,
+        params: dict[str, Any],
+        data: dict[str, Any] | None,
+) -> str:
     if (
         (timestamp := params.get('timestamp')) is None or
         (closest := params.get('closest')) is None
@@ -177,11 +198,15 @@ def _mock_etherscan_getblocknobytime(url, params, data):
     return f'{{"status":"1","message":"OK","result":"{block_result}"}}'
 
 
-def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
+def patch_etherscan_request(etherscan: Any, mock_data: dict[str, Any]) -> _patch:
     """Patches all requests going to the passed etherscan object with the given data"""
     counter = 0
 
-    def mock_etherscan_query(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_etherscan_query(
+            url: str,
+            params: dict[str, Any],
+            **kwargs: Any,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal counter
         if (action := params.get('action')) is None:
             raise AssertionError(f'Could not get action from etherscan query: {url} {params}')
@@ -206,11 +231,14 @@ def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
 BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v2/ethereum/validators$')
 
 
-def patch_eth2_requests(eth2, mock_data):
+def patch_eth2_requests(eth2: Any, mock_data: dict[str, Any]) -> _patch:
     """Patches all requests going to the passed Eth2 object"""
 
-    def mock_beaconchain_query(url, **kwargs):  # pylint: disable=unused-argument
-        response_data = {'data': []}
+    def mock_beaconchain_query(
+            url: str,
+            **kwargs: Any,
+    ) -> MockResponse:  # pylint: disable=unused-argument
+        response_data: dict[str, Any] = {'data': []}
         request_data = kwargs['json']
         validator_selector = request_data.get('validator', {})
         if (eth1_address := validator_selector.get('deposit_address')) is not None:
@@ -231,6 +259,7 @@ def patch_eth2_requests(eth2, mock_data):
         elif BEACONCHAIN_VALIDATOR_CALL_RE.search(url) is not None:
             identifiers = set(validator_selector['validator_identifiers'])
             validator_data = mock_data.get('validator')
+            assert validator_data is not None
             validator_data = [
                 entry for entry in validator_data
                 if entry['validatorindex'] in identifiers or entry['pubkey'] in identifiers
@@ -269,7 +298,7 @@ def patch_eth2_requests(eth2, mock_data):
     )
 
 
-def mock_proxies(stack, mocked_proxies):
+def mock_proxies(stack: Any, mocked_proxies: dict[str, Any]) -> None:
     dsr_proxies = mocked_proxies.get('dsr', {})
     liquity_proxies = mocked_proxies.get('liquity', {})
     stack.enter_context(patch(
@@ -291,7 +320,7 @@ def mock_proxies(stack, mocked_proxies):
 
 
 @contextmanager
-def mock_evm_chains_with_transactions():
+def mock_evm_chains_with_transactions() -> Generator[None]:
     with patch(
         'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
         new=(SupportedBlockchain.ETHEREUM,),

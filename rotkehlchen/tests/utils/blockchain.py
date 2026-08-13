@@ -1,7 +1,7 @@
 import json
 import re
 from typing import TYPE_CHECKING, Any, Final
-from unittest.mock import patch
+from unittest.mock import _patch, patch
 
 from eth_utils.abi import get_abi_input_types, get_abi_output_types
 from web3 import Web3
@@ -183,10 +183,14 @@ def _get_token(value: Any) -> EvmToken | None:
 def mock_beaconchain(
         beaconchain: BeaconChain,
         original_queries: list[str] | None,
-        original_requests_get,
-):
+        original_requests_get: Any,
+) -> _patch:
 
-    def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_requests_get(
+            url: str,
+            *args: Any,
+            **kwargs: Any,
+    ) -> Any:  # pylint: disable=unused-argument
         if original_queries is not None and 'beaconchain' in original_queries:
             return original_requests_get(url, *args, **kwargs)
 
@@ -206,14 +210,19 @@ def mock_etherscan_query(
         ethereum: EthereumInquirer,
         original_queries: list[str] | None,
         extra_flags: list[str] | None,
-        original_requests_get,
-):
+        original_requests_get: Any,
+) -> _patch:
     eth_scan = ethereum.contracts.contract(BALANCE_SCANNER_ADDRESS)
     eth_multicall = ethereum.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
     original_queries = [] if original_queries is None else original_queries
     extra_flags = [] if extra_flags is None else extra_flags
 
-    def mock_requests_get(url, params, *args, **kwargs):
+    def mock_requests_get(
+            url: str,
+            params: dict[str, Any],
+            *request_args: Any,
+            **request_kwargs: Any,
+    ) -> Any:
 
         def check_params(
                 values: dict[str, str] | None = None,
@@ -235,7 +244,7 @@ def mock_etherscan_query(
             return True
 
         if check_params(values={'module': 'account', 'action': 'balance'}, keys=['address']):
-            addr = url[67:109]
+            addr = deserialize_evm_address(url[67:109])
             value = eth_map[addr].get('ETH', '0')
             response = f'{{"status":"1","message":"OK","result":{value}}}'
         elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': '0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441', 'data': '0x252dba4200000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000086f25b64e1fe4c5162cdeed5245575d32ec549db00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000084e5da1b6800000000000000000000000001471db828cfb96dcf215c57a7a6493702031ec100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000255aa6df07540cb5d3d297f0d0d4d84cb52bc8e600000000000000000000000000000000000000000000000000000000'}):   # noqa: E501
@@ -248,14 +257,14 @@ def mock_etherscan_query(
             # This is querying aave for the status of the pool
             response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000007d00d08290420081c200000000000000000000000000000000000000000033d6d8eaa28625ea2840ba4000000000000000000000000000000000000000003471d710caeed5ae821e50400000000000000000000000000000000000000000000f487b0cec3822e8c80a60000000000000000000000000000000000000000000aa1b430cd04910319afff000000000000000000000000000000000000000000261ae07f3c498e21e01bfe00000000000000000000000000000000000000000000000000000000636f9edb0000000000000000000000009ff58f4ffb29fa2266ab25e75e2a8b350331165600000000000000000000000051b039b9afe64b78758f8ef091211b5387ea717c0000000000000000000000009c39809dec7f95f5e0713634a4d0701329b3b4d2000000000000000000000000f41e8f817e6c399d1ade102059c454093b24f35b0000000000000000000000000000000000000000000000000000000000000001"}'  # noqa: E501
         elif check_params(values={'module': 'account', 'action': 'balancemulti'}):
-            queried_accounts = []
+            queried_accounts: list[ChecksumEvmAddress] = []
             length = 72
             # process url and get the accounts
             while len(url) >= length:
                 potential_address = url[length:length + 42]
                 if 'apikey=' in potential_address:
                     break
-                queried_accounts.append(potential_address)
+                queried_accounts.append(deserialize_evm_address(potential_address))
                 length += 43
 
             accounts = []
@@ -269,37 +278,37 @@ def mock_etherscan_query(
             msg = 'token address missing from test mapping'
             assert token_address in CONTRACT_ADDRESS_TO_TOKEN, msg
             response = '{"status":"1","message":"OK","result":"0"}'
-            token = CONTRACT_ADDRESS_TO_TOKEN[token_address]
-            account = url[131:173]
-            value = eth_map[account].get(token.identifier, 0)
+            contract_token = CONTRACT_ADDRESS_TO_TOKEN[token_address]
+            account = deserialize_evm_address(url[131:173])
+            value = eth_map[account].get(contract_token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
         elif (
             check_params(values={'module': 'account', 'action': 'txlistinternal'}) or
             check_params(values={'module': 'account', 'action': 'txlist'})
         ):
             if 'transactions' in original_queries:
-                return original_requests_get(url, params, *args, **kwargs)
+                return original_requests_get(url, params, *request_args, **request_kwargs)
             # By default when mocking, don't query for transactions
             response = '{"status":"1","message":"OK","result":[]}'
         elif check_params(values={'module': 'logs', 'action': 'getLogs'}):
             if 'logs' in original_queries:
-                return original_requests_get(url, params, *args, **kwargs)
+                return original_requests_get(url, params, *request_args, **request_kwargs)
             # By default when mocking, don't query logs
             response = '{"status":"1","message":"OK","result":[]}'
         elif check_params(values={'module': 'block', 'action': 'getblocknobytime'}):
             if 'blocknobytime' in original_queries:
-                return original_requests_get(url, params, *args, **kwargs)
+                return original_requests_get(url, params, *request_args, **request_kwargs)
             # By default when mocking don't query blocknobytime
             response = '{"status":"1","message":"OK","result":"1"}'
         elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': ZERION_ADAPTER_ADDRESS}):  # noqa: E501
             if 'zerion' in original_queries:
-                return original_requests_get(url, params, *args, **kwargs)
+                return original_requests_get(url, params, *request_args, **request_kwargs)
 
             web3 = Web3()
-            contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ethereum.contracts.abi('ZERION_ADAPTER'))  # noqa: E501
+            zerion_contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ethereum.contracts.abi('ZERION_ADAPTER'))  # noqa: E501
             data = params.get('data') or ''
             if data.startswith('0xc84aae17'):  # getBalances
-                fn_abi = contract._find_matching_fn_abi(
+                fn_abi = zerion_contract._find_matching_fn_abi(
                     'getBalances',
                     *['address'],
                 )
@@ -308,11 +317,11 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
                 # TODO: This here always returns empty response. If/when we want to
                 # mock it for etherscan, this is where we do it
-                args = []
-                result = '0x' + web3.codec.encode(output_types, [args]).hex()
+                call_args: list[Any] = []
+                result = '0x' + web3.codec.encode(output_types, [call_args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             elif data.startswith('0x85c6a7930'):  # getProtocolBalances
-                fn_abi = contract._find_matching_fn_abi(
+                fn_abi = zerion_contract._find_matching_fn_abi(
                     'getProtocolBalances',
                     *['address', ['some', 'protocol', 'names']],
                 )
@@ -321,25 +330,28 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
                 # TODO: This here always returns empty response. If/when we want to
                 # mock it for etherscan, this is where we do it
-                args = []
-                result = '0x' + web3.codec.encode(output_types, [args]).hex()
+                call_args = []
+                result = '0x' + web3.codec.encode(output_types, [call_args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             elif data.startswith('0x3b692f52'):  # getProtocolNames
-                fn_abi = contract._find_matching_fn_abi('getProtocolNames')
+                fn_abi = zerion_contract._find_matching_fn_abi('getProtocolNames')
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
                 # TODO: This here always returns empty response. If/when we want to
                 # mock it for etherscan, this is where we do it
-                args = []
-                result = '0x' + web3.codec.encode(output_types, [args]).hex()
+                call_args = []
+                result = '0x' + web3.codec.encode(output_types, [call_args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
 
         elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': eth_multicall.address}):  # noqa: E501
             web3 = Web3()
-            contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
+            multicall_contract = web3.eth.contract(
+                address=eth_multicall.address,
+                abi=eth_multicall.abi,
+            )
             data = params.get('data') or ''
             if (
                     'c2cb1040220768554cf699b0d863a3cd4324ce3' in data or  # DSProxy
@@ -362,41 +374,45 @@ def mock_etherscan_query(
 
             if data.startswith('0x252dba42'):  # aggregate
                 # Get the multicall aggregate input data
-                fn_abi = contract.functions.abi[0]
-                assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
+                fn_abi = multicall_contract.functions.abi[0]
+                assert fn_abi.get('name') == 'aggregate', (
+                    'Abi position of multicall aggregate changed'
+                )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
 
                 if multicall_purpose == 'multibalance_query':
-                    contract = eth_scan
+                    scan_contract = eth_scan
                     # Get the ethscan multibalance subcalls
-                    ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)  # noqa: E501
+                    ethscan_contract = web3.eth.contract(
+                        address=scan_contract.address,
+                        abi=scan_contract.abi,
+                    )
                     # not really the given args, but we just want the fn abi
-                    args = [next(iter(eth_map.keys())), list(eth_map.keys())]
+                    call_args = [next(iter(eth_map.keys())), list(eth_map.keys())]
                     scan_fn_abi = ethscan_contract._find_matching_fn_abi(
                         'tokens_balance',
-                        *args,
+                        *call_args,
                     )
                     scan_input_types = get_abi_input_types(scan_fn_abi)
                     scan_output_types = get_abi_output_types(scan_fn_abi)
                     result_bytes = []
                     for call_entry in decoded_input[0]:
                         call_contract_address = deserialize_evm_address(call_entry[0])
-                        assert call_contract_address == contract.address, 'balances multicall should only contain calls to scan contract'  # noqa: E501
+                        assert call_contract_address == scan_contract.address, 'balances multicall should only contain calls to scan contract'  # noqa: E501
                         call_data = call_entry[1]
                         scan_decoded_input = web3.codec.decode(scan_input_types, call_data[4:])
                         account_address = deserialize_evm_address(scan_decoded_input[0])
                         token_values = []
                         for token_addy_str in scan_decoded_input[1]:
                             token_address = deserialize_evm_address(token_addy_str)
-                            token = _get_token(token_address)
-                            if token is None:
+                            evm_token = _get_token(token_address)
+                            if evm_token is None:
                                 value = 0  # if token is missing from mapping return 0 value
                             else:
-                                value = int(eth_map[account_address].get(token))
-                                if value is None:
-                                    value = 0  # if token is missing from mapping return 0 value
+                                mapped_value = eth_map[account_address].get(evm_token)
+                                value = 0 if mapped_value is None else int(mapped_value)
                             token_values.append(value)
 
                         result_bytes.append(web3.codec.encode(scan_output_types, [token_values]))
@@ -407,8 +423,8 @@ def mock_etherscan_query(
                     # else has to be the 32 bytes for multicall balance
                     # of both veCRV and others. Return empty response
                     # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
-                    args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # noqa: E501
-                    result = '0x' + web3.codec.encode(output_types, args).hex()
+                    call_args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for _ in decoded_input[0]]]  # noqa: E501
+                    result = '0x' + web3.codec.encode(output_types, call_args).hex()
                     response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
             else:
@@ -416,11 +432,10 @@ def mock_etherscan_query(
 
         elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': eth_scan.address}):  # noqa: E501
             if 'ethscan' in original_queries:
-                return original_requests_get(url, params, *args, **kwargs)
+                return original_requests_get(url, params, *request_args, **request_kwargs)
 
             web3 = Web3()
-            contract = eth_scan
-            ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)
+            ethscan_contract = web3.eth.contract(address=eth_scan.address, abi=eth_scan.abi)
             data = params.get('data') or ''
             if data.startswith('0xee1806d2'):  # Eth balance query
                 fn_abi = ethscan_contract._find_matching_fn_abi(
@@ -430,23 +445,23 @@ def mock_etherscan_query(
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
-                args = []
+                call_args = []
                 for raw_account_address in decoded_input[0]:
                     account_address = deserialize_evm_address(raw_account_address)
-                    args.append(int(eth_map[account_address]['ETH']))
-                result = '0x' + web3.codec.encode(output_types, [args]).hex()
+                    call_args.append(int(eth_map[account_address]['ETH']))
+                result = '0x' + web3.codec.encode(output_types, [call_args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             elif data.startswith('0x665bb79e'):  # Multi token multiaddress balance query
                 # not really the given args, but we just want the fn abi
-                args = [list(eth_map.keys()), list(eth_map.keys())]
+                call_args = [list(eth_map.keys()), list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
-                    fn_identifier='tokens_balances',
-                    args=args,
+                    'tokens_balances',
+                    *call_args,
                 )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
-                args = []
+                call_args = []
                 for raw_account_address in decoded_input[0]:
                     account_address = deserialize_evm_address(raw_account_address)
                     x = []
@@ -463,22 +478,22 @@ def mock_etherscan_query(
                             value_to_add = int(value)
                             break
                         x.append(value_to_add)
-                    args.append(x)
+                    call_args.append(x)
 
-                result = '0x' + web3.codec.encode(output_types, [args]).hex()
+                result = '0x' + web3.codec.encode(output_types, [call_args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
             elif data.startswith('0xb0d861b8'):  # Multi token balance query
                 # not really the given args, but we just want the fn abi
-                args = ['str', list(eth_map.keys())]
+                call_args = ['str', list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
                     'tokens_balance',
-                    *args,
+                    *call_args,
                 )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
-                args = []
+                call_args = []
                 account_address = deserialize_evm_address(decoded_input[0])
                 x = []
                 for raw_token_address in decoded_input[1]:
@@ -494,24 +509,24 @@ def mock_etherscan_query(
                             continue
                         value_to_add = int(value)
                         break
-                    args.append(value_to_add)
+                    call_args.append(value_to_add)
 
-                result = '0x' + web3.codec.encode(output_types, [args]).hex()
+                result = '0x' + web3.codec.encode(output_types, [call_args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             elif data == '0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7':  # noqa: E501
                 # This is querying ethscan for the aave balances
                 if 'ethscan' in original_queries:
-                    return original_requests_get(url, params, *args, **kwargs)
+                    return original_requests_get(url, params, *request_args, **request_kwargs)
                 response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000f370be0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000"}'  # noqa: E501
             elif data == '0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7':  # noqa: E501
                 # This is querying aave for the status of the pool
                 if 'ethscan' in original_queries:
-                    return original_requests_get(url, params, *args, **kwargs)
+                    return original_requests_get(url, params, *request_args, **request_kwargs)
                 response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000003e80d060000000000000000000000000000000000000000000000000000038af6b55802f0e1cb76bbb2000000000000000000000000000000000000000003b458a890598cb1c935e9630000000000000000000000000000000000000000003f555421b1abbbff673b900000000000000000000000000000000000000000004949192d990ec458441edc0000000000000000000000000000000000000000008b75c1de391906a8441edc00000000000000000000000000000000000000000000000000000000636f9f470000000000000000000000003ed3b47dd13ec9a98b44e6204a523e766b225811000000000000000000000000e91d55ab2240594855abd11b3faae801fd4c4687000000000000000000000000531842cebbdd378f8ee36d171d6cc9c4fcf475ec000000000000000000000000515e87cb3fec986050f202a2bbfa362a2188bc3f0000000000000000000000000000000000000000000000000000000000000000"}'  # noqa: E501
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
         else:
-            return original_requests_get(url, params, *args, **kwargs)
+            return original_requests_get(url, params, *request_args, **request_kwargs)
 
         return MockResponse(200, response)
 
@@ -520,15 +535,15 @@ def mock_etherscan_query(
 
 def mock_bitcoin_balances_query(
         btc_map: dict[BTCAddress, str],
-        original_requests_get,
-):
+        original_requests_get: Any,
+) -> _patch:
 
-    def mock_requests_get(url, *args, **kwargs):
+    def mock_requests_get(url: str, *args: Any, **kwargs: Any) -> Any:
         if 'blockchain.info' in url:
             addresses = url.split('multiaddr?active=')[1].split('|')
             response = '{"addresses":['
             for idx, address in enumerate(addresses):
-                balance = btc_map.get(address, '0')
+                balance = btc_map.get(BTCAddress(address), '0')
                 response += f'{{"address":"{address}", "final_balance":{balance}}}'
                 if idx < len(addresses) - 1:
                     response += ','
@@ -538,7 +553,7 @@ def mock_bitcoin_balances_query(
             if len(split_result) != 2:
                 raise AssertionError(f'Could not find bitcoin address at url {url}')
             address = split_result[1]
-            balance = btc_map.get(address, '0')
+            balance = btc_map.get(BTCAddress(address), '0')
             response = f"""{{"address":"{address}","chain_stats":{{"funded_txo_count":1,"funded_txo_sum":{balance},"spent_txo_count":0,"spent_txo_sum":0,"tx_count":1}},"mempool_stats":{{"funded_txo_count":0,"funded_txo_sum":0,"spent_txo_count":0,"spent_txo_sum":0,"tx_count":0}}}}"""  # noqa: E501
         else:
             return original_requests_get(url, *args, **kwargs)
@@ -626,25 +641,28 @@ def setup_evm_addresses_activity_mock(
 ) -> ExitStack:
     saved_locals = locals()  # bit hacky, but save locals here so they can be accessed by mock_chain_has_activity  # noqa: E501
 
-    def mock_ethereum_get_code(account):
+    def mock_ethereum_get_code(account: ChecksumEvmAddress) -> str:
         if account in eth_contract_addresses:
             return '0xsomecode'
         return '0x'
 
-    def mock_is_contract(address: ChecksumEvmAddress):
+    def mock_is_contract(address: ChecksumEvmAddress) -> bool:
         return address in eth_contract_addresses
 
-    def mock_avax_get_tx_count(account):
-        if account in avalanche_addresses:
+    def mock_avax_get_tx_count(account: ChecksumEvmAddress) -> int:
+        if avalanche_addresses is not None and account in avalanche_addresses:
             return 1
         return 0
 
-    def mock_avax_balance(account):
-        if account in avalanche_addresses:
+    def mock_avax_balance(account: ChecksumEvmAddress) -> FVal:
+        if avalanche_addresses is not None and account in avalanche_addresses:
             return ONE
         return ZERO
 
-    def mock_zksync_lite_query_api(url, options):  # pylint: disable=unused-argument
+    def mock_zksync_lite_query_api(
+            url: str,
+            options: Any,
+    ) -> dict[str, Any]:  # pylint: disable=unused-argument
         re_match = re.search(r'accounts\/(0x[a-fA-F0-9]{40})\/transactions', url)
         assert re_match, f'Unexpected zksync lite url: {url}'
         address = re_match.group(1)
@@ -652,7 +670,10 @@ def setup_evm_addresses_activity_mock(
             return {'list': [1, 2]}  # a list with non zero length -- exists
         return {}  # does not exist
 
-    def mock_chain_has_activity(chain: ChainID | SupportedBlockchain, account: ChecksumEvmAddress):
+    def mock_chain_has_activity(
+            chain: ChainID | SupportedBlockchain,
+            account: ChecksumEvmAddress,
+    ) -> HasChainActivity:
         name = chain.to_name() if isinstance(chain, ChainID) else chain.to_chain_id().to_name()
         addresses = saved_locals[f'{name}_addresses']
         return HasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else HasChainActivity.NONE  # noqa: E501

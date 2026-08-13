@@ -61,7 +61,7 @@ def create_api_server(
     return api_server
 
 
-def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
+def api_url_for(api_server: APIServer, endpoint: str, **kwargs: Any) -> str:
     with api_server.flask_app.app_context():
         return url_for(f'v1_resources.{endpoint}', **kwargs)
 
@@ -119,7 +119,7 @@ def _check_error_response_properties(
         contained_in_msg: str | list[str] | tuple[str] | None,
         status_code: HTTPStatus | None,
         result_exists: bool,
-):
+) -> None:
     if status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
         if result_exists:
             assert response_data['result'] is not None
@@ -138,7 +138,7 @@ def assert_error_response(
         contained_in_msg: str | list[str] | tuple[str] | None = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
-):
+) -> Any:
     assert (
         response is not None and
         response.status_code == status_code and
@@ -150,6 +150,7 @@ def assert_error_response(
         status_code=status_code,
         result_exists=result_exists,
     )
+    return None
 
 
 def assert_error_async_response(
@@ -157,7 +158,7 @@ def assert_error_async_response(
         contained_in_msg: str | list[str] | None = None,
         status_code: HTTPStatus | None = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
-):
+) -> None:
     assert response_data is not None and response_data.get('status_code') == status_code
     _check_error_response_properties(
         response_data=response_data,
@@ -179,7 +180,7 @@ def assert_ok_async_response(response: requests.Response) -> int:
 def wait_for_async_task(
         server: APIServer,
         task_id: int,
-        timeout=ASYNC_TASK_WAIT_TIMEOUT,
+        timeout: int = ASYNC_TASK_WAIT_TIMEOUT,
 ) -> dict[str, Any]:
     """Waits until an async task is ready and when it is returns the response's outcome
 
@@ -218,7 +219,7 @@ def wait_for_async_task(
 def wait_for_async_tasks(
         server: APIServer,
         task_ids: Sequence[int],
-        timeout=ASYNC_TASK_WAIT_TIMEOUT,
+        timeout: int = ASYNC_TASK_WAIT_TIMEOUT,
 ) -> None:
     """Waits until a number of async tasks are ready"""
     searching_set = set(task_ids)
@@ -238,7 +239,7 @@ def wait_for_async_tasks(
 def wait_for_async_task_with_result(
         server: APIServer,
         task_id: int,
-        timeout=ASYNC_TASK_WAIT_TIMEOUT,
+        timeout: int = ASYNC_TASK_WAIT_TIMEOUT,
 ) -> Any:
     """Same as wait_for_async_task but returns the result part of the dict"""
     result = wait_for_async_task(server=server, task_id=task_id, timeout=timeout)

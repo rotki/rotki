@@ -1,15 +1,17 @@
 
+from typing import Any
+
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.tests.utils.mock import patch_web3_request
 
 
 def maybe_mock_evm_inquirer(
-        should_mock,
-        parent_stack,
-        evm_inquirer,
-        manager_connect_at_start,
-        mock_data,
-):
+        should_mock: bool,
+        parent_stack: Any,
+        evm_inquirer: Any,
+        manager_connect_at_start: Any,
+        mock_data: Any,
+) -> None:
     if should_mock is False:
         return
 

@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -284,10 +284,18 @@ def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] 
     assert len(events) == 0
 
 
-def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
+def mock_exchange_responses(
+        rotki: Rotkehlchen,
+        remote_errors: bool,
+) -> tuple[_patch | None, _patch | None, _patch | None]:
     invalid_payload = '[{'
 
-    def mock_binance_api_queries(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_binance_api_queries(
+            url: str,
+            params: dict[str, Any],
+            *args: Any,
+            **kwargs: Any,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         if remote_errors:
             payload = invalid_payload
         elif 'myTrades' in url:
@@ -339,7 +347,10 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
-    def mock_poloniex_api_queries(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_poloniex_api_queries(
+            url: str,
+            **kwargs: Any,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         payload = ''
         if remote_errors:
             payload = invalid_payload
@@ -405,7 +416,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             start_ts = int(split1.split('&')[0])
             end_ts = int(split1.split('end=')[1])
             data = json.loads(POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE)
-            new_data = {}
+            new_data: dict[str, list[Any]] = {}
             for x in ('deposits', 'withdrawals'):
                 new_data[x] = []
                 for entry in data[x]:
@@ -420,7 +431,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bitmex_api_queries(url, **_kwargs):
+    def mock_bitmex_api_queries(url: str, **_kwargs: Any) -> MockResponse:
         if remote_errors:
             payload = invalid_payload
         elif 'user/walletHistory' in url:
@@ -535,7 +546,7 @@ def mock_history_processing(
         remote_errors: bool = False,
         history_start_ts: Timestamp | None = None,
         history_end_ts: Timestamp | None = None,
-):
+) -> _patch:
     """ Patch away the processing of history """
     if remote_errors is True and should_mock_history_processing is False:
         raise AssertionError(
@@ -740,7 +751,12 @@ def mock_etherscan_like_transaction_response(
         remote_errors: bool,
         session_mock_attribute: str = 'get',
 ) -> _patch:
-    def mocked_request_dict(url, params, *_args, **_kwargs):
+    def mocked_request_dict(
+            url: str,
+            params: dict[str, Any],
+            *_args: Any,
+            **_kwargs: Any,
+    ) -> MockResponse:
         if remote_errors:
             return MockResponse(200, '[{')
 
@@ -835,6 +851,9 @@ def mock_history_processing_and_exchanges(
         rotki,
         remote_errors,
     )
+    assert polo_patch is not None
+    assert binance_patch is not None
+    assert bitmex_patch is not None
     assert rotki.chains_aggregator.ethereum.node_inquirer.blockscout is not None
     return TradesTestSetup(
         polo_patch=polo_patch,
@@ -883,9 +902,9 @@ def prepare_rotki_for_history_processing_test(
 
 
 def maybe_mock_historical_price_queries(
-        historian,
+        historian: Any,
         should_mock_price_queries: bool,
-        mocked_price_queries,
+        mocked_price_queries: dict[str, Any],
         default_mock_value: FVal | None = None,
         dont_mock_price_for: list[Asset] | None = None,
         force_no_price_found_for: list[tuple[Asset, Timestamp]] | None = None,
@@ -906,7 +925,11 @@ def maybe_mock_historical_price_queries(
     # the list of assets to not mock is non empty.
     original_function = historian.query_historical_price
 
-    def mock_historical_price_query(from_asset, to_asset, timestamp):
+    def mock_historical_price_query(
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> FVal:
         if from_asset == to_asset:
             return ONE
 

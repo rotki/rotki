@@ -51,7 +51,7 @@ class BalancesTestSetup(NamedTuple):
     evmtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
 
-    def enter_all_patches(self, stack: ExitStack):
+    def enter_all_patches(self, stack: ExitStack) -> ExitStack:
         if self.poloniex_patch:
             stack.enter_context(self.poloniex_patch)
         if self.binance_patch:
@@ -59,12 +59,12 @@ class BalancesTestSetup(NamedTuple):
         self.enter_blockchain_patches(stack)
         return stack
 
-    def enter_blockchain_patches(self, stack: ExitStack):
+    def enter_blockchain_patches(self, stack: ExitStack) -> ExitStack:
         self.enter_ethereum_patches(stack)
         stack.enter_context(self.bitcoin_patch)
         return stack
 
-    def enter_ethereum_patches(self, stack: ExitStack):
+    def enter_ethereum_patches(self, stack: ExitStack) -> ExitStack:
         stack.enter_context(self.etherscan_patch)
         stack.enter_context(self.evmtokens_max_chunks_patch)
         stack.enter_context(self.beaconchain_patch)
@@ -72,7 +72,7 @@ class BalancesTestSetup(NamedTuple):
 
 
 def setup_balances(
-        rotki,
+        rotki: Any,
         ethereum_accounts: list[ChecksumEvmAddress] | None,
         btc_accounts: list[BTCAddress] | None,
         eth_balances: list[str] | None = None,
@@ -143,7 +143,7 @@ def setup_balances(
                 rotki.data.db.save_tokens_for_address(write_cursor, acc, SupportedBlockchain.ETHEREUM, list(token_balances.keys()))  # noqa: E501
 
     if liabilities is not None:
-        def mock_add_defi_balances_to_account():
+        def mock_add_defi_balances_to_account() -> None:
             # super hacky way of mocking this but well fuck it
             if len(rotki.chains_aggregator.balances.eth) == 4:
                 d_liabilities = liabilities.copy()
@@ -245,7 +245,7 @@ def setup_balances(
     )
 
 
-def add_starting_balances(datahandler) -> list[DBAssetBalance]:
+def add_starting_balances(datahandler: Any) -> list[DBAssetBalance]:
     """Adds some starting balances and other data to a testing instance"""
     balances = [
         DBAssetBalance(
@@ -345,33 +345,33 @@ def add_starting_balances(datahandler) -> list[DBAssetBalance]:
     return balances
 
 
-def add_starting_nfts(datahandler):
+def add_starting_nfts(datahandler: Any) -> None:
     """Adds a time series for an account owning a NFT"""
     balances = [
         DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=Asset('_nft_pickle'),
-            amount='1',
-            usd_value='1000',
+            amount=FVal(1),
+            usd_value=FVal(1000),
         ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488426400),
             asset=Asset('_nft_pickle'),
-            amount='1',
-            usd_value='1000',
+            amount=FVal(1),
+            usd_value=FVal(1000),
         ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488526400),
             asset=Asset('_nft_pickle'),
-            amount='2',
-            usd_value='2000',
+            amount=FVal(2),
+            usd_value=FVal(2000),
         ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488626400),
             asset=Asset('_nft_pickle'),
-            amount='1',
-            usd_value='1000',
+            amount=FVal(1),
+            usd_value=FVal(1000),
         ),
     ]
     with datahandler.db.user_write() as cursor:

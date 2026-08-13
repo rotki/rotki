@@ -17,7 +17,7 @@ def add_create_eigenpod_event(
         database: DBHandler,
         eigenpod_address: ChecksumEvmAddress,
         eigenpod_owner: ChecksumEvmAddress,
-):
+) -> None:
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_event(
             write_cursor=write_cursor,

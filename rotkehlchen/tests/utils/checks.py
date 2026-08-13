@@ -39,7 +39,7 @@ def assert_serialized_dicts_equal(
         ignore_keys: list | None = None,
         length_list_keymap: dict | None = None,
         max_diff: str = '1e-6',
-        same_key_length=True,
+        same_key_length: bool = True,
 ) -> None:
     """Compares serialized dicts so that serialized numbers can be compared for equality"""
 

@@ -147,10 +147,10 @@ else:
 
 
 def wait_until_all_nodes_connected(
-        connect_at_start,
-        evm_inquirer,
+        connect_at_start: Any,
+        evm_inquirer: EvmNodeInquirer,
         timeout: int = NODE_CONNECTION_TIMEOUT,
-):
+) -> None:
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
     connected = [False] * len(connect_at_start)
     deadline = time.monotonic() + timeout
@@ -491,7 +491,7 @@ def get_decoded_events_of_transaction(
     original_run_all_post_decoding_rules = decoder.run_all_post_decoding_rules
     expected_call_count = 0
 
-    def mock_run_all_post_decoding_rules(**kwargs):
+    def mock_run_all_post_decoding_rules(**kwargs: Any) -> tuple[list[EvmEvent], bool]:
         """Increment expected_call_count when a transaction with swaps is encountered."""
         nonlocal expected_call_count
         events, maybe_modified = original_run_all_post_decoding_rules(**kwargs)

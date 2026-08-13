@@ -1,12 +1,14 @@
+from typing import Any
+
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.inquirer import Inquirer
 
 
 def inquirer_inject_evm_managers_set_order(
-        inquirer,
-        add_defi_oracles,
-        current_price_oracles_order,
-        evm_managers,
+        inquirer: Any,
+        add_defi_oracles: bool,
+        current_price_oracles_order: list[Any],
+        evm_managers: list[Any],
 ) -> None:
     inquirer.inject_evm_managers([
         (evm_manager.node_inquirer.chain_id, evm_manager)

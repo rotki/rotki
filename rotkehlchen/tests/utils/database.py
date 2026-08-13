@@ -207,7 +207,7 @@ def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[st
             )
 
 
-def run_no_db_upgrades(self) -> bool:
+def run_no_db_upgrades(self: Any) -> bool:
     """Patched version of DBUpgradeManager to not run any upgrades but still
     return true for fresh DB and false otherwise
 
@@ -222,7 +222,7 @@ def run_no_db_upgrades(self) -> bool:
     return False
 
 
-def clean_ignored_assets(database: DBHandler):
+def clean_ignored_assets(database: DBHandler) -> None:
     """Some tests need to be simplified by removing all pre-ignored assets
     from the global DB sync or elsewhere so they start clean"""
     with database.user_write() as write_cursor:

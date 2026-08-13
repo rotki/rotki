@@ -467,7 +467,11 @@ def generate_random_single_kraken_ledger_data(
     return ledger
 
 
-def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_type: str):
+def generate_random_kraken_ledger_data(
+        start: Timestamp,
+        end: Timestamp,
+        ledger_type: str,
+) -> dict[str, Any]:
     ledgers_num = random.randint(1, 49)
     # Ledgers is a dict with txid as the key
     ledgers = {}
@@ -487,7 +491,7 @@ def generate_random_kraken_trades_data(
         start: Timestamp,
         end: Timestamp,
         tradeable_pairs: list[str],
-):
+) -> dict[str, Any]:
     trades_num = random.randint(1, 49)
 
     # Trades is a dict with txid as the key

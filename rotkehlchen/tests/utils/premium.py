@@ -1,7 +1,7 @@
 import os
 import tempfile
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
@@ -15,6 +15,8 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -28,8 +30,16 @@ VALID_PREMIUM_SECRET = (
 )
 
 
-def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
-    def do_mock_query_last_metadata(url, data, timeout):  # pylint: disable=unused-argument
+def mock_query_last_metadata(
+        last_modify_ts: Any,
+        data_hash: Any,
+        data_size: int,
+) -> Callable[..., MockResponse]:
+    def do_mock_query_last_metadata(
+            url: str,
+            data: dict[str, Any],
+            timeout: int,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         assert len(data) == 1
         assert 'nonce' in data
         assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
@@ -44,8 +54,13 @@ def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
     return do_mock_query_last_metadata
 
 
-def mock_get_backup(saved_data: bytes | None):
-    def do_mock_get_backup(url, timeout, params, data=None):  # pylint: disable=unused-argument
+def mock_get_backup(saved_data: bytes | None) -> Callable[..., MockResponse]:
+    def do_mock_get_backup(
+            url: str,
+            timeout: int,
+            params: dict[str, Any],
+            data: dict[str, Any] | None = None,
+    ) -> MockResponse:  # pylint: disable=unused-argument
         if data is not None:
             assert len(data) == 1
             assert 'nonce' in data
@@ -58,18 +73,18 @@ def mock_get_backup(saved_data: bytes | None):
 
 
 def create_patched_requests_get_for_premium(
-        session,
-        metadata_last_modify_ts=None,
-        metadata_data_hash=None,
-        metadata_data_size=None,
+        session: Any,
+        metadata_last_modify_ts: Any = None,
+        metadata_data_hash: Any = None,
+        metadata_data_size: int | None = None,
         saved_data: bytes | None = None,
         consider_authentication_invalid: bool = False,
-):
-    def mocked_get(url, *args, **kwargs):
+) -> Any:
+    def mocked_get(url: str, *args: Any, **kwargs: Any) -> MockResponse:
         if consider_authentication_invalid:
             return MockResponse(
                 HTTPStatus.UNAUTHORIZED,
-                {'error': 'API KEY signature mismatch'},
+                '{"error": "API KEY signature mismatch"}',
             )
 
         if 'last_data_metadata' in url:
@@ -102,7 +117,7 @@ def create_patched_premium(
         metadata_data_size: int | None = None,
         saved_data: bytes | None = None,
         consider_authentication_invalid: bool = False,
-):
+) -> tuple[Any, Any, Any, Any]:
     premium = Premium(
         credentials=premium_credentials,
         username=username,
@@ -130,7 +145,10 @@ def create_patched_premium(
         return_value=premium,
     )
 
-    def mock_perform_userdb_upgrade_steps(db, progress_handler):
+    def mock_perform_userdb_upgrade_steps(
+            db: DBHandler,
+            progress_handler: Any,
+    ) -> None:
         """The remote encrypted DB in the tests has a remnant combined_trades_view. It's not
         deleted since that normally gets removed in 34->35 and the remove DB starts from 35 which
         I assume was a mistake on our side when testing it. I thought it faster to do a mock in
@@ -183,7 +201,7 @@ def setup_starting_environment(
         remote_data: bytes | None,
         sync_approval: Literal['yes', 'no', 'unknown'] = 'yes',
         sync_database: bool = True,
-):
+) -> None:
     """
     Sets up the starting environment for premium testing when the user
     starts up his node either for the first time or logs in an already
@@ -222,6 +240,7 @@ def setup_starting_environment(
         metadata_data_size=len(remote_data) if remote_data else 0,
         saved_data=remote_data,
     )
+    assert patched_get is not None
 
     given_premium_credentials: PremiumCredentials | None
     if first_time:
@@ -241,7 +260,7 @@ def setup_starting_environment(
         )
 
 
-def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
+def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str) -> None:
     """For environment setup with setup_starting_environment make sure DB is replaced
     """
     msg = 'Test default main currency should be different from the restored currency'

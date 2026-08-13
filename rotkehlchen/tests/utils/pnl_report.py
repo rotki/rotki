@@ -1,6 +1,6 @@
 import random
 from contextlib import ExitStack
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import requests
@@ -13,18 +13,19 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.types import Timestamp
 
 
 def query_api_create_and_get_report(
-        server,
+        server: APIServer,
         start_ts: Timestamp,
         end_ts: Timestamp,
         prepare_mocks: bool,
         events_offset: int | None = None,
         events_limit: int | None = None,
         events_ascending_timestamp: bool = False,
-):
+) -> tuple[Any, Any, Any]:
     async_query = random.choice([False, True])
     rotki = server.rest_api.rotkehlchen
     setup = None

@@ -165,7 +165,7 @@ def assert_pnl_totals_close(expected: PnlTotals, got: PnlTotals) -> None:
     assert len(iterate_pnl) == len(check_pnl) + reduced_length
 
 
-def _check_boolean_settings(row: dict[str, Any], accountant: Accountant):
+def _check_boolean_settings(row: dict[str, Any], accountant: Accountant) -> None:
     """Check boolean settings are exported correctly to the spreadsheet CSV"""
     booleans = ('include_crypto2crypto', 'include_gas_costs', 'calculate_past_cost_basis')
 
@@ -175,7 +175,7 @@ def _check_boolean_settings(row: dict[str, Any], accountant: Accountant):
             break
 
 
-def _check_summaries_row(row: dict[str, Any], accountant: Accountant):
+def _check_summaries_row(row: dict[str, Any], accountant: Accountant) -> None:
     if row['free_amount'] == 'rotki version':
         assert row['taxable_amount'] == str(get_current_version().our_version)
     elif row['free_amount'] == 'taxfree_after_period':
@@ -184,7 +184,7 @@ def _check_summaries_row(row: dict[str, Any], accountant: Accountant):
         _check_boolean_settings(row, accountant)
 
 
-def _check_column(attribute: str, index: int, sheet_id: str, expected: dict[str, Any], got_columns: list[list[str]]):  # noqa: E501
+def _check_column(attribute: str, index: int, sheet_id: str, expected: dict[str, Any], got_columns: list[list[str]]) -> None:  # noqa: E501
     expected_value = FVal(expected[attribute])
     got_value = FVal(got_columns[index][0])
     msg = f'Sheet: {sheet_id}, row: {index + CSV_INDEX_OFFSET} {attribute} mismatch. {got_value} != {expected_value}'  # noqa: E501
@@ -388,7 +388,7 @@ def toggle_ignore_an_asset(
     assert asset_to_ignore.identifier in result
 
 
-def get_calculated_asset_amount(cost_basis, asset: Asset) -> FVal | None:
+def get_calculated_asset_amount(cost_basis: Any, asset: Asset) -> FVal | None:
     """Get the amount of asset accounting has calculated we should have after
     the history has been processed on a cost basis object
     """

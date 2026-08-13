@@ -45,7 +45,10 @@ KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
 }
 
 
-def pop_multiple_keys(serialized_event: dict[str, Any], entry_type: HistoryBaseEntryType):
+def pop_multiple_keys(
+        serialized_event: dict[str, Any],
+        entry_type: HistoryBaseEntryType,
+) -> None:
     valid_keys = KEYS_IN_ENTRY_TYPE[entry_type].union({'entry_type', 'timestamp', 'amount', 'location_label', 'identifier'})  # noqa: E501
     event_keys = set(serialized_event.keys())
     for field in event_keys:

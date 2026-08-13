@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
@@ -25,7 +25,7 @@ def default_args(
         ethrpc_endpoint: str | None = None,
         max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB,
         loglevel: str = 'DEBUG',
-):
+) -> Any:
     return ConfigurationArgs(
         loglevel=loglevel,
         logfromothermodules=False,

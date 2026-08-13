@@ -224,6 +224,7 @@ module = [
     "rotkehlchen.tests.unit.globaldb.*",
     "rotkehlchen.tests.unit.solana.*",
     "rotkehlchen.tests.unit.solana_decoders.*",
+    "rotkehlchen.tests.utils.*",
     "rotkehlchen.tests.websocketsapi.*",
 ]
 check_untyped_defs = true
