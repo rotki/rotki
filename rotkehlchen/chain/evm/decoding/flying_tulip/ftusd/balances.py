@@ -32,8 +32,8 @@ class FlyingTulipStakingBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

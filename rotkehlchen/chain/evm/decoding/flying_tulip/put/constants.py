@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 class FlyingTulipPutDeployment(NamedTuple):
     """Addresses of the ftPUT contracts on one chain."""
-    put_manager: 'ChecksumEvmAddress'
-    ft_token: 'ChecksumEvmAddress'
+    put_manager: ChecksumEvmAddress
+    ft_token: ChecksumEvmAddress
 
 
 FLYING_TULIP_PUT_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipPutDeployment]] = {

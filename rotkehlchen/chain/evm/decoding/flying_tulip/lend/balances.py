@@ -29,8 +29,8 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -54,8 +54,8 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
 
     def _query_asset_lists(
             self,
-            addresses: list['ChecksumEvmAddress'],
-    ) -> tuple[list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress']], list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress']]]:  # noqa: E501
+            addresses: list[ChecksumEvmAddress],
+    ) -> tuple[list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]], list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]]]:  # noqa: E501
         """Return the (address, asset) pairs with deposited collateral and with open debt."""
         calls = [
             (
@@ -66,7 +66,8 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
             for method_name in ('userCollateralAssets', 'userDebtAssets')
         ]
         results = self.evm_inquirer.multicall(calls=calls)
-        collateral_pairs, debt_pairs = [], []
+        collateral_pairs: list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]] = []
+        debt_pairs: list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]] = []
         for address, collateral_result, debt_result in zip(
             addresses,
             results[::2],
@@ -158,7 +159,7 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
                     )
             except (DeserializationError, NotERC20Conformant, NotERC721Conformant) as e:
                 log.error(
-                    'Failed to decode a Flying Tulip lending balance of %s for %s on %s due to %s',  # noqa: E501
+                    'Failed to decode a Flying Tulip lending balance of %s for %s on %s due to %s',
                     asset_address,
                     address,
                     self.evm_inquirer.chain_name,
