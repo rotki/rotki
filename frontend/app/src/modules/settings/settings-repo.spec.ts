@@ -51,6 +51,7 @@ describe('useSettingsRepo frontend channel', () => {
     const store = useSettingsRepo(pinia);
     const state: FrontendSettings = {
       schemaVersion: 2,
+      clientId: '',
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       lastAppliedSettingsVersion: '0.0.0',

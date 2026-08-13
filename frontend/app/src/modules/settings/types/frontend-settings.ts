@@ -214,6 +214,8 @@ export const FrontendSettings = z.object({
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
   ),
+  /** Empty until first set. `.catch` so a corrupt value costs one reset, not the whole blob. */
+  clientId: z.string().default('').catch(''),
   currencyLocation: CurrencyLocationEnum.default(Defaults.DEFAULT_CURRENCY_LOCATION),
   darkTheme: ThemeColors.default(DARK_COLORS),
   dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default(() => ({

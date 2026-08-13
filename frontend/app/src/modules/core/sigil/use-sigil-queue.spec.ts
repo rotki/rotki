@@ -91,6 +91,149 @@ describe('use-sigil-queue', () => {
     });
   });
 
+  describe('identify', () => {
+    interface FlushedEntry { type: string; payload: { id?: string; name?: string; data?: Record<string, unknown> } }
+
+    async function flushed(): Promise<FlushedEntry[]> {
+      const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', fetchSpy);
+
+      const { flush } = await import('@/modules/core/sigil/use-sigil-queue');
+      await flush();
+
+      const [, init] = fetchSpy.mock.calls[0];
+      return JSON.parse(init.body);
+    }
+
+    it('should send an identify entry with the value as the distinct id', async () => {
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      await enqueue({ kind: 'identify', clientId: 'client-1', data: { instance_id: 'instance-1' }, url: '/page', timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.type).toBe('identify');
+      expect(entry.payload.id).toBe('client-1');
+      expect(entry.payload.data).toEqual({ instance_id: 'instance-1' });
+      vi.unstubAllGlobals();
+    });
+
+    it('should keep its place ahead of the events queued after it', async () => {
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      await enqueue({ kind: 'identify', clientId: 'client-1', url: '/page', timestamp: 1000 });
+      await enqueue({ url: '/page', timestamp: 2000 });
+
+      const entries = await flushed();
+
+      expect(entries.map(entry => entry.type)).toEqual(['identify', 'event']);
+      vi.unstubAllGlobals();
+    });
+
+    /**
+     * Upstream classifies an entry by its name, so an identify must not carry one, and the
+     * identity must not be smuggled into event data: data on a nameless entry is dropped.
+     */
+    it('should not name the identify entry', async () => {
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      await enqueue({ kind: 'identify', clientId: 'client-1', url: '/page', timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.payload).not.toHaveProperty('name');
+      vi.unstubAllGlobals();
+    });
+
+    it('should leave a page view without data of its own', async () => {
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      await enqueue({ url: '/page', timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.type).toBe('event');
+      expect(entry.payload).not.toHaveProperty('data');
+      vi.unstubAllGlobals();
+    });
+
+    it('should leave a custom event data untouched', async () => {
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      await enqueue({ url: '/page', name: 'session_config', data: { premium: true }, timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.payload.data).toEqual({ premium: true });
+      vi.unstubAllGlobals();
+    });
+  });
+
+  /**
+   * Upstream stores it per row, and derives the session from ip, user agent and a daily salt, so
+   * one session covers every account used on that machine that day. Stamping only the identify
+   * would leave the events unattributed and the account switch invisible.
+   */
+  describe('per-entry distinct id', () => {
+    interface FlushedEntry { payload: { id?: string } }
+
+    async function flushed(): Promise<FlushedEntry[]> {
+      const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', fetchSpy);
+
+      const { flush } = await import('@/modules/core/sigil/use-sigil-queue');
+      await flush();
+
+      const [, init] = fetchSpy.mock.calls[0];
+      return JSON.parse(init.body);
+    }
+
+    it('should stamp a page view', async () => {
+      const { setCurrentClientId } = await import('@/modules/core/sigil/use-sigil-identity');
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      setCurrentClientId('client-1');
+      await enqueue({ url: '/page', timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.payload.id).toBe('client-1');
+      vi.unstubAllGlobals();
+    });
+
+    it('should stamp a custom event', async () => {
+      const { setCurrentClientId } = await import('@/modules/core/sigil/use-sigil-identity');
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      setCurrentClientId('client-1');
+      await enqueue({ url: '/page', name: 'session_config', timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.payload.id).toBe('client-1');
+      vi.unstubAllGlobals();
+    });
+
+    it('should stamp nothing once cleared, so nothing is attributed to the account that left', async () => {
+      const { clearCurrentClientId, setCurrentClientId } = await import('@/modules/core/sigil/use-sigil-identity');
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      setCurrentClientId('client-1');
+      clearCurrentClientId();
+      await enqueue({ url: '/page', timestamp: 1000 });
+
+      const [entry] = await flushed();
+
+      expect(entry.payload.id).toBeUndefined();
+      vi.unstubAllGlobals();
+    });
+
+    it('should use the value current at flush, so a switch does not relabel the queue wrongly', async () => {
+      const { setCurrentClientId } = await import('@/modules/core/sigil/use-sigil-identity');
+      const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
+      setCurrentClientId('client-1');
+      await enqueue({ url: '/page', timestamp: 1000 });
+      setCurrentClientId('client-2');
+
+      const [entry] = await flushed();
+
+      expect(entry.payload.id).toBe('client-2');
+      vi.unstubAllGlobals();
+    });
+  });
+
   describe('flush', () => {
     it('should not call fetch when queue is empty', async () => {
       const fetchSpy = vi.fn();
