@@ -90,6 +90,12 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://monadscan.com/token/',
     transaction: 'https://monadscan.com/tx/',
   },
+  [Blockchain.SONIC]: {
+    address: 'https://sonicscan.org/address/',
+    block: 'https://sonicscan.org/block/',
+    token: 'https://sonicscan.org/token/',
+    transaction: 'https://sonicscan.org/tx/',
+  },
   [Blockchain.SCROLL]: {
     address: 'https://scrollscan.com/address/',
     block: 'https://scrollscan.com/block/',
