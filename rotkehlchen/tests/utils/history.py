@@ -816,9 +816,9 @@ def mock_etherscan_like_transaction_response(
 
 
 class TradesTestSetup(NamedTuple):
-    polo_patch: _patch
-    binance_patch: _patch
-    bitmex_patch: _patch
+    polo_patch: _patch | None
+    binance_patch: _patch | None
+    bitmex_patch: _patch | None
     accountant_patch: _patch
     etherscan_patch: _patch
     blockscout_patch: _patch
@@ -851,9 +851,6 @@ def mock_history_processing_and_exchanges(
         rotki,
         remote_errors,
     )
-    assert polo_patch is not None
-    assert binance_patch is not None
-    assert bitmex_patch is not None
     assert rotki.chains_aggregator.ethereum.node_inquirer.blockscout is not None
     return TradesTestSetup(
         polo_patch=polo_patch,

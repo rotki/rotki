@@ -25,6 +25,7 @@ def test_query_messages(
     """Test that querying the messages endpoint returns notifications for the user"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
+    assert setup.polo_patch is not None
 
     # Query polo trades of to get them saved in the DB. This generates unknown
     # asset messages for the assets that can't be mapped during querying
