@@ -11,9 +11,7 @@ import {
   RuiDialog,
   RuiDivider,
   RuiIcon,
-  RuiMenu,
   RuiProgress,
-  RuiSlider,
   RuiTextField,
   RuiTooltip,
 } from '@rotki/ui-library';
@@ -31,7 +29,6 @@ import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
-import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import MissingDailyPrices from '@/modules/statistics/MissingDailyPrices.vue';
 import NewGraphTooltipWrapper from '@/modules/statistics/NewGraphTooltipWrapper.vue';
 
@@ -46,8 +43,6 @@ function ruiRegister(app: App): void {
   app.component('RuiDataTable', RuiDataTable);
   app.component('RuiDivider', RuiDivider);
   app.component('RuiChip', RuiChip);
-  app.component('RuiMenu', RuiMenu);
-  app.component('RuiSlider', RuiSlider);
   app.component('RuiDialog', RuiDialog);
   app.component('RuiColorPicker', RuiColorPicker);
   app.component('RuiProgress', RuiProgress);
@@ -70,7 +65,6 @@ export function registerComponents(app: App): void {
   app.component('AssetSelect', AssetSelect);
   app.component('StatisticsGraphSettings', StatisticsGraphSettings);
   app.component('ExportSnapshotDialog', ExportSnapshotDialog);
-  app.component('MenuTooltipButton', MenuTooltipButton);
   app.component('HistoryEventsView', HistoryEventsView);
   app.component('AssetBalanceStatisticSourceSetting', AssetBalanceStatisticSourceSetting);
   app.component('MissingDailyPrices', MissingDailyPrices);
