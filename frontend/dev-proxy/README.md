@@ -92,8 +92,16 @@ pnpm install --frozen-lockfile
 pnpm run --filter @rotki/dev-proxy serve
 ```
 
-In that mode `PORT`, `BACKEND`, and `PREMIUM_COMPONENT_DIR` all come from
-`frontend/dev-proxy/.env`. The frontend then needs `VITE_BACKEND_URL=http://localhost:4243`
+In that mode `PORT`, `BACKEND`, and `PREMIUM_COMPONENT_DIR` come from
+`frontend/dev-proxy/.env` if it exists, or from the shell. The file is optional:
+`PORT` and `BACKEND` have defaults and an unset `PREMIUM_COMPONENT_DIR` just
+disables statistics renderer support. Passing them inline works too:
+
+```bash
+PREMIUM_COMPONENT_DIR=/path/to/components pnpm run --filter @rotki/dev-proxy serve
+```
+
+The frontend then needs `VITE_BACKEND_URL=http://localhost:4243`
 (or whatever proxy port you chose) so it routes through the proxy.
 
 > **Heads-up — old workflow:** previous versions of this README documented

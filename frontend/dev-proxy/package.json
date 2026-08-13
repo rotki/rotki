@@ -7,7 +7,7 @@
   "license": "AGPL-3.0",
   "author": "Rotki Solutions GmbH",
   "scripts": {
-    "serve": "tsx --env-file=.env --watch ./src/index.ts"
+    "serve": "tsx --env-file-if-exists=.env --watch ./src/index.ts"
   },
   "dependencies": {
     "body-parser": "catalog:",
