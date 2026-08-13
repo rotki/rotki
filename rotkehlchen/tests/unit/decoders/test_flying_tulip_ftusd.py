@@ -1,0 +1,202 @@
+import pytest
+
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.flying_tulip.constants import CPT_FLYING_TULIP
+from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.constants import (
+    FLYING_TULIP_FTUSD_DEPLOYMENTS,
+)
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
+
+A_FTUSD = Asset('eip155:1/erc20:0xF7D85EC4E7710f71992752eac2111312e73E9C9C')
+A_SFTUSD = Asset('eip155:1/erc20:0xeb48218a4c35C814C7678cBcae88C6Ee037F7625')
+A_FT = Asset('eip155:1/erc20:0x5DD1A7A369e8273371d2DBf9d83356057088082c')
+A_ETH_USDT = Asset('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7')
+A_ETH_USDC = Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
+DEPLOYMENT = FLYING_TULIP_FTUSD_DEPLOYMENTS[ChainID.ETHEREUM]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_ftusd_mint(ethereum_inquirer, ethereum_accounts):
+    """Mint is relayer-submitted, so the user pays no gas in this transaction."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x247ae3bca7dcb6c4d5d295135f32a976aff124089e9f1554980ac7a69fbcd740')),  # noqa: E501
+    )
+    assert events == [
+        EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1782585407000)),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH_USDT,
+            amount=FVal(out_amount := '106.004476'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Swap {out_amount} USDT in Flying Tulip',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.mint_and_redeem,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_FTUSD,
+            amount=FVal(in_amount := '105.556274'),
+            location_label=user_address,
+            notes=f'Receive {in_amount} ftUSD as the result of a swap in Flying Tulip',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.mint_and_redeem,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_ftusd_redeem(ethereum_inquirer, ethereum_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x28b438630c1c4be29208af5b1bcf8627916d309a7f9e2a45d42c13411b4d734c')),  # noqa: E501
+    )
+    assert events == [
+        EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1783094447000)),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_FTUSD,
+            amount=FVal(out_amount := '105.152836'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Swap {out_amount} ftUSD in Flying Tulip',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.mint_and_redeem,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH_USDC,
+            amount=FVal(in_amount := '104.628923'),
+            location_label=user_address,
+            notes=f'Receive {in_amount} USDC as the result of a swap in Flying Tulip',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.mint_and_redeem,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_sftusd_stake(ethereum_inquirer, ethereum_accounts):
+    """The relayer fee is carved out of the user's gross transfer into the vault."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xda81303cc65040a0fbd75b97cae82f61d068d32d61e52f0e836f664d9858cfcd')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=156,
+            timestamp=(timestamp := TimestampMS(1782585431000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_FTUSD,
+            amount=FVal(fee_amount := '0.101158'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Pay {fee_amount} ftUSD as Flying Tulip relayer fee',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.staking_vault,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=157,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_FTUSD,
+            amount=FVal(amount := '105.455116'),
+            location_label=user_address,
+            notes=f'Deposit {amount} ftUSD in the Flying Tulip sftUSD vault',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.staking_vault,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=158,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_SFTUSD,
+            amount=FVal(amount),
+            location_label=user_address,
+            notes=f'Receive {amount} sftUSD from depositing in the Flying Tulip sftUSD vault',
+            counterparty=CPT_FLYING_TULIP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_sftusd_unstake(ethereum_inquirer, ethereum_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x26ca866cc3313a7c1ea250dfef154f634bc0b341e9ba4ac47821cf4f8b097e39')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1783094399000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_SFTUSD,
+            amount=FVal(shares_amount := '105.455116'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Return {shares_amount} sftUSD to the Flying Tulip sftUSD vault',
+            counterparty=CPT_FLYING_TULIP,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_FTUSD,
+            amount=FVal(assets_amount := '105.152836'),
+            location_label=user_address,
+            notes=f'Withdraw {assets_amount} ftUSD from the Flying Tulip sftUSD vault',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.staking_vault,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x966bD381BbA921B6728C5548F0BCD01CE3381974']])
+def test_sftusd_claim_rewards(ethereum_inquirer, ethereum_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe458f8a6b981007009eff7bc466692a0c8e64fa0f9423a5d4a3908193f745e3c')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=314,
+        timestamp=TimestampMS(1786644743000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_FT,
+        amount=FVal(reward_amount := '89.230209370556996258'),
+        location_label=ethereum_accounts[0],
+        notes=f'Claim {reward_amount} FT from Flying Tulip ftUSD staking',
+        counterparty=CPT_FLYING_TULIP,
+        address=DEPLOYMENT.staking_vault,
+    )]
