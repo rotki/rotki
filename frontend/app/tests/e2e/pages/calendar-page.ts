@@ -97,8 +97,9 @@ export class CalendarPage {
     await confirmDelete(this.page);
   }
 
+  /** Scoped to the dialog: a page-wide match also picks up a closing dialog's rows. */
   private reminderRows() {
-    return this.page.locator('[data-testid=reminder-amount]');
+    return this.page.locator('[data-testid=bottom-dialog] [data-testid=reminder-amount]');
   }
 
   /** Adds a reminder to the dialog that is already open, and sets it to `amount` of `unit`. */
@@ -106,7 +107,12 @@ export class CalendarPage {
     await this.page.getByTestId('reminder-add').click();
     const row = this.reminderRows().last();
     await row.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    await row.locator('input').fill(amount);
+    const input = row.locator('input');
+    await input.fill(amount);
+    // A new row starts at the 15 minute default, and the amount field reformats as it is typed, so
+    // the fill can be observed part-applied. Settling here reports it as what it is rather than as
+    // a wrong value read back several steps later.
+    await expect(input).toHaveValue(amount, { timeout: TIMEOUT_MEDIUM });
 
     // RuiMenuSelect opens a teleported menu rather than a native select.
     await this.page.getByTestId('reminder-unit').last().locator('[data-id=activator]').click();
@@ -118,9 +124,13 @@ export class CalendarPage {
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
+  private reminderUnits() {
+    return this.page.locator('[data-testid=bottom-dialog] [data-testid=reminder-unit]');
+  }
+
   async expectReminder(amount: string, unit: string): Promise<void> {
     await expect(this.reminderRows().first().locator('input')).toHaveValue(amount, { timeout: TIMEOUT_MEDIUM });
-    await expect(this.page.getByTestId('reminder-unit').first()).toContainText(unit);
+    await expect(this.reminderUnits().first()).toContainText(unit);
   }
 
   async expectReminderCount(count: number): Promise<void> {
@@ -150,12 +160,13 @@ export class CalendarPage {
     const input = this.reminderRows().locator(`input[value="${from}"]`).first();
     await input.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await input.fill(to);
+    await expect(input).toHaveValue(to, { timeout: TIMEOUT_MEDIUM });
     await input.blur();
   }
 
   async deleteReminder(amount: string): Promise<void> {
     await this.expandReminders();
-    const row = this.page.locator('[data-testid=reminder-amount]')
+    const row = this.reminderRows()
       .filter({ has: this.page.locator(`input[value="${amount}"]`) })
       .locator('xpath=..');
     await row.getByTestId('reminder-delete').click();

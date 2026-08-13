@@ -24,12 +24,6 @@ export interface CalendarReminderRequestPayload {
   identifier: number;
 }
 
-export interface CalendarReminderTemporaryPayload {
-  isTemporary: boolean;
-  identifier: number;
-  secsBefore: number;
-}
-
 export const CalendarReminderAddResponseSchema = z.object({
   success: z.array(z.number()).optional(),
   failed: z.array(z.number()).optional(),

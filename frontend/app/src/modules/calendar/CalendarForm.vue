@@ -71,7 +71,7 @@ defineExpose({
   reset: (): void => {
     form.reset();
   },
-  saveTemporaryReminder: (eventId: number) => get(reminderRef)?.saveTemporaryReminder(eventId),
+  saveReminders: async (eventId: number): Promise<void> => get(reminderRef)?.save(eventId),
   // The reminder rows are a separate form, so the gate says so rather than relying on vuelidate
   // quietly collecting every child instance.
   validate: (): boolean => {
