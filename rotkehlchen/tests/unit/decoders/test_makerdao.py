@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -13,7 +15,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x648aA14e4424e0825A5cE739C8C68610e143FB79']])
-def test_makerdao_simple_transaction(ethereum_inquirer, ethereum_accounts):
+def test_makerdao_simple_transaction(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -49,7 +51,7 @@ def test_makerdao_simple_transaction(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xE4916bF722d5B2d397fd2F3A925029d2c4e83B51']])
-def test_withdraw_with_transfer_after(ethereum_inquirer, ethereum_accounts):
+def test_withdraw_with_transfer_after(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test withdraw/deposit with the transfer coming after the log event (happens for recent vault interactions"""  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xb8f625820b7449ac7c83cffb4dbd33cf7c7cb64e5d69429e61df3c67c8c70d9c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

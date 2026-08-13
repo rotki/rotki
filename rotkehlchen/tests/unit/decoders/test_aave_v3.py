@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x93a208b0d7007f5733ea23F65bACF101Be8aC6cD']])
-def test_aave_v3_enable_collateral(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_enable_collateral(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x867d09a777ca7c5cbccd281d197ffbed327b5a8f07153483e94f75d4e1d04413')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     deposit_amount, gas_fees = '99503', '0.007154122119159412'
@@ -113,7 +113,7 @@ def test_aave_v3_enable_collateral(ethereum_inquirer, ethereum_accounts) -> None
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x203b2E862C57fbAc813c05c46B6e1242844724A2']])
-def test_aave_v3_disable_collateral(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_disable_collateral(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f7614ba2425f3345d02bf1518c81ab3aa46e888553b409f3c9a360259bc7988')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     returned_amount, interest_amount, gas_fees = '0.3', '0.00005421', '0.005234272941346752'
@@ -187,7 +187,7 @@ def test_aave_v3_disable_collateral(ethereum_inquirer, ethereum_accounts) -> Non
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x08c14B32C8A48894E4b933090EBcC9CE33B21135']])
-def test_aave_v3_deposit(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_deposit(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x062bb6b01d4ac5fabd7b7783965d22589d289e44bb0227bb2fc0adaad7eb563b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     deposit_amount, gas_fees = '71657.177259074315114745', '0.009902467860617334'
@@ -236,7 +236,7 @@ def test_aave_v3_deposit(ethereum_inquirer, ethereum_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x8abad97dBdBE16D043a5df66cf9E120D13708a3F']])
-def test_aave_v3_deposit_with_interest(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_deposit_with_interest(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd5dc3d24da9a97957743c09b8655154ffedb3cb40325b698b1159aa2fe9cf166')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     deposit_amount, interest_amount, gas_fees = '0.21191208', '0.00000083', '0.000975505588598266'
@@ -297,7 +297,7 @@ def test_aave_v3_deposit_with_interest(ethereum_inquirer, ethereum_accounts) -> 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xabE9e5d199E1E411098181b6a5Ab9f5f65d91389']])
-def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_withdraw(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf184c285dab9ea6c72d18025c65202e3d9e5ec3181209a6cbedf88dfd4c8283f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     return_amount, interest_amount, gas_fees = '6770.796829', '9.053171', '0.00692900756596481'
@@ -358,7 +358,7 @@ def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xa37478676A7A86a6Fb9e8D57D3e543EAc8140A95']])
-def test_aave_v3_monerium_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
+def test_aave_v3_monerium_order(gnosis_inquirer: Any, gnosis_accounts: Any, allow_gnosis_etherscan: Any) -> None:  # noqa: E501
     """Regression test for https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=129465997
 
     The reason this happened was that the matching logic was comparing assets and monerium has
@@ -423,7 +423,7 @@ def test_aave_v3_monerium_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_e
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x430431aE62cD20F0D519ee9fF7E26c2005b50AAf']])
-def test_aave_v3_withdraw_with_bigger_interest(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_withdraw_with_bigger_interest(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x8ed7c1ed348212c6b9aa615a2c13857dd801dfac103f01852a303e62cc58b24f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     return_amount, interest_amount, gas_fees = '20000', '33086.007538', '0.000395645857253556'
@@ -484,7 +484,7 @@ def test_aave_v3_withdraw_with_bigger_interest(ethereum_inquirer, ethereum_accou
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x08c14B32C8A48894E4b933090EBcC9CE33B21135']])
-def test_aave_v3_borrow(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_borrow(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x44367976e841cde459d84aec984d5fae4466b2978b1d71c9cd916bb79792ee20')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     borrowed_amount, gas_fees = '79931.500229', '0.011111128567338506'
@@ -533,7 +533,7 @@ def test_aave_v3_borrow(ethereum_inquirer, ethereum_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9CBF099ff424979439dFBa03F00B5961784c06ce']])
-def test_aave_v3_repay(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_repay(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x440dddaad9f8d9c6d99777494640520854cca8dd102fb557f1654f5746da5f7e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     return_amount, repay_amount, gas_fees = '123942.602894', '123961.452987', '0.00646693553105336'
@@ -582,7 +582,7 @@ def test_aave_v3_repay(ethereum_inquirer, ethereum_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7420fA58bA44E1141d5E9ADB6903BE549f7cE0b5']])
-def test_aave_v3_liquidation(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_liquidation(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc1a03e87f1c0446ddd5a77f7eb906831c72618a921a1f6f9f430f612edca0531')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     payback_amount, liquidation_amount, fee_amount = '23.378156', '0.01887243880551005', '0.000090391508992915'  # noqa: E501
@@ -646,7 +646,7 @@ def test_aave_v3_liquidation(ethereum_inquirer, ethereum_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xA55EaD17fa903b1218dc6a79c47b54C9370E20AB']])
-def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> None:
+def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8002f1a3044bcdec645d512713724f09551c18a14c67509417c83961b230294b')),  # noqa: E501
@@ -710,7 +710,7 @@ def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_acc
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x645C22593c232Ae78a7eCbaC93b38cbaC535ef12']])
-def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:
+def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x09d5e6da511fb88e8a7db6f1209542610a9d3873048e405b88c7a766d7210d6f')),  # noqa: E501
@@ -774,7 +774,7 @@ def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xaafc3e3C8B4fD93584256E6D49a9C364648E66cE']])
-def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
+def test_aave_v3_borrow_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92b6fef0623a3f56daa651968819f2e5b7a982037c19fed2166e4c00ba4d6350')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     borrowed_amount, gas_fees = '0.181', '0.000090985761072991'
@@ -823,7 +823,7 @@ def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x91ed7A7fd3072885c1ec905C932717Df6A8aE2cA']])
-def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
+def test_aave_v3_withdraw_gnosis(gnosis_inquirer: Any, gnosis_accounts: Any, allow_gnosis_etherscan: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x1f3cae37be928563d154c534c98f41eefe9201eb3d0129c99c1ecb51f83e5596')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     withdraw_amount, gas_fees = '4300', '0.000876816'
@@ -873,7 +873,7 @@ def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xdbD5D31B7f48adC13A0aB0c591F7e3D4f9642e69']])
-def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
+def test_aave_v3_borrow_optimism(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb043a7f28cccd6cb0392db47cea4607f8cf3b91b6510669a0a62588b66eb7fcf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     borrowed_amount, gas_fees = '2000', '0.000018093759776472'
@@ -922,7 +922,7 @@ def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
 
 @pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x3E6B4598E5bfeEc911f344E546C9EbFe4A00d770']])
-def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan) -> None:
+def test_aave_v3_repay_scroll(scroll_inquirer: Any, scroll_accounts: Any, allow_scroll_etherscan: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x66010f353be60adaa004f839d37cecd22c35c580060eeaffb9a28ebe169e1692')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     return_amount, repay_amount, gas_fees = '14459.999417', '14460.008663', '0.000386215421959661'
@@ -971,7 +971,7 @@ def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts, allow_scroll_eth
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x35E0091D67B5e213db857F605c2047cA29A8800d']])
-def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
+def test_non_aave_tx(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test that the non-aave transactions happened through flash loans are not decoded
     as aave events."""
     tx_hash = deserialize_evm_tx_hash('0xf5b4c6f3b4e5bce1f91f7e7eab6185b6d1518e63dea637c79d7f1bbb97edda67')  # noqa: E501
@@ -1012,7 +1012,7 @@ def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
     '0xfB9922C154aF5131C341d537d07e1068368bf3F1',
     '0xD99697546891EE4C20b9A3C65fBfbC356353BEFB',
 ]])
-def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None:
+def test_safe_interaction_interest(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test that safe interactions with aave v3 also display interest.
     Regression test for aave post decoding not firing."""
     tx_hash = deserialize_evm_tx_hash('0x01ac87a1fe87913f54153a85f9657359387b82f374cb81132f5ccb30b3bddfbb')  # noqa: E501
@@ -1090,7 +1090,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
+def test_claim_incentives_reward(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     """Test that claim rewards for incentives works"""
     tx_hash = deserialize_evm_tx_hash('0xa2860ca34ea7558240c44f3d0895a9cf832bd0dd952b2b27d3ae34ba6d45697c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -1128,7 +1128,7 @@ def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xfe46dCeb5d586DA13aBAA571613e20f5a61fa62e']])
-def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts) -> None:
+def test_aave_v3_events_with_approval(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0aaca18a7e0ee29a247bd9bfab3b081acf469833105a9204251c5a4969a5fc29')),  # noqa: E501
@@ -1203,7 +1203,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
 
 @pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x76111D2841b41B15e6F07fBae4796a82438D9c90']])
-def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts, allow_scroll_etherscan) -> None:
+def test_aave_v3_withdraw_eth(scroll_inquirer: Any, scroll_accounts: Any, allow_scroll_etherscan: Any) -> None:  # noqa: E501
     """Test that withdrawing ETH from Aave gets decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x65cd06fd54a10052c3d9084d14d28c06e2bb328b1ec39730fab9284cb529d068')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
@@ -1292,7 +1292,7 @@ def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts, allow_scroll_eth
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_arbitrum_deposit_eth_gatewayv3(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:
+def test_arbitrum_deposit_eth_gatewayv3(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     """Test that deposit ETH in Aave in Arbitrum gets decoded properly when using gateway v3"""
     tx_hash = deserialize_evm_tx_hash('0xc951183a146d91b996d36632fc8dbe994378da8af88d3c63631a14fcf2f16ca4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -1354,7 +1354,7 @@ def test_arbitrum_deposit_eth_gatewayv3(arbitrum_one_inquirer, arbitrum_one_acco
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2013b74bdbd2Adf3eBF39E5112a9f794144Aeb15']])
-def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> None:
+def test_aave_v3_withdraw_matic(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x301885bdc8998d0e6d5c0064b3b92f5ee34f81ebbd14ca2b796579981ff8df31')),  # noqa: E501
@@ -1431,7 +1431,7 @@ def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> N
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x44ddBB35CfeBbafE98e402970517b33d8e925eB3']])
-def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
+def test_aave_v3_withdraw_xdai(gnosis_inquirer: Any, gnosis_accounts: Any, allow_gnosis_etherscan: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x0154ef3042e93a632d654c86bff99f7d452681dba72f4f773806c9c26470f678')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     gateway_address = string_to_evm_address('0xfE76366A986B72c3f2923e05E6ba07b7de5401e4')
@@ -1519,7 +1519,7 @@ def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_et
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x79A4D7448B110bf926d96b726D113f7d7De6781f']])
-def test_aave_v3_interest_on_transfer(ethereum_inquirer, ethereum_accounts) -> None:
+def test_aave_v3_interest_on_transfer(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x84a70d14ef53987e1ee267435492100f07a4480b7d8022a8d3508e3a4ee70fbf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     transfer_amount, interest_amount, gas_fees = '50000', '2447.464003', '0.001366713726208557'
@@ -1700,7 +1700,7 @@ def test_aave_v3_deposit_bnb(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x57D4bEb0fD4438b8910fEf03a961131742D845E2', '0x1cdC859a9685103A0791075B6c365e2D583BC236']])   # noqa: E501
-def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:
+def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x56c57b83508f46d45af6b3230ee882f99df315c089af3250fbe5494ea59e5624')),  # noqa: E501
@@ -1917,7 +1917,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
-def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
+def test_gnosis_xdai_deposit(gnosis_inquirer: Any, gnosis_accounts: Any, allow_gnosis_etherscan: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xbdc74d91e713209a666daf25a97da7c73aca646a7e7c0e126954e6a4c644eb72')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -1977,7 +1977,7 @@ def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xE37b28362F65060C18c16398cFD23275D8CaE750']])
-def test_aave_v3_collateral_swap(base_inquirer, base_accounts) -> None:
+def test_aave_v3_collateral_swap(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xdc1a92c8cbda2fe7917e633efd889d17fc62e88e0f584af65f577b5d2a8bcb3c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -2059,7 +2059,7 @@ def test_aave_v3_collateral_swap(base_inquirer, base_accounts) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0BeBD2FcA9854F657329324aA7dc90F656395189']])
-def test_batch_aave3_operations_via_safe(ethereum_inquirer, ethereum_accounts) -> None:
+def test_batch_aave3_operations_via_safe(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcb42b04cf1b8dbc70c21c07f150107a500da4f19753b07a14ffa9b6f84645d33')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -2146,8 +2146,8 @@ def test_batch_aave3_operations_via_safe(ethereum_inquirer, ethereum_accounts) -
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB5D235C27bd7741E2467fFB0eFd49877f6BeDa13']])
 def test_aave_v3_deposit_native_and_wrapped_same_reserve(
-        ethereum_inquirer,
-        ethereum_accounts,
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb834f10346b44fea939462547e7df990430ddccf92152fa452680afe7a636748')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -2255,7 +2255,7 @@ def test_aave_v3_deposit_native_and_wrapped_same_reserve(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xC4B17C8d9e1B6b2814Ef2666a577a0d1e2a99909']])
-def test_aave_v3_deposit_pol(polygon_pos_inquirer, polygon_pos_accounts) -> None:
+def test_aave_v3_deposit_pol(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x285cae1c14c05915f5b1e9b290b6cb6a7c9d886e7e990a7d14e6d2cd4dfa6246')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -2313,7 +2313,7 @@ def test_aave_v3_deposit_pol(polygon_pos_inquirer, polygon_pos_accounts) -> None
 
 @pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x72534B92C950b9D4739919bFD5FAcd81397178eb']])
-def test_aave_v3_scroll_deposit_eth(scroll_inquirer, scroll_accounts, allow_scroll_etherscan) -> None:  # noqa: E501
+def test_aave_v3_scroll_deposit_eth(scroll_inquirer: Any, scroll_accounts: Any, allow_scroll_etherscan: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x76dd8a5b94409801fd86676be4d43913401eb407e3795facf063b7fb35c80e0e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(

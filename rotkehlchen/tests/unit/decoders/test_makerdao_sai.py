@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -23,6 +25,7 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -42,7 +45,7 @@ ADDY_10 = '0x720972Dc53741a72fEE22400828122836640a74b'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
-def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
+def test_makerdao_sai_new_cdp(ethereum_transaction_decoder: Any) -> None:
     """
     Data for cdp creation is taken from
     https://etherscan.io/tx/0xf7049668cb7cbb9c00d80092b2dce7ea59984f4c52c83e5c0940535a93f3d5a0
@@ -50,9 +53,9 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf7049668cb7cbb9c00d80092b2dce7ea59984f4c52c83e5c0940535a93f3d5a0')),  # noqa: E501
-        timestamp=1513958719,
+        timestamp=Timestamp(1513958719),
         block_number=4777541,
-        from_address=ADDY_1,
+        from_address=string_to_evm_address(ADDY_1),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=171249,
@@ -102,7 +105,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1513958719000,
+            timestamp=TimestampMS(1513958719000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -114,7 +117,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=23,
-            timestamp=1513958719000,
+            timestamp=TimestampMS(1513958719000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -129,7 +132,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_2]])
-def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
+def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder: Any) -> None:
     """
     Data for sai borrow is taken from
     https://etherscan.io/tx/0x4aed2d2fe5712a5b65cb6866c51ae672a53e39fa25f343e4c6ebaa8eae21de80
@@ -137,9 +140,9 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4aed2d2fe5712a5b65cb6866c51ae672a53e39fa25f343e4c6ebaa8eae21de80')),  # noqa: E501
-        timestamp=1513957014,
+        timestamp=Timestamp(1513957014),
         block_number=4777443,
-        from_address=ADDY_2,
+        from_address=string_to_evm_address(ADDY_2),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=940000,
@@ -252,7 +255,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1513957014000,
+            timestamp=TimestampMS(1513957014000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -264,7 +267,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=45,
-            timestamp=1513957014000,
+            timestamp=TimestampMS(1513957014000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -279,7 +282,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
-def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
+def test_makerdao_sai_close_cdp(ethereum_transaction_decoder: Any) -> None:
     """
     Data for cdp closure is taken from
     https://etherscan.io/tx/0xc851e18df6dec02ac2efff000298001e839dde3d6e99d25d1d98ecb0d390c9a6
@@ -287,9 +290,9 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc851e18df6dec02ac2efff000298001e839dde3d6e99d25d1d98ecb0d390c9a6')),  # noqa: E501
-        timestamp=1513954042,
+        timestamp=Timestamp(1513954042),
         block_number=4777277,
-        from_address=ADDY_3,
+        from_address=string_to_evm_address(ADDY_3),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=183231,
@@ -422,7 +425,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_4]])
-def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
+def test_makerdao_sai_repay_sai(ethereum_transaction_decoder: Any) -> None:
     """
     Data for repayment of sai loan is taken from
     https://etherscan.io/tx/0xe964cb12f4bbfa1ba4b6db8464eb3f2d4234ceafb0b5ec5f4a2188b0264bab27
@@ -430,9 +433,9 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe964cb12f4bbfa1ba4b6db8464eb3f2d4234ceafb0b5ec5f4a2188b0264bab27')),  # noqa: E501
-        timestamp=1513958625,
+        timestamp=Timestamp(1513958625),
         block_number=4777277,
-        from_address=ADDY_4,
+        from_address=string_to_evm_address(ADDY_4),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=193606,
@@ -590,7 +593,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_5]])
-def test_makerdao_sai_deposit_weth(ethereum_inquirer):
+def test_makerdao_sai_deposit_weth(ethereum_inquirer: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5a7849ab4b7f7de2b005deddef24a094387c248c3bcb06066109bd7852c1d8af')),  # noqa: E501,
@@ -640,7 +643,7 @@ def test_makerdao_sai_deposit_weth(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_5]])
-def test_makerdao_sai_deposit_peth(ethereum_inquirer):
+def test_makerdao_sai_deposit_peth(ethereum_inquirer: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc8bd1d3556706e659e907b515185ce7e139777229f257e79a6b0b26e2a536e2c')),  # noqa: E501,
@@ -677,7 +680,7 @@ def test_makerdao_sai_deposit_peth(ethereum_inquirer):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_6]])
-def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
+def test_makerdao_sai_liquidation(ethereum_transaction_decoder: Any) -> None:
     """
     Data for liquidation is taken from
     https://etherscan.io/tx/0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba
@@ -685,9 +688,9 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba')),  # noqa: E501
-        timestamp=1513952436,
+        timestamp=Timestamp(1513952436),
         block_number=4777359,
-        from_address=ADDY_6,
+        from_address=string_to_evm_address(ADDY_6),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=249556,
@@ -786,7 +789,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1513952436000,
+            timestamp=TimestampMS(1513952436000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -798,7 +801,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=24,
-            timestamp=1513952436000,
+            timestamp=TimestampMS(1513952436000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.LOSS,
             event_subtype=HistoryEventSubType.LIQUIDATE,
@@ -813,7 +816,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_7]])
-def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
+def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder: Any) -> None:
     """
     Data for abstracted collateral removal is taken from
     https://etherscan.io/tx/0x8c95ecc864db038a42c6cd9d6cab17e12f1f56332b140d903948a69d8b9e4308
@@ -821,9 +824,9 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8c95ecc864db038a42c6cd9d6cab17e12f1f56332b140d903948a69d8b9e4308')),  # noqa: E501
-        timestamp=1514047441,
+        timestamp=Timestamp(1514047441),
         block_number=4783564,
-        from_address=ADDY_7,
+        from_address=string_to_evm_address(ADDY_7),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=164502,
@@ -921,7 +924,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_8]])
-def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder):
+def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder: Any) -> None:
     """
     Data for underlying collateral removal is taken from
     https://etherscan.io/tx/0x6467c080d5c0af9756681a368417fb802206d832f51d20b19c08d7c46a4216b0
@@ -929,9 +932,9 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6467c080d5c0af9756681a368417fb802206d832f51d20b19c08d7c46a4216b0')),  # noqa: E501
-        timestamp=1663338359,
+        timestamp=Timestamp(1663338359),
         block_number=15546757,
-        from_address=ADDY_8,
+        from_address=string_to_evm_address(ADDY_8),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=126261,
@@ -1017,7 +1020,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_9, ADDY_10]])
-def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
+def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder: Any) -> None:
     """
     Data for proxy interaction is taken from
     https://etherscan.io/tx/0xf4203a8b507b0b382903bd8d35dcff29aea98de76b89f745d94705d54b67646f
@@ -1025,9 +1028,9 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf4203a8b507b0b382903bd8d35dcff29aea98de76b89f745d94705d54b67646f')),  # noqa: E501
-        timestamp=1565146195,
+        timestamp=Timestamp(1565146195),
         block_number=8300924,
-        from_address=ADDY_9,
+        from_address=string_to_evm_address(ADDY_9),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=6000000000000000,
         gas=1453333,
@@ -1344,9 +1347,9 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x96c8d55100427de5edbf33fb41623b42966f7ae7273b55edaf6f7a5178d93594')),  # noqa: E501
-        timestamp=1588030530,
+        timestamp=Timestamp(1588030530),
         block_number=8300924,
-        from_address=ADDY_10,
+        from_address=string_to_evm_address(ADDY_10),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=427422,
@@ -1523,7 +1526,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1588030530000,
+            timestamp=TimestampMS(1588030530000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -1535,7 +1538,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=85,
-            timestamp=1588030530000,
+            timestamp=TimestampMS(1588030530000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
@@ -1554,9 +1557,9 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3c85624d0103f946e02c76bf4f801e72e6a753679601611c13ba2d736db1c004')),  # noqa: E501
-        timestamp=1588035170,
+        timestamp=Timestamp(1588035170),
         block_number=8300924,
-        from_address=ADDY_10,
+        from_address=string_to_evm_address(ADDY_10),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=80000000000000000,
         gas=799894,
@@ -1765,7 +1768,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1588035170000,
+            timestamp=TimestampMS(1588035170000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -1777,7 +1780,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=1588035170000,
+            timestamp=TimestampMS(1588035170000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -1790,7 +1793,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
-            timestamp=1588035170000,
+            timestamp=TimestampMS(1588035170000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -1803,7 +1806,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=106,
-            timestamp=1588035170000,
+            timestamp=TimestampMS(1588035170000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -1816,7 +1819,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=117,
-            timestamp=1588035170000,
+            timestamp=TimestampMS(1588035170000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -1836,9 +1839,9 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4e569aa1f23dc771f1c9ad05ab7cdb0af2607358b166a8137b702f81b88e37b9')),  # noqa: E501
-        timestamp=1588030595,
+        timestamp=Timestamp(1588030595),
         block_number=9957537,
-        from_address=ADDY_10,
+        from_address=string_to_evm_address(ADDY_10),
         to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         value=0,
         gas=896581,
@@ -1852,7 +1855,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         chain_id=ChainID.ETHEREUM,
         trace_id=27,
         from_address=string_to_evm_address('0x72Ee0f9AB3678148CC0700243CB38577Bd290869'),
-        to_address=ADDY_10,
+        to_address=string_to_evm_address(ADDY_10),
         value=30000004449579884,
         gas=0,
         gas_used=0,
@@ -1993,7 +1996,11 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
         dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
-        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_10)
+        dbevmtx.add_evm_internal_transactions(
+            cursor,
+            [internal_tx],
+            relevant_address=string_to_evm_address(ADDY_10),
+        )
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -2003,7 +2010,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1588030595000,
+            timestamp=TimestampMS(1588030595000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -2015,7 +2022,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=1588030595000,
+            timestamp=TimestampMS(1588030595000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
@@ -2028,7 +2035,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=90,
-            timestamp=1588030595000,
+            timestamp=TimestampMS(1588030595000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -2044,7 +2051,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xca482bCd75A6E0697aD6A1732aa187310b8372Df']])
-def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accounts):
+def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     """Check that a Sai CDP migration is decoded properly"""
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -2055,7 +2062,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
@@ -2069,7 +2076,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
@@ -2081,7 +2088,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=41,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -2094,7 +2101,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=51,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
@@ -2106,7 +2113,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=52,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -2118,7 +2125,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=58,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
@@ -2130,7 +2137,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=65,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -2143,7 +2150,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=102,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -2155,7 +2162,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=105,
-            timestamp=1579044372000,
+            timestamp=TimestampMS(1579044372000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -2171,7 +2178,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2D3f907b0cF2C7D3c2BA4Cbc72971081FfCea963']])
-def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
+def test_sai_dai_migration(ethereum_transaction_decoder: Any, ethereum_accounts: Any) -> None:
     """Check that SAI to DAI migration is decoded properly"""
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(

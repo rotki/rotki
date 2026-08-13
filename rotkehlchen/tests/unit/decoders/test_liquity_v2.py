@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD77Eb80F38fEC10D87A192d07329415173307E93']])
-def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accounts):
+def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     """Test Liquity V2 staking deposit transaction that also claims previous rewards"""
     tx_hash = deserialize_evm_tx_hash('0x80d85ccacbc3acdbc797ed580044c0d5427d19f70d9d1b67d724bdc7bd4aeff8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -82,7 +82,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             location_label=ethereum_accounts[0],
             notes="Collect 1.125295810448450699 LQTY from Liquity's stability pool into the user's Liquity proxy",  # noqa: E501
             counterparty=CPT_LIQUITY,
-            address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
+            address=string_to_evm_address('0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1'),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=282,
@@ -95,14 +95,14 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             location_label=ethereum_accounts[0],
             notes="Collect 0.000086401749307711 ETH from Liquity's stability pool into the user's Liquity proxy",  # noqa: E501
             counterparty=CPT_LIQUITY,
-            address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
+            address=string_to_evm_address('0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1'),
         ),
     ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC71265fBEEdB11dfE583C1acE8A6be4de5ae2DB4']])
-def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accounts):
+def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     """Test Liquity V2 staking withdraw transaction that also claims previous rewards"""
     tx_hash = deserialize_evm_tx_hash('0xc2288994345ca7c3f7be017c2b3f4e0b32b394b0b7331f6e5fbafafd76daaa8f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -132,7 +132,7 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
             location_label=ethereum_accounts[0],
             notes='Unstake 213.836840607259655703 LQTY from the Liquity V2 protocol',
             counterparty=CPT_LIQUITY,
-            address='0xBb4A9306f99ea6813187140fd0f26C7725e83c60',
+            address=string_to_evm_address('0xBb4A9306f99ea6813187140fd0f26C7725e83c60'),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -145,7 +145,7 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
             location_label=ethereum_accounts[0],
             notes="Collect 0.001294373858063965 LQTY from Liquity's stability pool into the user's Liquity proxy",  # noqa: E501
             counterparty=CPT_LIQUITY,
-            address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
+            address=string_to_evm_address('0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1'),
         ),
     ]
 

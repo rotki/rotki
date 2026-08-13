@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -40,6 +40,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -56,7 +57,7 @@ ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_aave_deposit_v1(ethereum_inquirer):
+def test_aave_deposit_v1(ethereum_inquirer: Any) -> None:
     """Data taken from
     https://etherscan.io/tx/0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410
     """
@@ -121,7 +122,7 @@ def test_aave_deposit_v1(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_aave_withdraw_v1(ethereum_inquirer):
+def test_aave_withdraw_v1(ethereum_inquirer: Any) -> None:
     """Data taken from
     https://etherscan.io/tx/0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486
     """
@@ -186,7 +187,7 @@ def test_aave_withdraw_v1(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
-def test_aave_eth_withdraw_v1(ethereum_inquirer):
+def test_aave_eth_withdraw_v1(ethereum_inquirer: Any) -> None:
     """Data taken from
     https://etherscan.io/tx/0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787
     """
@@ -197,7 +198,7 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=1605789951000,
+            timestamp=TimestampMS(1605789951000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -209,7 +210,7 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=1605789951000,
+            timestamp=TimestampMS(1605789951000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -222,7 +223,7 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
-            timestamp=1605789951000,
+            timestamp=TimestampMS(1605789951000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
@@ -235,7 +236,7 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
-            timestamp=1605789951000,
+            timestamp=TimestampMS(1605789951000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
@@ -250,7 +251,7 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2715273613632226985186221669179813245119')]])  # noqa: E501
-def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions):
+def test_aave_v2_enable_collateral(database: Any, ethereum_inquirer: Any, eth_transactions: Any) -> None:  # noqa: E501
     """
     Data taken from
     https://etherscan.io/tx/0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e
@@ -259,7 +260,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=user_address,
         to_address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
@@ -302,7 +303,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -316,7 +317,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=252,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -333,7 +334,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2715273613632226985186221669179813245119')]])  # noqa: E501
-def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transactions):
+def test_aave_v2_disable_collateral(database: Any, ethereum_inquirer: Any, eth_transactions: Any) -> None:  # noqa: E501
     """
     Data taken from
     https://etherscan.io/tx/0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c
@@ -342,7 +343,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=user_address,
         to_address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
@@ -385,7 +386,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -399,7 +400,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=25,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
@@ -416,7 +417,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2715273613632226985186221669179813245119')]])  # noqa: E501
-def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
+def test_aave_v2_deposit(database: Any, ethereum_inquirer: Any, eth_transactions: Any) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a
@@ -425,7 +426,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=user_address,
         to_address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
@@ -488,7 +489,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -502,7 +503,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -517,7 +518,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -538,7 +539,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     '0x2715273613632226985186221669179813245119',
     '0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44',
 ]])
-def test_aave_v2_withdraw(ethereum_inquirer, ethereum_accounts):
+def test_aave_v2_withdraw(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -606,7 +607,7 @@ def test_aave_v2_withdraw(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9']])
-def test_aave_v2_borrow(ethereum_inquirer, ethereum_accounts):
+def test_aave_v2_borrow(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6c8af2a4157632e33fac9d94a03619f54d318ce1254998aabc5384053eb98ffb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -659,7 +660,7 @@ def test_aave_v2_borrow(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9')]])  # noqa: E501
-def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
+def test_aave_v2_repay(database: Any, ethereum_inquirer: Any, eth_transactions: Any) -> None:
     """
     Data taken from
     https://etherscan.io/tx/0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11
@@ -668,7 +669,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=user_address,
         to_address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
@@ -730,7 +731,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -744,7 +745,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -759,7 +760,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
@@ -866,7 +867,7 @@ def test_aave_v1_liquidation(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90']])
-def test_aave_v2_supply_ether(ethereum_inquirer, ethereum_accounts):
+def test_aave_v2_supply_ether(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     Test deposit in aave using the eth wrapper contract. Data taken from
     https://etherscan.io/tx/0xefc9040c100829a391a636f02eb96a9361bd0bc2ca5e8e5f97bbc4a1831cdec9
@@ -939,7 +940,7 @@ def test_aave_v2_supply_ether(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x572f60c0b887203324149D9C308574BcF2dfaD82']])
-def test_aave_v2_borrow_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> None:
+def test_aave_v2_borrow_polygon(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2c2777e24bc8a59171e33d54c2a87d846fc23e7f21a32b99d22397e64429b39c')),  # noqa: E501
@@ -1416,7 +1417,7 @@ def test_polygon_incentives(polygon_pos_inquirer: PolygonPOSInquirer, polygon_po
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4BF180A73575D4393Cc794f29fb92C3954a36b5A']])
-def test_mainnet_aave_v2_migrate_to_v3_(ethereum_inquirer, ethereum_accounts) -> None:
+def test_mainnet_aave_v2_migrate_to_v3_(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa77ea655f8e0fc7227674633ee1da0c52aadd38f825e2dfa8f44d40867ae1745')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
 

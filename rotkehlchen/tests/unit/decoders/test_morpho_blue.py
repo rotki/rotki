@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -339,7 +339,7 @@ def test_morpho_blue_supply_collateral_and_borrow_via_bundler(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc74EA8404f1819609124ae694328699007BcF73b']])
 def test_morpho_blue_arbitrum_withdrawal(
-        arbitrum_one_inquirer,
+        arbitrum_one_inquirer: Any,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92b92f53d335c457183dda6adb6ba947373bc11b386cb07651648268e553572d')  # noqa: E501

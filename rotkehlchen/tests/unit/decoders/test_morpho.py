@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
 
 
-def _add_morpho_reward_distributor(chain_id: ChainID, address: str):
+def _add_morpho_reward_distributor(chain_id: ChainID, address: str) -> None:
     """Add Morpho reward distributor address to cache for proper decoding."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
@@ -47,7 +47,7 @@ def _add_morpho_vault(
         chain_id: ChainID,
         vault: ChecksumEvmAddress,
         underlying: ChecksumEvmAddress,
-):
+) -> None:
     """Add Morpho vault address and underlying token address to the cache for proper decoding."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(

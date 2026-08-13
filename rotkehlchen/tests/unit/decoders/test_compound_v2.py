@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -39,7 +39,7 @@ ADDR_REPAYS_ETH = '0x18c42014Fb0aeD3E35515eb45DF8498Af67773a4'
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_compound_ether_deposit(ethereum_inquirer):
+def test_compound_ether_deposit(ethereum_inquirer: Any) -> None:
     """Data taken from:
     https://etherscan.io/tx/0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39
     """
@@ -89,7 +89,7 @@ def test_compound_ether_deposit(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_compound_ether_withdraw(ethereum_inquirer):
+def test_compound_ether_withdraw(ethereum_inquirer: Any) -> None:
     """Data taken from:
     https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
     """
@@ -139,7 +139,7 @@ def test_compound_ether_withdraw(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
-def test_compound_deposit_with_comp_claim(ethereum_inquirer):
+def test_compound_deposit_with_comp_claim(ethereum_inquirer: Any) -> None:
     """Data taken from:
     https://etherscan.io/tx/0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba
     """
@@ -205,7 +205,7 @@ def test_compound_deposit_with_comp_claim(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY3]])
-def test_compound_multiple_comp_claim(ethereum_inquirer):
+def test_compound_multiple_comp_claim(ethereum_inquirer: Any) -> None:
     """Test that a transaction with multiple comp claims decodes all of them as rewards
     This is to test against a regression of a bug that decoded the last reward claim
     as a simple receive.
@@ -295,7 +295,7 @@ def test_compound_multiple_comp_claim(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xB8cCf257d32b134ffecb902e5Bef3042841B8A4A']])
-def test_compound_comp_claim_last_transfer(ethereum_inquirer, ethereum_accounts):
+def test_compound_comp_claim_last_transfer(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     Test comp claim case that was not decoded properly before due to
     the transfer being last the last event
@@ -501,7 +501,7 @@ def test_compound_repays_eth(ethereum_inquirer: EthereumInquirer) -> None:
 @pytest.mark.parametrize('ethereum_accounts', [['0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15']])
 def test_compound_liquidate(
         ethereum_inquirer: EthereumInquirer,
-        ethereum_accounts,
+        ethereum_accounts: Any,
 ) -> None:
     """
     Decode a liquidation happening to the position of 0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15
@@ -530,7 +530,7 @@ def test_compound_liquidate(
 @pytest.mark.parametrize('ethereum_accounts', [['0xD911560979B78821D7b045C79E36E9CbfC2F6C6F']])
 def test_compound_liquidator_side(
         ethereum_inquirer: EthereumInquirer,
-        ethereum_accounts,
+        ethereum_accounts: Any,
 ) -> None:
     """
     Decode liquidation made by 0xD911560979B78821D7b045C79E36E9CbfC2F6C6F
@@ -574,7 +574,7 @@ def test_compound_liquidator_side(
 @pytest.mark.parametrize('ethereum_accounts', [['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']])
 def test_compound_liquidation_eth(
         ethereum_inquirer: EthereumInquirer,
-        ethereum_accounts,
+        ethereum_accounts: Any,
 ) -> None:
     """Test that repaying a compound loan in a liquidation using ETH is correctly decoded"""
     tx_hash = deserialize_evm_tx_hash('0x160c0e6db0df5ea0c1cc9b1b31bd90c842ef793c9b2ab496efdc62bdd80eeb52')  # noqa: E501

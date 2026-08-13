@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 def test_extrafi_deposit_and_stake(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x81a87d2f8a9752ac4889ec92d6ec553417e3b4cc709a240718cf423f362e89b1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -86,7 +86,7 @@ def test_extrafi_deposit_and_stake(
 def test_extrafi_unstake_and_withdraw(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6acaea14d49f1e27902064251b1656067ed2518f831ae2d75ca6806bb7a21892')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -125,7 +125,7 @@ def test_extrafi_unstake_and_withdraw(
 def test_extrafi_claim_from_pool(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0c14b9d8d9a7dbe9243a29f4ec4d32852456163f80f46de7119c2c9fd8737a0b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -177,7 +177,7 @@ def test_extrafi_claim_from_pool(
 def test_extrafi_lock_token(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x10cc6bb6d749e4c42c4d961de69bcd0d3885fe74ecc627e9069b41d000344fa7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -228,7 +228,7 @@ def test_extrafi_lock_token(
 def test_extrafi_repay(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc1b3c8ac33f3b5d27e48377e59a6a6c384ee425f86c7ac86cec4b903e38c9bca')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -280,7 +280,7 @@ def test_extrafi_repay(
 def test_extrafi_repay_with_token(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5b907d75ec3ba70436385071fc57e31b428b24cb92a05d802a5714273171e697')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -344,7 +344,7 @@ def test_extrafi_repay_with_token(
 def test_close_position(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x24c5e37be0340c3713c851cbe849f2f2d7c9fd9c776d889fe065cd5aaaadb49f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -383,7 +383,7 @@ def test_close_position(
 def test_farm_investment(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf1f2de24757b57df7b53090369020a527f9ea54d5a876fe85fe972643c50a7e2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -458,7 +458,7 @@ def test_farm_investment(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
-def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
+def test_new_farm_borrow_position_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb9479f2e21100ddbba10395d76abb2fb4e151b2142ba90c91151a10fcb5cfbc7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -507,7 +507,7 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
-def test_new_farm_position_on_base(base_inquirer, base_accounts):
+def test_new_farm_position_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf0458b2c208fa7362669b6430277808a2bda527fcbe5dd3514a5879c445311cc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -544,7 +544,7 @@ def test_new_farm_position_on_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xDbA7bB7Ee25d259e0a14880Ef107A7c5106A716d']])
-def test_vested_extra_base(base_inquirer, base_accounts):
+def test_vested_extra_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x560a5e279a7f1b9c89dca3d7f93da11c9418037c0362f01b443d50967a719d5d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -597,7 +597,7 @@ def test_extrafi_claim_lending(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6cca377983ebf715d83a3ea566e420d79abf545b8aad61c6bad68cc60fc57c05')),  # noqa: E501
@@ -654,7 +654,7 @@ def test_extrafi_claim_lending_base(
         base_inquirer: BaseInquirer,
         base_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xccefe09c6b3cfc9753494c28f07de309d26ccb5169ed478c93b4169776ac0edc')),  # noqa: E501
@@ -696,7 +696,7 @@ def test_extrafi_claim_lending_base(
 def test_op_incentive_rewards(
         optimism_inquirer: OptimismInquirer,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb9bb665425a4beeac4afaba637bffcdfc3fe57d2606eee44ec90bba532050a0c')),  # noqa: E501
