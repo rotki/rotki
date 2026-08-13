@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
 import { RotkiApp } from './rotki-app';
 
@@ -102,17 +102,29 @@ export class CalendarPage {
     return this.page.locator('[data-testid=bottom-dialog] [data-testid=reminder-amount]');
   }
 
+  /**
+   * Types an amount into a reminder row and commits it.
+   *
+   * `fill` never reaches this field. It is a formatted input, so the single synthetic event that
+   * `fill` dispatches is discarded on the next redraw and the row keeps its previous amount, with
+   * no error and nothing to show the value was dropped. Typing it a key at a time is what actually
+   * reaches the model, and the assertion holds it to that.
+   */
+  private async fillAmount(input: Locator, amount: string): Promise<void> {
+    await input.click();
+    await input.press('ControlOrMeta+a');
+    await input.pressSequentially(amount);
+    await input.blur();
+    await expect(input).toHaveValue(amount, { timeout: TIMEOUT_MEDIUM });
+  }
+
   /** Adds a reminder to the dialog that is already open, and sets it to `amount` of `unit`. */
   async addReminder(amount: string, unit: string): Promise<void> {
     await this.page.getByTestId('reminder-add').click();
     const row = this.reminderRows().last();
     await row.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     const input = row.locator('input');
-    await input.fill(amount);
-    // A new row starts at the 15 minute default, and the amount field reformats as it is typed, so
-    // the fill can be observed part-applied. Settling here reports it as what it is rather than as
-    // a wrong value read back several steps later.
-    await expect(input).toHaveValue(amount, { timeout: TIMEOUT_MEDIUM });
+    await this.fillAmount(input, amount);
 
     // RuiMenuSelect opens a teleported menu rather than a native select.
     await this.page.getByTestId('reminder-unit').last().locator('[data-id=activator]').click();
@@ -154,14 +166,24 @@ export class CalendarPage {
     await expect(toggle).toHaveAttribute('data-expanded', 'true', { timeout: TIMEOUT_MEDIUM });
   }
 
-  /** Retypes the amount of the row currently showing `amount`, and leaves the field. */
+  /**
+   * Retypes the amount of the row currently showing `from`, and leaves the field.
+   *
+   * The row is found by its amount but addressed by position from there on. A locator matching on
+   * the amount is re-resolved before every action, so it stops matching its own row the moment the
+   * new amount is typed, and the rest of the edit then waits on an element that no longer exists.
+   */
   async changeReminderAmount(from: string, to: string): Promise<void> {
     await this.expandReminders();
-    const input = this.reminderRows().locator(`input[value="${from}"]`).first();
-    await input.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    await input.fill(to);
-    await expect(input).toHaveValue(to, { timeout: TIMEOUT_MEDIUM });
-    await input.blur();
+    const inputs = this.reminderRows().locator('input');
+    await inputs.first().waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+
+    const count = await inputs.count();
+    const values = await Promise.all(Array.from({ length: count }, async (_, position) => inputs.nth(position).inputValue()));
+    const index = values.indexOf(from);
+    expect(index, `no reminder row shows ${from}, found ${values.join(', ')}`).toBeGreaterThanOrEqual(0);
+
+    await this.fillAmount(inputs.nth(index), to);
   }
 
   async deleteReminder(amount: string): Promise<void> {
