@@ -30,6 +30,24 @@ from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCom
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
+from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.constants import (
+    FLYING_TULIP_FTUSD_DEPLOYMENTS,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.decoder import (
+    FlyingTulipFtusdCommonDecoder,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
+    FLYING_TULIP_LEND_DEPLOYMENTS,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.decoder import (
+    FlyingTulipLendCommonDecoder,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.put.constants import (
+    FLYING_TULIP_PUT_DEPLOYMENTS,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.put.decoder import (
+    FlyingTulipPutCommonDecoder,
+)
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
     SUPPORTED_ZCHF_SAVINGS_CHAINS,
 )
@@ -281,6 +299,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         if self.evm_inquirer.chain_id in SUPPORTED_ZCHF_SAVINGS_CHAINS:
             self._add_single_decoder(class_name='FrankencoinSavings', decoder_class=FrankencoinSavingsCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in FLYING_TULIP_FTUSD_DEPLOYMENTS:
+            self._add_single_decoder(class_name='FlyingTulipFtusd', decoder_class=FlyingTulipFtusdCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in FLYING_TULIP_LEND_DEPLOYMENTS:
+            self._add_single_decoder(class_name='FlyingTulipLend', decoder_class=FlyingTulipLendCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in FLYING_TULIP_PUT_DEPLOYMENTS:
+            self._add_single_decoder(class_name='FlyingTulipPut', decoder_class=FlyingTulipPutCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
         if self.evm_inquirer.chain_id in CFA_V1_ADDRESSES:
             self._add_single_decoder(class_name='Superfluid', decoder_class=SuperfluidCommonDecoder, rules=rules)  # noqa: E501

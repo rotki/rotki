@@ -50,6 +50,8 @@ from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.yearn.vesting.balances import YearnVestingBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
+from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.balances import FlyingTulipStakingBalances
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.balances import FlyingTulipLendBalances
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
 )
@@ -216,6 +218,8 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         WoofiBalances,
         YearnVestingBalances,
         FrankencoinSavingsBalances,
+        FlyingTulipLendBalances,
+        FlyingTulipStakingBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,

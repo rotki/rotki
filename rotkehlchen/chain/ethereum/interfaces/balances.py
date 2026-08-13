@@ -36,6 +36,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'aerodrome',
     'curve',
     'convex',
+    'flying-tulip',
     'frankencoin',
     'velodrome',
     'thegraph',
