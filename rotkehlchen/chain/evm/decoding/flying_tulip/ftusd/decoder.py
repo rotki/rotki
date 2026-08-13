@@ -122,8 +122,9 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
 
         if out_event is None or in_event is None:
             log.warning(
-                f'Failed to find both sides of a {FLYING_TULIP_LABEL} ftUSD '
-                f'mint/redeem in transaction {context.transaction}',
+                'Failed to find both sides of a %s ftUSD mint/redeem in transaction %s',
+                FLYING_TULIP_LABEL,
+                context.transaction,
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
