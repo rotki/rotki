@@ -124,7 +124,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     event.asset == token and
                     event.location_label == candidate.location_label and
                     event.address == candidate.address and
-                    event.amount < fee_amount
+                    event.amount <= fee_amount
                 )
             ), None)
             if refund_event is not None:
@@ -258,18 +258,14 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             )))
 
         # A relayed transfer covers a single event's funds plus the fee. When
-        # several events compete for the same token's transfers on the same
-        # side, inferring the fee from an amount difference is ambiguous, so
-        # the split is only allowed for a token with one event on that side
-        # (otherwise only exact matches are decoded).
+        # several events compete for the same token's transfers, inferring the
+        # fee (or a refund) from an amount difference is ambiguous, so the
+        # split is only allowed for a token with exactly one event in the
+        # whole transaction (otherwise only exact matches are decoded).
         spend_topics = (DEPOSIT_TOPIC_V3, PM_DEPOSIT_FOR_TOPIC, PM_REPAY_TOPIC, PM_REPAY_FOR_TOPIC)
-        spend_counts: dict[ChecksumEvmAddress, int] = defaultdict(int)
-        receive_counts: dict[ChecksumEvmAddress, int] = defaultdict(int)
-        for topic, _, _, _, token, _ in parsed_events:
-            if topic in spend_topics:
-                spend_counts[token.evm_address] += 1
-            else:
-                receive_counts[token.evm_address] += 1
+        token_counts: dict[ChecksumEvmAddress, int] = defaultdict(int)
+        for _, _, _, _, token, _ in parsed_events:
+            token_counts[token.evm_address] += 1
 
         consumed: set[int] = set()  # ids of transfer events already claimed by an event
         for topic, user, payer, beneficiary, token, amount in parsed_events:
@@ -282,8 +278,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     notes = f'Repay {amount} {token.symbol} in {LEND_LABEL}'
                     to_event_type = HistoryEventType.SPEND
                     to_event_subtype = HistoryEventSubType.PAYBACK_DEBT
-                if beneficiary is not None and not self.base.is_tracked(beneficiary):
-                    notes += f' for {beneficiary}'
                 matched = self._reconcile_spend(
                     transaction=transaction,
                     decoded_events=decoded_events,
@@ -294,18 +288,20 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     to_event_type=to_event_type,
                     to_event_subtype=to_event_subtype,
                     notes=notes,
-                    allow_fee_split=spend_counts[token.evm_address] == 1,
+                    allow_fee_split=token_counts[token.evm_address] == 1,
                 )
                 if (
                         matched is not None and
-                        topic == PM_DEPOSIT_FOR_TOPIC and
-                        matched.location_label != beneficiary and
-                        self.base.is_tracked(beneficiary)  # type: ignore[arg-type]  # beneficiary is set here
+                        beneficiary is not None and
+                        matched.location_label != beneficiary
                 ):
-                    # Attribute an on-behalf deposit to the position owner so
-                    # the deposit is found when querying their balances.
-                    matched.notes = f'{notes} paid by {matched.location_label}'
-                    matched.location_label = beneficiary
+                    if topic == PM_DEPOSIT_FOR_TOPIC and self.base.is_tracked(beneficiary):
+                        # Attribute an on-behalf deposit to the position owner
+                        # so it is found when querying their balances.
+                        matched.notes = f'{notes} paid by {matched.location_label}'
+                        matched.location_label = beneficiary
+                    else:
+                        matched.notes = f'{notes} for {beneficiary}'
             else:  # WITHDRAW_TOPIC or PM_BORROW_TOPIC
                 if topic == WITHDRAW_TOPIC:
                     notes = f'Withdraw {amount} {token.symbol} from {LEND_LABEL}'
@@ -325,7 +321,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     to_event_type=to_event_type,
                     to_event_subtype=to_event_subtype,
                     notes=notes,
-                    allow_fee_split=receive_counts[token.evm_address] == 1,
+                    allow_fee_split=token_counts[token.evm_address] == 1,
                 )
 
         return decoded_events

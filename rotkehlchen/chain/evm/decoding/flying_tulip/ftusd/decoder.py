@@ -11,7 +11,6 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.constants import (
 from rotkehlchen.chain.evm.decoding.flying_tulip.decoder import FlyingTulipCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
-    ActionItem,
     DecoderContext,
     EvmDecodingOutput,
 )
@@ -280,19 +279,25 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
         On relayed flows the fee is deducted from the payout before it reaches
         the wallet, so it only shows in the vault's RelayerFeePaid log.
         """
+        fee_log = None
         for tx_log in context.all_logs:
             if (
                     tx_log.address == self.deployment.staking_vault and
                     tx_log.topics[0] == VAULT_RELAYER_FEE_PAID_TOPIC and
+                    tx_log.log_index < context.tx_log.log_index and
                     bytes_to_address(tx_log.topics[1]) == user and
-                    bytes_to_address(tx_log.data[0:32]) == token.evm_address
-            ):
-                return token_normalized_value(
-                    token_amount=int.from_bytes(tx_log.data[32:64]),
-                    token=token,
-                )
+                    bytes_to_address(tx_log.data[0:32]) == token.evm_address and
+                    (fee_log is None or tx_log.log_index > fee_log.log_index)
+            ):  # the vault emits the fee log right before its payout event, so
+                fee_log = tx_log  # the nearest preceding one belongs to this payout
 
-        return ZERO
+        if fee_log is None:
+            return ZERO
+
+        return token_normalized_value(
+            token_amount=int.from_bytes(fee_log.data[32:64]),
+            token=token,
+        )
 
     def _make_relayer_fee_event(
             self,
@@ -426,17 +431,12 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                 event.counterparty = CPT_FLYING_TULIP
                 return DEFAULT_EVM_DECODING_OUTPUT
 
-        return EvmDecodingOutput(action_items=[ActionItem(  # reward transfer not decoded yet
-            action='transform',
-            from_event_type=HistoryEventType.RECEIVE,
-            from_event_subtype=HistoryEventSubType.NONE,
-            asset=self.ft_token,
-            amount=paid_amount,
-            location_label=receiver,
-            to_event_subtype=HistoryEventSubType.REWARD,
-            to_notes=f'Claim {paid_amount} FT from {FLYING_TULIP_LABEL} ftUSD staking',
-            to_counterparty=CPT_FLYING_TULIP,
-        )])
+        log.warning(  # the vault transfers the reward before emitting Claimed
+            'Failed to find the reward transfer of a %s staking claim in transaction %s',
+            FLYING_TULIP_LABEL,
+            context.transaction,
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
