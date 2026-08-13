@@ -194,5 +194,6 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
             EvmIndexer.ETHERSCAN,
         ),  # Etherscan only serves gnosis to paid api keys now, so blockscout goes first and etherscan stays as a fallback. Routescan does not support gnosis  # noqa: E501
         ChainID.MONAD: (EvmIndexer.ETHERSCAN,),  # Only etherscan (monadscan) is available for Monad  # noqa: E501
+          ChainID.SONIC: (EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT),  # sonicscan primary, blockscout fallback  # noqa: E501
     },
 )
