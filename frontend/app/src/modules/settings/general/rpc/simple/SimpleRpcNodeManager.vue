@@ -135,7 +135,24 @@ defineExpose({
           colspan="2"
           class="!py-4 text-rui-text-secondary text-center w-full"
         >
-          {{ t('data_table.no_data') }}
+          <div class="flex flex-col gap-3 items-center">
+            {{ t('data_table.no_data') }}
+            <!-- The header "Add node" button is hidden for single-value
+                 endpoints, so this is the only way to set an empty one. -->
+            <RuiButton
+              color="primary"
+              data-testid="add-simple-node"
+              @click="addNewRpcNode()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-plus"
+                  size="16"
+                />
+              </template>
+              {{ t('evm_rpc_node_manager.add_button') }}
+            </RuiButton>
+          </div>
         </td>
       </tr>
     </tbody>
