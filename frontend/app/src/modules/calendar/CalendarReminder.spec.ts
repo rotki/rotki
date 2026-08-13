@@ -1,3 +1,4 @@
+import type { ComponentPublicInstance } from 'vue';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -56,8 +57,8 @@ describe('calendarReminder', () => {
     return mounted;
   }
 
-  function rows(): VueWrapper[] {
-    return wrapper.findAllComponents({ name: 'CalendarReminderEntry' });
+  function rows(): VueWrapper<ComponentPublicInstance<Record<string, unknown>>>[] {
+    return wrapper.findAllComponents<ComponentPublicInstance<Record<string, unknown>>>({ name: 'CalendarReminderEntry' });
   }
 
   it('should render a row per saved reminder', async () => {
@@ -84,7 +85,8 @@ describe('calendarReminder', () => {
     await rows()[1].findAll('button').at(-1)!.trigger('click');
     await flushPromises();
 
-    const remaining = rows().map(row => Reflect.get(row.props('modelValue') ?? {}, 'identifier'));
-    expect(remaining).toEqual([11, 33]);
+    // The rows are one, two and three hours, so the amounts say which ones survived.
+    const remaining = rows().map(row => row.props('amount'));
+    expect(remaining).toEqual(['1', '3']);
   });
 });

@@ -1957,6 +1957,10 @@
         "message": "There was a problem fetching the reminder: {message}",
         "title": "Fetching calendar reminder"
       },
+      "labels": {
+        "amount": "Amount",
+        "unit": "Unit"
+      },
       "notify": "Notify me at event time",
       "title": "Reminder",
       "units": {
@@ -1970,9 +1974,6 @@
           "max_value": "Cannot set reminder more than {amount} {unit}",
           "min_value": "Cannot set reminder less than 1 minute",
           "non_empty": "The amount field should not be empty"
-        },
-        "unit": {
-          "non_empty": "The unit field should not be empty"
         }
       }
     },

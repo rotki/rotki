@@ -1,4 +1,5 @@
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -49,6 +50,58 @@ describe('calendarForm', () => {
     });
   }
 
+  /** Mounts the form the way the dialog does, with a parent holding the event in a real ref. */
+  function mountWithOwner(modelValue: CalendarEvent = baseModel()): ModelFormHarness<CalendarEvent> {
+    return mountModelForm<CalendarEvent>(CalendarForm, {
+      errors: {},
+      global: {
+        stubs: {
+          BlockchainAccountSelector: true,
+          CalendarColorInput: true,
+          CounterpartyInput: true,
+          DateTimePicker: true,
+        },
+      },
+      payload: { ...modelValue },
+      props: { editMode: false },
+    });
+  }
+
+  // The form decides none of its own opening state, so nothing it does on mount may read back as an
+  // edit and prompt the user about unsaved changes before they have touched anything.
+  it('should open without arming the unsaved-changes prompt', async () => {
+    const harness = mountWithOwner();
+    await nextTick();
+    await nextTick();
+
+    expect(harness.stateUpdated()).toBe(false);
+    harness.wrapper.unmount();
+  });
+
+  // The dialog reads the payload it saves off the model, and the form writes every edit back into
+  // it, so a typed value has to survive the trip out and back.
+  it('should keep a typed name when the owner echoes the model back', async () => {
+    const harness = mountWithOwner({ ...baseModel(), name: '' });
+
+    await harness.wrapper.find('[data-testid=calendar-form-name] input').setValue('team standup');
+    await nextTick();
+    await nextTick();
+
+    expect(await harness.validate()).toBe(true);
+    harness.wrapper.unmount();
+  });
+
+  it('should hand the owner the name that was typed', async () => {
+    const harness = mountWithOwner({ ...baseModel(), name: '' });
+
+    await harness.wrapper.find('[data-testid=calendar-form-name] input').setValue('team standup');
+    await nextTick();
+    await nextTick();
+
+    expect(harness.model().name).toBe('team standup');
+    harness.wrapper.unmount();
+  });
+
   /** Adds a reminder row, which starts at the 15 minute default. */
   async function addReminderRow(): Promise<void> {
     const buttons = wrapper.findAll('button');
@@ -64,6 +117,24 @@ describe('calendarForm', () => {
 
   it('should pass validation when the name is filled', async () => {
     wrapper = createWrapper();
+
+    expect(await wrapper.vm.validate()).toBe(true);
+  });
+
+  // Everything except the name is carried rather than validated, and most of it has no field bound
+  // to show a message, so a rule here would block the save with nothing on screen to explain it.
+  it.each([
+    ['autoDelete'],
+    ['color'],
+    ['counterparty'],
+    ['description'],
+    ['address'],
+    ['blockchain'],
+    ['identifier'],
+  ] as const)('should still validate when %s is absent', async (key) => {
+    const model = baseModel();
+    Reflect.deleteProperty(model, key);
+    wrapper = createWrapper(model);
 
     expect(await wrapper.vm.validate()).toBe(true);
   });
