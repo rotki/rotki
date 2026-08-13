@@ -2,8 +2,9 @@ import path from 'node:path';
 import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
-import { buildStarlingInvocation, describeResolvedCore, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
+import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
 import { requestStarlingStart, spawnStarling } from '../shared/starling/starling-launch';
+import { describeResolvedCore } from '../shared/starling/starling-launchers';
 import { StarlingMethod } from '../shared/starling/starling-protocol';
 import { StarlingRpc } from '../shared/starling/starling-rpc';
 

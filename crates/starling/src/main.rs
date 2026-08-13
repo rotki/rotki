@@ -222,6 +222,17 @@ struct Cli {
     #[arg(long, default_value_t = starling_core::config::DEFAULT_CORE_PORT)]
     core_port: u16,
 
+    /// Development-only: forward `/api/1/*` here instead of to `--core-port`.
+    /// Embedded-only, and ignored in docker.
+    ///
+    /// Puts the premium dev-proxy between this proxy and core, so it can serve
+    /// locally built premium components while the renderer keeps addressing one
+    /// origin. Core is still spawned and supervised on `--core-port`, and the
+    /// session-validate call still goes there directly, so this never places a
+    /// dev tool in the authentication path.
+    #[arg(long)]
+    core_upstream_port: Option<u16>,
+
     #[arg(long, default_value_t = starling_core::config::DEFAULT_COLIBRI_PORT)]
     colibri_port: u16,
 
@@ -506,8 +517,20 @@ async fn main() -> std::process::ExitCode {
                 "ignoring docker-only flags in embedded mode",
             );
         }
-    } else if cli.proxy_port.is_some() {
-        warn!("ignoring embedded-only flag --proxy-port in docker mode");
+    } else {
+        let ignored: Vec<&str> = [
+            ("--proxy-port", cli.proxy_port.is_some()),
+            ("--core-upstream-port", cli.core_upstream_port.is_some()),
+        ]
+        .into_iter()
+        .filter_map(|(name, given)| given.then_some(name))
+        .collect();
+        if !ignored.is_empty() {
+            warn!(
+                flags = ignored.join(", "),
+                "ignoring embedded-only flags in docker mode",
+            );
+        }
     }
 
     // Guard the MiB -> bytes conversion: clap accepts any usize, and an
@@ -894,6 +917,8 @@ async fn main() -> std::process::ExitCode {
         let config = ProxyConfig {
             port,
             core_port: cli.core_port,
+            // Embedded-only; the docker branch above warns and drops it.
+            api_upstream_port: (!docker).then_some(cli.core_upstream_port).flatten(),
             colibri_port: cli.colibri_port,
             mcp_port: cli.mcp_port,
             mcp_enabled: cookie_auth,

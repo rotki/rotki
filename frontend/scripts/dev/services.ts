@@ -170,34 +170,46 @@ export interface DevEnvironmentOptions {
 async function startBackendForMode(
   instance: InstanceRuntime | null,
   opts: DevEnvironmentOptions,
-): Promise<{ backendEnv: StarlingDevEnv; devPort: number | undefined }> {
+): Promise<{ backendEnv: StarlingDevEnv; corePort: number; devPort: number | undefined }> {
   const logDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logDir))
     fs.mkdirSync(logDir);
 
-  const backendEnv = await startStarlingSupervisor({
+  const { env, ports } = await startStarlingSupervisor({
     logDir,
     dataDir: instance?.dir,
     corePort: instance ? instance.ports.restApi : opts.webPort,
     colibriPort: instance ? instance.ports.colibri : opts.colibriPort,
     proxyPort: instance ? instance.ports.starlingProxy : DEFAULT_PORTS.starlingProxy,
     mcpPort: instance ? instance.ports.mcp : DEFAULT_PORTS.mcp,
+    // With the dev-proxy on, starling forwards `/api/1/*` through it. The port is
+    // known up front (a slot reservation or the default), so it can be named at
+    // launch even though the proxy itself starts once starling is up.
+    coreUpstreamPort: opts.useProxy ? devProxyPort(instance) : undefined,
     // An instance owns its slot outright; otherwise the defaults are only a
     // starting point and a busy port walks up, as it did before starling.
     strictPorts: instance !== null,
   });
-  return { backendEnv, devPort: instance?.ports.dev };
+  return { backendEnv: env, corePort: ports.corePort, devPort: instance?.ports.dev };
 }
 
-function spawnProxyForBackend(instance: InstanceRuntime | null, backendEnv: StarlingDevEnv): void {
-  // The premium dev-proxy is the outermost hop, so it fronts starling's proxy
-  // rather than core directly: frontend -> dev-proxy -> starling proxy -> core.
-  // Colibri now rides the same chain: the dev-proxy mounts a catch-all with no
-  // path filter and only intercepts `/api/1/*`, so `/colibri/*` passes straight
-  // through to starling, which strips the prefix.
-  const proxyPort = instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
-  process.env.VITE_BACKEND_URL = `http://127.0.0.1:${proxyPort}`;
-  startDevProxy({ PORT: String(proxyPort), BACKEND: backendEnv.VITE_BACKEND_URL });
+function devProxyPort(instance: InstanceRuntime | null): number {
+  return instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
+}
+
+function spawnProxyForBackend(instance: InstanceRuntime | null, corePort: number): void {
+  // The premium dev-proxy sits *between* starling and core:
+  // frontend -> starling proxy -> dev-proxy -> core. starling stays the single
+  // renderer origin in every mode, so `VITE_BACKEND_URL` is untouched here — it
+  // used to be redirected at the proxy, which the vite child then overrode with
+  // starling's url anyway, leaving the proxy running with nothing routed to it.
+  //
+  // Only `/api/1/*` is routed through it, which is the whole of what it
+  // intercepts. `/colibri/*`, `/ws/*` and `/_control` never leave starling.
+  startDevProxy({
+    PORT: String(devProxyPort(instance)),
+    BACKEND: `http://127.0.0.1:${corePort}`,
+  });
 }
 
 function spawnProxyForElectron(instance: InstanceRuntime | null): void {
@@ -234,10 +246,11 @@ function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string
 }
 
 function pointFrontendAtBackend(backendEnv: StarlingDevEnv): void {
-  // No dev-proxy — Vite talks straight to starling's proxy, the same single
-  // origin the packaged renderer uses. Core answers `/api/1/*`, colibri
-  // `/colibri/*`, and the CORS allowance starling passes both backends permits
-  // the Vite origin.
+  // Vite talks to starling's proxy, the same single origin the packaged renderer
+  // uses, whether or not the dev-proxy is enabled — with it on, starling routes
+  // `/api/1/*` through it upstream, which the renderer never sees. Core answers
+  // `/api/1/*`, colibri `/colibri/*`, and the CORS allowance starling passes both
+  // backends permits the Vite origin.
   process.env.VITE_BACKEND_URL = backendEnv.VITE_BACKEND_URL;
 }
 
@@ -249,11 +262,11 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
   let extraEnv: Record<string, string> | undefined;
 
   if (noElectron) {
-    ({ backendEnv, devPort } = await startBackendForMode(instance, opts));
+    let corePort: number;
+    ({ backendEnv, corePort, devPort } = await startBackendForMode(instance, opts));
+    pointFrontendAtBackend(backendEnv);
     if (useProxy)
-      spawnProxyForBackend(instance, backendEnv);
-    else
-      pointFrontendAtBackend(backendEnv);
+      spawnProxyForBackend(instance, corePort);
   }
   else {
     // Electron mode: electron's main process spawns its own backend + colibri.
