@@ -57,8 +57,8 @@ def _pendle_cache(globaldb: GlobalDBHandler) -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFd83CCCecef02a334e6A86e7eA8D0aa0F61f1Faf']])
 def test_lock_pendle(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -147,8 +147,8 @@ def test_lock_pendle(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6fB14757A71978D067142d7aAc0C869497dc9119']])
 def test_stake_pendle_all_events(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash(
@@ -216,8 +216,8 @@ def test_stake_pendle_all_events(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2F8eC6866a50a64AC2d0cE211519C6f4172b770b']])
 def test_cooldown_staked_pendle_all_events(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash(
@@ -272,8 +272,8 @@ def test_cooldown_staked_pendle_all_events(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x97C1837fEEc918Bd2Db0365Dd075F8EFB3EaaCe2']])
 def test_instant_unstake_staked_pendle_all_events(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash(
@@ -329,8 +329,8 @@ def test_instant_unstake_staked_pendle_all_events(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0661f7963fA984bDFE53F86FCe7b3172D63BEC13']])
 def test_finalize_cooldown_staked_pendle_all_events(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash(
@@ -371,8 +371,8 @@ def test_finalize_cooldown_staked_pendle_all_events(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe0eAa41BdaF0F0126c75bD0a4F07a325dE842dd6']])
 def test_unlock_pendle(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0x5bbfd3175156e347edb917f02311cbc7723d6f61d5bed532e7cfb947fe5b4d72',
@@ -418,8 +418,8 @@ def test_unlock_pendle(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4aCAeaD5249770F268F18284Ef7e71039DC127Fb']])
 def test_buy_pt(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     assert (
         get_evm_token(
@@ -537,8 +537,8 @@ def test_buy_pt(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xaf4F6710207f1BdaFFA5540afC81DDd26B76ED66']])
 def test_buy_pt_router_v3(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
 
     events, _ = get_decoded_events_of_transaction(
@@ -598,8 +598,8 @@ def test_buy_pt_router_v3(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x25eBAb74687236c711a612dA494c79EaC2a0f250']])
 def test_add_liquidity_keep_yt_router_v3(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -671,9 +671,9 @@ def test_add_liquidity_keep_yt_router_v3(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFd83CCCecef02a334e6A86e7eA8D0aa0F61f1Faf']])
 def test_return_pt(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
-    pendle_cache: None,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        pendle_cache: None,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xcdd9f5254bf8d451a924f350e325eae55d4fadba52d277e47d1218ce08108c5b',
@@ -744,8 +744,8 @@ def test_return_pt(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xAeF32637DbE2cC1ed4e8b04bE1363bE583724947']])
 def test_buy_yt(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -811,8 +811,8 @@ def test_buy_yt(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC1466a0a0e2a8BB9304823087643Fec98957a73B']])
 def test_sell_yt(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -892,8 +892,8 @@ def test_sell_yt(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xCA9CE67D4E2d19a5aa9C1c3EB5BfDaec71c271C7']])
 def test_add_liquidity(
-    base_inquirer: BaseInquirer,
-    base_accounts: list[ChecksumEvmAddress],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     assert (
         get_evm_token(
@@ -973,8 +973,8 @@ def test_add_liquidity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe1685a3D1aE79B7C85829fcCe57D62a02eac61a5']])
 def test_swap_using_kyber(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This checks for swaps where the receive event comes after the swap event."""
     events, _ = get_decoded_events_of_transaction(
@@ -1052,8 +1052,8 @@ def test_swap_using_kyber(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
 def test_swap_using_kyber_2(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This checks for swaps where the receive event comes before the swap event."""
     events, _ = get_decoded_events_of_transaction(
@@ -1117,8 +1117,8 @@ def test_swap_using_kyber_2(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc68Ca8A21AAcF167E234F8d08F5d9d115fae2F8d']])
 def test_swap_using_odos(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1181,8 +1181,8 @@ def test_swap_using_odos(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3fEB789a337E7C9E82d6E1AB16f1C9AC116c6956']])
 def test_mint_pt_yt(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xac0df15d6f1699158d912fcaf493155b0a4e577d2fc564e43a642b9882a0318c',
@@ -1257,8 +1257,8 @@ def test_mint_pt_yt(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf7Ae4ec5f1f5813fBA503Dd98fc42633fAff6c2e']])
 def test_mint_sy(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0x682b1836e7d4f7d27488e21c6dfeb0097bb72a662dd1d6491c026e2352aad843',
@@ -1333,8 +1333,8 @@ def test_mint_sy(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc34fd717265Daa4495c41d40f7E961bc1cD0C51D']])
 def test_redeem_sy(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0x22df390a960906ecb6c022e44bf0c0d5ccc3da0b79c41e552acd73d1a1eae933',
@@ -1410,8 +1410,8 @@ def test_redeem_sy(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbcE5F31d1cAABa396E04Bde53b611Da034F7fd36']])
 def test_redeem_pt_yt(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0x578422ff1673e37d9dc16fce0b9dd379c7d491dc0babb2e385a2480d8939d2f9',
@@ -1513,8 +1513,8 @@ def test_redeem_pt_yt(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1ce995a82249Ec19A4ce817AfCb4D3c111329f6f']])
 def test_exit_post_exp_to_token(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xc06dfd41c1b55847a92ea60db05a1f800599fa4d5d48b9a0213e5e598fe7e5f4',
@@ -1590,9 +1590,9 @@ def test_exit_post_exp_to_token(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xaC28b5A163eD3265c5d76809aF39955Da27B8430']])
 def test_remove_liquidity(
-    base_inquirer: BaseInquirer,
-    base_accounts: list[ChecksumEvmAddress],
-    pendle_cache: None,
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+        pendle_cache: None,
 ) -> None:
     assert (
         get_evm_token(
@@ -1701,9 +1701,9 @@ def test_remove_liquidity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x11B6AA86Cd8EFB8B4452cc7f9c0C6fcc188D92F0']])
 def test_redeem_due_rewards_and_interests(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
-    pendle_cache: None,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        pendle_cache: None,
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1782,9 +1782,9 @@ def test_redeem_due_rewards_and_interests(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x743D7B30661d65B41960Bf6b5d1bB93CF7972A73']])
 def test_redeem_due_rewards_multiple_tokens(
-    ethereum_inquirer: EthereumInquirer,
-    ethereum_accounts: list[ChecksumEvmAddress],
-    pendle_cache: None,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        pendle_cache: None,
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,

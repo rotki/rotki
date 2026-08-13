@@ -71,9 +71,9 @@ def _add_velodrome_pool(pool: ChecksumEvmAddress) -> None:
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_add_liquidity_v2(
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    optimism_accounts: list[ChecksumEvmAddress],
-    load_global_caches: list[str],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
 ) -> None:
     """Check that adding liquidity to a velodrome v2 pool is properly decoded."""
     _add_velodrome_pool(WETH_OP_POOL_ADDRESS)
@@ -178,9 +178,9 @@ def test_add_liquidity_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xE1343a4b5e64d47B0c0f208d05Fb4B5973443818']])
 def test_add_liquidity_v1(
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    optimism_accounts: list[ChecksumEvmAddress],
-    load_global_caches: list[str],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
 ) -> None:
     """Check that adding liquidity to a velodrome v1 pool is properly decoded."""
     _add_velodrome_pool(
@@ -262,9 +262,9 @@ def test_add_liquidity_v1(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_remove_liquidity_v2(
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    optimism_accounts: list[ChecksumEvmAddress],
-    load_global_caches: list[str],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
 ) -> None:
     """Check that removing liquidity from a velodrome v2 pool is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'))
@@ -354,9 +354,9 @@ def test_remove_liquidity_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xe435BEbA6DEE3D6F99392ab9568777EB8165719d']])
 def test_remove_liquidity_v1(
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    optimism_accounts: list[ChecksumEvmAddress],
-    load_global_caches: list[str],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
 ) -> None:
     """Check that removing liquidity from a velodrome v1 pool is properly decoded."""
     _add_velodrome_pool(
@@ -452,9 +452,9 @@ def test_remove_liquidity_v1(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_swap_eth_to_token_v2(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that swapping eth to token in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x3f42Dc59DC4dF5cD607163bC620168f7FF7aB970'))
@@ -526,9 +526,9 @@ def test_swap_eth_to_token_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xB1D34002ee676516787fd8CDb9C549a415F68aA8']])
 def test_swap_eth_to_token_v1(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that swapping eth to token in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x7866C6072B09539fC0FDE82963846b80203d7beb'))
@@ -599,9 +599,9 @@ def test_swap_eth_to_token_v1(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x2359497cc3F8F11A80d775715367d5CB3D0fD274']])
 def test_swap_token_to_eth_v2(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that swapping token to eth in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'))
@@ -675,9 +675,9 @@ def test_swap_token_to_eth_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xeEf53a1f4eb3846f33C3E549D6FDF130fa4f8b27']])
 def test_swap_token_to_eth_v1(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that swapping token to eth in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xe8537b6FF1039CB9eD0B71713f697DDbaDBb717d'))
@@ -751,9 +751,9 @@ def test_swap_token_to_eth_v1(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x60583f22aDA7B1352bB2faF694b3eAaf942696DD']])
 def test_swap_tokens_v2(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that swapping tokens in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6'))
@@ -830,9 +830,9 @@ def test_swap_tokens_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xC6d5Ad3C4002A1b48d87b83939698660516ae142']])
 def test_swap_tokens_v1(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that swapping tokens in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xcdd41009E74bD1AE4F7B2EeCF892e4bC718b9302'))
@@ -896,9 +896,9 @@ def test_swap_tokens_v1(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_stake_lp_token_to_gauge_v2(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that depositing lp tokens to a velodrome v2 gauge is properly decoded."""
     get_or_create_evm_token(  # the token is needed for the approval event to be created
@@ -967,9 +967,9 @@ def test_stake_lp_token_to_gauge_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_unstake_lp_token_to_gauge_v2(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check that withdrawing lp tokens from a velodrome v2 gauge is properly decoded."""
     user_address = optimism_accounts[0]
@@ -1018,9 +1018,9 @@ def test_unstake_lp_token_to_gauge_v2(
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xf9AEb52bB4eF74E1987dd295E4Df326d41D0d0fF']])
 def test_get_reward_from_gauge_v2(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    load_global_caches: list[str],
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        load_global_caches: list[str],
 ) -> None:
     """Check claiming rewards from a velodrome v2 gauge is properly decoded."""
     user_address = optimism_accounts[0]
@@ -1069,8 +1069,8 @@ def test_get_reward_from_gauge_v2(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x04b0f18b9b1FF987C5D5e134516f449aA9a2E004']])
 def test_unlock_velo(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
     user_address, tx_hash = (
         optimism_accounts[0],
@@ -1131,8 +1131,8 @@ def test_unlock_velo(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x6725BF01bF6Ca11FF3bd9Bd6701991DC4EBf24fa']])
 def test_lock_velo(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
     user_address, tx_hash = (
         optimism_accounts[0],
@@ -1207,8 +1207,8 @@ def test_lock_velo(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9844c3688dAaA98De18fBe52499A6B152236896b']])
 def test_increase_locked_amount(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
     user_address, tx_hash = (
         optimism_accounts[0],
@@ -1269,8 +1269,8 @@ def test_increase_locked_amount(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x923CD36115817D59c51f33e0b5832d7b70ef2530']])
 def test_increase_unlock_time(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
     user_address, tx_hash = (
         optimism_accounts[0],
@@ -1318,9 +1318,9 @@ def test_increase_unlock_time(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x21814F7481f07BA48d2CA224dBA62Bc1f5B447D0']])
 def test_claim_bribes(
-    optimism_accounts: list[ChecksumEvmAddress],
-    optimism_transaction_decoder: OptimismTransactionDecoder,
-    globaldb: GlobalDBHandler,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_transaction_decoder: OptimismTransactionDecoder,
+        globaldb: GlobalDBHandler,
 ) -> None:
     user_address, tx_hash = (
         optimism_accounts[0],
