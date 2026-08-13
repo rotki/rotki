@@ -62,7 +62,10 @@ test.describe.serial('calendar', () => {
   test('blocks saving while a reminder is out of range', async () => {
     await page.openAddDialog();
     await page.createEventFields({ name: 'quarterly review' });
-    await page.addReminder('99999', 'Weeks');
+    // Out of range by the amount, not by the unit: the row starts at 15 minutes, and 15 of any
+    // larger unit is over the ceiling too, so a test that never got its own amount in would still
+    // see the error and pass.
+    await page.addReminder('99', 'Weeks');
 
     await page.submitDialog();
 
