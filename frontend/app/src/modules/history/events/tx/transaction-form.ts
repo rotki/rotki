@@ -23,7 +23,7 @@ export function transactionFormSchema(messages: TransactionFormMessages): ZodTyp
      * so the rule only ever separates "an account is chosen" from "none is", and trimming here
      * would be a new rule rather than a port of the old one.
      */
-    associatedAddress: z.string().min(1, { error: messages.accountRequired }),
+    associatedAddress: z.string({ error: messages.accountRequired }).min(1, { error: messages.accountRequired }),
     blockchain: requiredField(messages.chainRequired),
     /*
      * Both messages, because the format check runs on an empty string too and reports alongside

@@ -105,7 +105,8 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     expect(await harness.validate()).toBe(false);
   });
 
-  // Kraken reports no date range, so the picker is hidden and its rules go with it.
+  // Bitmex is one of the exchanges that reports no date range, so the picker is hidden for it and
+  // its rules go with it. Kraken, used everywhere else here, is not.
   it('should accept a missing range for an exchange that has no picker', async () => {
     harness = createWrapper({ ...basePayload(), fromTimestamp: undefined, toTimestamp: undefined });
     await vi.advanceTimersToNextTimerAsync();
