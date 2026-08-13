@@ -65,7 +65,6 @@ async function save() {
       ref="form"
       v-model="modelValue"
       v-model:state-updated="stateUpdated"
-      :edit-mode="editMode"
     />
   </BigDialog>
 </template>
