@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
-import useVuelidate from '@vuelidate/core';
-import { helpers, not, required, sameAs } from '@vuelidate/validators';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { toServerErrors } from '@/modules/core/form/server-errors';
+import { useModelForm } from '@/modules/core/form/use-model-form';
+import { deviceNameSchema, type DeviceNameState } from '@/modules/premium/devices/device-form-schema';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const modelValue = defineModel<string>({ required: true });
@@ -19,31 +18,49 @@ const { device } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const rules = {
-  deviceName: {
-    notEqual: helpers.withMessage(t('premium_devices.form.device_name.error.not_equal'), not(sameAs(device.deviceName))),
-    required: helpers.withMessage(t('premium_devices.form.device_name.error.required'), required),
+// Read once, so the rule keeps comparing against the name the device had when the dialog opened.
+const currentName = device.deviceName;
+
+const schema = deviceNameSchema(currentName, {
+  notEqual: t('premium_devices.form.device_name.error.not_equal'),
+  required: t('premium_devices.form.device_name.error.required'),
+});
+
+// The dialog owns the name as a bare string, while the form core works on a state object, so the
+// two are bridged here rather than by a pair of hand-written watchers.
+const model = computed<DeviceNameState>({
+  get: (): DeviceNameState => ({ deviceName: get(modelValue) }),
+  set: (value: DeviceNameState): void => {
+    set(modelValue, value.deviceName);
   },
-};
+});
 
-const v$ = useVuelidate(rules, { deviceName: modelValue }, { $autoDirty: true, $externalResults: errors });
+const form = useModelForm<DeviceNameState>({
+  model,
+  schema,
+  stateUpdated,
+});
 
-useFormStateWatcher({ deviceName: modelValue }, stateUpdated);
+watchImmediate(errors, (value) => {
+  form.setServerErrors(toServerErrors(value));
+});
 
 defineExpose({
-  validate: async () => await get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
 <template>
   <div class="mt-4">
     <RuiTextField
-      v-model="modelValue"
+      v-model="form.state.deviceName"
       variant="outlined"
       color="primary"
       :label="t('premium_devices.form.device_name.label')"
       :hint="t('premium_devices.form.device_name.hint')"
-      :error-messages="toMessages(v$.deviceName)"
+      :error-messages="form.errors('deviceName')"
+      data-testid="premium-device-name"
+      @blur="form.touch('deviceName')"
     />
 
     <div>
