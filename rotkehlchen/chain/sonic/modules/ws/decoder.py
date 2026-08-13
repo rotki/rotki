@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoderBase
-from rotkehlchen.chain.sonic.modules.wson.constants import CPT_WSON
+from rotkehlchen.chain.sonic.modules.ws.constants import CPT_WS
 from rotkehlchen.constants.assets import A_S, A_WS
 
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class WsonDecoder(WethDecoderBase):
+class WsDecoder(WethDecoderBase):
     def __init__(
             self,
             sonic_inquirer: SonicInquirer,
@@ -24,9 +24,9 @@ class WsonDecoder(WethDecoderBase):
             msg_aggregator=msg_aggregator,
             base_asset=A_S.resolve_to_crypto_asset(),
             wrapped_token=A_WS.resolve_to_evm_token(),
-            counterparty=CPT_WSON,
+            counterparty=CPT_WS,
         )
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_WSON, label='WS', image='wson.svg'),)
+        return (CounterpartyDetails(identifier=CPT_WS, label='WS', image='ws.svg'),)

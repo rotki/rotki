@@ -1,3 +1,3 @@
 from typing import Final
 
-CPT_WSON: Final = 'wson'
+CPT_WS: Final = 'ws'
