@@ -64,6 +64,9 @@ async function savePrice(payload: HistoricalPriceFormPayload) {
 }
 
 async function updatePrice() {
+  if (!(await get(v$).$validate()))
+    return;
+
   const payload: HistoricalPriceFormPayload = {
     fromAsset: event.assetIdentifier,
     price: get(price),
@@ -104,6 +107,7 @@ async function updatePrice() {
       </template>
       <RuiButton
         variant="list"
+        data-testid="edit-historic-price-open"
         @click="openEditHistoricPriceDialog()"
       >
         <template #prepend>
@@ -156,6 +160,7 @@ async function updatePrice() {
               :disabled="fetchingPrice"
               :label="t('common.price')"
               :error-messages="toMessages(v$.price)"
+              data-testid="edit-historic-price-value"
             />
           </div>
 
