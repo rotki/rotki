@@ -2084,7 +2084,10 @@ mod tests {
         // reach it, which is what keeps production behaviour unchanged.
         let _ = dev;
 
-        assert_eq!(get_api_1_ping(dev_upstream_router(core, None)).await, "core");
+        assert_eq!(
+            get_api_1_ping(dev_upstream_router(core, None)).await,
+            "core"
+        );
     }
 
     #[tokio::test]
