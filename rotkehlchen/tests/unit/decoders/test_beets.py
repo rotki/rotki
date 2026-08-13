@@ -125,6 +125,173 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
 
 
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
+@pytest.mark.parametrize('sonic_accounts', [['0xda20986e2D4FaeB3B4C949E9c0Ab5630D8Ac0914']])
+def test_beets_v2_join(sonic_inquirer, sonic_accounts):
+    """A Beets v2 pool join of three tokens directly through the vault."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x22f8c09f5d945aec30f4e9f60f4b7539abd547269844f89d231ebd7a90a7720d')),  # noqa: E501
+    )
+    user = sonic_accounts[0]
+    vault = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1751905538000)),
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_S,
+        amount=FVal(gas_amount := '0.01822623'),
+        location_label=user,
+        notes=f'Burn {gas_amount} S for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset='eip155:146/erc20:0x3bcE5CB273F0F148010BbEa2470e7b5df84C7812',
+        amount=FVal(sceth_amount := '0.037175112093163958'),
+        location_label=user,
+        notes=f'Deposit {sceth_amount} scETH to a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset='eip155:146/erc20:0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE',
+        amount=FVal(scusd_amount := '94.143991'),
+        location_label=user,
+        notes=f'Deposit {scusd_amount} scUSD to a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
+        amount=FVal(sts_amount := '573.366037918215836679'),
+        location_label=user,
+        notes=f'Deposit {sts_amount} stS to a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset='eip155:146/erc20:0x32BAC522c4F97F4913d18D81Cf3bE119c8Cce26a',
+        amount=FVal(pool_amount := '557231.474081683784771027'),
+        location_label=user,
+        notes=f'Receive {pool_amount} 10stS-10scETH-10scUSD-70F from a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
+@pytest.mark.parametrize('sonic_accounts', [['0xCB6586874cc04B01Cc4fDB777dE502cEa7b3D6c1']])
+def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
+    """A Beets v2 pool exit of four tokens directly through the vault."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x67dc26e6a19bb69cc49bb0d3b678d512d9dc78ba0c76f171eac748462d2fab5d')),  # noqa: E501
+    )
+    user = sonic_accounts[0]
+    vault = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1778192359000)),
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_S,
+        amount=FVal(gas_amount := '0.016167450000323349'),
+        location_label=user,
+        notes=f'Burn {gas_amount} S for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset='eip155:146/erc20:0x32BAC522c4F97F4913d18D81Cf3bE119c8Cce26a',
+        amount=FVal(return_amount := '38952.503374014711216412'),
+        location_label=user,
+        notes=f'Return {return_amount} 10stS-10scETH-10scUSD-70F to a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset='eip155:146/erc20:0x3bcE5CB273F0F148010BbEa2470e7b5df84C7812',
+        amount=FVal(sceth_amount := '0.000430940611224193'),
+        location_label=user,
+        notes=f'Receive {sceth_amount} scETH after removing liquidity from a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset='eip155:146/erc20:0xBe422DD2F451348d5D0979D8ab25B4c6eAAd1eB2',
+        amount=FVal(f_amount := '1125014.199838167776212026'),
+        location_label=user,
+        notes=f'Receive {f_amount} F after removing liquidity from a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset='eip155:146/erc20:0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE',
+        amount=FVal(scusd_amount := '0.991061'),
+        location_label=user,
+        notes=f'Receive {scusd_amount} scUSD after removing liquidity from a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=5,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
+        amount=FVal(sts_amount := '19.123213205894685941'),
+        location_label=user,
+        notes=f'Receive {sts_amount} stS after removing liquidity from a Balancer v2 pool',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    )]
+
+
+@pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0x5541B7D1F2f0d5A6bA921156ce48D97f9D212e02']])
 def test_wson_wrap(sonic_inquirer, sonic_accounts):
     """Wrapping S to WS."""
