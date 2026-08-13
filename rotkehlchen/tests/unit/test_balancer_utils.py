@@ -13,6 +13,10 @@ def test_balancer_api_chain_mapping_contains_monad() -> None:
     assert CHAIN_ID_TO_BALANCER_API_MAPPINGS[ChainID.MONAD] == 'MONAD'
 
 
+def test_balancer_api_chain_mapping_contains_sonic() -> None:
+    assert CHAIN_ID_TO_BALANCER_API_MAPPINGS[ChainID.SONIC] == 'SONIC'
+
+
 def test_balancer_api_chain_mapping_contains_hyperevm() -> None:
     assert CHAIN_ID_TO_BALANCER_API_MAPPINGS[ChainID.HYPERLIQUID] == 'HYPEREVM'
 
