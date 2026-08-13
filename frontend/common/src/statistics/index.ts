@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AssetBalance, AssetEntry, Balance } from '../balances';
+import { AssetBalance, AssetEntry } from '../balances';
 import { NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
@@ -10,8 +10,9 @@ const AssetDistribution = z.object({
 });
 
 const TimedBalance = z.object({
-  ...Balance.shape,
+  amount: NumericString,
   ...TimedEntry.shape,
+  usdValue: NumericString,
 });
 
 export type TimedBalance = z.infer<typeof TimedBalance>;

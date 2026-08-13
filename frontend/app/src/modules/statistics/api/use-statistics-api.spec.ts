@@ -89,7 +89,9 @@ describe('composables/api/statistics/statistics-api', () => {
         to_timestamp: 1700100000,
         asset: 'ETH',
       });
-      expect(result).toHaveLength(1);
+      expect(result).toEqual([
+        { time: 1700000000, amount: '10.5', usdValue: '1050.00' },
+      ]);
     });
 
     it('should send POST request with collection_id when provided', async () => {
