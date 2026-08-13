@@ -71,6 +71,12 @@ from rotkehlchen.chain.evm.decoding.extrafi.cache import (
     query_extrafi_data,
 )
 from rotkehlchen.chain.evm.decoding.extrafi.constants import CPT_EXTRAFI
+from rotkehlchen.chain.evm.decoding.flying_tulip.constants import CPT_FLYING_TULIP
+from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.balances import FlyingTulipStakingBalances
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.balances import FlyingTulipLendBalances
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
+    FLYING_TULIP_LEND_DEPLOYMENTS,
+)
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
@@ -2111,3 +2117,117 @@ def test_protocol_balances_skip_the_events_query_for_absent_counterparties(
         )
 
     assert refresh_query_count() == 1
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
+def test_flying_tulip_lend_balances(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Check that deposited collateral and open debt in the Flying Tulip lending
+    market are detected, including debt-only discovery via borrow events."""
+    ftusd = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xF7D85EC4E7710f71992752eac2111312e73E9C9C'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='ftUSD',
+        decimals=6,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+            tx_ref=deserialize_evm_tx_hash('0x84dfebb43989ad185ba61d493762501e421e862b2ed15c86c81359d9b6e7f490'),
+            sequence_index=158,
+            timestamp=TimestampMS(1786597487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=ftusd,
+            amount=FVal('800'),
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_FLYING_TULIP,
+            address=FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.ETHEREUM].positions_manager,
+        ))
+
+    with patch.object(ethereum_inquirer, 'multicall', side_effect=[
+        [  # userCollateralAssets and userDebtAssets
+            WEB3.codec.encode(['address[]'], [[A_WETH.resolve_to_evm_token().evm_address]]),
+            WEB3.codec.encode(['address[]'], [[ftusd.evm_address]]),
+        ], [  # getBalance of the collateral and debt of the borrow
+            WEB3.codec.encode(['uint256', 'uint256'], [10000000000000000000, 0]),
+            WEB3.codec.encode(['uint256'], [800000000]),
+        ],
+    ]):
+        protocol_balances = FlyingTulipLendBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+
+    expected_collateral = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
+        amount=(collateral_amount := FVal('10')),
+        value=collateral_amount * CURRENT_PRICE_MOCK,
+    )
+    expected_debt = Balance(
+        amount=(debt_amount := FVal('800')),
+        value=debt_amount * CURRENT_PRICE_MOCK,
+    )
+    assert protocol_balances[user_address].assets[A_WETH][CPT_FLYING_TULIP] == expected_collateral
+    assert protocol_balances[user_address].liabilities[ftusd][CPT_FLYING_TULIP] == expected_debt
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_flying_tulip_staking_balances(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Check that FT rewards claimable from the sftUSD staking vault are detected."""
+    ftusd = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xF7D85EC4E7710f71992752eac2111312e73E9C9C'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='ftUSD',
+        decimals=6,
+    )
+    ft_token = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0x5DD1A7A369e8273371d2DBf9d83356057088082c'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='FT',
+        decimals=18,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+            tx_ref=deserialize_evm_tx_hash('0xda81303cc65040a0fbd75b97cae82f61d068d32d61e52f0e836f664d9858cfcd'),
+            sequence_index=157,
+            timestamp=TimestampMS(1782585431000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=ftusd,
+            amount=FVal('105.455116'),
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_FLYING_TULIP,
+            address=string_to_evm_address('0xeb48218a4c35C814C7678cBcae88C6Ee037F7625'),
+        ))
+
+    with patch.object(ethereum_inquirer, 'multicall', return_value=[
+        WEB3.codec.encode(['uint256'], [1849673514971359627]),  # previewClaimable
+    ]):
+        protocol_balances = FlyingTulipStakingBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+
+    expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
+        amount=(claimable_amount := FVal('1.849673514971359627')),
+        value=claimable_amount * CURRENT_PRICE_MOCK,
+    )
+    assert protocol_balances[user_address].assets[ft_token][CPT_FLYING_TULIP] == expected_balance
