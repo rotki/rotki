@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
     CHAIN_ID_TO_BALANCER_API_MAPPINGS,
     CPT_BALANCER_V1,
     CPT_BALANCER_V3,
+    CPT_BEETS_V3,
     GET_POOL_PRICE_QUERY,
     GET_POOLS_COUNT_QUERY,
     GET_POOLS_QUERY,
@@ -124,7 +125,7 @@ def get_balancer_pool_price(
     - RemoteError
     """
     # For v1 & v3 pool tokens, pool id is the pool address since they don't implement getPoolId
-    if pool_token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V3):
+    if pool_token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V3, CPT_BEETS_V3):
         pool_id = str(pool_token.evm_address)
     else:
         try:
