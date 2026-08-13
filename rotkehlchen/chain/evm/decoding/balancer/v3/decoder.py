@@ -68,11 +68,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             msg_aggregator: MessagesAggregator,
             counterparty: str = CPT_BALANCER_V3,
             swap_counterparty: str = CPT_BALANCER_SWAP_V3,
-            label: str = BALANCER_LABEL,
-            image: str = 'balancer.svg',
     ) -> None:
-        self._label = label
-        self._image = image
         self.swap_counterparty = swap_counterparty
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -237,7 +233,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         return EvmDecodingOutput(matched_counterparty=self.swap_counterparty)
 
     def _order_lp_events(
-              self,
+            self,
             transaction: EvmTransaction,
             decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
@@ -353,9 +349,10 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             self.swap_counterparty: [(0, self._process_swap_events)],
         }
 
-    def counterparties(self) -> tuple[CounterpartyDetails, ...]:
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
-            identifier=self.counterparty,
-            label=self._label,
-            image=self._image,
+            identifier=CPT_BALANCER_V3,
+            label=BALANCER_LABEL,
+            image='balancer.svg',
         ),)
