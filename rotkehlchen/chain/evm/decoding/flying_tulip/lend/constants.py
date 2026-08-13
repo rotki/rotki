@@ -37,9 +37,6 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
     ),
 }
 
-# Deposit(address indexed u, address indexed a, uint256 amt)
-# 0x5548c837ab068cf56a2c2479df0882a4922fd203edb7517321831d95078c5f62
-PM_DEPOSIT_TOPIC: Final = b'UH\xc87\xab\x06\x8c\xf5j,$y\xdf\x08\x82\xa4\x92/\xd2\x03\xed\xb7Qs!\x83\x1d\x95\x07\x8c_b'  # noqa: E501
 # DepositFor(address indexed from, address indexed beneficiary, address indexed asset, uint256 amount)  # noqa: E501
 # 0x9b97b64e9cc6e815f094532deb9581a5b7daa7de9eecaf344c66d6e707b0b418
 PM_DEPOSIT_FOR_TOPIC: Final = b'\x9b\x97\xb6N\x9c\xc6\xe8\x15\xf0\x94S-\xeb\x95\x81\xa5\xb7\xda\xa7\xde\x9e\xec\xaf4Lf\xd6\xe7\x07\xb0\xb4\x18'  # noqa: E501

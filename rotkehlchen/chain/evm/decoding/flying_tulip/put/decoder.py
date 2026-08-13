@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import UNSTAKE_TOPIC
 from rotkehlchen.chain.evm.decoding.flying_tulip.constants import FLYING_TULIP_LABEL
 from rotkehlchen.chain.evm.decoding.flying_tulip.decoder import FlyingTulipCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -15,7 +16,6 @@ from .constants import (
     DIVESTED_TOPIC,
     FLYING_TULIP_PUT_DEPLOYMENTS,
     INVESTED_TOPIC,
-    PUT_WITHDRAW_FT_TOPIC,
 )
 
 if TYPE_CHECKING:
@@ -98,7 +98,7 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 notes=f'Divest {amount} {token.symbol} from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
             )
 
-        if context.tx_log.topics[0] == PUT_WITHDRAW_FT_TOPIC:
+        if context.tx_log.topics[0] == UNSTAKE_TOPIC:  # Withdraw(address,uint256,uint256)
             if not self.base.is_tracked(
                 owner := bytes_to_address(context.tx_log.data[0:32]),
             ):
