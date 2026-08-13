@@ -5056,6 +5056,7 @@
       "source": "Source"
     },
     "refresh_tooltip": "Refresh the oracle prices list",
+    "settings_tooltip": "Price oracle settings: choose which oracles are used, and in which order",
     "sources": {
       "cryptocompare": "CryptoCompare"
     },
