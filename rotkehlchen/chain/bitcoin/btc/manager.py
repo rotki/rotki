@@ -32,6 +32,7 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int,
@@ -39,12 +40,12 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     ensure_type,
 )
-from rotkehlchen.types import BTCAddress, SupportedBlockchain
+from rotkehlchen.types import BTCAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc
 from rotkehlchen.utils.network import request_get, request_get_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
@@ -97,6 +98,7 @@ class BitcoinManager(BitcoinCommonManager):
     def _query_blockchain_info(
             accounts: Sequence[BTCAddress],
             key: Literal['addresses', 'txs'] = 'addresses',
+            progress_callback: Callable[[Timestamp], None] | None = None,
     ) -> list[list[dict[str, Any]]]:
         """Queries blockchain.info for the specified accounts.
         The response from blockchain.info is a dict with two keys: addresses and txs, each of which
@@ -126,6 +128,15 @@ class BitcoinManager(BitcoinCommonManager):
                         url=f'{base_url}&n={BLOCKCHAIN_INFO_TX_LIMIT}&offset={offset}',
                         **kwargs,
                     )[key])
+                    if progress_callback is not None and len(chunk) != 0:
+                        try:
+                            progress_callback(deserialize_timestamp(chunk[-1]['time']))
+                        except (DeserializationError, KeyError, ValueError) as e:
+                            log.debug(
+                                'Unable to report blockchain.info query progress due to %s',
+                                e,
+                            )
+
                     if len(chunk) < BLOCKCHAIN_INFO_TX_LIMIT:
                         break  # all txs have been queried
 
@@ -172,7 +183,11 @@ class BitcoinManager(BitcoinCommonManager):
         Returns a tuple containing the latest queried block height and the list of txs.
         """
         return self._process_raw_tx_lists(
-            raw_tx_lists=self._query_blockchain_info(accounts=accounts, key='txs'),
+            raw_tx_lists=self._query_blockchain_info(
+                accounts=accounts,
+                key='txs',
+                progress_callback=options.get('progress_callback'),
+            ),
             options=options,
             processing_fn=self.deserialize_tx_from_blockchain_info,
         )
@@ -204,6 +219,21 @@ class BitcoinManager(BitcoinCommonManager):
         processed_data['inputs'] = inputs
         processed_data['outputs'] = outputs
         return self.deserialize_tx_from_blockcypher(processed_data)
+
+    @staticmethod
+    def _report_blockcypher_query_progress(options: dict[str, Any], txs: list[dict[str, Any]]) -> None:  # noqa: E501
+        """Report the oldest transaction from a fetched BlockCypher page, when available."""
+        if (progress_callback := options.get('progress_callback')) is None or len(txs) == 0:
+            return
+
+        try:
+            progress_callback(deserialize_timestamp_from_date(
+                date=txs[-1]['confirmed'],
+                formatstr='iso8601',
+                location='blockcypher bitcoin tx',
+            ))
+        except (DeserializationError, KeyError, ValueError) as e:
+            log.debug('Unable to report blockcypher query progress due to %s', e)
 
     def _query_blockcypher_transactions(
             self,
@@ -238,6 +268,7 @@ class BitcoinManager(BitcoinCommonManager):
                             earliest_block_height if before_height is None
                             else min(before_height, earliest_block_height)
                         )
+                    self._report_blockcypher_query_progress(options=options, txs=txs)
                     if not entry.get('hasMore', False):
                         accounts_chunk.remove(address)
 

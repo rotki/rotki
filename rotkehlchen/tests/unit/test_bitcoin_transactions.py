@@ -1,6 +1,6 @@
 import json
 from typing import TYPE_CHECKING, Any
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -920,6 +920,50 @@ def test_bitcoin_decoding_sends_progress_updates(
             },
         ),
     ])
+
+
+def test_blockcypher_sends_query_progress_per_page(bitcoin_manager: BitcoinManager) -> None:
+    """Each BlockCypher page advances the transaction-query cursor before processing starts."""
+    progress_callback = MagicMock()
+    address = BTCAddress('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')
+    page_1 = {
+        'address': address,
+        'txs': [{
+            'block_height': 900_000,
+            'confirmed': '2026-08-01T12:00:00Z',
+        }],
+        'hasMore': True,
+    }
+    page_2 = {
+        'address': address,
+        'txs': [{
+            'block_height': 800_000,
+            'confirmed': '2026-07-01T12:00:00Z',
+        }],
+        'hasMore': False,
+    }
+    with (
+        patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.request_get',
+            side_effect=[page_1, page_2],
+        ) as request_get_mock,
+        patch.object(
+            bitcoin_manager,
+            '_process_raw_tx_lists',
+            return_value=(900_000, []),
+        ) as process_mock,
+    ):
+        bitcoin_manager._query_blockcypher_transactions(
+            accounts=[address],
+            options={'progress_callback': progress_callback},
+        )
+
+    assert progress_callback.call_args_list == [
+        call(Timestamp(1785585600)),
+        call(Timestamp(1782907200)),
+    ]
+    assert request_get_mock.call_count == 2
+    process_mock.assert_called_once()
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
