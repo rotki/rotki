@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import { msg } from '@/message-key';
 import OracleCacheContent from '@/modules/assets/prices/components/oracle/OracleCacheContent.vue';
 import OraclePriceContent from '@/modules/assets/prices/components/oracle/OraclePriceContent.vue';
@@ -13,12 +14,36 @@ definePage({
 const { t } = useI18n({ useScope: 'global' });
 
 const tab = ref<'prices' | 'caches'>('prices');
+
+const oracleSettingsRoute: RouteLocationRaw = { name: '/settings/oracle/' };
 </script>
 
 <template>
   <TablePageLayout
     :title="[t('navigation_menu.manage_prices'), t('navigation_menu.manage_prices_sub.oracle_prices')]"
   >
+    <template #buttons>
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
+        <template #activator>
+          <RouterLink :to="oracleSettingsRoute">
+            <RuiButton
+              variant="text"
+              icon
+              color="primary"
+              size="lg"
+              data-testid="oracle-settings-link"
+            >
+              <RuiIcon name="lu-settings" />
+            </RuiButton>
+          </RouterLink>
+        </template>
+        <span>{{ t('oracle_prices.settings_tooltip') }}</span>
+      </RuiTooltip>
+    </template>
+
     <div>
       <RuiTabs
         v-model="tab"
