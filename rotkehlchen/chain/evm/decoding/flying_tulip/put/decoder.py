@@ -48,10 +48,9 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
 
     def _decode_put_manager(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == INVESTED_TOPIC:
-            if not self.base.any_tracked([
-                investor := bytes_to_address(context.tx_log.data[0:32]),
-                bytes_to_address(context.tx_log.data[32:64]),  # position recipient
-            ]):
+            investor = bytes_to_address(context.tx_log.data[0:32])
+            recipient = bytes_to_address(context.tx_log.data[32:64])  # position recipient
+            if not self.base.any_tracked([investor, recipient]):
                 return DEFAULT_EVM_DECODING_OUTPUT
 
             position_id = int.from_bytes(context.tx_log.data[64:96])
@@ -62,16 +61,21 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 token_amount=int.from_bytes(context.tx_log.data[192:224]),
                 token=token,
             )
-            return self._transform_or_defer(
+            # An investment is either funded straight into the manager, or the
+            # user funds an investing proxy which then appears as the investor,
+            # so the eligible transfer counterparties are exactly those two.
+            self._transform_matching_event(
                 context=context,
                 from_event_type=HistoryEventType.SPEND,
                 token=token,
                 amount=amount,
-                location_label=investor,
+                allowed_labels=(investor, recipient),
+                allowed_addresses=(self.deployment.put_manager, investor),
                 to_event_type=HistoryEventType.DEPOSIT,
                 to_event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 notes=f'Invest {amount} {token.symbol} in {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
             )
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == DIVESTED_TOPIC:
             if not self.base.is_tracked(
@@ -87,16 +91,18 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 token_amount=int.from_bytes(context.tx_log.data[160:192]),
                 token=token,
             )
-            return self._transform_or_defer(
+            self._transform_matching_event(
                 context=context,
                 from_event_type=HistoryEventType.RECEIVE,
                 token=token,
                 amount=amount,
-                location_label=divestor,
+                allowed_labels=(divestor,),
+                allowed_addresses=self.deployment.collateral_wrappers | {self.deployment.put_manager},  # noqa: E501
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 notes=f'Divest {amount} {token.symbol} from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
             )
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == UNSTAKE_TOPIC:  # Withdraw(address,uint256,uint256)
             if not self.base.is_tracked(
@@ -110,12 +116,13 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 token_amount=int.from_bytes(context.tx_log.data[64:96]),
                 token=ft_token,
             )
-            return self._transform_or_defer(
+            self._transform_matching_event(
                 context=context,
                 from_event_type=HistoryEventType.RECEIVE,
                 token=ft_token,
                 amount=amount,
-                location_label=owner,
+                allowed_labels=(owner,),
+                allowed_addresses=(self.deployment.put_manager,),
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 notes=f'Withdraw {amount} FT from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
