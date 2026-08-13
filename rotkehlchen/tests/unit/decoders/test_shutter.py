@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -17,7 +19,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xCc60Eb2f64E7AD9b6924939B7985970D29A0108c']])
-def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3f20929de51baefdc688997a05bde1e32120cb7d4e0fda5da3963b1a620d0a8b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount_str, claimed_amount = '0.006946508605618104', '1086.95652173913'
@@ -54,7 +56,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x36bE40f9bd613dFf47294E7e10D4cae072E06A2D']])
-def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
+def test_shu_delegation(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x46a476b09c85d2278f1ac889e943d7f47d029d0985719cc2a73d589a73cb2473')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

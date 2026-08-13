@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -21,7 +23,7 @@ PICKLE_JAR = string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69')
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f']])
-def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
+def test_pickle_deposit(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -80,7 +82,7 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7Dc4Cd171812a441A30472219d390f4F15f6070']])
-def test_pickle_withdraw(ethereum_inquirer, ethereum_accounts):
+def test_pickle_withdraw(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -127,7 +129,7 @@ def test_pickle_withdraw(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd7aC4581eF4E2BB6cC3734Da183B981bfd0Ee2A2']])
-def test_claim_cornichon(ethereum_inquirer, ethereum_accounts):
+def test_claim_cornichon(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x23a52632e47eeaf9588972cc3f65a2101745952880be17828d810da3735f333f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

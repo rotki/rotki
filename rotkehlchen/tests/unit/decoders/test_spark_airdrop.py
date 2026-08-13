@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Any, Final
 
 import pytest
 
@@ -18,7 +18,7 @@ A_SPK: Final = Asset('eip155:1/erc20:0xc20059e0317DE91738d13af027DfC4a50781b066'
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD4fb8777b51fcF2aB468619E97b27FD49E672fC0']])
-def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
+def test_spark_airdrop_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test decoding of Spark airdrop claim transaction"""
     tx_hash = deserialize_evm_tx_hash(
         '0xe0ce13ffe3e9fe43fd7a80eb04604e857d388167cd30aa86f581369377a47131',
@@ -61,7 +61,7 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1e5f2AdD8B9a96652838A0A8291E94DEE408eB6d']])
-def test_spark_staking(ethereum_inquirer, ethereum_accounts):
+def test_spark_staking(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test decoding of Spark token staking transaction"""
     tx_hash = deserialize_evm_tx_hash(
         '0xdd39f4868976c5df5705c83bb0af1a55094d759c5ee9a6513f21e6494517f0d5',

@@ -1,5 +1,5 @@
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x929a6225A5012316aF9d36386b243911ad6df9DF', '0x223EE48E2A9A786FD061e8273D078a4451FAf76B']])  # noqa: E501
-def test_receive_poison(ethereum_inquirer: EthereumInquirer):
+def test_receive_poison(ethereum_inquirer: EthereumInquirer, ethereum_accounts: Any) -> None:
     """Check the main currency poisoning. In this transaction there are only spam token transfers.
     There is a fake ETH transfer and a fake USDC transfer.
     """

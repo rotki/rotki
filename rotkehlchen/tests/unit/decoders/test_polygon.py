@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -14,7 +16,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x692C673814eDB9Fe6DB2a6F4227F40524240Cbec']])
-def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
+def test_matic_to_pol_migration(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6c30b202e7223ea93b9d1c898d7012b699d14bec5434e8839fc290858718f6a2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount = '10000.28'

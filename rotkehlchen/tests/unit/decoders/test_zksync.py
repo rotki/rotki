@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -16,7 +18,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_legacy_deposit(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     Test a transaction with the OnChainDeposit event which is missing
     from the newest implementation of the proxy address
@@ -63,7 +65,7 @@ def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_deposit(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test a transaction with the Deposit event"""
     tx_hash = deserialize_evm_tx_hash('0x041514c879ae6f4f36c44000270ce482798502be230865911d1013978f4bcb87')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -107,7 +109,7 @@ def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_withdrawal(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test a transaction with the Withdrawal event"""
     tx_hash = deserialize_evm_tx_hash('0x234407968b9a688be3fb37cf7ff8ef3b4168d6cd85ec45b8344bb2a88832f982')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -193,7 +195,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_zksync_lite_batched_withdrawal(ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_batched_withdrawal(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test decoding of a single withdrawal from a batched zksync lite transaction."""
     tx_hash = deserialize_evm_tx_hash('0x4fe316860f922fe8a9cdc61dc1f786ec663ebedfd4eaf101d7719f3989c2522e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -221,7 +223,10 @@ def test_zksync_lite_batched_withdrawal(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfC27723b63464f195b8492814A2791555DA7c8B8']])
-def test_zksync_lite_batched_withdrawal_token(ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_batched_withdrawal_token(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test decoding of a token withdrawal from a batched zksync lite transaction."""
     tx_hash = deserialize_evm_tx_hash('0x4fe316860f922fe8a9cdc61dc1f786ec663ebedfd4eaf101d7719f3989c2522e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -248,7 +253,7 @@ def test_zksync_lite_batched_withdrawal_token(ethereum_inquirer, ethereum_accoun
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xFB3A939Cb06eeF36E1ceD48bdba1fcEe177Ac7f4']])
-def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_sunset_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test decoding ZKsync Lite sunset claims."""
     tx_hash = deserialize_evm_tx_hash('0x8c1cf41de91b0e5fd09db4d15eaf4e95dfa65fd4c385b0b0092a80140b353b7e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

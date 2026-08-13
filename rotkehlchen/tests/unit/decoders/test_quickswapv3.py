@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 def test_swap(
         polygon_pos_inquirer: PolygonPOSInquirer,
         polygon_pos_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x50c55589a2a7b97bdb0c46815783993133c8bd099d9fcc8b91e2e465f00f4687')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(

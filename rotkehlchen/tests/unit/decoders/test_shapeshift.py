@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
@@ -13,7 +15,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3800966F67ccBA1976F69D006374204fba56d240']])
-def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6635d1e12fed1a95019a53e6f6495c586891bf7b41bccfc5838f9b1703a9c20c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

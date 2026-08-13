@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -38,7 +38,7 @@ ADDY_3 = string_to_evm_address('0x3D6a724247c4B133C3b279558e90EdD0c5d25751')
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
-def test_sushiswap_single_swap(ethereum_inquirer):
+def test_sushiswap_single_swap(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xbfe3c8a13c325a32736beb34ea170053cdbbd1740a9c3ceca52060906b7f87bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -97,7 +97,7 @@ def test_sushiswap_single_swap(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_2]])
-def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
+def test_sushiswap_v2_remove_liquidity(ethereum_inquirer: Any) -> None:
     """This checks that removing liquidity to Sushiswap V2 pool is decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x4720a52fc768591cb3997da3a2eab76c54b69176f3c3f8d9a817c2d60dd449ac')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -162,7 +162,7 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
-def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
+def test_sushiswap_v2_add_liquidity(ethereum_inquirer: Any) -> None:
     """This checks that adding liquidity to Sushiswap V2 pool is decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x2ce6f92f4020fdc4ed69a173b10c1dd2811184fac34d56188270950db1152f3a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
