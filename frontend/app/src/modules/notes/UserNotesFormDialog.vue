@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserNote } from '@/modules/core/common/notes';
+import type { UserNoteDraft } from '@/modules/core/common/notes';
 import { useTemplateRef } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useUserNotesApi } from '@/modules/notes/use-user-notes-api';
@@ -7,7 +7,7 @@ import UserNotesForm from '@/modules/notes/UserNotesForm.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const open = defineModel<boolean>('open', { required: true });
-const model = defineModel<Partial<UserNote>>({ required: true });
+const model = defineModel<UserNoteDraft>({ required: true });
 
 const { editMode, location } = defineProps<{
   editMode: boolean;

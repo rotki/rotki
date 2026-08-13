@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
-import { NoteLocation, type UserNote, type UserNotesRequestPayload } from '@/modules/core/common/notes';
+import { NoteLocation, type UserNote, type UserNoteDraft, type UserNotesRequestPayload } from '@/modules/core/common/notes';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useNotesCount } from '@/modules/notes/use-notes-count';
 import { useUserNotesApi } from '@/modules/notes/use-user-notes-api';
@@ -14,7 +14,7 @@ const open = defineModel<boolean>('open', { required: true });
 
 const { location = NoteLocation.GLOBAL } = defineProps<{ location?: string }>();
 
-function getDefaultForm() {
+function getDefaultForm(): UserNoteDraft {
   return {
     content: '',
     isPinned: false,
@@ -27,7 +27,7 @@ const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 
 const showDeleteConfirmation = ref<boolean>(false);
 const idToDelete = ref<number | null>(null);
-const form = ref<Partial<UserNote>>(getDefaultForm());
+const form = ref<UserNoteDraft>(getDefaultForm());
 const editMode = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const search = ref<string>('');
