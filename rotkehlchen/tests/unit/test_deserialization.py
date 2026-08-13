@@ -1,4 +1,5 @@
 import math
+from typing import Any
 
 import pytest
 
@@ -11,7 +12,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import Timestamp, Timezone
 
 
-def test_deserialize_timestamp():
+def test_deserialize_timestamp() -> None:
     """Test various edge cases of deserialize timestamp and that they all work as expected"""
     target_ts = Timestamp(1492980000)
     ts_from_scientific_str = deserialize_timestamp('1.49298E+9')
@@ -23,7 +24,15 @@ def test_deserialize_timestamp():
     ts_from_normal_scientific = deserialize_timestamp(1.49298E+9)
     assert ts_from_normal_scientific == target_ts
 
-    for bad_argument in (-1, FVal('3.14'), math.pi, '3.14', '5.23267356186572e+8', ['lol']):
+    bad_arguments: tuple[Any, ...] = (
+        -1,
+        FVal('3.14'),
+        math.pi,
+        '3.14',
+        '5.23267356186572e+8',
+        ['lol'],
+    )
+    for bad_argument in bad_arguments:
         with pytest.raises(DeserializationError):
             deserialize_timestamp(bad_argument)
 

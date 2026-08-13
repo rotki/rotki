@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 def test_arbitrum_one_nodes_prune_and_archive_status(
         arbitrum_one_manager_connect_at_start: list[tuple],
         arbitrum_one_inquirer: ArbitrumOneInquirer,
-):
+) -> None:
     """Checks that connecting to a set of Arbitrum One nodes, the capabilities of those nodes
     are known and stored. It tests the nodes one by one to avoid the randomness of the connections
     to the nodes while running with the VCR cassettes.
@@ -42,7 +42,7 @@ def test_arbitrum_one_nodes_prune_and_archive_status(
     assert len(arbitrum_one_inquirer.rpc_mapping) == len(arbitrum_one_manager_connect_at_start)
 
 
-def test_block_by_time_close_to_genesis(arbitrum_one_inquirer):
+def test_block_by_time_close_to_genesis(arbitrum_one_inquirer: Any) -> None:
     """Checks that etherscan handles block number by time query correctly for a timestamp
     very close to genesis"""
     result = arbitrum_one_inquirer.get_blocknumber_by_time(1622243344)

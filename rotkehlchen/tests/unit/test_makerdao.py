@@ -1,6 +1,5 @@
-from collections import defaultdict
 from contextlib import ExitStack, nullcontext
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from web3 import Web3
@@ -56,8 +55,8 @@ def fixture_use_etherscan() -> bool:
 
 @pytest.fixture(name='makerdao_test_data')
 def fixture_makerdao_test_data(
-        ethereum_accounts,
-        inquirer,  # pylint: disable=unused-argument
+        ethereum_accounts: Any,
+        inquirer: Any,  # pylint: disable=unused-argument
 ) -> VaultTestData:
     user_address = ethereum_accounts[1]
     vault0 = MakerdaoVault(
@@ -97,15 +96,16 @@ def fixture_makerdao_test_data(
 
 @pytest.fixture(name='makerdao_vaults')
 def fixture_makerdao_vaults(
-        ethereum_inquirer,
-        database,
-        function_scope_messages_aggregator,
-        use_etherscan,
-        start_with_valid_premium,
-        rotki_premium_credentials,
-        makerdao_test_data,
-        username,
-):
+        ethereum_inquirer: Any,
+        database: Any,
+        function_scope_messages_aggregator: Any,
+        use_etherscan: Any,
+        start_with_valid_premium: Any,
+        rotki_premium_credentials: Any,
+        makerdao_test_data: Any,
+        username: Any,
+) -> Any:
+    web3_patch: Any
     if not use_etherscan:
         set_web3_node_in_inquirer(
             ethereum_inquirer=ethereum_inquirer,
@@ -136,7 +136,7 @@ def fixture_makerdao_vaults(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('mocked_proxies', [{}])
-def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
+def test_get_vaults(makerdao_vaults: Any, makerdao_test_data: Any, ethereum_inquirer: Any) -> None:
     web3_node = get_web3_node_from_inquirer(makerdao_vaults.ethereum)
     web3_patch = create_web3_mock(web3=web3_node.rpc_client, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     with web3_patch:
@@ -151,15 +151,15 @@ def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
     'DAI': FVal('1.01'),
 }])
 def test_get_vault_balance(
-        inquirer,  # pylint: disable=unused-argument
-        mocked_current_prices,
-):
+        inquirer: Any,  # pylint: disable=unused-argument
+        mocked_current_prices: Any,
+) -> None:
     debt_value = FVal('2000')
     owner = make_evm_address()
     vault = MakerdaoVault(
         identifier=1,
         collateral_type='ETH-A',
-        collateral_asset=A_ETH,
+        collateral_asset=A_ETH.resolve_to_crypto_asset(),
         owner=owner,
         collateral=Balance(FVal('100'), FVal('20000')),
         debt=Balance(debt_value, debt_value * mocked_current_prices['DAI']),
@@ -169,10 +169,9 @@ def test_get_vault_balance(
         urn=make_evm_address(),
         stability_fee=ZERO,
     )
-    expected_result = BalanceSheet(
-        assets=defaultdict(Balance, {A_ETH: {CPT_VAULT: Balance(FVal('100'), FVal('20000'))}}),
-        liabilities=defaultdict(Balance, {A_DAI: {CPT_VAULT: Balance(FVal('2000'), FVal('2020'))}}),  # noqa: E501
-    )
+    expected_result = BalanceSheet()
+    expected_result.assets[A_ETH][CPT_VAULT] = Balance(FVal('100'), FVal('20000'))
+    expected_result.liabilities[A_DAI][CPT_VAULT] = Balance(FVal('2000'), FVal('2020'))
     assert vault.get_balance() == expected_result
 
 
@@ -181,7 +180,7 @@ def test_get_vault_balance(
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
+def test_query_ilk_registry_and_update_cache(globaldb: Any, ethereum_inquirer: Any) -> None:
     """Test at the state of the global DB going from 1.27.0 to 1.27.1 when ilk cache is introduced
 
     - Apply the migration so the ilk registry abi is there

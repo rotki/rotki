@@ -1,6 +1,6 @@
 import re
 from contextlib import nullcontext
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.types import BtcApiCallback
 
 
-def test_is_valid_btc_address():
+def test_is_valid_btc_address() -> None:
     """Test cases for Bech32 addresses taken from here:
     https://en.bitcoin.it/wiki/BIP_0173#Test_vectors
     https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki#test-vectors
@@ -86,13 +86,13 @@ def test_is_valid_btc_address():
     assert not is_valid_btc_address('BC130XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ7ZWS8R')  # noqa: E501
 
 
-def test_bech32m_hrp_must_match_exactly():
+def test_bech32m_hrp_must_match_exactly() -> None:
     """A bech32m string whose hrp merely starts with bc1 is not a bitcoin address."""
     assert is_valid_btc_address('bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0')  # BIP-350 valid vector  # noqa: E501
     assert not is_valid_btc_address('bc1b1pqqqsyqcyq5rqwzqfpg9scrgwpugpzysnzs23v9ccrydpk8qarc0sed2y4h')  # hrp is bc1b, encoded with a valid bech32m checksum  # noqa: E501
 
 
-def test_pubkey_to_base58_address():
+def test_pubkey_to_base58_address() -> None:
     """Test vectors from here: https://iancoleman.io/bip39/"""
     address = pubkey_to_base58_address(
         bytes.fromhex('03564213318d739994e4d9785bf40eac4edbfa21f0546040ce7e6859778dfce5d4'),
@@ -116,7 +116,7 @@ def test_pubkey_to_base58_address():
     assert address == '1NjxqbA9aZWnh17q1UW3rB4EPu79wDXj7x'
 
 
-def test_pubkey_to_bech32_address():
+def test_pubkey_to_bech32_address() -> None:
     """Test vectors from here: https://iancoleman.io/bip39/"""
     address = pubkey_to_bech32_address(
         bytes.fromhex('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
@@ -165,7 +165,7 @@ def test_pubkey_to_bech32_address():
     assert address == 'bc1p0vuq2cmrm7xdyc4wskdg8hp2prgkpe56g09knye73ne97tjdqfgqru9fkg'
 
 
-def test_from_xpub_with_conversion():
+def test_from_xpub_with_conversion() -> None:
     legacy_xpub = 'xpub6CjniigyzMWgVDHvDpgvsroPkTJeqUbrHJaLHARHmAM8zuAbCjmHpp3QhKTcnnscd6iBDrqmABCJjnpwUW42cQjtvKjaEZRcShHKEVh35Y8'  # noqa: E501
     legacy_xpub_hdkey = HDKey.from_xpub(xpub=legacy_xpub, path='m')
 
@@ -198,7 +198,7 @@ def test_from_xpub_with_conversion():
     assert converted_zpub_hdkey.hint == 'zpub'
 
 
-def test_xpub_to_addresses():
+def test_xpub_to_addresses() -> None:
     """Test vectors from here: https://iancoleman.io/bip39/"""
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     root = HDKey.from_xpub(xpub=xpub, path='m')
@@ -244,7 +244,7 @@ def test_xpub_to_addresses():
     assert child.address() == 'bc1p3qkhfews2uk44qtvauqyr2ttdsw7svhkl9nkm9s9c3x4ax5h60wqwruhk7'
 
 
-def test_ypub_to_addresses():
+def test_ypub_to_addresses() -> None:
     """Test vectors from here: https://iancoleman.io/bip39/"""
     xpub = 'ypub6WkRUvNhspMCJLiLgeP7oL1pzrJ6wA2tpwsKtXnbmpdAGmHHcC6FeZeF4VurGU14dSjGpF2xLavPhgvCQeXd6JxYgSfbaD1wSUi2XmEsx33'  # noqa: E501
     root = HDKey.from_xpub(xpub=xpub, path='m')
@@ -274,7 +274,7 @@ def test_ypub_to_addresses():
         assert child.address() == expected_addresses[i]
 
 
-def test_zpub_to_addresses():
+def test_zpub_to_addresses() -> None:
     """Test vectors from here: https://iancoleman.io/bip39/"""
     zpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
     root = HDKey.from_xpub(xpub=zpub, path='m')
@@ -292,7 +292,7 @@ def test_zpub_to_addresses():
         assert child.address() == expected_addresses[i]
 
 
-def test_from_bad_xpub():
+def test_from_bad_xpub() -> None:
     with pytest.raises(XPUBError):
         HDKey.from_xpub('ddodod')
     with pytest.raises(XPUBError):
@@ -303,7 +303,7 @@ def test_from_bad_xpub():
         HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
 
 
-def test_secp256k1_public_key_validation_and_tweaks():
+def test_secp256k1_public_key_validation_and_tweaks() -> None:
     key = PublicKey(bytes.fromhex(
         '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
     ))
@@ -320,7 +320,7 @@ def test_secp256k1_public_key_validation_and_tweaks():
         key.add(b'\x00' * 32)
 
 
-def test_xpub_data_comparison():
+def test_xpub_data_comparison() -> None:
     hdkey1 = HDKey.from_xpub('xpub6DCi5iJ57ZPd5qPzvTm5hUt6X23TJdh9H4NjNsNbt7t7UuTMJfawQWsdWRFhfLwkiMkB1rQ4ZJWLB9YBnzR7kbs9N8b2PsKZgKUHQm1X4or')  # noqa: E501
     hdkey2 = HDKey.from_xpub('xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
     xpubdata1 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
@@ -354,7 +354,7 @@ def test_xpub_data_comparison():
     assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not  # noqa: SIM201
 
 
-def test_is_valid_derivation_path():
+def test_is_valid_derivation_path() -> None:
     valid, msg = is_valid_derivation_path('m')
     assert valid
     assert msg == ''
@@ -402,12 +402,12 @@ def test_is_valid_derivation_path():
         ENS_BRUNO_BTC_ADDR,
     ),
 ])
-def test_scriptpubkey_to_p2pkh_address(scriptpubkey, expected_address):
+def test_scriptpubkey_to_p2pkh_address(scriptpubkey: Any, expected_address: Any) -> None:
     address = scriptpubkey_to_p2pkh_address(bytes.fromhex(scriptpubkey))
     assert address == expected_address
 
 
-def test_scriptpubkey_to_p2sh_address():
+def test_scriptpubkey_to_p2sh_address() -> None:
     scriptpubkey = 'a91462e907b15cbf27d5425399ebf6f0fb50ebb88f1887'
 
     address = scriptpubkey_to_p2sh_address(bytes.fromhex(scriptpubkey))
@@ -436,12 +436,12 @@ def test_scriptpubkey_to_p2sh_address():
         'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
     ),
 ])
-def test_scriptpubkey_to_bech32_address(scriptpubkey, expected_address):
+def test_scriptpubkey_to_bech32_address(scriptpubkey: Any, expected_address: Any) -> None:
     address = scriptpubkey_to_bech32_address(bytes.fromhex(scriptpubkey))
     assert address == expected_address
 
 
-def test_valid_bitcoin_chains():
+def test_valid_bitcoin_chains() -> None:
     """Test that checks that Bitcoin chains are not in `NON_BITCOIN_CHAIN` constant."""
     for blockchain in SupportedBlockchain:
         if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
@@ -537,7 +537,7 @@ def test_bitcoin_balance_api_resolver(
         balances = bitcoin_manager.query_balances(addresses)
     check_balances(balances)
 
-    def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs):
+    def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs: Any) -> Any:
         if only_blockstream and 'blockstream' in kwargs['url']:
             raise RemoteError('Fatality')
 
@@ -628,7 +628,7 @@ def test_local_bitcoin_mempool_api(
         mock_mempool.assert_has_calls(expected_calls)  # type: ignore
 
 
-def _mock_blockstream_or_mempool_query(url, **kwargs):  # pylint: disable=unused-argument
+def _mock_blockstream_or_mempool_query(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
     address_re = re.compile(r'.*/address/(.*)')
     match = address_re.search(url)
     assert match

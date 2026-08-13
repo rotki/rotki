@@ -41,13 +41,13 @@ class DummyEvmNodeInquirer(EvmNodeInquirer):
             EvmIndexer.ROUTESCAN: self.routescan,
         }
 
-    def _get_archive_check_data(self):
+    def _get_archive_check_data(self) -> Any:
         return (ZERO_ADDRESS, 0, ZERO)
 
-    def _get_pruned_check_tx_hash(self):
+    def _get_pruned_check_tx_hash(self) -> Any:
         return GENESIS_HASH
 
-    def _is_pruned(self, web3: Any):
+    def _is_pruned(self, web3: Any) -> Any:
         return False
 
 

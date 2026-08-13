@@ -1,8 +1,10 @@
 from collections import defaultdict
+from typing import Any
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -10,7 +12,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 
 
-def test_balance_addition():
+def test_balance_addition() -> None:
     a = Balance(amount=FVal('1.5'), value=FVal('1.6'))
     b = Balance(amount=FVal('2.5'), value=FVal('2.7'))
     c = Balance(amount=FVal('3'), value=FVal('3.21'))
@@ -39,7 +41,7 @@ def test_balance_addition():
         result = a + {'amount': 1, 'value': 'dsad'}
 
 
-def test_balance_raddition():
+def test_balance_raddition() -> None:
     a = Balance(amount=FVal('1.5'), value=FVal('1.6'))
     b = Balance(amount=FVal('2.5'), value=FVal('2.7'))
     c = Balance(amount=FVal('3'), value=FVal('3.21'))
@@ -51,7 +53,7 @@ def test_balance_raddition():
     assert result.value == FVal('7.51')
 
 
-def test_balance_sheet_addition():
+def test_balance_sheet_addition() -> None:
     a = BalanceSheet(
         assets=defaultdict(lambda: defaultdict(Balance), {
             A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))}),  # noqa: E501
@@ -88,7 +90,7 @@ def test_balance_sheet_addition():
     assert a + b == c
 
 
-def test_balance_sheet_raddition():
+def test_balance_sheet_raddition() -> None:
     a = BalanceSheet(
         assets=defaultdict(lambda: defaultdict(Balance), {
             A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))}),  # noqa: E501
@@ -128,10 +130,10 @@ def test_balance_sheet_raddition():
     assert result == c
 
 
-def test_balance_sheet_operators_do_not_mutate_operands():
+def test_balance_sheet_operators_do_not_mutate_operands() -> None:
     """Regression test: the non-augmented operators (+, -, sum) must not mutate their
     operands, while the augmented operators (+=, -=) intentionally accumulate in place."""
-    def sheet(asset, amount: str) -> BalanceSheet:
+    def sheet(asset: Any, amount: str) -> BalanceSheet:
         result = BalanceSheet()
         result.assets[asset][DEFAULT_BALANCE_LABEL] += Balance(FVal(amount), FVal(amount))
         return result
@@ -146,6 +148,7 @@ def test_balance_sheet_operators_do_not_mutate_operands():
     # `sum([...])` must not corrupt the first element of the iterable (the sum() seed)
     sheets = [sheet(A_ETH, '10'), sheet(A_ETH, '20'), sheet(A_ETH, '30')]
     total = sum(sheets)
+    assert isinstance(total, BalanceSheet)
     assert total.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('60'), FVal('60'))
     assert sheets[0].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('10'), FVal('10'))
 
@@ -162,7 +165,7 @@ def test_balance_sheet_operators_do_not_mutate_operands():
     assert acc.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('4'), FVal('4'))
 
 
-def test_default_balance_sheet():
+def test_default_balance_sheet() -> None:
     a = BalanceSheet(
         assets=defaultdict(lambda: defaultdict(Balance), {
             A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))}),  # noqa: E501
@@ -183,7 +186,7 @@ def test_default_balance_sheet():
     assert a == b
 
 
-def test_balance_sheet_subtraction():
+def test_balance_sheet_subtraction() -> None:
     a = BalanceSheet(
         assets=defaultdict(lambda: defaultdict(Balance), {
             A_USD: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))}),  # noqa: E501
@@ -220,47 +223,37 @@ def test_balance_sheet_subtraction():
     assert a - b == c
 
 
-def test_balance_sheet_serialize():
-    a = BalanceSheet(
-        assets={
-            A_USD: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))},
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), value=FVal('900'))},
-        },
-        liabilities={
-            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), value=FVal('5.1'))},
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), value=FVal('150'))},
-        },
-    )
+def test_balance_sheet_serialize() -> None:
+    a = BalanceSheet()
+    a.assets[A_USD][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('2'), value=FVal('2'))
+    a.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('3'), value=FVal('900'))
+    a.liabilities[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('5'), value=FVal('5.1'))
+    a.liabilities[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('0.5'), value=FVal('150'))
     assert a.serialize() == {
         'assets': {
             'USD': {DEFAULT_BALANCE_LABEL: {'amount': '2', 'value': '2'}},
             'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '3', 'value': '900'}},
         },
         'liabilities': {
-            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': '5', 'value': '5.1'}},  # noqa: E501
+            ethaddress_to_identifier(string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F')): {DEFAULT_BALANCE_LABEL: {'amount': '5', 'value': '5.1'}},  # noqa: E501
             'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '0.5', 'value': '150'}},
         },
     }
 
 
-def test_balance_sheet_to_dict():
-    a = BalanceSheet(
-        assets={
-            A_USD: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))},
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), value=FVal('900'))},
-        },
-        liabilities={
-            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), value=FVal('5.1'))},
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), value=FVal('150'))},
-        },
-    )
+def test_balance_sheet_to_dict() -> None:
+    a = BalanceSheet()
+    a.assets[A_USD][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('2'), value=FVal('2'))
+    a.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('3'), value=FVal('900'))
+    a.liabilities[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('5'), value=FVal('5.1'))
+    a.liabilities[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('0.5'), value=FVal('150'))
     assert a.to_dict() == {
         'assets': {
             'USD': {DEFAULT_BALANCE_LABEL: {'amount': FVal('2'), 'value': FVal('2')}},
             'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('3'), 'value': FVal('900')}},
         },
         'liabilities': {
-            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': FVal('5'), 'value': FVal('5.1')}},  # noqa: E501
+            ethaddress_to_identifier(string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F')): {DEFAULT_BALANCE_LABEL: {'amount': FVal('5'), 'value': FVal('5.1')}},  # noqa: E501
             'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('0.5'), 'value': FVal('150')}},
         },
     }

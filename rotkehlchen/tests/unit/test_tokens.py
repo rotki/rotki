@@ -59,7 +59,7 @@ ERC721_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 
 
 @pytest.fixture(name='tokens')
-def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: disable=unused-argument
+def fixture_ethereumtokens(ethereum_inquirer: Any, database: Any, inquirer: Any) -> Any:  # pylint: disable=unused-argument
     return EthereumTokens(database, ethereum_inquirer)
 
 
@@ -80,7 +80,7 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.freeze_time('2023-02-18 22:31:11 GMT')
-def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
+def test_detect_tokens_for_addresses(rotkehlchen_api_server: Any, ethereum_accounts: Any) -> None:
     """
     Detect tokens, query balances and check that ignored assets are not queried.
 
@@ -118,8 +118,9 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
 
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
-    Inquirer.find_main_currency_prices = MagicMock(side_effect=Inquirer.find_main_currency_prices)
+    price_query_mock = MagicMock(side_effect=Inquirer.find_main_currency_prices)
     with (
+        patch.object(Inquirer, 'find_main_currency_prices', price_query_mock),
         patch(
             target='rotkehlchen.chain.evm.tokens.EvmTokens._query_new_tokens',
             wraps=super(EvmTokensWithProxies, tokens)._query_new_tokens,
@@ -202,17 +203,18 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
 
     # Confirm that prices were not queried for a token in evm_accounts_details that has no balance.
     assert A_CRV not in found_tokens
-    assert all(asset in found_tokens for asset in Inquirer.find_main_currency_prices.call_args_list[0][0][0])  # noqa: E501
+    assert all(asset in found_tokens for asset in price_query_mock.call_args_list[0][0][0])
 
 
-def test_generate_chunks():
+def test_generate_chunks() -> None:
+    addresses_to_tokens: Any = {
+        'acc1': ['token1'],
+        'acc2': ['token2', 'token3', 'token4', 'token5', 'token6'],
+        'acc3': ['token7', 'token8', 'token9', 'token10', 'token11', 'token12', 'token13', 'token14', 'token15', 'token16'],  # noqa: E501
+    }
     generated_chunks = generate_multicall_chunks(
         chunk_length=17,
-        addresses_to_tokens={
-            'acc1': ['token1'],
-            'acc2': ['token2', 'token3', 'token4', 'token5', 'token6'],
-            'acc3': ['token7', 'token8', 'token9', 'token10', 'token11', 'token12', 'token13', 'token14', 'token15', 'token16'],  # noqa: E501
-        },
+        addresses_to_tokens=addresses_to_tokens,
     )
     expected_chunks = [
         [
@@ -545,7 +547,7 @@ def test_query_new_tokens_skips_save_on_partial_failures(tokens: EthereumTokens)
     assert saved_tokens == [existing_token]
 
 
-def test_last_queried_ts(tokens, freezer):
+def test_last_queried_ts(tokens: Any, freezer: Any) -> None:
     """
     Checks that after detecting evm tokens last_queried_timestamp is updated and there
     are no duplicates.
@@ -675,11 +677,11 @@ def test_query_new_tokens_caches_protocol_and_liability_balances(tokens: Ethereu
     ]
 
 
-def test_cache_is_per_token_type(ethereum_inquirer):
+def test_cache_is_per_token_type(ethereum_inquirer: Any) -> None:
     """This test makes sure that different info cache is used per token type."""
     address = make_evm_address()
 
-    def query_token_info(token_kind):
+    def query_token_info(token_kind: Any) -> Any:
         """
         Util function to request token info. Doesn't pass name, symbol or decimals because they
         should be retrieved from the chain (chain calls are mocked below).
@@ -693,7 +695,7 @@ def test_cache_is_per_token_type(ethereum_inquirer):
             token_kind=token_kind,
         )
 
-    def patch_multicall_2(return_value):
+    def patch_multicall_2(return_value: Any) -> Any:
         """
         This patch method together with ERC20_INFO_RESPONSE and ERC721_INFO_RESPONSE mocks
         tokens info.
@@ -722,14 +724,14 @@ def test_cache_is_per_token_type(ethereum_inquirer):
     assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721)
 
 
-def _do_read(database):
+def _do_read(database: Any) -> None:
     with database.conn.read_ctx() as cursor:
         database.get_settings(cursor)
         database.get_all_external_service_credentials()
         database.get_blockchain_accounts(cursor)
 
 
-def _do_spawn(database, stop_event):
+def _do_spawn(database: Any, stop_event: Any) -> None:
     while not stop_event.is_set():
         spawn(_do_read, database)
         with database.user_write() as write_cursor:
@@ -793,7 +795,7 @@ def test_flaky_binding_parameter_zero(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-def test_old_curve_gauge(ethereum_inquirer: EthereumInquirer):
+def test_old_curve_gauge(ethereum_inquirer: EthereumInquirer) -> None:
     """Test that querying new and old gauges get the data correctly.
     Old one should pick the default values provided and the new one should
     get the values from the chain
@@ -842,7 +844,7 @@ def test_old_curve_gauge(ethereum_inquirer: EthereumInquirer):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-def test_chain_is_not_queried_when_details(ethereum_inquirer: EthereumInquirer):
+def test_chain_is_not_queried_when_details(ethereum_inquirer: EthereumInquirer) -> None:
     """Test that if we provide the values of name, decimals and symbol we don't query
     the chain without need
     """
@@ -880,7 +882,7 @@ def test_monerium_queries(
         gnosis_accounts: list[ChecksumEvmAddress],
         inquirer: Inquirer,
         allow_gnosis_etherscan: None,
-):
+) -> None:
     """Test that we query balances for the new monerium eure but not the old one"""
     new_eure = get_or_create_evm_token(  # ensure that the new eure is in the db
         userdb=gnosis_manager.node_inquirer.database,
@@ -934,7 +936,7 @@ def test_erc721_token_ownership_verification(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
         database: DBHandler,
-):
+) -> None:
     """Test that when a user has historical events for two NFTs from the same collection
     but only currently owns one, we correctly identify only the currently owned NFT.
     """

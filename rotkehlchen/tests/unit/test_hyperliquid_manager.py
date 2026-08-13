@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from rotkehlchen.api.services.transactions import TransactionsService
@@ -13,7 +14,7 @@ from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 
 @contextmanager
-def _dummy_ctx():
+def _dummy_ctx() -> Any:
     yield object()
 
 

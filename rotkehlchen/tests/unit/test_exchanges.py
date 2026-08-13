@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-def test_exchanges_filtering(database, exchange_manager, function_scope_messages_aggregator):
+def test_exchanges_filtering(database: Any, exchange_manager: Any, function_scope_messages_aggregator: Any) -> None:  # noqa: E501
     kraken1 = MockKraken(
         name='mockkraken_1',
         api_key=make_api_key(),
@@ -133,13 +133,13 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    def mock_kucoin_validate_api_key(kucoin):
+    def mock_kucoin_validate_api_key(kucoin: Any) -> Any:
         if kucoin.api_passphrase in (TEST_CREDENTIALS_1.passphrase, TEST_CREDENTIALS_3.passphrase):
             return True, ''
 
         return False, 'Invalid passphrase'  # For TEST_KUCOIN_PASSPHRASE_2
 
-    def get_current_credentials(kucoin) -> ExchangeApiCredentials:
+    def get_current_credentials(kucoin: Any) -> ExchangeApiCredentials:
         return ExchangeApiCredentials(
             name=kucoin.name,
             location=Location.KUCOIN,

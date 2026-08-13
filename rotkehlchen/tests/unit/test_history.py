@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -9,5 +11,5 @@ from rotkehlchen.history.types import HistoricalPriceOracle
     ('cryptocompare', HistoricalPriceOracle.CRYPTOCOMPARE),
     ('xratescom', HistoricalPriceOracle.XRATESCOM),
 ])
-def test_historical_price_oracle_deserialize(value, result):
+def test_historical_price_oracle_deserialize(value: Any, result: Any) -> None:
     assert HistoricalPriceOracle.deserialize(value) == result

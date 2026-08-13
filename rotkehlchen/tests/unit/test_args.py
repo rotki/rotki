@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.args import app_args
@@ -5,7 +7,7 @@ from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
 @pytest.fixture(name='argparser')
-def fixture_appargs():
+def fixture_appargs() -> Any:
     return app_args(
         prog='rotki',
         description=(
@@ -14,7 +16,7 @@ def fixture_appargs():
     )
 
 
-def test_arg_sql_vm_instructions_cb(argparser):
+def test_arg_sql_vm_instructions_cb(argparser: Any) -> None:
     with pytest.raises(SystemExit):
         argparser.parse_args(['--sqlite-instructions', '-3'])
 

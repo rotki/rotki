@@ -46,7 +46,7 @@ def make_dummy_chains_aggregator(
         chain_manager_by_blockchain: dict[Any, Any] | None = None,
 ) -> Any:
     class _DummyTransactions:
-        def _query_internal_transactions_for_parent_hash(self, **kwargs):
+        def _query_internal_transactions_for_parent_hash(self, **kwargs: Any) -> Any:
             if query_internal_hook is not None:
                 query_internal_hook(**kwargs)
             if query_internal_side_effect is not None:
@@ -55,12 +55,12 @@ def make_dummy_chains_aggregator(
                 return query_internal_return_value
             return [], None, ''
 
-        def _replace_internal_transactions_for_parent_hash(self, **kwargs):
+        def _replace_internal_transactions_for_parent_hash(self, **kwargs: Any) -> None:
             if replace_internal_hook is not None:
                 replace_internal_hook(**kwargs)
 
     class _DummyDecoder:
-        def decode_and_get_transaction_hashes(self, **_kwargs):
+        def decode_and_get_transaction_hashes(self, **_kwargs: Any) -> Any:
             return []
 
     class _DummyChainManager:
@@ -69,7 +69,7 @@ def make_dummy_chains_aggregator(
             self.transactions_decoder = _DummyDecoder()
 
     class _DummyChainsAggregator:
-        def get_chain_manager(self, blockchain):
+        def get_chain_manager(self, blockchain: Any) -> Any:
             if chain_manager_by_blockchain is not None and (
                     chain_manager := chain_manager_by_blockchain.get(blockchain)
             ) is not None:
@@ -80,7 +80,7 @@ def make_dummy_chains_aggregator(
     return _DummyChainsAggregator()
 
 
-def test_repull_internal_tx_conflicts_batch_limit(database) -> None:
+def test_repull_internal_tx_conflicts_batch_limit(database: Any) -> None:
     entries = [
         (
             make_evm_tx_hash(),
@@ -123,7 +123,7 @@ def test_repull_internal_tx_conflicts_batch_limit(database) -> None:
         ).fetchone()[0] == 1
 
 
-def test_repull_internal_tx_conflicts_prefetches_parent_tx_data(database) -> None:
+def test_repull_internal_tx_conflicts_prefetches_parent_tx_data(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     tx = EvmTransaction(
         tx_hash=tx_hash,
@@ -152,7 +152,7 @@ def test_repull_internal_tx_conflicts_prefetches_parent_tx_data(database) -> Non
 
     captured_tx_data = []
 
-    def repull_side_effect(**kwargs):
+    def repull_side_effect(**kwargs: Any) -> Any:
         captured_tx_data.append(kwargs['tx_data'])
         return _RepullResult(
             chain_id=kwargs['chain_id'],
@@ -182,7 +182,7 @@ def test_repull_internal_tx_conflicts_prefetches_parent_tx_data(database) -> Non
     assert captured_tx_data[0].timestamp == tx_ts
 
 
-def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database) -> None:
+def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     with database.user_write() as write_cursor:
         write_cursor.execute(
@@ -214,7 +214,7 @@ def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database) -> No
     )
 
 
-def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
+def test_repull_internal_tx_conflicts_skip_customized(database: Any) -> None:
     """Customized txs should be repulled (fixing bad internal data) but not
     redecoded, so the customized events are preserved.  The conflict entry
     must be marked as fixed afterwards."""
@@ -306,7 +306,7 @@ def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
         ).fetchone()[0] == 'customized'
 
 
-def test_repull_internal_tx_conflicts_records_retry_error(database) -> None:
+def test_repull_internal_tx_conflicts_records_retry_error(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     with database.user_write() as write_cursor:
         write_cursor.execute(
@@ -348,7 +348,7 @@ def test_repull_internal_tx_conflicts_records_retry_error(database) -> None:
 
 
 def test_repull_internal_tx_conflicts_unexpected_worker_exception_records_retry_error(
-        database,
+        database: Any,
 ) -> None:
     tx_hash_fail = make_evm_tx_hash()
     tx_hash_ok = make_evm_tx_hash()
@@ -373,7 +373,7 @@ def test_repull_internal_tx_conflicts_unexpected_worker_exception_records_retry_
             ],
         )
 
-    def worker(**kwargs) -> _RepullResult:
+    def worker(**kwargs: Any) -> _RepullResult:
         if kwargs['tx_hash'] == tx_hash_fail:
             raise RuntimeError('unexpected failure')
 
@@ -417,7 +417,7 @@ def test_repull_internal_tx_conflicts_unexpected_worker_exception_records_retry_
     assert ok_row == (1, None)
 
 
-def test_repull_internal_tx_conflicts_prioritizes_untried_rows(database) -> None:
+def test_repull_internal_tx_conflicts_prioritizes_untried_rows(database: Any) -> None:
     tx_hash_never_tried = make_evm_tx_hash()
     tx_hash_retried = make_evm_tx_hash()
     with database.user_write() as write_cursor:
@@ -448,7 +448,7 @@ def test_repull_internal_tx_conflicts_prioritizes_untried_rows(database) -> None
     assert called_tx_hash == tx_hash_never_tried
 
 
-def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database) -> None:
+def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database: Any) -> None:
     entries = [
         (
             make_evm_tx_hash(),
@@ -469,7 +469,7 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
     completion_count = 0
     started_at_fifth_completion: int | None = None
 
-    def worker(**kwargs) -> _RepullResult:
+    def worker(**kwargs: Any) -> _RepullResult:
         nonlocal active_workers, max_workers, started_workers, completion_count, started_at_fifth_completion  # noqa: E501
         started_workers += 1
         active_workers += 1
@@ -502,7 +502,7 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
     assert started_at_fifth_completion == 5
 
 
-def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
+def test_repull_internal_tx_conflicts_uses_staggered_launch(database: Any) -> None:
     entries = [
         (
             make_evm_tx_hash(),
@@ -520,7 +520,7 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
 
     delays: list[float] = []
 
-    def spawn_later(delay, func, **kwargs):
+    def spawn_later(delay: Any, func: Any, **kwargs: Any) -> Any:
         delays.append(delay)
         result = _RepullResult(
             chain_id=kwargs['chain_id'],
@@ -551,7 +551,7 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
     assert delays == pytest.approx([0.0, 0.03, 0.06, 0.09, 0.12, 0.0, 0.03])
 
 
-def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None:
+def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database: Any) -> None:
     tx_hash_eth_repull = make_evm_tx_hash()
     tx_hash_eth_fix = make_evm_tx_hash()
     tx_hash_optimism = make_evm_tx_hash()
@@ -616,7 +616,7 @@ def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None
         ).fetchone()[0] == 3
 
 
-def test_repull_internal_tx_conflicts_batch_decode_emits_ws_fixed_messages(database) -> None:
+def test_repull_internal_tx_conflicts_batch_decode_emits_ws_fixed_messages(database: Any) -> None:
     tx_hash1 = make_evm_tx_hash()
     tx_hash2 = make_evm_tx_hash()
     with database.user_write() as write_cursor:
@@ -673,7 +673,7 @@ def test_repull_internal_tx_conflicts_batch_decode_emits_ws_fixed_messages(datab
 
 
 def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fixed(
-        database,
+        database: Any,
 ) -> None:
     tx_hash1, tx_hash2, tx_hash3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
     with database.user_write() as write_cursor:
@@ -732,7 +732,7 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fi
 
 
 def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failures(
-        database,
+        database: Any,
 ) -> None:
     tx_hash_ok1, tx_hash_ok2, tx_hash_fail = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()  # noqa: E501
     with database.user_write() as write_cursor:
@@ -752,7 +752,7 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failur
         transaction=MagicMock(),
     )
 
-    def purge_side_effect(**kwargs) -> None:
+    def purge_side_effect(**kwargs: Any) -> None:
         if kwargs['tx_ref'] == tx_hash_fail:
             raise InputError('purge failed')
 
@@ -794,7 +794,7 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failur
         assert fail_row[2] == 'purge failed'
 
 
-def test_repull_internal_pull_dataintegrity_updates_retry_fields(database) -> None:
+def test_repull_internal_pull_dataintegrity_updates_retry_fields(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     tx = EvmTransaction(
         tx_hash=tx_hash,
@@ -841,7 +841,7 @@ def test_repull_internal_pull_dataintegrity_updates_retry_fields(database) -> No
     assert row[2] == 'Indexer did not provide valid data: empty internals payload'
 
 
-def test_repull_fetch_failure_keeps_db_unchanged(database) -> None:
+def test_repull_fetch_failure_keeps_db_unchanged(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     tx = EvmTransaction(
         tx_hash=tx_hash,
@@ -911,7 +911,7 @@ def test_repull_fetch_failure_keeps_db_unchanged(database) -> None:
     assert internal_after == internal_before
 
 
-def test_repull_internal_conflict_uses_indexer_source_from_internal_query(database) -> None:
+def test_repull_internal_conflict_uses_indexer_source_from_internal_query(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     tx = EvmTransaction(
         tx_hash=tx_hash,
@@ -950,7 +950,7 @@ def test_repull_internal_conflict_uses_indexer_source_from_internal_query(databa
     assert captured_indexer_source['value'] == 'etherscan'
 
 
-def test_fix_conflict_with_specific_internal_tx_dataset(database) -> None:
+def test_fix_conflict_with_specific_internal_tx_dataset(database: Any) -> None:
     tx_hash = make_evm_tx_hash()
     tx = EvmTransaction(
         tx_hash=tx_hash,
@@ -1023,7 +1023,7 @@ def test_fix_conflict_with_specific_internal_tx_dataset(database) -> None:
         ).fetchone()[0] == 0
 
 
-def test_repull_passes_tx_timestamp_to_internal_query(database) -> None:
+def test_repull_passes_tx_timestamp_to_internal_query(database: Any) -> None:
     """Ensure _repull_internal_tx_data forwards the transaction timestamp as
     tx_timestamp so that indexer guards (e.g. Blockscout pre-Bedrock check)
     can gate queries correctly."""
@@ -1063,7 +1063,7 @@ def test_repull_passes_tx_timestamp_to_internal_query(database) -> None:
     assert captured_kwargs.get('tx_timestamp') == tx_ts
 
 
-def test_repull_skips_previously_failed_entries(database) -> None:
+def test_repull_skips_previously_failed_entries(database: Any) -> None:
     """Entries with last_retry_ts set (previously failed) are skipped by the task."""
     entries = [
         (
@@ -1106,7 +1106,7 @@ def test_repull_skips_previously_failed_entries(database) -> None:
         ).fetchone()[0] == 1
 
 
-def test_fix_redecode_preserves_customized_events(database) -> None:
+def test_fix_redecode_preserves_customized_events(database: Any) -> None:
     """Regression: fix_redecode must not delete customized events.
 
     Previously clean_internal_tx_conflict unconditionally deleted all events

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import math
 from decimal import InvalidOperation
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -8,8 +11,11 @@ from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-def test_simple_arithmetic():
+
+def test_simple_arithmetic() -> None:
     a = FVal(5.21)
     b = FVal(2.12)
     c = FVal(-23.124)
@@ -38,11 +44,12 @@ def test_simple_arithmetic():
     assert a == FVal('7.33')
 
     # For the moment not allowing operations against floats
+    float_value: Any = 5.23
     with pytest.raises(NotImplementedError):
-        _ = a + 5.23
+        _ = a + float_value
 
 
-def test_arithmetic_with_int():
+def test_arithmetic_with_int() -> None:
     a = FVal(5.21)
 
     assert a - 2 == FVal('3.21')
@@ -60,7 +67,7 @@ def test_arithmetic_with_int():
     assert 2 // a == FVal('0')
 
 
-def test_comparison():
+def test_comparison() -> None:
     a = FVal('1.348938409')
     b = FVal('0.123432434')
     c = FVal('1.348938410')
@@ -79,7 +86,7 @@ def test_comparison():
     assert a >= d
 
 
-def test_int_comparison():
+def test_int_comparison() -> None:
     a = FVal('1.348938409')
     b = 1
     c = FVal('3.0')
@@ -104,7 +111,7 @@ def test_int_comparison():
     assert e == c
 
 
-def test_operators_preserve_decimal_value():
+def test_operators_preserve_decimal_value() -> None:
     """The arithmetic/unary operators wrap the result via the _from_decimal fast path.
     Pin that every result still equals the underlying raw Decimal operation, so the fast
     path can never silently diverge from constructing FVal from the Decimal result."""
@@ -126,7 +133,7 @@ def test_operators_preserve_decimal_value():
     assert isinstance(a + b, FVal)  # results are real FVal instances
 
 
-def test_comparisons_match_decimal():
+def test_comparisons_match_decimal() -> None:
     """The native comparisons must match the Decimal semantics they replaced."""
     a, b = FVal('1.0'), FVal('1.00')
     assert a == b  # numerically equal despite different scale
@@ -141,7 +148,7 @@ def test_comparisons_match_decimal():
     assert FVal('2') != 'foo'  # non-numeric -> not equal, must not raise
 
 
-def test_nan_comparison_contract():
+def test_nan_comparison_contract() -> None:
     """A NaN never arises in practice (the decimal context traps the operations that would
     produce one, and nothing constructs FVal('nan')), but pin the contract anyway: equality
     returns False (standard IEEE behavior, and safe for dict/set membership), while ordering
@@ -151,12 +158,17 @@ def test_nan_comparison_contract():
     assert (nan == FVal(1)) is False
     assert (nan == 1) is False
     assert (FVal(1) == nan) is False
-    for bad in (lambda: nan > FVal(1), lambda: nan < FVal(1), lambda: nan >= FVal(1)):
+    bad_operations: tuple[Callable[[], bool], ...] = (
+        lambda: nan > FVal(1),
+        lambda: nan < FVal(1),
+        lambda: nan >= FVal(1),
+    )
+    for bad in bad_operations:
         with pytest.raises(InvalidOperation):
             bad()
 
 
-def test_representation():
+def test_representation() -> None:
     a = FVal(2.01)
     b = FVal('2.01')
     assert a == b
@@ -168,7 +180,7 @@ def test_representation():
     assert b == c
 
 
-def test_encoding():
+def test_encoding() -> None:
     data = {'a': math.pi, 'b': 5, 'c': 'foo', 'd': '5.42323143', 'e': {'u1': '3.221'},
             'f': [2.1, 'boo', 3, '4.2324']}
     strdata = rlk_jsondumps(data)
@@ -180,7 +192,7 @@ def test_encoding():
     )
 
 
-def test_conversion():
+def test_conversion() -> None:
     a = 2.0123
     b = FVal('2.0123')
     c = float(b)
@@ -191,7 +203,7 @@ def test_conversion():
         b.to_int(exact=True)
 
 
-def test_to_percentage():
+def test_to_percentage() -> None:
     assert FVal('0.5').to_percentage() == '50.0000%'
     assert FVal('0.5').to_percentage(with_perc_sign=False) == '50.0000'
     assert FVal('0.2345').to_percentage() == '23.4500%'
@@ -202,7 +214,7 @@ def test_to_percentage():
     assert FVal('1.5321').to_percentage() == '153.2100%'
 
 
-def test_initialize_with_bool_fails():
+def test_initialize_with_bool_fails() -> None:
     """
     Test that initializing with a bool fails
 
@@ -219,7 +231,7 @@ def test_initialize_with_bool_fails():
         FVal(False)
 
 
-def test_calculations_with_large_values():
+def test_calculations_with_large_values() -> None:
     assert str(
         FVal(115792089237316195423570985008687907853269984665640564034996606767801203425279) /
         FVal(10) ** 18,

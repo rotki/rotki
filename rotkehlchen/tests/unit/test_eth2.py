@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -142,7 +142,7 @@ ADDR2: Final = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19
         },
     ],
 }])
-def test_ownership_proportion(eth2: Eth2, database):
+def test_ownership_proportion(eth2: Eth2, database: Any) -> None:
     """
     Test that the ownership proportion is correct when querying validators. If proportion is
     customized then the custom value should be used. Otherwise the proportion should be ONE.
@@ -187,7 +187,7 @@ def test_ownership_proportion(eth2: Eth2, database):
     assert [x.validator_index for x in result] == [9, 1757]
 
 
-def test_deposits_pubkey_re(eth2: Eth2, database):
+def test_deposits_pubkey_re(eth2: Eth2, database: Any) -> None:
     dbevents = DBHistoryEvents(database)
     pubkey1 = Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda')  # noqa: E501
     pubkey2 = Eth2PubKey('0x96dab7564980306b3052649e523747fb613ebf91308a788350bbd16435f55f8d3a7090a2ec73fe636eed66ada6e52ad5')  # noqa: E501
@@ -253,7 +253,7 @@ def test_deposits_pubkey_re(eth2: Eth2, database):
     ],
 
 }])
-def test_eth_validators_performance(eth2, database, ethereum_accounts):
+def test_eth_validators_performance(eth2: Any, database: Any, ethereum_accounts: Any) -> None:
     """Test that the performance of all multiple validators is returned fine"""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -370,7 +370,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
             ),
         ])
 
-    def check_performance_validator(performance, vindex, check_keys, expected_data, expected_apr):
+    def check_performance_validator(performance: Any, vindex: Any, check_keys: Any, expected_data: Any, expected_apr: Any) -> None:  # noqa: E501
         for check_key in check_keys:
             assert performance['validators'][vindex][check_key] == expected_data[check_key]
             assert performance['validators'][vindex]['apr'].is_close(expected_apr)
@@ -651,7 +651,7 @@ def test_eth_validators_performance_recent(
     assert vindex1_apr.is_close(FVal('0.000111972949762056615807290389049698277976745326988176421527743707991954079379875'))  # noqa: E501
 
 
-def test_combine_block_with_tx_events(eth2, database):
+def test_combine_block_with_tx_events(eth2: Any, database: Any) -> None:
     """Small unit test to see the logic of the DB query to detect and modify eth2
     mev reward events works"""
     dbevents = DBHistoryEvents(database)
@@ -756,7 +756,7 @@ def test_combine_block_with_tx_events(eth2, database):
         assert hidden_ids == {2}
 
 
-def test_combine_block_with_tx_events_without_relay_data(eth2, database):
+def test_combine_block_with_tx_events_without_relay_data(eth2: Any, database: Any) -> None:
     """Test mev reward event combination when relay data is missing."""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -851,7 +851,7 @@ def test_combine_block_with_tx_events_without_relay_data(eth2, database):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-30 21:52:55 GMT')
-def test_refresh_activated_validators_deposits(eth2, database):
+def test_refresh_activated_validators_deposits(eth2: Any, database: Any) -> None:
     """Test that if an eth deposit event is missing the index, the redetection task works"""
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -876,6 +876,9 @@ def test_refresh_activated_validators_deposits(eth2, database):
         withdrawable_timestamp=Timestamp(1755241175),
         exited_timestamp=Timestamp(1755142871),
     )
+    assert validator1.validator_index is not None
+    assert validator2.validator_index is not None
+    assert validator3.validator_index is not None
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, [validator1])  # first one is active and in DB at time of deposit decoding  # noqa: E501
 
@@ -948,7 +951,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         assert validators_by_index[validator3.validator_index].public_key == validator3.public_key
 
 
-def test_query_chunked_endpoint_with_cursor_pagination(eth2):
+def test_query_chunked_endpoint_with_cursor_pagination(eth2: Any) -> None:
     """Test that beaconchain V2 cursor pagination only stops when next_cursor is empty."""
     responses = [
         BeaconChainQueryResponse(data=[{'block': '1'}], next_cursor='next-page'),
@@ -985,7 +988,7 @@ def test_query_chunked_endpoint_with_cursor_pagination(eth2):
     assert third_call_data['cursor'] == ''
 
 
-def test_get_active_validator_indices(database):
+def test_get_active_validator_indices(database: Any) -> None:
     active_index, exited_index, noevents_index, consolidated_index = 1, 575645, 4242, 999
     dbeth2 = DBEth2(database)
     dbevents = DBHistoryEvents(database)
@@ -1067,7 +1070,7 @@ def test_clean_cache_on_account_removal(
     'validator': [{'data_can_be_anything_here': 'with length of list being 1 (validator)'}],
 
 }])
-def test_staking_performance_division_by_zero_protection(eth2) -> None:
+def test_staking_performance_division_by_zero_protection(eth2: Any) -> None:
     """Test that division by zero is prevented when time_weighted_avg is zero in APR calculation"""
     dbevents, dbeth2 = DBHistoryEvents(eth2.database), DBEth2(eth2.database)
     with eth2.database.conn.write_ctx() as write_cursor:
@@ -1212,7 +1215,7 @@ def test_validator_details_update(
         eth2: Eth2,
         database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test that validator details are properly updated."""
     dbeth2 = DBEth2(database)
     with database.user_write() as write_cursor:
@@ -1265,7 +1268,7 @@ def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
         assert result['sums']['outstanding_consensus_pnl'] == small_balance
 
 
-def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(eth2: Eth2):
+def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(eth2: Eth2) -> None:
     """Test that detect_and_refresh_validators only processes addresses that have deposit events"""
     with eth2.database.user_write() as cursor:
         DBHistoryEvents(eth2.database).add_history_event(
@@ -1278,7 +1281,7 @@ def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(et
 
     addresses_queried = []
 
-    def mock_get_eth1_address_validators(address):
+    def mock_get_eth1_address_validators(address: Any) -> Any:
         addresses_queried.append(address)
         return []
 
@@ -1309,7 +1312,7 @@ def test_detect_and_refresh_validators_skips_exited_validators(eth2: Eth2) -> No
 
     queried_indices = []
 
-    def mock_get_validator_data(indices_or_pubkeys):
+    def mock_get_validator_data(indices_or_pubkeys: Any) -> Any:
         queried_indices.extend(indices_or_pubkeys)
         return []
 
@@ -1319,11 +1322,12 @@ def test_detect_and_refresh_validators_skips_exited_validators(eth2: Eth2) -> No
     assert queried_indices == [active_index]
 
 
-def test_beacon_node_bad_version_response_raises_remote_error():
+def test_beacon_node_bad_version_response_raises_remote_error() -> None:
     """An unexpected response shape from the beacon node's version endpoint
     must raise RemoteError (which callers handle by degrading gracefully)
     instead of an unhandled TypeError that crashes user login"""
-    for bad_response in ([], 'lighthouse', None):
+    bad_responses: tuple[Any, ...] = ([], 'lighthouse', None)
+    for bad_response in bad_responses:
         with (
             patch.object(BeaconNode, 'query', return_value=bad_response),
             pytest.raises(RemoteError),

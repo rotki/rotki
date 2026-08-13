@@ -9,7 +9,7 @@ from rotkehlchen.exchanges.constants import (
 from rotkehlchen.types import Location
 
 
-def test_location_details_coverage():
+def test_location_details_coverage() -> None:
     """Test that all locations are covered in the location details"""
     for location in Location:
         if location == Location.TOTAL:
@@ -29,7 +29,7 @@ def test_location_details_coverage():
             assert 'is_exchange' in location_detail
 
 
-def test_coinex_exists_in_db_schema():
+def test_coinex_exists_in_db_schema() -> None:
     """Test that fresh user DBs contain CoinEx."""
     assert (
         f"INSERT OR IGNORE INTO location(location, seq) VALUES "

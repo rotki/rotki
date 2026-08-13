@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0xd6Ade875eEC93a7aAb7EfB7DBF13d1457443f95B']])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
-def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
+def test_query_transactions_no_fee(optimism_transactions: Any, optimism_accounts: Any) -> None:
     """Test to query an optimism transaction with and without l1_fee existing in the DB.
     Make sure that if l1_fee is missing in the DB nothing breaks, but it's just seen as 0.
     Note that the transaction used here is from after the bedrock upgrade and tests the case where
@@ -34,7 +34,7 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6eb136db4d36cf695f4026da16f602ed4a2583b2420dbbcbd4f436943190b665')  # noqa: E501
     to_address = '0xDEF1ABE32c034e558Cdd535791643C58a13aCC10'
 
-    def assert_tx_okay(transactions, should_have_l1):
+    def assert_tx_okay(transactions: Any, should_have_l1: Any) -> None:
         assert len(transactions) == 1
         assert transactions[0].tx_hash == tx_hash
         assert transactions[0].chain_id == ChainID.OPTIMISM
@@ -86,7 +86,7 @@ def test_l1_fee_queried_when_missing(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
         optimism_manager_connect_at_start: Sequence[WeightedNode],
-):
+) -> None:
     """Test that if the L1 fee is initially missing it gets queried from either
     the mainnet node or from an indexer. The RPC and etherscan responses are mocked since they
     no longer return an L1 fee for this tx/chain, but the other indexers are not mocked.
@@ -107,7 +107,7 @@ def test_l1_fee_queried_when_missing(
         ]),
     ):
 
-        def mock_get_transaction_receipt(fallback=fallback_to_indexers, **kwargs: Any) -> dict[str, Any]:  # noqa: E501
+        def mock_get_transaction_receipt(fallback: Any = fallback_to_indexers, **kwargs: Any) -> dict[str, Any]:  # noqa: E501
             """Mock the l1Fee in the rpc response."""
             tx_receipt = original_get_transaction_receipt(**kwargs)
             tx_receipt['l1Fee'] = None if fallback else l1_fee_value
@@ -148,7 +148,7 @@ def test_l1_fee_queried_when_missing(
 def test_l1_fee_fetched_during_indexer_tx_query(
         optimism_transactions: OptimismTransactions,
         optimism_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test that L1 fees are fetched via indexer's get_l1_fee during transaction queries.
 
     This tests the fix where get_transactions() in etherscan_like.py now calls get_l1_fee()

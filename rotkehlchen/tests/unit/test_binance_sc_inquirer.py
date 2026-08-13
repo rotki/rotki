@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 def test_binance_sc_nodes_prune_and_archive_status(
         binance_sc_manager_connect_at_start: list[tuple],
         binance_sc_inquirer: BinanceSCInquirer,
-):
+) -> None:
     """Checks that connecting to a set of BinanceSC nodes, the capabilities of those nodes are
     known and stored. It tests the nodes one by one to avoid the randomness of the connections
     to the nodes while running with the VCR cassettes.

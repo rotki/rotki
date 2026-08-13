@@ -1,7 +1,7 @@
 import tempfile
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -69,7 +69,7 @@ def test_get_prioritized_name(evm_address: ChecksumEvmAddress) -> None:
 
 def test_get_name_of_lowest_prio_name_source(
         evm_address: ChecksumEvmAddress,
-):
+) -> None:
     """Given some name fetchers where only the one with the lowest priority
     (the last one) returns a name, the NamePrioritizer must return
     the name with the last priority
@@ -106,7 +106,7 @@ def get_fetchers_with_names(
     return fetchers
 
 
-def test_uses_sources_only_when_needed(evm_address, database: DBHandler):
+def test_uses_sources_only_when_needed(evm_address: Any, database: DBHandler) -> None:
     """
     Tests that names sources are not used when they are not supposed to be used. For example
     blockchain labels shouldn't be used when blockchain is not specified.
@@ -127,7 +127,7 @@ def test_uses_sources_only_when_needed(evm_address, database: DBHandler):
     assert names == [], 'No names should have been returned since the blockchain was None'
 
 
-def test_naming_system_names_priority(evm_address, database: DBHandler):
+def test_naming_system_names_priority(evm_address: Any, database: DBHandler) -> None:
     """Test that an address can have a cached name per naming system and that
     the priority between them is applied at read time by the prioritizer"""
     dbens = DBEns(database)
@@ -151,13 +151,13 @@ def test_naming_system_names_priority(evm_address, database: DBHandler):
         )]
 
 
-def test_find_ens_mappings_naming_systems(evm_address, database: DBHandler, monkeypatch):
+def test_find_ens_mappings_naming_systems(evm_address: Any, database: DBHandler, monkeypatch: Any) -> None:  # noqa: E501
     """Test that additional naming systems are only queried when they are in the
     address_name_priority setting and that the highest priority name wins the merge"""
     queried_systems = []
 
-    def make_reverse_lookup(identifier: str, suffix: str):
-        def reverse_lookup(inquirer, addresses):
+    def make_reverse_lookup(identifier: str, suffix: str) -> Any:
+        def reverse_lookup(inquirer: Any, addresses: Any) -> Any:
             queried_systems.append(identifier)
             return dict.fromkeys(addresses, f'someone{suffix}')
         return reverse_lookup
@@ -207,7 +207,7 @@ def test_find_ens_mappings_naming_systems(evm_address, database: DBHandler, monk
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_gns_reverse_lookup(ethereum_inquirer):
+def test_gns_reverse_lookup(ethereum_inquirer: Any) -> None:
     """Test that reverse resolution of gwei names works properly"""
     assert gns_reverse_lookup(ethereum_inquirer, [
         (donnoh := string_to_evm_address('0xC04689227Fa24785609B1174698DBe481437f1A3')),  # has donnoh.gwei set as primary name  # noqa: E501
@@ -216,7 +216,7 @@ def test_gns_reverse_lookup(ethereum_inquirer):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_gns_resolve(ethereum_inquirer):
+def test_gns_resolve(ethereum_inquirer: Any) -> None:
     """Test that forward resolution of gwei names works properly."""
     assert gns_resolve(ethereum_inquirer, 'yabir.gwei') == ethereum_inquirer.ens_lookup('yabir.eth') == string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')  # noqa: E501
     assert gns_resolve(ethereum_inquirer, 'surely-not-registered-a1b2c3.gwei') is None
@@ -224,7 +224,7 @@ def test_gns_resolve(ethereum_inquirer):
 
 @pytest.mark.vcr
 @freeze_time('2023-05-12')  # freezing time just to make sure comparisons of timestamps won't fail
-def test_download_ens_avatar(ethereum_inquirer, opensea):
+def test_download_ens_avatar(ethereum_inquirer: Any, opensea: Any) -> None:
     """
     Tests that detection and downloading of ens avatars works properly for all resolvers
     """
@@ -295,7 +295,7 @@ def test_download_ens_avatar(ethereum_inquirer, opensea):
         }
 
 
-def test_download_gwei_name_avatar(ethereum_inquirer):
+def test_download_gwei_name_avatar(ethereum_inquirer: Any) -> None:
     """Test that avatars of gwei names are queried from the GNS contract, which acts as
     an ENS-compatible resolver for all .gwei names, and downloaded properly"""
     dbens = DBEns(ethereum_inquirer.database)
@@ -308,7 +308,7 @@ def test_download_gwei_name_avatar(ethereum_inquirer):
             source='gns',
         )
 
-    def mock_call_contract(contract_address, abi, method_name, arguments):
+    def mock_call_contract(contract_address: Any, abi: Any, method_name: Any, arguments: Any) -> Any:  # noqa: E501
         assert contract_address == GWEI_NAMES_ADDRESS
         assert method_name == 'text'
         assert arguments[1] == 'avatar'

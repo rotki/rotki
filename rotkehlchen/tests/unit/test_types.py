@@ -20,7 +20,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.types import ChainID, SupportedBlockchain
 
 
-def test_supported_blockchain_native_token():
+def test_supported_blockchain_native_token() -> None:
     """Test the native token identifiers are valid and exist in the DB"""
     expected_assets = {
         SupportedBlockchain.ETHEREUM: A_ETH,

@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -44,12 +45,14 @@ ETH_ADDRESS2 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65
 
 
 @pytest.fixture(name='use_db')
-def fixture_use_db():
+def fixture_use_db() -> Any:
     return False
 
 
 @pytest.fixture(name='blockchain_balances')
-def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_cb):
+def fixture_blockchain_balances(use_db: Any, data_dir: Any, username: Any, sql_vm_instructions_cb: Any) -> Any:  # noqa: E501
+    db: Any = None
+    all_btc_addresses: Any
     if use_db is True:
         db, _, xpub2, _, all_btc_addresses = setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb)  # noqa: E501
         xpub_data = xpub2
@@ -57,7 +60,7 @@ def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_
         for btc_addy in all_btc_addresses:
             a.btc[btc_addy] = Balance(amount=ONE, value=ONE)
     else:
-        a = BlockchainBalances(None)
+        a = BlockchainBalances(db)
         a.btc[UNIT_BTC_ADDRESS1] = Balance(amount=ONE, value=ONE)
         a.bch[UNIT_BTC_ADDRESS1] = Balance(amount=ONE, value=ONE)
         all_btc_addresses = (UNIT_BTC_ADDRESS1,)
@@ -75,8 +78,9 @@ def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_
         db.logout()
 
 
-def test_copy():
-    a = BlockchainBalances(None)
+def test_copy() -> None:
+    db: Any = None
+    a = BlockchainBalances(db)
     address = make_evm_address()
     a.eth[address] = BalanceSheet()
     a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
@@ -88,16 +92,14 @@ def test_copy():
     assert b.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=ONE, value=ONE)
 
 
-def test_recalculate_totals(blockchain_balances):
+def test_recalculate_totals(blockchain_balances: Any) -> None:
     a, address1, address2, _, _ = blockchain_balances
-    assert a.recalculate_totals() == BalanceSheet(
-        assets={
-            OPTIMISM_OP_TOKEN: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))},
-            A_BTC: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
-            A_BCH: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
-        },
-    )
+    expected = BalanceSheet()
+    expected.assets[OPTIMISM_OP_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    expected.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('2'), value=FVal('2'))
+    expected.assets[A_BTC][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    expected.assets[A_BCH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    assert a.recalculate_totals() == expected
 
     # do a change and see it's taken into account at recalculate
     a.eth[address2] = BalanceSheet()
@@ -106,23 +108,21 @@ def test_recalculate_totals(blockchain_balances):
     a.bch[UNIT_BTC_ADDRESS1] = Balance(amount=FVal('5'), value=FVal('5'))
     a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), value=FVal('100'))  # noqa: E501
     a.optimism[address2].assets.pop('ETH')
-    assert a.recalculate_totals() == BalanceSheet(
-        assets={
-            OPTIMISM_OP_TOKEN: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
-            OPTIMISM_USDC_TOKEN:  {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('100'), value=FVal('100'))},  # noqa: E501
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), value=FVal('5'))},
-            A_BTC: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
-            A_BCH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), value=FVal('5'))},
-        },
-    )
+    expected = BalanceSheet()
+    expected.assets[OPTIMISM_OP_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    expected.assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), value=FVal('100'))  # noqa: E501
+    expected.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('5'), value=FVal('5'))
+    expected.assets[A_BTC][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    expected.assets[A_BCH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('5'), value=FVal('5'))
+    assert a.recalculate_totals() == expected
 
 
 @pytest.mark.parametrize('use_db', [True])
-def test_serialize(blockchain_balances):
+def test_serialize(blockchain_balances: Any) -> None:
     a, address1, address2, _, xpub_data = blockchain_balances
     optimism_chain_key = SupportedBlockchain.OPTIMISM.serialize()
     ethereum_chain_key = SupportedBlockchain.ETHEREUM.serialize()
-    expected_serialized_dict = {
+    expected_serialized_dict: dict[str, Any] = {
         SupportedBlockchain.BITCOIN.serialize(): {
             'standalone': {
                 '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd': {'amount': '1', 'value': '1'},
@@ -327,7 +327,7 @@ def test_blockchain_balances_cache_removes_spent_token(blockchain: ChainsAggrega
 def test_native_token_balance(
         blockchain: ChainsAggregator,
         polygon_pos_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """
     Test that for different blockchains different assets are used as native tokens.
     We test it by requesting a Polygon POS balance and checking MATIC balance.
@@ -335,7 +335,7 @@ def test_native_token_balance(
     address = polygon_pos_accounts[0]
     sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())  # type: ignore
 
-    def mock_default_call_order(skip_indexers: bool = False):  # pylint: disable=unused-argument
+    def mock_default_call_order(skip_indexers: bool = False) -> Any:  # pylint: disable=unused-argument
         # return sorted_call_order to remove randomness, and thus make it vcr'able
         return sorted_call_order
 

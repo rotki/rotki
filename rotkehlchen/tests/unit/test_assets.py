@@ -3,7 +3,7 @@ import shutil
 import warnings as test_warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import PropertyMock, patch
 
 import pytest
@@ -102,25 +102,25 @@ def query_all_asset_data() -> list[AssetData]:
     return result
 
 
-def test_unknown_asset():
+def test_unknown_asset() -> None:
     """Test than an unknown asset will throw"""
     with pytest.raises(UnknownAsset):
         FiatAsset('jsakdjsladjsakdj')
 
 
-def test_asset_nft():
+def test_asset_nft() -> None:
     a = Asset('_nft_foo')
     assert a.identifier == '_nft_foo'
     should_not_exist = {'name', 'symbol', 'started', 'forked', 'swapped_for', 'cryptocompare', 'coingecko'}  # noqa: E501
     assert all(hasattr(a, attr) is False for attr in should_not_exist)
 
 
-def test_repr():
+def test_repr() -> None:
     btc_repr = repr(CryptoAsset('BTC'))
     assert btc_repr == '<Asset identifier:BTC name:Bitcoin symbol:BTC>'
 
 
-def test_asset_hashes_properly():
+def test_asset_hashes_properly() -> None:
     """Test that assets can be hashed and are equivalent to the canonical string"""
     btc_asset = Asset('BTC')
     eth_asset = Asset('ETH')
@@ -148,7 +148,7 @@ def fixture_allow_case_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.usefixtures('allow_case_mismatch')
-def test_asset_equals():
+def test_asset_equals() -> None:
     btc_asset = Asset('BTC')
     eth_asset = Asset('ETH')
     other_btc_asset = Asset('BTC')
@@ -165,7 +165,7 @@ def test_asset_equals():
 
 
 @pytest.mark.usefixtures('allow_case_mismatch')
-def test_asset_hash_matches_equality():
+def test_asset_hash_matches_equality() -> None:
     """Equal assets must hash equal, and the Asset<->str key contract must survive"""
     assert hash(Asset('ETH')) == hash(Asset('ETH'))
     assert len({Asset('ETH'), Asset('ETH')}) == 1
@@ -177,7 +177,7 @@ def test_asset_hash_matches_equality():
 
 
 @pytest.mark.usefixtures('allow_case_mismatch')
-def test_asset_ordering_agrees_with_equality():
+def test_asset_ordering_agrees_with_equality() -> None:
     """@total_ordering derives __le__/__gt__/__ge__ from __eq__ and __lt__, so the two must
     not contradict each other or sorting becomes dependent on the input order"""
     for first, second in (
@@ -189,7 +189,7 @@ def test_asset_ordering_agrees_with_equality():
         assert (first == second) != (first < second or second < first)
 
 
-def test_ethereum_tokens():
+def test_ethereum_tokens() -> None:
     rdn_asset = EvmToken('eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
     assert rdn_asset.evm_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
     assert rdn_asset.decimals == 18
@@ -201,7 +201,7 @@ def test_ethereum_tokens():
 
 @pytest.mark.skip(reason='CryptoCompare free API access is discontinued')
 @pytest.mark.asset_test
-def test_cryptocompare_asset_support(cryptocompare):
+def test_cryptocompare_asset_support(cryptocompare: Any) -> None:
     """Try to detect if a token that we have as not supported by cryptocompare got added"""
     cc_assets = cryptocompare.all_coins()
     exceptions = (
@@ -704,7 +704,7 @@ def test_cryptocompare_asset_support(cryptocompare):
             test_warnings.warn(UserWarning(msg))
 
 
-def test_assets_tokens_addresses_are_checksummed():
+def test_assets_tokens_addresses_are_checksummed() -> None:
     """Test that all ethereum saved token asset addresses are checksummed"""
     for asset_data in query_all_asset_data():
         if asset_data.asset_type != AssetType.EVM_TOKEN:
@@ -717,7 +717,7 @@ def test_assets_tokens_addresses_are_checksummed():
         assert is_checksum_address(asset_data.address), msg
 
 
-def test_asset_identifiers_are_unique_all_lowercased():
+def test_asset_identifiers_are_unique_all_lowercased() -> None:
     """Test that adding an identifier that exists but with different case, would fail"""
     with pytest.raises(InputError):
         GlobalDBHandler.add_asset(CryptoAsset.initialize(
@@ -728,7 +728,7 @@ def test_asset_identifiers_are_unique_all_lowercased():
         ))
 
 
-def test_case_does_not_matter_for_asset_constructor():
+def test_case_does_not_matter_for_asset_constructor() -> None:
     """Test that whatever case we give to asset constructor result is the same"""
     a1 = CryptoAsset('bTc')
     a2 = CryptoAsset('BTC')
@@ -763,7 +763,7 @@ def test_case_does_not_matter_for_asset_constructor():
     reason='SLOW TEST -- it executes locally every time we check the assets so can be skipped',
 )
 @pytest.mark.asset_test
-def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable=unused-argument
+def test_coingecko_identifiers_are_reachable(socket_enabled: Any) -> None:  # pylint: disable=unused-argument
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
@@ -1103,20 +1103,20 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
-def test_get_or_create_evm_token(globaldb, database):
+def test_get_or_create_evm_token(globaldb: Any, database: Any) -> None:
     cursor = globaldb.conn.cursor()
     assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
     assert get_or_create_evm_token(
         userdb=database,
         symbol='DAI',
-        evm_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        evm_address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
         chain_id=ChainID.ETHEREUM,
     ) == A_DAI
     # Try getting a DAI token of a different address. Should add new token to DB
     new_token = get_or_create_evm_token(
         userdb=database,
         symbol='DAI',
-        evm_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
+        evm_address=string_to_evm_address('0xA379B8204A49A72FF9703e18eE61402FAfCCdD60'),
         chain_id=ChainID.ETHEREUM,
     )
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 1
@@ -1126,7 +1126,7 @@ def test_get_or_create_evm_token(globaldb, database):
     new_token = get_or_create_evm_token(
         userdb=database,
         symbol='DOT',
-        evm_address='0xb179b8204a49672ff9703E18EE61402fafCCdD60',
+        evm_address=string_to_evm_address('0xb179b8204a49672ff9703E18EE61402fafCCdD60'),
         chain_id=ChainID.ETHEREUM,
     )
     assert new_token.symbol == 'DOT'
@@ -1136,13 +1136,13 @@ def test_get_or_create_evm_token(globaldb, database):
     assert get_or_create_evm_token(
         userdb=database,
         symbol='ROFL',
-        evm_address='0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        evm_address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
         chain_id=ChainID.ETHEREUM,
     ) == A_USDT
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
 
 
-def test_resolve_nft():
+def test_resolve_nft() -> None:
     """Test that a special case of nft is handled when checking asset type and when resolving"""
     nft_asset = Asset('_nft_foo')
     assert nft_asset.is_nft() is True
@@ -1153,13 +1153,13 @@ def test_resolve_nft():
     )
 
 
-def test_resolver_cache_clean_during_resolution_not_resurrected(globaldb: GlobalDBHandler):
+def test_resolver_cache_clean_during_resolution_not_resurrected(globaldb: GlobalDBHandler) -> None:
     """A cache clean for an edited/deleted asset landing while a resolution is in
     flight must not be undone by that resolution writing its stale result back"""
     AssetResolver.clean_memory_cache()
     original_resolve = GlobalDBHandler.resolve_asset
 
-    def resolve_then_concurrent_edit(*args, **kwargs):
+    def resolve_then_concurrent_edit(*args: Any, **kwargs: Any) -> Any:
         result = original_resolve(*args, **kwargs)
         # an edit of the asset lands after the DB read but before the write-back
         AssetResolver.clean_memory_cache(A_DAI.identifier)
@@ -1182,7 +1182,7 @@ def test_resolver_cache_clean_during_resolution_not_resurrected(globaldb: Global
     assert AssetResolver.assets_cache.get(A_DAI.identifier) is None
 
 
-def test_symbol_or_name(database):
+def test_symbol_or_name(database: Any) -> None:
     db_custom_assets = DBCustomAssets(database)
     db_custom_assets.add_custom_asset(CustomAsset.initialize(
         identifier='xyz',
@@ -1195,7 +1195,7 @@ def test_symbol_or_name(database):
         Asset('i-dont-exist').symbol_or_name()
 
 
-def test_load_from_packaged_db(globaldb: GlobalDBHandler):
+def test_load_from_packaged_db(globaldb: GlobalDBHandler) -> None:
     """Test that connecting to the packaged globaldb doesn't try to write into it."""
     packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / GLOBALDB_NAME
     with TemporaryDirectory(
@@ -1218,7 +1218,7 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
         backup.chmod(0o444)
 
         # mock Path parent attribute to return the destination file always
-        def parent():
+        def parent() -> Any:
             return Path(tmpdirname)
 
         # mock the parent method from pathlib in the initialization of the globaldb
@@ -1234,14 +1234,14 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
             assert cursor.fetchone()[0] == 'my eth'
 
 
-def test_nexo_converter():
+def test_nexo_converter() -> None:
     """Test that we don't have overlapping keys in nexo and resolve to the expected assets"""
     assert asset_from_nexo('USDT') == A_USDT
     assert asset_from_nexo('USDTERC') == A_USDT
     assert EvmToken('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206') == asset_from_nexo('NEXONEXO')  # noqa: E501
 
 
-def test_spam_detection_respects_whitelist(globaldb: GlobalDBHandler, database: DBHandler):
+def test_spam_detection_respects_whitelist(globaldb: GlobalDBHandler, database: DBHandler) -> None:
     """Check that automatic spam detection doesn't add whitelisted assets"""
     token = Asset('eip155:1/erc20:0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d')  # crypto.com that gets detected as spam due to the . in the name  # noqa: E501
     new_token_whitelisted = EvmToken.initialize(
@@ -1269,7 +1269,7 @@ def test_spam_detection_respects_whitelist(globaldb: GlobalDBHandler, database: 
     ) is False
 
 
-def test_all_assets_pagination(globaldb: GlobalDBHandler, database: DBHandler):
+def test_all_assets_pagination(globaldb: GlobalDBHandler, database: DBHandler) -> None:
     """Test the pagination by OFFSET and LIMIT parameters in the assets retrieval function.
     With page1 having un-ignored assets from 0-10 and page2 having un-ignored assets from 10-20,
     page1 and page2 should be different, and page1 + page2 should return assets from 0-20."""

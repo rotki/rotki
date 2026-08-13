@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def test_polygon_pos_nodes_prune_and_archive_status(
         polygon_pos_manager_connect_at_start: list[tuple],
         polygon_pos_inquirer: PolygonPOSInquirer,
-):
+) -> None:
     """Checks that connecting to a set of polygon POS nodes, the capabilities of those nodes are
     known and stored. It tests the nodes one by one to avoid the randomness of the connections to
     the nodes while running with the VCR cassettes."""
@@ -42,7 +42,7 @@ def test_polygon_pos_nodes_prune_and_archive_status(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_json_decode_error_handling(polygon_pos_inquirer):
+def test_json_decode_error_handling(polygon_pos_inquirer: Any) -> None:
     """Test that a JSON decode error from a bad RPC node is handled properly"""
     success, msg = polygon_pos_inquirer.attempt_connect(
         node=NodeName(

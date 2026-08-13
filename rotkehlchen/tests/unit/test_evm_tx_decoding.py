@@ -131,9 +131,9 @@ def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
 
 
 @pytest.mark.parametrize('use_custom_database', ['ethtxs.db'])
-def test_tx_decode(ethereum_transaction_decoder, database):
+def test_tx_decode(ethereum_transaction_decoder: Any, database: Any) -> None:
     dbevmtx = DBEvmTx(database)
-    addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+    addr1 = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')
     approve_tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     with database.conn.read_ctx() as cursor:
         transactions = dbevmtx.get_transactions(
@@ -157,7 +157,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
                         tx_ref=approve_tx_hash,
                         sequence_index=0,
-                        timestamp=1569924574000,
+                        timestamp=TimestampMS(1569924574000),
                         location=Location.ETHEREUM,
                         location_label=addr1,
                         asset=A_ETH,
@@ -172,11 +172,11 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
                         tx_ref=approve_tx_hash,
                         sequence_index=163,
-                        timestamp=1569924574000,
+                        timestamp=TimestampMS(1569924574000),
                         location=Location.ETHEREUM,
                         location_label=addr1,
                         asset=A_SAI,
-                        amount=1,
+                        amount=FVal(1),
                         notes=f'Set SAI spending approval of {addr1} by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
                         event_type=HistoryEventType.INFORMATIONAL,
                         event_subtype=HistoryEventSubType.APPROVE,
@@ -194,11 +194,11 @@ def test_tx_decode(ethereum_transaction_decoder, database):
     dbevents = DBHistoryEvents(database)
     # customize one evm event to check that the logic for them works correctly
     with database.user_write() as write_cursor:
-        assert dbevents.edit_history_event(
+        dbevents.edit_history_event(
             write_cursor=write_cursor,
             event=events[1],
             mapping_state=HistoryMappingState.CUSTOMIZED,
-        ) is None
+        )
 
     with database.user_write() as write_cursor:
         assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 2
@@ -438,7 +438,7 @@ def test_genesis_remove_address(
         database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-):
+) -> None:
     """
     Checks that if an address had a genesis transaction:
     1. The decoded event gets deleted when the address is removed
@@ -509,7 +509,7 @@ def test_token_detection_after_decoding(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf4ae64c5c4fb632D0e0D77097b957941c399d26e']])
-def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
+def test_eip7702_transaction(ethereum_transaction_decoder: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x42402dcf6658abaf2c47593a7ebe1264fb2f331de918239d1717a7a9d2996abf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
@@ -560,7 +560,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x22d094Fb289DD45B02490F97b015891FD9d4C145']])
-def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_accounts):
+def test_eip7702_revocation_transaction(ethereum_transaction_decoder: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x8419cf2c21e755a9a3e916749b8356beca49d85fb4fc31f7e5fbb7f36d21fe62')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
@@ -599,7 +599,7 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
-def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
+def test_contract_deployment(ethereum_transaction_decoder: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x36d18e69806af47ea9469156917af9e0278fa315256d08a566023dce5df08c70')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
@@ -628,7 +628,7 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             amount=ZERO,
             location_label=user_address,
-            address=(contract_address := '0x3337286E850cf01B8A8B6094574f0dd6a2108B16'),
+            address=(contract_address := string_to_evm_address('0x3337286E850cf01B8A8B6094574f0dd6a2108B16')),  # noqa: E501
             notes=f'Deploy a new contract at {contract_address}',
         ),
     ]

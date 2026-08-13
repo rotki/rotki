@@ -1,5 +1,6 @@
 import logging
 import subprocess  # noqa: S404  # is only used to execute rotki code here
+from typing import Any
 
 import pytest
 
@@ -18,11 +19,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def test_search_assets_levenshtein_multiple(globaldb, database):  # pylint: disable=unused-argument
+def test_search_assets_levenshtein_multiple(globaldb: Any, database: Any) -> None:  # pylint: disable=unused-argument
     """Test that parallel access to levenshtein search does not raise any errors"""
     filter_query = LevenshteinFilterQuery.make(substring_search='ETH')
 
-    def do_search():
+    def do_search() -> None:
         search_assets_levenshtein(
             db=database,
             filter_query=filter_query,
@@ -50,7 +51,7 @@ def get_identifier_from_stdout(stdout: str) -> str | None:
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_db_persistence_after_search(messages_aggregator):
+def test_db_persistence_after_search(messages_aggregator: Any) -> None:
     """Test that manual prices of a newly added asset are saved in the global database,
     when doing an asset search before the price is added.
     Issue tested: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=69334133

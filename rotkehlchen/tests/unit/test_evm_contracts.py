@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from eth_utils import is_checksum_address
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-def test_evm_contracts_data(globaldb):
+def test_evm_contracts_data(globaldb: Any) -> None:
     """Test that all evm contract entries in the packaged global DB have legal data"""
     serialized_chain_ids = [x.serialize_for_db() for x in ChainID]
     with globaldb.conn.read_ctx() as cursor:
@@ -26,9 +26,9 @@ def test_evm_contracts_data(globaldb):
             assert isinstance(entry[3], int) and entry[3] >= 0
 
 
-def test_evm_abi_data(globaldb):
+def test_evm_abi_data(globaldb: Any) -> None:
     """Test that the evm abi entries in the packaged globalDB have legal data"""
-    abis_set = {0}
+    abis_set: set[int | str] = {0}
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute('SELECT id, value FROM contract_abi')
         for entry in cursor:
@@ -44,7 +44,7 @@ def test_evm_abi_data(globaldb):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [2])
-def test_fallback_to_packaged_db(ethereum_inquirer: EthereumInquirer):
+def test_fallback_to_packaged_db(ethereum_inquirer: EthereumInquirer) -> None:
     """
     Test that if a contract / abi is missing in the globaldb, it is searched in the packaged db.
     """

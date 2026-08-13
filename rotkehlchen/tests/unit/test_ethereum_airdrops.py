@@ -5,7 +5,7 @@ from collections import defaultdict
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -59,7 +59,7 @@ NOT_CSV_WEBPAGE = {
         },
     }, 'poap_airdrops': {},
 }
-MOCK_AIRDROP_INDEX = {'airdrops': {
+MOCK_AIRDROP_INDEX: dict[str, Any] = {'airdrops': {
     'uniswap': {
         'file_path': 'airdrops/uniswap.csv.gz',
         'file_hash': '87c81b0070d4a19ab87fd631b79247293031412706ec5414a859899572470ddf',
@@ -202,7 +202,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
 }}
 
 
-def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
+def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None) -> Any:  # pylint: disable=unused-argument
     mock_response = Mock()
     if url == AIRDROPS_INDEX:
         mock_response.headers = {'ETag': 'etag'}
@@ -219,7 +219,7 @@ def prepare_airdrop_mock_response(
         mock_airdrop_index: dict,
         mock_airdrop_data: dict,
         update_airdrop_index: bool = False,
-):
+) -> Any:
     """Mocking the airdrop data is very convenient here because the airdrop data is quite large
     and read timeout errors can happen even with 90secs threshold. Vcr-ing it is not possible
     because the vcr yaml file is above the github limit of 100MB. The schema of AIRDROPS_INDEX
@@ -276,13 +276,13 @@ def prepare_airdrop_mock_response(
 }])
 @pytest.mark.parametrize('remove_global_assets', [['eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7']])  # noqa: E501
 def test_check_airdrops(
-        freezer,
-        ethereum_accounts,
-        database,
-        globaldb,
-        new_asset_data,
-        data_dir,
-):
+        freezer: Any,
+        ethereum_accounts: Any,
+        database: Any,
+        globaldb: Any,
+        new_asset_data: Any,
+        data_dir: Any,
+) -> None:
     # create airdrop claim events to test the claimed attribute
     tolerance_for_amount_check = FVal('0.1')
     claim_events = [
@@ -356,7 +356,7 @@ def test_check_airdrops(
             f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
     }
 
-    def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
+    def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None) -> Any:  # pylint: disable=unused-argument
         return prepare_airdrop_mock_response(
             url=url,
             mock_airdrop_index=mock_airdrop_index,
@@ -521,7 +521,7 @@ def test_check_airdrops(
         'name': 'AAVE V2 Pioneers',
     }]
 
-    def update_mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
+    def update_mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None) -> Any:  # pylint: disable=unused-argument
         return prepare_airdrop_mock_response(
             url=url,
             mock_airdrop_index=mock_airdrop_index,
@@ -562,7 +562,7 @@ def test_check_airdrops(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_airdrop_fail(database):
+def test_airdrop_fail(database: Any) -> None:
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=_mock_airdrop_list),
         pytest.raises(RemoteError),
@@ -572,7 +572,7 @@ def test_airdrop_fail(database):
 
 @pytest.mark.parametrize('remote_etag', ['etag', 'updated_etag'])
 @pytest.mark.parametrize('database_etag', [None, 'etag', 'updated_etag'])
-def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
+def test_fetch_airdrops_metadata(database: Any, remote_etag: Any, database_etag: Any) -> None:
     if database_etag is not None:
         # if database_etag is present, add those values in DB
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -591,7 +591,7 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
     if remote_etag != database_etag:  # if etag is different, update mock_airdrop_index
         mock_airdrop_index['airdrops']['diva']['name'] = 'new_name'
 
-    def _mock_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
+    def _mock_get(url: str, timeout: int = 0, headers: dict | None = None) -> Any:  # pylint: disable=unused-argument
         mock_response = Mock()
         mock_response.headers = {'ETag': remote_etag}
         if database_etag == remote_etag:  # not returning content in this case

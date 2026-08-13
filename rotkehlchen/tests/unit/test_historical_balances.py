@@ -1,6 +1,6 @@
 import json
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -1483,7 +1483,7 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
 def test_swapped_for_asset_tracked_under_new_identifier(
         database: DBHandler,
         messages_aggregator: MessagesAggregator,
-        globaldb,  # pylint: disable=unused-argument
+        globaldb: Any,  # pylint: disable=unused-argument
 ) -> None:
     """Test that events with v1 tokens (that have swapped_for set) are tracked under v2 identifier.
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.data_import.importers.coinledger import CoinledgerImporter
@@ -21,7 +22,7 @@ def _coinledger_ts(date: str) -> TimestampMS:
     ))
 
 
-def test_coinledger_importer(database) -> None:
+def test_coinledger_importer(database: Any) -> None:
     importer = CoinledgerImporter(db=database)
     filepath = Path(__file__).resolve().parent.parent / 'data' / 'coinledger_export.csv'
     success, msg = importer.import_csv(filepath=filepath)
@@ -268,7 +269,7 @@ def test_coinledger_importer(database) -> None:
     assert event.notes == 'Margin Gain (Margin Gain) from CoinLedger'
 
 
-def test_coinledger_importer_rejects_contradictory_signs(database, tmp_path) -> None:
+def test_coinledger_importer_rejects_contradictory_signs(database: Any, tmp_path: Any) -> None:
     importer = CoinledgerImporter(db=database)
     filepath = tmp_path / 'coinledger_contradictory_signs.csv'
     header = (

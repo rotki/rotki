@@ -78,9 +78,9 @@ def _make_receipt_data(tx_hash: EVMTxHash) -> dict[str, Any]:
 @pytest.mark.parametrize('gnosis_accounts', [[YAB_ADDRESS]])
 def test_delete_transactions_by_chain(
         database: DBHandler,
-        gnosis_accounts,
-        ethereum_inquirer,
-        gnosis_inquirer,
+        gnosis_accounts: Any,
+        ethereum_inquirer: Any,
+        gnosis_inquirer: Any,
         allow_gnosis_etherscan: None,
 ) -> None:
     """
@@ -661,7 +661,7 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
 
     def _mock_get_transaction_by_hash(
             tx_hash: EVMTxHash,
-            call_order=None,
+            call_order: Any = None,
     ) -> tuple[EvmTransaction, dict[str, Any]]:
         if tx_hash == new_parent_tx.tx_hash:
             return new_parent_tx, _make_receipt_data(new_parent_tx.tx_hash)
@@ -1071,7 +1071,7 @@ def test_query_and_save_erc20_transfers_returns_only_new_hashes(
 
     def _mock_get_transaction_by_hash(
             tx_hash: EVMTxHash,
-            call_order=None,
+            call_order: Any = None,
     ) -> tuple[EvmTransaction, dict[str, Any]]:
         if tx_hash == new_tx.tx_hash:
             return new_tx, _make_receipt_data(new_tx.tx_hash)
@@ -1354,7 +1354,7 @@ def test_block_range_ends_come_from_one_indexer(ethereum_inquirer: EthereumInqui
     """Both ends must be resolved by the same indexer in a single fallback attempt."""
     resolved_by: list[str] = []
 
-    def mock_blocknumber_by_time(chain_id, ts, closest='before'):
+    def mock_blocknumber_by_time(chain_id: Any, ts: Any, closest: Any = 'before') -> Any:
         resolved_by.append(ethereum_inquirer.etherscan.name)
         return ts // 10
 

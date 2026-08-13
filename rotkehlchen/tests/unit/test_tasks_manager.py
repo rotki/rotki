@@ -92,7 +92,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('enable_priority_tasks', [True])
-def test_potential_maybe_schedule_task(task_manager: TaskManager):
+def test_potential_maybe_schedule_task(task_manager: TaskManager) -> None:
     """Check that all the _maybe_... tasks are included in the potential tasks."""
     tasks = {function.__name__ for function in task_manager.potential_tasks}
     expected_tasks = {
@@ -124,11 +124,11 @@ def test_cryptocompare_task_not_scheduled_without_api_key(task_manager: TaskMana
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
+def test_maybe_query_ethereum_transactions(task_manager: Any, ethereum_accounts: Any) -> None:
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
     now = ts_now()
 
-    def tx_query_mock(address, start_ts, end_ts):
+    def tx_query_mock(address: Any, start_ts: Any, end_ts: Any) -> None:
         assert address in ethereum_accounts
         assert start_ts == 0
         assert end_ts >= now
@@ -160,7 +160,7 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, ethereum_accounts):
+def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     """An up-to-date account's queried range is read once and then remembered in memory, so
     subsequent scheduler ticks skip the per-account queried-range DB read."""
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
@@ -183,8 +183,8 @@ def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, eth
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_maybe_query_evm_transactions_skips_disabled_chain(
-        task_manager,
-        ethereum_accounts,
+        task_manager: Any,
+        ethereum_accounts: Any,
 ) -> None:
     """A disabled chain must not be scheduled by the periodic transaction task."""
     CachedSettings().update_entry(
@@ -252,7 +252,7 @@ def test_maybe_detect_new_tokens_skips_disabled_address(
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_schedule_xpub_derivation(task_manager, database):
+def test_maybe_schedule_xpub_derivation(task_manager: Any, database: Any) -> None:
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub_data1 = XpubData(
         xpub=HDKey.from_xpub(xpub=xpub, path='m'),
@@ -284,11 +284,11 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex):
+def test_maybe_schedule_exchange_query(task_manager: Any, exchange_manager: Any, poloniex: Any) -> None:  # noqa: E501
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_schedule_exchange_history_query]
 
-    def mock_query_history(start_ts, end_ts):
+    def mock_query_history(start_ts: Any, end_ts: Any) -> None:
         assert start_ts == 0
         assert end_ts >= now
 
@@ -328,12 +328,12 @@ def test_maybe_schedule_exchange_query_ignore_exchanges(
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_schedule_ethereum_txreceipts(
-        task_manager,
-        ethereum_manager,
-        eth_transactions,
-        database,
-        one_receipt_in_db,
-):
+        task_manager: Any,
+        ethereum_manager: Any,
+        eth_transactions: Any,
+        database: Any,
+        one_receipt_in_db: Any,
+) -> None:
     task_manager.potential_tasks = [task_manager._maybe_schedule_evm_txreceipts]
     _, receipts = setup_ethereum_transactions_test(
         database=database,
@@ -346,7 +346,7 @@ def test_maybe_schedule_ethereum_txreceipts(
     tx_hash_1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     tx_hash_2 = deserialize_evm_tx_hash('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
     receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # noqa: E501
-    queried_receipts = set()
+    queried_receipts: set[EVMTxHash] = set()
     deadline = time.monotonic() + timeout
     with receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():
         task_manager.schedule()
@@ -424,7 +424,7 @@ def test_maybe_schedule_txreceipts_skips_recently_clean_chain(task_manager: Task
 
 @pytest.mark.parametrize('max_tasks_num', [7])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_check_premium_status(rotkehlchen_api_server, username):
+def test_check_premium_status(rotkehlchen_api_server: Any, username: Any) -> None:
     """
     Test that the premium check tasks works correctly. The tests creates a valid subscription
     and verifies that after the task was scheduled the users premium is deactivated.
@@ -452,7 +452,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
     )
     premium.status = SubscriptionStatus.ACTIVE
 
-    def mock_check_premium_status():
+    def mock_check_premium_status() -> None:
         task_manager.last_premium_status_check = ts_now() - PREMIUM_STATUS_CHECK
         task_manager._maybe_check_premium_status()
 
@@ -460,19 +460,19 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         'rotkehlchen.db.dbhandler.DBHandler.get_rotkehlchen_premium',
         MagicMock(return_value=premium_credentials),
     ):
-        assert premium.is_active() is True
-        assert rotki.premium is not None
+        assert bool(premium.is_active() is True)
+        assert bool(rotki.premium is not None)
 
         with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(side_effect=PremiumAuthenticationError())):  # noqa: E501
             mock_check_premium_status()
-            assert rotki.premium is None, (
+            assert bool(rotki.premium is None), (
                 'Premium object is not None and should be'
                 'deactivated after invalid premium credentials'
             )
 
         with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
-            assert rotki.premium is not None, (
+            assert bool(rotki.premium is not None), (
                 'Premium object is None and Periodic check'
                 "didn't reactivate the premium status"
             )
@@ -483,10 +483,10 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         ):
             for check_trial in range(3):
                 mock_check_premium_status()
-                assert rotki.premium is not None, f'Premium object is None and should be active after the {check_trial} periodic check'  # noqa: E501
+                assert bool(rotki.premium is not None), f'Premium object is None and should be active after the {check_trial} periodic check'  # noqa: E501
 
             mock_check_premium_status()
-            assert rotki.premium is None, 'Premium object is not None and should be deactivated after the 4th periodic check'  # noqa: E501
+            assert bool(rotki.premium is None), 'Premium object is not None and should be deactivated after the 4th periodic check'  # noqa: E501
 
         with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
@@ -502,7 +502,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
 ])
 def test_premium_status_error_conditions(
         task_manager: TaskManager,
-        rotki_premium_credentials,
+        rotki_premium_credentials: Any,
         error_case: tuple[Exception, bool],
 ) -> None:
     """Test premium status updates for network and authentication errors.
@@ -527,7 +527,7 @@ def test_premium_status_error_conditions(
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_premium_device_limit_error(
         task_manager: TaskManager,
-        rotki_premium_credentials,
+        rotki_premium_credentials: Any,
 ) -> None:
     """Test that device limit errors send premium_status_update with reason."""
     task_manager.database.set_rotkehlchen_premium(rotki_premium_credentials)
@@ -550,7 +550,7 @@ def test_premium_device_limit_error(
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
+def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen) -> None:
     database = rotkehlchen_instance.data.db
     db_history_events = DBHistoryEvents(database)
     with db_history_events.db.user_write() as write_cursor:
@@ -666,7 +666,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_try_start_same_task(rotkehlchen_api_server):
+def test_try_start_same_task(rotkehlchen_api_server: Any) -> None:
     """Check that a scheduled task cannot be duplicated until it finishes."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Using rotki.task_supervisor instead of pure TaskSupervisor() since patch.object
@@ -679,11 +679,11 @@ def test_try_start_same_task(rotkehlchen_api_server):
     task_started = threading.Event()
     allow_task_to_finish = threading.Event()
 
-    def blocking_balance_query(**kwargs):  # pylint: disable=unused-argument
+    def blocking_balance_query(**kwargs: Any) -> None:  # pylint: disable=unused-argument
         task_started.set()
         assert allow_task_to_finish.wait(timeout=5) is True
 
-    def simple_task():
+    def simple_task() -> Any:
         return [rotki.task_supervisor.spawn_and_track(
             method=lambda: time.sleep(0.1),
             after_seconds=None,
@@ -803,7 +803,7 @@ def test_should_run_periodic_task_cached_timestamps(database: DBHandler) -> None
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_accounts):
+def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     """Test that using maybe_cancel_running_tx_query_tasks cooperatively stops the running tasks
 
     Also test that if called two times without a schedule() in between, no KeyErrors happen.
@@ -815,7 +815,7 @@ def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_ac
     rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_query_evm_transactions]
     eth_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
 
-    def patched_address_query_transactions(address, start_ts, end_ts):  # pylint: disable=unused-argument
+    def patched_address_query_transactions(address: Any, start_ts: Any, end_ts: Any) -> None:  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
             cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
@@ -828,13 +828,13 @@ def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_ac
     with query_patch:
         rotki.task_manager.schedule()  # Schedule the query
         greenlet = rotki.task_manager.running_tasks[rotki.task_manager._maybe_query_evm_transactions][0]  # noqa: E501
-        assert greenlet.dead is False
+        assert bool(greenlet.dead is False)
         assert 'Query ethereum transaction' in greenlet.task_name
         # Running it twice to see it's handled properly and dead greenlet does not raise KeyErrors
         rotki.maybe_cancel_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
-        assert greenlet.dead is True
+        assert bool(greenlet.dead is True)
         rotki.maybe_cancel_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
-        assert greenlet.dead is True
+        assert bool(greenlet.dead is True)
 
         # Do a reschedule to see that this clears running greenlets
         rotki.task_manager.potential_tasks = []
@@ -844,16 +844,16 @@ def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_ac
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_maybe_cancel_tx_query_tasks_all_accounts_refresh(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test that an api transactions refresh task without specific accounts (refresh all)
     is cancelled when one of the tracked addresses is removed, instead of raising a
     TypeError on the None accounts kwarg which made account removal fail."""
     rest_api = rotkehlchen_api_server.rest_api
     rotki = rest_api.rotkehlchen
 
-    def blocking_refresh(**kwargs):  # pylint: disable=unused-argument
+    def blocking_refresh(**kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
             cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
@@ -884,7 +884,7 @@ def test_maybe_cancel_tx_query_tasks_all_accounts_refresh(
 ]])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
+def test_maybe_query_ethereum_withdrawals(task_manager: Any, ethereum_accounts: Any) -> None:
     task_manager.potential_tasks = [task_manager._maybe_query_withdrawals]
     eth2 = task_manager.chains_aggregator.get_module('eth2')
     with task_manager.database.user_write() as cursor:
@@ -900,7 +900,7 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
     ) -> None:
         queried_addresses = []
 
-        def mock_get_withdrawals(address, *args, **kwargs) -> set:
+        def mock_get_withdrawals(address: Any, *args: Any, **kwargs: Any) -> set:
             """Assert that addresses queried matches the expected addresses."""
             queried_addresses.append(address)
             return set()
@@ -941,7 +941,7 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
+def test_maybe_query_produced_blocks(task_manager: Any, ethereum_accounts: Any) -> None:
     task_manager.potential_tasks = [task_manager._maybe_query_produced_blocks]
     original_get_and_store_blocks = task_manager.chains_aggregator.beaconchain._get_and_store_produced_blocks  # noqa: E501
     with task_manager.database.user_write() as cursor:
@@ -1055,7 +1055,7 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
 def test_update_lending_protocol_underlying_assets_task(
         task_manager: TaskManager,
         globaldb: GlobalDBHandler,
-        vcr_cassette_name,  # pylint: disable=unused-argument
+        vcr_cassette_name: Any,  # pylint: disable=unused-argument
         allow_gnosis_etherscan: None,
 ) -> None:
     """Test that the periodic task that updates underlying assets
@@ -1089,7 +1089,7 @@ def test_update_lending_protocol_underlying_assets_task(
     )
     original_find_missing_tokens = _find_missing_tokens
 
-    def wrapped_find_missing_tokens(*args, **kwargs):
+    def wrapped_find_missing_tokens(*args: Any, **kwargs: Any) -> Any:
         """Sort the response of _find_missing_tokens to have the same order in cassettes"""
         output = list(original_find_missing_tokens(*args, **kwargs))
         output.sort()
@@ -1195,7 +1195,7 @@ def test_send_ws_calendar_reminder(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
         legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
-        freezer,
+        freezer: Any,
 ) -> None:
     """
     Test that reminders work correctly by:
@@ -1383,7 +1383,7 @@ def test_acknowledged_calendar_reminder_does_not_retrigger(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
         legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
-        freezer,
+        freezer: Any,
 ) -> None:
     """Acknowledged reminders must not be re-sent on subsequent trigger cycles.
 
@@ -1443,7 +1443,7 @@ def test_acknowledged_calendar_reminder_does_not_retrigger(
 ])
 def test_calendar_entries_get_deleted(
         task_manager: TaskManager,
-        freezer,
+        freezer: Any,
 ) -> None:
     """
     Tests the auto-deletion of calendar entries based on settings and reminder status:
@@ -1548,7 +1548,7 @@ def test_maybe_create_calendar_reminders(
         ethereum_inquirer: EthereumInquirer,
         db_settings: dict[str, Any],
         tx_hashes: list[EVMTxHash],
-        add_subgraph_api_key,  # pylint: disable=unused-argument
+        add_subgraph_api_key: Any,  # pylint: disable=unused-argument
 ) -> None:
     """Test that creating calendar entries and reminders via a task works correctly."""
     database = task_manager.database
@@ -1588,7 +1588,7 @@ def test_maybe_create_calendar_reminders(
 def test_deadlock_logout(
         rotkehlchen_instance: Rotkehlchen,
         globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
-):
+) -> None:
     """Test that a task cancelled at logout while holding packaged_db_lock through
     its context manager releases the lock itself when it dies at its next
     checkpoint. Logout must not force-release the lock: threads cannot die inside
@@ -1599,14 +1599,14 @@ def test_deadlock_logout(
     task_manager.max_tasks_num = 10
     task_started = threading.Event()
 
-    def task():
+    def task() -> None:
         """Task that holds the lock and dies at its next checkpoint on logout"""
         with GlobalDBHandler().packaged_db_lock:
             task_started.set()
             while True:
                 cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
-    def maybe_task():
+    def maybe_task() -> Any:
         return [task_manager.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='TEst',
@@ -1682,7 +1682,7 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: APIServer) -> No
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
     task_manager.should_schedule = True
 
-    def mock_query_balances(**kwargs):
+    def mock_query_balances(**kwargs: Any) -> None:
         """Raise RemoteError to simulate a failed balance snapshot."""
         raise RemoteError
 
@@ -1718,7 +1718,7 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: APIServer) -> No
 def test_graph_query_query_delegations(
         eth_transactions: EthereumTransactions,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Check that log events for graph delegations are queried in chunks
     and we save the range queried correctly. Also ensures that only addresses
     that interacted with the L2 delegation are queried for logs.
@@ -1770,7 +1770,7 @@ def test_graph_query_query_delegations(
 
     block_offset, address_check_counter = 0, 0
 
-    def mock_get_logs(chain_id, contract_address, topics, from_block, to_block, existing_events):
+    def mock_get_logs(chain_id: Any, contract_address: Any, topics: Any, from_block: Any, to_block: Any, existing_events: Any) -> Any:  # noqa: E501
         nonlocal block_offset, address_check_counter
         assert contract_address == CONTRACT_STAKING
         if from_block == 11546786:

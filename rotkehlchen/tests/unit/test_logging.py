@@ -1,14 +1,15 @@
 import logging
+from typing import Any
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 
-def test_sensitive_key_redaction(caplog):
+def test_sensitive_key_redaction(caplog: Any) -> None:
     logger = logging.getLogger(__name__)
     log = RotkehlchenLogsAdapter(logger)
 
     with caplog.at_level(logging.DEBUG):
-        test_data = {
+        test_data: dict[str, Any] = {
             'json_data': {
                 'username': 'testuser',
                 'password': 'secret',

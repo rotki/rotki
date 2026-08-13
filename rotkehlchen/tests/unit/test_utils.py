@@ -5,6 +5,7 @@ import threading
 from collections import defaultdict
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -25,6 +26,7 @@ from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_dat
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import (
     combine_dicts,
     combine_nested_dicts_inplace,
@@ -41,7 +43,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 from rotkehlchen.utils.version_check import get_current_version
 
 
-def test_process_result():
+def test_process_result() -> None:
     d = {
         'overview': {
             'foo': FVal(1.0),
@@ -62,7 +64,7 @@ def test_process_result():
     json.dumps(process_result(d))
 
 
-def test_process_result_handles_evmtoken():
+def test_process_result_handles_evmtoken() -> None:
     """Check that process result properly handles evm tokens."""
     d = {'somekey': A_WBTC.resolve_to_evm_token()}
 
@@ -72,7 +74,7 @@ def test_process_result_handles_evmtoken():
     json.dumps(process_result(d))
 
 
-def test_process_result_recursively_processes_tuples():
+def test_process_result_recursively_processes_tuples() -> None:
     nested_tuple = {
         'tuple': (
             FVal('1.5'),
@@ -100,13 +102,13 @@ def test_process_result_recursively_processes_tuples():
     json.dumps(processed)
 
 
-def test_hexbytes_in_process_result():
+def test_hexbytes_in_process_result() -> None:
     expected_str = '{"overview": "0xd4e56740f876aef8c010906a34"}'
     d = {'overview': HexBytes(b'\xd4\xe5g@\xf8v\xae\xf8\xc0\x10\x90j4')}
     assert json.dumps(process_result(d)) == expected_str
 
 
-def test_iso8601ts_to_timestamp():
+def test_iso8601ts_to_timestamp() -> None:
     assert iso8601ts_to_timestamp('2018-09-09T12:00:00.000Z') == 1536494400
     assert iso8601ts_to_timestamp('2011-01-01T04:13:22.220Z') == 1293855202
     assert iso8601ts_to_timestamp('1986-11-04T16:23:57.921Z') == 531505438
@@ -114,7 +116,9 @@ def test_iso8601ts_to_timestamp():
     timezone_ts_str = '1997-07-16T22:30'
     timezone_ts_at_utc = 869092200
     assert iso8601ts_to_timestamp(timezone_ts_str + 'Z') == timezone_ts_at_utc
-    utc_offset = datetime.fromtimestamp(timezone_ts_at_utc).astimezone().utcoffset().total_seconds()  # noqa: E501
+    utc_delta = datetime.fromtimestamp(timezone_ts_at_utc).astimezone().utcoffset()
+    assert utc_delta is not None
+    utc_offset = utc_delta.total_seconds()
     assert iso8601ts_to_timestamp(timezone_ts_str) == timezone_ts_at_utc - utc_offset
     assert iso8601ts_to_timestamp('1997-07-16T22:30+01:00') == 869088600
     assert iso8601ts_to_timestamp('1997-07-16T22:30:45+01:00') == 869088645
@@ -127,20 +131,20 @@ def test_iso8601ts_to_timestamp():
     assert iso8601ts_to_timestamp('1997-07-16T21:30:45+00:00') == 869088645
 
 
-def test_combine_dicts():
+def test_combine_dicts() -> None:
     a = {'a': 1, 'b': 2, 'c': 3}
     b = {'a': 4, 'c': 2}
     result = combine_dicts(a, b)
     assert result == {'a': 5, 'b': 2, 'c': 5}
 
 
-def test_check_if_version_up_to_date():
-    def mock_github_return_current(url, **kwargs):  # pylint: disable=unused-argument
+def test_check_if_version_up_to_date() -> None:
+    def mock_github_return_current(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         contents = '{"tag_name": "v1.4.0", "html_url": "https://foo"}'
         return MockResponse(200, contents)
     patch_github = patch('requests.get', side_effect=mock_github_return_current)
 
-    def mock_system_spec():
+    def mock_system_spec() -> Any:
         return {'rotkehlchen': 'v1.4.0'}
     patch_our_version = patch(
         'rotkehlchen.utils.version_check.get_system_spec',
@@ -154,7 +158,7 @@ def test_check_if_version_up_to_date():
         result = get_current_version(github=github)
         assert result.download_url is None, 'Same version should return None as url'
 
-    def mock_github_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_github_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
         return MockResponse(200, contents)
 
@@ -167,7 +171,7 @@ def test_check_if_version_up_to_date():
     assert result.download_url == 'https://foo'
 
     # Also test that bad responses are handled gracefully
-    def mock_non_200_github_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_non_200_github_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
         return MockResponse(501, contents)
 
@@ -177,7 +181,7 @@ def test_check_if_version_up_to_date():
         assert not result.latest_version
         assert not result.latest_version
 
-    def mock_missing_fields_github_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_missing_fields_github_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         contents = '{"html_url": "https://foo"}'
         return MockResponse(200, contents)
 
@@ -187,7 +191,7 @@ def test_check_if_version_up_to_date():
         assert not result.latest_version
         assert not result.latest_version
 
-    def mock_invalid_json_github_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_invalid_json_github_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         contents = '{html_url: "https://foo"}'
         return MockResponse(200, contents)
 
@@ -198,11 +202,11 @@ def test_check_if_version_up_to_date():
         assert not result.latest_version
 
 
-def test_is_production():
+def test_is_production() -> None:
     """Test the dev version check in is_production"""
     version_str = 'v1.32.0'
 
-    def mock_system_spec():
+    def mock_system_spec() -> Any:
         nonlocal version_str
         return {'rotkehlchen': version_str}
 
@@ -210,7 +214,8 @@ def test_is_production():
         'rotkehlchen.utils.version_check.get_system_spec',
         side_effect=mock_system_spec,
     )
-    sys.frozen = True
+    frozen_attribute = 'frozen'
+    setattr(sys, frozen_attribute, True)
     with patch_our_version:
         assert is_production() is True
 
@@ -218,14 +223,14 @@ def test_is_production():
     with patch_our_version:
         assert is_production() is False  # version is non production
 
-    del sys.frozen
+    delattr(sys, frozen_attribute)
     version_str = 'v1.32.0'
     with patch_our_version:
         assert is_production() is False  # even if full tag, when not frozen not production
 
 
 class Foo(CacheableMixIn):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.do_sum_call_count = 0
@@ -233,22 +238,22 @@ class Foo(CacheableMixIn):
         self.do_something_arguments_dont_matter_count = 0
 
     @cache_response_timewise()
-    def do_sum(self, arg1, arg2, **kwargs):  # pylint: disable=unused-argument
+    def do_sum(self, arg1: Any, arg2: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         self.do_sum_call_count += 1
         return arg1 + arg2
 
     @cache_response_timewise()
-    def do_something(self, **kwargs):  # pylint: disable=unused-argument
+    def do_something(self, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         self.do_something_call_count += 1
         return 5
 
     @cache_response_timewise(arguments_matter=False)
-    def do_something_arguments_dont_matter(self, arg1, arg2, **kwargs):  # pylint: disable=unused-argument
+    def do_something_arguments_dont_matter(self, arg1: Any, arg2: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         self.do_something_arguments_dont_matter_count += 1
         return arg1 + arg2
 
 
-def test_cache_response_timewise():
+def test_cache_response_timewise() -> None:
     """Test that cached value is called and not the function again"""
     instance = Foo()
 
@@ -258,7 +263,7 @@ def test_cache_response_timewise():
     assert instance.do_something_call_count == 1
 
 
-def test_cache_response_timewise_different_args():
+def test_cache_response_timewise_different_args() -> None:
     """Test that applying the cache timewise decorator works fine for different arguments
 
     Regression test for https://github.com/rotki/rotki/issues/543
@@ -269,7 +274,7 @@ def test_cache_response_timewise_different_args():
     assert instance.do_sum_call_count == 2
 
 
-def test_cache_response_timewise_ignore_cache():
+def test_cache_response_timewise_ignore_cache() -> None:
     """Test that if the magic keyword argument `ignore_cache=True` is given the cache is ignored"""
     instance = Foo()
 
@@ -283,7 +288,7 @@ def test_cache_response_timewise_ignore_cache():
     assert instance.do_sum_call_count == 2
 
 
-def test_cache_response_timewise_with_arguments_matter_false():
+def test_cache_response_timewise_with_arguments_matter_false() -> None:
     """Test that arguments_matter works as expected and if false we always get same result"""
     instance = Foo()
 
@@ -296,7 +301,7 @@ def test_cache_response_timewise_with_arguments_matter_false():
     assert instance.do_something_arguments_dont_matter_count == 2
 
 
-def test_convert_to_int():
+def test_convert_to_int() -> None:
     assert convert_to_int('5') == 5
     assert convert_to_int('37451082560000003241000000000003221111111111') == 37451082560000003241000000000003221111111111  # noqa: E501
     with pytest.raises(ConversionError):
@@ -381,12 +386,12 @@ def test_convert_to_int():
     ),
 ])
 def test_generate_address_via_create2(
-        address,
-        salt,
-        init_code,
-        is_init_code_hashed,
-        expected_contract_address,
-):
+        address: Any,
+        salt: Any,
+        init_code: Any,
+        is_init_code_hashed: Any,
+        expected_contract_address: Any,
+) -> None:
     """Test the CREATE2 opcode Python implementation."""
     contract_address = generate_address_via_create2(
         address=HexAddress(address),
@@ -397,12 +402,12 @@ def test_generate_address_via_create2(
     assert contract_address == to_checksum_address(expected_contract_address)
 
 
-def test_timestamp_to_date():
-    date = timestamp_to_date(1611395717, formatstr='%d/%m/%Y %H:%M:%S %Z')
+def test_timestamp_to_date() -> None:
+    date = timestamp_to_date(Timestamp(1611395717), formatstr='%d/%m/%Y %H:%M:%S %Z')
     assert not date.endswith(' '), 'Make sure %Z empty string is removed'
 
 
-def test_deserialize_timestamp_from_date():
+def test_deserialize_timestamp_from_date() -> None:
     timestamp = deserialize_timestamp_from_date(
         date='2020-10-06T20:46:48Z',  # failed in the past due to the trailing Z
         formatstr='%Y-%m-%dT%H:%M:%S',
@@ -412,7 +417,7 @@ def test_deserialize_timestamp_from_date():
     assert timestamp == 1602017208
 
 
-def test_jsonloads_dict():
+def test_jsonloads_dict() -> None:
     result = jsonloads_dict('{"foo": 1, "boo": "value"}')
     assert result == {'foo': 1, 'boo': 'value'}
     with pytest.raises(JSONDecodeError) as e:
@@ -420,7 +425,7 @@ def test_jsonloads_dict():
     assert 'Returned json is not a dict' in str(e.value)
 
 
-def test_jsonloads_list():
+def test_jsonloads_list() -> None:
     result = jsonloads_list('["foo", "boo", 3]')
     assert result == ['foo', 'boo', 3]
     with pytest.raises(JSONDecodeError) as e:
@@ -429,13 +434,13 @@ def test_jsonloads_list():
 
 
 @pytest.mark.vcr
-def test_retrieve_old_erc20_token_info(ethereum_inquirer):
+def test_retrieve_old_erc20_token_info(ethereum_inquirer: Any) -> None:
     info = ethereum_inquirer.get_erc20_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')
     assert info['symbol'] == 'UNI-V1'
     assert info['name'] == 'Uniswap V1'
 
 
-def test_pairwise():
+def test_pairwise() -> None:
     a = [1, 2, 3, 4, 5, 6]
     assert [x + y for x, y in pairwise(a)] == [3, 7, 11]
     assert [x + y for x, y in pairwise_longest(a)] == [3, 7, 11]
@@ -445,7 +450,7 @@ def test_pairwise():
     assert list(pairwise_longest(a)) == [(1, 2), (3, 4), (5, None)]
 
 
-def test_combine_nested_dicts_inplace():
+def test_combine_nested_dicts_inplace() -> None:
     # basic addition
     result_1 = combine_nested_dicts_inplace(
         a=defaultdict(lambda: defaultdict(int), {
@@ -519,7 +524,7 @@ def test_combine_nested_dicts_inplace():
     assert result_6 == {'A': {'X': 10, 'Z': 50}}
 
 
-def test_identifier_to_evm_address():
+def test_identifier_to_evm_address() -> None:
     """Test various identifier_to_evm_address conversions.
     Checks that valid erc20 and erc721 identifiers get the correct address and also
     that a number of invalid identifiers return None without raising exceptions.
@@ -541,7 +546,7 @@ def test_identifier_to_evm_address():
     assert identifier_to_evm_address(identifier='eip155:1/erc20:xyz') is None
 
 
-def test_identifier_to_evm_chain():
+def test_identifier_to_evm_chain() -> None:
     """Test various identifier_to_evm_chain conversions.
     Checks that valid identifier gets the correct chain, and also that a number of invalid
     identifiers return None without raising exceptions.
@@ -559,7 +564,7 @@ def test_identifier_to_evm_chain():
     assert identifier_to_evm_chain(identifier='eip155:/:') is None
 
 
-def test_skip_if_running():
+def test_skip_if_running() -> None:
     """Test that skip_if_running decorator skips concurrent calls"""
     call_count = 0
     execution_order = []
@@ -567,7 +572,7 @@ def test_skip_if_running():
     allow_finish = threading.Event()
 
     @skip_if_running
-    def slow_function():
+    def slow_function() -> Any:
         nonlocal call_count
         call_count += 1
         execution_order.append(f'start_{call_count}')

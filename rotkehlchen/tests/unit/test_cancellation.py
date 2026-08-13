@@ -1,6 +1,7 @@
 """Tests for the cooperative cancellation machinery of phase 2 of the
 gevent removal migration. See docs/designs/gevent_to_asyncio.md"""
 import time
+from typing import Any
 
 import pytest
 
@@ -24,7 +25,7 @@ LONG_QUERY = (  # a recursive CTE that runs long enough to guarantee progress ca
 
 
 @pytest.fixture(name='transient_conn')
-def fixture_transient_conn():
+def fixture_transient_conn() -> Any:
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.TRANSIENT,
@@ -34,16 +35,16 @@ def fixture_transient_conn():
     conn.close()
 
 
-def test_cancellable_sleep_wakes_up_at_cancellation():
+def test_cancellable_sleep_wakes_up_at_cancellation() -> None:
     token = CancellationToken()
     seen_token = []
 
-    def task():
+    def task_target() -> None:
         seen_token.append(current_token() is token)
         while True:
             cancellable_sleep(10)
 
-    task = Task(name='test task', target=task, token=token).start()
+    task = Task(name='test task', target=task_target, token=token).start()
     time.sleep(0.05)  # let the task enter the sleep
     token.cancel('test cancel')
     task.join(timeout=2)  # wakes up immediately, way before the 10 seconds pass
@@ -53,13 +54,13 @@ def test_cancellable_sleep_wakes_up_at_cancellation():
     assert seen_token == [True]
 
 
-def test_checkpoint_is_noop_outside_cancellable_tasks():
+def test_checkpoint_is_noop_outside_cancellable_tasks() -> None:
     assert current_token() is None
     checkpoint()  # does not raise
     cancellable_sleep(0)  # falls back to plain sleep, does not raise
 
 
-def test_cancelled_before_start_never_runs():
+def test_cancelled_before_start_never_runs() -> None:
     token = CancellationToken()
     token.cancel('cancelled before spawn')
     ran = []
@@ -69,15 +70,15 @@ def test_cancelled_before_start_never_runs():
     assert ran == []
 
 
-def test_spawn_propagates_token_to_children():
+def test_spawn_propagates_token_to_children() -> None:
     """Cancelling a task's token also cancels tasks it spawned through the seam"""
     token = CancellationToken()
 
-    def child():
+    def child() -> None:
         while True:
             cancellable_sleep(10)
 
-    def parent():
+    def parent() -> Any:
         child_task = spawn(child)
         wait([child_task])  # swallows the child's cancellation exception
         return child_task
@@ -91,14 +92,14 @@ def test_spawn_propagates_token_to_children():
     assert isinstance(exception_of(task.get()), TaskCancelledError)
 
 
-def test_db_statement_aborts_at_cancellation(transient_conn):
+def test_db_statement_aborts_at_cancellation(transient_conn: Any) -> None:
     """A long running statement of a cancelled task is aborted by the progress
     callback checkpoint and surfaces as TaskCancelledError, leaving the
     connection usable. The task cancels its own token right before executing,
     so no timing assumption on when the canceller runs is needed."""
     token = CancellationToken()
 
-    def long_query():
+    def long_query() -> None:
         token.cancel('abort the query')
         with transient_conn.read_ctx() as cursor:
             cursor.execute(LONG_QUERY).fetchone()
@@ -111,12 +112,12 @@ def test_db_statement_aborts_at_cancellation(transient_conn):
         assert cursor.execute('SELECT 1').fetchone() == (1,)
 
 
-def test_db_statement_aborts_when_cancelled_mid_query(transient_conn):
+def test_db_statement_aborts_when_cancelled_mid_query(transient_conn: Any) -> None:
     """Another thread can cancel a task while its statement is running and the
     abort fires at the statement's next progress callback checkpoint"""
     token = CancellationToken()
 
-    def long_query():
+    def long_query() -> None:
         with transient_conn.read_ctx() as cursor:
             cursor.execute(LONG_QUERY).fetchone()
 
@@ -130,12 +131,12 @@ def test_db_statement_aborts_when_cancelled_mid_query(transient_conn):
         assert cursor.execute('SELECT 1').fetchone() == (1,)
 
 
-def test_write_tx_rolls_back_at_cancellation(transient_conn):
+def test_write_tx_rolls_back_at_cancellation(transient_conn: Any) -> None:
     """TaskCancelledError does not inherit Exception, so make sure the write
     context rolls the transaction back for it too"""
     token = CancellationToken()
 
-    def writer():
+    def writer() -> None:
         with transient_conn.write_ctx() as cursor:
             cursor.execute('CREATE TABLE t(a INTEGER)')
             cursor.execute('INSERT INTO t VALUES (1)')
@@ -152,7 +153,7 @@ def test_write_tx_rolls_back_at_cancellation(transient_conn):
         ).fetchone() == (0,)
 
 
-def test_savepoint_rolls_back_at_cancellation(transient_conn):
+def test_savepoint_rolls_back_at_cancellation(transient_conn: Any) -> None:
     """Savepoint contexts must roll back and release cleanly for a cancelled task"""
     with transient_conn.write_ctx() as cursor:
         cursor.execute('CREATE TABLE t(a INTEGER)')
@@ -160,13 +161,13 @@ def test_savepoint_rolls_back_at_cancellation(transient_conn):
 
     token = CancellationToken()
 
-    def task():
+    def task_target() -> None:
         with transient_conn.savepoint_ctx() as cursor:
             cursor.execute('INSERT INTO t VALUES (2)')
             token.cancel('cancelled mid-savepoint')
             checkpoint()
 
-    task = Task(name='test task', target=task, token=token).start()
+    task = Task(name='test task', target=task_target, token=token).start()
     task.join(timeout=2)
     assert isinstance(task.exception, TaskCancelledError)
     assert len(transient_conn.savepoints) == 0
@@ -175,15 +176,15 @@ def test_savepoint_rolls_back_at_cancellation(transient_conn):
         assert cursor.execute('SELECT a FROM t').fetchall() == [(1,)]
 
 
-def test_cancelled_task_does_not_open_new_savepoints(transient_conn):
+def test_cancelled_task_does_not_open_new_savepoints(transient_conn: Any) -> None:
     token = CancellationToken()
 
-    def task():
+    def task_target() -> None:
         token.cancel('cancelled before the savepoint')
         with transient_conn.savepoint_ctx():
             raise AssertionError('should never get here')
 
-    task = Task(name='test task', target=task, token=token).start()
+    task = Task(name='test task', target=task_target, token=token).start()
     task.join(timeout=2)
     assert isinstance(task.exception, TaskCancelledError)
     assert len(transient_conn.savepoints) == 0

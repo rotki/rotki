@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -76,11 +76,12 @@ mocked_prices = {
 
 
 @pytest.fixture(name='fake_price_historian')
-def fixture_fake_price_historian(historical_price_oracles_order):
+def fixture_fake_price_historian(historical_price_oracles_order: Any) -> Any:
     # NB: custom fixture for quick unit testing. Do not export.
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
-    PriceHistorian._PriceHistorian__instance = None
+    instance_attribute = '_PriceHistorian__instance'
+    setattr(PriceHistorian, instance_attribute, None)
     price_historian = PriceHistorian(
         data_directory=MagicMock(spec=Path),
         cryptocompare=MagicMock(spec=Cryptocompare),
@@ -95,9 +96,10 @@ def fixture_fake_price_historian(historical_price_oracles_order):
     return price_historian
 
 
-def test_all_common_methods_implemented():
+def test_all_common_methods_implemented() -> None:
     """Test all historical price oracles implement the expected methods.
     """
+    instance: Any
     for oracle in DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER:
         if oracle == HistoricalPriceOracle.COINGECKO:
             instance = Coingecko
@@ -124,7 +126,7 @@ def test_all_common_methods_implemented():
         assert callable(instance.query_historical_price)
 
 
-def test_set_oracles_custom_order(fake_price_historian):
+def test_set_oracles_custom_order(fake_price_historian: Any) -> None:
     price_historian = fake_price_historian
 
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
@@ -146,7 +148,7 @@ def test_fiat_to_fiat(
     query_timestamp = Timestamp(1611595466)
 
     def mock_price_query(
-            _cls,
+            _cls: Any,
             from_fiat_currency: FiatAsset,
             to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
@@ -173,7 +175,7 @@ def test_fiat_to_fiat(
     assert call_count == 1
 
 
-def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price_historian):
+def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price_historian: Any) -> None:  # noqa: E501
     """Test NoPriceForGivenTimestamp is raised when all the oracles can't query
     the history.
     """
@@ -193,14 +195,14 @@ def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price
         assert oracle_instance.query_historical_price.call_count == 0
 
 
-def test_token_to_fiat_no_price_found_exception(fake_price_historian):
+def test_token_to_fiat_no_price_found_exception(fake_price_historian: Any) -> None:
     """Test NoPriceForGivenTimestamp is raised when the all the oracles fail
     requesting the historical price from token to fiat.
     """
     price_historian = fake_price_historian
 
     for oracle_instance in price_historian._oracle_instances:
-        oracle_instance.query_historical_price.side_effect = NoPriceForGivenTimestamp(from_asset=A_BTC, to_asset=A_USD, time=1614556800)  # noqa: E501  # make sure they all fail
+        oracle_instance.query_historical_price.side_effect = NoPriceForGivenTimestamp(from_asset=A_BTC, to_asset=A_USD, time=Timestamp(1614556800))  # noqa: E501  # make sure they all fail
 
     with pytest.raises(NoPriceForGivenTimestamp):
         price_historian.query_historical_price(
@@ -212,7 +214,7 @@ def test_token_to_fiat_no_price_found_exception(fake_price_historian):
         assert oracle_instance.query_historical_price.call_count == 1
 
 
-def test_token_to_fiat_via_second_oracle(fake_price_historian):
+def test_token_to_fiat_via_second_oracle(fake_price_historian: Any) -> None:
     """Test price is returned via the second oracle when the first oracle fails
     requesting the historical price from token to fiat.
     """
@@ -233,7 +235,7 @@ def test_token_to_fiat_via_second_oracle(fake_price_historian):
         assert oracle_instance.query_historical_price.call_count == 1
 
 
-def test_cached_price_returns_without_oracle_calls(globaldb, fake_price_historian):
+def test_cached_price_returns_without_oracle_calls(globaldb: Any, fake_price_historian: Any) -> None:  # noqa: E501
     price_historian = fake_price_historian
     globaldb.add_single_historical_price(  # store a manual price in the DB.
         HistoricalPrice(
@@ -265,10 +267,10 @@ def test_cached_price_returns_without_oracle_calls(globaldb, fake_price_historia
 
 
 def test_disabled_historical_oracle_cache_is_ignored(
-        globaldb,
-        fake_price_historian,
-        inquirer,  # pylint: disable=unused-argument
-):
+        globaldb: Any,
+        fake_price_historian: Any,
+        inquirer: Any,  # pylint: disable=unused-argument
+) -> None:
     """Cached values from disabled historical oracles should not be used."""
     price_historian = fake_price_historian
     query_timestamp = Timestamp(1611595466)
@@ -403,7 +405,7 @@ def test_get_historical_prices(globaldb: GlobalDBHandler) -> None:
 
 
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_oracle_instance_caches_price(price_historian):
+def test_oracle_instance_caches_price(price_historian: Any) -> None:
     """Test that an oracle saves the historical price after a successful price query"""
     expected_price, expected_timestamp = Price(FVal('100')), Timestamp(1611595466)
     for oracle_instance in price_historian._oracle_instances:
@@ -428,7 +430,7 @@ def test_oracle_instance_caches_price(price_historian):
         )])
 
 
-def test_price_priority_order():
+def test_price_priority_order() -> None:
     """Test to ensure that we detect changes on the constant value returned"""
     order_clause, order_bindings = _prioritize_manual_balances_query()
     assert order_clause.startswith(' ORDER BY ABS(timestamp - ?),')
@@ -527,7 +529,7 @@ def test_price_priority_distance_then_source(globaldb: GlobalDBHandler) -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
-def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
+def test_uniswap_v2_position_price_query(price_historian: PriceHistorian) -> None:
     price = price_historian.query_uniswap_position_price(
         pool_token=EvmToken.initialize(
             address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
@@ -547,7 +549,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
-def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
+def test_uniswap_v3_position_price_query(price_historian: PriceHistorian) -> None:
     price = price_historian.query_uniswap_position_price(
         pool_token=EvmToken.initialize(
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),

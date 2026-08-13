@@ -1,10 +1,11 @@
 from pathlib import Path
+from typing import Any
 
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.tests.utils.history import assert_pnl_debug_import
 
 
-def test_pnl_debug_import(database):
+def test_pnl_debug_import(database: Any) -> None:
     pnl_debug_file = Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json'
 
     json_importer = DebugHistoryImporter(database)

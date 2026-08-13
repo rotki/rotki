@@ -138,7 +138,7 @@ UNDERLYING_ASSET_PRICES = {
     'CI' in os.environ,
     reason='This test would contribute in rate limiting of these apis',
 )
-def test_query_price_for_not_supported_fiat_asset(inquirer: Inquirer):
+def test_query_price_for_not_supported_fiat_asset(inquirer: Inquirer) -> None:
     """Check that if we can't find the price for a fiat currency we correctly return None"""
     current_price = inquirer.query_historical_fiat_exchange_rates(
         from_fiat_currency=A_USD.resolve_to_fiat_asset(),
@@ -154,11 +154,11 @@ def test_query_price_for_not_supported_fiat_asset(inquirer: Inquirer):
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_switching_to_backup_api(inquirer):
+def test_switching_to_backup_api(inquirer: Any) -> None:
     count = 0
     original_get = requests.get
 
-    def mock_xratescom_fail(url, timeout):  # pylint: disable=unused-argument
+    def mock_xratescom_fail(url: Any, timeout: Any) -> Any:  # pylint: disable=unused-argument
         nonlocal count
         count += 1
         if 'www.x-rates.com' in url:
@@ -175,8 +175,8 @@ def test_switching_to_backup_api(inquirer):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_fiat_pair_caching(inquirer):
-    def mock_xratescom_exchange_rate(from_currency: Asset):  # pylint: disable=unused-argument
+def test_fiat_pair_caching(inquirer: Any) -> None:
+    def mock_xratescom_exchange_rate(from_currency: Asset) -> Any:  # pylint: disable=unused-argument
         return {A_EUR: FVal('0.9165902841')}
     usd, eur = A_USD.resolve_to_fiat_asset(), A_EUR.resolve_to_fiat_asset()
     with patch('rotkehlchen.inquirer.get_current_xratescom_exchange_rates', side_effect=mock_xratescom_exchange_rate):  # noqa: E501
@@ -189,8 +189,8 @@ def test_fiat_pair_caching(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=unused-argument
-    def mock_api_remote_fail(url, timeout):  # pylint: disable=unused-argument
+def test_fallback_to_cached_values_within_a_month(inquirer: Any) -> None:  # pylint: disable=unused-argument
+    def mock_api_remote_fail(url: Any, timeout: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(500, '{"msg": "shit hit the fan"')
 
     # Get a date 15 days ago and insert a cached entry for EUR JPY then
@@ -229,11 +229,11 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_parsing_forex_cache_works(
-        inquirer,
-        data_dir,
-        mocked_current_prices,
-        current_price_oracles_order,
-):  # pylint: disable=unused-argument
+        inquirer: Any,
+        data_dir: Any,
+        mocked_current_prices: Any,
+        current_price_oracles_order: Any,
+) -> None:  # pylint: disable=unused-argument
     price = Price(FVal('124.123'))
     now = ts_now()
     cache_data = [HistoricalPrice(
@@ -250,7 +250,7 @@ def test_parsing_forex_cache_works(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_fallback_to_coingecko(inquirer: Inquirer):
+def test_fallback_to_coingecko(inquirer: Inquirer) -> None:
     """Cryptocompare does not return current prices for some assets.
     For those we are going to be using coingecko"""
     price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'), skip_onchain=True)  # RARI # noqa: E501
@@ -260,10 +260,10 @@ def test_fallback_to_coingecko(inquirer: Inquirer):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argument
+def test_find_usd_price_cache(inquirer: Any, freezer: Any) -> None:  # pylint: disable=unused-argument
     call_count = 0
 
-    def mock_query_price(from_assets, to_asset):  # pylint: disable=unused-argument
+    def mock_query_price(from_assets: Any, to_asset: Any) -> Any:  # pylint: disable=unused-argument
         from_asset = from_assets[0]
         assert from_asset.identifier == 'ETH'
         assert to_asset.identifier == 'USD'
@@ -319,7 +319,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         assert price == Price(FVal('2'))
 
 
-def test_set_oracles_order(inquirer):
+def test_set_oracles_order(inquirer: Any) -> None:
     inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO])
 
     assert inquirer._oracles == [CurrentPriceOracle.COINGECKO]
@@ -328,22 +328,23 @@ def test_set_oracles_order(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_usd_price_all_rate_limited_in_last(inquirer):
+def test_find_usd_price_all_rate_limited_in_last(inquirer: Any) -> None:
     """Test zero price is returned when all the oracles have exceeded the rate
     limits requesting the USD price of an asset.
     """
     class OracleMock(CurrentPriceOracleInterface):
-        def __init__(self, name):
+        def __init__(self, name: Any) -> None:
             self.rate_limited_in_last_call_count = 0
             self.query_current_price_call_count = 0
             super().__init__(name)
 
-        def rate_limited_in_last(self, seconds):
+        def rate_limited_in_last(self, seconds: int | None = None) -> bool:
             self.rate_limited_in_last_call_count += 1
             return True
 
-        def query_current_price(self, from_asset, to_asset):
+        def query_current_price(self, from_asset: Any, to_asset: Any) -> Price:
             self.query_current_price_call_count += 1
+            return ZERO_PRICE
 
     inquirer._oracle_instances = [OracleMock('x') for _ in inquirer._oracles]
 
@@ -356,7 +357,7 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_usd_price_no_price_found(inquirer):
+def test_find_usd_price_no_price_found(inquirer: Any) -> None:
     """Test zero price is returned when all the oracles
     are unable to find the USD price of an asset.
     """
@@ -374,7 +375,7 @@ def test_find_usd_price_no_price_found(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_usd_price_via_second_oracle(inquirer):
+def test_find_usd_price_via_second_oracle(inquirer: Any) -> None:
     """Test price is returned via the second oracle when the first oracle fails
     requesting the USD price of an asset.
     """
@@ -393,7 +394,7 @@ def test_find_usd_price_via_second_oracle(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_usd_price_manual_prices_preference(inquirer, globaldb):
+def test_find_usd_price_manual_prices_preference(inquirer: Any, globaldb: Any) -> None:
     """Test that manual prices is checked first before all other oracles
     and special price calculations."""
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
@@ -466,7 +467,7 @@ def test_price_asset_preparation_and_manual_lookup_are_batched(
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_price_query_normalizes_asset_in_place(inquirer: Inquirer, globaldb) -> None:
+def test_price_query_normalizes_asset_in_place(inquirer: Inquirer, globaldb: Any) -> None:
     """A case-insensitive DB match must keep the caller's asset usable as the result key."""
     asset = Asset('eTh')
     expected_price = Price(FVal('1234'))
@@ -486,7 +487,7 @@ def test_price_query_normalizes_asset_in_place(inquirer: Inquirer, globaldb) -> 
     assert asset.identifier == A_ETH.identifier
 
 
-def test_manual_price_batch_isolates_asset_errors(globaldb) -> None:
+def test_manual_price_batch_isolates_asset_errors(globaldb: Any) -> None:
     """A failed denomination conversion must not discard other manual prices in the batch."""
     btc = A_BTC.resolve_to_asset_with_oracles()
     eth = A_ETH.resolve_to_asset_with_oracles()
@@ -508,7 +509,7 @@ def test_manual_price_batch_isolates_asset_errors(globaldb) -> None:
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('mocked_current_prices', [UNDERLYING_ASSET_PRICES])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['eip155:1/erc20:0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'USD']])  # noqa: E501
-def test_price_underlying_tokens(inquirer, globaldb):
+def test_price_underlying_tokens(inquirer: Any, globaldb: Any) -> None:
     aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
     address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
     identifier = ethaddress_to_identifier(address)
@@ -531,7 +532,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     assert price == FVal(67)
 
 
-def test_price_underlying_tokens_unpriced_when_a_leg_is_missing(inquirer, globaldb):
+def test_price_underlying_tokens_unpriced_when_a_leg_is_missing(inquirer: Any, globaldb: Any) -> None:  # noqa: E501
     """Regression test: a token valued from its underlying tokens must be reported as
     unpriced when any underlying leg has no price, instead of returning a too-low partial
     sum that the user would mistake for the real value."""
@@ -551,7 +552,7 @@ def test_price_underlying_tokens_unpriced_when_a_leg_is_missing(inquirer, global
     )
     globaldb.add_asset(token)
 
-    def mock_find(asset, *args, **kwargs):  # AAVE is priced, LINK can't be priced
+    def mock_find(asset: Any, *args: Any, **kwargs: Any) -> Any:  # AAVE is priced, LINK can't be priced  # noqa: E501
         if asset == A_AAVE:
             return Price(FVal('100')), CurrentPriceOracle.COINGECKO
         return ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN
@@ -575,7 +576,7 @@ def test_price_underlying_tokens_unpriced_when_a_leg_is_missing(inquirer, global
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
+def test_find_uniswap_v2_lp_token_price(inquirer: Any, ethereum_manager: Any, globaldb: Any) -> None:  # noqa: E501
     """Tests that the Uniswap v2 lp token's price is correctly found. The special price
     calculation that is needed, is applied based on the protocol attribute of the lp token"""
     identifier = ethaddress_to_identifier(string_to_evm_address('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'))  # LINK ETH POOL  # noqa: E501
@@ -639,7 +640,7 @@ def test_find_quickswap_algrebra_lp_token_price(database: DBHandler, inquirer_de
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
+def test_find_velodrome_v2_lp_token_price(inquirer: Any, optimism_manager: Any) -> None:
     """Tests that the Velodrome v2 lp token's price is correctly found. The special price
     calculation that is needed, is applied based on the protocol attribute of the lp token"""
     token = get_or_create_evm_token(
@@ -656,7 +657,7 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_aerodrome_lp_token_price(inquirer, base_manager):
+def test_find_aerodrome_lp_token_price(inquirer: Any, base_manager: Any) -> None:
     get_or_create_evm_token(  # wBLT token
         userdb=base_manager.node_inquirer.database,
         evm_address=string_to_evm_address('0x4E74D4Db6c0726ccded4656d0BCE448876BB4C7A'),
@@ -680,7 +681,7 @@ def test_find_curve_lp_token_price(
         inquirer: Inquirer,
         blockchain: ChainsAggregator,
         allow_gnosis_etherscan: None,
-):
+) -> None:
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
         ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('954.52')),
         # 3CRV-OP-gauge
@@ -753,7 +754,7 @@ def test_find_curve_lp_token_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_zero_supply_curve_lp_price(inquirer_defi: Inquirer):
+def test_zero_supply_curve_lp_price(inquirer_defi: Inquirer) -> None:
     """Regression test for a division by zero error when querying the price of a curve lp token
     for a pool with zero supply."""
     with patch('rotkehlchen.chain.evm.decoding.curve.curve_cache.request_get_dict'):
@@ -764,14 +765,14 @@ def test_zero_supply_curve_lp_price(inquirer_defi: Inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_kfee_price(inquirer):
+def test_find_kfee_price(inquirer: Any) -> None:
     price = inquirer.find_usd_price(A_KFEE)
     assert FVal(price) == FVal(0.01)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_kfee_price_non_usd(inquirer):
+def test_find_kfee_price_non_usd(inquirer: Any) -> None:
     """Test that we can query KFEE price in non-USD currency"""
     kfee_eur_price = inquirer.find_price(from_asset=A_KFEE, to_asset=A_EUR)
     usd_eur_rate = inquirer.find_price(from_asset=A_USD, to_asset=A_EUR)
@@ -824,7 +825,7 @@ def test_eur_pegged_asset_special_price_non_usd(inquirer: Inquirer) -> None:
     """Test that EURe collection assets are correctly priced in non-USD target currencies."""
     eur_jpy_rate = Price(FVal('162.5'))
 
-    def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
+    def mock_query_fiat_pair(base: Any, quote: Any) -> Any:  # pylint: disable=unused-argument
         if base == A_EUR.resolve_to_fiat_asset() and quote == A_JPY.resolve_to_fiat_asset():
             return (eur_jpy_rate, CurrentPriceOracle.FIAT)
         return None
@@ -934,7 +935,7 @@ def test_special_price_cached_for_non_usd_target(inquirer: Inquirer) -> None:
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_asset_with_no_api_oracles(inquirer_defi):
+def test_find_asset_with_no_api_oracles(inquirer_defi: Any) -> None:
     """
     Test that uniswap oracles correctly query USD price of assets
     """
@@ -956,7 +957,7 @@ def test_find_asset_with_no_api_oracles(inquirer_defi):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
+def test_price_non_ethereum_evm_token(inquirer_defi: Any, globaldb: Any) -> None:
     """
     This test checks that `inquirer.find_usd_price` does not fail with
     "'NoneType' object has no attribute 'underlying_tokens'" when an evm token
@@ -986,7 +987,7 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_price_for_custom_assets(inquirer, database, globaldb):
+def test_price_for_custom_assets(inquirer: Any, database: Any, globaldb: Any) -> None:
     db_custom_assets = DBCustomAssets(database)
     db_custom_assets.add_custom_asset(CustomAsset.initialize(
         identifier='id',
@@ -1006,7 +1007,7 @@ def test_price_for_custom_assets(inquirer, database, globaldb):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_price_with_custom_asset_as_target(inquirer, database):
+def test_price_with_custom_asset_as_target(inquirer: Any, database: Any) -> None:
     """Regression test for a custom asset used as the price target (to_asset).
 
     A custom asset has no oracles, so resolving the target to an AssetWithOracles inside
@@ -1028,13 +1029,13 @@ def test_price_with_custom_asset_as_target(inquirer, database):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_coingecko_handles_rate_limit(inquirer):
+def test_coingecko_handles_rate_limit(inquirer: Any) -> None:
     """
     Test that the mechanism to ignore coingecko when the user gets rate limited works as expected
     """
     coingecko_api_calls = 0
 
-    def mock_coingecko_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_coingecko_return(url: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         nonlocal coingecko_api_calls
         coingecko_api_calls += 1
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '{}')
@@ -1056,7 +1057,7 @@ def test_coingecko_handles_rate_limit(inquirer):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_punishing_of_oracles_works(inquirer):
+def test_punishing_of_oracles_works(inquirer: Any) -> None:
     defillama_patch = patch.object(inquirer._defillama.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"coins":{"coingecko:bitcoin":{"price":100.14,"symbol":"BTC","timestamp":1668592376,"confidence":0.99}}}'))  # noqa: E501
     coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.RequestException('An unexpected error occurred!'))  # noqa: E501
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
@@ -1091,7 +1092,7 @@ def test_punishing_of_oracles_works(inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):
+def test_find_yearn_vaults_v2_price(inquirer_defi: Any, globaldb: Any) -> None:
     """
     When this test was written yearn vaults query was relying in the underlying token
     being correctly recorded in the global DB. To emulate that we make sure one is
@@ -1160,7 +1161,7 @@ def test_find_yearn_vaults_v3_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_gearbox_lp_price(inquirer: Inquirer, arbitrum_one_manager: ArbitrumOneManager):
+def test_find_gearbox_lp_price(inquirer: Inquirer, arbitrum_one_manager: ArbitrumOneManager) -> None:  # noqa: E501
     dwethv3 = EvmToken('eip155:42161/erc20:0x04419d3509f13054f60d253E0c79491d9E683399')
     sdwethv3 = EvmToken('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a')
 
@@ -1182,7 +1183,7 @@ def test_find_gearbox_lp_price(inquirer: Inquirer, arbitrum_one_manager: Arbitru
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_protocol_price_fallback_to_oracle(inquirer_defi):
+def test_find_protocol_price_fallback_to_oracle(inquirer_defi: Any) -> None:
     """Test that if the onchain price query fails for a known protocol token,
     the external oracles are still queried and provide us (potentially) with an answer
     """
@@ -1196,7 +1197,7 @@ def test_find_protocol_price_fallback_to_oracle(inquirer_defi):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_yearn_v1_vault_token_price(inquirer_defi):
+def test_find_yearn_v1_vault_token_price(inquirer_defi: Any) -> None:
     """Regression test for https://github.com/rotki/rotki/pull/8838
     Similar prices were found by this method with and without the change in PR 8838
     """
@@ -1207,7 +1208,7 @@ def test_find_yearn_v1_vault_token_price(inquirer_defi):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_cache_is_hit_for_collection(inquirer: Inquirer):
+def test_cache_is_hit_for_collection(inquirer: Inquirer) -> None:
     """Test that the price for a collection is saved to cache and not queried for every asset.
 
     Querying one member of a multi-chain collection (wstETH on mainnet) and then another member
@@ -1231,7 +1232,7 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @requires_env([TestEnvironment.NIGHTLY])
-def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
+def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler) -> None:
     """Check that price is queried for tokens in different chains using defillama"""
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.DEFILLAMA])
     globaldb.add_asset(EvmToken.initialize(
@@ -1287,7 +1288,7 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
-def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
+def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer) -> None:
     """Test that connecting to an RPC that returns the chain id as an hex value
     instead of an integer works correctly
     """
@@ -1303,7 +1304,7 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
 
 
 @pytest.mark.parametrize('network_mocking', [False])
-def test_connect_rpc_with_broken_version_response(ethereum_inquirer: EthereumInquirer):
+def test_connect_rpc_with_broken_version_response(ethereum_inquirer: EthereumInquirer) -> None:
     """Test that a node replying to net_version with a non-string result, such as an error
     object, only fails the connection instead of raising and killing the querying task"""
     with (
@@ -1328,7 +1329,7 @@ def test_connect_rpc_with_broken_version_response(ethereum_inquirer: EthereumInq
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_fake_symbol_doesnt_query_cc(inquirer: Inquirer):
+def test_fake_symbol_doesnt_query_cc(inquirer: Inquirer) -> None:
     """Test that a token that has the symbol of another token (like USDC) doesn't trigger
     a price query"""
     with patch.object(inquirer._cryptocompare, '_get_api_key', return_value=ApiKey('test')):
@@ -1345,7 +1346,7 @@ def test_fake_symbol_doesnt_query_cc(inquirer: Inquirer):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_recursion_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
+def test_recursion_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler) -> None:
     """Test that if a token has itself as underlying token we don't create an
     infinite recursion querying its price"""
     a_usdt = A_USDT.resolve_to_evm_token()
@@ -1362,7 +1363,7 @@ def test_recursion_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
+def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler) -> None:
     """This is a regression test that checks for the handling of the recursion error in the inquirer."""  # noqa: E501
     a_usdt = A_USDT.resolve_to_evm_token()
     with globaldb.conn.write_ctx() as write_cursor:
@@ -1383,7 +1384,7 @@ def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHa
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_vthor_price(inquirer_defi: Inquirer, database: DBHandler):
+def test_find_vthor_price(inquirer_defi: Inquirer, database: DBHandler) -> None:
     """Test that we can query price for vTHOR using the ratio that it maintains with THOR"""
     inquirer_defi._oracle_instances = [inquirer_defi._defillama]
     get_or_create_evm_token(
@@ -1990,7 +1991,7 @@ def test_find_woo_fi_supercharger_vault_token_price(
 @pytest.mark.freeze_time('2024-10-21 18:00:00 GMT')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_fiat_to_fiat(inquirer):
+def test_fiat_to_fiat(inquirer: Any) -> None:
     """Test that fiat to fiat works for current prices and goes through the fiat oracle path"""
     inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])
     with patch.object(Inquirer, '_query_fiat_pair', wraps=Inquirer._query_fiat_pair) as _query_fiat_pair:  # noqa: E501, RUF052
@@ -2005,7 +2006,7 @@ def test_fiat_to_fiat(inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_price_of_assets_in_collection(inquirer):
+def test_price_of_assets_in_collection(inquirer: Any) -> None:
     """
     Test that the inquirer can correctly find the USD price of the main asset and
     secondary assets in a collection.
@@ -2022,7 +2023,7 @@ def test_price_of_assets_in_collection(inquirer):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_errors_web3_logs():
+def test_errors_web3_logs() -> None:
     """
     1rpc.io/gnosis has a limit of 1000 logs per query. This test
     ensure that the amount of queries made to the node is the minimum
@@ -2042,7 +2043,7 @@ def test_errors_web3_logs():
     make_request = web3.HTTPProvider.make_request
     start_block, end_block = 50000, 60000
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         nonlocal count
         count += 1
         return make_request(*args, **kwargs)
@@ -2080,7 +2081,7 @@ def test_bsq_price(inquirer: Inquirer) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_batch_price_query(inquirer: Inquirer):
+def test_batch_price_query(inquirer: Inquirer) -> None:
     """Test that finding multiple prices at once works as expected."""
     inquirer._cryptocompare.api_key = ApiKey('dummy-api-key')
     inquirer._cryptocompare.last_ts = ts_now()

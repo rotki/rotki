@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 
 
 class DummyImporter(BaseExchangeImporter):
-    def _import_csv(self, write_cursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: Any, filepath: Path, **kwargs: Any) -> None:
         return None
 
 
-def test_detect_duplicate_event_escapes_like(database) -> None:
+def test_detect_duplicate_event_escapes_like(database: Any) -> None:
     assert database is not None
     history_db = DBHistoryEvents(database)
     event = HistoryEvent(
@@ -61,7 +61,7 @@ def test_detect_duplicate_event_escapes_like(database) -> None:
         ) is False
 
 
-def test_rotki_generic_trades_unknown_asset(database, tmp_path) -> None:
+def test_rotki_generic_trades_unknown_asset(database: Any, tmp_path: Any) -> None:
     """Regression for https://github.com/rotki/rotki/issues/12233.
 
     An asset on a row that can't be mapped to a known asset must not crash the
@@ -88,7 +88,7 @@ def test_rotki_generic_trades_unknown_asset(database, tmp_path) -> None:
     assert 'Unknown asset' in error_msgs[0]['msg']
 
 
-def test_rotki_generic_events_unknown_asset(database, tmp_path) -> None:
+def test_rotki_generic_events_unknown_asset(database: Any, tmp_path: Any) -> None:
     """Same regression for the rotki generic events importer."""
     filepath = tmp_path / 'rotki_generic_events.csv'
     filepath.write_text(

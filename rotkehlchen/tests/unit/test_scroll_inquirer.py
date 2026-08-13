@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 def test_scroll_nodes_prune_and_archive_status(
         scroll_manager_connect_at_start: list[tuple],
         scroll_inquirer: ScrollInquirer,
-):
+) -> None:
     """Checks that connecting to a set of scroll nodes, the capabilities of those nodes are known
     and stored. It tests the nodes one by one to avoid the randomness of the connections to
     the nodes while running with the VCR cassettes.

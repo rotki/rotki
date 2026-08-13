@@ -24,7 +24,7 @@ def test_optimism_balances(
         rotkehlchen_instance: Rotkehlchen,
         optimism_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-):
+) -> None:
     """
     Tests the balance of an account that has an asset both in wallet and staked in a gauge.
     The total balance should be the sum of the two.

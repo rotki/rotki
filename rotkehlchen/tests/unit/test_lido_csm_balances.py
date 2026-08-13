@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,14 +27,14 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-def _make_evm_inquirer():
+def _make_evm_inquirer() -> Any:
     return SimpleNamespace(
         database=MagicMock(),
         chain_id=ChainID.ETHEREUM,
     )
 
 
-def test_lido_csm_balances_accumulates():
+def test_lido_csm_balances_accumulates() -> None:
     entry = LidoCsmNodeOperator(address=make_evm_address(), node_operator_id=9)
     with patch(
         'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
@@ -75,10 +75,10 @@ def test_lido_csm_balances_accumulates():
     )
 
 
-def test_lido_csm_balances_skips_on_error():
+def test_lido_csm_balances_skips_on_error() -> None:
     entry = LidoCsmNodeOperator(address=make_evm_address(), node_operator_id=5)
 
-    def _raise_remote_error(*_args, **_kwargs):
+    def _raise_remote_error(*_args: Any, **_kwargs: Any) -> None:
         raise RemoteError('boom')
 
     with patch(
@@ -118,7 +118,7 @@ def test_lido_csm_balances_real_data(
         ethereum_inquirer: EthereumInquirer,
         ethereum_transaction_decoder: EthereumTransactionDecoder,
         inquirer: Inquirer,
-):
+) -> None:
     """Queries the real Lido CSM contracts for node operator id 1 using VCR."""
     node_operator_address = string_to_evm_address('0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4')
     db = DBLidoCsm(ethereum_inquirer.database)

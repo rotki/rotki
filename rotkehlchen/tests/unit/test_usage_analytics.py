@@ -1,8 +1,10 @@
+from typing import Any
+
 from rotkehlchen.usage_analytics import create_usage_analytics
 from rotkehlchen.utils.misc import get_system_spec
 
 
-def test_create_usage_analytics(data_dir):
+def test_create_usage_analytics(data_dir: Any) -> None:
     analytics = create_usage_analytics(data_dir)
 
     assert 'system_os' in analytics

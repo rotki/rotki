@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -22,7 +22,7 @@ TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_addresses_queried_for_nfts(blockchain):
+def test_addresses_queried_for_nfts(blockchain: Any) -> None:
     """Tests that nfts are only queried for addresses stored in the database preventing the
     IntegrityError described in https://github.com/rotki/rotki/issues/4456
     """
@@ -39,7 +39,7 @@ def test_addresses_queried_for_nfts(blockchain):
 def test_nfts_floor_prices(
         blockchain: ChainsAggregator,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test that if the floor price is given in something else than ETH we correctly
     represent it.
     """
@@ -56,7 +56,7 @@ def test_nfts_floor_prices(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 @pytest.mark.parametrize('mocked_current_prices', [{A_USDC.identifier: 1, A_ETH: 3600}])
-def test_sorting_nfts(blockchain: ChainsAggregator):
+def test_sorting_nfts(blockchain: ChainsAggregator) -> None:
     """Test that if we have NFTs priced using different currencies then they are properly sorted
     by usd price when queried from the database.
     Regression test for https://github.com/rotki/rotki/issues/8022
@@ -93,10 +93,10 @@ def test_sorting_nfts(blockchain: ChainsAggregator):
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_duplicate_balances(
         rotkehlchen_api_server: APIServer,
-        ethereum_accounts,
-        gnosis_accounts,
+        ethereum_accounts: Any,
+        gnosis_accounts: Any,
         allow_gnosis_etherscan: None,
-):
+) -> None:
     """Checks that we don't have duplicate balances for NFTs in balances.
 
     If an NFT is tracked only as a token and not in the NFT table we query it
@@ -142,7 +142,7 @@ def test_duplicate_balances(
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_add_and_delete_nft_custom_price(blockchain: ChainsAggregator):
+def test_add_and_delete_nft_custom_price(blockchain: ChainsAggregator) -> None:
     """Test that adding and deleting a custom price for an NFT works correctly.
 
     Regression test: delete_price_for_nft used to set last_price and last_price_asset to NULL,

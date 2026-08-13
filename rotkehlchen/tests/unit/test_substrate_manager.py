@@ -27,19 +27,19 @@ class AccountInfo(NamedTuple):
 
 
 @pytest.fixture(scope='module', name='kusama_available_node_attributes_map')
-def fixture_kusama_available_node_attributes_map():
+def fixture_kusama_available_node_attributes_map() -> Any:
     """Attempt to connect to Kusama nodes and return the available nodes map.
     The connection will persist along the session.
     """
     return attempt_connect_test_nodes(SupportedBlockchain.KUSAMA)
 
 
-def test_get_account_balance(kusama_manager):
+def test_get_account_balance(kusama_manager: Any) -> None:
     balance = kusama_manager.get_account_balance(SUBSTRATE_ACC1_KSM_ADDR)
     assert balance >= ZERO
 
 
-def test_get_accounts_balance_invalid_account(kusama_manager):
+def test_get_accounts_balance_invalid_account(kusama_manager: Any) -> None:
     """Test querying KSM balances with an invalid address adds the specific error
     in `msg_aggregator` but also that the request is done for each available
     node. RemoteError is raised by `request_available_nodes()`.
@@ -50,7 +50,7 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
     assert 'kusama request failed after trying the following nodes' in str(e.value)
 
 
-def test_get_accounts_balance(kusama_manager):
+def test_get_accounts_balance(kusama_manager: Any) -> None:
     account_balance = kusama_manager.get_accounts_balance([
         SUBSTRATE_ACC1_KSM_ADDR,
         SUBSTRATE_ACC2_KSM_ADDR,
@@ -59,24 +59,24 @@ def test_get_accounts_balance(kusama_manager):
     assert account_balance[SUBSTRATE_ACC2_KSM_ADDR] > ZERO
 
 
-def test_get_chain_id(kusama_manager):
+def test_get_chain_id(kusama_manager: Any) -> None:
     chain_id = kusama_manager.get_chain_id()
     assert chain_id == 'Kusama Asset Hub'
 
 
-def test_get_chain_properties(kusama_manager):
+def test_get_chain_properties(kusama_manager: Any) -> None:
     chain_properties = kusama_manager.get_chain_properties()
     assert chain_properties.ss58_format == 2
     assert chain_properties.token == A_KSM
     assert chain_properties.token_decimals == FVal(12)
 
 
-def test_get_last_block(kusama_manager):
+def test_get_last_block(kusama_manager: Any) -> None:
     last_block = kusama_manager.get_last_block()
     assert last_block > BlockNumber(5740274)
 
 
-def test_get_account_balance_calculation(kusama_manager):
+def test_get_account_balance_calculation(kusama_manager: Any) -> None:
     """Test `_get_account_balance()` balance calculation sums 'free' and 'reserved'
     amounts and amends the decimals using the native token decimals.
     """
@@ -101,7 +101,7 @@ def test_get_account_balance_calculation(kusama_manager):
     assert balance == FVal(111.004701754251)  # (free + reserved)/10**12
 
 
-def test_set_available_nodes_call_order(kusama_manager):
+def test_set_available_nodes_call_order(kusama_manager: Any) -> None:
     """Test `_set_available_nodes_call_order()` sets the available nodes sorted
     by preference; currently own node first and then by the highest 'weight_block'.
     """
@@ -112,21 +112,21 @@ def test_set_available_nodes_call_order(kusama_manager):
         KusamaNodeName.OWN,
         NodeNameAttributes(
             node_interface=object(),
-            weight_block=1000,
+            weight_block=BlockNumber(1000),
         ),
     )
     node_attrs_item_2 = (
         fake_kusama_node_name,
         NodeNameAttributes(
             node_interface=object(),
-            weight_block=750,
+            weight_block=BlockNumber(750),
         ),
     )
     node_attrs_item_3 = (
         KusamaNodeName.DWELLIR,
         NodeNameAttributes(
             node_interface=object(),
-            weight_block=1000,
+            weight_block=BlockNumber(1000),
         ),
     )
     node_attrs_items = [node_attrs_item_3, node_attrs_item_2, node_attrs_item_1]
@@ -146,11 +146,11 @@ def test_set_available_nodes_call_order(kusama_manager):
     ('localhost:9933', 'http://localhost:9933'),
     ('http://localhost:9933', 'http://localhost:9933'),
 ])
-def test_format_own_rpc_endpoint(endpoint, formatted_endpoint):
+def test_format_own_rpc_endpoint(endpoint: Any, formatted_endpoint: Any) -> None:
     assert formatted_endpoint == SubstrateManager._format_own_rpc_endpoint(endpoint)
 
 
-def test_connect_to_own_node(polkadot_manager: SubstrateManager):
+def test_connect_to_own_node(polkadot_manager: SubstrateManager) -> None:
     polkadot_manager.connect_at_start = [PolkadotNodeName.OWN, PolkadotNodeName.DWELLIR]
     polkadot_manager.own_rpc_endpoint = ''
     polkadot_manager.attempt_connections()

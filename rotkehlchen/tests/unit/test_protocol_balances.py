@@ -3,7 +3,7 @@ import operator
 from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -534,7 +534,7 @@ def test_thegraph_balances_vested_arbitrum_one(
 
     original_get_delegations = ThegraphBalances._get_delegations
 
-    def mock_get_delegations(self):
+    def mock_get_delegations(self: Any) -> Any:
         """Mock _get_delegations to ensure deterministic ordering for VCR"""
         delegations = original_get_delegations(self)
         return sorted(delegations, key=operator.itemgetter(0, 1, 2, 3))
@@ -734,7 +734,7 @@ def test_gmx_balances(
 def test_gmx_balances_staking(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-        arbitrum_one_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start: Any,
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ) -> None:
     """Test the balance query for staked GMX. It adds a staking event and then queries the
@@ -895,7 +895,7 @@ def test_compound_v3_token_balances_liabilities(
             for token, addresses in unique_borrows.items()
         }, underlying_tokens
 
-    def mock_query_tokens(addresses):
+    def mock_query_tokens(addresses: Any) -> Any:
         return ({
             ethereum_accounts[1]: {c_usdc_v3: FVal('0.32795')},
         }, {c_usdc_v3: Price(CURRENT_PRICE_MOCK)}) if len(addresses) != 0 else ({}, {})
@@ -909,7 +909,7 @@ def test_compound_v3_token_balances_liabilities(
     ):
         blockchain._query_chain_balances(blockchain=SupportedBlockchain.ETHEREUM)
 
-    def get_balance(amount: str):
+    def get_balance(amount: str) -> Any:
         return Balance(
             amount=FVal(amount), value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
@@ -1207,7 +1207,7 @@ def test_extrafi_farm_balances(
 
 @pytest.mark.freeze_time
 @pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['uri', 'method', 'body'])
-def test_extrafi_cache(optimism_inquirer: OptimismInquirer, freezer):
+def test_extrafi_cache(optimism_inquirer: OptimismInquirer, freezer: Any) -> None:
     """Check that the cache gets populated and timestamp updated if
     we requery again"""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -1501,15 +1501,16 @@ def test_aerodrome_locked_balances(
     )
 
 
-def test_all_balance_classes_used():
+def test_all_balance_classes_used() -> None:
     """
     Test that all protocol balance classes are used properly in the
     CHAIN_TO_BALANCE_PROTOCOLS mapping
     """
+    protocol_with_balance: Any = ProtocolWithBalance
     classes = find_inheriting_classes(
         root_directory=(root_directory := Path(__file__).resolve().parent.parent.parent),
         search_directory=root_directory / 'chain',
-        base_class=ProtocolWithBalance,
+        base_class=protocol_with_balance,
         exclude_class_names={
             'GearboxCommonBalances',
             'ExtrafiCommonBalances',
@@ -1735,10 +1736,10 @@ def test_woofi_stake_vault_token_balances(
 
 
 def test_pickle_dill_zero_positions_skip_price_query(
-        ethereum_inquirer,
-        database,
-        function_scope_messages_aggregator,
-):
+        ethereum_inquirer: Any,
+        database: Any,
+        function_scope_messages_aggregator: Any,
+) -> None:
     """Zero dill positions must not trigger a PICKLE price lookup, since that
     can cascade into remote oracle queries for every user that simply has the
     module enabled (the default) without ever having used pickle"""

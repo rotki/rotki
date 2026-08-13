@@ -1,4 +1,5 @@
 import json
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -43,7 +44,7 @@ TEST_DATA = {
 }
 
 
-def test_rlk_jsondumps():
+def test_rlk_jsondumps() -> None:
     result = rlk_jsondumps(TEST_DATA)
     assert result == (
         '{"a": "5.4", "b": "foo", "c": "32.1", "d": 5, '
@@ -75,7 +76,7 @@ def test_pre_serialized_list_skips_rewalk() -> None:
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_deserialize_location(database):
+def test_deserialize_location(database: Any) -> None:
     balances = []
     for idx, data in enumerate(Location):
         assert Location.deserialize(str(data)) == data
@@ -92,8 +93,9 @@ def test_deserialize_location(database):
     with pytest.raises(DeserializationError):
         Location.deserialize('dsadsad')
 
+    invalid_location: Any = 15
     with pytest.raises(DeserializationError):
-        Location.deserialize(15)
+        Location.deserialize(invalid_location)
 
     # Also write and read each location to DB to make sure that
     # location.serialize_for_db() and deserialize_location_from_db work fine
@@ -104,7 +106,7 @@ def test_deserialize_location(database):
         assert data in (x.location for x in balances)
 
 
-def test_deserialize_int_from_hex_or_int():
+def test_deserialize_int_from_hex_or_int() -> None:
     # Etherscan can return logIndex 0x if it's the 0th log in the hash
     # https://etherscan.io/tx/0x6f1370cd9fa19d550031a30290b062dd3b56f44caf6344c05545ef15428de7ef
     assert deserialize_int_from_hex_or_int('0x', 'whatever') == 0
@@ -113,8 +115,8 @@ def test_deserialize_int_from_hex_or_int():
     assert deserialize_int_from_hex_or_int(66, 'whatever') == 66
 
 
-def test_deserialize_deployment_ethereum_transaction():
-    data = {
+def test_deserialize_deployment_ethereum_transaction() -> None:
+    data: dict[str, Any] = {
         'timeStamp': 0,
         'blockNumber': 1,
         'hash': '0xc5be14f87be25174846ed53ed239517e4c45c1fe024b184559c17d4f1fefa736',
@@ -150,7 +152,7 @@ def test_deserialize_deployment_ethereum_transaction():
     assert tx == expected
 
 
-def test_blockchain_field_allow_only():
+def test_blockchain_field_allow_only() -> None:
     """Test that BlockchainField properly validates the allow_only parameter."""
     field = BlockchainField(allow_only=[SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM])  # noqa: E501
     assert field.deserialize('ETH') == SupportedBlockchain.ETHEREUM
@@ -163,7 +165,7 @@ def test_blockchain_field_allow_only():
         field.deserialize('BTC')
 
 
-def test_exported_assets_schema_accepts_empty_symbol():
+def test_exported_assets_schema_accepts_empty_symbol() -> None:
     """Regression test for ExportedAssetsSchema to accept assets with empty symbol."""
     data = '{"version": "15", "assets": [{"asset_type": "own chain", "name": "Test Asset", "symbol": "", "identifier": "TEST123"}]}'  # noqa: E501
     result = ExportedAssetsSchema().loads(data)
@@ -226,7 +228,7 @@ def test_history_events_deletion_schema_field_coverage() -> None:
     assert all_fields - known_filter_fields - schema._NON_FILTER_FIELDS == set()
 
 
-def test_deserialize_evm_transaction_empty_gas_price():
+def test_deserialize_evm_transaction_empty_gas_price() -> None:
     """Test that transactions with empty gasPrice fall back to effectiveGasPrice from receipt."""
     mock_indexer = MagicMock()
     mock_indexer.get_transaction_receipt.return_value = {

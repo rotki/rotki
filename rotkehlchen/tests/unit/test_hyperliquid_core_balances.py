@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -67,9 +67,9 @@ def test_query_balances_merges_evm_and_core_balances(
 ),)])
 def test_query_balances_does_not_duplicate_reported_sthype_balance(
         hyperliquid_manager: HyperliquidManager,
-        hyperliquid_manager_connect_at_start,
-        inquirer,
-        database,
+        hyperliquid_manager_connect_at_start: Any,
+        inquirer: Any,
+        database: Any,
 ) -> None:
     """Regression test for the reported Valantis wstHYPE/stHYPE double counting.
 
@@ -131,7 +131,7 @@ def test_query_balances_core_failure_returns_evm_only(
     assert len(result[ADDR_A].assets) == 1
 
 
-def test_query_balances_does_not_double_count_open_perp_margin(globaldb) -> None:
+def test_query_balances_does_not_double_count_open_perp_margin(globaldb: Any) -> None:
     """Regression test for the reported HYPE/USDC perp double count.
 
     Hyperliquid reports the USDC margin used by an open perp as held spot USDC and
@@ -184,7 +184,7 @@ def test_query_balances_does_not_double_count_open_perp_margin(globaldb) -> None
 
 @pytest.mark.vcr(match_on=['uri', 'method', 'body'], record_mode='once')
 def test_query_balances_fetches_core_balances_with_vcr(
-        globaldb,
+        globaldb: Any,
 ) -> None:
     result = HyperliquidAPI().query_balances(
         address=ADDR_A,

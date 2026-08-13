@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +21,7 @@ from rotkehlchen.types import SupportedBlockchain
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_ens_lookup(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
+def test_ens_lookup(ethereum_inquirer: Any, call_order: Any, ethereum_manager_connect_at_start: Any) -> None:  # noqa: E501
     """Test that ENS lookup works. Both with etherscan and with querying a real node"""
     wait_until_all_nodes_connected(ethereum_manager_connect_at_start, ethereum_inquirer)
     result = ethereum_inquirer.ens_lookup('api.zerion.eth', call_order=call_order)
@@ -42,10 +43,10 @@ def test_ens_lookup(ethereum_inquirer, call_order, ethereum_manager_connect_at_s
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 def test_ens_lookup_multichain(
-        ethereum_inquirer,
-        call_order,
-        ethereum_manager_connect_at_start,
-):
+        ethereum_inquirer: Any,
+        call_order: Any,
+        ethereum_manager_connect_at_start: Any,
+) -> None:
     """Tests that ENS multichain lookup works as expected.
 
     Testing ENS domain is 'bruno.eth' from Kusama documentation (it shouldn't change)
@@ -82,7 +83,7 @@ def test_ens_lookup_multichain(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_ens_reverse_lookup(ethereum_inquirer):
+def test_ens_reverse_lookup(ethereum_inquirer: Any) -> None:
     """This test could be flaky because it assumes
         that all used ens names exist
     """

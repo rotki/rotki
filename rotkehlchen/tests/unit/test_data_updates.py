@@ -223,11 +223,11 @@ COUNTERPARTY_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
 }
 
 
-def make_single_mock_github_data_response(target: UpdateType):
+def make_single_mock_github_data_response(target: UpdateType) -> Any:
     """Creates a mocking function for a single update type for github requests."""
-    def mock_github_data_response(url, timeout):  # pylint: disable=unused-argument
+    def mock_github_data_response(url: Any, timeout: Any) -> Any:  # pylint: disable=unused-argument
         if 'info' in url:
-            data = {
+            data: Any = {
                 'spam_assets': {'latest': 1 if target == UpdateType.SPAM_ASSETS else 0},
                 'rpc_nodes': {'latest': 1 if target == UpdateType.RPC_NODES else 0},
                 'contracts': {'latest': 1 if target == UpdateType.CONTRACTS else 0},
@@ -260,11 +260,11 @@ def make_single_mock_github_data_response(target: UpdateType):
 
 def make_mock_github_response(latest: int, min_version: str | None = None, max_version: str | None = None) -> Callable:  # noqa: E501
     """Creates a mocking function for all update types for github requests."""
-    def mock_github_response(url, timeout):  # pylint: disable=unused-argument
+    def mock_github_response(url: Any, timeout: Any) -> Any:  # pylint: disable=unused-argument
         if 'info' in url:
-            result = {}
+            result: Any = {}
             for update_type in UpdateType:
-                entry = {'latest': latest}
+                entry: dict[str, Any] = {'latest': latest}
                 for i in range(1, latest + 1):
                     if min_version or max_version:
                         if 'limits' not in entry:  # not using defaultdict to see that if missing it's also handled by the code fine  # noqa: E501
@@ -652,7 +652,7 @@ def test_reset_accounting_rules(data_updater: RotkiDataUpdater) -> None:
         )
 
     # if fetching the defaults fails, the user's rules must be left untouched
-    def mock_info_ok_file_fail(url, timeout):  # pylint: disable=unused-argument
+    def mock_info_ok_file_fail(url: Any, timeout: Any) -> Any:  # pylint: disable=unused-argument
         if 'info' in url:
             return MockResponse(200, json.dumps({'accounting_rules': {'latest': 1}}))
         return MockResponse(500, 'boom')  # the version file fetch fails

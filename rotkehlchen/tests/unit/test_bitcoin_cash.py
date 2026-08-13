@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
 
 
-def test_is_valid_bitcoin_cash_address():
+def test_is_valid_bitcoin_cash_address() -> None:
     """Test that addresses follow the Bitcoin Cash CashAddr format."""
     assert is_valid_bitcoin_cash_address('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa')
     assert is_valid_bitcoin_cash_address('qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa')
@@ -36,15 +36,15 @@ def test_is_valid_bitcoin_cash_address():
     assert not is_valid_bitcoin_cash_address('abcdefghijssfs')
 
 
-def test_force_address_to_legacy_address():
+def test_force_address_to_legacy_address() -> None:
     """Test that converting a btc/bch address to the legacy format works."""
     assert force_address_to_legacy_address('bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt') == '17CTr5NPYx7NcLp6w8mwZamfq7Xam8QrAe'  # noqa: E501
     assert force_address_to_legacy_address('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') == '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr'  # noqa: E501
 
 
-def test_force_addresses_to_legacy_addresses():
+def test_force_addresses_to_legacy_addresses() -> None:
     """Test that converting btc/bch addresses to the legacy format works."""
-    addresses = {
+    addresses: Any = {
         'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa',
         'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
         '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
@@ -58,7 +58,7 @@ def test_force_addresses_to_legacy_addresses():
     assert force_addresses_to_legacy_addresses(addresses) == converted_addresses
 
 
-def test_legacy_to_cash_format():
+def test_legacy_to_cash_format() -> None:
     """Test that converting a legacy bch address to the CashAddr format works."""
     assert legacy_to_cash_address('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') == 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'  # noqa: E501
     assert legacy_to_cash_address('1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8') == 'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa'  # noqa: E501
@@ -66,20 +66,23 @@ def test_legacy_to_cash_format():
     assert legacy_to_cash_address('abcdefghijssfs') is None
 
 
-def test_validate_bch_address_input():
+def test_validate_bch_address_input() -> None:
     """Test that an address is properly validated for Bitcoin Cash."""
-    empty_set = set()
-    assert validate_bch_address_input('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa', empty_set) is None  # noqa: E501
-    assert validate_bch_address_input('qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa', empty_set) is None  # noqa: E501
-    assert validate_bch_address_input('bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt', empty_set) is None  # noqa: E501
-    assert validate_bch_address_input('qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt', empty_set) is None  # noqa: E501
-    assert validate_bch_address_input('pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g', empty_set) is None  # noqa: E501
-    assert validate_bch_address_input('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr', empty_set) is None
+    empty_set: Any = set()
+    validate_bch_address_input('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa', empty_set)
+    validate_bch_address_input('qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa', empty_set)
+    validate_bch_address_input('bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt', empty_set)
+    validate_bch_address_input('qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt', empty_set)
+    validate_bch_address_input('pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g', empty_set)
+    validate_bch_address_input('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr', empty_set)
 
+    duplicate_addresses: Any = {
+        'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
+    }
     with pytest.raises(ValidationError) as exc_info:
         validate_bch_address_input(
             '17CTr5NPYx7NcLp6w8mwZamfq7Xam8QrAe',
-            {'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt'},
+            duplicate_addresses,
         )
     assert 'multiple times in the request data' in str(exc_info)
 
@@ -134,7 +137,7 @@ def test_query_bch_has_transactions_and_balances(
         MELROY_BASE_URL,
     ):
 
-        def mock_request_get(url: str, *args, api_url=api, **kwargs):
+        def mock_request_get(url: str, *args: Any, api_url: Any = api, **kwargs: Any) -> Any:
             """Mock request_get to fail requests to apis other than the one we want to test."""
             if api_url not in url:
                 raise RemoteError('Skip to next api')

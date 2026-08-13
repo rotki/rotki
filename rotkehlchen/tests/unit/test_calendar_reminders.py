@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -102,7 +102,7 @@ MOCK_MYSO_ZK_AIRDROP_INDEX = {
 
 def get_airdrop_request_mock(user_address: ChecksumEvmAddress) -> Callable:
     """Get airdrop request mocking function for the specified address."""
-    def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
+    def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None) -> Any:  # pylint: disable=unused-argument
         """Mock airdrop data retrieval to avoid huge VCRs"""
         return prepare_airdrop_mock_response(
             url=url,
@@ -147,7 +147,7 @@ def test_ens_expiry_calendar_reminders(
         base_inquirer: BaseInquirer,
         ethereum_inquirer: EthereumInquirer,
         ens_data: tuple[list[EVMTxHash], dict[str, Timestamp], str],
-        add_subgraph_api_key,  # pylint: disable=unused-argument
+        add_subgraph_api_key: Any,  # pylint: disable=unused-argument
 ) -> None:
     """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
     ens_tx_hashes, latest_expiry_of_ens, counterparty = ens_data
@@ -156,7 +156,7 @@ def test_ens_expiry_calendar_reminders(
     assert all_calendar_entries['entries_total'] == 0
     original_requests_get = requests.get
 
-    def mock_basenames_request_get(url, timeout):
+    def mock_basenames_request_get(url: Any, timeout: Any) -> Any:
         """There is a basenames api request that fails and is excluded from the VCR. So force
         it to fail here to avoid VCR problems.
         """
@@ -407,7 +407,7 @@ def test_airdrop_claim_calendar_reminders_wrong_chain(
 @pytest.mark.parametrize('base_accounts', [[
     '0x6730b1Df17E50217777EeE475E34815964e3BFb2',
 ]])
-def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer, optimism_accounts, optimism_inquirer, base_accounts, base_inquirer, database):  # noqa: E501
+def test_l2_bridge_claim_reminders(arbitrum_one_accounts: Any, arbitrum_one_inquirer: Any, optimism_accounts: Any, optimism_inquirer: Any, base_accounts: Any, base_inquirer: Any, database: Any) -> None:  # noqa: E501
     parameters = [
         (optimism_accounts, optimism_inquirer, '0xe2111cddcd42c8214770c7a3270490c31663cd8b4b20b3fc27018ca3ce7a3979', '2023-01-09 08:34:00 GMT'),  # noqa: E501
         (arbitrum_one_accounts, arbitrum_one_inquirer, '0xdb8e29f27a7b7b416f168e8135347703268a142b6776503e26419dbfc43bcabf', '2023-06-30 15:45:00 GMT'),  # noqa: E501

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def test_optimism_nodes_prune_and_archive_status(
         optimism_manager_connect_at_start: list[tuple],
         optimism_inquirer: OptimismInquirer,
-):
+) -> None:
     """Checks that connecting to a set of optimism nodes, the capabilities of those nodes are known
     and stored. It tests the nodes one by one to avoid the randomness of the connections to the
     nodes while running with the VCR cassettes."""

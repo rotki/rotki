@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def test_serialize_with_invalid_type_subtype():
+def test_serialize_with_invalid_type_subtype() -> None:
     """Test that serialize an event with invalid type/subtype does not raise exception"""
     event_type = HistoryEventType.TRANSFER
     event_subtype = HistoryEventSubType.SPEND
@@ -75,7 +75,7 @@ def test_serialize_with_invalid_type_subtype():
     }
 
 
-def test_hash_does_not_collide_on_digit_boundary():
+def test_hash_does_not_collide_on_digit_boundary() -> None:
     """Regression: __hash__ must not collide for pairs like (gid='0xabc', seq=12)
     and (gid='0xabc1', seq=2) which would share the same hash under naive
     str(group_identifier) + str(sequence_index) concatenation."""
@@ -95,7 +95,7 @@ def test_hash_does_not_collide_on_digit_boundary():
 
 
 @pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
-def test_informational_events(database: DBHandler, base_accounts: list[ChecksumEvmAddress]):
+def test_informational_events(database: DBHandler, base_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that informational events don't trigger price queries"""
     dbevents = DBHistoryEvents(database)
     tx = make_ethereum_transaction()
@@ -383,7 +383,7 @@ def test_get_history_events_internal_skips_ignored_group_lookup(database: DBHand
         executed: list[str] = []
         real_execute = cursor.execute
 
-        def _spy(statement, *args, **kwargs):
+        def _spy(statement: Any, *args: Any, **kwargs: Any) -> Any:
             executed.append(statement)
             return real_execute(statement, *args, **kwargs)
 

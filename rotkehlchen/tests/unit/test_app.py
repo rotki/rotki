@@ -1,5 +1,6 @@
 import base64
 import uuid
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -14,7 +15,7 @@ from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, mak
 from rotkehlchen.types import Location
 
 
-def test_initializing_exchanges(uninitialized_rotkehlchen):
+def test_initializing_exchanges(uninitialized_rotkehlchen: Any) -> None:
     """Test that initializing exchanges for which credentials exist in the DB works
 
     This also tests db.get_exchange_credentials() since we also pretend to have
@@ -62,7 +63,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
 
 
 @mock.patch('os.access')
-def test_initializing_rotki_with_datadir_with_wrong_permissions(mock_os_access, cli_args):
+def test_initializing_rotki_with_datadir_with_wrong_permissions(mock_os_access: Any, cli_args: Any) -> None:  # noqa: E501
     mock_os_access.return_value = False
     success = True
     try:
@@ -74,7 +75,7 @@ def test_initializing_rotki_with_datadir_with_wrong_permissions(mock_os_access, 
     assert success is True
 
 
-def test_solana_tokens_migration_notification(uninitialized_rotkehlchen):
+def test_solana_tokens_migration_notification(uninitialized_rotkehlchen: Any) -> None:
     """Test that Solana tokens migration notification is sent when table exists"""
     rotki = uninitialized_rotkehlchen
     rotki.msg_aggregator.rotki_notifier = MockRotkiNotifier()

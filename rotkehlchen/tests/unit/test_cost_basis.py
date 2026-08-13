@@ -59,7 +59,7 @@ def add_in_event(
         asset: Asset = A_ETH,
         price: Price = ONE_PRICE,
         taxable: bool = False,
-):
+) -> None:
     """
     Util function to add an acquisition to an accounting pot.
     Timestamp doesn't matter here since we provide `given_price`, but has to be big enough so that
@@ -83,7 +83,7 @@ def add_out_event(
         asset: Asset = A_ETH,
         price: Price = ONE_PRICE,
         taxable: bool = True,
-):
+) -> None:
     """
     Util function to add a spend event to an accounting pot.
     Timestamp doesn't matter here since we provide `given_price`, but has to be big enough so that
@@ -103,7 +103,7 @@ def add_out_event(
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_after_year(accountant: Accountant):
+def test_calculate_spend_cost_basis_after_year(accountant: Accountant) -> None:
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
@@ -164,7 +164,7 @@ def test_calculate_spend_cost_basis_after_year(accountant: Accountant):
     assert remaining_amount == FVal(12), '3 of 15 should have been consumed'
 
 
-def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant: Accountant):
+def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant: Accountant) -> None:
     """ Assert bought_cost is correct when 1 buy is completely consumed by 1 sell
 
     Regression test for part of https://github.com/rotki/rotki/issues/223
@@ -206,7 +206,7 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant: Account
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
-def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant: Accountant):
+def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant: Accountant) -> None:
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxable part of:
@@ -278,7 +278,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant: Acc
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant: Accountant):
+def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant: Accountant) -> None:
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxfree part of:
@@ -349,7 +349,7 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant: Ac
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant: Accountant):
+def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant: Accountant) -> None:  # noqa: E501
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
@@ -400,7 +400,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant: Accountant):
+def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant: Accountant) -> None:  # noqa: E501
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
@@ -450,7 +450,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant:
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
-def test_reduce_asset_amount(accountant: Accountant):
+def test_reduce_asset_amount(accountant: Accountant) -> None:
     asset = A_ETH
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
@@ -496,7 +496,7 @@ def test_reduce_asset_amount(accountant: Accountant):
     assert equivalent_events.acquisitions_manager.get_acquisitions()[0].remaining_amount == FVal(0.5)  # noqa: E501
 
 
-def test_reduce_asset_amount_exact(accountant: Accountant):
+def test_reduce_asset_amount_exact(accountant: Accountant) -> None:
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
@@ -522,11 +522,11 @@ def test_reduce_asset_amount_exact(accountant: Accountant):
     assert acquisitions_num == 0, 'all buys should be used'
 
 
-def test_reduce_asset_amount_not_bought(accountant: Accountant):
+def test_reduce_asset_amount_not_bought(accountant: Accountant) -> None:
     assert not accountant.pots[0].cost_basis.reduce_asset_amount(None, A_BTC, FVal(3), Timestamp(0))  # noqa: E501
 
 
-def test_reduce_asset_amount_more_than_bought(accountant: Accountant):
+def test_reduce_asset_amount_more_than_bought(accountant: Accountant) -> None:
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(A_ETH)
     asset_events.acquisitions_manager.add_in_event(
@@ -552,7 +552,7 @@ def test_reduce_asset_amount_more_than_bought(accountant: Accountant):
     assert acquisitions_num == 0, 'all buys should be used'
 
 
-def test_accounting_lifo_order(accountant: Accountant):
+def test_accounting_lifo_order(accountant: Accountant) -> None:
     asset = A_ETH
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.LIFO))
@@ -676,7 +676,7 @@ def test_accounting_lifo_order(accountant: Accountant):
     ]
 
 
-def test_accounting_simple_hifo_order(accountant: Accountant):
+def test_accounting_simple_hifo_order(accountant: Accountant) -> None:
     """A simple test that checks that from 2 events the one with the highest amount is used."""
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
@@ -701,7 +701,7 @@ def test_accounting_simple_hifo_order(accountant: Accountant):
     assert len(acquisitions) == 2 and acquisitions[0] == event2 and acquisitions[1] == event1
 
 
-def test_accounting_hifo_order(accountant: Accountant):
+def test_accounting_hifo_order(accountant: Accountant) -> None:
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
@@ -804,7 +804,7 @@ def test_accounting_hifo_order(accountant: Accountant):
     ]
 
 
-def test_missing_acquisitions(accountant: Accountant):
+def test_missing_acquisitions(accountant: Accountant) -> None:
     """Test that missing acquisitions are added properly by
     reduce_asset_amount and calculate_spend_cost_basis
     """
@@ -890,7 +890,7 @@ def test_missing_acquisitions(accountant: Accountant):
 @pytest.mark.parametrize('db_settings', [
     {'cost_basis_method': CostBasisMethod.ACB},
 ])
-def test_accounting_average_cost_basis(accountant: Accountant):
+def test_accounting_average_cost_basis(accountant: Accountant) -> None:
     """Test various scenarios in average cost basis calculation"""
     pot = accountant.pots[0]
     events = pot.processed_events
@@ -1223,7 +1223,7 @@ def test_taxable_acquisition(accountant: Accountant) -> None:
     ),
 ])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_fees(accountant: Accountant, expected_pnls: list[FVal]):
+def test_fees(accountant: Accountant, expected_pnls: list[FVal]) -> None:
     """
     Tests that fees are properly either calculated as standalone events or included in the price.
     Values for the example are taken from the Canada example from this issue comment
@@ -1277,7 +1277,7 @@ def test_fees(accountant: Accountant, expected_pnls: list[FVal]):
     [FVal(10), ZERO, ZERO, ZERO, ZERO, FVal(-20), ZERO],
 )])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_swaps_with_multiple_fees(accountant: Accountant, expected_pnls: list[FVal]):
+def test_swaps_with_multiple_fees(accountant: Accountant, expected_pnls: list[FVal]) -> None:
     """Check that a swap with multiple fees is handled properly."""
     history = [HistoryEvent(
         group_identifier='1xyz',

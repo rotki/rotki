@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylint: disable=unused-argument
+def test_uniswap_oracles_asset_to_asset(inquirer_defi: Any, socket_enabled: Any) -> None:  # pylint: disable=unused-argument
     """
     Test that the uniswap oracles return a price close to the one reported by
     coingecko.
@@ -81,7 +81,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylin
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
-def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylint: disable=unused-argument
+def test_uniswap_oracles_historic_price(inquirer_defi: Any, socket_enabled: Any) -> None:  # pylint: disable=unused-argument
     """Test that the uniswap oracles return correct historical prices."""
     inquirer_defi.set_oracles_order(oracles=[CurrentPriceOracle.UNISWAPV3])
     assert inquirer_defi._uniswapv3.query_historical_price(
@@ -188,7 +188,7 @@ def test_uniswap_oracles_routing_assets(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_uniswap_oracles_special_cases(inquirer_defi, socket_enabled):  # pylint: disable=unused-argument
+def test_uniswap_oracles_special_cases(inquirer_defi: Any, socket_enabled: Any) -> None:  # pylint: disable=unused-argument
     """
     Test special cases for the uniswap oracles
     """
@@ -208,7 +208,7 @@ def test_uniswap_oracles_special_cases(inquirer_defi, socket_enabled):  # pylint
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_uniswap_no_decimals(inquirer_defi: Inquirer):
+def test_uniswap_no_decimals(inquirer_defi: Inquirer) -> None:
     """Test that if a token has no information about the number of decimals a proper error
     is raised"""
     asset_resolver = AssetResolver()
@@ -217,7 +217,7 @@ def test_uniswap_no_decimals(inquirer_defi: Inquirer):
     resolved_weth = A_WETH.resolve_to_evm_token()
     resolved_usdc = A_USDC.resolve_to_evm_token()
 
-    def mocked_asset_getter(identifier, **kwargs):
+    def mocked_asset_getter(identifier: Any, **kwargs: Any) -> Any:
         if identifier == resolved_weth.identifier:
             return EvmToken.initialize(
                 address=resolved_weth.evm_address,
@@ -227,8 +227,8 @@ def test_uniswap_no_decimals(inquirer_defi: Inquirer):
                 name=resolved_weth.name,
                 symbol=resolved_weth.symbol,
                 started=resolved_weth.started,
-                forked=resolved_weth.forked.identifier if resolved_weth.forked is not None else None,  # noqa: E501
-                swapped_for=resolved_weth.swapped_for.identifier if resolved_weth.swapped_for is not None else None,  # noqa: E501
+                forked=resolved_weth.forked,
+                swapped_for=resolved_weth.swapped_for,
                 coingecko=resolved_weth.coingecko,
                 cryptocompare=resolved_weth.cryptocompare,
                 protocol=resolved_weth.protocol,
@@ -253,13 +253,13 @@ def test_uniswap_no_decimals(inquirer_defi: Inquirer):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_pool_with_no_liquidity(inquirer_defi: Inquirer):
+def test_pool_with_no_liquidity(inquirer_defi: Inquirer) -> None:
     """
     Test that a pool with no liquidity on range is skipped when using uni-v3 oracle
     """
     old_stream = EvmToken('eip155:1/erc20:0x0Cf0Ee63788A0849fE5297F3407f701E122cC023')
 
-    def mock_requests_get(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_requests_get(*args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         response = """{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000f2aa4700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"}"""  # noqa: E501
         return MockResponse(200, response)
 
@@ -278,7 +278,7 @@ def test_pool_with_no_liquidity(inquirer_defi: Inquirer):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_invalid_token_kind_price_query(inquirer_defi: Inquirer):
+def test_invalid_token_kind_price_query(inquirer_defi: Inquirer) -> None:
     """
     Test that if we pass something that is not an ERC20 the inquirer raises an error
     """
@@ -305,7 +305,7 @@ def test_invalid_token_kind_price_query(inquirer_defi: Inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_uniswap_oracle_query_multiple_handles_exceptions(inquirer_defi):
+def test_uniswap_oracle_query_multiple_handles_exceptions(inquirer_defi: Any) -> None:
     """
     Regression test for query_multiple_current_prices to ensure it properly handles
     exceptions without failing the entire batch. This prevents the issue where

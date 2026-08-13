@@ -92,7 +92,7 @@ def test_iter_entries_dedups_same_tid_across_pages() -> None:
     assert len(contexts) == 1
 
 
-def test_max_spot_transfer_with_unresolvable_asset_is_skipped(globaldb, caplog) -> None:
+def test_max_spot_transfer_with_unresolvable_asset_is_skipped(globaldb: Any, caplog: Any) -> None:
     api = HyperliquidAPI()
     address = string_to_evm_address('0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF')
     entry: dict[str, Any] = {

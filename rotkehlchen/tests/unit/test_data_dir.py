@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.constants.misc import (
@@ -22,7 +24,7 @@ REMNANT_FILES = ('file1.txt', 'file2.json')
 REMNANT_DIRS = ('random_dir1', 'random_dir2')
 
 
-def _create_old_directory_structure(data_dir):
+def _create_old_directory_structure(data_dir: Any) -> None:
     """Create the old directory tree structure to test against it"""
     global_data = data_dir / 'global_data'
     global_data.mkdir(parents=True, exist_ok=True)
@@ -72,14 +74,14 @@ def _create_old_directory_structure(data_dir):
         (data_dir / random_dir).mkdir()
 
 
-def _assert_dir_matches(directory, expected):
-    contents = set()
+def _assert_dir_matches(directory: Any, expected: Any) -> None:
+    contents: set[str] = set()
     contents.update(x.name for x in directory.iterdir())
 
     assert contents == set(expected)
 
 
-def _assert_directory_structure(data_dir):
+def _assert_directory_structure(data_dir: Any) -> None:
     """Asserts that the directory structure has been properly migrated"""
     for x in data_dir.iterdir():
         assert x.is_dir() and x.name in ('users', 'app', 'global', 'images', 'restructuring_remnants')  # noqa: E501
@@ -138,7 +140,7 @@ def _assert_directory_structure(data_dir):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_restructure_rotki_data_directory(data_dir):
+def test_restructure_rotki_data_directory(data_dir: Any) -> None:
     """Test that restructuring the rotki data directory works as expected"""
     _create_old_directory_structure(data_dir)
     maybe_restructure_rotki_data_directory(data_dir)

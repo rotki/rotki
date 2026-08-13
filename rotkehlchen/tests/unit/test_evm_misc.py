@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
 
-def test_asset_id_is_evm_token():
+def test_asset_id_is_evm_token() -> None:
     result = asset_id_is_evm_token('eip155:1/erc20:0x0F5D2fB29fb7d3CFeE444a200298f468908cC942')
     assert result == (
         ChainID.ETHEREUM,
@@ -79,7 +79,7 @@ def test_address_regex() -> None:
         assert (EVM_ADDRESS_REGEX.search(case) is not None) == expected_result
 
 
-def test_weth_is_supported():
+def test_weth_is_supported() -> None:
     """Check that weth is supported for all the evm chains with ETH"""
     assert (
         set(CHAIN_ID_TO_WETH_MAPPING.keys()) ==
@@ -94,7 +94,7 @@ def test_evm_transaction_chain_ids_match_supported_chain_ids() -> None:
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_is_safe_proxy(blockchain: ChainsAggregator):
+def test_is_safe_proxy(blockchain: ChainsAggregator) -> None:
     assert blockchain.ethereum.node_inquirer.is_safe_proxy_or_eoa(  # EOA
         address=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
     ) is True
@@ -124,7 +124,7 @@ def test_multicall_error_retry(
         gnosis_inquirer: GnosisInquirer,
         gnosis_manager_connect_at_start: list[tuple],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     """Test multicall retries with smaller chunks on errors."""
     wait_until_all_nodes_connected(gnosis_manager_connect_at_start, gnosis_inquirer)
 
@@ -138,7 +138,7 @@ def test_multicall_error_retry(
     call_count = 0
     original_call_contract = gnosis_inquirer.call_contract
 
-    def mock_call_contract(*args, **kwargs):
+    def mock_call_contract(*args: Any, **kwargs: Any) -> Any:
         nonlocal call_count
         call_count += 1
         if call_count == 1:
@@ -158,7 +158,7 @@ def test_multicall_error_retry(
 
     call_count = 0
 
-    def mock_call_contract_no_fail(*args, **kwargs):
+    def mock_call_contract_no_fail(*args: Any, **kwargs: Any) -> Any:
         nonlocal call_count
         call_count += 1
         return original_call_contract(*args, **kwargs)
@@ -183,7 +183,7 @@ def test_query_raises_request_too_large_when_gas_limit_seen(
 
     call_count = 0
 
-    def mock_method(web3, **kwargs):
+    def mock_method(web3: Any, **kwargs: Any) -> None:
         nonlocal call_count
         call_count += 1
         if call_count == 1:

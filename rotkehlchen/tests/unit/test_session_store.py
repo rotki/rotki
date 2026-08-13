@@ -1,6 +1,7 @@
 """Unit tests for the persistent single-active-session store (Docker cookie auth)."""
 import sqlite3
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,12 +28,12 @@ BASE = datetime(2023, 11, 14, 22, 13, 20, tzinfo=UTC)
 BASE_TS = int(BASE.timestamp())
 
 
-def _store(tmp_path) -> SessionStore:
+def _store(tmp_path: Any) -> SessionStore:
     return SessionStore(db_path=tmp_path / SESSION_DB_NAME, session_key=KEY)
 
 
 @pytest.mark.freeze_time(BASE)
-def test_login_mints_active_token(tmp_path):
+def test_login_mints_active_token(tmp_path: Any) -> None:
     store = _store(tmp_path)
     token = store.login('alice')
     claims = read_session_token(KEY, token)
@@ -43,7 +44,7 @@ def test_login_mints_active_token(tmp_path):
 
 
 @pytest.mark.freeze_time(BASE)
-def test_new_login_kicks_previous_session(tmp_path):
+def test_new_login_kicks_previous_session(tmp_path: Any) -> None:
     store = _store(tmp_path)
     first = read_session_token(KEY, store.login('alice'))
     second = read_session_token(KEY, store.login('alice'))
@@ -55,7 +56,7 @@ def test_new_login_kicks_previous_session(tmp_path):
 
 
 @pytest.mark.freeze_time(BASE)
-def test_is_active_rejects_unknown_user_and_wrong_sid(tmp_path):
+def test_is_active_rejects_unknown_user_and_wrong_sid(tmp_path: Any) -> None:
     store = _store(tmp_path)
     claims = read_session_token(KEY, store.login('alice'))
     assert claims is not None
@@ -64,7 +65,7 @@ def test_is_active_rejects_unknown_user_and_wrong_sid(tmp_path):
 
 
 @pytest.mark.freeze_time(BASE)
-def test_login_displaces_every_other_user(tmp_path):
+def test_login_displaces_every_other_user(tmp_path: Any) -> None:
     """A login ends every other user's session, not just the row it upserts.
 
     Core unlocks one user at a time, so any other row is a session that can no longer
@@ -94,7 +95,7 @@ def test_login_displaces_every_other_user(tmp_path):
     ) is False
 
 
-def test_reissue_rolls_exp_and_caps_at_absolute(tmp_path):
+def test_reissue_rolls_exp_and_caps_at_absolute(tmp_path: Any) -> None:
     with freeze_time(BASE):
         store = _store(tmp_path)
         claims = read_session_token(KEY, store.login('alice'))
@@ -102,19 +103,23 @@ def test_reissue_rolls_exp_and_caps_at_absolute(tmp_path):
     # a later request rolls the idle window forward
     later_ts = BASE_TS + SESSION_IDLE_TTL // 2
     with freeze_time(BASE + timedelta(seconds=SESSION_IDLE_TTL // 2)):
-        rolled = read_session_token(KEY, store.reissue('alice', claims.sid))
+        reissued_token = store.reissue('alice', claims.sid)
+        assert reissued_token is not None
+        rolled = read_session_token(KEY, reissued_token)
         assert rolled is not None
         assert rolled.sid == claims.sid  # same session, not a takeover
         assert rolled.exp == later_ts + SESSION_IDLE_TTL
     # near the absolute ceiling, the rolled exp is capped at abs, never beyond
     with freeze_time(BASE + timedelta(seconds=SESSION_ABSOLUTE_TTL - 10)):
-        capped = read_session_token(KEY, store.reissue('alice', claims.sid))
+        reissued_token = store.reissue('alice', claims.sid)
+        assert reissued_token is not None
+        capped = read_session_token(KEY, reissued_token)
         assert capped is not None
         assert capped.exp == BASE_TS + SESSION_ABSOLUTE_TTL
 
 
 @pytest.mark.freeze_time(BASE)
-def test_reissue_rejects_non_active_sid(tmp_path):
+def test_reissue_rejects_non_active_sid(tmp_path: Any) -> None:
     store = _store(tmp_path)
     store.login('alice')
     assert store.reissue('alice', 'not-the-active-sid') is None
@@ -122,7 +127,7 @@ def test_reissue_rejects_non_active_sid(tmp_path):
 
 
 @pytest.mark.freeze_time(BASE)
-def test_mcp_token_is_domain_separated_and_linked_to_session(tmp_path) -> None:
+def test_mcp_token_is_domain_separated_and_linked_to_session(tmp_path: Any) -> None:
     store = _store(tmp_path)
     session_claims = read_session_token(KEY, store.login('alice'))
     assert session_claims is not None
@@ -155,7 +160,7 @@ def test_mcp_token_is_domain_separated_and_linked_to_session(tmp_path) -> None:
     assert store.is_mcp_active(replacement_claims.username, replacement_claims.sid) is False
 
 
-def test_persisted_session_check_closes_connection(tmp_path) -> None:
+def test_persisted_session_check_closes_connection(tmp_path: Any) -> None:
     connection = MagicMock()
     connection.execute.return_value.fetchone.return_value = (1,)
     with patch('rotkehlchen.api.session_store.sqlite3.connect', return_value=connection):
@@ -174,7 +179,7 @@ def test_read_session_token_rejects_non_ascii_token(token: str) -> None:
 
 
 @pytest.mark.freeze_time(BASE)
-def test_revoke_removes_session(tmp_path):
+def test_revoke_removes_session(tmp_path: Any) -> None:
     store = _store(tmp_path)
     claims = read_session_token(KEY, store.login('alice'))
     assert claims is not None
@@ -182,7 +187,7 @@ def test_revoke_removes_session(tmp_path):
     assert store.is_active('alice', claims.sid) is False
 
 
-def test_session_survives_restart(tmp_path):
+def test_session_survives_restart(tmp_path: Any) -> None:
     db_path = tmp_path / SESSION_DB_NAME
     with freeze_time(BASE):
         claims = read_session_token(KEY, SessionStore(db_path=db_path, session_key=KEY).login('alice'))  # noqa: E501
@@ -192,7 +197,7 @@ def test_session_survives_restart(tmp_path):
         assert reopened.is_active('alice', claims.sid) is True
 
 
-def test_expired_sessions_pruned_on_load(tmp_path):
+def test_expired_sessions_pruned_on_load(tmp_path: Any) -> None:
     db_path = tmp_path / SESSION_DB_NAME
     with freeze_time(BASE):
         claims = read_session_token(KEY, SessionStore(db_path=db_path, session_key=KEY).login('alice'))  # noqa: E501
@@ -204,7 +209,7 @@ def test_expired_sessions_pruned_on_load(tmp_path):
 
 
 @pytest.mark.freeze_time(BASE)
-def test_version_mismatch_recreates_table(tmp_path):
+def test_version_mismatch_recreates_table(tmp_path: Any) -> None:
     db_path = tmp_path / SESSION_DB_NAME
     SessionStore(db_path=db_path, session_key=KEY).login('alice')
     # simulate a schema bump: an older/newer version must discard the disposable rows

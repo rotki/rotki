@@ -1,6 +1,6 @@
 import json
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import _patch, patch
 
 import pytest
@@ -55,7 +55,7 @@ def fixture_check_all_indexers(request: pytest.FixtureRequest) -> Iterator[None]
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_contract_abi(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     """Check that all the indexers properly retrieve the abi of a verified contract and return
     None for a non-contract address.
@@ -73,7 +73,7 @@ def test_get_contract_abi(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_contract_creation_hash(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     """Check that all the indexers properly retrieve the abi of a verified contract and return
     None for a non-contract address.
@@ -91,7 +91,7 @@ def test_get_contract_creation_hash(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_has_activity(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     """Check that all indexers properly return the correct account activity."""
     assert ethereum_inquirer.has_activity(
@@ -107,7 +107,7 @@ def test_has_activity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_code(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     assert ethereum_inquirer.get_code(
         account=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
@@ -117,7 +117,7 @@ def test_get_code(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_call_contract(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     assert ethereum_inquirer._call_contract(
         web3=None,
@@ -130,7 +130,7 @@ def test_call_contract(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_latest_block_number(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     assert ethereum_inquirer.get_latest_block_number() == 24069561
 
@@ -138,7 +138,7 @@ def test_get_latest_block_number(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_block_by_number(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     """Check that all indexers properly return block data by block number."""
     block = ethereum_inquirer.get_block_by_number(num=10304885)
@@ -150,7 +150,7 @@ def test_get_block_by_number(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_receipt(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     raw_receipt = ethereum_inquirer.get_transaction_receipt(
         tx_hash=deserialize_evm_tx_hash('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89'),
@@ -163,7 +163,7 @@ def test_get_transaction_receipt(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_by_hash(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     tx, _ = ethereum_inquirer.get_transaction_by_hash(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c')),  # noqa: E501
@@ -192,7 +192,7 @@ def test_get_transaction_by_hash_l1_fee(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_logs(
         ethereum_inquirer: EthereumInquirer,
-        check_all_indexers,
+        check_all_indexers: Any,
 ) -> None:
     assert len(events := ethereum_inquirer.get_logs(
         contract_address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
