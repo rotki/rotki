@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin
 
@@ -13,7 +13,7 @@ T_Address = TypeVar('T_Address')
 T_NodeInquirer = TypeVar('T_NodeInquirer', bound=RPCManagerMixin)
 
 
-class ChainManager(ABC, Generic[T_Address]):  # noqa: UP046
+class ChainManager[T_Address](ABC):
 
     @abstractmethod
     def query_balances(
@@ -39,7 +39,7 @@ class ChainManagerWithTransactions(ChainManager[T_Address]):
         """
 
 
-class ChainManagerWithNodesMixin(Generic[T_NodeInquirer]):  # noqa: UP046
+class ChainManagerWithNodesMixin[T_NodeInquirer: RPCManagerMixin]:  # noqa: B903
     """Mixin for chain managers that use a node inquirer that inherits from RPCManagerMixin."""
 
     def __init__(self, node_inquirer: T_NodeInquirer) -> None:

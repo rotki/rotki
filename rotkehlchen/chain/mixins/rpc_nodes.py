@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Final, Generic, Literal, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar
 from urllib.parse import urlparse
 
 import requests
@@ -112,7 +112,7 @@ def _is_rate_limit_error(exc: Exception) -> bool:
     return any(p in err for p in RATE_LIMIT_PATTERNS)
 
 
-class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):  # noqa: UP046
+class RPCNode[WEB3_NODE_TYPE: (Web3, Client)](NamedTuple):
     """This represents an RPC node with its capabilities."""
     rpc_client: WEB3_NODE_TYPE
     is_pruned: bool
@@ -120,7 +120,7 @@ class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):  # noqa: UP046
     supports_program_accounts: bool = False
 
 
-class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):  # noqa: UP046
+class RPCManagerMixin[WEB3_NODE_TYPE: (Web3, Client)](ABC):
     """
     Mixin that provides logic for managing RPC nodes. It tracks active connections
     and implements the core mechanisms for connecting to them.

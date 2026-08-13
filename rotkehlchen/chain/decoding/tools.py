@@ -1,7 +1,7 @@
 import logging
 import threading
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -26,7 +26,7 @@ E = TypeVar('E')  # For events
 A = TypeVar('A')  # For addresses
 
 
-class BaseDecoderTools(ABC, Generic[T, A, R, E]):  # noqa: UP046
+class BaseDecoderTools[T, A, R, E](ABC):
     """Base class for chain-agnostic decoder tools providing common state and functionality"""
 
     def __init__(
