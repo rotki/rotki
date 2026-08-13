@@ -18,7 +18,6 @@ const { existsSyncMock, statSyncMock, readdirSyncMock, execSyncMock, buildCargoE
 const CARGO_ENV = { Path: 'C:\\Strawberry\\perl\\bin;C:\\Windows' };
 vi.mock('@shared/cargo-env', () => ({
   buildCargoEnv: buildCargoEnvMock,
-  STRAWBERRY_MISSING_WARNING: 'strawberry missing',
 }));
 
 // `statSync`/`readdirSync` are stubbed alongside `existsSync` because the core

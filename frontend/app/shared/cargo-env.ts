@@ -64,8 +64,3 @@ export function buildCargoEnv(): Record<string, string> | null | undefined {
   merged[pathKey] = [...existing, ...parts].join(';');
   return merged;
 }
-
-/** Shared wording so every cargo call site reports a missing Strawberry the same way. */
-export const STRAWBERRY_MISSING_WARNING
-  = 'Strawberry Perl not found at C:\\Strawberry - the vendored OpenSSL build will likely fail. '
-    + 'Install Strawberry Perl from https://strawberryperl.com and re-run.';
