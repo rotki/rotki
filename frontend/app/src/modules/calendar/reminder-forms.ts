@@ -25,9 +25,9 @@ const SECONDS: Record<ReminderUnit, number> = {
 };
 
 /** A reminder may be set at most thirty days before its event. */
-export const MAX_SECONDS_BEFORE = 60 * 60 * 24 * 30;
+const MAX_SECONDS_BEFORE = 60 * 60 * 24 * 30;
 
-export function secondsIn(unit: ReminderUnit): number {
+function secondsIn(unit: ReminderUnit): number {
   return SECONDS[unit];
 }
 
@@ -66,7 +66,7 @@ export interface ReminderMessages {
   amountTooSmall: string;
 }
 
-export interface ReminderRowsState {
+interface ReminderRowsState {
   rows: ReminderRow[];
 }
 
@@ -74,7 +74,7 @@ export interface ReminderRowsState {
  * The ceiling depends on the unit the row is set to, so it is checked per row rather than by a rule
  * on the amount alone.
  */
-export function reminderRowsSchema(messages: ReminderMessages): ZodType {
+export function reminderRowsSchema(messages: ReminderMessages): ZodType<ReminderRowsState> {
   const row = z.object({
     amount: z.string(),
     unit: z.enum(REMINDER_UNITS),
