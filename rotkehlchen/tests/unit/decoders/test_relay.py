@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -23,7 +24,7 @@ from rotkehlchen.types import (
 )
 
 
-def test_relay_solver_configuration():
+def test_relay_solver_configuration() -> None:
     assert RELAY_CPT_DETAILS.image == 'relay.svg'
     assert set(RELAY_SOLVERS) == {
         ChainID.ETHEREUM,
@@ -56,7 +57,7 @@ def test_relay_solver_configuration():
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_relay_bridge_receive(ethereum_inquirer, ethereum_accounts):
+def test_relay_bridge_receive(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -102,7 +103,7 @@ def test_relay_bridge_receive(ethereum_inquirer, ethereum_accounts):
 )])
 @pytest.mark.parametrize('base_accounts', [['0x4179Ec0c2137C63934Dc765BC7ECe7b70c92EE2c']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_relay_bridge_receive_on_base(base_inquirer, base_accounts):
+def test_relay_bridge_receive_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     with patch(
         'rotkehlchen.chain.evm.transactions.'
         'EvmTransactions._query_and_save_internal_transactions_for_parent_hash',

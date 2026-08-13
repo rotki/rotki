@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -20,7 +22,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4e7DF0FDa2d203f5DFbaa34b9FB64DDe5133196e']])
-def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_accounts):
+def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xbe5b747193c68a7d1844053996e1a27a1279a4f1743f4b9a00e5a14152ee8641')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -63,7 +65,7 @@ def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_a
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x4e7DF0FDa2d203f5DFbaa34b9FB64DDe5133196e']])
-def test_receive_eth_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_receive_eth_on_arbitrum_one(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x30505174f2f82a6513f21eb5177e59935a6da95d057e4c1972e65da90ea1c547')),  # noqa: E501
@@ -94,7 +96,7 @@ def test_receive_eth_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x5EA45c8E36704d7F4053Bb0e23cDd96E4d8b80F7']])
-def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdb8e29f27a7b7b416f168e8135347703268a142b6776503e26419dbfc43bcabf')),  # noqa: E501
@@ -139,7 +141,7 @@ def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x5EA45c8E36704d7F4053Bb0e23cDd96E4d8b80F7']])
-def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_receive_eth_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2698916bd8d658ce6cfe032e5526fa345b3656a849870e72b1e853d22efdd7ac')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -182,7 +184,7 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xBEEC919d69FB1a5195964ee90959C413CDbACe28']])
-def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_accounts):
+def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x2eb4686e6b9857f02c1c8a035dc1ac7dcaf160fd52248b56a76de7774482390d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -239,7 +241,7 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
-def test_receive_erc20_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_receive_erc20_on_arbitrum_one(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x80e6c0835c3ead90dde524c3dfe49a067fd5b5cda93d5a223707e686d910d8a2')),  # noqa: E501
@@ -271,13 +273,13 @@ def test_receive_erc20_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xbD91C9DF3C30F0e43B19b1dd05888CF9b647b781']])
-def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbitrum_one_accounts, caplog):  # noqa: E501
+def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any, caplog: Any) -> None:  # noqa: E501
     """Test that LPT withdrawals from arbitrum to L1 work fine"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x90ca8a767118c27aa4f6370bc06d9f952ab88a9219431f68d8e2d33b4a15b395')),  # noqa: E501
     )
-    gateway_address = '0x6D2457a4ad276000A615295f7A80F79E48CcD318'
+    gateway_address = string_to_evm_address('0x6D2457a4ad276000A615295f7A80F79E48CcD318')
     user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
@@ -333,7 +335,7 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     """
     Test that DAI withdrawals from arbitrum to L1 work fine. This is just to test that
     our code is not token/gateway specific"""
@@ -381,7 +383,7 @@ def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbD91C9DF3C30F0e43B19b1dd05888CF9b647b781']])
-def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_receive_erc20_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa235be4bde09d215518485acf55a577ca0662f27ff4af2a33f6867e4847596b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -424,7 +426,7 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_receive_erc20_on_ethereum_old_bridge(ethereum_inquirer, ethereum_accounts):
+def test_receive_erc20_on_ethereum_old_bridge(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xdd71f6b50a24b2f6704819579cb4c0d27cf3d56bd3ba03fe8a7a9f9dc56eea52')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas, withdraw_amount = ethereum_accounts[0], TimestampMS(1655573929000), '0.003627235640125152', '39566.332611058195231384'  # noqa: E501

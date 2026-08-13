@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4c1a316De360E08817eB88dD31A0E7305005fB65']])
-def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_bridge_dai_from_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe17f61edb9fe278720679ecfd5498f75082e38bf4779e5e6403a551f5084ee23')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -157,7 +157,7 @@ def test_bridge_dai_from_ethereum_post_usds_upgrade(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfF025244b556F0CD4617FBfE67F7986D7292A3E4']])
-def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
+def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test the case where a simple transfer to the bridge is recognized as a bridging event"""
     tx_hash = deserialize_evm_tx_hash('0x196e7d687e1e2ce280dbe7f52b6ffe5a61d3a851b38740a37d1d00caffce7562')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -201,7 +201,7 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x07AD02e0C1FA0b09fC945ff197E18e9C256838c6']])
-def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_withdraw_dai_to_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xb151a9294e7cdf9b62d5716eff3d69cc96c6fa3f1279b1d36c16896bd9cb3b32')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -244,7 +244,7 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x07AD02e0C1FA0b09fC945ff197E18e9C256838c6']])
-def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_withdraw_dai_from_gnosis(gnosis_inquirer: Any, gnosis_accounts: Any, allow_gnosis_etherscan: Any) -> None:  # noqa: E501
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x1a7014cbc1e6af2558c3a3cafd7fe87d8d67d27242b5abe8af0d4bf51a5230f6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -288,7 +288,7 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x7DA9A33d15413F499299687cC9d81DE84684E28E']])
-def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_deposit_dai_to_gnosis(gnosis_inquirer: Any, gnosis_accounts: Any, allow_gnosis_etherscan: Any) -> None:  # noqa: E501
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x5892a695860f6087a2d93140f05e6365142ff77fd7128e39dbc03128d5797ac4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

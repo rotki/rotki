@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -16,7 +18,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
+def test_optimism_to_arb_bridge(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe8c9cffe2a2bbccf81cf8dd34f9b89c01b00ae3f0ff74eab089de96f4624165c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address = optimism_accounts[0]
@@ -59,7 +61,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_bridge_eth(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb1e29bebca0300ff02ee478dfa6c0c2197169761e1c0dcc87418c53a6530d3a5')),  # noqa: E501
@@ -104,7 +106,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
-def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
+def test_polygon_to_gnosis_bridge(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xafaf61e1f897f394780d069627d1ac1e5f68ad31a00ed72533ce4c709d381a44',
     )

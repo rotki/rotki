@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 def test_across_bridge_receive_on_base(
         base_inquirer: BaseInquirer,
         base_accounts: list[ChecksumEvmAddress],
-        allow_base_routescan,
-):
+        allow_base_routescan: Any,
+) -> None:
     """Test that a Across bridge fill (withdrawal) on Base is decoded correctly.
 
     Transaction: 0xcc6297f80c413865b7dcc269f305e79216befd98d393a2ce89fe67131c6b4172
@@ -77,7 +77,7 @@ def test_across_bridge_receive_on_base(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB']])
-def test_across_relayed_bridge_receive_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_relayed_bridge_receive_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x742fbbe405ea7a547e30895719e3de09b852f5540a67b6bbd0cc8546131c6318')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -105,7 +105,7 @@ def test_across_relayed_bridge_receive_on_ethereum(ethereum_inquirer, ethereum_a
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf70da97812CB96acDF810712Aa562db8dfA3dbEF']])
-def test_across_relayed_bridge_receive_usdc_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_relayed_bridge_receive_usdc_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xee7641ad46d4367a371a7320767323a0a7cb1f5301b27235e884551d715b2e0f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -133,7 +133,7 @@ def test_across_relayed_bridge_receive_usdc_on_ethereum(ethereum_inquirer, ether
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6b21bb0D79C543B13DEE153700788D2c008633E5']])
-def test_across_bridge_deposit_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_bridge_deposit_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x01456be6d500a21b91941e569df54ec4760868d4b51ba9ef2ddab59d33d3c21f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -176,7 +176,7 @@ def test_across_bridge_deposit_on_ethereum(ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2b0989d09867f9a54EcB7c1b5F2F5960f199e6a8']])
-def test_across_remove_liquidity_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_remove_liquidity_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x5a10ed0c32f81029b6693c60289817f24d45e937b926ff80b9732b9280651610')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -225,7 +225,7 @@ def test_across_remove_liquidity_on_ethereum(ethereum_inquirer, ethereum_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x58D7Fc9319c926e21cea96A32B230B71B244196D']])
-def test_across_add_liquidity_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_add_liquidity_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x17244a522c12ab3edc12ddf0722cdfbb95eb5068a56159f4e551cb0265912071')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -274,7 +274,7 @@ def test_across_add_liquidity_on_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa25Ad78E8BF1Ff9e5872662934eC4984b92611Ff']])
-def test_across_stake_lp_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_stake_lp_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7d5719bed42d5013ea52fa6dc5d868b28795ed6d2f784214ebbcfd7c9087bbf1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -310,7 +310,7 @@ def test_across_stake_lp_on_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x8780b720095923F4c1D6D84b52772aC188914d67']])
-def test_across_unstake_lp_on_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_across_unstake_lp_on_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa28735c30fb6a83b490bfc669259315e1ed1ac66d5783e0c478f38ce84dfb12d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]

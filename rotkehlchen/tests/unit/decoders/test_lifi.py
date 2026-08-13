@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -25,7 +26,7 @@ WSTETH_GNOSIS = Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946e
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x58ea4953f07A23232Ff6FdFcE008BBfE010f801c']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -99,7 +100,7 @@ def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer, arbitrum_one_account
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('monad_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_bridge_out(monad_inquirer, monad_accounts):
+def test_lifi_bridge_out(monad_inquirer: Any, monad_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=monad_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -173,7 +174,7 @@ def test_lifi_bridge_out(monad_inquirer, monad_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xBDaB13eb71AaA83E6917A4E7a29C00b9490DefC5']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_bridge_receive(ethereum_inquirer, ethereum_accounts):
+def test_lifi_bridge_receive(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -219,7 +220,7 @@ def test_lifi_bridge_receive(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_intent_refund(base_inquirer, base_accounts):
+def test_lifi_intent_refund(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xe3bf559268ec5c8e365945d28825c504e0a86d67e363274c2a6ee8509d25a4bb',
     )
@@ -248,7 +249,7 @@ def test_lifi_intent_refund(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x3163Bb273E8D9960Ce003fD542bF26b4C529f515']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_mayan_refund(optimism_inquirer, optimism_accounts):
+def test_lifi_mayan_refund(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -276,7 +277,7 @@ def test_lifi_mayan_refund(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_arbitrum_native_value_is_not_a_fee(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_lifi_arbitrum_native_value_is_not_a_fee(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -313,7 +314,7 @@ def test_lifi_arbitrum_native_value_is_not_a_fee(arbitrum_one_inquirer, arbitrum
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_bridge_arbitrum_to_ethereum(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_lifi_bridge_arbitrum_to_ethereum(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(
@@ -359,7 +360,7 @@ def test_lifi_bridge_arbitrum_to_ethereum(arbitrum_one_inquirer, arbitrum_one_ac
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_lifi_swap(gnosis_inquirer, gnosis_accounts):
+def test_lifi_swap(gnosis_inquirer: Any, gnosis_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash(

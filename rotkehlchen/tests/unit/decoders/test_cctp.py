@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 def test_deposit_usdc_from_ethereum_to_arbitrum_one(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xac7bb45701a4311a2c662377a4764ac694a8f6438270c1ee8a4100d4a000a511')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -72,7 +72,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
 def test_receive_usdc_on_arbitrum_one_from_ethereum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9da8beb8e9ad2428ad2de132d920d27c2d6c7e0604d2977669aab219e51fd323')),  # noqa: E501
@@ -118,7 +118,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
 def test_deposit_usdc_from_polygon_to_arbitrum_one(
         polygon_pos_inquirer: PolygonPOSInquirer,
         polygon_pos_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x90128b2988d709e7719dc157aaf08ea76792934cac4e47fa01e93c80d21d30fd')),  # noqa: E501
@@ -165,7 +165,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
 def test_receive_usdc_on_arbitrum_one_from_polygon(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xad6aa5691bde79c4c97be04871d92e1cc2fa8e43984834716d09001da309dce0')),  # noqa: E501
@@ -211,7 +211,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
 def test_receive_usdc_on_arbitrum_one_from_polygon_2(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd067d3d8ed104af374b7cf101b8dea72ee4d9cf11a3b18dea9b2de4bb4d1e362')),  # noqa: E501
