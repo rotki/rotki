@@ -18,7 +18,6 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const { t } = useI18n({ useScope: 'global' });
 
-const chain = useRefPropVModel(modelValue, 'chain');
 const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
 const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 
@@ -32,7 +31,6 @@ const showDateRangePicker = computed<boolean>(() => shouldShowDateRangePicker(fa
 const rules = computed(() => {
   const timestampRules = get(showDateRangePicker) ? { required } : {};
   return {
-    chain: { required },
     exchange: { required },
     fromTimestamp: timestampRules,
     toTimestamp: timestampRules,
@@ -40,7 +38,6 @@ const rules = computed(() => {
 });
 
 const states = {
-  chain,
   exchange,
   fromTimestamp,
   toTimestamp,
