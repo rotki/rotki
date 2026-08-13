@@ -2349,17 +2349,6 @@
       },
       "title": "blockchain"
     },
-    "completeness": {
-      "missing_prices": "{count} asset without a price | {count} assets without a price",
-      "missing_prices_dialog": {
-        "add_price": "Add price",
-        "description": "These assets had an oracle price before but currently report none. Add a manual price to restore their value.",
-        "empty": "All prices resolved",
-        "open_manager": "Open price manager",
-        "title": "Missing prices"
-      },
-      "undecoded": "{count} undecoded transaction | {count} undecoded transactions"
-    },
     "exchange_balances": {
       "add": "Add an exchange",
       "refresh": "Refresh {exchange} balances",

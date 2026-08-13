@@ -1,6 +1,5 @@
 import type { Collection } from '@/modules/core/common/collection';
 import {
-  AssetOraclePriceExistence,
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,
   type HistoricalPriceFormPayload,
@@ -25,7 +24,6 @@ interface UseAssetPricesApiReturn {
   editHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
   deleteHistoricalPrice: (payload: HistoricalPriceDeletePayload) => Promise<boolean>;
   fetchOraclePrices: (query?: OraclePricesQuery) => Promise<Collection<OraclePriceEntry>>;
-  assetsHadOraclePrice: (identifiers: string[]) => Promise<AssetOraclePriceExistence>;
   fetchLatestPrices: (payload?: Partial<ManualPricePayload>) => Promise<ManualPrice[]>;
   addLatestPrice: (payload: ManualPriceFormPayload) => Promise<boolean>;
   deleteLatestPrice: (asset: string) => Promise<boolean>;
@@ -75,19 +73,6 @@ export function useAssetPricesApi(): UseAssetPricesApiReturn {
     return mapCollectionResponse(OraclePricesCollectionResponse.parse(response));
   };
 
-  const assetsHadOraclePrice = async (identifiers: string[]): Promise<AssetOraclePriceExistence> => {
-    const response = await api.post<AssetOraclePriceExistence>(
-      '/prices/oracle/existence',
-      { identifiers },
-      {
-        retry: true,
-        target: RequestTarget.COLIBRI,
-      },
-    );
-
-    return AssetOraclePriceExistence.parse(response);
-  };
-
   const fetchLatestPrices = async (payload?: Partial<ManualPricePayload>): Promise<ManualPrice[]> => {
     const response = await api.post<ManualPrice[]>(
       '/assets/prices/latest/all',
@@ -120,7 +105,6 @@ export function useAssetPricesApi(): UseAssetPricesApiReturn {
   return {
     addHistoricalPrice,
     addLatestPrice,
-    assetsHadOraclePrice,
     deleteHistoricalPrice,
     deleteLatestPrice,
     editHistoricalPrice,
