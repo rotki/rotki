@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BEETS_V3
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BEETS_V2, CPT_BEETS_V3
 from rotkehlchen.constants.assets import A_S
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -119,6 +119,57 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
         notes=f'Receive {receive_amount} wS as the result of a swap in Balancer v3',
         counterparty=CPT_BEETS_V3,
         address=pool,
+    )]
+
+
+@pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
+@pytest.mark.parametrize('sonic_accounts', [['0x725AbD8eb83d0f22E905B1e60884b98c8314CB93']])
+def test_beets_v2_swap(sonic_inquirer, sonic_accounts):
+    """A Beets v2 single-hop swap of stS for scUSD through the vault."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6c583ce6f57b6ffd0b48be4cf6083a93d9926ba5eccaaa066d74bbad3d0b1101')),  # noqa: E501
+    )
+    user = sonic_accounts[0]
+    vault = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1786620857000)),
+        location=Location.SONIC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_S,
+        amount=FVal(gas_amount := '0.008759322'),
+        location_label=user,
+        notes=f'Burn {gas_amount} S for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
+        amount=FVal(spend_amount := '230.76923'),
+        location_label=user,
+        notes=f'Swap {spend_amount} stS in Balancer v2',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.SONIC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset='eip155:146/erc20:0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE',
+        amount=FVal(receive_amount := '5.643006'),
+        location_label=user,
+        notes=f'Receive {receive_amount} scUSD as the result of a swap in Balancer v2',
+        counterparty=CPT_BEETS_V2,
+        address=vault,
     )]
 
 
