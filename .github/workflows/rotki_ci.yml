@@ -185,6 +185,12 @@ jobs:
         working-directory: ./frontend
         run: pnpm run --filter rotki check:linked-keys
 
+      # The app typecheck filters to `rotki`, so the dev-proxy is only covered here.
+      - name: dev-proxy
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        working-directory: ./frontend
+        run: pnpm run test:proxy
+
   check-backend-mapping-keys:
     name: 'Backend mapping keys'
     needs: [ 'check-changes' ]
