@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BEETS_V2, CPT_BEETS_V3
-from rotkehlchen.chain.sonic.modules.wson.constants import CPT_WSON
+from rotkehlchen.chain.sonic.modules.ws.constants import CPT_WS
 from rotkehlchen.constants.assets import A_S, A_WS
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -293,7 +293,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
 
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0x5541B7D1F2f0d5A6bA921156ce48D97f9D212e02']])
-def test_wson_wrap(sonic_inquirer, sonic_accounts):
+def test_ws_wrap(sonic_inquirer, sonic_accounts):
     """Wrapping S to WS."""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=sonic_inquirer,
@@ -323,7 +323,7 @@ def test_wson_wrap(sonic_inquirer, sonic_accounts):
         amount=FVal(wrapped_amount := '12923'),
         location_label=user,
         notes=f'Wrap {wrapped_amount} S in wS',
-        counterparty=CPT_WSON,
+        counterparty=CPT_WS,
         address=WS_ADDRESS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -336,14 +336,14 @@ def test_wson_wrap(sonic_inquirer, sonic_accounts):
         amount=FVal(wrapped_amount),
         location_label=user,
         notes=f'Receive {wrapped_amount} wS',
-        counterparty=CPT_WSON,
+        counterparty=CPT_WS,
         address=WS_ADDRESS,
     )]
 
 
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0xCB4fF53cfC5747611CFD2d89dA9114c243Bea3d5']])
-def test_wson_unwrap(sonic_inquirer, sonic_accounts):
+def test_ws_unwrap(sonic_inquirer, sonic_accounts):
     """Unwrapping WS to S."""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=sonic_inquirer,
@@ -373,7 +373,7 @@ def test_wson_unwrap(sonic_inquirer, sonic_accounts):
         amount=FVal(unwrapped_amount := '538.947586765268183953'),
         location_label=user,
         notes=f'Unwrap {unwrapped_amount} wS',
-        counterparty=CPT_WSON,
+        counterparty=CPT_WS,
         address=WS_ADDRESS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -386,7 +386,7 @@ def test_wson_unwrap(sonic_inquirer, sonic_accounts):
         amount=FVal(unwrapped_amount),
         location_label=user,
         notes=f'Receive {unwrapped_amount} S',
-        counterparty=CPT_WSON,
+        counterparty=CPT_WS,
         address=WS_ADDRESS,
     )]
 
