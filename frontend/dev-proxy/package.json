@@ -8,6 +8,8 @@
   "author": "Rotki Solutions GmbH",
   "scripts": {
     "serve": "tsx --env-file-if-exists=.env --watch ./src/index.ts",
+    "test:smoke": "node test/smoke.mjs",
+    "test:unit": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -18,6 +20,7 @@
     "@types/node": "catalog:",
     "consola": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

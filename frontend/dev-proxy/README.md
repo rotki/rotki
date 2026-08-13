@@ -146,11 +146,34 @@ request verb. The verb's value can either be an object or an array:
 - The proxy is a plain `node:http` server in front of `httpxy`, the same
   dependency the electron main process uses for its own dev proxy. There is no
   web framework: the routing is one locally-served path plus a catch-all.
-- Mock endpoint implementations live in `src/mocked-apis/`. The statistics
-  renderer is answered locally before anything is forwarded; the async-mock
-  handlers run on the `proxyRes` event and rewrite the backend's response.
-- Request bodies are read up front so the handlers can inspect `async_query`,
+- `src/mock-engine.ts` holds all the mocking logic as pure functions over its
+  own state, so it is unit-tested directly. `src/index.ts` is only wiring.
+- The statistics renderer (`src/mocked-apis/`) is answered locally before
+  anything is forwarded, and a preflight for a mocked path is answered from the
+  CORS headers alone.
+- Responses are proxied with `selfHandleResponse`, and buffered only for the
+  requests the engine can rewrite (the task endpoints and mocked paths), so
+  everything else still streams straight through. A rewritten body is sent with
+  its own `content-length`.
+- Request bodies are read up front so the engine can inspect `async_query`,
   then replayed to the backend through httpxy's `buffer` option, so the
   forwarded request stays byte-identical.
+- Mock keys are matched exactly: on the full url first, so a key may pin a
+  query string, then on the path alone.
+- A mocked async query reports as pending for
+  `DEFAULT_TASK_COMPLETION_MS` (8s) and completed after that.
 - WebSocket forwarding is enabled (`ws: true`), so the backend's `/ws/`
   endpoint reaches the renderer through the same proxy hop.
+
+## Tests
+
+```bash
+pnpm run test:proxy                              # from frontend/: typecheck + unit tests (what CI runs)
+pnpm run --filter @rotki/dev-proxy test:unit     # vitest, the mock engine and helpers
+pnpm run --filter @rotki/dev-proxy test:smoke    # the proxy end to end against a stub backend
+```
+
+The smoke test starts the real proxy and a stub backend on ports 14998/14999 and
+covers what the unit tests cannot reach: pass-through, the locally served
+statistics route, CORS, body forwarding, chunked responses and websocket
+upgrades. It writes a temporary `async-mock.json` only if you do not have one.

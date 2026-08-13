@@ -31,6 +31,7 @@
     "test": "pnpm run test:unit && pnpm run test:e2e",
     "test:contract": "pnpm run --filter rotki test:contract",
     "test:unit": "pnpm run --filter rotki test:unit:run",
+    "test:proxy": "pnpm run --filter @rotki/dev-proxy typecheck && pnpm run --filter @rotki/dev-proxy test:unit",
     "test:unit:watch": "pnpm run --filter rotki test:unit",
     "test:e2e": "pnpm run --filter rotki test:e2e",
     "test:e2e:shards": "pnpm run --filter rotki test:e2e:shards",
