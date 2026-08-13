@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
@@ -28,8 +29,11 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -92,41 +96,48 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             out_asset, out_amount, in_asset, in_amount = self.ftusd, ftusd_amount, collateral, collateral_amount  # noqa: E501
 
         out_event = in_event = None
-        for event in context.decoded_events:
+        for event in context.decoded_events:  # find both legs before mutating anything
             if (
+                    out_event is None and
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == from_address and
                     event.asset == out_asset and
                     event.amount == out_amount
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {out_amount} {out_asset.symbol} in {FLYING_TULIP_LABEL}'
-                event.counterparty = CPT_FLYING_TULIP
-                event.address = context.tx_log.address
                 out_event = event
             elif (
+                    in_event is None and
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == to_address and
                     event.asset == in_asset and
                     event.amount == in_amount
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {in_amount} {in_asset.symbol} as the result of a swap in {FLYING_TULIP_LABEL}'  # noqa: E501
-                event.counterparty = CPT_FLYING_TULIP
-                event.address = context.tx_log.address
                 in_event = event
+            if out_event is not None and in_event is not None:
+                break
 
         if out_event is None or in_event is None:
+            # Only decode complete swaps: with a single leg (the other party is
+            # untracked) the wallet movement is left as a plain transfer.
             log.warning(
                 'Failed to find both sides of a %s ftUSD mint/redeem in transaction %s',
                 FLYING_TULIP_LABEL,
                 context.transaction,
             )
             return DEFAULT_EVM_DECODING_OUTPUT
+
+        out_event.event_type = HistoryEventType.TRADE
+        out_event.event_subtype = HistoryEventSubType.SPEND
+        out_event.notes = f'Swap {out_amount} {out_asset.symbol} in {FLYING_TULIP_LABEL}'
+        out_event.counterparty = CPT_FLYING_TULIP
+        out_event.address = context.tx_log.address
+        in_event.event_type = HistoryEventType.TRADE
+        in_event.event_subtype = HistoryEventSubType.RECEIVE
+        in_event.notes = f'Receive {in_amount} {in_asset.symbol} as the result of a swap in {FLYING_TULIP_LABEL}'  # noqa: E501
+        in_event.counterparty = CPT_FLYING_TULIP
+        in_event.address = context.tx_log.address
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
@@ -165,13 +176,26 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token=fee_token,
         )
+        deposited_assets = {  # the amounts the vault deposits of this transaction report
+            token_normalized_value(
+                token_amount=int.from_bytes(tx_log.data[0:32]),
+                token=fee_token,
+            )
+            for tx_log in context.all_logs
+            if (
+                tx_log.address == context.tx_log.address and
+                tx_log.topics[0] == DEPOSIT_TOPIC
+            )
+        }
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == user and
                     event.asset == fee_token and
-                    event.amount > fee_amount
+                    event.address == context.tx_log.address and  # the transfer into the vault
+                    event.amount > fee_amount and
+                    event.amount - fee_amount in deposited_assets  # ties the fee to its stake
             ):
                 event.amount -= fee_amount
                 context.decoded_events.append(self.base.make_event_from_transaction(
@@ -182,7 +206,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     asset=fee_token,
                     amount=fee_amount,
                     location_label=user,
-                    notes=f'Pay {fee_amount} {fee_token.symbol} as {FLYING_TULIP_LABEL} relayer fee',  # noqa: E501
+                    notes=f'Spend {fee_amount} {fee_token.symbol} as a {FLYING_TULIP_LABEL} relayer fee',  # noqa: E501
                     counterparty=CPT_FLYING_TULIP,
                     address=context.tx_log.address,
                 ))
@@ -191,55 +215,9 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_vault_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
-        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[2])):  # vault share owner  # noqa: E501
-            return DEFAULT_EVM_DECODING_OUTPUT
-
-        assets_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=self.ftusd,
-        )
-        shares_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token=(vault_token := self.base.get_or_create_evm_token(
-                address=self.deployment.staking_vault,
-            )),
-        )
-        out_event = in_event = None
-        for event in context.decoded_events:
-            if (
-                    event.event_type == HistoryEventType.SPEND and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset == self.ftusd and
-                    event.amount == assets_amount
-            ):
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                event.notes = f'Deposit {assets_amount} ftUSD in the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
-                event.counterparty = CPT_FLYING_TULIP
-                event.address = context.tx_log.address
-                out_event = event
-            elif (
-                    event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.address == ZERO_ADDRESS and
-                    event.asset == vault_token and
-                    event.amount == shares_amount
-            ):
-                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.notes = f'Receive {shares_amount} sftUSD from depositing in the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
-                event.counterparty = CPT_FLYING_TULIP
-                in_event = event
-
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events,
-        )
-        return DEFAULT_EVM_DECODING_OUTPUT
-
-    def _decode_vault_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.any_tracked([
-            receiver := bytes_to_address(context.tx_log.topics[2]),
-            bytes_to_address(context.tx_log.topics[3]),  # vault share owner
+            sender := bytes_to_address(context.tx_log.topics[1]),
+            owner := bytes_to_address(context.tx_log.topics[2]),  # vault share owner
         ]):
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -256,8 +234,110 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
         out_event = in_event = None
         for event in context.decoded_events:
             if (
+                    out_event is None and
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == sender and
+                    event.asset == self.ftusd and
+                    event.amount == assets_amount
+            ):
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.notes = f'Deposit {assets_amount} ftUSD in the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
+                event.counterparty = CPT_FLYING_TULIP
+                event.address = context.tx_log.address
+                out_event = event
+            elif (
+                    in_event is None and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == ZERO_ADDRESS and
+                    event.location_label == owner and
+                    event.asset == vault_token and
+                    event.amount == shares_amount
+            ):
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.notes = f'Receive {shares_amount} sftUSD from depositing in the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
+                event.counterparty = CPT_FLYING_TULIP
+                in_event = event
+            if out_event is not None and in_event is not None:
+                break
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _find_payout_relayer_fee(
+            self,
+            context: DecoderContext,
+            user: ChecksumEvmAddress,
+            token: EvmToken,
+    ) -> FVal:
+        """Return the relayer fee the vault paid out of a user's withdrawal or claim.
+
+        On relayed flows the fee is deducted from the payout before it reaches
+        the wallet, so it only shows in the vault's RelayerFeePaid log.
+        """
+        for tx_log in context.all_logs:
+            if (
+                    tx_log.address == self.deployment.staking_vault and
+                    tx_log.topics[0] == VAULT_RELAYER_FEE_PAID_TOPIC and
+                    bytes_to_address(tx_log.topics[1]) == user and
+                    bytes_to_address(tx_log.data[0:32]) == token.evm_address
+            ):
+                return token_normalized_value(
+                    token_amount=int.from_bytes(tx_log.data[32:64]),
+                    token=token,
+                )
+
+        return ZERO
+
+    def _make_relayer_fee_event(
+            self,
+            context: DecoderContext,
+            token: EvmToken,
+            fee_amount: FVal,
+            location_label: ChecksumEvmAddress,
+    ) -> EvmEvent:
+        return self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=token,
+            amount=fee_amount,
+            location_label=location_label,
+            notes=f'Spend {fee_amount} {token.symbol} as a {FLYING_TULIP_LABEL} relayer fee',
+            counterparty=CPT_FLYING_TULIP,
+            address=self.deployment.staking_vault,
+        )
+
+    def _decode_vault_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
+        if not self.base.any_tracked([
+            receiver := bytes_to_address(context.tx_log.topics[2]),
+            owner := bytes_to_address(context.tx_log.topics[3]),  # vault share owner
+        ]):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        assets_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token=self.ftusd,
+        )
+        shares_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
+            token=(vault_token := self.base.get_or_create_evm_token(
+                address=self.deployment.staking_vault,
+            )),
+        )
+        out_event = in_event = None
+        for event in context.decoded_events:
+            if (
+                    out_event is None and
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == owner and
                     event.asset == vault_token and
                     event.amount == shares_amount
             ):
@@ -266,21 +346,45 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                 event.counterparty = CPT_FLYING_TULIP
                 out_event = event
             elif (
+                    in_event is None and
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == receiver and
                     event.asset == self.ftusd and
                     event.amount == assets_amount
             ):
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                event.notes = f'Withdraw {assets_amount} ftUSD from the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
-                event.counterparty = CPT_FLYING_TULIP
-                event.address = context.tx_log.address
                 in_event = event
+            if out_event is not None and in_event is not None:
+                break
+
+        fee_event = None
+        if in_event is not None:
+            # The Withdraw event's assets are net of any relayer fee, so gross
+            # the withdrawal up and decode the fee explicitly. The net wallet
+            # movement stays unchanged.
+            withdrawn_amount = assets_amount
+            if (fee_amount := self._find_payout_relayer_fee(
+                context=context,
+                user=owner,
+                token=self.ftusd,
+            )) > ZERO:
+                withdrawn_amount += fee_amount
+                in_event.amount = withdrawn_amount
+                fee_event = self._make_relayer_fee_event(
+                    context=context,
+                    token=self.ftusd,
+                    fee_amount=fee_amount,
+                    location_label=receiver,
+                )
+                context.decoded_events.append(fee_event)
+            in_event.event_type = HistoryEventType.WITHDRAWAL
+            in_event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+            in_event.notes = f'Withdraw {withdrawn_amount} ftUSD from the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
+            in_event.counterparty = CPT_FLYING_TULIP
+            in_event.address = context.tx_log.address
 
         maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
+            ordered_events=[out_event, in_event, fee_event],
             events_list=context.decoded_events,
         )
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -293,7 +397,6 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token=self.ft_token,
         )
-        notes = f'Claim {paid_amount} FT from {FLYING_TULIP_LABEL} ftUSD staking'
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -302,8 +405,24 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.asset == self.ft_token and
                     event.amount == paid_amount
             ):
+                # The Claimed event's paid amount is net of any relayer fee, so
+                # gross the reward up and decode the fee explicitly.
+                claimed_amount = paid_amount
+                if (fee_amount := self._find_payout_relayer_fee(
+                    context=context,
+                    user=bytes_to_address(context.tx_log.topics[1]),
+                    token=self.ft_token,
+                )) > ZERO:
+                    claimed_amount += fee_amount
+                    event.amount = claimed_amount
+                    context.decoded_events.append(self._make_relayer_fee_event(
+                        context=context,
+                        token=self.ft_token,
+                        fee_amount=fee_amount,
+                        location_label=receiver,
+                    ))
                 event.event_subtype = HistoryEventSubType.REWARD
-                event.notes = notes
+                event.notes = f'Claim {claimed_amount} FT from {FLYING_TULIP_LABEL} ftUSD staking'
                 event.counterparty = CPT_FLYING_TULIP
                 return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -315,7 +434,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             amount=paid_amount,
             location_label=receiver,
             to_event_subtype=HistoryEventSubType.REWARD,
-            to_notes=notes,
+            to_notes=f'Claim {paid_amount} FT from {FLYING_TULIP_LABEL} ftUSD staking',
             to_counterparty=CPT_FLYING_TULIP,
         )])
 

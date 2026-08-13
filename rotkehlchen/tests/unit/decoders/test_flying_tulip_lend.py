@@ -215,3 +215,42 @@ def test_lend_repay(ethereum_inquirer, ethereum_accounts):
             address=POSITIONS_MANAGER,
         ),
     ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x031f3bAb8f21057D1D7218E3B90cec42aEF3C885']])
+def test_lend_full_repay_with_refund(ethereum_inquirer, ethereum_accounts):
+    """A relayed full repayment that uses less than the sent amount: the unused
+    funds are refunded, and only the actual relayer fee is decoded as a fee."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4462e7bbb2dfee0d053c9936f045f4c7a4a6f63e538b6e3df7561d2b55ba76bc')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=228,
+            timestamp=(timestamp := TimestampMS(1780006871000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=A_USDC,
+            amount=FVal(amount := '400.277826'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Repay {amount} USDC in Flying Tulip Lend',
+            counterparty=CPT_FLYING_TULIP,
+            address=POSITIONS_MANAGER,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=242,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDC,
+            amount=FVal(fee_amount := '0.157393'),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} USDC as a Flying Tulip relayer fee',
+            counterparty=CPT_FLYING_TULIP,
+            address=POSITIONS_MANAGER,
+        ),
+    ]
