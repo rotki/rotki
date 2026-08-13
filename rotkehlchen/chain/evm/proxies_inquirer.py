@@ -173,25 +173,49 @@ class EvmProxiesInquirer:
         Checks the given address for all proxies and if found having one adds them to the mappings
         Ignores the cache.
         """
+        mappings: dict[str, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]] = {}
         for proxy_type in ProxyType:
             if len(mapping := getattr(self, f'get_or_query_{proxy_type}_proxy')([address])) != 0:
                 self.address_to_proxies[proxy_type][address] = (proxy_addresses := mapping[address])  # noqa: E501
                 for proxy_address in proxy_addresses:
                     self.proxy_to_address[proxy_type][proxy_address] = address
+                mappings[proxy_type] = mapping
+
+        with self.node_inquirer.database.user_write() as write_cursor:
+            self.node_inquirer.database.save_evm_account_proxies(
+                write_cursor=write_cursor,
+                blockchain=self.node_inquirer.blockchain,
+                accounts=[address],
+                mappings=mappings,
+                proxy_types=list(ProxyType),
+            )
 
     @overload
-    def get_accounts_having_proxy(self, proxy_type: None = None) -> dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:  # noqa: E501
+    def get_accounts_having_proxy(
+            self,
+            proxy_type: None = None,
+            only_cache: bool = False,
+    ) -> dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:
         ...
 
     @overload
-    def get_accounts_having_proxy(self, proxy_type: ProxyType) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:  # noqa: E501
+    def get_accounts_having_proxy(
+            self,
+            proxy_type: ProxyType,
+            only_cache: bool = False,
+    ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
         ...
 
-    def get_accounts_having_proxy(self, proxy_type: ProxyType | None = None) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]] | dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:  # noqa: E501
+    def get_accounts_having_proxy(
+            self,
+            proxy_type: ProxyType | None = None,
+            only_cache: bool = False,
+    ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]] | dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:  # noqa: E501
         """Returns a mapping of accounts that have proxies to their proxies. Either all proxies or
         specific ones if the proxy types argument is given.
 
-        If the proxy mappings have been recently queried then the old result is used.
+        If the proxy mappings have been recently queried then the old result is used. With
+        ``only_cache=True``, mappings are read from the user DB and never refreshed from a node.
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with
@@ -199,6 +223,28 @@ class EvmProxiesInquirer:
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
+        if only_cache:
+            with self.node_inquirer.database.conn.read_ctx() as cursor:
+                cached_mappings = self.node_inquirer.database.get_evm_account_proxies(
+                    cursor=cursor,
+                    blockchain=self.node_inquirer.blockchain,
+                )
+            self.address_to_proxies = {
+                i_type: cached_mappings.get(i_type, {})
+                for i_type in ProxyType
+            }
+            self.proxy_to_address = {
+                i_type: {
+                    proxy: address
+                    for address, proxies in mapping.items()
+                    for proxy in proxies
+                }
+                for i_type, mapping in self.address_to_proxies.items()
+            }
+            if proxy_type is not None:
+                return self.address_to_proxies[proxy_type].copy()
+            return {i_type: mapping.copy() for i_type, mapping in self.address_to_proxies.items()}
+
         now = ts_now()
         if now - self.last_proxy_mapping_query_ts < DAY_IN_SECONDS:  # refresh daily
             # return copies just like the requery path below: query_address_for_proxies
@@ -218,6 +264,18 @@ class EvmProxiesInquirer:
                 )
                 self.address_to_proxies[i_type] = mapping
                 self.proxy_to_address[i_type] = {proxy: addr for addr, proxies in mapping.items() for proxy in proxies}  # noqa: E501
+
+        with self.node_inquirer.database.user_write() as write_cursor:
+            self.node_inquirer.database.save_evm_account_proxies(
+                write_cursor=write_cursor,
+                blockchain=self.node_inquirer.blockchain,
+                accounts=accounts.get(self.node_inquirer.blockchain),
+                mappings={
+                    str(i_type): mapping
+                    for i_type, mapping in self.address_to_proxies.items()
+                },
+                proxy_types=[proxy_type] if proxy_type is not None else list(ProxyType),
+            )
 
         self.last_proxy_mapping_query_ts = ts_now()
         if proxy_type is not None:  # return a copy to avoid "dictionary modified during iteration errors"  # noqa: E501

@@ -63,6 +63,54 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     return EthereumTokens(database, ethereum_inquirer)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_cached_tokens_detection_uses_cached_proxy_mapping_without_rpc(
+        tokens: EthereumTokens,
+        database: DBHandler,
+) -> None:
+    owner = make_evm_address()
+    proxy = make_evm_address()
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=owner,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[A_DAI],
+        )
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=proxy,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[A_WETH],
+        )
+
+    proxies_inquirer = tokens.evm_inquirer.proxies_inquirer
+    with (
+        patch.object(proxies_inquirer, 'get_or_query_ds_proxy', return_value={owner: {proxy}}),
+        patch.object(proxies_inquirer, 'get_or_query_liquity_proxy', return_value={}),
+        patch.object(proxies_inquirer, 'get_or_query_summer_fi_proxy', return_value={}),
+    ):
+        proxies_inquirer.query_address_for_proxies(owner)
+
+    with patch.object(tokens.evm_inquirer, 'multicall') as multicall:
+        detected_tokens = tokens.detect_tokens(only_cache=True, addresses=[owner])
+
+    multicall.assert_not_called()
+    assert (owner_tokens := detected_tokens[owner][0]) is not None
+    assert set(owner_tokens) == {A_DAI, A_WETH}
+
+    with database.user_write() as write_cursor:
+        database.delete_data_for_evm_address(
+            write_cursor=write_cursor,
+            address=owner,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM evm_account_proxies WHERE account=?',
+            (owner,),
+        ).fetchone()[0] == 0
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ignored_assets', [[A_LPT]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
