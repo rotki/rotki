@@ -54,9 +54,12 @@ watchImmediate(errors, (value) => {
   form.setServerErrors(toServerErrors(value));
 }, { deep: true });
 
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
+/*
+ * Immediate, like `useModelForm` does it. The flag belongs to the dialog and is shared with the two
+ * sibling tabs, so a form arriving after an edited one has to hand it back disarmed; a plain watch
+ * only ever raises it, and this form's own state never changes to trigger one.
+ */
+syncRefs(form.dirty, stateUpdated);
 
 // An exchange that reports no range has no picker, so anything already in it is dropped rather than
 // sent.
@@ -69,10 +72,6 @@ watch(showDateRangePicker, (show) => {
 
 onBeforeUnmount(() => {
   set(errors, {});
-});
-
-onUnmounted(() => {
-  set(stateUpdated, false);
 });
 
 defineExpose({

@@ -118,16 +118,11 @@ watchImmediate(errors, (value) => {
   form.setServerErrors(toServerErrors(value));
 }, { deep: true });
 
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
+// Immediate, so arriving from an edited sibling tab hands the dialog's flag back disarmed.
+syncRefs(form.dirty, stateUpdated);
 
 onBeforeUnmount(() => {
   set(errors, {});
-});
-
-onUnmounted(() => {
-  set(stateUpdated, false);
 });
 
 defineExpose({
