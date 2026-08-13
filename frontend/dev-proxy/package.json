@@ -7,16 +7,14 @@
   "license": "AGPL-3.0",
   "author": "Rotki Solutions GmbH",
   "scripts": {
-    "serve": "tsx --env-file-if-exists=.env --watch ./src/index.ts"
+    "serve": "tsx --env-file-if-exists=.env --watch ./src/index.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "body-parser": "catalog:",
-    "express": "catalog:",
-    "http-proxy-middleware": "catalog:"
+    "httpxy": "catalog:"
   },
   "devDependencies": {
-    "@types/body-parser": "catalog:",
-    "@types/express": "catalog:",
+    "@tsconfig/node24": "catalog:",
     "@types/node": "catalog:",
     "consola": "catalog:",
     "tsx": "catalog:",

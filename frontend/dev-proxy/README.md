@@ -143,9 +143,14 @@ request verb. The verb's value can either be an object or an array:
 
 ## Implementation notes
 
-- Mock endpoint implementations live in `src/mocked-apis/`. The proxy registers
-  any mock-matched handlers **before** the generic
-  `createProxyMiddleware({ target: backend })` so they take precedence over the
-  pass-through.
+- The proxy is a plain `node:http` server in front of `httpxy`, the same
+  dependency the electron main process uses for its own dev proxy. There is no
+  web framework: the routing is one locally-served path plus a catch-all.
+- Mock endpoint implementations live in `src/mocked-apis/`. The statistics
+  renderer is answered locally before anything is forwarded; the async-mock
+  handlers run on the `proxyRes` event and rewrite the backend's response.
+- Request bodies are read up front so the handlers can inspect `async_query`,
+  then replayed to the backend through httpxy's `buffer` option, so the
+  forwarded request stays byte-identical.
 - WebSocket forwarding is enabled (`ws: true`), so the backend's `/ws/`
   endpoint reaches the renderer through the same proxy hop.
