@@ -23,6 +23,23 @@ async function checkAvailability(port: number, host: string): Promise<number> {
   });
 }
 
+/**
+ * Whether a port can be bound right now. For callers that must have one exact
+ * port rather than the next free one, so they can fail with their own message
+ * instead of silently landing somewhere else.
+ */
+export async function isPortFree(port: number, host: string = 'localhost'): Promise<boolean> {
+  try {
+    await checkAvailability(port, host);
+    return true;
+  }
+  catch (error: any) {
+    if (['EADDRINUSE', 'EACCES'].includes(error.code))
+      return false;
+    throw error;
+  }
+}
+
 export async function selectPort(startPort: number = DEFAULT_PORT, host: string = 'localhost'): Promise<number> {
   for (let portNumber = startPort; portNumber <= 65535; portNumber++) {
     try {

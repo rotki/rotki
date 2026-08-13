@@ -188,6 +188,35 @@ describe('starlingHandler', () => {
     );
   });
 
+  it('should refuse to start when core cannot bind the port the dev-proxy forwards to', async () => {
+    // Coming up on another port would leave the proxy pointed at nothing, so
+    // every /api/1/* request would fail with the app looking healthy otherwise.
+    selectPortMock.mockImplementation(async (port: number) => port === 4242 ? 4250 : port);
+    spawnMock.mockImplementation(() => makeFakeChild(nullResponder));
+    const config = makeConfig();
+    const handler = new StarlingHandler(
+      makeLogger(),
+      { ...config, ports: { ...config.ports, coreUpstreamPort: 4243 } },
+    );
+    const onProcessError = vi.fn();
+
+    await handler.restartBackend({}, { onProcessError });
+
+    expect(onProcessError).toHaveBeenCalledWith(expect.stringContaining('4242'), BackendCode.TERMINATED);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it('should still let core move to a free port when no dev-proxy is in the chain', async () => {
+    selectPortMock.mockImplementation(async (port: number) => port === 4242 ? 4250 : port);
+    spawnMock.mockImplementation(() => makeFakeChild(nullResponder));
+    const onProcessError = vi.fn();
+
+    await new StarlingHandler(makeLogger(), makeConfig()).restartBackend({}, { onProcessError });
+
+    expect(onProcessError).not.toHaveBeenCalled();
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(expect.objectContaining({ corePort: 4250 }));
+  });
+
   it('should publish and launch MCP on an available port', async () => {
     selectPortMock.mockImplementation(async (port: number) => port === 4445 ? 4450 : port);
     const child = makeFakeChild(nullResponder);
