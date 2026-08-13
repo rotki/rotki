@@ -1066,6 +1066,7 @@ class AssetsService:
         arbitrum_inquirer = self.rotkehlchen.chains_aggregator.arbitrum_one.node_inquirer
         gnosis_inquirer = self.rotkehlchen.chains_aggregator.gnosis.node_inquirer
         polygon_inquirer = self.rotkehlchen.chains_aggregator.polygon_pos.node_inquirer
+        sonic_inquirer = self.rotkehlchen.chains_aggregator.sonic.node_inquirer
         cache_rules: list[tuple[str, CacheType, Callable, ChainID | None, Any]] = []
 
         match cache_protocol:
@@ -1204,6 +1205,7 @@ class AssetsService:
                         (ChainID.ETHEREUM, eth_node_inquirer),
                         (ChainID.OPTIMISM, optimism_inquirer),
                         (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
+                        (ChainID.SONIC, sonic_inquirer),
                     )
                 ])
             case ProtocolsWithCache.ETH_WITHDRAWALS:
