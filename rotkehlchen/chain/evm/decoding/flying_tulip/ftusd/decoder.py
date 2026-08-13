@@ -291,7 +291,14 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             ):  # the vault emits the fee log right before its payout event, so
                 fee_log = tx_log  # the nearest preceding one belongs to this payout
 
-        if fee_log is None:
+        if fee_log is None or any(
+            # Another payout or deposit between the fee log and this payout
+            # means the fee belongs to that earlier action, not to this one.
+            tx_log.address == self.deployment.staking_vault and
+            tx_log.topics[0] in (DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3, CLAIMED_TOPIC) and
+            fee_log.log_index < tx_log.log_index < context.tx_log.log_index
+            for tx_log in context.all_logs
+        ):
             return ZERO
 
         return token_normalized_value(
