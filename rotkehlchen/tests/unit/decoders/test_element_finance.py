@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -16,7 +18,7 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_claim_airdrop(ethereum_inquirer):
+def test_claim_airdrop(ethereum_inquirer: Any) -> None:
     """Data taken from
     https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
     """

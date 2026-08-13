@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -118,7 +118,11 @@ def _set_beefy_cache(chain_id: ChainID, entries: list[tuple[str, str, bool]]) ->
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x71b278042bFf0537CbAc1d5cF2197Bd8f4f79EeF']])
-def test_zap_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
+def test_zap_deposit_to_beefy(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+        beefy_cache: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xab6fab1441b7f6843109eb1c903e93c7d24536d09a81aced724302e1c8002c71')),  # noqa: E501
@@ -166,7 +170,11 @@ def test_zap_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfaC2F11ba2577D5122DC1EC5301d35B16688251E']])
-def test_zap_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
+def test_zap_withdrawal_from_beefy(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+        beefy_cache: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3dab2b65117b4c3953a20e6d850a7aa1b15351de30382cea31a4dba795ec3101')),  # noqa: E501
@@ -226,7 +234,11 @@ def test_zap_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_c
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7B8e047dFa4B27314C6A7EA5067e356F38666089']])
-def test_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
+def test_deposit_to_beefy(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+        beefy_cache: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5d11116ca9ff5edc826394f93c7ee81057119899daa0a9a77d384909584d816e')),  # noqa: E501
@@ -286,7 +298,11 @@ def test_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA2d238002Bf1A91fed3C218fA770C4933d833ead']])
-def test_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
+def test_withdrawal_from_beefy(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+        beefy_cache: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xda0a5066e573451465447a0d84d2b62b14dd980b3df7421c639b1beea9f9ec4a')),  # noqa: E501
@@ -1227,7 +1243,11 @@ def test_unstake_beefy_reward_pool_with_reward(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x356a14285c8D2d351682D6E6fEF0213ddEd8Abad']])
-def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
+def test_legacy_boost_exit(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+        beefy_cache: Any,
+) -> None:
     """Test that a Beefy legacy boost exit() decodes as unstake + reward claim."""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1236,6 +1256,7 @@ def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
         load_global_caches=[CPT_BEEFY_FINANCE],
     )
     legacy_vault = EvmToken('eip155:1/erc20:0xbd313b13ed794B86Bd161885F8e170769E0e68b2')
+    assert legacy_vault.underlying_tokens is not None
     assert (
         len(legacy_vault.underlying_tokens) == 1 and
         legacy_vault.underlying_tokens[0].address == '0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -17,7 +19,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_attest_optimism(optimism_inquirer, optimism_accounts):
+def test_attest_optimism(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf843f6d09e8dec2ee2d1b5fdeade9a9744857f598cf593b6c259166c32dfd05a')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -53,7 +55,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_attest_gitcoin_mint(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_attest_gitcoin_mint(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     """A test for minting gitcoin impact donation attestation"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,

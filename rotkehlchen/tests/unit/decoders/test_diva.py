@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -16,7 +18,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
+def test_diva_delegate(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x806081bcc60a40db22bae2c1729f240f48de4b73e76b673fc4767bcee4f1c704')),  # noqa: E501
@@ -53,7 +55,7 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_diva_claim(ethereum_inquirer, ethereum_accounts):
+def test_diva_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc66dd53da9837e5197f95d32065807706a118dc2ff326a5e3bf8844b8ee261c2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -103,7 +105,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_vote_cast(ethereum_inquirer, ethereum_accounts):
+def test_vote_cast(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test voting for DIVA governance"""
     tx_hash = deserialize_evm_tx_hash('0x640818700732a7345f085d14377adf285098ae33747da21444e594a64c905d41')  # noqa: E501
     user_address = ethereum_accounts[0]

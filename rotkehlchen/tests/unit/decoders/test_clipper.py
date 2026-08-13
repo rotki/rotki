@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -19,7 +21,7 @@ CLIPPER_POOL_BASE = string_to_evm_address('0xb32D856cAd3D2EF07C94867A800035E3724
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9dBd35AdF013e26DfDa9741c09c1790Cf8a25Dd1']])
-def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_token_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6b6c3f0810b234a9be3f012e072b3ce2857040cc5266e0429b2d5b4c136be64c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1767528011000), '0.000004294030803529', '6.96', '6.957538'  # noqa: E501
@@ -66,7 +68,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc2863f32E61d3d95688f0c61322d8A803639E1e1']])
-def test_swap_token_to_eth_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_eth_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xaf966689919ab2aebe9bb333150f4e2e16b1c0addf292108460b794eeffc7dca')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1768400735000), '0.000236314177734726', '1.5', '0.00045127273560297'  # noqa: E501
@@ -125,7 +127,12 @@ def test_swap_token_to_eth_ethereum(ethereum_inquirer, ethereum_accounts):
     ),
 )])
 @pytest.mark.parametrize('base_accounts', [['0xd26a5e62808E501a55ffd91f662387a646E1Beb0']])
-def test_swap_eth_to_token_base(base_inquirer, base_accounts, allow_base_routescan, monkeypatch):
+def test_swap_eth_to_token_base(
+        base_inquirer: Any,
+        base_accounts: Any,
+        allow_base_routescan: Any,
+        monkeypatch: Any,
+) -> None:
     monkeypatch.setattr(
         'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_parent_hash',
         lambda *args, **kwargs: [],

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -17,6 +19,7 @@ from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -24,14 +27,14 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xc931De6d845846E332a52D045072E3feF540Bd5d']])
-def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
+def test_1inch_claim(database: Any, ethereum_inquirer: Any, eth_transactions: Any) -> None:
     """Data for claim taken from
     https://etherscan.io/tx/0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17
     """
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
+        timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=string_to_evm_address('0xc931De6d845846E332a52D045072E3feF540Bd5d'),
         to_address=string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe'),
@@ -116,14 +119,14 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe']])
-def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
+def test_gitcoin_claim(database: Any, ethereum_inquirer: Any, eth_transactions: Any) -> None:
     """Data for claim taken from
     https://etherscan.io/tx/0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa
     """
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
+        timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=string_to_evm_address('0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe'),
         to_address=string_to_evm_address('0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E'),

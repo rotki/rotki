@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_swap_erc20_tokens(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9e97c7f79e788ebaa815cbee019f1dbb6cb80c4dd5bb0957fd989af130d85445')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, approval_amount, out_amount, in_amount = arbitrum_one_accounts[0], TimestampMS(1704018154000), '0.0001858737', '999999999999999999999174', '825', '1286.844424'  # noqa: E501
@@ -81,7 +81,7 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA739d838855E7253e41d5A6EEBD6e874c479aac5']])
-def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
+def test_swap_eth_for_erc20_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe44fe9c5cdd8b1b2d0ab0691fc9633d49146bf665575a83e0c6a3e9e70e70203')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1672529231000), '0.004636897380394857', '0.4', '1007.80191074694080899'  # noqa: E501
@@ -129,7 +129,7 @@ def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc15534EA729972fc21AEDE69cB7Ca16D60E8D342']])
-def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
+def test_swap_erc20_token_for_eth(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc19f8f547c49c3f35dae993b713d95cce79aa425563fd28aeaca2510ebb95059')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = optimism_accounts[0], TimestampMS(1708454525000), '0.000261272046054672', '24.828647237813394885', '0.03345269400143805'  # noqa: E501

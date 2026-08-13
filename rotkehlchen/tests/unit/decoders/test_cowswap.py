@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -45,7 +45,7 @@ BSC_NODES_TO_CONNECT = [(WeightedNode(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x31b6020CeF40b72D1e53562229c1F9200d00CC12']])
-def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd4d16ea74bbf806715f5f0e799fd5e8befbf369a9e5461fa9c0ed88d72bd06e4')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -96,7 +96,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC8842a6aE1fDEAb2213821B5267d072547aa7A1f']])
-def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_token_limit_order(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7674d6e3b8905cc4c6bc525d6cfa12dbb52de3093be0fe68038dfa7dafbdd849')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -113,7 +113,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             amount=FVal('21255'),
             location_label=user_address,
             notes=f'Set PENDLE spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 21255',  # noqa: E501
-            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+            address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=223,
@@ -156,7 +156,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x34938Bd809BDf57178df6DF523759B4083A29190']])
-def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd4d16ea74bbf806715f5f0e799fd5e8befbf369a9e5461fa9c0ed88d72bd06e4')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -207,7 +207,10 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts):
+def test_swap_token_to_eth_with_other_trade(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """This was not decoded properly before since the FLT swap was first detectedd
     as part of uniswap and then the cowswap decoder was not picking it up. This fixes that"""
     tx_hash = deserialize_evm_tx_hash('0x31051b28d2b0a0365c2b518778af91180355f130f1fcf2b199faecd256093cc9')  # noqa: E501
@@ -268,7 +271,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcFeA48Cf6Ba36e0328a6Ead0fdB4C2642D21c59d']])
-def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
+def test_swap_eth_to_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe2d6aa636623989061f1d762b19ca6fe6bc0edb5a890cf5a934a8fc6d42dcaca')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -322,7 +325,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
     '0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1',
     '0x34938Bd809BDf57178df6DF523759B4083A29190',
 ]])
-def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
+def test_2_decoded_swaps(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """
     Tests that if a user has 2 tracked addresses from a cowswap settlement transaction
     both swaps are decoded correctly.
@@ -353,7 +356,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             amount=FVal('115792089237316195423570985008687907853269984665640564039457583991913.129639935'),
             location_label=user_address_1,
             notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457583991913.129639935',  # noqa: E501
-            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+            address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
 
         ), EvmSwapEvent(  # 1st swap with FUND
             tx_ref=tx_hash,
@@ -433,7 +436,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcFeA48Cf6Ba36e0328a6Ead0fdB4C2642D21c59d']])
-def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
+def test_place_eth_order(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3619cc8d8f60541df0ea7d96d923efa4c783f53491af0d3ed1ed31de9fe15bcf')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -469,7 +472,11 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_place_xdai_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_place_xdai_order(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0fa7c5936310a7fefa2b62597aea88fd152f73e736eee805d26e9337f461bc4f')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -594,7 +601,7 @@ def test_bnb_create_order(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xdc4CaDC65123Ebd371887CaD59Cc8c6F8F6fC29c']])
-def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
+def test_invalidate_eth_order(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5769b4634ae26ec93aebc80a50e0676b0793af485041b249652bd7ee6703a9f5')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -630,7 +637,11 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xb0e83C2D71A991017e0116d58c5765Abc57384af']])
-def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_invalidate_gnosis_order(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x68927e822317242ac1c0a0c71f2303725fc998164f1bb812f61b3053ef2a9a02')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -666,7 +677,7 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4DD2a258130673a2d4242FaC1C5E5f82d1A0888d']])
-def test_refund_eth_order(ethereum_inquirer, ethereum_accounts):
+def test_refund_eth_order(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x424f29ad7b865d764d89fe28767a7f34d177cad71cc123a2a8c0209aa0b70fda')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -690,7 +701,11 @@ def test_refund_eth_order(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x402633Ec0283F58415bcbe5b48e7F44338a349eb']])
-def test_refund_gnosis_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_refund_gnosis_order(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb37be7c154ef4fb0fd291c647c21013abb10428181e64ba1c6305b77df929d0e')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -714,7 +729,11 @@ def test_refund_gnosis_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_swap_gnosis_tokens(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x024e1da9dc2bf7ff88dd22643857979fcd954103860698203257b6db27778482')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -765,7 +784,11 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts, allow_gnosis_ether
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xECCf11f03CEfe8A68bb01CAF66e76CEeFeaAEe5e']])
-def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_swap_gnosis_monerium(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     """The annoying problem with monerium's multiple versions messing with the decoder matching"""
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4f34125588875b708faae04c0711473171982b48f7c0f2de8ca33bc5dcc974a3')))  # noqa: E501
     assert events == [
@@ -799,7 +822,7 @@ def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf393fb8C4BbF7e37f583D0593AD1d1b2443E205c']])
-def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_claim_airdrop(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8d33a6f1c37da1e2b77a4595425360361b6db79ec8811ff2eef810ebb9942044')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -837,7 +860,11 @@ def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_claim_airdrop(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x85540c0cb716efa6027ff9415c700ecb36d382aafa18749b9e66c67e66f47b8d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -875,7 +902,7 @@ def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x773d161310d07CaFC6f767Ca24f43e52163b9BE6']])
-def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_vested_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb6b58ea77542bfeec311c2df5707fe002b62c5a5d648aa17892d680f4e0d6e07')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -925,7 +952,11 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_vested_claim(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x57ecb8f87eed5548cb375ea695531d6849843d6217771a5c25c957058a460243')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -976,10 +1007,10 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4eF72636664E3348791357588b7d3BF61d29f4DF']])
 def test_gnosis_claim_airdrop_with_xdai_payment(
-        gnosis_inquirer,
-        gnosis_accounts,
-        allow_gnosis_etherscan,
-):
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x1b82f080f70f00d63be3da2bed93834c254517640406aec949126020f7deb4c4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1028,10 +1059,10 @@ def test_gnosis_claim_airdrop_with_xdai_payment(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x0b297C31d2DA6d959Bc911413990653e19F0e283']])
 def test_gnosis_claim_airdrop_with_gno_payment(
-        gnosis_inquirer,
-        gnosis_accounts,
-        allow_gnosis_etherscan,
-):
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xdae21fd2a64756326ba0bf119b8ee33cf41480fb758d0d7f17168fcc01622da1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1093,7 +1124,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_swap_token_to_token_arb(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     user_address = arbitrum_one_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -1112,7 +1143,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935'),
             location_label=user_address,
             notes='Set ARB spending approval of 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457.584007913129639935',  # noqa: E501
-            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+            address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=7,
@@ -1159,7 +1190,7 @@ def test_gnosis_eure_v2(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf751e1aa988888ab9edfa14ac98022c7d8241664f481fde40a418723b0fed009')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -1204,7 +1235,10 @@ def test_gnosis_eure_v2(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
-def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_accounts):
+def test_swap_cvx_to_eth_indirect_settlement(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test CowSwap transaction that is not sent directly to the settlement contract."""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1265,7 +1299,11 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7904667C340601AaB73939372C016dC5102732A2']])
-def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_cowswap_wrapped_eth_to_token(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     """This tests that native assets deposited via the new ethflow
     contract are decoded correctly."""
     events, _ = get_decoded_events_of_transaction(
@@ -1317,10 +1355,10 @@ def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts, allow_gn
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xBA7551e55eB7513F209BeEE476C175D367d35e39']])
 def test_cowswap_gnosis_token_to_native_via_curve(
-        gnosis_inquirer,
-        gnosis_accounts,
-        allow_gnosis_etherscan,
-):
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     """Test that swapping a token for native XDAI on gnosis via cowswap is decoded
     correctly when the cowswap solver routes through a Curve pool. The Curve decoder
     must not claim the native XDAI transfer from the settlement to the user."""
@@ -1360,7 +1398,7 @@ def test_cowswap_gnosis_token_to_native_via_curve(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_cowswap_polygon_swap(polygon_pos_inquirer, polygon_pos_accounts):
+def test_cowswap_polygon_swap(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdbe490bbfa05c142328fb17e0a4b937aef6515319054684463ff55e6fd8ecb3b')),  # noqa: E501
@@ -1422,7 +1460,7 @@ def test_cowswap_polygon_swap(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
-def test_cowswap_polygon_swap_native(polygon_pos_inquirer, polygon_pos_accounts):
+def test_cowswap_polygon_swap_native(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2c8cac577a6e4819fcc280e92645d9096d85f0941882079f54947c35af4f9d8f')),  # noqa: E501

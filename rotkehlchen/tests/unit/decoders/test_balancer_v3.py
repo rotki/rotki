@@ -463,7 +463,7 @@ def test_gauge_deposit(
         ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
         globaldb: GlobalDBHandler,
-):
+) -> None:
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
@@ -530,7 +530,7 @@ def test_gauge_withdrawal(
         base_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
         globaldb: GlobalDBHandler,
-):
+) -> None:
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,

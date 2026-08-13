@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -359,7 +359,7 @@ def test_basenames_content_hash_changed(
     ('Send', ['0x2B97eb170a57fa2B5ea499b9f0176Ef587c6F54d']),
     ('Receive', ['0x6722d0fED54f02C60e9Cb6948aA18130eAc627c7']),
 ])
-def test_basenames_transfer_name(database, base_inquirer, action, base_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
+def test_basenames_transfer_name(database: Any, base_inquirer: Any, action: Any, base_accounts: Any, add_subgraph_api_key: Any) -> None:  # pylint: disable=unused-argument  # noqa: E501
     """Test that transferring a Basename name is decoded properly for all 3 cases.
 
     Owning both addresses in the transfer, only sender or only receiver
