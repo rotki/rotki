@@ -1,4 +1,4 @@
-import type { UserNote } from '@/modules/core/common/notes';
+import type { UserNoteDraft } from '@/modules/core/common/notes';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import UserNotesForm from '@/modules/notes/UserNotesForm.vue';
@@ -7,7 +7,7 @@ import '@test/i18n';
 describe('userNotesForm', () => {
   let wrapper: VueWrapper<InstanceType<typeof UserNotesForm>>;
 
-  const baseModel = (): Partial<UserNote> => ({
+  const baseModel = (): UserNoteDraft => ({
     content: 'a note',
     title: 'a title',
   });
@@ -21,7 +21,7 @@ describe('userNotesForm', () => {
     vi.useRealTimers();
   });
 
-  function createWrapper(modelValue: Partial<UserNote> = baseModel()): VueWrapper<InstanceType<typeof UserNotesForm>> {
+  function createWrapper(modelValue: UserNoteDraft = baseModel()): VueWrapper<InstanceType<typeof UserNotesForm>> {
     return mount(UserNotesForm, { props: { modelValue } });
   }
 
@@ -66,8 +66,8 @@ describe('userNotesForm', () => {
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
-  it('should show a missing title as an empty field rather than undefined', async () => {
-    wrapper = createWrapper({ content: 'a note' });
+  it('should show an untitled note as an empty field', async () => {
+    wrapper = createWrapper({ content: 'a note', title: '' });
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('input').element.value).toBe('');
@@ -105,7 +105,7 @@ describe('userNotesForm', () => {
 
     await editContent('edited');
 
-    const updates = wrapper.emitted<[Partial<UserNote>]>('update:modelValue');
+    const updates = wrapper.emitted<[UserNoteDraft]>('update:modelValue');
     expect(updates).toBeTruthy();
     const last = updates!.at(-1)![0];
     expect(last.content).toBe('edited');
@@ -119,7 +119,7 @@ describe('userNotesForm', () => {
     await wrapper.find('input').setValue('');
     await vi.advanceTimersToNextTimerAsync();
 
-    const updates = wrapper.emitted<[Partial<UserNote>]>('update:modelValue');
+    const updates = wrapper.emitted<[UserNoteDraft]>('update:modelValue');
     expect(updates!.at(-1)![0].title).toBe('');
   });
 

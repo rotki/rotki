@@ -13,6 +13,12 @@ export const UserNote = z.object({
 
 export type UserNote = z.infer<typeof UserNote>;
 
+/**
+ * A note being written. The identifier and timestamp only exist once it is saved, but the two fields
+ * the form edits are always present: a new note starts with both empty rather than absent.
+ */
+export type UserNoteDraft = Partial<UserNote> & Pick<UserNote, 'content' | 'title'>;
+
 export const UserNoteCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(UserNote),
 });

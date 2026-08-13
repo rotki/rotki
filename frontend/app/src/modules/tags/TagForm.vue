@@ -1,11 +1,9 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useModelForm } from '@/modules/core/form/use-model-form';
+import { tagSchema } from '@/modules/tags/tag-forms';
 import TagIcon from '@/modules/tags/TagIcon.vue';
 
 const modelValue = defineModel<Tag>({ required: true });
@@ -14,58 +12,35 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 
-const name = useRefPropVModel(modelValue, 'name');
-const description = useRefPropVModel(modelValue, 'description');
-const backgroundColor = useRefPropVModel(modelValue, 'backgroundColor');
-const foregroundColor = useRefPropVModel(modelValue, 'foregroundColor');
+const schema = computed<ZodType>(() => tagSchema({
+  name: t('tag_creator.validation.empty_name'),
+}));
 
+const form = useModelForm<Tag>({
+  model: modelValue,
+  schema,
+  stateUpdated,
+});
+
+/** The column is nullable, and a description of only spaces is stored as no description at all. */
 const descriptionModel = computed<string>({
   get() {
-    return get(description) || '';
+    return form.state.description || '';
   },
   set(value: string) {
-    const trimmedValue = value.trim();
-    set(description, trimmedValue.length > 0 ? trimmedValue : null);
+    const trimmed = value.trim();
+    form.state.description = trimmed.length > 0 ? trimmed : null;
   },
 });
 
-useFormStateWatcher({
-  backgroundColor,
-  description,
-  foregroundColor,
-  name,
-}, stateUpdated);
-
-const rules = {
-  description: {
-    optional: () => true,
-  },
-  name: {
-    required: helpers.withMessage(t('tag_creator.validation.empty_name'), required),
-  },
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    description,
-    name,
-  },
-  { $autoDirty: true },
-);
-
-function randomize() {
-  const newBgColor = randomColor();
-  const newFgColor = invertColor(newBgColor);
-  set(modelValue, {
-    ...get(modelValue),
-    backgroundColor: newBgColor,
-    foregroundColor: newFgColor,
-  });
+function randomize(): void {
+  const background = randomColor();
+  form.state.backgroundColor = background;
+  form.state.foregroundColor = invertColor(background);
 }
 
 defineExpose({
-  validate: async (): Promise<boolean> => await get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -83,7 +58,7 @@ defineExpose({
       </template>
       <TagIcon
         class="min-w-[7rem] min-h-8"
-        :tag="modelValue"
+        :tag="form.state"
       />
       <RuiButton
         size="sm"
@@ -98,13 +73,14 @@ defineExpose({
       </RuiButton>
     </RuiCard>
     <RuiTextField
-      v-model="name"
+      v-model="form.state.name"
       variant="outlined"
       color="primary"
       class="tag_creator__name"
       data-testid="tag-creator-name"
       :label="t('common.name')"
-      :error-messages="toMessages(v$.name)"
+      :error-messages="form.errors('name')"
+      @update:model-value="form.touch('name')"
     />
     <RuiTextField
       v-model="descriptionModel"
@@ -123,7 +99,7 @@ defineExpose({
           {{ t('tag_creator.labels.foreground') }}
         </template>
         <RuiColorPicker
-          v-model="foregroundColor"
+          v-model="form.state.foregroundColor"
           class="w-full"
           data-testid="tag-creator__color-picker__foreground"
         />
@@ -133,7 +109,7 @@ defineExpose({
           {{ t('tag_creator.labels.background') }}
         </template>
         <RuiColorPicker
-          v-model="backgroundColor"
+          v-model="form.state.backgroundColor"
           class="w-full"
           data-testid="tag-creator__color-picker__background"
         />
