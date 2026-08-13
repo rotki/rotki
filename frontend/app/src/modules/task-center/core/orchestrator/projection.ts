@@ -135,7 +135,7 @@ export function childProgress(records: ReadonlyMap<ActivityId, ProgressRecord>):
   return byParent;
 }
 
-export function percentageOf(status: ActivityStatus, steps: ActivitySteps | undefined, children?: ActivitySteps): number {
+function percentageOf(status: ActivityStatus, steps: ActivitySteps | undefined, children?: ActivitySteps): number {
   // Skipped and failed both count as done for the bar. To an observer a failure is *completed
   // with a failure status*, not work still in flight: no further progress is coming, so a bar
   // that excluded it would stall at 3/5 whenever two chains failed — the same argument that

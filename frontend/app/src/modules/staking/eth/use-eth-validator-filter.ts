@@ -7,7 +7,7 @@ export const EthValidatorFilterKeys = {
   STATUS: 'status',
 } as const;
 
-export type EthValidatorFilterKey = typeof EthValidatorFilterKeys[keyof typeof EthValidatorFilterKeys];
+type EthValidatorFilterKey = typeof EthValidatorFilterKeys[keyof typeof EthValidatorFilterKeys];
 
 export type Filters = MatchedKeywordWithBehaviour<EthValidatorFilterKey>;
 

@@ -10,6 +10,6 @@ export const DataIssuesFilterKeys = {
   STATE: 'state',
 } as const;
 
-export type DataIssuesFilterKey = typeof DataIssuesFilterKeys[keyof typeof DataIssuesFilterKeys];
+type DataIssuesFilterKey = typeof DataIssuesFilterKeys[keyof typeof DataIssuesFilterKeys];
 
 export type Filters = MatchedKeyword<DataIssuesFilterKey>;

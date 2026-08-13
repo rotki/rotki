@@ -9,7 +9,7 @@ import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { getModuleEnabled, Module } from '@/modules/session/use-module-enabled';
 
 /** The keys the blockchain balances table filters on. Not wire keys: both narrow it in memory. */
-export const BlockchainBalanceFilterKeys = {
+const BlockchainBalanceFilterKeys = {
   CHAINS: 'chains',
   SEARCH: 'search',
 } as const;

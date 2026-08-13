@@ -3,7 +3,7 @@ import type { ActionItem } from '@/modules/core/action-center/types';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 
 /** One provider of counts behind a center: how to re-read it, and whether it is reading now. */
-export interface ActionCenterSource {
+interface ActionCenterSource {
   /** the return value is discarded: a center only cares that the read finished */
   refresh: () => Promise<unknown>;
   /** in-flight state of this source's own read, when it exposes one */

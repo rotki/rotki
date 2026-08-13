@@ -4,7 +4,7 @@ export const FilterBehaviours = {
   INCLUDE: 'include',
 } as const;
 
-export type FilterBehaviour = typeof FilterBehaviours[keyof typeof FilterBehaviours];
+type FilterBehaviour = typeof FilterBehaviours[keyof typeof FilterBehaviours];
 
 export interface FilterObjectWithBehaviour<T> {
   behaviour?: FilterBehaviour;

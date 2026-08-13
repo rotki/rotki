@@ -64,7 +64,7 @@ export interface ValueSwatch {
  *   how *external* filters (e.g. history account `locationLabels`) are transported. Modelling
  *   them as fields is what lets the pill bar absorb external filters into one bar.
  */
-export type FieldBinding =
+type FieldBinding =
   | { readonly kind: 'filter' }
   | { readonly kind: 'param'; readonly paramKey: string; readonly to: 'request' | 'url' | 'both' };
 

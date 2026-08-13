@@ -10,7 +10,7 @@ export const ManualBalanceFilterKeys = {
   LOCATION: 'location',
 } as const;
 
-export type ManualBalanceFilterKey = typeof ManualBalanceFilterKeys[keyof typeof ManualBalanceFilterKeys];
+type ManualBalanceFilterKey = typeof ManualBalanceFilterKeys[keyof typeof ManualBalanceFilterKeys];
 
 export type Filters = MatchedKeyword<ManualBalanceFilterKey>;
 

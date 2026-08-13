@@ -9,7 +9,7 @@ import { toDateFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { useSetting } from '@/modules/settings/use-setting';
 
 /** The keys the two bounds are stored under, matching `SnapshotListFilters`. */
-export const SnapshotListFilterKeys = {
+const SnapshotListFilterKeys = {
   END: 'toTimestamp',
   START: 'fromTimestamp',
 } as const;

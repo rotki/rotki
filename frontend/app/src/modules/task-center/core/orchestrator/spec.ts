@@ -3,22 +3,31 @@ import type { ActivityId, ActivityKind, ActivitySteps, ActivityText, GroupId } f
 import type { TaskError } from '@/modules/core/tasks/task-result';
 
 /**
- * Every lane whose name is fixed at author time. Declared as one closed list so a cap can only be
- * keyed by a lane that exists — a typo like `balnces` is a compile error rather than a silent
- * fallback to the default cap, which would otherwise surface only as unexplained concurrency.
+ * Every lane whose name is fixed at author time. Derived from the consts below so each name is
+ * written once: a cap can only be keyed by a lane that exists, and a typo like `balnces` is a
+ * compile error rather than a silent fallback to the default cap, which would otherwise surface
+ * only as unexplained concurrency.
  */
-export const STATIC_LANES = ['default', 'balances', 'exchange', 'session', 'umbrella', 'chain-sync', 'decode'] as const;
-
-export type StaticLane = (typeof STATIC_LANES)[number];
+type StaticLane =
+  | typeof DEFAULT_LANE
+  | typeof BALANCES_LANE
+  | typeof EXCHANGE_LANE
+  | typeof SESSION_LANE
+  | typeof UMBRELLA_LANE
+  | typeof CHAIN_SYNC_LANE
+  | typeof DECODE_LANE;
 
 /**
  * Prefixes for lanes minted per entity, where the full name is only known at runtime
- * (`tx-sync:<chain>`). Also a closed list, so a family cap cannot be keyed by a prefix no producer
- * ever mints.
+ * (`tx-sync:<chain>`). Also derived from its consts, so a family cap cannot be keyed by a prefix no
+ * producer ever mints.
  */
-export const LANE_FAMILIES = ['tx-sync:', 'exchange-events:', 'accounts-add:', 'accounts-remove:', 'detect:'] as const;
-
-export type LaneFamily = (typeof LANE_FAMILIES)[number];
+export type LaneFamily =
+  | typeof ACCOUNT_SYNC_LANE_PREFIX
+  | typeof DETECT_LANE_PREFIX
+  | typeof EXCHANGE_EVENTS_LANE_PREFIX
+  | typeof ACCOUNTS_ADD_LANE_PREFIX
+  | typeof ACCOUNTS_REMOVE_LANE_PREFIX;
 
 /** A lane minted from a family — the prefix is checked, the entity part is free. */
 export type FamilyLane = `${LaneFamily}${string}`;
@@ -31,7 +40,7 @@ export function familyLane(family: LaneFamily, entity: string): FamilyLane {
   return `${family}${entity}`;
 }
 
-export const DEFAULT_LANE: StaticLane = 'default';
+export const DEFAULT_LANE = 'default';
 
 /**
  * Blockchain-balance refreshes + token detection run here; capped at 2 to mirror the old
@@ -42,27 +51,27 @@ export const DEFAULT_LANE: StaticLane = 'default';
  * is `allWithConcurrency` inside `useBalanceHydration`, which is what makes the {@link DECODE_LANE}
  * trap structurally unavailable rather than merely avoided.
  */
-export const BALANCES_LANE: StaticLane = 'balances';
+export const BALANCES_LANE = 'balances';
 
 /** Exchange balance + savings queries run here; capped at 2, a pool separate from {@link BALANCES_LANE}. */
-export const EXCHANGE_LANE: StaticLane = 'exchange';
+export const EXCHANGE_LANE = 'exchange';
 
 /**
  * Unlocking a session — login and account creation. On its own lane because session work must
  * never queue behind user data: everything else in the app exists only once a session is up, so
  * sharing a pool with it means a stalled query can keep a user from signing in at all.
  */
-export const SESSION_LANE: StaticLane = 'session';
+export const SESSION_LANE = 'session';
 
 /**
  * Umbrella activities that await children run here, never alongside them. A parent holding a slot in
  * the same lane as the children it waits for throttles them, and at a cap of 1 it would deadlock.
  * Nothing in this lane does work itself, so the cap only has to exceed the number of umbrellas.
  */
-export const UMBRELLA_LANE: StaticLane = 'umbrella';
+export const UMBRELLA_LANE = 'umbrella';
 
 /** One per-chain sync group runs here; capped at 2, mirroring the old chain-level fan-out. */
-export const CHAIN_SYNC_LANE: StaticLane = 'chain-sync';
+export const CHAIN_SYNC_LANE = 'chain-sync';
 
 /**
  * Every transaction decode runs here, capped at 2.
@@ -71,13 +80,13 @@ export const CHAIN_SYNC_LANE: StaticLane = 'chain-sync';
  * that already submits here is captured by the inner cap and silently becomes dead, which is how
  * redecode throughput was once halved without anything reporting a change.
  */
-export const DECODE_LANE: StaticLane = 'decode';
+export const DECODE_LANE = 'decode';
 
 /**
  * Family prefix for the per-chain account lanes (`tx-sync:<chain>`). Capped per chain, so two
  * accounts sync at once *on each chain* rather than two across all of them.
  */
-export const ACCOUNT_SYNC_LANE_PREFIX: LaneFamily = 'tx-sync:';
+export const ACCOUNT_SYNC_LANE_PREFIX = 'tx-sync:';
 
 /**
  * Family prefix for the per-chain token-detection lanes (`detect:<chain>`).
@@ -90,7 +99,7 @@ export const ACCOUNT_SYNC_LANE_PREFIX: LaneFamily = 'tx-sync:';
  * A separate family also gives the shape §8 asks for directly: 2 addresses per chain, with the
  * balances cap deciding how many chains detect at once.
  */
-export const DETECT_LANE_PREFIX: LaneFamily = 'detect:';
+export const DETECT_LANE_PREFIX = 'detect:';
 
 /**
  * Family prefix for the per-location exchange lanes (`exchange-events:<location>`). Capped at 1 per
@@ -98,13 +107,13 @@ export const DETECT_LANE_PREFIX: LaneFamily = 'detect:';
  * many locations run at once — the shape the old `awaitGroupedExecution(..., 2)` produced by hand.
  * A flat lane cap could not express it: two slots would happily go to the same exchange.
  */
-export const EXCHANGE_EVENTS_LANE_PREFIX: LaneFamily = 'exchange-events:';
+export const EXCHANGE_EVENTS_LANE_PREFIX = 'exchange-events:';
 
 /**
  * Family prefix for the per-chain account-addition lanes (`accounts-add:<chain>`). Capped at 2 per
  * chain rather than 2 overall: a flat lane would serialize additions across unrelated chains.
  */
-export const ACCOUNTS_ADD_LANE_PREFIX: LaneFamily = 'accounts-add:';
+export const ACCOUNTS_ADD_LANE_PREFIX = 'accounts-add:';
 
 /**
  * Family prefix for the per-chain account-removal lanes (`accounts-remove:<chain>`). Capped at 1 per
@@ -115,7 +124,7 @@ export const ACCOUNTS_ADD_LANE_PREFIX: LaneFamily = 'accounts-add:';
  * unrelated addition. They contend for the same chain only in the sense every chain call does, which
  * is a per-chain budget question, not a reason to serialize the two against each other.
  */
-export const ACCOUNTS_REMOVE_LANE_PREFIX: LaneFamily = 'accounts-remove:';
+export const ACCOUNTS_REMOVE_LANE_PREFIX = 'accounts-remove:';
 
 /** Push live step progress for a running activity. Pure no-op-safe; calling after the spec
  *  settles is harmless (ignored by the orchestrator). */

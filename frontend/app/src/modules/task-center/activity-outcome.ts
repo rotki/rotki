@@ -3,7 +3,7 @@ import { type MessageKey, msg } from '@/message-key';
 import { type ActivityStatus, ActivityStatus as Status } from './core/types';
 
 /** RUI chip colours, narrowed to the five a status can take. */
-export type OutcomeColor = 'error' | 'warning' | 'success' | 'grey' | 'primary';
+type OutcomeColor = 'error' | 'warning' | 'success' | 'grey' | 'primary';
 
 export interface ActivityOutcome {
   readonly color: OutcomeColor;

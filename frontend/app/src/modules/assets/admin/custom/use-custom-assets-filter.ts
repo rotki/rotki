@@ -6,6 +6,6 @@ export const CustomAssetFilterKeys = {
   NAME: 'name',
 } as const;
 
-export type CustomAssetFilterKey = typeof CustomAssetFilterKeys[keyof typeof CustomAssetFilterKeys];
+type CustomAssetFilterKey = typeof CustomAssetFilterKeys[keyof typeof CustomAssetFilterKeys];
 
 export type Filters = MatchedKeyword<CustomAssetFilterKey>;

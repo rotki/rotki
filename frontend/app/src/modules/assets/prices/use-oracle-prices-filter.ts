@@ -9,6 +9,6 @@ export const OraclePriceFilterKeys = {
   TO_ASSET: 'toAsset',
 } as const;
 
-export type OraclePriceFilterKey = typeof OraclePriceFilterKeys[keyof typeof OraclePriceFilterKeys];
+type OraclePriceFilterKey = typeof OraclePriceFilterKeys[keyof typeof OraclePriceFilterKeys];
 
 export type Filters = MatchedKeyword<OraclePriceFilterKey>;

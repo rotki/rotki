@@ -18,6 +18,6 @@ export const HistoryEventFilterKeys = {
   VALIDATOR_INDICES: 'validatorIndices',
 } as const;
 
-export type HistoryEventFilterKey = typeof HistoryEventFilterKeys[keyof typeof HistoryEventFilterKeys];
+type HistoryEventFilterKey = typeof HistoryEventFilterKeys[keyof typeof HistoryEventFilterKeys];
 
 export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterKey>;

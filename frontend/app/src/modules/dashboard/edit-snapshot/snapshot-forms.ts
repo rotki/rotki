@@ -30,7 +30,7 @@ export interface BalanceSnapshotFormState {
   usdValue: string;
 }
 
-export interface BalanceSnapshotMessages {
+interface BalanceSnapshotMessages {
   category: string;
   location: string;
   locationInsufficient: string;

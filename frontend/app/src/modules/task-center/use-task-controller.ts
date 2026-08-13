@@ -5,7 +5,7 @@ import type { TaskError } from '@/modules/core/tasks/task-result';
 import { useTaskCenter } from './use-task-center';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 
-export type CommandResult = Result<void, ControlError | TaskError>;
+type CommandResult = Result<void, ControlError | TaskError>;
 
 interface UseTaskControllerReturn {
   cancel: (activity: Activity) => Promise<CommandResult>;

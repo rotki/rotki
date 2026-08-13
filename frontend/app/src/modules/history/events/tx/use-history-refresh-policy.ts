@@ -8,7 +8,7 @@ import { Purgeable } from '@/modules/session/purge';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
-export interface NoveltyDetection {
+interface NoveltyDetection {
   newAccounts: ChainAddress[];
   newExchanges: Exchange[];
 }

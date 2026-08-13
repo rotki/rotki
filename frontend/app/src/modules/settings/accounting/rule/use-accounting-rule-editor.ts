@@ -14,14 +14,14 @@ import { getPlaceholderRule } from '@/modules/settings/settings-utils';
  * general rule for its type/subtype pair *and* by one written for that event alone, and the choice
  * between them is what the action dialog asks.
  */
-export interface ActionDialogContext {
+interface ActionDialogContext {
   eventId: number;
   generalRule?: AccountingRuleEntry;
   eventSpecificRule?: AccountingRuleEntry;
 }
 
 /** Everything the action dialog renders from, in one object rather than four parallel refs. */
-export interface ActionDialogState {
+interface ActionDialogState {
   open: boolean;
   context?: ActionDialogContext;
   hasGeneralRule: boolean;
