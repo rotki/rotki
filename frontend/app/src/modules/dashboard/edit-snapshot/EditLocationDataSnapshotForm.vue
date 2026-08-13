@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
-import { isEqual } from 'es-toolkit';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
-import { useForm } from '@/modules/core/form/use-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import {
   type LocationDataSnapshotFormState,
   locationDataSnapshotSchema,
@@ -27,34 +26,12 @@ const schema = computed<ZodType>(() => locationDataSnapshotSchema({
   value: t('dashboard.snapshot.edit.dialog.location_data.rules.value'),
 }));
 
-/** The dialog owns the persist and reads the payload off the model, so submitting here is a no-op. */
-const form = useForm<LocationDataSnapshotFormState, LocationDataSnapshotFormState>({
-  initial: (): LocationDataSnapshotFormState => ({ ...get(model) }),
+const form = useModelForm<LocationDataSnapshotFormState>({
+  model,
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
-  transform: (state): LocationDataSnapshotFormState => ({ ...state }),
+  stateUpdated,
   // The timestamp is carried, not edited; only the two fields the form gates count as an edit.
   transientKeys: ['timestamp'],
-});
-
-// The dialog reads the payload it saves straight off the model, so every edit is written back to it.
-watch(() => form.state, (state) => {
-  set(model, { ...state });
-}, { deep: true });
-
-// And an edit made outside the form (a reset, a different row) is pulled back in.
-watch(model, (value) => {
-  if (!isEqual(value, form.state))
-    Object.assign(form.state, value);
-}, { deep: true });
-
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
-
-// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
-onUnmounted(() => {
-  set(stateUpdated, false);
 });
 
 defineExpose({

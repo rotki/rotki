@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
-import { isEqual } from 'es-toolkit';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { historicPriceSchema } from '@/modules/assets/prices/price-forms';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { useForm } from '@/modules/core/form/use-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -29,12 +28,10 @@ const schema = computed<ZodType>(() => historicPriceSchema({
   toAsset: t('price_form.to_non_empty'),
 }));
 
-/** The dialog owns the persist and reads the payload off the model, so submitting here is a no-op. */
-const form = useForm<HistoricalPriceFormPayload, HistoricalPriceFormPayload>({
-  initial: (): HistoricalPriceFormPayload => ({ ...get(modelValue) }),
+const form = useModelForm<HistoricalPriceFormPayload>({
+  model: modelValue,
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
-  transform: (state): HistoricalPriceFormPayload => ({ ...state }),
+  stateUpdated,
   // Carried for the payload, never edited here, so it must not make the form look edited either.
   transientKeys: ['sourceType'],
 });
@@ -43,26 +40,6 @@ const fromAssetSymbol = useAssetField(computed<string>(() => form.state.fromAsse
 const toAssetSymbol = useAssetField(computed<string>(() => form.state.toAsset), 'symbol');
 
 const numericPrice = bigNumberifyFromRef(() => form.state.price);
-
-// The dialog reads the payload it saves straight off the model, so every edit is written back to it.
-watch(() => form.state, (state) => {
-  set(modelValue, { ...state });
-}, { deep: true });
-
-// And an edit made outside the form (a different row, a reset) is pulled back in.
-watch(modelValue, (value) => {
-  if (!isEqual(value, form.state))
-    Object.assign(form.state, value);
-}, { deep: true });
-
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
-
-// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
-onUnmounted(() => {
-  set(stateUpdated, false);
-});
 
 defineExpose({
   validate: (): boolean => form.validate(),
