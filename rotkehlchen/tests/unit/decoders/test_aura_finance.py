@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -17,7 +19,7 @@ from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x6DF95c1F5AdD9cE98a013AD9809782d10272c6b8']])
-def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_aura_finance_deposit_arb(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9c3b996891eb0ffb5261486ff77c69c20a332499b9cf4196df7fab2c2123ea5f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_str, deposit_amount, receive_amount, approve_amount = arbitrum_one_accounts[0], TimestampMS(1732504225000), '0.00000372964', '2.862546191448752712', '2.054508357973208982', '115792089237316195423570985008687907853269984665640564039448.345378216051229581'  # noqa: E501
@@ -79,7 +81,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x4936f33b7B060c7336fD0e4c61316EA248DA6827']])
-def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
+def test_aura_finance_claim_rewards_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xffbc4716efdb4dbd7671c969599827313166fc507e2564ff1222a317d47e7a70')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2 = base_accounts[0], TimestampMS(1721018721000), '0.000001321340972471', '8.383663297617516524', '6.566591452101315364'  # noqa: E501
@@ -129,7 +131,10 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
-def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accounts):
+def test_aura_finance_lock_aura_from_base_to_ethereum(
+        base_inquirer: Any,
+        base_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe0a6fd1bd40451d4b42c520b41a39ab569bf4aae43b741efbe228da40fed91ad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, bridge_fee_amount, locked_amount = base_accounts[0], TimestampMS(1732631175000), '0.000007432156846576', '0.011914017676630994', '90'  # noqa: E501
@@ -178,7 +183,7 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xDbE0c28c273bbB10a632B1aaf65AC2B877bb2b92']])
-def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_aura_finance_lock_aura_ethereum(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x69a2c2e3e7c80f7ca3207041f09bb2799b760b937ba985af65fd69faa7487336')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, approval_amount, locked_amount = ethereum_accounts[0], TimestampMS(1732623719000), '0.002081603016233576', '115792089237316195423570985008687907853269984665640563943628.250490697661436953', '4675.24673564105539589'  # noqa: E501
@@ -226,7 +231,10 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB3af0E54426e48D230c97aE837F34345167BE1C6']])
-def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accounts):
+def test_aura_finance_booster_deposit_ethereum(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4ed0d517c29bfd7d202efb50e7f98fdf1acc78c7f6977b55b56c354efd8275d2')  # noqa: E501
     assert get_evm_token(
         evm_address=(pool_token_address := string_to_evm_address('0x4313428170c09ca81117a95f0418aefE3446d935')),  # noqa: E501
@@ -299,7 +307,10 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_aura_finance_claim_rewards_arb(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3ee95df7dfb12a183ef7ccb408e320a6a909561fe8da5408b3897ebd336b5420')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = arbitrum_one_accounts[0], TimestampMS(1735459868000), '0.00000266091', '0.096740702346661316', '0.097900452506457258', '0.14964073351979476'  # noqa: E501
@@ -362,7 +373,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
-def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
+def test_aura_finance_get_rewards_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc54f5bc1b45b151dd7e106a45fea82a0bbb0dd1a48b5e71be2d8b9f36fbcb704')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = base_accounts[0], TimestampMS(1733666205000), '0.000003758872604736', '0.016918933596764049', '0.018407669504926201', '0.018747704109670571'  # noqa: E501
@@ -424,7 +435,7 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbA3C494F3b3937d1C8101ffBe1588023ad5Ea0A2']])
-def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
+def test_aura_finance_claim_rewards_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xefc4dac1c3cf3b7058ae35427edeb984286ade8097717479294999992c508aee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3, claim_amount_4, claim_amount_5, claim_amount_6, claim_amount_7, claim_amount_8 = ethereum_accounts[0], TimestampMS(1735498547000), '0.002203275422715936', '112.627896656336279713', '114.159636050862453116', '77.020600939024296766', '8.274820603749552408', '184.126157708212142242', '186.630273453043827374', '170.528893362154769237', '216.7944203094842023'  # noqa: E501
@@ -551,7 +562,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x1A02715cf60f0544dEfDB676A3ffeeE710b04115']])
-def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_claim_and_withdraw(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfd54629dda6c8a533a0a8019ccdd9dded867cba1bc623d91a75527b571c66ac9')),  # noqa: E501

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -17,7 +19,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfcA5BDce638Fb8b80438bdb41F5CedcAA8893bc7']])
-def test_lock_gno(ethereum_inquirer, ethereum_accounts):
+def test_lock_gno(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe74bd8d81a057942d734d16303d74b9ae01dcd5659488f7955c36d6be5b107fe')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -67,7 +69,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc62b361FdC14210dA59b9F5c3Ba7FAa7d61893a4']])
-def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
+def test_unlock_gno(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x60b03b2bf3861c68a508f54a233d9ed742ddcd57899e730c57cc10f2939b0df0')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

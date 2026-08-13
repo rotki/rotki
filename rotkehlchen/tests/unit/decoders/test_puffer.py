@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -20,7 +22,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6872a0E272f9De4a7FEF217f2fF9ac297fc72aeb']])
-def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
+def test_pufferxeigen_s2_airdrop(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4e42f307effc0dc7fdfbf72d54a9a86b4b0d96cf1a14f1069717e2d637bf5561')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -54,7 +56,7 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3D8a392BdF76Cf1bB17e9C118d7F390B6c409934']])
-def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
+def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5f5111b2ebdc3fa8f7bcf4659d898fafc00fc7df5e727f1edabf246ee89c68f9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -18,6 +20,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGENPOD_MANAGER,
     REWARDS_COORDINATOR,
 )
+from rotkehlchen.chain.ethereum.modules.eigenlayer.decoder import EigenlayerDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -35,7 +38,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbec0937E0E99425a886B99A3b956C7aC6C39aA12']])
-def test_deposit_token(ethereum_inquirer, ethereum_accounts):
+def test_deposit_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x716b15f5088ff469d7d31680535d35b085e1c3de25255c7849e5955a59df8d31')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
@@ -84,7 +87,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x47E50634E32212F43713Bf4e4A86E6275AcD456d']])
-def test_withdraw(ethereum_inquirer, ethereum_accounts):
+def test_withdraw(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x00bdab08d05bd68f8f863e35a8dbe435978481dcbf15faf7276da30a5bfee971')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
@@ -119,7 +122,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xabe8430e3f0BeCa32915dA84E530f81A01379953']])
-def test_airdrop_claim_s1_phase1(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim_s1_phase1(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0a72c7bf0fe1808035f8df466a70453f29c6b57d0bec46913d993a19ef72265c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     claim_amount = '110'
@@ -155,7 +158,7 @@ def test_airdrop_claim_s1_phase1(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf6d3d6B6cee9991900Bf53261e1bb213A3d54Fec']])
-def test_airdrop_claim_s1_phase2(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim_s1_phase2(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7896ca761e9e2fd53dbec28c946d5dbc2e0802a3700641d26d61bc79afaac1a5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     claim_amount = '110'
@@ -191,7 +194,7 @@ def test_airdrop_claim_s1_phase2(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x65151A6343b16c38286f31fcC93e20246629cF8c']])
-def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
+def test_stake_eigen(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4da63226965a8b0584f137efa934106cd0cb7a15b536d6f659945cfd4c260b4e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -230,7 +233,13 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Deposit {staked_amount} EIGEN in EigenLayer',
         counterparty=CPT_EIGENLAYER,
-        extra_data={'strategy': (strategy_addr := '0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7')},
+        extra_data={
+            'strategy': (
+                strategy_addr := string_to_evm_address(
+                    '0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7',
+                )
+            ),
+        },
         address=strategy_addr,
     )]
     assert events == expected_events
@@ -238,10 +247,12 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x80B7EDA1Baa2290478205786615F65052c80882f']])
-def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
+def test_deploy_eigenpod(ethereum_inquirer: Any, ethereum_accounts: Any, database: Any) -> None:
     ethereum_transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)  # noqa: E501
     ethereum_tx_decoder = EthereumTransactionDecoder(database=database, ethereum_inquirer=ethereum_inquirer, transactions=ethereum_transactions)  # noqa: E501
-    assert ethereum_tx_decoder.decoders['Eigenlayer'].eigenpod_owner_mapping == {}
+    eigenlayer_decoder = ethereum_tx_decoder.decoders['Eigenlayer']
+    assert isinstance(eigenlayer_decoder, EigenlayerDecoder)
+    assert eigenlayer_decoder.eigenpod_owner_mapping == {}
 
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -249,7 +260,7 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
         transactions=ethereum_transactions,
         evm_decoder=ethereum_tx_decoder,
     )
-    eigenpod_address = '0x664BFef14A62F316175d39D355809D04D2Cb7a23'
+    eigenpod_address = string_to_evm_address('0x664BFef14A62F316175d39D355809D04D2Cb7a23')
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
@@ -278,14 +289,14 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
         address=EIGENPOD_MANAGER,
     )]
     assert events == expected_events
-    assert ethereum_tx_decoder.decoders['Eigenlayer'].eigenpod_owner_mapping == {
+    assert eigenlayer_decoder.eigenpod_owner_mapping == {
         eigenpod_address: ethereum_accounts[0],
     }
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x15646dDb42Ee60B26A0BA727CFeB4E8b1A319cdE', '0x24557b5D264757A3fCe2B55b257709D9f8C5aE94']])  # noqa: E501
-def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
+def test_deploy_eigenpod_via_safe(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x449447b417019f9d8617e41c735c206d94669e91e066bd3cb0dd609fcd8faff7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     eigenpod_address = '0x081aC22eb8582eF9f5ae596A5E8Df42b451b28b7'
@@ -336,7 +347,7 @@ def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd007058e9b58E74C33c6bF6fbCd38BaAB813cBB6']])
-def test_create_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
+def test_create_delayed_withdrawals(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd054c9f07b880ac8e587c725b0427dde2b4c2633250f6f84a5c803fa665fe307')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     withdrawal_amount = '0.021045998'
@@ -371,7 +382,12 @@ def test_create_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x02855536652F67cB936851D94c793Fb3Ba27F9bb']])
-def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts, inquirer):  # pylint: disable=unused-argument
+def test_lst_create_delayed_withdrawals(
+        database: Any,
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+        inquirer: Any,
+) -> None:  # pylint: disable=unused-argument
     events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8c006f764e9264cd150b2583ba72205bb4575ace76ed3afa83689227e9fe461b')),  # noqa: E501
@@ -438,7 +454,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Ee701145E1F44C9AA9fc8889F80863198838145']])
-def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+def test_lst_complete_delayed_withdrawals(database: Any, ethereum_inquirer: Any, ethereum_accounts: Any, inquirer: Any) -> None:  # pylint: disable=unused-argument  # noqa: E501
     queue_tx_hash = deserialize_evm_tx_hash('0xeab48010e80d50b7d35fd43a886448ffca1e798b641baf7c8877fc04075d972b')  # noqa: E501
     get_decoded_events_of_transaction(  # just decode the events of the withdrawal queuing
         evm_inquirer=ethereum_inquirer,
@@ -519,7 +535,11 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1DEd04611E3B48F620D42bC97f798cb085403f73']])
-def test_complete_withdrawal_post_slashing_token(database, ethereum_inquirer, ethereum_accounts):
+def test_complete_withdrawal_post_slashing_token(
+        database: Any,
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test queueing and completing an EIGEN withdrawal emitting the SlashingWithdrawalQueued
     and SlashingWithdrawalCompleted events introduced by the slashing upgrade (ELIP-002).
     Also checks that the EIGEN strategy's bEIGEN underlying token is shown as EIGEN,
@@ -638,7 +658,11 @@ def test_complete_withdrawal_post_slashing_token(database, ethereum_inquirer, et
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x79f4B334c0e290250Dd5b65799310805FD807F0F']])
-def test_complete_withdrawal_post_slashing_eth(database, ethereum_inquirer, ethereum_accounts):
+def test_complete_withdrawal_post_slashing_eth(
+        database: Any,
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test queueing and completing a natively restaked ETH withdrawal emitting the
     events introduced by the slashing upgrade (ELIP-002). The ETH is sent to the
     withdrawer by their eigenpod when the withdrawal is completed."""
@@ -756,7 +780,10 @@ def test_complete_withdrawal_post_slashing_eth(database, ethereum_inquirer, ethe
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1DEd04611E3B48F620D42bC97f798cb085403f73']])
-def test_complete_withdrawal_token_without_queue_event(ethereum_inquirer, ethereum_accounts):
+def test_complete_withdrawal_token_without_queue_event(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test completing a token withdrawal whose queueing event is not in the DB.
 
     This happens when the withdrawal was queued by a transaction not associated with any
@@ -809,7 +836,10 @@ def test_complete_withdrawal_token_without_queue_event(ethereum_inquirer, ethere
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x79f4B334c0e290250Dd5b65799310805FD807F0F']])
-def test_complete_withdrawal_eth_without_queue_event(ethereum_inquirer, ethereum_accounts):
+def test_complete_withdrawal_eth_without_queue_event(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test completing a natively restaked ETH withdrawal whose queueing event is not
     in the DB, same as in test_complete_withdrawal_token_without_queue_event. Simulated
     by decoding only the completion transaction of the queue/complete pair used in
@@ -860,7 +890,7 @@ def test_complete_withdrawal_eth_without_queue_event(ethereum_inquirer, ethereum
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xCd2bCdE423F36E1B81a25168D5373f908546c9BE', '0xf17606D3FFbd5B07454542146a74712Eb797Ac0a']])  # noqa: E501
-def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
+def test_claim_delayed_withdrawals(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc5d38c05567f5a4d51e686225dfc461ddf177eefa7c531822656b2ed9560ab12')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -909,7 +939,7 @@ def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x78524bEeAc12368e600457478738c233f436e9f6']])
-def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
+def test_native_restake_delegate(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd857a09084c1dfc1d2df83cbeed70e99b79b1e3a74c7385df7dc7065a79e184c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     eth_restaked = '160'
@@ -948,7 +978,7 @@ def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x574c25d8e5fF25377a5D2E319f4ADeAeDD66539a',  # proof submitter
     '0xefF584E8336dA7A23EE32ea19a937b016D69d589']])  # eigenpod owner
-def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
+def test_eigenpod_start_checkpoint(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Note: The address we track here is the proof submitter of the eigenpod.
     It's not possible to have multiple. By default pod owner is also submitter but
     this can also be changed."""
@@ -993,7 +1023,7 @@ def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x574c25d8e5fF25377a5D2E319f4ADeAeDD66539a',  # proof submitter
     '0xefF584E8336dA7A23EE32ea19a937b016D69d589']])  # eigenpod owner
-def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts):
+def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     add_create_eigenpod_event(
         database=ethereum_inquirer.database,
         eigenpod_owner=(eigenpod_owner := ethereum_accounts[1]),
@@ -1059,7 +1089,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x8ccF35F1A937205fe20353DE42cFAdE8f34cE7E1']])
-def test_avs_rewards_claim(ethereum_inquirer, ethereum_accounts):
+def test_avs_rewards_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x652b479994529e11f1331864739312e643e912a78cf1dca05403aa1d33c4ac46')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -1094,7 +1124,7 @@ def test_avs_rewards_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA8aF03ceEB1F63805c09C8497a877cb4788b115d']])
-def test_airdrop_claim_s2(ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim_s2(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc939c3ccdb19a4cdc27d00f2010cd45f652e0553efc663ae6050fa2eed74db8a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(

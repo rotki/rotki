@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +20,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import CacheType, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import CacheType, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ def _stakedao_gauges(globaldb: GlobalDBHandler) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6eEC7Dd840e3c1aBbaC157bB3C14e2aCBa72bC1e']])
-def test_claim_one(ethereum_inquirer, ethereum_accounts):
+def test_claim_one(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3f747b34f1d0a6c59c62b5d6c3aba8f2bd278546cd53daa131327242c7c5b02e')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -84,7 +84,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
             asset=A_CRV,
             amount=FVal(amount_str := '215.403304465915246838'),
             location_label=user_address,
-            notes=f'Claim {amount_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(Timestamp(period), formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER2,
         ),
@@ -93,7 +93,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x54dEa0D442c3254419382f0b5Fc5D245eb241569']])
-def test_old_claim(ethereum_inquirer, ethereum_accounts):
+def test_old_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc76710a3bd4428ae8f462f75b31fcf56bbf40c4cfe2746f62259437526735073')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -122,7 +122,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'),
             amount=FVal(amount_str := '1.029361212967421451'),
             location_label=user_address,
-            notes=f'Claim {amount_str} INV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount_str} INV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(Timestamp(period), formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER_OLD,
         ),
@@ -131,7 +131,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c28C42B24B7909c8292920929f083F60C4997A6']])
-def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
+def test_claim_multiple(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc866db3fcbef6359919c444de324b6f059f299ed155f5bff00abd81537c88627')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -160,7 +160,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             asset=A_CRV,
             amount=FVal(amount1_str := '43.57001129039620188'),
             location_label=user_address,
-            notes=f'Claim {amount1_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount1_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(Timestamp(period), formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER1,
         ), EvmEvent(
@@ -173,7 +173,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             asset=A_CRV,
             amount=FVal(amount2_str := '41.966838515681574848'),
             location_label=user_address,
-            notes=f'Claim {amount2_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount2_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(Timestamp(period), formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER1,
         ),
@@ -182,7 +182,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x76d5eb42A854A1cEAfFD99000341d4E4e7a4a70F']])
-def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
+def test_deposit(ethereum_inquirer: Any, ethereum_accounts: Any, stakedao_gauges: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0b98f04aeeaa4068b8c8ae0568ed236537c3573b4c3e6fd6b1924741cd5c9ef5')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -231,7 +231,7 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5bAaC7ccda079839C9524b90dF81720834FC039f']])
-def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
+def test_withdraw(ethereum_inquirer: Any, ethereum_accounts: Any, stakedao_gauges: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f0b98aa12fb35df17801ddfbbc0c2979ec611b50311535bad92ab5ec54f65f9')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -306,7 +306,11 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x65387326f9b8C3B6a83C1B3dFB43061F3ff3E508']])
-def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gauges):
+def test_deposit_arb(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+        stakedao_gauges: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x433171926de6f818765b125e259244f6965993a4bc0eb055a03ee007f9e8a1e8')  # noqa: E501
     user_address = arbitrum_one_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -354,11 +358,15 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xa99345367044C80D8f01d0618c44B752C4C29Bdb']])
-def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges):
+def test_withdraw_bsc(
+        binance_sc_inquirer: Any,
+        binance_sc_accounts: Any,
+        stakedao_gauges: Any,
+) -> None:
     user_address = binance_sc_accounts[0]
     original_get = binance_sc_inquirer.etherscan.session.get
 
-    def mocked_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mocked_get(url: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         params = kwargs.get('params') or {}
         if params.get('action') == 'txlistinternal':
             return MockResponse(200, '{"status":"0","message":"No transactions found","result":[]}')  # noqa: E501
@@ -427,7 +435,7 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x811e8f6d80F38A2f0f8b606cB743A950638f0aD4']])
-def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_claim_rewards(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7ce0becce93ff093c51f33c2012fd3d2dfa5118cedb1c60d9cad339ceb3e4ae4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -487,7 +495,7 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb6aE392c3D209BEE9dEd8A2a434A47c05F651092']])
-def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
+def test_claim_bribe_with_protocolfee(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd76c858d4e9a11d6b2cb70ca752c898728e79f40705c93d7e31b814f8f20a497')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, gas_amount, claim_amount, timestamp, period = ethereum_accounts[0], '0.002079703956975652', '0.703793566500610594', TimestampMS(1679130407000), 1678924800  # noqa: E501
@@ -514,7 +522,7 @@ def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96'),  # GNO
         amount=FVal(claim_amount),
         location_label=user_address,
-        notes=f'Claim {claim_amount} GNO from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+        notes=f'Claim {claim_amount} GNO from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(Timestamp(period), formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x7D0F747eb583D43D41897994c983F13eF7459e1f'),
     )]

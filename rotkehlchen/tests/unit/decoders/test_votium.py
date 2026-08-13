@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -14,7 +16,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA']])
-def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
+def test_votium_claim_1(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test for votium contract 1 (MultiMerkleStash)"""
     tx_hash = deserialize_evm_tx_hash('0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -52,7 +54,7 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x96CC80292fa3A7045611EB84aE09DF8bd15936d2']])
-def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
+def test_votium_claim_2(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test for votium contract 2 (veCRV Merkle Stash)"""
     tx_hash = deserialize_evm_tx_hash('0x27b48aa8f0f02e8e35f182925e2efb2a299a1410641d96de4de98666d28b36c7')  # noqa: E501
     user_address = ethereum_accounts[0]

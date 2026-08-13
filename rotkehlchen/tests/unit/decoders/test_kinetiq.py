@@ -31,7 +31,7 @@ A_VKHYPE = Asset('eip155:999/erc20:0x9BA2EDc44E0A4632EB4723E81d4142353e1bB160')
 def test_kinetiq_stake(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4038b03243cb10a8efd117e4126e44a74e8694167ecdfeb58736dfd915ce5cdb')),  # noqa: E501
@@ -84,7 +84,7 @@ def test_kinetiq_stake(
 def test_kinetiq_partner_stake(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test that staking via a partner deployment (Flowdesk flowHYPE) is also decoded"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
@@ -138,7 +138,7 @@ def test_kinetiq_partner_stake(
 def test_kinetiq_queue_withdrawal(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1638247ae17adceb57fb31545c569ceed387c1d82c9b8e9ef55cfcec5446bf25')),  # noqa: E501
@@ -179,7 +179,7 @@ def test_kinetiq_queue_withdrawal(
 def test_kinetiq_confirm_withdrawal(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xacd376754d6b72d3975443c23bb34d3422282c10d215f8b9feb020c41f7bd574')),  # noqa: E501
@@ -219,7 +219,7 @@ def test_kinetiq_confirm_withdrawal(
 def test_kinetiq_instant_unstake(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x507ff2318c3e35d619901831491b9d1b7228fc705bf92d1646bc3e42e57b1c93')),  # noqa: E501
@@ -272,7 +272,7 @@ def test_kinetiq_instant_unstake(
 def test_kinetiq_redelegate(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb3eea91821a2a02e47df5aab9907755ff2c652480da4ec9e6d0ea6604fdc705e')),  # noqa: E501
@@ -312,7 +312,7 @@ def test_kinetiq_redelegate(
 def test_kinetiq_earn_deposit(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8307faa1eb25f100669a87aed4d026ccb5366974f39f215af731aca383ddcc01')),  # noqa: E501
@@ -365,7 +365,7 @@ def test_kinetiq_earn_deposit(
 def test_kinetiq_earn_withdraw_request(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5039d2c51631d6b600a346b502d46fb9354a7948a24c4fdef8907f030b94aafe')),  # noqa: E501
@@ -410,7 +410,7 @@ def test_kinetiq_earn_withdraw_request(
 def test_kinetiq_earn_withdraw_solve(
         hyperliquid_inquirer: HyperliquidInquirer,
         hyperliquid_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test the execution of a queued Kinetiq Earn withdrawal (here self-solved by the user)"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=hyperliquid_inquirer,

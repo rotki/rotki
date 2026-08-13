@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -20,10 +22,11 @@ from rotkehlchen.types import Eth2PubKey, Location, TimestampMS, deserialize_evm
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc66962Ff943449C90b457856D448Aa19D60CB033']])
-def test_deposit(database, ethereum_inquirer, ethereum_accounts):
+def test_deposit(database: Any, ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test a simple beacon chain deposit contract"""
     dbeth2 = DBEth2(database)
     validator = ValidatorDetails(validator_index=507258, public_key=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'), validator_type=ValidatorType.DISTRIBUTING)  # noqa: E501
+    assert validator.validator_index is not None
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(  # add validator in DB so decoder can map pubkey -> index
             write_cursor,
@@ -59,7 +62,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3e5fd0244e13d82fC230f3Fc610bcd76b3c8217C']])
-def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
+def test_multiple_deposits(database: Any, ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -125,7 +128,11 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397', '0xFbcE5F52fc21296AE42EE000dFdFdC7FecAaA2fD']])  # noqa: E501
-def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_accounts):
+def test_deposit_with_anonymous_event(
+        database: Any,
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """As seen here: https://twitter.com/LefterisJP/status/1671515625397669889
 
     This is a beaconchain deposit via a proxy contract (who is also the depositor).
@@ -134,6 +141,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
     """
     dbeth2 = DBEth2(database)
     validator = ValidatorDetails(validator_index=482198, public_key=Eth2PubKey('0xaa9c8a2653f08b3045fdb63547bfe1ad2a66225f7402717bde9897cc163840ee190ed31c78819db372253332bba3c570'), validator_type=ValidatorType.DISTRIBUTING)  # noqa: E501
+    assert validator.validator_index is not None
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(  # add validator in DB so decoder can map pubkey -> index
             write_cursor,
@@ -169,7 +177,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
 
 @pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5907fc323d165680fb8141681958A2FdBFA0907e']])
-def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
+def test_convert_to_accumulating_request(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcc80041642ebd2f62a9d939321a1927f52d2bcb984355accefadcb20f9641d28')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -216,7 +224,7 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcECA24BE4585ADadC8f0D95285F65ac44533094C']])
-def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
+def test_consolidation_request(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x812eeeb8a786650afa1826d8e9d46aa2073e28f1ed261f0c3da4ea18b7d7cd82')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -266,7 +274,7 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
     '0x338aD53f251a7a9A1E4644f91802EDBD0683175d',
     '0x3fd8462E467708e5d1Dd4aD6BEcf4058d4ccBD8d',
 ]])
-def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
+def test_multi_consolidation_request(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     """Test that a multisig withdrawal address asking to consolidate multiple works fine"""
     tx_hash = deserialize_evm_tx_hash('0xbded678de7cb58d7f0e4e8d1f0f5adeb1dd5097601a8ab5790558f8228a04c58')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -320,7 +328,7 @@ def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x86863bC22648d8c2fb02e3fcA314B8ee9ca0A4e0']])
-def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
+def test_withdraw_request(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5f038d3775fc27e16d8d5770aa1ba6f962e67ff8db0a194551566418542d60dc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -367,7 +375,7 @@ def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Fb695A1b8Bc5ea18d8A4811eb514a7E17d80695']])
-def test_exit_request(ethereum_inquirer, ethereum_accounts):
+def test_exit_request(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6224c1cde536d2488e29be74da6ed907bbeb885ecd38edc99820f35d8c0e136c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
