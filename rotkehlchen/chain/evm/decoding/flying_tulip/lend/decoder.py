@@ -43,9 +43,9 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -153,5 +153,5 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             notes=notes,
         )
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.deployment.positions_manager: (self._decode_positions_manager,)}

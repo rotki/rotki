@@ -35,9 +35,9 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -123,5 +123,5 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.deployment.put_manager: (self._decode_put_manager,)}

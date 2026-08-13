@@ -4,17 +4,19 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
+    from eth_typing import ABI
+
     from rotkehlchen.types import ChecksumEvmAddress
 
 
 class FlyingTulipLendDeployment(NamedTuple):
     """Addresses of the Flying Tulip lending contracts on one chain."""
-    positions_manager: 'ChecksumEvmAddress'
-    lending_lens: 'ChecksumEvmAddress'
+    positions_manager: ChecksumEvmAddress
+    lending_lens: ChecksumEvmAddress
     # RFQ engines move funds inside the positions manager on behalf of users
     # when filling leverage orders. Events they drive are position-internal
     # rebalancing, not wallet-level lending activity, and are skipped.
-    engines: frozenset['ChecksumEvmAddress']
+    engines: frozenset[ChecksumEvmAddress]
 
 
 FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] = {
@@ -44,7 +46,7 @@ PM_REPAY_TOPIC: Final = b"2\xb9\xf1\x92\xf0FP$7\xb6R\x80\xa1\xff\x8aCS'\xa7\xbb9
 # 0xfe1b46ad82b670225ffdad07a6c5d6c091daed088a1c049d9e4a3dc82124e137
 PM_REPAY_FOR_TOPIC: Final = b'\xfe\x1bF\xad\x82\xb6p"_\xfd\xad\x07\xa6\xc5\xd6\xc0\x91\xda\xed\x08\x8a\x1c\x04\x9d\x9eJ=\xc8!$\xe17'  # noqa: E501
 
-POSITIONS_MANAGER_ABI: Final = [
+POSITIONS_MANAGER_ABI: Final[ABI] = [
     {
         'inputs': [{'name': 'user', 'type': 'address'}],
         'name': 'userCollateralAssets',
@@ -72,7 +74,7 @@ POSITIONS_MANAGER_ABI: Final = [
     },
 ]
 
-LENDING_LENS_ABI: Final = [
+LENDING_LENS_ABI: Final[ABI] = [
     {
         'inputs': [
             {'name': 'user', 'type': 'address'},

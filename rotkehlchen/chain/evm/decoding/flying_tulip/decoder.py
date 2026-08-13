@@ -29,9 +29,9 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
             self,
             context: DecoderContext,
             from_event_type: HistoryEventType,
-            token: 'EvmToken',
-            amount: 'FVal',
-            location_label: 'ChecksumEvmAddress | None',
+            token: EvmToken,
+            amount: FVal,
+            location_label: ChecksumEvmAddress | None,
             to_event_type: HistoryEventType,
             to_event_subtype: HistoryEventSubType,
             notes: str,
@@ -74,5 +74,5 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
         )])
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (FLYING_TULIP_CPT_DETAILS,)

@@ -49,9 +49,9 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -318,7 +318,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             to_counterparty=CPT_FLYING_TULIP,
         )])
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             self.deployment.mint_and_redeem: (self._decode_mint_redeem,),
             self.deployment.staking_vault: (self._decode_staking_vault,),
