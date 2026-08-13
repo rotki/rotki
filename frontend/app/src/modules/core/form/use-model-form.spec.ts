@@ -1,5 +1,7 @@
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { startPromise } from '@shared/utils';
 import { describe, expect, it } from 'vitest';
-import { nextTick, type Ref, ref } from 'vue';
+import { customRef, nextTick, type Ref, ref } from 'vue';
 import { z } from 'zod';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 
@@ -107,6 +109,122 @@ describe('useModelForm', () => {
       createWithFlag(stateUpdated);
 
       expect(get(stateUpdated)).toBe(false);
+    });
+  });
+
+  describe('seed', () => {
+    it('should open on the seeded value', () => {
+      const model = ref<PriceState>(baseModel());
+      const form = useModelForm<PriceState>({
+        model,
+        schema: PriceSchema,
+        seed: state => ({ ...state, sourceType: 'oracle' }),
+      });
+
+      expect(form.state.sourceType).toBe('oracle');
+    });
+
+    it('should not count the seeding as an edit', async () => {
+      const stateUpdated = ref<boolean>(false);
+      const form = useModelForm<PriceState>({
+        model: ref<PriceState>(baseModel()),
+        schema: PriceSchema,
+        seed: state => ({ ...state, sourceType: 'oracle' }),
+        stateUpdated,
+      });
+      await nextTick();
+
+      expect(get(form.dirty)).toBe(false);
+      expect(get(stateUpdated)).toBe(false);
+    });
+
+    it('should put the seeded value in the model the dialog saves', () => {
+      const model = ref<PriceState>(baseModel());
+      useModelForm<PriceState>({
+        model,
+        schema: PriceSchema,
+        seed: state => ({ ...state, sourceType: 'oracle' }),
+      });
+
+      expect(get(model).sourceType).toBe('oracle');
+    });
+
+    /*
+     * A `defineModel` ref reads back the value from before the write until the parent catches up, so
+     * the model still reports the pre-seed payload right after the form seeds it. Asserted on the
+     * spot, with no tick in between: let the ref catch up first and the state converges either way,
+     * which is what made an earlier version of this test unable to fail.
+     */
+    it('should not let a stale model read undo the seeding', () => {
+      const inner = ref<PriceState>(baseModel());
+      const lagging = customRef<PriceState>((track, trigger) => ({
+        get: (): PriceState => {
+          track();
+          return get(inner);
+        },
+        set: (value): void => {
+          startPromise(nextTick().then(() => {
+            set(inner, value);
+            trigger();
+          }));
+        },
+      }));
+
+      const form = useModelForm<PriceState>({
+        model: lagging,
+        schema: PriceSchema,
+        seed: state => ({ ...state, sourceType: 'oracle' }),
+      });
+
+      expect(form.state.sourceType).toBe('oracle');
+      expect(get(form.dirty)).toBe(false);
+    });
+
+    it('should still edit normally after seeding', async () => {
+      const model = ref<PriceState>(baseModel());
+      const form = useModelForm<PriceState>({
+        model,
+        schema: PriceSchema,
+        seed: state => ({ ...state, sourceType: 'oracle' }),
+      });
+
+      form.state.price = '3000';
+      await nextTick();
+
+      expect(get(model).price).toBe('3000');
+      expect(get(form.dirty)).toBe(true);
+    });
+  });
+
+  describe('serverErrors', () => {
+    it('should surface errors the dialog is already holding when the form mounts', () => {
+      const form = useModelForm<PriceState>({
+        model: ref<PriceState>(baseModel()),
+        schema: PriceSchema,
+        serverErrors: ref({ price: 'already known' }),
+      });
+
+      expect(form.errors('price')).toEqual(['already known']);
+    });
+
+    it('should surface errors reported after a failed save', async () => {
+      const serverErrors = ref<ValidationErrors>({});
+      const form = useModelForm<PriceState>({ model: ref<PriceState>(baseModel()), schema: PriceSchema, serverErrors });
+
+      set(serverErrors, { price: ['too high', 'and wrong'] });
+      await nextTick();
+
+      expect(form.errors('price')).toEqual(['too high', 'and wrong']);
+    });
+
+    it('should drop a server error once the field it names is edited', async () => {
+      const serverErrors = ref<ValidationErrors>({ price: 'already known' });
+      const form = useModelForm<PriceState>({ model: ref<PriceState>(baseModel()), schema: PriceSchema, serverErrors });
+
+      form.state.price = '3000';
+      await nextTick();
+
+      expect(form.errors('price')).toEqual([]);
     });
   });
 

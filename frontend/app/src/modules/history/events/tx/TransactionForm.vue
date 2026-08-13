@@ -10,7 +10,6 @@ import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { toServerErrors } from '@/modules/core/form/server-errors';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import { transactionFormSchema, type TransactionFormState } from '@/modules/history/events/tx/transaction-form';
 
@@ -42,22 +41,22 @@ const schema = computed<ZodType>(() => transactionFormSchema({
   txRefValid: t('transactions.form.tx_hash.validation.valid'),
 }));
 
+/** The dialog opens on the chain the last add used, or on the first one with an account. */
+function rememberedChain(): string {
+  const options = get(chainOptions);
+  if (!options.includes(get<string>(lastChain)) && options.length > 0) {
+    set(lastChain, options[0]);
+  }
+  return get<string>(lastChain);
+}
+
 const form = useModelForm<TransactionFormState>({
   model: modelValue,
   schema,
+  seed: state => ({ ...state, blockchain: rememberedChain() }),
+  serverErrors: errors,
   stateUpdated,
 });
-
-/*
- * The dialog opens on the chain the last add used. It is seeded through `reset`, so it becomes part
- * of the baseline the form compares against: written as a plain edit it would arm the dialog's
- * close prompt before the user has typed anything.
- */
-const options = get(chainOptions);
-if (!options.includes(get<string>(lastChain)) && options.length > 0) {
-  set(lastChain, options[0]);
-}
-form.reset({ ...form.state, blockchain: get<string>(lastChain) });
 
 const usableChains = computed<string[]>(() => {
   const blockchain = form.state.blockchain;
@@ -98,11 +97,6 @@ watch(() => form.state.blockchain, (chain) => {
     set(lastChain, chain);
   }
 });
-
-// Immediate: the dialog can hand the form errors from a save that failed before it reopened.
-watchImmediate(errors, (value) => {
-  form.setServerErrors(toServerErrors(value));
-}, { deep: true });
 
 onBeforeUnmount(() => {
   set(errors, {});
