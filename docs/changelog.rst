@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Frankencoin Savings deposits, withdrawals, interest and balances are now supported on Ethereum, Arbitrum One, Base, Gnosis, Optimism and Polygon PoS.
 * :feature:`-` The Help menu can now open the data directory, next to the entry that opens the logs directory. It stays disabled until the backend is running, since that is when the directory in use is known.
 * :bug:`-` Single-asset deposits in StakeDAO are now decoded correctly.
 * :bug:`-` Swaps in Gnosis chain that paraswap routes through a curve pool are properly decoded again.
