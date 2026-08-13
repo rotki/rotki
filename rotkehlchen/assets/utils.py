@@ -22,6 +22,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_HYPE,
     A_MON,
+    A_S,
     A_WBNB,
     A_WETH,
     A_WETH_ARB,
@@ -31,6 +32,7 @@ from rotkehlchen.constants.assets import (
     A_WHYPE,
     A_WMON,
     A_WPOL,
+    A_WS,
     A_WXDAI,
     A_XDAI,
 )
@@ -725,7 +727,7 @@ def get_decimals(asset: CryptoAsset) -> int:
     May raise:
     - UnsupportedAsset if the given asset is not a native token or an ERC20 token
     """
-    if asset in (A_ETH, A_XDAI, A_BSC_BNB, A_HYPE, A_MON):
+    if asset in (A_ETH, A_XDAI, A_BSC_BNB, A_HYPE, A_MON, A_S):
         return 18
     try:
         token = asset.resolve_to_evm_token()
@@ -764,4 +766,5 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.BINANCE_SC: A_WBNB,
     SupportedBlockchain.SCROLL: A_WETH_SCROLL,
     SupportedBlockchain.MONAD: A_WMON,
+    SupportedBlockchain.SONIC: A_WS,
 }
