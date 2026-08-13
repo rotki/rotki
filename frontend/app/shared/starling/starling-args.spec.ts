@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { describeResolvedCore } from './starling-args';
+import { describeResolvedCore } from './starling-launchers';
 
 // The dev launchers probe the filesystem (is the warm-up build there?) and shell
 // out to uv (which interpreter?). Both are mocked so these run identically on a
@@ -223,6 +223,25 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     existsSyncMock.mockReturnValue(true);
     const invocation = await buildDevInvocation();
     expect(invocation.env).toBeUndefined();
+  });
+
+  // The dev-proxy sits between starling and core, so starling has to be told to
+  // forward `/api/1/*` through it. Off by default: without the flag a run is
+  // byte-identical to what it was before the option existed.
+  it('should not name a core upstream unless the dev-proxy is on', async () => {
+    existsSyncMock.mockReturnValue(true);
+    const { args } = await buildDevInvocation();
+    expect(args).not.toContain('--core-upstream-port');
+  });
+
+  it('should point starling at the dev-proxy when one was allocated', async () => {
+    existsSyncMock.mockReturnValue(true);
+    vi.resetModules();
+    const { buildStarlingInvocation } = await import('./starling-args');
+    const { args } = buildStarlingInvocation({ ...devInput, coreUpstreamPort: 4243 });
+    expect(flagValue(args, '--core-upstream-port')).toBe('4243');
+    // Core is still spawned and supervised on its own port; only the data route moves.
+    expect(flagValue(args, '--core-port')).toBe('4242');
   });
 
   // StarlingHandler.stop() outwaits this same constant before it SIGKILLs, so
