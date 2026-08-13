@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -12,7 +14,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('monad_accounts', [['0xB5c0e65Fb2A31CB935F5234A9982050AC1693E55']])
-def test_wmon_wrap(monad_inquirer, monad_accounts):
+def test_wmon_wrap(monad_inquirer: Any, monad_accounts: Any) -> None:
     """Test wrapping MON to WMON on Monad"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=monad_inquirer,
@@ -61,7 +63,7 @@ def test_wmon_wrap(monad_inquirer, monad_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('monad_accounts', [['0x9D24d495F7380BA80dC114D8C2cF1a54a68e25A4']])
-def test_wmon_unwrap(monad_inquirer, monad_accounts):
+def test_wmon_unwrap(monad_inquirer: Any, monad_accounts: Any) -> None:
     """Test unwrapping WMON to MON on Monad"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=monad_inquirer,

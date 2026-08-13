@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -37,7 +37,7 @@ A_ZIG: Final = Asset('eip155:1/erc20:0xb2617246d0c6c0087f18703d576831899ca94f01'
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfe25d6300D33e19E15AeeFEFD0Aafb319Dd61ae1']])
-def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
+def test_rainbow_swap_eth_to_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcd6afacf1efce38186b6cf9164792c4034d33d3f071c5e28c0b79ce5ab0223a9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees, fee_amount, timestamp, user_address = '0.1983', '28827.267041421686554081', '0.000114360530468618', '0.0017', TimestampMS(1741808351000), ethereum_accounts[0]  # noqa: E501
@@ -103,7 +103,7 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0a471798F7f609A0B7fAC97051E57Be1c434FdeF']])
-def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
+def test_rainbow_swap_token_to_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd34d7393151a3c0f2d23d0df4d8f0b4a000be7613277e831ef0860191e68f855')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     swap_amount, received_amount, gas_fees, fee_amount, timestamp, user_address = '1010.887928111872496631', '0.089068967427375408', '0.000147805218572058', '0.000763576624440434', TimestampMS(1741892171000), ethereum_accounts[0]  # noqa: E501
@@ -160,7 +160,7 @@ def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB80177697e160eFC91d4B1ec295ABE6Ce0c0Fe1f']])
-def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
+def test_rainbow_swap_token_to_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x4f85ee11bbc401240755b083106e0811e6b60ef7972063a51596934cbb6ed43f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_fees, swap_amount, received_amount, approve_amount, fee_amount, timestamp, user_address = '0.000364910690805408', '77248.794187730822813278', '45110.517197738477939043', '115792089237316195423570985008687907853269984665640563961546.545997090312884234', '662.243823091993942423', TimestampMS(1741889531000), ethereum_accounts[0]  # noqa: E501
@@ -229,7 +229,10 @@ def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xD918F8179e915e523c0d14B98dDD45aD6AE82076']])
-def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_rainbow_swap_on_arbitrum_one(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xeb91cb1f850ebf1ac028b9c23c2445e8d050df6eca58f9aff6a2f77e5d156fcc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.0000046705', '0.0305382', '57.839494', '0.0002618', TimestampMS(1742300433000), arbitrum_one_accounts[0]  # noqa: E501
@@ -287,7 +290,7 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x4C855204c4EeD411a03D20acE673d08837A8F5ee']])
-def test_rainbow_swap_on_base(base_inquirer, base_accounts):
+def test_rainbow_swap_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa8ba1828b24608d3c3405a211bca5fcb57c5f4cdfde93d6a55b7f3b16f8f78f1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.000000503840420226', '0.00007932', '2.062496993416307892', '0.00000068', TimestampMS(1742302681000), base_accounts[0]  # noqa: E501
@@ -344,7 +347,7 @@ def test_rainbow_swap_on_base(base_inquirer, base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xe733D0155F460DC8574855293Fbd4E6b44699374']])
-def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
+def test_rainbow_swap_on_binance_sc(binance_sc_inquirer: Any, binance_sc_accounts: Any) -> None:
     """Test that a rainbow swap on binance_sc works correctly.
     Also a regression test for https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=109177215
     Rainbow swap fees are calculated from the internal transactions, but the app only queries
@@ -360,7 +363,7 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         database=binance_sc_inquirer.database,
     )._query_and_save_internal_transactions_for_parent_hash
 
-    def mock_query_and_save_internal_txs(*args, **kwargs):
+    def mock_query_and_save_internal_txs(*args: Any, **kwargs: Any) -> Any:
         """On the initial attempt to query, add an unrelated internal tx to ensure all needed
         transactions get queried later even when some are already present for this tx_hash.
         On any subsequent attempts to query simply call the original query function.
@@ -447,7 +450,7 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x158E5aE870c64C0B48Dd062c62D160aBF13391b6']])
-def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
+def test_rainbow_swap_on_optimism(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc670f3c5efbeaf47e1c14349be3dc0f6df136b69d651b26e3a2cf371b6a63f6f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.000000048317451417', '0.01060905', '23.332130274980295506', '0.00009095', TimestampMS(1742305889000), optimism_accounts[0]  # noqa: E501
@@ -504,7 +507,7 @@ def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x383d65320c9f1F4109DeB828d29FC7573122E9a7']])
-def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
+def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x240ab184f97590310a32b77ebbcaa80f898a01c29592f41442391c67f7e20360')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.0138519465', '9.915', '7.29700878889547439', '0.085', TimestampMS(1742309278000), polygon_pos_accounts[0]  # noqa: E501
@@ -562,7 +565,7 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
 @pytest.mark.parametrize('base_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
-def test_rainbow_swap_token_to_eth_on_base(base_inquirer, base_accounts):
+def test_rainbow_swap_token_to_eth_on_base(base_inquirer: Any, base_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1dadb9930dfd8732fe2281435fabf3b32d0a1317b02c4484153e3c9c8e5aa5ce')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.000764710318845322', '2043495.674885273676574334', '0.168875532937728981', '0.001447747887010283', TimestampMS(1710032189000), base_accounts[0]  # noqa: E501

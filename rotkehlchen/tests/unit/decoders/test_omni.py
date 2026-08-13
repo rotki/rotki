@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -20,7 +22,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9211043D7012457a51caB901e5b184dA2Ef8b245']])
-def test_claim(ethereum_inquirer, ethereum_accounts):
+def test_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc626898273896eb771e9725137849dd104e388aad49687068a7681b5c54893fe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -69,7 +71,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x361D6a0A6ce25c833081DAa7C31c416D4295eC5A']])
-def test_stake(ethereum_inquirer, ethereum_accounts):
+def test_stake(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x66f47dc448d7371eeccaa500af1aea76a1620de56c621187be83b1cc19bf861c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -116,7 +118,7 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x77782FcAFAF67576b7423ae5173CDe6D83695796']])
-def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
+def test_claim_and_stake(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x630c32c20d75c51ffe7b1db1cb3d82d357a8db4da10c1c5b212e01f8e92f6310')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

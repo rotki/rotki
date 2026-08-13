@@ -1,3 +1,4 @@
+from typing import Any
 
 import pytest
 
@@ -32,7 +33,7 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [[ADDY]])
-def test_optimism_airdrop_1_claim(optimism_inquirer):
+def test_optimism_airdrop_1_claim(optimism_inquirer: Any) -> None:
     """Data taken from
     https://optimistic.etherscan.io/tx/0xda810d7e1757c6ce7387b437c26472f802eec47404e60d4f1eaa9f23bf8d8b73
     """
@@ -71,7 +72,7 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x168FEB2E7de2aC0c37a239261D3F9e1b396F22a2']])
-def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
+def test_optimism_airdrop_4_claim(optimism_accounts: Any, optimism_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb5b478b321a81ae03565dd72bd625fcb203a97f017670b28e306a893414ae83b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -107,7 +108,7 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x0000009867C140dE521ee9799b1E99d48A14D4f7']])
-def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
+def test_optimism_airdrop_5_claim(optimism_accounts: Any, optimism_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc017fb7d0a9362f7aa681ed6fa695779d1d8dd22dbabbc4aa77fb40c6bc8bda8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -143,7 +144,7 @@ def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x000a837Ddd815Bcba0fa91a98a50AA7A3fA62C9C']])
-def test_optimism_airdrop_3_distribution(optimism_accounts, optimism_inquirer):
+def test_optimism_airdrop_3_distribution(optimism_accounts: Any, optimism_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x178e96280c38d2b0b40143e3794b89747ee544b2a273b64eb3fb09392c220cfa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -168,7 +169,7 @@ def test_optimism_airdrop_3_distribution(optimism_accounts, optimism_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_optimism_airdrop_2_distribution(optimism_accounts, optimism_inquirer):
+def test_optimism_airdrop_2_distribution(optimism_accounts: Any, optimism_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xce2215e8d2141d7a0a2e45d9c07ca7599d9b762447e77f0b3e65f3fa2fc49b9f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -193,7 +194,7 @@ def test_optimism_airdrop_2_distribution(optimism_accounts, optimism_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x003325D3054Cd7668FB16f19eA11bAE6D02A474c']])
-def test_optimism_airdrop_1_distribution(optimism_accounts, optimism_inquirer):
+def test_optimism_airdrop_1_distribution(optimism_accounts: Any, optimism_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc0e1ee0ea2f3683c5186a078aea67a84009c42d6cf55002725da1adbe0614ac8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -218,7 +219,7 @@ def test_optimism_airdrop_1_distribution(optimism_accounts, optimism_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [[ADDY]])
-def test_optimism_delegate_change(optimism_inquirer):
+def test_optimism_delegate_change(optimism_inquirer: Any) -> None:
     """Data taken from
     https://optimistic.etherscan.io/tx/0xe0b31814f787385ab9f680c2ecf7e20e6dd2f880d979a44487768add26faa594
     """

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -38,7 +40,7 @@ from rotkehlchen.types import (
     ),
 )])
 @pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_mintclub_claim(base_inquirer, base_accounts, allow_base_routescan) -> None:
+def test_mintclub_claim(base_inquirer: Any, base_accounts: Any, allow_base_routescan: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xfaa51ffecb5388ef59808d4f3f5e6e07b8a47d4a7d195c467bf77c24ee77b287')  # noqa: E501
     transactions = BaseTransactions(base_inquirer, base_inquirer.database)
     transactions.single_address_query_transactions(  # temporary hack at the time of writing get_decoded_events_of_transaction does not respect the `evm_indexers_order` so we do this here to use the given order  # noqa: E501
