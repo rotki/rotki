@@ -75,6 +75,12 @@ function canRewrite(req: IncomingMessage, proxyRes: IncomingMessage): boolean {
   if (!engine.handles(describe(req)))
     return false;
 
+  // Rewriting an error into a 200 would hide it: a 401 on the task endpoint
+  // would read as "no tasks running" rather than as a failure.
+  const status = proxyRes.statusCode ?? 200;
+  if (status < 200 || status > 299)
+    return false;
+
   if (proxyRes.headers['content-encoding'])
     return false;
 

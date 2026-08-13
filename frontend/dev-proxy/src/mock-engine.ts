@@ -32,7 +32,7 @@ export interface MockEngine {
   stop: () => void;
 }
 
-export const TASKS_PATH = '/api/1/tasks/';
+export const TASKS_PATH = '/api/1/tasks';
 
 /** How long a mocked async query stays pending before it reports as completed. */
 export const DEFAULT_TASK_COMPLETION_MS = 8000;
@@ -122,7 +122,8 @@ export function createMockEngine(
 
   /** Answers a poll for one mocked task; a real backend task falls through. */
   function taskOutcome(req: MockRequest): unknown {
-    const taskId = Number.parseInt(req.path.replace(TASKS_PATH, ''), 10);
+    // Non-numeric siblings (/tasks/trigger, /tasks/scheduler) fall through.
+    const taskId = Number.parseInt(req.path.replace(`${TASKS_PATH}/`, ''), 10);
     if (Number.isNaN(taskId))
       return undefined;
 
@@ -139,12 +140,14 @@ export function createMockEngine(
     return undefined;
   }
 
+  // The app polls `/api/1/tasks`; the old code only recognised the trailing
+  // slash form, so the merge never fired against the real frontend.
   function isTaskStatus(req: MockRequest): boolean {
-    return req.path === TASKS_PATH;
+    return req.path === TASKS_PATH || req.path === `${TASKS_PATH}/`;
   }
 
   function isTaskPoll(req: MockRequest): boolean {
-    return req.path.startsWith(TASKS_PATH) && req.path !== TASKS_PATH;
+    return req.path.startsWith(`${TASKS_PATH}/`) && !isTaskStatus(req);
   }
 
   function isMocked(req: MockRequest): boolean {
