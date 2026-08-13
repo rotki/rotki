@@ -6,6 +6,7 @@ import { NewDetectedTokenKind } from './types';
 const allEvmChains: EvmChainEntries = [
   { id: 1, label: 'Ethereum', name: 'ethereum' },
   { id: 143, label: 'Monad', name: 'monad' },
+  { id: 146, label: 'Sonic', name: 'sonic' },
   { id: 999, label: 'Hyperliquid', name: 'hyperliquid' },
 ];
 
@@ -20,6 +21,18 @@ describe('getTokenChain', () => {
     );
 
     expect(chain).toBe('monad');
+  });
+
+  it('should resolve the evm chain name from a Sonic token identifier', () => {
+    const chain = getTokenChain(
+      {
+        tokenIdentifier: 'eip155:146/erc20:0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38',
+        tokenKind: NewDetectedTokenKind.EVM,
+      },
+      allEvmChains,
+    );
+
+    expect(chain).toBe('sonic');
   });
 
   it('should resolve the evm chain name from a Hyperliquid token identifier', () => {
