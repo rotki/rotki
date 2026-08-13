@@ -15,6 +15,10 @@ class FlyingTulipFtusdDeployment(NamedTuple):
     staking_vault: ChecksumEvmAddress  # EpochRewardsVault, the sftUSD ERC-4626 vault
     ftusd_token: ChecksumEvmAddress
     ft_token: ChecksumEvmAddress  # staking rewards are paid in FT
+    # The collateral wrappers pay redemptions and unstaked funds directly to
+    # the user, so they are valid counterparties of payout transfers. This
+    # list has to track the protocol's deployments.
+    wrappers: frozenset[ChecksumEvmAddress]
 
 
 FLYING_TULIP_FTUSD_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipFtusdDeployment]] = {
@@ -23,6 +27,11 @@ FLYING_TULIP_FTUSD_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipFtusdDeployment]]
         staking_vault=string_to_evm_address('0xeb48218a4c35C814C7678cBcae88C6Ee037F7625'),
         ftusd_token=string_to_evm_address('0xF7D85EC4E7710f71992752eac2111312e73E9C9C'),
         ft_token=string_to_evm_address('0x5DD1A7A369e8273371d2DBf9d83356057088082c'),
+        wrappers=frozenset((
+            string_to_evm_address('0xB44a9C40EFc05Eb014EfFEac3CBed6A31F8cB87f'),  # WrapperFtUSD
+            string_to_evm_address('0x6aaf84563Cdb03a22Cd92EE2553698beE87E837D'),  # WrapperUSDC
+            string_to_evm_address('0x28CCa8eEA2cD0498cE91A9da15772A1ce42347D6'),  # WrapperUSDT
+        )),
     ),
 }
 
