@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -11,18 +13,18 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA2BF60058C0657C45FDd1741220b4A7F0DA91CA3']])
-def test_claim(ethereum_inquirer, ethereum_accounts):
+def test_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8a2bf33211bb1903ee3db7ca5a7bef10b168fdd68701cd3c9dc17c7b0c60a3f7')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount = '1079.056809836717269824'
-    period = 1671062400
+    period = Timestamp(1671062400)
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,

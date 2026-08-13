@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -17,7 +19,7 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_gitcoin_old_donation(ethereum_inquirer):
+def test_gitcoin_old_donation(ethereum_inquirer: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x811ba23a10c76111289133ec6f90d3c33a604baa50053739210e870687a456d9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
@@ -65,7 +67,7 @@ def test_gitcoin_old_donation(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_bulkcheckout_receive_eth(ethereum_inquirer, ethereum_accounts):
+def test_bulkcheckout_receive_eth(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6ed7d6c156fa3a8e73c3726d9179f139abcf7e7d3845efe9c5b70e6b4222c0be')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -82,14 +84,14 @@ def test_bulkcheckout_receive_eth(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Receive donation of {amount} ETH from {donor} via gitcoin',
         counterparty=CPT_GITCOIN,
-        address=donor,
+        address=string_to_evm_address(donor),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x81facc69908D9C1188280fBB2793567De39f8f9B']])
-def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
+def test_bulkcheckout_send_token(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x89f8f62f7b1a8af0f8de685b676dac94088833442db93a9c4d896817b9f5099d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -120,7 +122,7 @@ def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Donate {amount1} DAI to {dst1} via gitcoin',
             counterparty=CPT_GITCOIN,
-            address=dst1,
+            address=string_to_evm_address(dst1),
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=40,
@@ -133,14 +135,17 @@ def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Donate {amount2} DAI to {dst2} via gitcoin',
             counterparty=CPT_GITCOIN,
-            address=dst2,
+            address=string_to_evm_address(dst2),
         ),
     ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_polygon_bulkcheckout_receive_matic(polygon_pos_inquirer, polygon_pos_accounts):
+def test_polygon_bulkcheckout_receive_matic(
+        polygon_pos_inquirer: Any,
+        polygon_pos_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe2d9464020f45ea2a69c93156976c1323a16e390550e0fe9af749e88e234e06b')),  # noqa: E501
@@ -159,14 +164,14 @@ def test_polygon_bulkcheckout_receive_matic(polygon_pos_inquirer, polygon_pos_ac
         location_label=user_address,
         notes=f'Receive donation of {amount} POL from {donor} via gitcoin',
         counterparty=CPT_GITCOIN,
-        address=donor,
+        address=string_to_evm_address(donor),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_gitcoin_vote_cast(ethereum_inquirer):
+def test_gitcoin_vote_cast(ethereum_inquirer: Any) -> None:
     """Test the old vote cast that gitcoin governor has"""
     tx_hash = deserialize_evm_tx_hash('0x068a954e8c8eda8942e972977d252997bd9de766c7b59230377ebdb9351e0183')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -202,7 +207,7 @@ def test_gitcoin_vote_cast(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB1b3751834646fb999EDd18CA62C69663071cF43']])
-def test_gitcoin_gr15_matching_claim(ethereum_inquirer, ethereum_accounts):
+def test_gitcoin_gr15_matching_claim(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc7ba01598f7fee42bb3923af95355d676ad38ec0aebdcdf49eaf7cb74d2150b2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user = ethereum_accounts[0]
@@ -239,7 +244,10 @@ def test_gitcoin_gr15_matching_claim(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd31b671F1a398B519222FdAba5aB5464B9F2a3Fa']])
-def test_gitcoin_payout_claimed_matching_gr12(ethereum_inquirer, ethereum_accounts):
+def test_gitcoin_payout_claimed_matching_gr12(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5acb6ddac6b72fc6ff45e6a387cf8316c1478dfbaff513918c4cc8731858b362')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user = ethereum_accounts[0]
@@ -276,7 +284,10 @@ def test_gitcoin_payout_claimed_matching_gr12(ethereum_inquirer, ethereum_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x28BE0996b15149aA011C84f09cE3389cbC719Fa6']])
-def test_gitcoin_payout_claimed_matching_gr11(ethereum_inquirer, ethereum_accounts):
+def test_gitcoin_payout_claimed_matching_gr11(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test of the PayoutClaimed event with both recipiend and amount in data (non-indexed args)"""
     tx_hash = deserialize_evm_tx_hash('0x3a069b8cef0d25068fbd2ae4e46ddd552451ed1bbe3737fbaaca05eeb87d9425')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

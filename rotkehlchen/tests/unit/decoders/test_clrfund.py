@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -15,7 +17,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_ethstaker_matching_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_ethstaker_matching_claim(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     """Whats interesting here is that someone else claimed funds and not the recipient address"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -42,7 +44,7 @@ def test_ethstaker_matching_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_add_recipient(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x52f8b96df94af89566fb6048026d10411928f8cf1518788b2d3d0ef6623bafe2')),  # noqa: E501
@@ -80,7 +82,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x506498abf98C157eFE8B226E5EcAa0093aB77F04']])
-def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_voted(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf2fa4e67b28a20e49fe69fe83c0848557141b852bf84367f260f285e38bef5c5')),  # noqa: E501
@@ -118,7 +120,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x017dc108b35495f627B9F991AA34C982Ae1047Fb']])
-def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_contribution(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x527e008a0fd9f0e0146eb842dfe7c47e2830e9cc05f07ca9908b23be1f8a18b8')),  # noqa: E501

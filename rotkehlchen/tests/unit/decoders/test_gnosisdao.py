@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -20,7 +22,11 @@ A_GNO = Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb')
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7dfF87ac15Ca19DF043Bf76F2EF5efdfebB9d712']])
-def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosisdao_redemption_deposit(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6e23bf76cb922eaf2fd85aed5453a0972aa1ee7121b11310f4ff852ebc440cf8')),  # noqa: E501
@@ -69,7 +75,11 @@ def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gn
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x8547C3710B8c1CC465C1ca2aF64Fe01Ed7918a28']])
-def test_gnosisdao_redemption_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosisdao_redemption_claim(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdb289aad6dc4b1064f6746631f617d28a503dd0d188505dc45364cd1e84488a6')),  # noqa: E501

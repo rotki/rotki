@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -15,7 +17,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_donation(ethereum_inquirer, ethereum_accounts):
+def test_donation(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xf7873b900aa9bb0453b70bc57c7eef54af37346c58edfd4768eb74567279e06e',
     )
@@ -79,7 +81,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x15b850a67A6ceDd218e368f1Cab11403f45a42f4']])
-def test_fund_raising(ethereum_inquirer, ethereum_accounts):
+def test_fund_raising(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash(
         '0xd4b8b0857d4cce83f0ce7310a0ed1a8f6360bae331bb4e8bd9217b1370b05bee',
     )

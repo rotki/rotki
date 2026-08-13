@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -17,7 +19,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_lock_glm(ethereum_inquirer, ethereum_accounts):
+def test_lock_glm(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x29944efad254413b5eccdd5f13f14642ab830dbf51d5f2cfc59cf4957f33671a')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -65,7 +67,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa8258ED271BB9be9d7E16c5818E45eF6F2577d92']])
-def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
+def test_unlock_glm(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6705075bef0c3d9167c95a4a6c4911d6cc4055365e12fc445acd1039b157b1ab')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -101,7 +103,7 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd1B8dB70Ded72dB850713b2ce7e1A4FfAfAD95d1']])
-def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
+def test_claim_rewards(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xfc9b4ca277dcfd8000830aee13f8785b15516ce55a432c0d68f1bbdc0f599a49')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -137,7 +139,7 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_lock_glm_v2(ethereum_inquirer, ethereum_accounts):
+def test_lock_glm_v2(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x117d78603f8a20f3c8ce29145d2f485d27688c922e09f532132fe33ecddcfe71')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -18,7 +20,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_optimism_donation_received(optimism_inquirer, optimism_accounts):
+def test_optimism_donation_received(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601')),  # noqa: E501
@@ -36,14 +38,14 @@ def test_optimism_donation_received(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes=f'Receive a gitcoin donation of {amount_str} ETH from {donator}',
         counterparty=CPT_GITCOIN,
-        address=donator,
+        address=string_to_evm_address(donator),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_ethereum_donation_received(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_donation_received(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount_str, donator = '0.001', '0xc191a29203a83eec8e846c26340f828C68835715'
@@ -59,7 +61,7 @@ def test_ethereum_donation_received(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Receive a gitcoin donation of {amount_str} ETH from {donator}',
         counterparty=CPT_GITCOIN,
-        address=donator,
+        address=string_to_evm_address(donator),
     )]
     assert events == expected_events
 
@@ -70,7 +72,7 @@ def test_ethereum_donation_received(ethereum_inquirer, ethereum_accounts):
     # also track a grantee to see we handle donating to self fine
     '0xB352bB4E2A4f27683435f153A259f1B207218b1b',
 ]])
-def test_ethereum_make_donation(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_make_donation(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd8d55b66f19a6dbf260d171fbb0c4c146f00c90919f1215cf691d7f0684771c6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, tracked_grant, timestamp, amount_str, gas_str = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1683676595000), '0.0006', '0.011086829409239852'  # noqa: E501
@@ -113,7 +115,7 @@ def test_ethereum_make_donation(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Make a gitcoin donation of {amount_str} ETH to {grant_address}',
         counterparty=CPT_GITCOIN,
-        address=grant_address,
+        address=string_to_evm_address(grant_address),
     ) for idx, grant_address in [
         (2, '0x713Bc00D1df5C452F172C317D39eFf71B771C163'),
         (107, '0xDEcf6615152AC768BFB688c4eF882e35DeBE08ac'),
@@ -126,7 +128,7 @@ def test_ethereum_make_donation(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_optimism_create_project(optimism_inquirer, optimism_accounts):
+def test_optimism_create_project(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe59f04c693e91f1659bd8bc718c993158efeb9af02c9c6337f039c44d8a822f6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str = optimism_accounts[0], TimestampMS(1691697693000), '0.000085459641651569'  # noqa: E501
@@ -154,7 +156,7 @@ def test_optimism_create_project(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes=f'Create gitcoin project with id 779 and owner {user_address}',
         counterparty=CPT_GITCOIN,
-        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+        address=string_to_evm_address('0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174'),
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=66,
@@ -167,14 +169,14 @@ def test_optimism_create_project(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes='Update gitcoin project with id 779',
         counterparty=CPT_GITCOIN,
-        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+        address=string_to_evm_address('0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_ethereum_project_apply(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_project_apply(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3e4639d97be450c6d32ce77a146898780b75781caaf004d3c40bae083dec07c7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1673472803000), '0.000645250895735256'  # noqa: E501
@@ -202,14 +204,14 @@ def test_ethereum_project_apply(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes='Apply to gitcoin round with project application id 0x755e5c4d042c1245555075b699e774c2ed0f0f1499460201fc936a0595e91683',  # noqa: E501
         counterparty=CPT_GITCOIN,
-        address='0xe575282b376E3c9886779A841A2510F1Dd8C2CE4',
+        address=string_to_evm_address('0xe575282b376E3c9886779A841A2510F1Dd8C2CE4'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_ethereum_project_update(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_project_update(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xfe00fa198eb5395e1d809e017c6b416e882b0aef16e82bf00cd60ce5576bb122')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1681330523000), '0.001464795019471285'  # noqa: E501
@@ -237,7 +239,7 @@ def test_ethereum_project_update(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes='Update gitcoin project with id 128',
         counterparty=CPT_GITCOIN,
-        address='0x03506eD3f57892C85DB20C36846e9c808aFe9ef4',
+        address=string_to_evm_address('0x03506eD3f57892C85DB20C36846e9c808aFe9ef4'),
     )]
     assert events == expected_events
 
@@ -245,7 +247,10 @@ def test_ethereum_project_update(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xd034Fd34eaEe5eC2c413C51936109E12873f4DA5']])
-def test_optimism_many_donations_different_strategies(optimism_inquirer, optimism_accounts):
+def test_optimism_many_donations_different_strategies(
+        optimism_inquirer: Any,
+        optimism_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5d85b436f5f177de6019baa9ecebae285e0def4924546307fac40556bece4cd7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str = optimism_accounts[0], TimestampMS(1692300843000), '0.004506208027331091'  # noqa: E501
@@ -273,7 +278,7 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
         amount=FVal('147.7'),
         location_label=user_address,
         notes=f'Set DAI spending approval of {user_address} by 0x15fa08599EB017F89c1712d0Fe76138899FdB9db to 147.7',  # noqa: E501
-        address='0x15fa08599EB017F89c1712d0Fe76138899FdB9db',
+        address=string_to_evm_address('0x15fa08599EB017F89c1712d0Fe76138899FdB9db'),
     )]
 
     assert len(events) == 121  # 119 donations plus the 2 events above
@@ -291,7 +296,7 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_optimism_grant_payout(optimism_inquirer, optimism_accounts):
+def test_optimism_grant_payout(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x84110136c94ceb71c72afb27ccb517eb33f77a8a419d125101644e2c43294815')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -306,14 +311,14 @@ def test_optimism_grant_payout(optimism_inquirer, optimism_accounts):
         location_label=optimism_accounts[0],
         notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
         counterparty=CPT_GITCOIN,
-        address='0xEb33BB3705135e99F7975cDC931648942cB2A96f',
+        address=string_to_evm_address('0xEb33BB3705135e99F7975cDC931648942cB2A96f'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_ethereum_grant_payout(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_grant_payout(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x66ff5be7841f05cc9cb53fd0307460690f91203c52490f5bbfdeabe8462be50b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
@@ -328,14 +333,17 @@ def test_ethereum_grant_payout(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
         counterparty=CPT_GITCOIN,
-        address='0xebaF311F318b5426815727101fB82f0Af3525d7b',
+        address=string_to_evm_address('0xebaF311F318b5426815727101fB82f0Af3525d7b'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accounts):
+def test_polygon_donation_matic_received(
+        polygon_pos_inquirer: Any,
+        polygon_pos_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x32837e03ac3e9066f09c1ee0807c533aa1bef5e3119b98dcacdd1ca631bc7ca6')),  # noqa: E501
@@ -353,14 +361,17 @@ def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accou
         location_label=user_address,
         notes=f'Receive a gitcoin donation of {amount_str} POL from {donator}',
         counterparty=CPT_GITCOIN,
-        address=donator,
+        address=string_to_evm_address(donator),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_polygon_donation_token_received(polygon_pos_inquirer, polygon_pos_accounts):
+def test_polygon_donation_token_received(
+        polygon_pos_inquirer: Any,
+        polygon_pos_accounts: Any,
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x17601356467af0cfcf3a62f93879b504695b8690545b2b8669da5ec0f3a2a91b')),  # noqa: E501
@@ -378,14 +389,14 @@ def test_polygon_donation_token_received(polygon_pos_inquirer, polygon_pos_accou
         location_label=user_address,
         notes=f'Receive a gitcoin donation of {amount_str} USDC from {donator}',
         counterparty=CPT_GITCOIN,
-        address=donator,
+        address=string_to_evm_address(donator),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
+def test_polygon_apply_to_round(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x51c1909ce9268f453d4b7136b0fecb72d8da567f406c37014dd8ad8ed05c9a1f')),  # noqa: E501
@@ -415,14 +426,17 @@ def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
         location_label=user_address,
         notes='Apply to gitcoin round with project application id 0xbb5864fabd76bd8a9d620dd2cfd089a0507135e6e57d12487d4ffd74a4939538',  # noqa: E501
         counterparty=CPT_GITCOIN,
-        address='0xa1D52F9b5339792651861329A046dD912761E9A9',
+        address=string_to_evm_address('0xa1D52F9b5339792651861329A046dD912761E9A9'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_accounts):
+def test_ethereum_voted_without_application_index(
+        ethereum_inquirer: Any,
+        ethereum_accounts: Any,
+) -> None:
     """Test that voted events missing the application index are properly seen as donations"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -441,14 +455,14 @@ def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_ac
         location_label=user_address,
         notes=f'Receive a gitcoin donation of {amount} ETH from {donator}',
         counterparty=CPT_GITCOIN,
-        address=donator,
+        address=string_to_evm_address(donator),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_allocated_receive_token(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af')),  # noqa: E501
@@ -466,14 +480,14 @@ def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         location_label=user_address,
         notes=f'Receive a gitcoin donation of {amount} ARB from {donator}',
         counterparty=CPT_GITCOIN,
-        address=donator,
+        address=string_to_evm_address(donator),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x514e84986C09Ca52661eeE5EC8a3E6b645c54388']])
-def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_allocated_donate_token(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9509a7be197f1926a480f0c02251c5b1f7d4fc4334a77c991efb61f55c243e5f')),  # noqa: E501
@@ -502,7 +516,7 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         amount=FVal(approve),
         location_label=user_address,
         notes=f'Set ARB spending approval of {user_address} by 0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174 to {approve}',  # noqa: E501
-        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+        address=string_to_evm_address('0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174'),
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -514,7 +528,7 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         amount=ZERO,
         location_label=user_address,
         notes=f'Revoke ARB spending approval of {user_address} by 0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',  # noqa: E501
-        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+        address=string_to_evm_address('0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174'),
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=3,
@@ -527,7 +541,7 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         location_label=user_address,
         notes=f'Make a gitcoin donation of {amount} ARB to 0xb9ecee9a0e273d8A1857F3B8EeA30e5dD3cb6335',  # noqa: E501
         counterparty=CPT_GITCOIN,
-        address='0xb9ecee9a0e273d8A1857F3B8EeA30e5dD3cb6335',
+        address=string_to_evm_address('0xb9ecee9a0e273d8A1857F3B8EeA30e5dD3cb6335'),
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=9,
@@ -540,14 +554,14 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         location_label=user_address,
         notes=f'Make a gitcoin donation of {amount} ARB to 0xE6D7b9Fb31B93E542f57c7B6bfa0a5a48EfC9D0f',  # noqa: E501
         counterparty=CPT_GITCOIN,
-        address='0xE6D7b9Fb31B93E542f57c7B6bfa0a5a48EfC9D0f',
+        address=string_to_evm_address('0xE6D7b9Fb31B93E542f57c7B6bfa0a5a48EfC9D0f'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x173a7942Ac9989d8A2203051bF22E673BcDa6e9D']])
-def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_allocated_donate_eth(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x92450a269e9dc36bb78e3c631104eec0e9e190f5672e666bcd6397f310617849')),  # noqa: E501
@@ -577,7 +591,7 @@ def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
         location_label=user_address,
         notes=f'Make a gitcoin donation of {amount} ETH to 0x698386C93513d6D0C58f296633A7A3e529bd4026',  # noqa: E501
         counterparty=CPT_GITCOIN,
-        address='0x698386C93513d6D0C58f296633A7A3e529bd4026',
+        address=string_to_evm_address('0x698386C93513d6D0C58f296633A7A3e529bd4026'),
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=10,
@@ -590,14 +604,14 @@ def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
         location_label=user_address,
         notes=f'Make a gitcoin donation of {amount} ETH to 0xfcBf17200C64E860F6639aa12B525015d115F863',  # noqa: E501
         counterparty=CPT_GITCOIN,
-        address='0xfcBf17200C64E860F6639aa12B525015d115F863',
+        address=string_to_evm_address('0xfcBf17200C64E860F6639aa12B525015d115F863'),
     )]
     assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_registered(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x75d7138bc9f43954d64120d29be217274e08a6e27a7f3634e5dbc6f1f466e372')),  # noqa: E501
@@ -635,7 +649,7 @@ def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_create_profile(optimism_inquirer, optimism_accounts):
+def test_create_profile(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x21495907ebaf438445534f5460e75f01635e6fb99f0ab4d05e9e4c7906606329')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, profile_id = optimism_accounts[0], TimestampMS(1737131721000), '0.000004819811310411', '0xca5797a71ca6f849ba9c366972d47c01061949d5cdf7fa61e20a229e035d877b'  # noqa: E501
@@ -677,7 +691,7 @@ def test_create_profile(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB8Fbd9A43cc0CeB3d9ddd58b752979a77e6f0c1D']])
-def test_update_profile_metadata(optimism_inquirer, optimism_accounts):
+def test_update_profile_metadata(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb5a8549899c7e5174c69701f7eb7b89ad491bed9954825e19d58b0ce0c5b29ab')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, profile_id = optimism_accounts[0], TimestampMS(1737130603000), '0.000010433913479874', '0x233b3b3a4e2e0f114c2fb5412e810d9fcab0138b4b3087f268628a62c5b3e5c0'  # noqa: E501
@@ -712,7 +726,7 @@ def test_update_profile_metadata(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_registered_retro_strategy(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_registered_retro_strategy(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xaab8dd47ad5c05cb8a2d5aee387b1b3c2c716abdfb7508cf63c0125e7d9752ed')),  # noqa: E501
@@ -749,7 +763,7 @@ def test_registered_retro_strategy(arbitrum_one_inquirer, arbitrum_one_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_arbitrum_direct_allocation_erc20_token_donation(arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+def test_arbitrum_direct_allocation_erc20_token_donation(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x41a394d9a2d835e3ce27842412609f414d8911350e397a805f40ef057df72fbf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     expected_events = [EvmEvent(
@@ -771,7 +785,7 @@ def test_arbitrum_direct_allocation_erc20_token_donation(arbitrum_one_inquirer, 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1']])
-def test_arbitrum_direct_allocation_native_token_donation(arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+def test_arbitrum_direct_allocation_native_token_donation(arbitrum_one_inquirer: Any, arbitrum_one_accounts: Any) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x21b795aa95b1cf4f1b6f7a221e8ff90a72f1cdaece9b71272b72225f1a633163')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     expected_events = [EvmEvent(

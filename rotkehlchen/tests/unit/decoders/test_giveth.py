@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Any, Final
 
 import pytest
 
@@ -35,7 +35,7 @@ ROTKI_ADDRESS: Final = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB9573982875b83aaDc1296726E2ae77D13D9B98F']])
-def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
+def test_optimism_stake_deposit(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x875d69d471b2c31c5175848b11f68815e197fd609509cee420075685d21feccb')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = optimism_accounts[0]
@@ -98,7 +98,7 @@ def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB9573982875b83aaDc1296726E2ae77D13D9B98F']])
-def test_optimism_lock(optimism_inquirer, optimism_accounts):
+def test_optimism_lock(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x160a78b4ce5001b407db9f5fca3e64fcc0619995d8888c66605f69525eed0270')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = optimism_accounts[0]
@@ -148,7 +148,7 @@ def test_optimism_lock(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xAca2F322d69E07993E073C8730180FB139cA4446']])
-def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
+def test_optimism_withdraw(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd687dcd65be8a2a9aea83123a9bdae775232af23e5846f01ade70f3f5280d392')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = optimism_accounts[0]
@@ -199,7 +199,7 @@ def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x8a0F0a09e622bc0677a404343129FB5dDA1E2d33']])
-def test_optimism_claim(optimism_inquirer, optimism_accounts):
+def test_optimism_claim(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2144b2417404977fe2b4b4064b58cdaafc90e416e68a5ad16c04989cc025f3b1')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = optimism_accounts[0]
@@ -236,7 +236,11 @@ def test_optimism_claim(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_gnosis_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_claim(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8a7edd5f0008f8838664404a2b2aab593b705149044865cbdeb75d2126130949')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = gnosis_accounts[0]
@@ -273,7 +277,11 @@ def test_gnosis_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xBe784DB8CB6909a6ff24AAD9a39dAd7E87642902']])
-def test_gnosis_lock(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_lock(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9a79d704dd637460a17bb3897df522c56deb4848d9d3b5630424c545e47172b5')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = gnosis_accounts[0]
@@ -322,7 +330,11 @@ def test_gnosis_lock(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5D28FE1e9F895464aab52287d85Ebff32B351674']])
-def test_gnosis_stake_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_stake_deposit(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0xaee26eb3b311b318292d4c29c2ad9b050fc339bfaef6da2f329a43cdb89dcd9b')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = gnosis_accounts[0]
@@ -385,7 +397,11 @@ def test_gnosis_stake_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5918D889E913c53288C17265280DAD439FEc8275']])
-def test_gnosis_withdraw(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_gnosis_withdraw(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x277949402fb601446f5b8c7e751e72df0f4687b38612935211542b3f4b3f2cf4')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
     user = gnosis_accounts[0]
@@ -435,7 +451,7 @@ def test_gnosis_withdraw(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethersca
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2345678901234567890123456789012345678901']])
-def test_giveth_donation_pol(polygon_pos_inquirer, polygon_pos_accounts):
+def test_giveth_donation_pol(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2f39809f4cab0e97ee12eb5a70fd76a28c2855ccc2b840f2030844c7e81b2e43')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -456,7 +472,7 @@ def test_giveth_donation_pol(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x29EE09Bd0f7f41EcD083Ad2708Df17691065790B']])
-def test_giveth_donation_erc20(polygon_pos_inquirer, polygon_pos_accounts):
+def test_giveth_donation_erc20(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0b7bbafb80a494ab65eaf8b8f38f3afca1bd4f8979dc6c72b090bb609dd6d329')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -477,7 +493,7 @@ def test_giveth_donation_erc20(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xB5Ab1C37ac3d89A48f32307C4DfCc96F79BeAd27']])
-def test_giveth_donation_sender(polygon_pos_inquirer, polygon_pos_accounts):
+def test_giveth_donation_sender(polygon_pos_inquirer: Any, polygon_pos_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9150c5c1dfc5a587b43f5dc39c585af2c6e16cd62396f6d2feb6bafd77e9edac')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -562,7 +578,7 @@ def test_giveth_donation_sender(polygon_pos_inquirer, polygon_pos_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ROTKI_ADDRESS]])
-def test_giveth_donation_eth_receiver(ethereum_inquirer, ethereum_accounts):
+def test_giveth_donation_eth_receiver(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0x98c47c3914f182ec1ef98d30a9f48b2724a0e7a81811b1b61cd281ed1fd93f1f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -583,7 +599,11 @@ def test_giveth_donation_eth_receiver(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [[ROTKI_ADDRESS]])
-def test_giveth_donation_gnosis_receiver(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
+def test_giveth_donation_gnosis_receiver(
+        gnosis_inquirer: Any,
+        gnosis_accounts: Any,
+        allow_gnosis_etherscan: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x293273ea9d2f3a6c22b02a59a2f675eeb1f218e6b4cd8bddda26f8859706f5c6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -604,7 +624,7 @@ def test_giveth_donation_gnosis_receiver(gnosis_inquirer, gnosis_accounts, allow
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [[ROTKI_ADDRESS]])
-def test_giveth_donation_optimism_receiver(optimism_inquirer, optimism_accounts):
+def test_giveth_donation_optimism_receiver(optimism_inquirer: Any, optimism_accounts: Any) -> None:
     tx_hash = deserialize_evm_tx_hash('0xab954bb018e2f6f24ce6bc487c03919ba3f86d593723ed05958a15d6175b182a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -619,13 +639,16 @@ def test_giveth_donation_optimism_receiver(optimism_inquirer, optimism_accounts)
         location_label=optimism_accounts[0],
         notes=f'Receive a giveth donation of {donation_amount} GIV from 0x6eb78c56F639b3d161456e9f893c8e8aD9d754F0',  # noqa: E501
         counterparty=CPT_GIVETH,
-        address='0x6eb78c56F639b3d161456e9f893c8e8aD9d754F0',
+        address=string_to_evm_address('0x6eb78c56F639b3d161456e9f893c8e8aD9d754F0'),
     )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ROTKI_ADDRESS]])
-def test_giveth_donation_arbitrum_receiver(arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_giveth_donation_arbitrum_receiver(
+        arbitrum_one_inquirer: Any,
+        arbitrum_one_accounts: Any,
+) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2b741f8ecec20a8842cc37bc1b8ae358cfed091f017e9a40a0763f1b17bd9caf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -646,7 +669,7 @@ def test_giveth_donation_arbitrum_receiver(arbitrum_one_inquirer, arbitrum_one_a
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x19d42933AD90F8d75df06AaB6D7D0B6965F11dF3']])
-def test_giveth_donation_eth_multi_sender(ethereum_inquirer, ethereum_accounts):
+def test_giveth_donation_eth_multi_sender(ethereum_inquirer: Any, ethereum_accounts: Any) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xcc0296f12367f88162f99e50bdb1ddd5b524e0ad0e335956c7f880d9bec09155')),  # noqa: E501
