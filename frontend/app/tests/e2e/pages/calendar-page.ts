@@ -57,12 +57,17 @@ export class CalendarPage {
     await expect(this.page.getByTestId('calendar-today')).toBeEnabled();
   }
 
-  async createEvent(opts: { name: string; description?: string }): Promise<void> {
-    await this.openAddDialog();
+  /** Fills the event fields of an already-open dialog, without submitting it. */
+  async createEventFields(opts: { name: string; description?: string }): Promise<void> {
     await this.page.getByTestId('calendar-form-name').locator('input').fill(opts.name);
     if (opts.description !== undefined) {
       await this.page.getByTestId('calendar-form-description').locator('textarea').first().fill(opts.description);
     }
+  }
+
+  async createEvent(opts: { name: string; description?: string }): Promise<void> {
+    await this.openAddDialog();
+    await this.createEventFields(opts);
     await confirmDialog(this.page);
   }
 
@@ -90,6 +95,95 @@ export class CalendarPage {
     await this.openEventByName(name);
     await this.page.getByTestId('calendar-form-delete').click();
     await confirmDelete(this.page);
+  }
+
+  private reminderRows() {
+    return this.page.locator('[data-testid=reminder-amount]');
+  }
+
+  /** Adds a reminder to the dialog that is already open, and sets it to `amount` of `unit`. */
+  async addReminder(amount: string, unit: string): Promise<void> {
+    await this.page.getByTestId('reminder-add').click();
+    const row = this.reminderRows().last();
+    await row.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await row.locator('input').fill(amount);
+
+    // RuiMenuSelect opens a teleported menu rather than a native select.
+    await this.page.getByTestId('reminder-unit').last().locator('[data-id=activator]').click();
+    const menu = this.page.locator('[role=menu]');
+    await menu.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    const option = menu.getByText(new RegExp(`^${unit}$`, 'i'));
+    await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await option.click();
+    await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
+  }
+
+  async expectReminder(amount: string, unit: string): Promise<void> {
+    await expect(this.reminderRows().first().locator('input')).toHaveValue(amount, { timeout: TIMEOUT_MEDIUM });
+    await expect(this.page.getByTestId('reminder-unit').first()).toContainText(unit);
+  }
+
+  async expectReminderCount(count: number): Promise<void> {
+    await expect(this.reminderRows()).toHaveCount(count, { timeout: TIMEOUT_MEDIUM });
+  }
+
+  /**
+   * Opens the reminder list, which a reopened event starts with collapsed.
+   *
+   * The accordion is eager, so a collapsed list still has its rows in the DOM and Playwright reads
+   * them as visible: the clipping is on an ancestor, not on the row. A click then lands on whatever
+   * covers the collapsed strip, and retries until the test times out. Expanding first is what makes
+   * the rows reachable, so every interaction with an existing row goes through here.
+   */
+  private async expandReminders(): Promise<void> {
+    const toggle = this.page.locator('[data-testid=bottom-dialog] [data-testid=reminder-toggle]');
+    if (await toggle.getAttribute('data-expanded') === 'true')
+      return;
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('data-expanded', 'true', { timeout: TIMEOUT_MEDIUM });
+  }
+
+  /** Retypes the amount of the row currently showing `amount`, and leaves the field. */
+  async changeReminderAmount(from: string, to: string): Promise<void> {
+    await this.expandReminders();
+    const input = this.reminderRows().locator(`input[value="${from}"]`).first();
+    await input.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await input.fill(to);
+    await input.blur();
+  }
+
+  async deleteReminder(amount: string): Promise<void> {
+    await this.expandReminders();
+    const row = this.page.locator('[data-testid=reminder-amount]')
+      .filter({ has: this.page.locator(`input[value="${amount}"]`) })
+      .locator('xpath=..');
+    await row.getByTestId('reminder-delete').click();
+  }
+
+  async expectReminderAmounts(amounts: string[]): Promise<void> {
+    await expect(this.reminderRows()).toHaveCount(amounts.length, { timeout: TIMEOUT_MEDIUM });
+    for (const [index, amount] of amounts.entries())
+      await expect(this.reminderRows().nth(index).locator('input')).toHaveValue(amount, { timeout: TIMEOUT_MEDIUM });
+  }
+
+  /** Submits without waiting for the dialog to close, for the cases where it must not. */
+  async submitDialog(): Promise<void> {
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
+  }
+
+  async expectDialogOpen(): Promise<void> {
+    await expect(this.page.locator('[data-testid=bottom-dialog]')).toBeVisible();
+  }
+
+  async expectReminderError(message: string): Promise<void> {
+    await expect(this.page.locator('[data-testid=bottom-dialog]').getByText(message)).toBeVisible({
+      timeout: TIMEOUT_MEDIUM,
+    });
+  }
+
+  async confirmDialog(): Promise<void> {
+    await confirmDialog(this.page);
   }
 
   async expectEventInSelected(name: string): Promise<void> {

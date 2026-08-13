@@ -1,20 +1,11 @@
-import type { CalendarReminderTemporaryPayload } from '@/modules/calendar/reminder';
 import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest';
 import CalendarReminderEntry from '@/modules/calendar/CalendarReminderEntry.vue';
+import { ReminderUnit } from '@/modules/calendar/reminder-forms';
 import '@test/i18n';
-
-const HOUR = 60 * 60;
-const DAY = HOUR * 24;
 
 describe('calendarReminderEntry', () => {
   let wrapper: VueWrapper<InstanceType<typeof CalendarReminderEntry>>;
-
-  const baseModel = (secsBefore: number = HOUR): CalendarReminderTemporaryPayload => ({
-    identifier: 1,
-    isTemporary: true,
-    secsBefore,
-  });
 
   beforeEach(() => {
     // AmountInput reads the thousand-separator settings from the store.
@@ -26,18 +17,15 @@ describe('calendarReminderEntry', () => {
   });
 
   function createWrapper(
-    modelValue: CalendarReminderTemporaryPayload = baseModel(),
+    props: Record<string, unknown> = {},
   ): VueWrapper<InstanceType<typeof CalendarReminderEntry>> {
-    return mount(CalendarReminderEntry, { props: { latest: false, modelValue } });
+    return mount(CalendarReminderEntry, {
+      props: { amount: '2', latest: false, unit: ReminderUnit.HOURS, ...props },
+    });
   }
 
   function amountInput(): DOMWrapper<HTMLInputElement> {
     return wrapper.find<HTMLInputElement>('input');
-  }
-
-  function lastWriteBack(): CalendarReminderTemporaryPayload | undefined {
-    const updates = wrapper.emitted<[CalendarReminderTemporaryPayload]>('update:modelValue');
-    return updates?.at(-1)?.[0];
   }
 
   function unitOptions(): string[] {
@@ -46,79 +34,54 @@ describe('calendarReminderEntry', () => {
     return options.map(option => String(Reflect.get(option, 'key')));
   }
 
-  it('should split the seconds it is given into an amount and a unit', () => {
-    wrapper = createWrapper(baseModel(2 * DAY));
+  it('should show the amount it is given', () => {
+    wrapper = createWrapper({ amount: '90', unit: ReminderUnit.MINUTES });
 
-    expect(amountInput().element.value).toBe('2');
-  });
-
-  // The largest unit that divides evenly wins, so 90 minutes stays in minutes rather than becoming
-  // an hour and a half.
-  it.each([
-    [90 * 60, '90'],
-    [2 * HOUR, '2'],
-    [3 * DAY, '3'],
-    [2 * 7 * DAY, '2'],
-  ])('should pick the largest unit that divides %i seconds evenly', (seconds, expected) => {
-    wrapper = createWrapper(baseModel(seconds));
-
-    expect(amountInput().element.value).toBe(expected);
+    expect(amountInput().element.value).toBe('90');
   });
 
   it('should offer the units from smallest to largest', () => {
-    wrapper = createWrapper(baseModel(2 * DAY));
+    wrapper = createWrapper();
 
     expect(unitOptions()).toEqual(['minutes', 'hours', 'days', 'weeks']);
   });
 
-  it('should write the edited value back in seconds', async () => {
+  // The row no longer decides whether a value is worth reporting: it reports what was typed, and
+  // the list it belongs to validates. An out-of-range entry used to be swallowed here.
+  it.each([
+    ['99999'],
+    [''],
+    ['0'],
+  ])('should report %s as typed rather than swallowing it', async (typed) => {
+    wrapper = createWrapper();
+
+    await amountInput().setValue(typed);
+
+    expect(wrapper.emitted<[string]>('update:amount')?.at(-1)?.[0]).toBe(typed);
+  });
+
+  it('should show the messages it is handed', () => {
+    wrapper = createWrapper({ errorMessages: ['too big'] });
+
+    expect(wrapper.text()).toContain('too big');
+  });
+
+  it('should ask to be committed once the amount field is left', async () => {
     wrapper = createWrapper();
 
     await amountInput().setValue('3');
     await amountInput().trigger('blur');
 
-    expect(lastWriteBack()?.secsBefore).toBe(3 * HOUR);
+    expect(wrapper.emitted('commit')).toHaveLength(1);
   });
 
-  // 🔴 The write-back is gated on validity, and there is no other channel: an out-of-range row
-  // leaves the model holding its previous value and says nothing to its parent.
-  it('should not write back a value above the allowed ceiling', async () => {
+  it('should ask to be committed as soon as the unit changes', async () => {
     wrapper = createWrapper();
 
-    await amountInput().setValue('99999');
-    await amountInput().trigger('blur');
+    wrapper.findComponent({ name: 'RuiMenuSelect' }).vm.$emit('update:modelValue', ReminderUnit.DAYS);
+    await nextTick();
 
-    expect(lastWriteBack()).toBeUndefined();
-  });
-
-  it('should not write back an empty amount', async () => {
-    wrapper = createWrapper();
-
-    await amountInput().setValue('');
-    await amountInput().trigger('blur');
-
-    expect(lastWriteBack()).toBeUndefined();
-  });
-
-  it('should not write back a zero amount', async () => {
-    wrapper = createWrapper();
-
-    await amountInput().setValue('0');
-    await amountInput().trigger('blur');
-
-    expect(lastWriteBack()).toBeUndefined();
-  });
-
-  // The write-back is silent, so the message is the only thing telling the user why nothing saved.
-  it('should show the ceiling message once the amount is out of range', async () => {
-    vi.useFakeTimers();
-    wrapper = createWrapper();
-
-    await amountInput().setValue('99999');
-    // The message sits behind an enter transition, so it is not in the DOM immediately.
-    await vi.advanceTimersByTimeAsync(700);
-
-    expect(wrapper.find('.details').text()).toContain('calendar.reminder.validation.amount.max_value');
-    vi.useRealTimers();
+    expect(wrapper.emitted<[string]>('update:unit')?.at(-1)?.[0]).toBe(ReminderUnit.DAYS);
+    expect(wrapper.emitted('commit')).toHaveLength(1);
   });
 });

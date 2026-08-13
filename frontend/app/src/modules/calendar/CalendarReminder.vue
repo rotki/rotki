@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/modules/calendar/reminder';
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { startPromise } from '@shared/utils';
 import CalendarReminderEntry from '@/modules/calendar/CalendarReminderEntry.vue';
+import { type ReminderRow, reminderRowsSchema, splitSeconds, toSeconds } from '@/modules/calendar/reminder-forms';
 import { useCalendarReminderApi } from '@/modules/calendar/use-calendar-reminder-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
+import { useForm } from '@/modules/core/form/use-form';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
@@ -29,6 +33,77 @@ const {
 } = useCalendarReminderApi();
 
 const length = computed<number>(() => get(temporaryData).filter(item => item.secsBefore > 0).length);
+
+/** A row carries the identifier of the reminder it edits, so nothing is addressed by position. */
+interface EditableRow extends ReminderRow {
+  identifier: number;
+}
+
+const schema = computed<ZodType>(() => reminderRowsSchema({
+  amountMissing: t('calendar.reminder.validation.amount.non_empty'),
+  amountTooLarge: (amount, unit) => t('calendar.reminder.validation.amount.max_value', {
+    amount,
+    unit: t(`calendar.reminder.units.${unit}`),
+  }),
+  amountTooSmall: t('calendar.reminder.validation.amount.min_value'),
+}));
+
+/**
+ * The rows the user edits. Persistence still happens per reminder against its own endpoints; this
+ * form exists so a half-written row is ordinary state that the event form can gate on, rather than
+ * something the row hides until it happens to be valid.
+ */
+const form = useForm<{ rows: EditableRow[] }, { rows: EditableRow[] }>({
+  initial: (): { rows: EditableRow[] } => ({ rows: [] }),
+  schema,
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: state => ({ rows: [...state.rows] }),
+});
+
+/** Rebuilt only when the stored reminders change, so an in-progress edit is not overwritten. */
+watchImmediate(temporaryData, (data) => {
+  const next = data
+    .filter(item => item.secsBefore > 0)
+    .map(item => ({ ...splitSeconds(item.secsBefore), identifier: item.identifier }));
+
+  const current = form.state.rows;
+  const unchanged = next.length === current.length
+    && next.every((row, index) => row.identifier === current[index].identifier
+      && toSeconds(row) === toSeconds(current[index]));
+
+  if (!unchanged)
+    form.reset({ rows: next });
+}, { deep: true });
+
+function indexOfIdentifier(identifier: number): number {
+  return get(temporaryData).findIndex(item => item.identifier === identifier);
+}
+
+/**
+ * Persists a row once the user leaves it. An invalid row is not sent, exactly as before, but it is
+ * no longer invisible: it stays in the form state, shows its message, and blocks the event's save.
+ */
+function commitRow(row: EditableRow): void {
+  form.touch(`rows.${form.state.rows.indexOf(row)}.amount`);
+
+  if (!get(form.valid))
+    return;
+
+  const index = indexOfIdentifier(row.identifier);
+  if (index === -1)
+    return;
+
+  const stored = get(temporaryData)[index];
+  const secsBefore = toSeconds(row);
+  if (stored.secsBefore !== secsBefore)
+    startPromise(updateData(index, { ...stored, secsBefore }));
+}
+
+function deleteRow(row: EditableRow): void {
+  const index = indexOfIdentifier(row.identifier);
+  if (index > -1)
+    startPromise(deleteData(index));
+}
 
 const remindInTime = computed<boolean>({
   get() {
@@ -230,6 +305,8 @@ onBeforeMount(() => refreshTemporaryData());
 
 defineExpose({
   saveTemporaryReminder,
+  /** The event form gates on this: vuelidate used to collect the rows on its own, zod does not. */
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -240,6 +317,8 @@ defineExpose({
         <RuiButton
           class="-ml-1"
           variant="text"
+          data-testid="reminder-toggle"
+          :data-expanded="showReminders"
           :class="{
             'hover:!bg-transparent active:!bg-transparent cursor-default': length === 0,
           }"
@@ -264,6 +343,7 @@ defineExpose({
         <RuiButton
           color="secondary"
           size="sm"
+          data-testid="reminder-add"
           @click="addReminder()"
         >
           {{ t('calendar.reminder.add_reminder') }}
@@ -276,16 +356,16 @@ defineExpose({
               v-if="length > 0"
               class="flex flex-col gap-2 pt-2"
             >
-              <template v-for="(data, index) in temporaryData">
-                <CalendarReminderEntry
-                  v-if="data.secsBefore > 0"
-                  :key="data.identifier"
-                  :model-value="data"
-                  :latest="data.identifier === newIdCreated"
-                  @delete="deleteData(index)"
-                  @update:model-value="updateData(index, $event)"
-                />
-              </template>
+              <CalendarReminderEntry
+                v-for="(row, index) in form.state.rows"
+                :key="row.identifier"
+                v-model:amount="row.amount"
+                v-model:unit="row.unit"
+                :latest="row.identifier === newIdCreated"
+                :error-messages="form.errors(`rows.${index}.amount`)"
+                @commit="commitRow(row)"
+                @delete="deleteRow(row)"
+              />
             </div>
           </template>
         </RuiAccordion>
