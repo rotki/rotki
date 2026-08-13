@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 WETH_OP_BASE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000006')
 WMATIC_ADDRESS = string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270')
@@ -167,7 +168,7 @@ def test_weth_withdrawal(ethereum_inquirer: EthereumInquirer) -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC4DdFf531132d32b47eC938AcfA28E354769A806']])
 def test_weth_interaction_with_protocols_deposit(
-        database: object,
+        database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
 ) -> None:
     """

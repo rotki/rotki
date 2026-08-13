@@ -119,7 +119,7 @@ class RotkehlchenServer:
         log.info('SQLCipher version: %s', get_sqlcipher_version_string())
         log.info('GIL disabled: %s', not sys._is_gil_enabled())
         if os.name != 'nt':
-            signal.signal(signal.SIGQUIT, self.shutdown)
+            signal.signal(signal.SIGQUIT, self.shutdown)  # type: ignore[attr-defined]  # SIGQUIT exists on POSIX but is absent from Windows stubs
             signal.signal(signal.SIGTERM, self.shutdown)
         else:
             # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup

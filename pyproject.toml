@@ -199,244 +199,8 @@ ignore_missing_imports = false
 # -- These modules still need to have proper type definitions given --
 [[tool.mypy.overrides]]
 module = "rotkehlchen.tests.*"
-check_untyped_defs = false
-disallow_untyped_defs = false
 # Pytest's fixture decorators are not typed
 disallow_untyped_decorators = false
-
-# -- Typing has been fixed in these tests --
-[[tool.mypy.overrides]]
-module = [
-    "rotkehlchen.tests.api.*",
-    "rotkehlchen.tests.benchmarks.*",
-    "rotkehlchen.tests.conftest",
-    "rotkehlchen.tests.data_migrations.*",
-    "rotkehlchen.tests.db.*",
-    "rotkehlchen.tests.exchanges.*",
-    "rotkehlchen.tests.external_apis.*",
-    "rotkehlchen.tests.fixtures.*",
-    "rotkehlchen.tests.integration.*",
-    "rotkehlchen.tests.mcp.*",
-    "rotkehlchen.tests.profiling.*",
-    "rotkehlchen.tests.pylint.*",
-    "rotkehlchen.tests.test_no_missing_init",
-    "rotkehlchen.tests.test_users",
-    "rotkehlchen.tests.unit.accounting.*",
-    "rotkehlchen.tests.unit.decoders.test_aave_v2",
-    "rotkehlchen.tests.unit.decoders.test_aave_v3",
-    "rotkehlchen.tests.unit.decoders.test_across",
-    "rotkehlchen.tests.unit.decoders.test_aerodrome",
-    "rotkehlchen.tests.unit.decoders.test_arbitrum_one",
-    "rotkehlchen.tests.unit.decoders.test_arbitrum_one_bridge",
-    "rotkehlchen.tests.unit.decoders.test_aura_finance",
-    "rotkehlchen.tests.unit.decoders.test_balancer_v3",
-    "rotkehlchen.tests.unit.decoders.test_basenames",
-    "rotkehlchen.tests.unit.decoders.test_base_bridge",
-    "rotkehlchen.tests.unit.decoders.test_beefy_finance",
-    "rotkehlchen.tests.unit.decoders.test_blur",
-    "rotkehlchen.tests.unit.decoders.test_clipper",
-    "rotkehlchen.tests.unit.decoders.test_cctp",
-    "rotkehlchen.tests.unit.decoders.test_clrfund",
-    "rotkehlchen.tests.unit.decoders.test_compound_v2",
-    "rotkehlchen.tests.unit.decoders.test_compound_v3",
-    "rotkehlchen.tests.unit.decoders.test_convex",
-    "rotkehlchen.tests.unit.decoders.test_cowswap",
-    "rotkehlchen.tests.unit.decoders.test_crosscurve",
-    "rotkehlchen.tests.unit.decoders.test_curve_crvusd",
-    "rotkehlchen.tests.unit.decoders.test_curve_lend",
-    "rotkehlchen.tests.unit.decoders.test_degen",
-    "rotkehlchen.tests.unit.decoders.test_defisaver",
-    "rotkehlchen.tests.unit.decoders.test_digixdao",
-    "rotkehlchen.tests.unit.decoders.test_diva",
-    "rotkehlchen.tests.unit.decoders.test_dripsv1",
-    "rotkehlchen.tests.unit.decoders.test_eas",
-    "rotkehlchen.tests.unit.decoders.test_echo",
-    "rotkehlchen.tests.unit.decoders.test_eigenlayer",
-    "rotkehlchen.tests.unit.decoders.test_efp",
-    "rotkehlchen.tests.unit.decoders.test_element_finance",
-    "rotkehlchen.tests.unit.decoders.test_enriched",
-    "rotkehlchen.tests.unit.decoders.test_eth2",
-    "rotkehlchen.tests.unit.decoders.test_extrafi",
-    "rotkehlchen.tests.unit.decoders.test_farcaster",
-    "rotkehlchen.tests.unit.decoders.test_firebird_finance",
-    "rotkehlchen.tests.unit.decoders.test_fluence",
-    "rotkehlchen.tests.unit.decoders.test_frankencoin_savings",
-    "rotkehlchen.tests.unit.decoders.test_frankencoin_savings_balances",
-    "rotkehlchen.tests.unit.decoders.test_gearbox",
-    "rotkehlchen.tests.unit.decoders.test_gho",
-    "rotkehlchen.tests.unit.decoders.test_gitcoin",
-    "rotkehlchen.tests.unit.decoders.test_gitcoin_v2",
-    "rotkehlchen.tests.unit.decoders.test_giveth",
-    "rotkehlchen.tests.unit.decoders.test_gmx",
-    "rotkehlchen.tests.unit.decoders.test_gnosis_pay",
-    "rotkehlchen.tests.unit.decoders.test_golem",
-    "rotkehlchen.tests.unit.decoders.test_gnosisdao",
-    "rotkehlchen.tests.unit.decoders.test_gwei_names",
-    "rotkehlchen.tests.unit.decoders.test_harvest_finance",
-    "rotkehlchen.tests.unit.decoders.test_hedgey",
-    "rotkehlchen.tests.unit.decoders.test_hyperliquid",
-    "rotkehlchen.tests.unit.decoders.test_hop",
-    "rotkehlchen.tests.unit.decoders.test_juicebox",
-    "rotkehlchen.tests.unit.decoders.test_kinetiq",
-    "rotkehlchen.tests.unit.decoders.test_kyber",
-    "rotkehlchen.tests.unit.decoders.test_lido_eth",
-    "rotkehlchen.tests.unit.decoders.test_lifi",
-    "rotkehlchen.tests.unit.decoders.test_liquity",
-    "rotkehlchen.tests.unit.decoders.test_liquity_v2",
-    "rotkehlchen.tests.unit.decoders.test_lockedgno",
-    "rotkehlchen.tests.unit.decoders.test_makerdao",
-    "rotkehlchen.tests.unit.decoders.test_makerdao_sai",
-    "rotkehlchen.tests.unit.decoders.test_magpie",
-    "rotkehlchen.tests.unit.decoders.test_metamask",
-    "rotkehlchen.tests.unit.decoders.test_merkl",
-    "rotkehlchen.tests.unit.decoders.test_mintclub",
-    "rotkehlchen.tests.unit.decoders.test_monad",
-    "rotkehlchen.tests.unit.decoders.test_monerium",
-    "rotkehlchen.tests.unit.decoders.test_morpho",
-    "rotkehlchen.tests.unit.decoders.test_morpho_blue",
-    "rotkehlchen.tests.unit.decoders.test_omni",
-    "rotkehlchen.tests.unit.decoders.test_odos_v1",
-    "rotkehlchen.tests.unit.decoders.test_odos_v2",
-    "rotkehlchen.tests.unit.decoders.test_openocean",
-    "rotkehlchen.tests.unit.decoders.test_octant",
-    "rotkehlchen.tests.unit.decoders.test_optimism",
-    "rotkehlchen.tests.unit.decoders.test_project_x",
-    "rotkehlchen.tests.unit.decoders.test_pickle",
-    "rotkehlchen.tests.unit.decoders.test_polygon",
-    "rotkehlchen.tests.unit.decoders.test_quickswapv2",
-    "rotkehlchen.tests.unit.decoders.test_quickswapv3",
-    "rotkehlchen.tests.unit.decoders.test_quickswapv4",
-    "rotkehlchen.tests.unit.decoders.test_rainbow",
-    "rotkehlchen.tests.unit.decoders.test_rotki",
-    "rotkehlchen.tests.unit.decoders.test_safe",
-    "rotkehlchen.tests.unit.decoders.test_omnibridge",
-    "rotkehlchen.tests.unit.decoders.test_kittenswap",
-    "rotkehlchen.tests.unit.decoders.test_optimism_governor",
-    "rotkehlchen.tests.unit.decoders.test_paladin",
-    "rotkehlchen.tests.unit.decoders.test_polygon_pos_bridge",
-    "rotkehlchen.tests.unit.decoders.test_puffer",
-    "rotkehlchen.tests.unit.decoders.test_relay",
-    "rotkehlchen.tests.unit.decoders.test_runmoney",
-    "rotkehlchen.tests.unit.decoders.test_scroll_airdrop",
-    "rotkehlchen.tests.unit.decoders.test_shapeshift",
-    "rotkehlchen.tests.unit.decoders.test_shutter",
-    "rotkehlchen.tests.unit.decoders.test_scroll_bridge",
-    "rotkehlchen.tests.unit.decoders.test_spam",
-    "rotkehlchen.tests.unit.decoders.test_spark_airdrop",
-    "rotkehlchen.tests.unit.decoders.test_sky",
-    "rotkehlchen.tests.unit.decoders.test_sushiswap",
-    "rotkehlchen.tests.unit.decoders.test_socket",
-    "rotkehlchen.tests.unit.decoders.test_spark",
-    "rotkehlchen.tests.unit.decoders.test_stakedao",
-    "rotkehlchen.tests.unit.decoders.test_stakedao_v2",
-    "rotkehlchen.tests.unit.decoders.test_summer_fi",
-    "rotkehlchen.tests.unit.decoders.test_superchain_bridge",
-    "rotkehlchen.tests.unit.decoders.test_superfluid",
-    "rotkehlchen.tests.unit.decoders.test_thegraph",
-    "rotkehlchen.tests.unit.decoders.test_umami",
-    "rotkehlchen.tests.unit.decoders.test_uniswapv3",
-    "rotkehlchen.tests.unit.decoders.test_uniswapv2",
-    "rotkehlchen.tests.unit.decoders.test_uniswapv4",
-    "rotkehlchen.tests.unit.decoders.test_woo_fi",
-    "rotkehlchen.tests.unit.decoders.test_weth",
-    "rotkehlchen.tests.unit.decoders.test_yearn",
-    "rotkehlchen.tests.unit.decoders.test_yearn_vesting",
-    "rotkehlchen.tests.unit.decoders.test_votium",
-    "rotkehlchen.tests.unit.decoders.test_walletconnect",
-    "rotkehlchen.tests.unit.decoders.test_xdai_bridge",
-    "rotkehlchen.tests.unit.decoders.test_ygov",
-    "rotkehlchen.tests.unit.decoders.test_zksync",
-    "rotkehlchen.tests.unit.events.*",
-    "rotkehlchen.tests.unit.globaldb.*",
-    "rotkehlchen.tests.unit.solana.*",
-    "rotkehlchen.tests.unit.solana_decoders.*",
-    "rotkehlchen.tests.unit.test_app",
-    "rotkehlchen.tests.unit.test_arbitrum_one_inquirer",
-    "rotkehlchen.tests.unit.test_args",
-    "rotkehlchen.tests.unit.test_assets",
-    "rotkehlchen.tests.unit.test_balancer_utils",
-    "rotkehlchen.tests.unit.test_base58",
-    "rotkehlchen.tests.unit.test_base_inquirer",
-    "rotkehlchen.tests.unit.test_binance_import",
-    "rotkehlchen.tests.unit.test_binance_sc_inquirer",
-    "rotkehlchen.tests.unit.test_bitcoin",
-    "rotkehlchen.tests.unit.test_bitcoin_cash",
-    "rotkehlchen.tests.unit.test_bitcoin_transactions",
-    "rotkehlchen.tests.unit.test_blockchain_balances",
-    "rotkehlchen.tests.unit.test_calendar_reminders",
-    "rotkehlchen.tests.unit.test_cancellation",
-    "rotkehlchen.tests.unit.test_chains_aggregator",
-    "rotkehlchen.tests.unit.test_coinledger_import",
-    "rotkehlchen.tests.unit.test_cost_basis",
-    "rotkehlchen.tests.unit.test_data_dir",
-    "rotkehlchen.tests.unit.test_data_import_utils",
-    "rotkehlchen.tests.unit.test_data_issues",
-    "rotkehlchen.tests.unit.test_data_updates",
-    "rotkehlchen.tests.unit.test_defi_oracles",
-    "rotkehlchen.tests.unit.test_deserialization",
-    "rotkehlchen.tests.unit.test_ens",
-    "rotkehlchen.tests.unit.test_eth2",
-    "rotkehlchen.tests.unit.test_ethereum_airdrops",
-    "rotkehlchen.tests.unit.test_ethereum_inquirer",
-    "rotkehlchen.tests.unit.test_etherscan",
-    "rotkehlchen.tests.unit.test_evm_balances",
-    "rotkehlchen.tests.unit.test_evm_contracts",
-    "rotkehlchen.tests.unit.test_evm_indexer_order",
-    "rotkehlchen.tests.unit.test_evm_misc",
-    "rotkehlchen.tests.unit.test_evm_names",
-    "rotkehlchen.tests.unit.test_evm_transactions",
-    "rotkehlchen.tests.unit.test_evm_tx_decoding",
-    "rotkehlchen.tests.unit.test_exchanges",
-    "rotkehlchen.tests.unit.test_fval",
-    "rotkehlchen.tests.unit.test_gnosis_inquirer",
-    "rotkehlchen.tests.unit.test_historical_balances",
-    "rotkehlchen.tests.unit.test_history",
-    "rotkehlchen.tests.unit.test_history_events",
-    "rotkehlchen.tests.unit.test_hyperliquid_core_balances",
-    "rotkehlchen.tests.unit.test_hyperliquid_dex_discovery",
-    "rotkehlchen.tests.unit.test_hyperliquid_entry_id",
-    "rotkehlchen.tests.unit.test_hyperliquid_manager",
-    "rotkehlchen.tests.unit.test_indexers",
-    "rotkehlchen.tests.unit.test_inquirer",
-    "rotkehlchen.tests.unit.test_internal_tx_conflicts",
-    "rotkehlchen.tests.unit.test_lido_csm_balances",
-    "rotkehlchen.tests.unit.test_lido_csm_metrics",
-    "rotkehlchen.tests.unit.test_location",
-    "rotkehlchen.tests.unit.test_logging",
-    "rotkehlchen.tests.unit.test_makerdao",
-    "rotkehlchen.tests.unit.test_nfts",
-    "rotkehlchen.tests.unit.test_optimism_inquirer",
-    "rotkehlchen.tests.unit.test_optimism_transactions",
-    "rotkehlchen.tests.unit.test_pairs",
-    "rotkehlchen.tests.unit.test_pnl_debug",
-    "rotkehlchen.tests.unit.test_polygon_pos_inquirer",
-    "rotkehlchen.tests.unit.test_price_historian",
-    "rotkehlchen.tests.unit.test_protocol_balances",
-    "rotkehlchen.tests.unit.test_purge_exchange_matched_events",
-    "rotkehlchen.tests.unit.test_rate_limiter",
-    "rotkehlchen.tests.unit.test_rpc_node_runtime",
-    "rotkehlchen.tests.unit.test_scroll_inquirer",
-    "rotkehlchen.tests.unit.test_search",
-    "rotkehlchen.tests.unit.test_serialization",
-    "rotkehlchen.tests.unit.test_server",
-    "rotkehlchen.tests.unit.test_session_store",
-    "rotkehlchen.tests.unit.test_solana",
-    "rotkehlchen.tests.unit.test_solana_tokens_data",
-    "rotkehlchen.tests.unit.test_stats",
-    "rotkehlchen.tests.unit.test_structures",
-    "rotkehlchen.tests.unit.test_substrate_manager",
-    "rotkehlchen.tests.unit.test_substrate_utils",
-    "rotkehlchen.tests.unit.test_tasks_manager",
-    "rotkehlchen.tests.unit.test_tokens",
-    "rotkehlchen.tests.unit.test_types",
-    "rotkehlchen.tests.unit.test_usage_analytics",
-    "rotkehlchen.tests.unit.test_utils",
-    "rotkehlchen.tests.unit.test_vendor",
-    "rotkehlchen.tests.utils.*",
-    "rotkehlchen.tests.websocketsapi.*",
-]
-check_untyped_defs = true
-disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "rotkehlchen.tests.fixtures.google"
@@ -546,59 +310,59 @@ select = [
     "RUF",
 ]
 extend-select = [
-    "Q002",   # Single quote docstring found but double quotes preferred
-    "Q003",   # Change outer quotes to avoid escaping inner quotes
+    "bad-quotes-docstring",   # Single quote docstring found but double quotes preferred
+    "avoidable-escaped-quote",   # Change outer quotes to avoid escaping inner quotes
     # Some pathlib enforcement rules follow
-    "PTH108",
-    "PTH109",
+    "os-unlink",
+    "os-getcwd",
 ]
 ignore = [
-    "A005",  # shadow builtin module is fine, since it's easy to differentiate and we can use names like csv.py, json.py, types.py under subdirectories
-    "B028",  # no explicit stack level argument for warnings. Is fine due to the way we use them for now
-    "N818",  # error suffix in exception names
-    "C901",  # function too complex
-    "RUF005",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
-    "RET501",  # Explicitly returning None
-    "RET505",  # https://github.com/charliermarsh/ruff/issues/1035
-    "RET506",  # https://github.com/charliermarsh/ruff/issues/1035
-    "RET507",  # https://github.com/charliermarsh/ruff/issues/1035
-    "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
-    "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
-    "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
-    "PLR2004", # we try to use constant vars where possible but this complains abouttoo many things
-    "PLR0904", # too many public methods. This is a bit too much to enforce in the codebase
-    "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
-    "PLR0914", # too many local variables. This is a bit too much to enforce in the codebase
-    "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
-    "PLR0916", # too many boolean expressions -- we dont care
-    "PLR0911", # too many return statements -- we dont care
-    "PLR0912", # too many branches -- we dont care
-    "PLR0917", # too many positional arguments -- we dont care
-    "PLR1702", # too many nested blocks -- we dont care
-    "PLR6201", # Doesn't work only for constants: https://github.com/astral-sh/ruff/issues/8322
-    "PLR6301", # could be a staticmethod or function -- breaks for interfaces
-    "PLC0415", # we need to fix non top level imports and enable this
-    "PLC1901", # we prefer direct comparison to empty string for explicitness
-    "PLC2701", # unfortunately we do import private methods/vars from web3.py and webargs
-    "PLC2801", # false positive complain for dunder set (though we use it in a hacky way)
-    "PLW0717", # too many statements in try clause -- too strict for our error handling style
+    "stdlib-module-shadowing",  # shadow builtin module is fine, since it's easy to differentiate and we can use names like csv.py, json.py, types.py under subdirectories
+    "no-explicit-stacklevel",  # no explicit stack level argument for warnings. Is fine due to the way we use them for now
+    "error-suffix-on-exception-name",  # error suffix in exception names
+    "complex-structure",  # function too complex
+    "collection-literal-concatenation",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
+    "unnecessary-return-none",  # Explicitly returning None
+    "superfluous-else-return",  # https://github.com/charliermarsh/ruff/issues/1035
+    "superfluous-else-raise",  # https://github.com/charliermarsh/ruff/issues/1035
+    "superfluous-else-continue",  # https://github.com/charliermarsh/ruff/issues/1035
+    "superfluous-else-break",  # https://github.com/charliermarsh/ruff/issues/1035
+    "blanket-type-ignore",  # we do use blanket type: ignore. Perhaps can fix in the future
+    "if-else-block-instead-of-if-exp",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
+    "magic-value-comparison", # we try to use constant vars where possible but this complains abouttoo many things
+    "too-many-public-methods", # too many public methods. This is a bit too much to enforce in the codebase
+    "too-many-arguments", # too many arguments to function call. This is a bit too much to enforce in the codebase
+    "too-many-locals", # too many local variables. This is a bit too much to enforce in the codebase
+    "too-many-statements", # too many statements -- we probably could use this ... but with custom statements number?
+    "too-many-boolean-expressions", # too many boolean expressions -- we dont care
+    "too-many-return-statements", # too many return statements -- we dont care
+    "too-many-branches", # too many branches -- we dont care
+    "too-many-positional-arguments", # too many positional arguments -- we dont care
+    "too-many-nested-blocks", # too many nested blocks -- we dont care
+    "literal-membership", # Doesn't work only for constants: https://github.com/astral-sh/ruff/issues/8322
+    "no-self-use", # could be a staticmethod or function -- breaks for interfaces
+    "import-outside-top-level", # we need to fix non top level imports and enable this
+    "compare-to-empty-string", # we prefer direct comparison to empty string for explicitness
+    "import-private-name", # unfortunately we do import private methods/vars from web3.py and webargs
+    "unnecessary-dunder-call", # false positive complain for dunder set (though we use it in a hacky way)
+    "too-many-statements-in-try-clause", # too many statements in try clause -- too strict for our error handling style
     # Some bandit rules we don't check for
-    "S101",  # asserts are fine
-    "S103",  # permissive mask on file/directory
-    "S105",  # hard coded password checks got false positives
-    "S106",  # hard coded password checks got false positives
-    "S311",  # We know pseudo-random is not safe for cryptographic operations
-    "S608",  # possible sql-injection is overkill since we control the variables in question
-    "G004",  # Our logs do use f-strings everywhere at least for now
+    "assert",  # asserts are fine
+    "bad-file-permissions",  # permissive mask on file/directory
+    "hardcoded-password-string",  # hard coded password checks got false positives
+    "hardcoded-password-func-arg",  # hard coded password checks got false positives
+    "suspicious-non-cryptographic-random-usage",  # We know pseudo-random is not safe for cryptographic operations
+    "hardcoded-sql-expression",  # possible sql-injection is overkill since we control the variables in question
+    "logging-f-string",  # Our logs do use f-strings everywhere at least for now
     # Some pytest-styles rules we don't check for
-    "PT011", # pytest.raises() too broad is fine, since there is functions that raise ValueError
-    "PT018", # composite assertions are fine
-    "TRY003",  # long messages outside the exception class. Perhaps enable when we do internationalization and need to put messages in class logic?
-    "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
-    "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
-    "TRY400",  # logging.exception instead of logging.error. Not sure I understood this one
-    "RUF069",  # https://github.com/astral-sh/ruff/issues/23281
-    "RUF105",  # rewrites every `# noqa: X` to `# ruff:ignore[X]`. Preview rule and the ruff:ignore syntax only became official in 0.16.0. Both forms behave identically so we keep noqa
+    "pytest-raises-too-broad", # pytest.raises() too broad is fine, since there is functions that raise ValueError
+    "pytest-composite-assertion", # composite assertions are fine
+    "raise-vanilla-args",  # long messages outside the exception class. Perhaps enable when we do internationalization and need to put messages in class logic?
+    "type-check-without-type-error",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
+    "raise-within-try",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
+    "error-instead-of-exception",  # logging.exception instead of logging.error. Not sure I understood this one
+    "float-equality-comparison",  # https://github.com/astral-sh/ruff/issues/23281
+    "noqa-comments",  # rewrites every `# noqa: X` to `# ruff:ignore[X]`. Preview rule and the ruff:ignore syntax only became official in 0.16.0. Both forms behave identically so we keep noqa
 ]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
@@ -619,54 +383,54 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 
 [tool.ruff.lint.per-file-ignores]
 "tools/*" = [
-    "T201",  # got prints in tools
-    "INP001",  # no need for __init__ in tools
+    "print",  # got prints in tools
+    "implicit-namespace-package",  # no need for __init__ in tools
 ]
 "rotkehlchen/__main__.py" = [
-    "T201",  # got prints in main
+    "print",  # got prints in main
 ]
 "rotkehlchen/api/server.py" = [
-    "T201",  # got prints in server.py
+    "print",  # got prints in server.py
 ]
-"rotkehlchen/args.py" = ["T201"]  # got prints in args.py
+"rotkehlchen/args.py" = ["print"]  # got prints in args.py
 "rotkehlchen/db/minimized_schema.py" = [
-    "E501",  # huge lines there
-    "Q000",  # double quoted strings needed here
+    "line-too-long",  # huge lines there
+    "bad-quotes-inline-string",  # double quoted strings needed here
 ]
 "rotkehlchen/globaldb/minimized_schema.py" = [
-    "E501",  # huge lines there
-    "Q000",  # double quoted strings needed here
+    "line-too-long",  # huge lines there
+    "bad-quotes-inline-string",  # double quoted strings needed here
 ]
 "rotkehlchen/tests/*" = [
-    "S113",    # tests have no timeout in requests
-    "RUF018",  # We have assignments in assert in tests and that's fine there
+    "request-without-timeout",    # tests have no timeout in requests
+    "assignment-in-assert",  # We have assignments in assert in tests and that's fine there
 ]
 "rotkehlchen/tests/conftest.py" = [
-    "E402",  # logging must be configured before importing the fixtures, which pull in modules that grab loggers
-    "S602",  # test setup. No problem with shell=True
-    "S605",  # test setup, can't inject in process
-    "S607",  # test setup, partial path does not matter
+    "module-import-not-at-top-of-file",  # logging must be configured before importing the fixtures, which pull in modules that grab loggers
+    "subprocess-popen-with-shell-equals-true",  # test setup. No problem with shell=True
+    "start-process-with-a-shell",  # test setup, can't inject in process
+    "start-process-with-partial-path",  # test setup, partial path does not matter
 ]
 "rotkehlchen/tests/integration/test_backend.py" = [
-    "S603",  # test called by us. No variable input
-    "S607",  # test called by us. Partial executable path is fine.
+    "subprocess-without-shell-equals-true",  # test called by us. No variable input
+    "start-process-with-partial-path",  # test called by us. Partial executable path is fine.
 ]
-"setup.py" = ["INP001"]  # no need for __init__ here
+"setup.py" = ["implicit-namespace-package"]  # no need for __init__ here
 "package.py" = [
-    "INP001",  # no need for __init__ here
-    "S602",  # script called by us only when packaging. No problem with shell=True
-    "S607",  # script called by us only when packaging. No problem with partial path
+    "implicit-namespace-package",  # no need for __init__ here
+    "subprocess-popen-with-shell-equals-true",  # script called by us only when packaging. No problem with shell=True
+    "start-process-with-partial-path",  # script called by us only when packaging. No problem with partial path
 ]
 "tools/bench/launch_backend.py" = [
-    "E402",  # requests and the protocol cache are patched before importing the app on purpose
+    "module-import-not-at-top-of-file",  # requests and the protocol cache are patched before importing the app on purpose
 ]
 "tools/scripts/pylint_useless_suppression.py" = [
-    "S603",  # Script called by us. No variable input
-    "S607",  # Script called by us. Partial executable path is fine.
+    "subprocess-without-shell-equals-true",  # Script called by us. No variable input
+    "start-process-with-partial-path",  # Script called by us. Partial executable path is fine.
 ]
 "docs/conf.py" = [
-    "ERA001",  # Lots of comments with text combined with commented-out example code
-    "INP001",  # no need for __init__ here
+    "commented-out-code",  # Lots of comments with text combined with commented-out example code
+    "implicit-namespace-package",  # no need for __init__ here
 ]
 
 

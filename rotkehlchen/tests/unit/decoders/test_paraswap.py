@@ -1265,7 +1265,7 @@ def test_paraswap_fork_with_factory(
         amount=ZERO,
         location_label=user_address,
         notes=f'Revoke PSP spending approval of {user_address} by 0x216B4B4Ba9F3e719726886d34a177484278Bfcae',  # noqa: E501
-        address='0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
+        address=string_to_evm_address('0x216B4B4Ba9F3e719726886d34a177484278Bfcae'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=202,
@@ -1277,7 +1277,7 @@ def test_paraswap_fork_with_factory(
         location_label=user_address,
         notes=f'Swap {swap_amount} PSP in paraswap',
         counterparty=CPT_PARASWAP,
-        address='0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+        address=string_to_evm_address('0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=203,
@@ -1289,7 +1289,7 @@ def test_paraswap_fork_with_factory(
         location_label=user_address,
         notes=f'Receive {received_amount} ETH as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
-        address='0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+        address=string_to_evm_address('0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57'),
     )]
     assert expected_events == events
 

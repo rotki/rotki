@@ -1259,7 +1259,7 @@ def test_limit_order_swap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
         allow_gnosis_etherscan: None,
-):
+) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x55110fd84a901ec4a6650bb3069ed3465f5a37f09060dbbcb6d2195d4114f72c')),  # noqa: E501
@@ -1355,7 +1355,10 @@ def test_limit_order_swap_via_uniswap(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_1inch_v6_fusion_swap_via_balancer_v3(ethereum_inquirer, ethereum_accounts) -> None:
+def test_1inch_v6_fusion_swap_via_balancer_v3(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Regression test for a 1inch v6 Fusion swap (LINK->USDC) settled through a Balancer V3
     pool, where the user's spend leaves to a Fusion resolver instead of the v6 router. The
     Balancer V3 swap log is the only pool-side signature in the tx, so we need it recognized

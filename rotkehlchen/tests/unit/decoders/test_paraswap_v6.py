@@ -877,7 +877,7 @@ def test_eure_receive_swap(
 def test_swap_with_unrelated_curve_deposit(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
-        load_global_caches,
+        load_global_caches: list[str],
         allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for a bug where an unrelated curve deposit was causing the spend half of the
@@ -944,7 +944,7 @@ def test_swap_with_unrelated_curve_deposit(
 def test_curve_deposit_interfering_with_paraswap_swap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
-        load_global_caches,
+        load_global_caches: list[str],
         allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for a bug where a curve deposit was causing the spend half of the
@@ -1011,7 +1011,7 @@ def test_curve_deposit_interfering_with_paraswap_swap(
 def test_native_swap_routed_through_curve_zap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
-        load_global_caches,
+        load_global_caches: list[str],
         allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for a bug where paraswap routing a swap through the curve EURe zap made
@@ -1067,7 +1067,7 @@ def test_native_swap_routed_through_curve_zap(
 def test_native_receive_swap_routed_through_curve_zap(
         gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[ChecksumEvmAddress],
-        load_global_caches,
+        load_global_caches: list[str],
         allow_gnosis_etherscan: None,
 ) -> None:
     """Regression test for the withdrawal side of the same bug: paraswap routing a swap out of a

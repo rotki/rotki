@@ -322,7 +322,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer: Any, gnosis_account
         transactions=gnosis_transactions,
     )
 
-    gnosispay_decoder = cast(Any, gnosis_decoder.decoders.get('GnosisPay'))
+    gnosispay_decoder = cast('Any', gnosis_decoder.decoders.get('GnosisPay'))
     assert gnosispay_decoder is not None
 
     with gnosis_inquirer.database.user_write() as write_cursor:

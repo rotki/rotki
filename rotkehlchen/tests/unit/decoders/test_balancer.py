@@ -898,7 +898,7 @@ def test_balancer_v2_join_gnosis(
 def test_reth_arb(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Test the case of rETH on arb where the order of events is not the usual one"""
     tx_hash = deserialize_evm_tx_hash('0x6b380e483cb301cb060434e31bf053c0b55cd357e8c18f01d3573d850273954e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501

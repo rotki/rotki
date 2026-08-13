@@ -37,13 +37,15 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
 # Have to use a constant instead of make_evm_address() because vcr doesn't work otherwise.
 ADDRESS_WITHOUT_GENESIS_TX = '0x4bBa290826C253BD854121346c370a9886d1bC26'
 
 
-def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransactionDecoder):
+def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransactionDecoder) -> None:
     """Make sure that all decoders we have created for ethereum are detected and initialized"""
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aave',
@@ -291,7 +293,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']])
 def test_no_logs_and_zero_eth(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
 ) -> None:
@@ -300,11 +302,11 @@ def test_no_logs_and_zero_eth(
     https://etherscan.io/tx/0x9a95424c48d36bb2f60fb7684a1068c08ec643c64144e7cdfbe5fb3fc820aa7f
     """
     user_address = ethereum_accounts[0]
-    sender = '0xF99973C9F33793cb83a4590daF15b36F0ab62228'
+    sender = string_to_evm_address('0xF99973C9F33793cb83a4590daF15b36F0ab62228')
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9a95424c48d36bb2f60fb7684a1068c08ec643c64144e7cdfbe5fb3fc820aa7f')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=sender,
         to_address=user_address,
@@ -334,7 +336,7 @@ def test_no_logs_and_zero_eth(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -354,11 +356,11 @@ def test_no_logs_and_zero_eth(
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d'], '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', ChainID.OPTIMISM),  # noqa: E501
 ])
 def test_simple_erc20_transfer(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         optimism_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-        optimism_transaction_decoder: object,
+        optimism_transaction_decoder: OptimismTransactionDecoder,
         tether_address: ChecksumEvmAddress,
         chain: ChainID,
 ) -> None:
@@ -372,7 +374,7 @@ def test_simple_erc20_transfer(
     transaction = L2WithL1FeesTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbb58b36ddc027a1070131e68b915e5f0dca37767b020ed164eda681725b5ca4e')),  # noqa: E501
         chain_id=chain,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=from_address,
         to_address=tether_address,
@@ -415,8 +417,8 @@ def test_simple_erc20_transfer(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=Timestamp(0),
-            location=Location.from_chain_id(chain),
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM if chain is ChainID.ETHEREUM else Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -429,8 +431,8 @@ def test_simple_erc20_transfer(
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=74,
-            timestamp=Timestamp(0),
-            location=Location.from_chain_id(chain),
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM if chain is ChainID.ETHEREUM else Location.OPTIMISM,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT if chain is ChainID.ETHEREUM else A_OPTIMISM_USDT,
@@ -446,7 +448,7 @@ def test_simple_erc20_transfer(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_decode_skips_db_query_for_known_tx_id(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
 ) -> None:
@@ -511,7 +513,7 @@ def test_decode_skips_db_query_for_known_tx_id(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_token_resolved_only_for_transfer_logs(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
 ) -> None:
@@ -586,11 +588,11 @@ def test_token_resolved_only_for_transfer_logs(
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC'], ChainID.OPTIMISM),  # noqa: E501
 ])
 def test_eth_transfer(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         optimism_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-        optimism_transaction_decoder: object,
+        optimism_transaction_decoder: OptimismTransactionDecoder,
         chain: ChainID,
 ) -> None:
     """
@@ -603,14 +605,14 @@ def test_eth_transfer(
     transaction = L2WithL1FeesTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')),  # noqa: E501
         chain_id=chain,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=from_address,
         to_address=to_address,
         value=500000000000000000,
-        gas=2e5,
-        gas_price=10 * 1e9,  # 10 gwei
-        gas_used=1e5,
+        gas=200000,
+        gas_price=10_000_000_000,  # 10 gwei
+        gas_used=100000,
         input_data=b'',
         nonce=0,
         l1_fee=100000000000000,
@@ -635,8 +637,8 @@ def test_eth_transfer(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=Timestamp(0),
-            location=Location.from_chain_id(chain),
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM if chain is ChainID.ETHEREUM else Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -650,8 +652,8 @@ def test_eth_transfer(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=0,
-            location=Location.from_chain_id(chain),
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM if chain is ChainID.ETHEREUM else Location.OPTIMISM,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -670,11 +672,11 @@ def test_eth_transfer(
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26'], ChainID.OPTIMISM),
 ])
 def test_eth_spend(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         optimism_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-        optimism_transaction_decoder: object,
+        optimism_transaction_decoder: OptimismTransactionDecoder,
         chain: ChainID,
 ) -> None:
     """
@@ -686,14 +688,14 @@ def test_eth_spend(
     transaction = L2WithL1FeesTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')),  # noqa: E501
         chain_id=chain,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=from_address,
         to_address=to_address,
         value=500000000000000000,
-        gas=2e5,
-        gas_price=10 * 1e9,  # 10 gwei
-        gas_used=1e5,
+        gas=200000,
+        gas_price=10_000_000_000,  # 10 gwei
+        gas_used=100000,
         input_data=b'',
         nonce=0,
         l1_fee=100000000000000,
@@ -718,8 +720,8 @@ def test_eth_spend(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=Timestamp(0),
-            location=Location.from_chain_id(chain),
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM if chain is ChainID.ETHEREUM else Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -733,8 +735,8 @@ def test_eth_spend(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=0,
-            location=Location.from_chain_id(chain),
+            timestamp=TimestampMS(0),
+            location=Location.ETHEREUM if chain is ChainID.ETHEREUM else Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -750,7 +752,7 @@ def test_eth_spend(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xa4A6A282A7fC7F939e01D62D884355d79f5046C1']])
 def test_eth_deposit(
-        database: object,
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: EthereumTransactionDecoder,
 ) -> None:
@@ -759,18 +761,18 @@ def test_eth_deposit(
     https://etherscan.io/tx/0x8f91a9b98a856282cdad74d9b8a683504c13e3c9d810e4e22bd0ca2eb9d71800
     """
     from_address = ethereum_accounts[0]
-    to_address = '0xAe2D4617c862309A3d75A0fFB358c7a5009c673F'  # Kraken 10
+    to_address = string_to_evm_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F')  # Kraken 10
     transaction = EvmTransaction(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8f91a9b98a856282cdad74d9b8a683504c13e3c9d810e4e22bd0ca2eb9d71800')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=from_address,
         to_address=to_address,
         value=100000000000000000000,
-        gas=2e5,
-        gas_price=10 * 1e9,  # 10 gwei
-        gas_used=1e5,
+        gas=200000,
+        gas_price=10_000_000_000,  # 10 gwei
+        gas_used=100000,
         input_data=b'',
         nonce=0,
     )
@@ -793,7 +795,7 @@ def test_eth_deposit(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=Timestamp(0),
+        timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -808,7 +810,7 @@ def test_eth_deposit(
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=0,
+            timestamp=TimestampMS(0),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -824,7 +826,7 @@ def test_eth_deposit(
     ]
 
 
-def test_maybe_reshuffle_events():
+def test_maybe_reshuffle_events() -> None:
     """
     Tests that `maybe_reshuffle_events` works correctly.
     Especially tests that there are no duplicated indices produced.
@@ -845,7 +847,7 @@ def test_maybe_reshuffle_events():
     event_seq2 = make_ethereum_event(2, location_label='seq2')
     event_seq0 = make_ethereum_event(0, location_label='seq0')
 
-    def reset_events():
+    def reset_events() -> None:
         nonlocal event_a, event_b, event_c, event_seq1, event_seq4, event_seq6, event_seq12, event_seq35  # noqa: E501
         event_a = make_ethereum_event(99, location_label='a')
         event_b = make_ethereum_event(23, location_label='b')
@@ -856,7 +858,12 @@ def test_maybe_reshuffle_events():
         event_seq12 = make_ethereum_event(15, location_label='seq12')
         event_seq35 = make_ethereum_event(35, location_label='seq35')
 
-    def test_reshuffle(ordered_events, events_list, result_list, msg='events_should_be_swapped'):
+    def test_reshuffle(
+            ordered_events: list[EvmEvent | None],
+            events_list: list[EvmEvent],
+            result_list: list[EvmEvent],
+            msg: str = 'events_should_be_swapped',
+    ) -> None:
         reset_events()  # needed to reset all modified sequence indices
         maybe_reshuffle_events(ordered_events, events_list)
         events_list.sort(key=lambda event: event.sequence_index)
@@ -1023,7 +1030,7 @@ def test_maybe_reshuffle_events():
 ]])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_genesis_transaction(
-        database: object,
+        database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
@@ -1097,7 +1104,7 @@ def test_genesis_transaction_no_address(ethereum_inquirer: EthereumInquirer) -> 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_phishing_zero_transfers(
-        database: object,
+        database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
 ) -> None:
     """Checks that zero transfer phishing transactions are marked as ignored."""
@@ -1124,7 +1131,7 @@ def test_phishing_zero_transfers(
 
 
 def test_error_at_decoder_initialization(
-        database: object,
+        database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
         eth_transactions: EthereumTransactions,
 ) -> None:
@@ -1282,13 +1289,21 @@ def test_post_decoding_rules_break_on_new_event(
         make_ethereum_event(index=0, location_label=user_address),
     ]
 
-    def rule_that_adds_event(transaction, decoded_events, all_logs):
+    def rule_that_adds_event(
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Post-decoding rule that adds a new event to the list."""
         new_event = make_ethereum_event(index=99, location_label='added_by_rule_1')
         decoded_events.append(new_event)
         return decoded_events
 
-    def rule_that_does_nothing(transaction, decoded_events, all_logs):
+    def rule_that_does_nothing(
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Post-decoding rule that should NOT be called if break works correctly."""
         return decoded_events
 
