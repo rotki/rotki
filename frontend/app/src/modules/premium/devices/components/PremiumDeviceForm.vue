@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
-import { toServerErrors } from '@/modules/core/form/server-errors';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import { deviceNameSchema, type DeviceNameState } from '@/modules/premium/devices/device-form-schema';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -38,11 +37,8 @@ const model = computed<DeviceNameState>({
 const form = useModelForm<DeviceNameState>({
   model,
   schema,
+  serverErrors: errors,
   stateUpdated,
-});
-
-watchImmediate(errors, (value) => {
-  form.setServerErrors(toServerErrors(value));
 });
 
 defineExpose({

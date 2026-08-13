@@ -1,7 +1,7 @@
-import type { ComponentPublicInstance, Ref } from 'vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComponentPublicInstance, defineComponent, h, type Ref, type VNode } from 'vue';
 import { Quarter } from '@/modules/settings/types/frontend-settings';
 import '@test/i18n';
 
@@ -192,5 +192,75 @@ describe('rangeSelector', () => {
       start: undefined,
     });
     expect(updateFrontendSetting).toHaveBeenCalledWith({ profitLossReportPeriod: selection });
+  });
+
+  /*
+   * A parent holding the range in a real ref, so both directions are exercised. The shared
+   * `mountModelForm` does not fit: it binds a `stateUpdated` prop this form does not declare, and
+   * the validity this form reports leaves by an emit rather than through the model.
+   */
+  function mountUnderParent(initial: Range): { range: () => Range; setRange: (value: Range) => void; parent: VueWrapper } {
+    const range = ref<Range>(initial);
+    const parent = defineComponent({
+      setup(): () => VNode {
+        return () => h(RangeSelector, {
+          'modelValue': get(range),
+          'onUpdate:modelValue': (value: Range): void => set(range, value),
+        });
+      },
+    });
+
+    return {
+      parent: mount(parent, {
+        global: {
+          stubs: {
+            DateTimeRangePicker: {
+              emits: ['update:start', 'update:end'],
+              name: 'DateTimeRangePicker',
+              props: ['start', 'end', 'startErrorMessages', 'endErrorMessages'],
+              template: '<div />',
+            },
+            ReportPeriodSelector: {
+              emits: ['update:period', 'update:selection'],
+              name: 'ReportPeriodSelector',
+              props: ['year', 'quarter'],
+              template: '<div />',
+            },
+          },
+        },
+      }),
+      range: (): Range => get(range),
+      setRange: (value: Range): void => set(range, value),
+    };
+  }
+
+  it('should land a picked date in the model the page holds', async () => {
+    set(period, { quarter: Quarter.Q1, year: 'custom' });
+    const { parent, range } = mountUnderParent({ end: 1700000000, start: 1600000000 });
+    await vi.advanceTimersToNextTimerAsync();
+
+    parent.findComponent<StubInstance>({ name: 'DateTimeRangePicker' }).vm.$emit('update:start', 1650000000);
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The report is generated from what the page holds, not from what the form holds.
+    expect(range().start).toBe(1650000000);
+
+    parent.unmount();
+  });
+
+  it('should take a range changed outside the form', async () => {
+    set(period, { quarter: Quarter.Q1, year: 'custom' });
+    const { parent, setRange } = mountUnderParent({ end: 1700000000, start: 1600000000 });
+    await vi.advanceTimersToNextTimerAsync();
+
+    setRange({ end: 1800000000, start: 1750000000 });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // model -> state, the direction an edit made by the page above takes.
+    const picker = parent.findComponent<StubInstance>({ name: 'DateTimeRangePicker' });
+    expect(picker.props('start')).toBe(1750000000);
+    expect(picker.props('end')).toBe(1800000000);
+
+    parent.unmount();
   });
 });
