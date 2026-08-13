@@ -18,6 +18,7 @@ pub enum SupportedBlockchain {
     Gnosis,
     Hyperliquid,
     Monad,
+    Sonic,
     Optimism,
     PolygonPos,
     Scroll,
@@ -43,6 +44,7 @@ impl SupportedBlockchain {
             Self::Gnosis => "GNOSIS",
             Self::Hyperliquid => "HYPERLIQUID",
             Self::Monad => "MONAD",
+            Self::Sonic => "SONIC",
             Self::Optimism => "OPTIMISM",
             Self::PolygonPos => "POLYGON_POS",
             Self::Scroll => "SCROLL",
@@ -61,6 +63,7 @@ impl SupportedBlockchain {
             Self::BinanceSc => "BNB",
             Self::Hyperliquid => "HYPE",
             Self::Monad => "MON",
+            Self::Sonic => "S",
             Self::Solana => "SOL",
             // All others: the chain identifier is also its native token
             // (Ethereum→ETH, Bitcoin→BTC, Avalanche→AVAX, etc.)
@@ -79,6 +82,7 @@ impl SupportedBlockchain {
             137 => Some(Self::PolygonPos),
             43114 => Some(Self::Avalanche),
             143 => Some(Self::Monad),
+            146 => Some(Self::Sonic),
             999 => Some(Self::Hyperliquid),
             8453 => Some(Self::Base),
             42161 => Some(Self::ArbitrumOne),
@@ -117,6 +121,14 @@ mod tests {
     }
 
     #[test]
+    fn test_from_chain_id_includes_sonic() {
+        assert_eq!(
+            SupportedBlockchain::from_chain_id(146),
+            Some(SupportedBlockchain::Sonic)
+        );
+    }
+
+    #[test]
     fn test_from_chain_id_includes_hyperliquid() {
         assert_eq!(
             SupportedBlockchain::from_chain_id(999),
@@ -127,12 +139,14 @@ mod tests {
     #[test]
     fn test_native_token_id_for_new_chains() {
         assert_eq!(SupportedBlockchain::Monad.native_token_id(), "MON");
-        assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
+        assert_eq!(SupportedBlockchain::Sonic.native_token_id(), "S");
+          assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
     }
 
     #[test]
     fn test_as_str_for_new_chains() {
         assert_eq!(SupportedBlockchain::Monad.as_str(), "MONAD");
-        assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
+        assert_eq!(SupportedBlockchain::Sonic.as_str(), "SONIC");
+          assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
     }
 }
