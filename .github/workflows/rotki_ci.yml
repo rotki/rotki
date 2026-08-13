@@ -185,6 +185,13 @@ jobs:
         working-directory: ./frontend
         run: pnpm run --filter rotki check:linked-keys
 
+      # Runs from the workspace root, not from app: the catalog it resolves
+      # `catalog:` versions against lives in frontend/pnpm-workspace.yaml.
+      - name: Knip
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        working-directory: ./frontend
+        run: pnpm run knip
+
       # The app typecheck filters to `rotki`, so the dev-proxy is only covered here.
       - name: dev-proxy
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
