@@ -55,27 +55,30 @@ def do_tx_query_and_get_events(
         for message in websocket_connection.messages
         if message['type'] == 'transaction_status'
     ]
-    assert [message['status'] for message in status_messages] == [  # messages are descending
+    status_steps = [message['status'] for message in status_messages]
+    assert status_steps[:3] == [  # messages are descending
         'decoding_transactions_finished',
         'decoding_transactions_started',
         'querying_transactions_finished',
-        'querying_transactions',
-        'querying_transactions_started',
     ]
+    assert status_steps[-1] == 'querying_transactions_started'
+    assert all(status == 'querying_transactions' for status in status_steps[3:-1])
     for message in status_messages:
         assert message['chain'] == chain.value
         assert message['subtype'] == 'bitcoin'
         assert message['period']
-    querying_message = next(
+    querying_messages = [
         message for message in status_messages
         if message['status'] == 'querying_transactions'
-    )
+    ]
     started_message = next(
         message for message in status_messages
         if message['status'] == 'querying_transactions_started'
     )
-    assert querying_message['period'][0] == started_message['period'][0]
-    assert querying_message['period'][1] < started_message['period'][1]
+    assert len(querying_messages) != 0
+    for querying_message in querying_messages:
+        assert querying_message['period'][0] == started_message['period'][0]
+        assert querying_message['period'][1] < started_message['period'][1]
     websocket_connection.messages.clear()
 
     return events
