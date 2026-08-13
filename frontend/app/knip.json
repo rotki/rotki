@@ -25,11 +25,14 @@
   "ignoreDependencies": [
     "@fontsource/roboto",
     "@fontsource/roboto-mono",
-    "@vueuse/math"
+    "@vueuse/math",
+    "dmg-license"
   ],
   "ignoreBinaries": [
     "uv",
-    "xdg-mime"
+    "xdg-mime",
+    "report",
+    "ss"
   ],
   "tags": ["-@public"],
   "paths": {

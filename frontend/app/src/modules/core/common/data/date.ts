@@ -100,52 +100,14 @@ export function millisecondsToSeconds(milliseconds: number): number {
   return Math.floor(milliseconds / 1000);
 }
 
-function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
-  return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
-}
-
-/**
- * Validates a date string and ensures it respects a date range boundary.
- * For start dates, pass the end timestamp and `'start'` to ensure start <= end.
- * For end dates, pass the start timestamp and `'end'` to ensure end >= start.
- * Also rejects dates in the future.
- */
-export function dateRangeValidator(
-  dateInputFormat: Ref<DateFormat>,
-  getOtherBound: () => string | undefined,
-  type: 'start' | 'end',
-): (value: string) => boolean {
-  const baseValidator = dateValidator(dateInputFormat);
-  return (value: string): boolean => {
-    if (!baseValidator(value))
-      return false;
-
-    const timestamp = convertToTimestamp(value, get(dateInputFormat));
-
-    const now = dayjs().unix();
-    if (timestamp > now)
-      return false;
-
-    const otherBound = getOtherBound();
-    if (!otherBound)
-      return true;
-
-    return type === 'start' ? timestamp <= Number(otherBound) : timestamp >= Number(otherBound);
-  };
-}
-
-export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string) => string {
-  return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
-}
-
 /**
  * A written date read into the unix-second string a filter bound stores, or `undefined` when the
- * text is not a date. `dateSerializer` cannot say no: dayjs parses leniently and yields NaN for
- * nonsense, which would otherwise reach a filter as the literal string `NaN`.
+ * text is not a date. dayjs parses leniently and yields NaN for nonsense, which would otherwise
+ * reach a filter as the literal string `NaN`.
  *
- * A date in the future is refused for the same reason `dateRangeValidator` refuses one: nothing has
- * happened yet after it, and the backend rejects a `from_timestamp` past its default `to_timestamp`
- * of now with a 400. The bar offers no filter for such a date rather than one that cannot load.
+ * A date in the future is refused too: nothing has happened yet after it, and the backend rejects a
+ * `from_timestamp` past its default `to_timestamp` of now with a 400. The bar offers no filter for
+ * such a date rather than one that cannot load.
  */
 export function dateBoundParser(dateInputFormat: Ref<DateFormat>): (value: string) => string | undefined {
   return (value: string): string | undefined => {
