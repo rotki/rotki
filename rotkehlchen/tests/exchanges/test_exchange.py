@@ -1,5 +1,6 @@
 from collections import defaultdict
 from threading import Semaphore
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -95,14 +96,14 @@ def test_history_query_flushes_and_finishes_on_error(
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_balances_from_amounts_batches_and_uses_cache(inquirer):
+def test_balances_from_amounts_batches_and_uses_cache(inquirer: Any) -> Any:
     """Test that the exchange pricing helper queries all asset prices in a single
     batched oracle query and that subsequent calls (e.g. from the next exchange in
     a balance refresh) get the already priced assets from the price cache, querying
     the oracle only for the new ones"""
     oracle_queries = []
 
-    def mock_oracle_batch(from_assets, to_asset):
+    def mock_oracle_batch(from_assets: Any, to_asset: Any) -> Any:
         oracle_queries.append(set(from_assets))
         return {from_asset: Price(FVal(100)) for from_asset in from_assets}
 

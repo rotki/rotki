@@ -1,6 +1,7 @@
 import os
 import warnings as test_warnings
 from json.decoder import JSONDecodeError
+from typing import Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -21,15 +22,16 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
-def test_name():
-    exchange = Woo('woo', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('woo', 'a', b'a', object(), object())
+    exchange = Woo(*constructor_args)
     assert exchange.location == Location.WOO
     assert exchange.name == 'woo'
 
 
 @pytest.mark.xfail('CI' in os.environ, reason='WOO API sometimes fails with 403 HTML error pages')
 @pytest.mark.asset_test
-def test_woo_assets_are_known(mock_woo):
+def test_woo_assets_are_known(mock_woo: Any) -> None:
     request_url = f'{mock_woo.base_uri}/v1/public/token'
     try:
         response = requests.get(request_url)
@@ -56,7 +58,7 @@ def test_woo_assets_are_known(mock_woo):
             ))
 
 
-def test_query_online_history_events_basic(mock_woo):
+def test_query_online_history_events_basic(mock_woo: Any) -> None:
     """Assert that the expected arguments are passed to the `_api_query` method"""
     with patch.object(mock_woo, '_api_query') as mock_query:
         mock_woo.query_online_history_events(
@@ -84,11 +86,11 @@ def test_query_online_history_events_basic(mock_woo):
     )]
 
 
-def test_query_online_history_events(mock_woo):
+def test_query_online_history_events(mock_woo: Any) -> Any:
     """Assert that the expected calls are made to the `_api_query` method
     for deposit/withdrawals and trades with multiple pages
     """
-    def deposits_withdrawals_generator():
+    def deposits_withdrawals_generator() -> Any:
         for i, response in enumerate((
             [
                 {
@@ -163,7 +165,7 @@ def test_query_online_history_events(mock_woo):
                 },
             }
 
-    def trades_generator():
+    def trades_generator() -> Any:
         for response in (
             [{
                 'id': 121,
@@ -251,7 +253,7 @@ def test_query_online_history_events(mock_woo):
         )]
 
 
-def test_query_balances(mock_woo):
+def test_query_balances(mock_woo: Any) -> None:
     balances_response = {
         'success': 'true',
         'data': {
@@ -318,7 +320,7 @@ def test_query_balances(mock_woo):
         }
 
 
-def test_deserialize_trade_buy(mock_woo: Woo):
+def test_deserialize_trade_buy(mock_woo: Woo) -> None:
     assert mock_woo._deserialize_trade(trade={
         'id': 1,
         'symbol': 'SPOT_BTC_ETH',
@@ -356,7 +358,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
     )]
 
 
-def test_deserialize_trade_sell(mock_woo):
+def test_deserialize_trade_sell(mock_woo: Any) -> None:
     assert mock_woo._deserialize_trade(
         trade={
         'id': 2,

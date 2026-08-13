@@ -44,8 +44,8 @@ def htx_account_mock(
     return _mock_authenticated_query
 
 
-def test_accounts(htx_exchange: Htx):
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+def test_accounts(htx_exchange: Htx) -> Any:
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, """{"status": "ok", "data": [{"id": 50, "type": "spot", "subtype": "", "state": "working"}, {"id": 292, "type": "point", "subtype": "", "state": "working"}]}""")  # noqa: E501
 
     with patch.object(htx_exchange.session, 'get', side_effect=mock_api_return):
@@ -55,7 +55,7 @@ def test_accounts(htx_exchange: Htx):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_balances(htx_exchange: Htx):
+def test_balances(htx_exchange: Htx) -> Any:
     balance_response = """
     {
         "status": "ok",
@@ -67,7 +67,7 @@ def test_balances(htx_exchange: Htx):
         ]}
     }"""  # noqa: E501
 
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'balance' in url:
             return MockResponse(200, balance_response)
         else:
@@ -82,7 +82,7 @@ def test_balances(htx_exchange: Htx):
     }
 
 
-def test_assets_are_known(htx_exchange: Htx):
+def test_assets_are_known(htx_exchange: Htx) -> None:
     with patch('rotkehlchen.exchanges.htx.Htx._sign_request', return_value={}):
         tickers = htx_exchange._query('/v2/settings/common/symbols')
     for ticker in tickers:

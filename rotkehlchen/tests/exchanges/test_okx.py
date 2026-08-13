@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,8 +20,9 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
-def test_name():
-    exchange = Okx('okx1', 'a', b'a', 'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('okx1', 'a', b'a', 'a', object(), object())
+    exchange = Okx(*constructor_args)
     assert exchange.location == Location.OKX
     assert exchange.name == 'okx1'
 
@@ -42,7 +44,7 @@ def test_paginated_query_uses_provided_deserializer(mock_okx: Okx) -> None:
 
 
 @pytest.mark.asset_test
-def test_assets_are_known(mock_okx: Okx):
+def test_assets_are_known(mock_okx: Okx) -> None:
     currencies = mock_okx._api_query(OkxEndpoint.CURRENCIES)
     okx_assets = {currency['ccy'] for currency in currencies['data']}
 
@@ -56,7 +58,7 @@ def test_assets_are_known(mock_okx: Okx):
             ))
 
 
-def test_okx_api_signature(mock_okx: Okx):
+def test_okx_api_signature(mock_okx: Okx) -> None:
     sig = mock_okx._generate_signature(
         '2022-12-27T10:55:09.836Z',
         'GET',
@@ -66,8 +68,8 @@ def test_okx_api_signature(mock_okx: Okx):
     assert sig == 'miq5qKL+pRzZJjf0fq0qnUshMuNjvmwHWWyWv0QxsLs='
 
 
-def test_okx_query_balances(mock_okx: Okx):
-    def mock_okx_balances(method, url, **_kwargs):     # pylint: disable=unused-argument
+def test_okx_query_balances(mock_okx: Okx) -> Any:
+    def mock_okx_balances(method: Any, url: Any, **_kwargs: Any) -> Any:     # pylint: disable=unused-argument
         if '/api/v5/asset/balances' in url:
             return MockResponse(200, '{"code":"0","data":[{"availBal":"25","bal":"25","ccy":"USDT","frozenBal":"0"},{"availBal":"30","bal":"30","ccy":"USDC","frozenBal":"0"}],"msg":""}')  # noqa: E501
 
@@ -195,7 +197,7 @@ def test_okx_query_balances(mock_okx: Okx):
 
 
 def test_okx_query_trades(mock_okx: Okx) -> None:
-    def mock_okx_trades(method, url, **_kwargs):  # pylint: disable=unused-argument
+    def mock_okx_trades(method: Any, url: Any, **_kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'trade/orders-history-archive' in url:
             data = """
 {
@@ -817,7 +819,7 @@ def test_okx_query_trades(mock_okx: Okx) -> None:
 
 
 def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
-    def mock_okx_deposits_withdrawals(method, url, **_kwargs):     # pylint: disable=unused-argument
+    def mock_okx_deposits_withdrawals(method: Any, url: Any, **_kwargs: Any) -> Any:     # pylint: disable=unused-argument
         if 'deposit' in url:
             data = """
 {
@@ -1015,7 +1017,7 @@ def test_okx_withdrawals_pagination(mock_okx: Okx) -> None:
 
     seen_after: list[str] = []
 
-    def mock_request(method, url, **_kwargs):  # pylint: disable=unused-argument
+    def mock_request(method: Any, url: Any, **_kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'withdrawal' in url:
             # `after` is always present but empty on the first page
             if (after := url.split('after=')[1].split('&')[0]) != '':

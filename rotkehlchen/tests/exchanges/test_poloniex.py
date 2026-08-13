@@ -1,6 +1,6 @@
 import json
 import warnings as test_warnings
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
@@ -49,13 +49,14 @@ TEST_POLO_TRADE = {
 }
 
 
-def test_name():
-    exchange = Poloniex('poloniex1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('poloniex1', 'a', b'a', object(), object())
+    exchange = Poloniex(*constructor_args)
     assert exchange.location == Location.POLONIEX
     assert exchange.name == 'poloniex1'
 
 
-def test_trade_from_poloniex():
+def test_trade_from_poloniex() -> None:
     assert trade_from_poloniex(exchange_name=(exchange_name := 'poloniex1'), poloniex_trade=TEST_POLO_TRADE) == [SwapEvent(  # noqa: E501
         timestamp=TimestampMS(1500758317000),
         location=Location.POLONIEX,
@@ -92,7 +93,7 @@ def test_trade_from_poloniex():
     )]
 
 
-def test_poloniex_trade_deserialization_errors():
+def test_poloniex_trade_deserialization_errors() -> None:
     test_trade = TEST_POLO_TRADE.copy()
     test_trade['createTime'] = 'dsadsad'
     with pytest.raises(DeserializationError):
@@ -138,7 +139,7 @@ def test_poloniex_trade_missing_timestamp_is_skipped(poloniex: Poloniex) -> None
     ]
 
 
-def test_poloniex_trade_with_asset_needing_conversion():
+def test_poloniex_trade_with_asset_needing_conversion() -> None:
     amount = FVal(613.79427133)
     rate = FVal(0.00022999)
     fee = FVal(0.001)
@@ -161,9 +162,9 @@ def test_poloniex_trade_with_asset_needing_conversion():
     assert all(event.location_label == exchange_name for event in events)
 
 
-def test_query_trade_history(poloniex: Poloniex):
+def test_query_trade_history(poloniex: Poloniex) -> Any:
     """Happy path test for poloniex trade history querying"""
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/trades' in url:
             return MockResponse(200, POLONIEX_TRADES_RESPONSE)
 
@@ -259,7 +260,7 @@ def test_query_trade_history_multiple_chunks(poloniex: Poloniex) -> None:
         {'id': 3, 'createTime': start_ms + 33_000_000_000},  # ~day 382 -> chunk 3
     ]
 
-    def mock_api_return(url: str, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: str, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/trades' not in url:
             return MockResponse(200, '{"withdrawals": [], "deposits": []}')
 
@@ -307,13 +308,13 @@ def test_incremental_trade_history_skips_missing_id(poloniex: Poloniex) -> None:
     ]
 
 
-def test_query_trade_history_unexpected_data(poloniex):
+def test_query_trade_history_unexpected_data(poloniex: Any) -> Any:
     """Test that poloniex trade history querying returning unexpected data is handled gracefully"""
     poloniex.cache_ttl_secs = 0
 
-    def mock_poloniex_and_query(given_trades, expected_warnings_num, expected_errors_num, expected_trades_len=0):  # noqa: E501
+    def mock_poloniex_and_query(given_trades: Any, expected_warnings_num: Any, expected_errors_num: Any, expected_trades_len: Any = 0) -> Any:  # noqa: E501
 
-        def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+        def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
             if '/trades' in url:
                 return MockResponse(200, given_trades)
 
@@ -381,7 +382,7 @@ def test_query_trade_history_unexpected_data(poloniex):
 
 
 @pytest.mark.asset_test
-def test_poloniex_assets_are_known(poloniex: Poloniex):
+def test_poloniex_assets_are_known(poloniex: Poloniex) -> None:
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:
         for poloniex_asset in asset_data:
@@ -395,11 +396,11 @@ def test_poloniex_assets_are_known(poloniex: Poloniex):
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_query_balances_unknown_asset(poloniex):
+def test_poloniex_query_balances_unknown_asset(poloniex: Any) -> Any:
     """Test that if a poloniex balance query returns an asset that can't be mapped
     no exception is raised and an unknown asset message is generated"""
 
-    def mock_unknown_asset_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_unknown_asset_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
     with patch.object(poloniex.session, 'get', side_effect=mock_unknown_asset_return):
@@ -424,7 +425,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
     """Test that if a poloniex asset movement query returns an asset that can't be
     mapped no exception is raised and an unknown asset message is generated"""
 
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/trades' in url:
             return MockResponse(200, '[]')
 
@@ -509,13 +510,13 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: Poloniex) -> None:
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_null_fee(poloniex: Poloniex):
+def test_poloniex_deposits_withdrawal_null_fee(poloniex: Poloniex) -> Any:
     """
     Test that if a poloniex asset movement query returns null for fee we don't crash.
     Regression test for issue #76
     """
 
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/trades' in url:
             return MockResponse(200, '[]')
 
@@ -543,15 +544,19 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex: Poloniex):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
+def test_poloniex_deposits_withdrawal_unexpected_data(poloniex: Any) -> Any:
     """
     Test that if a poloniex asset movement query returns unexpected data we handle it gracefully
     """
     poloniex.cache_ttl_secs = 0
 
-    def mock_poloniex_and_query(given_movements, expected_warnings_num, expected_errors_num):
+    def mock_poloniex_and_query(
+            given_movements: Any,
+            expected_warnings_num: Any,
+            expected_errors_num: Any,
+    ) -> Any:
 
-        def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+        def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
             if '/trades' in url:
                 return MockResponse(200, '[]')
 
@@ -575,7 +580,7 @@ def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
             errors = poloniex.msg_aggregator.consume_errors()
             assert len(errors) == expected_errors_num
 
-    def check_permutations_of_input_invalid_data(given_input):
+    def check_permutations_of_input_invalid_data(given_input: Any) -> None:
         # First make sure it works with normal data
         mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
 

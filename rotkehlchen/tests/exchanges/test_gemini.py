@@ -1,6 +1,7 @@
 import os
 import warnings as test_warnings
 from collections import defaultdict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -29,7 +30,7 @@ from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
-def test_gemini_validate_key(sandbox_gemini):
+def test_gemini_validate_key(sandbox_gemini: Any) -> None:
     """Test that validate api key works for a correct api key
 
     Uses the Gemini sandbox
@@ -41,7 +42,7 @@ def test_gemini_validate_key(sandbox_gemini):
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [b'16NFMLWrVWf1TrHQtVExRFmBovnq'])
-def test_gemini_wrong_secret(sandbox_gemini):
+def test_gemini_wrong_secret(sandbox_gemini: Any) -> None:
     """Test that giving wrong api secret is detected
 
     Uses the Gemini sandbox
@@ -55,7 +56,7 @@ def test_gemini_wrong_secret(sandbox_gemini):
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_sandbox_api_key', ['fddad'])
-def test_gemini_wrong_key(sandbox_gemini):
+def test_gemini_wrong_key(sandbox_gemini: Any) -> None:
     """Test that giving wrong api key is detected
 
     Uses the Gemini sandbox
@@ -70,7 +71,7 @@ def test_gemini_wrong_key(sandbox_gemini):
 @pytest.mark.asset_test
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
-def test_gemini_all_symbols_are_known(sandbox_gemini):
+def test_gemini_all_symbols_are_known(sandbox_gemini: Any) -> None:
     """Test that the gemini trade pairs are all supported by rotki
 
     Use the real gemini API
@@ -96,7 +97,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_sandbox_api_key', [SANDBOX_GEMINI_WP_API_KEY])
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [SANDBOX_GEMINI_WP_API_SECRET])
-def test_gemini_wrong_key_permissions(sandbox_gemini):
+def test_gemini_wrong_key_permissions(sandbox_gemini: Any) -> None:
     """Test that using a gemini key that does not have the auditor permission is detected"""
     result, _ = sandbox_gemini.validate_api_key()
     assert not result
@@ -104,7 +105,7 @@ def test_gemini_wrong_key_permissions(sandbox_gemini):
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_gemini_query_balances(sandbox_gemini):
+def test_gemini_query_balances(sandbox_gemini: Any) -> None:
     """Test that querying the balances endpoint works correctly
 
     Uses the Gemini sandbox
@@ -128,7 +129,7 @@ def test_gemini_query_balances(sandbox_gemini):
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
-def test_gemini_query_trades(sandbox_gemini):
+def test_gemini_query_trades(sandbox_gemini: Any) -> None:
     """Test that querying the trades endpoint works correctly
 
     Uses the Gemini sandbox
@@ -209,7 +210,7 @@ def test_gemini_query_trades(sandbox_gemini):
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
-def test_gemini_query_all_trades_pagination(sandbox_gemini):
+def test_gemini_query_all_trades_pagination(sandbox_gemini: Any) -> None:
     """Test that querying the trades endpoint works correctly including
     combining results from multiple requests
 
@@ -221,7 +222,7 @@ def test_gemini_query_all_trades_pagination(sandbox_gemini):
             end_ts=ts_now(),
         )
 
-    identifiers = defaultdict(int)
+    identifiers: defaultdict[str, int] = defaultdict(int)
     for event in events:
         # The same group_identifier can be present up to 3 times (spend/receive/fee events).
         assert identifiers[event.group_identifier] <= 3, 'trade included multiple times in the results'  # noqa: E501
@@ -293,8 +294,8 @@ TRANSFERS_RESPONSE = """[
 ]"""
 
 
-def mock_gemini_transfers(gemini, original_requests_request):
-    def mock_requests_requests(method, url, *args, **kwargs):
+def mock_gemini_transfers(gemini: Any, original_requests_request: Any) -> Any:
+    def mock_requests_requests(method: Any, url: Any, *args: Any, **kwargs: Any) -> Any:
         if 'transfers' not in url:
             return original_requests_request(method, url, *args, **kwargs)
 
@@ -304,7 +305,7 @@ def mock_gemini_transfers(gemini, original_requests_request):
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
-def test_gemini_query_deposits_withdrawals(sandbox_gemini):
+def test_gemini_query_deposits_withdrawals(sandbox_gemini: Any) -> None:
     """Test that querying the asset movements endpoint works correctly
 
     Since Gemini sandbox does not support transfers, this uses a mocked call.
@@ -390,7 +391,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     assert movements == expected_movements[::-1]
 
 
-def test_gemini_symbol_to_base_quote():
+def test_gemini_symbol_to_base_quote() -> None:
     """Test quote asset detection and validation for gemini symbols"""
     assert gemini_symbol_to_base_quote('btcusd') == (A_BTC, A_USD)
     assert gemini_symbol_to_base_quote('linkbtc') == (A_LINK, A_BTC)

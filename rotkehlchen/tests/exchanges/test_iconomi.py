@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -25,18 +26,19 @@ ICONOMI_TRADES_RESPONSE = """{"transactions":[{"transactionId":"8362abff-12fd-4f
 ICONOMI_TRADES_EMPTY_RESPONSE = """{"transactions":[]}"""
 
 
-def test_name():
-    exchange = Iconomi('iconomi1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('iconomi1', 'a', b'a', object(), object())
+    exchange = Iconomi(*constructor_args)
     assert exchange.location == Location.ICONOMI
     assert exchange.name == 'iconomi1'
 
 
-def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
+def test_iconomi_query_balances_unknown_asset(function_scope_iconomi: Any) -> Any:
     """Test that if a iconomi balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
     iconomi = function_scope_iconomi
 
-    def mock_unknown_asset_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_unknown_asset_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, ICONOMI_BALANCES_RESPONSE)
 
     with patch.object(iconomi.session, 'get', side_effect=mock_unknown_asset_return):
@@ -56,11 +58,11 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
     assert 'unsupported ICONOMI strategy SCND' in warnings[1]
 
 
-def test_query_trade_history(function_scope_iconomi):
+def test_query_trade_history(function_scope_iconomi: Any) -> Any:
     """Happy path test for iconomi trade history querying"""
     iconomi = function_scope_iconomi
 
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'pageNumber=0' in url:
             return MockResponse(200, ICONOMI_TRADES_RESPONSE)
         return MockResponse(200, ICONOMI_TRADES_EMPTY_RESPONSE)
@@ -120,9 +122,9 @@ def test_query_trade_history(function_scope_iconomi):
 
 @pytest.mark.asset_test
 def test_iconomi_assets_are_known(
-        database,
-        inquirer,  # pylint: disable=unused-argument
-):
+        database: Any,
+        inquirer: Any,  # pylint: disable=unused-argument
+) -> None:
     # use a real Iconomi instance so that we always get the latest data
     iconomi = Iconomi(
         name='iconomi1',

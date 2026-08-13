@@ -2,7 +2,7 @@ import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -31,21 +31,22 @@ if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
 
 
-def test_name():
-    exchange = Kucoin(
-        name='kucoin1',
-        api_key='a',
-        secret=b'a',
-        database=object(),
-        msg_aggregator=object(),
-        passphrase='a',
-    )
+def test_name() -> None:
+    constructor_kwargs: Any = {
+        'name': 'kucoin1',
+        'api_key': 'a',
+        'secret': b'a',
+        'database': object(),
+        'msg_aggregator': object(),
+        'passphrase': 'a',
+    }
+    exchange = Kucoin(**constructor_kwargs)
     assert exchange.location == Location.KUCOIN
     assert exchange.name == 'kucoin1'
 
 
 @pytest.mark.asset_test
-def test_kucoin_exchange_assets_are_known(mock_kucoin):
+def test_kucoin_exchange_assets_are_known(mock_kucoin: Any) -> None:
     request_url = f'{mock_kucoin.base_uri}/api/v1/currencies'
     try:
         response = requests.get(request_url)
@@ -84,18 +85,18 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
                 ))
 
 
-def test_api_query_retries_request(mock_kucoin):
+def test_api_query_retries_request(mock_kucoin: Any) -> Any:
 
-    def get_response():
+    def get_response() -> Any:
         yield from [
             """{"code":400007,"msg":"unknown error"}""",
             """{"code":400007,"msg":"unknown error"}""",
         ]
 
-    def mock_api_query_response(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(get_response))
+    def mock_api_query_response(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
+        return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(responses))
 
-    get_response = get_response()
+    responses: Any = get_response()
     api_request_retry_times_patch = patch(
         target='rotkehlchen.exchanges.kucoin.API_REQUEST_RETRY_TIMES',
         new=1,
@@ -134,7 +135,7 @@ def test_api_query_retries_request(mock_kucoin):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argument
+def test_deserialize_accounts_balances(mock_kucoin: Any, inquirer: Any) -> None:  # pylint: disable=unused-argument
     accounts_data = [
         {
             'id': '601ac6f7d48f8000063ab2da',
@@ -242,7 +243,7 @@ def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disabl
     }
 
 
-def test_deserialize_v2_trade_buy(mock_kucoin):
+def test_deserialize_v2_trade_buy(mock_kucoin: Any) -> None:
     raw_result = {
         'symbol': 'KCS-USDT',
         'tradeId': (unique_id := '601da9faf1297d0007efd712'),
@@ -301,7 +302,7 @@ def test_deserialize_v2_trade_buy(mock_kucoin):
     )]
 
 
-def test_deserialize_v2_trade_sell(mock_kucoin):
+def test_deserialize_v2_trade_sell(mock_kucoin: Any) -> None:
     raw_result = {
         'symbol': 'BCHSV-USDT',
         'tradeId': (unique_id := '601da995e0ee8b00063a075c'),
@@ -360,7 +361,7 @@ def test_deserialize_v2_trade_sell(mock_kucoin):
     )]
 
 
-def test_deserialize_v1_trade(mock_kucoin):
+def test_deserialize_v1_trade(mock_kucoin: Any) -> None:
     raw_result = {
         'id': (unique_id := 'xxxx'),
         'symbol': 'NANO-ETH',
@@ -496,7 +497,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: Kucoin) -> None:
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argument
+def test_query_balances(mock_kucoin: Any, inquirer: Any) -> Any:  # pylint: disable=unused-argument
     balances_response = """{
         "code": "200000",
         "data": [{
@@ -530,7 +531,7 @@ def test_query_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argume
         }]
     }"""
 
-    def mock_query(case):  # pylint: disable=unused-argument
+    def mock_query(case: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, balances_response)
 
     with patch.object(target=mock_kucoin, attribute='_api_query', side_effect=mock_query):
@@ -553,7 +554,7 @@ def test_query_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argume
     assert msg == ''
 
 
-def test_query_trades(mock_kucoin: Kucoin):
+def test_query_trades(mock_kucoin: Kucoin) -> Any:
     """Test that querying kucoin trades works properly."""
     trades_response_1 = """{
         "code": "200000",
@@ -677,7 +678,7 @@ def test_query_trades(mock_kucoin: Kucoin):
             f'{trades_response_3}',
         ]
 
-    def mock_api_query_response(case, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(case: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, (
             next(get_response) if case == KucoinCase.TRADES else
             '{"data":{"currentPage":1,"totalPage":1,"items":[]}}'  # Empty response if not trades since query_online_history_events also queries asset movements  # noqa: E501
@@ -1086,7 +1087,7 @@ def test_query_asset_movements(
             f'{withdrawals_response_3}',
         ]
 
-    def mock_api_query_response(case, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(case: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, (
             '{"data":{"currentPage":1,"totalPage":1,"items":[]}}'  # Empty trades response since query_online_history_events also queries trades  # noqa: E501
             if case == KucoinCase.TRADES else next(get_response)

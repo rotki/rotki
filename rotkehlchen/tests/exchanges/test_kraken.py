@@ -8,7 +8,7 @@ from http import HTTPStatus
 from http.client import RemoteDisconnected
 from pathlib import Path
 from threading import Event
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import _patch, patch
 from uuid import uuid4
 
@@ -82,7 +82,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def _check_trade_history_events_order(db, expected):
+def _check_trade_history_events_order(db: Any, expected: Any) -> None:
     """Check that the history events for the trades have the expected order"""
     dbevents = DBHistoryEvents(db)
     with db.conn.read_ctx() as cursor:
@@ -104,8 +104,9 @@ def _patch_ledger(kraken: MockKraken, ledger_data: str) -> _patch:
     )
 
 
-def test_name():
-    exchange = Kraken('kraken1', 'a', b'YQ==', object(), object())  # b'YQ==' is base64 for 'a'
+def test_name() -> None:
+    constructor_args: Any = ('kraken1', 'a', b'YQ==', object(), object())
+    exchange = Kraken(*constructor_args)  # b'YQ==' is base64 for 'a'
     assert exchange.location == Location.KRAKEN
     assert exchange.name == 'kraken1'
 
@@ -141,7 +142,7 @@ def test_partial_history_query_saves_events_without_advancing_range(kraken: Krak
 
 
 @pytest.mark.asset_test
-def test_coverage_of_kraken_balances():
+def test_coverage_of_kraken_balances() -> None:
     response = requests.get('https://api.kraken.com/0/public/Assets')
     got_assets = set(response.json()['result'].keys())
     expected_assets = get_exchange_asset_symbols(
@@ -220,7 +221,7 @@ def test_coverage_of_kraken_balances():
         ))
 
 
-def test_querying_balances(kraken):
+def test_querying_balances(kraken: Any) -> None:
     result, error_or_empty = kraken.query_balances()
     assert error_or_empty == ''
     assert isinstance(result, dict)
@@ -229,7 +230,7 @@ def test_querying_balances(kraken):
         assert isinstance(entry, Balance)
 
 
-def test_querying_rate_limit_exhaustion(kraken, database):
+def test_querying_rate_limit_exhaustion(kraken: Any, database: Any) -> Any:
     """Test that if kraken api rates limit us we don't get stuck in an infinite loop
     and also that we return what we managed to retrieve until rate limit occurred.
 
@@ -240,7 +241,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
 
     count = 0
 
-    def mock_response(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_response(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         nonlocal count
         if 'Ledgers' in url:
             if count == 0:
@@ -286,7 +287,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         ) is None  # pages are newest-first, so a partial response has no safe range boundary
 
 
-def test_kraken_retries_after_remote_disconnect(kraken) -> None:
+def test_kraken_retries_after_remote_disconnect(kraken: Any) -> None:
     kraken.use_original_kraken = True
 
     initial_session = kraken.session
@@ -318,7 +319,7 @@ def test_kraken_retries_after_remote_disconnect(kraken) -> None:
     sleep_patch.assert_not_called()
 
 
-def test_kraken_does_not_retry_other_request_exceptions(kraken) -> None:
+def test_kraken_does_not_retry_other_request_exceptions(kraken: Any) -> None:
     kraken.use_original_kraken = True
 
     initial_session = kraken.session
@@ -338,7 +339,7 @@ def test_kraken_does_not_retry_other_request_exceptions(kraken) -> None:
     close_patch.assert_not_called()
 
 
-def test_kraken_retries_after_wrapped_remote_disconnect(kraken) -> None:
+def test_kraken_retries_after_wrapped_remote_disconnect(kraken: Any) -> None:
     kraken.use_original_kraken = True
 
     response_text = (
@@ -365,7 +366,9 @@ def test_kraken_retries_after_wrapped_remote_disconnect(kraken) -> None:
     sleep_patch.assert_not_called()
 
 
-def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(kraken) -> None:
+def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(
+        kraken: Any,
+) -> None:
     """Ensure reset waits until other in-flight session requests complete.
 
     Strategy:
@@ -385,7 +388,7 @@ def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(k
     recover_attempt = 0
     initial_session = kraken.session
 
-    def mock_send(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_send(*args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         nonlocal recover_attempt
         request = kwargs.get('request') or args[0]
         if request.url.endswith('/slow'):
@@ -438,7 +441,7 @@ def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(k
     assert close_while_slow is False
 
 
-def test_querying_deposits_withdrawals(kraken):
+def test_querying_deposits_withdrawals(kraken: Any) -> None:
     kraken.random_ledgers_data = False
     kraken.query_history_events()
     with kraken.db.conn.read_ctx() as cursor:
@@ -459,7 +462,7 @@ def test_querying_deposits_withdrawals(kraken):
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_kraken_query_balances_unknown_asset(kraken):
+def test_kraken_query_balances_unknown_asset(kraken: Any) -> None:
     """Test that if a kraken balance query returns unknown asset no exception
     is raised and a message is generated"""
     kraken.random_balance_data = False
@@ -479,7 +482,7 @@ def test_kraken_query_balances_unknown_asset(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
+def test_kraken_query_deposit_withdrawals_unknown_asset(kraken: Any) -> None:
     """Test that if a kraken deposits_withdrawals query returns unknown asset
     no exception is raised and a warning is generated and the deposits/withdrawals
     with valid assets are still returned"""
@@ -561,7 +564,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_with_spend_receive(kraken):
+def test_kraken_trade_with_spend_receive(kraken: Any) -> None:
     """Test that trades based on spend/receive events are correctly processed.
     Also checks the multiple fees are properly handled.
     """
@@ -649,7 +652,7 @@ def test_kraken_trade_with_spend_receive(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_with_same_spend_receive_amount(kraken):
+def test_kraken_trade_with_same_spend_receive_amount(kraken: Any) -> None:
     """Test Kraken trade entries with equal spend/receive amounts are not skipped."""
     test_trades = """{
         "ledger": {
@@ -725,7 +728,7 @@ def test_kraken_trade_with_same_spend_receive_amount(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_with_adjustment(kraken):
+def test_kraken_trade_with_adjustment(kraken: Any) -> None:
     """Test that trades based on adjustment events are processed"""
 
     test_trades = """{
@@ -796,7 +799,7 @@ def test_kraken_trade_with_adjustment(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_multiple_adjustment_pairs(kraken):
+def test_kraken_multiple_adjustment_pairs(kraken: Any) -> None:
     """Regression test: all adjustment pairs must be converted to SwapEvents.
 
     process_kraken_trades used to remove() from the adjustments list while iterating it via
@@ -837,7 +840,7 @@ def test_kraken_multiple_adjustment_pairs(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_adjustment(kraken):
+def test_kraken_adjustment(kraken: Any) -> None:
     """Test that a plain adjustment event (no associated trade) is handled correctly."""
     with _patch_ledger(
         kraken=kraken,
@@ -874,7 +877,7 @@ def test_kraken_adjustment(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_no_counterpart(kraken):
+def test_kraken_trade_no_counterpart(kraken: Any) -> None:
     """Test that trades with no counterpart are processed properly"""
     test_trades = """{
         "ledger": {
@@ -968,7 +971,7 @@ def test_kraken_trade_no_counterpart(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_failed_withdrawals(kraken):
+def test_kraken_failed_withdrawals(kraken: Any) -> None:
     """Test that failed withdrawals are processed properly"""
     test_events = """{
         "ledger": {
@@ -1009,7 +1012,7 @@ def test_kraken_failed_withdrawals(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_trade_from_kraken_unexpected_data(kraken):
+def test_trade_from_kraken_unexpected_data(kraken: Any) -> None:
     """Test that getting unexpected data from kraken leads to skipping the trade
     and does not lead to a crash"""
     # Important: Testing with a time floating point that has other than zero after decimal
@@ -1041,7 +1044,11 @@ def test_trade_from_kraken_unexpected_data(kraken):
     "count": 2
 }"""
 
-    def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
+    def query_kraken_and_test(
+            input_trades: Any,
+            expected_warnings_num: Any,
+            expected_errors_num: Any,
+    ) -> None:
         # delete kraken history entries so they get requeried
         with kraken.history_events_db.db.user_write() as cursor:
             location = Location.KRAKEN
@@ -1110,14 +1117,21 @@ def test_trade_from_kraken_unexpected_data(kraken):
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=2)
 
 
-def test_empty_kraken_balance_response():
+def test_empty_kraken_balance_response() -> Any:
     """Balance api query returns a response without a result
 
     Regression test for: https://github.com/rotki/rotki/issues/2443
     """
-    kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
+    constructor_args: Any = (
+        'kraken1',
+        'a',
+        b'YW55IGNhcm5hbCBwbGVhc3VyZS4=',
+        object(),
+        object(),
+    )
+    kraken = Kraken(*constructor_args)
 
-    def mock_post(url, data, **kwargs):  # pylint: disable=unused-argument
+    def mock_post(url: Any, data: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, '{"error":[]}')
 
     with patch.object(kraken.session, 'post', wraps=mock_post):
@@ -1126,7 +1140,7 @@ def test_empty_kraken_balance_response():
         assert result == {}
 
 
-def test_timestamp_deserialization():
+def test_timestamp_deserialization() -> None:
     """Test the function that allows to deserialize timestamp from different types"""
     assert deserialize_timestamp_from_floatstr('1458994442.2353') == 1458994442
     assert deserialize_timestamp_from_floatstr(1458994442.2353) == 1458994442
@@ -1146,7 +1160,10 @@ def test_timestamp_deserialization():
 @pytest.mark.parametrize('db_settings', [{  # to count the kraken ETH staking events in accounting
     'eth_staking_taxable_after_withdrawal_enabled': False,
 }])
-def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+def test_kraken_staking(
+        rotkehlchen_api_server_with_exchanges: Any,
+        start_with_valid_premium: Any,
+) -> None:
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -1238,6 +1255,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.purge_exchange_data(write_cursor, Location.KRAKEN)
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert isinstance(kraken, MockKraken)
     with _patch_ledger(kraken, input_ledger):
         kraken.query_history_events()
 
@@ -1377,8 +1395,8 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
 
     _, without_eth2_staking_report_result, _ = query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
-        start_ts=0,
-        end_ts=1640493377,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493377),
         prepare_mocks=False,
     )
     without_eth2_staking_overview = without_eth2_staking_report_result['entries'][0]['overview']
@@ -1392,8 +1410,8 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         )
     _, with_eth2_staking_report_result, _ = query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
-        start_ts=0,
-        end_ts=1640493377,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493377),
         prepare_mocks=False,
     )
     with_eth2_staking_overview = with_eth2_staking_report_result['entries'][0]['overview']
@@ -1403,7 +1421,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_event_serialization_with_custom_asset(database):
+def test_kraken_event_serialization_with_custom_asset(database: Any) -> None:
     """Regression test for https://github.com/rotki/rotki/issues/9200"""
     custom_asset = CustomAsset.initialize(
         identifier=str(uuid4()),
@@ -1434,7 +1452,11 @@ def test_kraken_event_serialization_with_custom_asset(database):
         asset_movements = create_asset_movement_with_fee(
             timestamp=TimestampMS(10000000000),
             location=Location.KRAKEN,
-            event_subtype=movement_subtype,
+            event_subtype=(
+                HistoryEventSubType.RECEIVE
+                if movement_subtype == HistoryEventSubType.RECEIVE
+                else HistoryEventSubType.SPEND
+            ),
             asset=custom_asset,
             amount=ONE,
             fee=AssetAmount(asset=custom_asset, amount=ONE),
@@ -1465,7 +1487,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: APIServer):
+def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that we correctly handle margin trade events"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     with _patch_ledger(
@@ -1575,21 +1597,21 @@ def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: APIServer)
     )]
 
 
-def test_kraken_validate_key(kraken):
+def test_kraken_validate_key(kraken: Any) -> None:
     """Test that validate api key works for a correct api key"""
     result, msg = kraken._validate_single_api_key_action('accounts')
     assert result is True
     assert msg == ''
 
 
-def test_kraken_futures_wrong_formatting_on_secret(kraken):
+def test_kraken_futures_wrong_formatting_on_secret(kraken: Any) -> None:
     """Test that giving wrong api secret is detected"""
     with pytest.raises(binascii.Error) as exc_info:
         kraken.set_futures_api_key('Qjqs', b'Wqz')
     assert 'Incorrect padding' in str(exc_info.value)
 
 
-def test_querying_futures_balances(kraken):
+def test_querying_futures_balances(kraken: Any) -> None:
     """Test that querying futures balances works. Uses a mocked futures response"""
     kraken.set_futures_api_key('QjqM', b'Wqdz')
     balances, _ = kraken.query_balances()
@@ -1610,7 +1632,7 @@ def test_querying_futures_balances(kraken):
     assert balances[A_USDT.identifier].amount == FVal('5003.96313881')
 
 
-def test_parse_single_collateral_futures_margin(kraken):
+def test_parse_single_collateral_futures_margin(kraken: Any) -> None:
     no_bch_future = jsonloads_dict("""{"cash": "unrelated_field"}""")
     assert kraken._parse_single_collateral_futures_margin(no_bch_future) == defaultdict()
 

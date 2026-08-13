@@ -298,7 +298,7 @@ def gate_account_mock(
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances(gate_exchange: Gate):
+def test_query_balances(gate_exchange: Gate) -> None:
     balance_response = [
         {'currency': 'BTC', 'available': '1.5', 'locked': '0.5'},
         {'currency': 'ETH', 'available': '2.0', 'locked': '0'},
@@ -319,7 +319,7 @@ def test_query_balances(gate_exchange: Gate):
     }
 
 
-def test_validate_api_key(gate_exchange: Gate):
+def test_validate_api_key(gate_exchange: Gate) -> None:
     mock_fn = gate_account_mock(calls={
         '/spot/accounts': [(None, [{'currency': 'BTC', 'available': '1.0', 'locked': '0.0'}])],
     })
@@ -330,7 +330,7 @@ def test_validate_api_key(gate_exchange: Gate):
     assert msg == ''
 
 
-def test_assets_are_known(gate_exchange: Gate):
+def test_assets_are_known(gate_exchange: Gate) -> None:
     mock_fn = gate_account_mock(calls={
         '/spot/accounts': [(None, [])],
     })

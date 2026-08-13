@@ -212,6 +212,7 @@ module = [
     "rotkehlchen.tests.conftest",
     "rotkehlchen.tests.data_migrations.*",
     "rotkehlchen.tests.db.*",
+    "rotkehlchen.tests.exchanges.*",
     "rotkehlchen.tests.external_apis.*",
     "rotkehlchen.tests.fixtures.*",
     "rotkehlchen.tests.integration.*",

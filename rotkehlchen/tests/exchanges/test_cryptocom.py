@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Final
+from typing import Any, Final
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,18 +27,20 @@ WITHDRAWALS_RESPONSE: Final = {'id': 11, 'method': 'private/get-withdrawal-histo
 TRADES_RESPONSE: Final = {'id': 1, 'method': 'private/get-trades', 'code': 0, 'result': {'data': [{'account_id': 'REDACTED', 'event_date': '2025-08-22', 'journal_type': 'TRADING', 'side': 'BUY', 'instrument_name': 'SOL_USD', 'fees': '-0.00025', 'trade_id': '6242909981674131791', 'trade_match_id': '4311686018497604499', 'create_time': 1755892532063, 'traded_price': '199.17', 'traded_quantity': '0.050', 'fee_instrument_name': 'SOL', 'client_oid': 'REDACTED', 'taker_side': 'TAKER', 'order_id': '6142909939312653446', 'match_count': 1, 'create_time_ns': '1755892532063684632', 'transact_time_ns': '1755892532063937846'}, {'account_id': 'REDACTED', 'event_date': '2025-08-22', 'journal_type': 'TRADING', 'side': 'BUY', 'instrument_name': 'BTC_USD', 'fees': '-0.00000085', 'trade_id': '6242909981648392989', 'trade_match_id': '4311686018635217937', 'create_time': 1755885101119, 'traded_price': '116760.00', 'traded_quantity': '0.00017', 'fee_instrument_name': 'BTC', 'client_oid': 'REDACTED', 'taker_side': 'TAKER', 'order_id': '6142909939299440672', 'match_count': 1, 'create_time_ns': '1755885101119164986', 'transact_time_ns': '1755885101119383557'}]}}  # noqa: E501
 
 
-def test_name():
-    exchange = Cryptocom('cryptocom1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('cryptocom1', 'a', b'a', object(), object())
+    exchange = Cryptocom(*constructor_args)
     assert exchange.location == Location.CRYPTOCOM
     assert exchange.name == 'cryptocom1'
 
 
-def test_api_query_response_handling():
+def test_api_query_response_handling() -> None:
     """Test proper processing of API responses"""
-    exchange = Cryptocom('cryptocom1', 'a', b'a', object(), object())
+    constructor_args: Any = ('cryptocom1', 'a', b'a', object(), object())
+    exchange = Cryptocom(*constructor_args)
 
     # Test successful response
-    response = MockResponse(HTTPStatus.OK, text='{"code": 0, "result": {"data": []}}')
+    response: Any = MockResponse(HTTPStatus.OK, text='{"code": 0, "result": {"data": []}}')
     result = exchange._process_response(response)
     assert result.code == 0
     assert result.result == {'data': []}
@@ -86,7 +88,7 @@ def test_paginated_query_does_not_duplicate_api_error(mock_cryptocom: Cryptocom)
     ]
 
 
-def test_query_balances_empty_account(mock_cryptocom):
+def test_query_balances_empty_account(mock_cryptocom: Any) -> None:
     """Test querying balances for an empty account."""
     with patch.object(
         target=mock_cryptocom,
@@ -99,7 +101,7 @@ def test_query_balances_empty_account(mock_cryptocom):
     assert len(balances) == 0
 
 
-def test_query_balances(mock_cryptocom):
+def test_query_balances(mock_cryptocom: Any) -> None:
     """Test querying balances for an account with some balances."""
     with (patch.object(
         target=mock_cryptocom,
@@ -119,12 +121,12 @@ def test_query_balances(mock_cryptocom):
         assert balances[A_USD] == Balance(amount=FVal('80.1508'), value=FVal('80.1508'))
 
 
-def test_query_trades(mock_cryptocom):
+def test_query_trades(mock_cryptocom: Any) -> Any:
     """Test querying trades from Crypto.com"""
     call_count = 0
     empty_result = {'code': 0, 'result': {'data': []}}
 
-    def mock_api_query(method, options=None):
+    def mock_api_query(method: Any, options: Any = None) -> Any:
         nonlocal call_count
 
         if method == 'private/get-trades':
@@ -210,9 +212,9 @@ def test_query_trades(mock_cryptocom):
         )]
 
 
-def test_query_deposits_withdrawals(mock_cryptocom):
+def test_query_deposits_withdrawals(mock_cryptocom: Any) -> Any:
     """Test querying deposits and withdrawals from Crypto.com"""
-    def mock_api_query(method, options=None):
+    def mock_api_query(method: Any, options: Any = None) -> Any:
         if method == 'private/get-deposit-history':
             return MockResponse(HTTPStatus.OK, text=json.dumps(DEPOSITS_RESPONSE))
         elif method == 'private/get-withdrawal-history':
@@ -257,10 +259,10 @@ def test_query_deposits_withdrawals(mock_cryptocom):
         )]
 
 
-def test_validate_api_key(mock_cryptocom):
+def test_validate_api_key(mock_cryptocom: Any) -> Any:
     """Test API key validation"""
     # Test successful validation
-    def mock_api_query_success(method, options=None):
+    def mock_api_query_success(method: Any, options: Any = None) -> Any:
         return MockResponse(HTTPStatus.OK, text='{"code": 0, "result": {"data": []}}')
 
     with patch.object(mock_cryptocom, '_api_query', side_effect=mock_api_query_success):
@@ -269,7 +271,7 @@ def test_validate_api_key(mock_cryptocom):
         assert msg == ''
 
     # Test failed validation
-    def mock_api_query_fail(method, options=None):
+    def mock_api_query_fail(method: Any, options: Any = None) -> Any:
         return MockResponse(HTTPStatus.OK, text='{"code": 10003, "message": "Invalid API key"}')
 
     with patch.object(mock_cryptocom, '_api_query', side_effect=mock_api_query_fail):

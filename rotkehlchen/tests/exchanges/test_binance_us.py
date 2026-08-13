@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -24,14 +25,22 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 
-def test_name():
-    exchange = Binance('binanceus1', 'a', b'a', object(), object(), uri=BINANCEUS_BASE_URL)
+def test_name() -> None:
+    constructor_kwargs: Any = {
+        'name': 'binanceus1',
+        'api_key': 'a',
+        'secret': b'a',
+        'database': object(),
+        'msg_aggregator': object(),
+        'uri': BINANCEUS_BASE_URL,
+    }
+    exchange = Binance(**constructor_kwargs)
     assert exchange.location == Location.BINANCEUS
     assert exchange.name == 'binanceus1'
 
 
 @pytest.mark.asset_test
-def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
+def test_binance_assets_are_known(inquirer: Any) -> None:  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api.binance.us/api/v3/exchangeInfo').json()
     binance_assets = set()
     for pair_symbol in exchange_data['symbols']:
@@ -50,14 +59,14 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
-def test_binanceus_trades_location(function_scope_binance):
+def test_binanceus_trades_location(function_scope_binance: Any) -> Any:
     """Test that trades from binance US have the right location.
 
     Regression test for https://github.com/rotki/rotki/issues/2837
     """
     binance = function_scope_binance
 
-    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_trades(url: Any, params: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if params.get('symbol') == 'BNBBTC':
             text = BINANCE_MYTRADES_RESPONSE
         else:
@@ -107,7 +116,7 @@ def test_binanceus_trades_location(function_scope_binance):
 
 
 @pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
-def test_binanceus_deposits_withdrawals_location(function_scope_binance):
+def test_binanceus_deposits_withdrawals_location(function_scope_binance: Any) -> Any:
     """Test deposits/withdrawals of binance US have the right location.
 
     Regression test for https://github.com/rotki/rotki/issues/2837
@@ -116,7 +125,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
-    def mock_get_history_events(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_history_events(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
         else:
@@ -144,7 +153,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
 
 
 @pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
-def test_binanceus_skips_convert_history(function_scope_binance: Binance):
+def test_binanceus_skips_convert_history(function_scope_binance: Binance) -> None:
     """Test that the convert history query is skipped for Binance US.
     While Binance US does have a convert feature in the UI, the API endpoint we use for querying
     the conversion history is not supported in Binance US, and there is no alternative endpoint

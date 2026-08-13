@@ -1,6 +1,7 @@
 import hmac
 import logging
 from hashlib import sha256
+from typing import Any
 from unittest.mock import call, patch
 
 import pytest
@@ -109,7 +110,7 @@ def test_signature(coinex_exchange: Coinex) -> None:
 def test_api_query_headers(coinex_exchange: Coinex) -> None:
     assert coinex_exchange.session.headers['X-COINEX-KEY'] == coinex_exchange.api_key
 
-    def mock_get(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_get(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         headers = kwargs['headers']
         assert headers['X-COINEX-TIMESTAMP'] == '1700490703564'
         assert headers['X-COINEX-SIGN'] == coinex_exchange._generate_signature(
@@ -123,7 +124,7 @@ def test_api_query_headers(coinex_exchange: Coinex) -> None:
             text = '{"code": 0, "data": [], "message": "OK"}'
 
             @staticmethod
-            def json():
+            def json() -> Any:
                 return {'code': 0, 'data': [], 'message': 'OK'}
 
         return Response()

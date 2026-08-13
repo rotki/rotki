@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -29,10 +30,10 @@ from rotkehlchen.types import FVal, Location
 from rotkehlchen.utils.misc import TimestampMS, ts_now
 
 
-def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
+def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime) -> Any:
     """Test that coinbase balance query works fine for the happy path"""
 
-    def mock_coinbase_accounts(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_coinbase_accounts(url: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             200,
             """
@@ -117,7 +118,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
     assert mock_msg_aggregator.call_args_list[0].kwargs['data'] == {'location': 'coinbase', 'name': 'coinbaseprime', 'identifier': 'IDONOTEXIST', 'details': 'balance query'}  # noqa: E501
 
 
-def test_process_trade():
+def test_process_trade() -> None:
     user_id, portfolio_id = uuid.uuid4(), uuid.uuid4()
     assert _process_trade(trade_data={
         'average_filled_price': '2.143375433810637',
@@ -238,7 +239,7 @@ def test_process_trade():
     )]
 
 
-def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
+def test_process_movements(function_scope_coinbaseprime: Coinbaseprime) -> None:
     """Test that the logic to process asset movements works as expected"""
     address = make_evm_address()
     tx_hash = str(make_evm_tx_hash())
@@ -328,7 +329,7 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
 
 
 @pytest.mark.freeze_time('2024-10-31 13:50:00 GMT')
-def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
+def test_history_events(function_scope_coinbaseprime: Coinbaseprime) -> Any:
     """Test history events in coinbase prime. It tests conversions and staking rewards
     This test checks the logic for _query_paginated_endpoint by returning
     a mocked pagination from _api_query and the logic of query_history_events
@@ -457,7 +458,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
 
     raw_data_iter = iter(enumerate(raw_data))
 
-    def mock_query(module, path='', params=None):
+    def mock_query(module: Any, path: Any = '', params: Any = None) -> Any:
         if 'transaction' in path:
             idx, raw_entry = next(raw_data_iter)
             return {

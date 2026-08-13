@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -29,13 +29,14 @@ TEST_BITMEX_WITHDRAWAL = """[{
  "timestamp": "2018-09-15T12:30:56.475Z"}]"""
 
 
-def test_name():
-    exchange = Bitmex('bitmex1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('bitmex1', 'a', b'a', object(), object())
+    exchange = Bitmex(*constructor_args)
     assert exchange.location == Location.BITMEX
     assert exchange.name == 'bitmex1'
 
 
-def test_bitmex_api_signature(mock_bitmex):
+def test_bitmex_api_signature(mock_bitmex: Any) -> None:
     # tests cases from here: https://www.bitmex.com/app/apiKeysUsage
     sig = mock_bitmex._generate_signature(
         'get',
@@ -140,7 +141,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: Bitmex) 
             expected_warnings_num: int,
             expected_errors_num: int,
     ) -> None:
-        def mock_get_history_events(url, **kwargs):  # pylint: disable=unused-argument
+        def mock_get_history_events(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
 
         with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_history_events):
@@ -195,7 +196,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: Bitmex) 
 def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex: Bitmex) -> None:
     """Test getting unknown asset in bitmex withdrawals deposit query is handled gracefully"""
 
-    def mock_get_response(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_response(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, TEST_BITMEX_WITHDRAWAL.replace('"XBt"', '"dadsdsa"'))
 
     with patch.object(mock_bitmex.session, 'request', side_effect=mock_get_response):
@@ -276,7 +277,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
     assert result[:5] == expected_result
 
 
-def test_bitmex_query_balances(sandbox_bitmex):
+def test_bitmex_query_balances(sandbox_bitmex: Any) -> None:
     mock_response = [
         {'currency': 'XBt', 'amount': 123456789},
         {'currency': 'USDt', 'amount': 31164180},

@@ -126,14 +126,15 @@ TRADE_3: Final = """
 """
 
 
-def test_name():
-    exchange = Bitfinex('bitfinex1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('bitfinex1', 'a', b'a', object(), object())
+    exchange = Bitfinex(*constructor_args)
     assert exchange.location == Location.BITFINEX
     assert exchange.name == 'bitfinex1'
 
 
 @pytest.mark.asset_test
-def test_assets_are_known(mock_bitfinex):
+def test_assets_are_known(mock_bitfinex: Any) -> None:
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
     currencies_response = mock_bitfinex._query_currencies()
@@ -185,7 +186,7 @@ def test_assets_are_known(mock_bitfinex):
             ))
 
 
-def test_first_connection(mock_bitfinex, globaldb):
+def test_first_connection(mock_bitfinex: Any, globaldb: Any) -> None:
     """Test that 'pair_bfx_symbols_map' contain the expected data.
     """
     assert mock_bitfinex.first_connection_made is False
@@ -218,7 +219,7 @@ def test_first_connection(mock_bitfinex, globaldb):
 
 def test_api_key_err_auth_nonce(mock_bitfinex: Bitfinex) -> None:
     """Test the error code related with the nonce authentication is properly handled"""
-    def mock_api_query_response(endpoint, options=None):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, options: Any = None) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
             f'["error", {API_ERR_AUTH_NONCE_CODE}, "nonce: small"]',
@@ -241,11 +242,11 @@ def test_api_key_err_auth_nonce(mock_bitfinex: Bitfinex) -> None:
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
-def test_validate_api_key_invalid_key(mock_bitfinex):
+def test_validate_api_key_invalid_key(mock_bitfinex: Any) -> Any:
     """Test the error code related with an invalid API key/secret returns the
     tuple (False, <invalid api key error message>).
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
             f'["error", {API_KEY_ERROR_CODE}, "apikey: invalid"]',
@@ -263,7 +264,7 @@ def test_query_balances_asset_balance(
         mock_bitfinex: Bitfinex,
         inquirer: Inquirer,  # pylint: disable=unused-argument
         globaldb: GlobalDBHandler,
-):
+) -> Any:
     """Test the balances of the assets are returned as expected.
 
     Also test the following logic:
@@ -301,7 +302,7 @@ def test_query_balances_asset_balance(
         """
     )
 
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, balances_data)
 
     with patch.object(
@@ -343,7 +344,7 @@ def test_query_balances_asset_balance(
 def test_api_query_paginated_stops_requesting(mock_bitfinex: Bitfinex) -> None:
     """Test requests are stopped after retry limit is reached.
     """
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
             f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
@@ -388,7 +389,7 @@ def test_api_query_paginated_retries_request(mock_bitfinex: Bitfinex) -> None:
             '["error", 10000, "unknown error"]',
         ]
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, next(get_response))
 
     get_response = get_paginated_response()
@@ -417,7 +418,7 @@ def test_api_query_paginated_retries_request(mock_bitfinex: Bitfinex) -> None:
         assert with_errors is True
 
 
-def test_deserialize_trade_buy(mock_bitfinex):
+def test_deserialize_trade_buy(mock_bitfinex: Any) -> None:
     mock_bitfinex.pair_bfx_symbols_map = {'WBTUST': ('WBT', 'UST')}
     raw_result = [
         399251013,
@@ -468,7 +469,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
     )]
 
 
-def test_deserialize_trade_sell(mock_bitfinex):
+def test_deserialize_trade_sell(mock_bitfinex: Any) -> None:
     mock_bitfinex.pair_bfx_symbols_map = {'ETHUST': ('ETH', 'UST')}
     raw_result = [
         399251013,
@@ -681,7 +682,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: Bitfinex) -> None:
             f'[{trade_5}]',
         ]
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         if endpoint == 'trades':
             return MockResponse(HTTPStatus.OK, next(get_response))
 
@@ -842,7 +843,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: Bitfinex) -> None:
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_trade_history_case_2(mock_bitfinex):
+def test_query_online_trade_history_case_2(mock_bitfinex: Any) -> Any:
     """Test pagination logic for trades works as expected when a request
     returns a result already processed in the previous request.
 
@@ -896,7 +897,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     ]
     """
 
-    def get_paginated_response():
+    def get_paginated_response() -> Any:
         yield from [
             f'[{trade_1},{TRADE_2}]',
             f'[{trade_1},{TRADE_2}]',  # repeated line
@@ -904,7 +905,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             f'[{trade_4}]',
         ]
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         if endpoint == 'trades':
             return MockResponse(HTTPStatus.OK, next(get_response))
 
@@ -1595,7 +1596,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: Bitfinex) -> No
             f'[{movement_4}]',
         ]
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         if endpoint == 'movements':
             return MockResponse(HTTPStatus.OK, next(get_response))
 

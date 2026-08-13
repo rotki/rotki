@@ -67,7 +67,7 @@ def bybit_account_mock(
     return _mock_authenticated_query
 
 
-def test_query_balances(bybit_exchange: Bybit):
+def test_query_balances(bybit_exchange: Bybit) -> None:
     balance_response = {'list': [
         {
             'accountIMRate': '',
@@ -310,7 +310,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
     'CI' in os.environ,
     reason='Cannot connect to server due to cloudflare blocking the github server',
 )
-def test_assets_are_known(bybit_exchange: Bybit):
+def test_assets_are_known(bybit_exchange: Bybit) -> None:
     tickers = bybit_exchange._api_query(
         path='market/tickers',
         options={'category': 'spot'},

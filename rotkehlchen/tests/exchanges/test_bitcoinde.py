@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -42,19 +43,20 @@ BITCOINDE_TRADING_PAIRS = (
 )
 
 
-def test_location():
-    exchange = Bitcoinde('bitcoinde1', 'a', b'a', object(), object())
+def test_location() -> None:
+    constructor_args: Any = ('bitcoinde1', 'a', b'a', object(), object())
+    exchange = Bitcoinde(*constructor_args)
     assert exchange.location == Location.BITCOINDE
     assert exchange.name == 'bitcoinde1'
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde):
+def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde: Any) -> Any:
     """Test that if a bitcoinde balance query returns unknown asset no exception
     is raised and a message is sent to the frontend."""
     bitcoinde = function_scope_bitcoinde
 
-    def mock_unknown_asset_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_unknown_asset_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BITCOINDE_BALANCES_RESPONSE.replace('btc', 'abcdef'))
 
     with patch.object(bitcoinde.session, 'get', side_effect=mock_unknown_asset_return):
@@ -67,11 +69,11 @@ def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde):
     assert len(bitcoinde.msg_aggregator.rotki_notifier.messages) == 1
 
 
-def test_query_trade_history(function_scope_bitcoinde):
+def test_query_trade_history(function_scope_bitcoinde: Any) -> Any:
     """Happy path test for bitcoinde trade history querying"""
     bitcoinde = function_scope_bitcoinde
 
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BITCOINDE_TRADES_RESPONSE)
 
     with patch.object(bitcoinde.session, 'get', side_effect=mock_api_return):
@@ -149,12 +151,12 @@ def test_query_trade_history(function_scope_bitcoinde):
     )]
 
 
-def test_bitcoinde_trading_pairs():
+def test_bitcoinde_trading_pairs() -> None:
     for pair in BITCOINDE_TRADING_PAIRS:
         _ = bitcoinde_pair_to_world(pair)
 
 
-def test_bitcoinde_invalid_trading_pair():
+def test_bitcoinde_invalid_trading_pair() -> None:
     with pytest.raises(UnknownAsset):
         _ = bitcoinde_pair_to_world('000btc')
 

@@ -36,20 +36,20 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='mock_coinbase')
-def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
+def fixture_mock_coinbase(messages_aggregator: Any) -> Coinbase:
     return Coinbase('coinbase1', str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)), object(), messages_aggregator)  # type: ignore  # noqa: E501
 
 
-def test_name(mock_coinbase):
+def test_name(mock_coinbase: Any) -> None:
     assert mock_coinbase.location == Location.COINBASE
     assert mock_coinbase.name == 'coinbase1'
 
 
-def test_coinbase_query_balances(function_scope_coinbase):
+def test_coinbase_query_balances(function_scope_coinbase: Any) -> Any:
     """Test that coinbase balance query works fine for the happy path"""
     coinbase = function_scope_coinbase
 
-    def mock_coinbase_accounts(url, timeout, **_kwargs):  # pylint: disable=unused-argument
+    def mock_coinbase_accounts(url: Any, timeout: Any, **_kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             200,
             """
@@ -131,7 +131,7 @@ def test_coinbase_query_balances(function_scope_coinbase):
     assert len(errors) == 0
 
 
-def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
+def test_coinbase_query_balances_unexpected_data(function_scope_coinbase: Any) -> Any:
     """Test that coinbase balance query works fine for the happy path"""
     coinbase = function_scope_coinbase
     coinbase.cache_ttl_secs = 0
@@ -155,13 +155,13 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
     }]}"""
 
     def query_coinbase_and_test_local_mock(
-            response_str,
-            expected_warnings_num,
-            expected_errors_num,
-            expected_balances_for_no_warnings=1,
-            contains_expected_msg=None,
-    ):
-        def mock_coinbase_accounts(url, timeout, **_kwargs):  # pylint: disable=unused-argument
+            response_str: Any,
+            expected_warnings_num: Any,
+            expected_errors_num: Any,
+            expected_balances_for_no_warnings: Any = 1,
+            contains_expected_msg: Any = None,
+    ) -> Any:
+        def mock_coinbase_accounts(url: Any, timeout: Any, **_kwargs: Any) -> Any:  # pylint: disable=unused-argument
             return MockResponse(200, response_str)
 
         with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts):
@@ -217,12 +217,12 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
     query_coinbase_and_test_local_mock(input_data, expected_warnings_num=0, expected_errors_num=0, expected_balances_for_no_warnings=0)  # noqa: E501
 
 
-def _create_coinbase_mock(transactions_response):
+def _create_coinbase_mock(transactions_response: Any) -> Any:
     """Creates a mock function used for mocking Coinbase API responses.
 
     Mocks both the transactions and accounts endpoints with mock data.
     """
-    def mock_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_coinbase_query(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'transaction' in url:
             if 'next-page' in url:
                 return MockResponse(200, TRANSACTIONS_RESPONSE)
@@ -238,14 +238,14 @@ def _create_coinbase_mock(transactions_response):
 
 
 def query_coinbase_and_test(
-        coinbase,
-        transactions_response=TRANSACTIONS_RESPONSE,
-        expected_warnings_num=0,
-        expected_errors_num=0,
+        coinbase: Any,
+        transactions_response: Any = TRANSACTIONS_RESPONSE,
+        expected_warnings_num: Any = 0,
+        expected_errors_num: Any = 0,
         # Since this test only mocks as breaking only one of the three actions by default
-        expected_events_num=5,  # spend/receive & spend/receive/fee
-        expected_ws_messages_num=0,
-):
+        expected_events_num: Any = 5,  # spend/receive & spend/receive/fee
+        expected_ws_messages_num: Any = 0,
+) -> None:
     mock_coinbase_query = _create_coinbase_mock(transactions_response)
 
     with coinbase.db.user_write() as write_cursor:  # clean saved ranges to try again
@@ -273,7 +273,7 @@ def query_coinbase_and_test(
         assert len(coinbase.msg_aggregator.rotki_notifier.messages) == expected_ws_messages_num
 
 
-def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
+def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase: Any) -> None:
     """Test that coinbase trade history query handles unexpected data properly"""
     coinbase = function_scope_coinbase
     coinbase.cache_ttl_secs = 0
@@ -344,7 +344,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_query_trade_history_unknown_asset(function_scope_coinbase):
+def test_query_trade_history_unknown_asset(function_scope_coinbase: Any) -> None:
     """Test that coinbase trade history query handles unknown asset properly"""
     query_coinbase_and_test(
         coinbase=function_scope_coinbase,
@@ -356,7 +356,7 @@ def test_query_trade_history_unknown_asset(function_scope_coinbase):
     )
 
 
-def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
+def test_coinbase_query_trade_history_paginated(function_scope_coinbase: Any) -> None:
     """Test that coinbase trade history query can deal with paginated response"""
     coinbase = function_scope_coinbase
     coinbase.cache_ttl_secs = 0
@@ -499,10 +499,10 @@ def test_account_failure_does_not_advance_cursors(
 
 
 def test_coinbase_query_history_events(
-        database,
-        function_scope_coinbase,
-        price_historian,    # pylint: disable=unused-argument
-):
+        database: Any,
+        function_scope_coinbase: Any,
+        price_historian: Any,    # pylint: disable=unused-argument
+) -> None:
     """Test that coinbase history events query works fine for the happy path"""
     coinbase = function_scope_coinbase
 
@@ -703,7 +703,7 @@ def test_coinbase_query_history_events(
     assert expected_events == events
 
 
-def test_asset_conversion(mock_coinbase):
+def test_asset_conversion(mock_coinbase: Any) -> None:
     tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_b = {
         'id': tx_id,
@@ -806,7 +806,7 @@ def test_asset_conversion(mock_coinbase):
     )]
 
 
-def test_conversion_with_fee(mock_coinbase):
+def test_conversion_with_fee(mock_coinbase: Any) -> None:
     tx_id = '61258a99-7e8a-4ece-94cf-485b33d09319'
     trade_b = {'amount': {'amount': '-10.571942', 'currency': 'USDC'}, 'created_at': '2024-12-06T10:27:56Z', 'id': '39073929-386e-58a2-9ec4-d8371a395a9e', 'native_amount': {'amount': '-10.00', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/40e03599-5601-534c-95c2-0db5f5c5e652/transactions/39073929-386e-58a2-9ec4-d8371a395a9e', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': '61258a99-7e8a-4ece-94cf-485b33d09319', 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
     trade_a = {'amount': {'amount': '0.00266121', 'currency': 'ETH'}, 'created_at': '2024-12-06T10:27:57Z', 'id': 'e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'native_amount': {'amount': '9.70', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/16ff1367-5834-5827-95f3-f503d891421c/transactions/e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': '61258a99-7e8a-4ece-94cf-485b33d09319', 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
@@ -849,7 +849,7 @@ def test_conversion_with_fee(mock_coinbase):
     )]
 
 
-def test_conversion_across_wallets(function_scope_coinbase):
+def test_conversion_across_wallets(function_scope_coinbase: Any) -> Any:
     """Test that a conversion whose two legs live in two different wallets produces
     a single correct swap after all accounts have been queried.
 
@@ -864,7 +864,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
     usdc_leg = {'amount': {'amount': '-10.571942', 'currency': 'USDC'}, 'created_at': '2024-12-06T10:27:56Z', 'id': '39073929-386e-58a2-9ec4-d8371a395a9e', 'native_amount': {'amount': '-10.00', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': f'/v2/accounts/{usdc_wallet_id}/transactions/39073929-386e-58a2-9ec4-d8371a395a9e', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': tx_id, 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
     eth_leg = {'amount': {'amount': '0.00266121', 'currency': 'ETH'}, 'created_at': '2024-12-06T10:27:57Z', 'id': 'e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'native_amount': {'amount': '9.70', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': f'/v2/accounts/{eth_wallet_id}/transactions/e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': tx_id, 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
 
-    def mock_query(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_query(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if f'accounts/{usdc_wallet_id}/transactions' in url:
             return MockResponse(200, json.dumps({'data': [usdc_leg]}))
         if f'accounts/{eth_wallet_id}/transactions' in url:
@@ -925,7 +925,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
     )]
 
 
-def test_asset_conversion_no_second_transaction(mock_coinbase):
+def test_asset_conversion_no_second_transaction(mock_coinbase: Any) -> None:
     tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_a = {
         'id': tx_id,
@@ -991,7 +991,7 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
     )]
 
 
-def test_asset_conversion_not_stable_coin(mock_coinbase):
+def test_asset_conversion_not_stable_coin(mock_coinbase: Any) -> None:
     """Test a conversion using a from asset that is not a stable coin"""
     tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_a = {
@@ -1095,7 +1095,7 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
     )]
 
 
-def test_asset_conversion_zero_fee(mock_coinbase):
+def test_asset_conversion_zero_fee(mock_coinbase: Any) -> None:
     """Test a conversion with 0 fee"""
     tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_a = {
@@ -1188,7 +1188,7 @@ def test_asset_conversion_zero_fee(mock_coinbase):
     )]
 
 
-def test_asset_conversion_choosing_fee_asset(mock_coinbase):
+def test_asset_conversion_choosing_fee_asset(mock_coinbase: Any) -> None:
     """Test that the fee asset is correctly chosen when the received asset transaction
     is created before the giving transaction.
     """
@@ -1296,7 +1296,7 @@ def test_asset_conversion_choosing_fee_asset(mock_coinbase):
     )]
 
 
-def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
+def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase: Any) -> None:
     """Test that coinbase trade history query works fine for advanced_trade_fill"""
     coinbase = function_scope_coinbase
     mock_transactions_response = """
@@ -1742,7 +1742,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
     )]
 
 
-def test_advancedtrade_missing_order_side(mock_coinbase):
+def test_advancedtrade_missing_order_side(mock_coinbase: Any) -> None:
     """Test that we can read coinbase advanced trades missing order_side.
 
     When order_side is absent the direction is inferred from the sign of the balance
@@ -1926,7 +1926,7 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
 
 
 @pytest.mark.asset_test
-def test_coverage_of_products():
+def test_coverage_of_products() -> None:
     """Test that we can process all assets from coinbase"""
     data = requests.get('https://api.exchange.coinbase.com/currencies')
     for coin in data.json():
@@ -1939,7 +1939,7 @@ def test_coverage_of_products():
             ))
 
 
-def test_invalid_api_key(database) -> None:
+def test_invalid_api_key(database: Any) -> None:
     """Test that initializing Coinbase with incorrectly formatted keys doesn't raise any exception,
     but that any requests fail with a proper error.
     Regression test for https://github.com/rotki/rotki/issues/11113
@@ -1955,7 +1955,7 @@ def test_invalid_api_key(database) -> None:
         coinbase.query_history_events()
 
 
-def test_ignore_updated_at_ts(function_scope_coinbase):
+def test_ignore_updated_at_ts(function_scope_coinbase: Any) -> Any:
     """Check that txs are still queried even if the updated_at timestamp would appear to show
     that the account has not been updated since the last query.
     Regression test for https://github.com/rotki/rotki/issues/11149
@@ -1971,7 +1971,7 @@ def test_ignore_updated_at_ts(function_scope_coinbase):
             account_id='xyz',
         )
 
-    def _mock_query(url, **kwargs):  # pylint: disable=unused-argument
+    def _mock_query(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'accounts' in url:
             return MockResponse(200, '{"data": [{"id": "xyz", "updated_at": "2024-10-10T01:00:00Z"}]}')  # noqa: E501
         # else
@@ -1986,7 +1986,7 @@ def test_ignore_updated_at_ts(function_scope_coinbase):
     assert tx_query_mock.call_count == 1
 
 
-def test_ignore_same_asset_same_amount_swap(function_scope_coinbase):
+def test_ignore_same_asset_same_amount_swap(function_scope_coinbase: Any) -> None:
     """Test that swaps are ignored if the spend and receive are exactly the same asset and amount.
     Regression test for https://github.com/rotki/rotki/issues/11483. Mocks the tx response with
     both a valid USDC->USD swap and a USD->USD swap that should be ignored.
@@ -2061,7 +2061,7 @@ def test_ignore_same_asset_same_amount_swap(function_scope_coinbase):
         )]
 
 
-def test_ignore_same_asset_and_amount_conversion(mock_coinbase):
+def test_ignore_same_asset_and_amount_conversion(mock_coinbase: Any) -> None:
     """Test that a conversion where the spend/receive asset and amount are the same is ignored."""
     assert mock_coinbase._process_trades_from_conversion(
         transaction_pairs={(tx_id := '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'): [{
@@ -2092,7 +2092,7 @@ def test_ignore_same_asset_and_amount_conversion(mock_coinbase):
     ) == []
 
 
-def test_ignore_asset_and_amount_advancedtrade(mock_coinbase):
+def test_ignore_asset_and_amount_advancedtrade(mock_coinbase: Any) -> None:
     """Test that if an advanced trade fill where the spend/receive asset and amount are the same
     is ignored.
     """

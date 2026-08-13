@@ -2,6 +2,7 @@ import datetime
 import warnings as test_warnings
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from typing import Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -35,14 +36,15 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_list
 
 
-def test_name():
-    exchange = Bitstamp('bitstamp1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('bitstamp1', 'a', b'a', object(), object())
+    exchange = Bitstamp(*constructor_args)
     assert exchange.location == Location.BITSTAMP
     assert exchange.name == 'bitstamp1'
 
 
 @pytest.mark.asset_test
-def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
+def test_bitstamp_exchange_assets_are_known(mock_bitstamp: Any) -> None:
     request_url = f'{mock_bitstamp.base_uri}/v2/trading-pairs-info'
     try:
         response = requests.get(request_url)
@@ -77,9 +79,9 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
             ))
 
 
-def test_validate_api_key_invalid_json(mock_bitstamp):
+def test_validate_api_key_invalid_json(mock_bitstamp: Any) -> Any:
     """Test when status code is not 200, an invalid JSON response is handled."""
-    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any = '', options: Any = None) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.FORBIDDEN, '{"key"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
@@ -88,9 +90,9 @@ def test_validate_api_key_invalid_json(mock_bitstamp):
         assert msg == 'Bitstamp returned invalid JSON response: {"key"}.'
 
 
-def test_validate_api_key_err_auth_nonce(mock_bitstamp):
+def test_validate_api_key_err_auth_nonce(mock_bitstamp: Any) -> Any:
     """Test the error code related with the nonce authentication is properly handled"""
-    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any = '', options: Any = None) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.FORBIDDEN,
             f'{{"code": "{API_ERR_AUTH_NONCE_CODE}", "reason": "whatever"}}',
@@ -114,14 +116,14 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
 
 @pytest.mark.parametrize('code', API_KEY_ERROR_CODE_ACTION.keys())
 def test_validate_api_key_api_key_error_code(
-        mock_bitstamp,
-        code,
-):
+        mock_bitstamp: Any,
+        code: Any,
+) -> Any:
     """Test an error code related with the API key ones returns a tuple with
     False (result) and a user friendly message (reason,
     from API_KEY_ERROR_CODE_ACTION values).
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.FORBIDDEN,
             f'{{"code": "{code}", "reason": "whatever"}}',
@@ -134,11 +136,11 @@ def test_validate_api_key_api_key_error_code(
     assert msg == API_KEY_ERROR_CODE_ACTION[code]
 
 
-def test_validate_api_key_success(mock_bitstamp):
+def test_validate_api_key_success(mock_bitstamp: Any) -> Any:
     """Test when status code is 200 the response is a tuple with True (result)
     and an empty message.
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
@@ -148,10 +150,10 @@ def test_validate_api_key_success(mock_bitstamp):
     assert msg == ''
 
 
-def test_query_balances_invalid_json(mock_bitstamp):
+def test_query_balances_invalid_json(mock_bitstamp: Any) -> Any:
     """Test an invalid JSON response raises RemoteError.
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"key"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response), pytest.raises(RemoteError):  # noqa: E501
@@ -163,15 +165,15 @@ def test_query_balances_invalid_json(mock_bitstamp):
     ('{"code": "APIXXX", "text": "has text"}', False),
 ])
 def test_query_balances_non_related_error_code(
-        mock_bitstamp,
-        response,
-        has_reason,
-):
+        mock_bitstamp: Any,
+        response: Any,
+        has_reason: Any,
+) -> Any:
     """Test an error code unrelated with the system clock not synced one
     returns a tuple with None (result) and a message (reason, from 'reason'
     response value or `response.text`).
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.FORBIDDEN, response)
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
@@ -182,29 +184,29 @@ def test_query_balances_non_related_error_code(
     assert exp_reason in msg
 
 
-def test_query_balances_skips_not_balance_entry(mock_bitstamp):
+def test_query_balances_skips_not_balance_entry(mock_bitstamp: Any) -> Any:
     """Test an entry that doesn't end with `_balance` is skipped
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"link_available": "1.00000000"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         assert mock_bitstamp.query_balances() == ({}, '')
 
 
-def test_query_balances_skipped_not_asset_entry(mock_bitstamp):
+def test_query_balances_skipped_not_asset_entry(mock_bitstamp: Any) -> Any:
     """Test an entry that can't instantiate Asset is skipped
     """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"bbbrrrlink_balance": "1.00000000"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         assert mock_bitstamp.query_balances() == ({}, '')
 
 
-def test_query_balances_includes_unpriceable_entry(mock_bitstamp):
+def test_query_balances_includes_unpriceable_entry(mock_bitstamp: Any) -> Any:
     """Test an entry whose price can't be found is included with a zero value"""
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"link_balance": "1.00000000"}')
 
     with (
@@ -221,7 +223,7 @@ def test_query_balances_includes_unpriceable_entry(mock_bitstamp):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disable=unused-argument
+def test_query_balances_asset_balance(mock_bitstamp: Any, inquirer: Any) -> Any:  # pylint: disable=unused-argument
     """Test an entry that can't get its USD price is skipped
     """
     balances_data = (
@@ -243,7 +245,7 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
         """
     )
 
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, balances_data)
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
@@ -261,7 +263,7 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
         assert msg == ''
 
 
-def test_deserialize_trade_buy(mock_bitstamp):
+def test_deserialize_trade_buy(mock_bitstamp: Any) -> None:
     assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 2,
         'type': 2,
@@ -400,7 +402,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
     )]
 
 
-def test_deserialize_trade_sell(mock_bitstamp):
+def test_deserialize_trade_sell(mock_bitstamp: Any) -> None:
     assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 5,
         'type': 2,
@@ -494,7 +496,10 @@ def test_deserialize_trade_sell(mock_bitstamp):
 
 
 @pytest.mark.parametrize('option', ['limit', 'since_id', 'sort', 'offset'])
-def test_api_query_paginated_user_transactions_required_options(mock_bitstamp, option):
+def test_api_query_paginated_user_transactions_required_options(
+        mock_bitstamp: Any,
+        option: Any,
+) -> None:
     """Test calling the 'user_transactions' endpoint requires a set of specific
     options.
     """
@@ -514,7 +519,10 @@ def test_api_query_paginated_user_transactions_required_options(mock_bitstamp, o
 
 
 @pytest.mark.parametrize('option', ['limit', 'since_id', 'sort', 'offset'])
-def test_api_query_paginated_user_transactions_required_options_values(mock_bitstamp, option):
+def test_api_query_paginated_user_transactions_required_options_values(
+        mock_bitstamp: Any,
+        option: Any,
+) -> None:
     """Test calling the 'user_transactions' endpoint requires a set of specific
     options.
     """
@@ -533,7 +541,7 @@ def test_api_query_paginated_user_transactions_required_options_values(mock_bits
         )
 
 
-def test_api_query_paginated_invalid_json(mock_bitstamp):
+def test_api_query_paginated_invalid_json(mock_bitstamp: Any) -> Any:
     """Test an invalid JSON response aborts the incomplete query."""
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
@@ -542,7 +550,7 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
         'offset': 0,
     }
 
-    def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '[{"key"}]')
 
     with (
@@ -561,10 +569,10 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
     ('{"code": "APIXXX", "text": "has text"}', 'has text'),
 ])
 def test_api_query_paginated_non_related_error_code(
-        mock_bitstamp,
-        response,
-        expected_message,
-):
+        mock_bitstamp: Any,
+        response: Any,
+        expected_message: Any,
+) -> Any:
     """Test an unrelated API error aborts the incomplete query."""
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
@@ -573,7 +581,7 @@ def test_api_query_paginated_non_related_error_code(
         'offset': 0,
     }
 
-    def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.FORBIDDEN, response)
 
     with (
@@ -608,7 +616,7 @@ def test_crypto_transactions_raises_decoded_error_once(mock_bitstamp: Bitstamp) 
     assert 'has reason' in errors[0]
 
 
-def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
+def test_api_query_paginated_skips_different_type_result(mock_bitstamp: Any) -> Any:
     """Test results whose type is not in `raw_result_type_filter` are skipped
     """
     options = {
@@ -618,7 +626,7 @@ def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
         'offset': 0,
     }
 
-    def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.OK,
             '[{"type": "whatever"}, {"type": "23"}]',
@@ -634,7 +642,7 @@ def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
     assert result == []
 
 
-def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
+def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp: Any) -> Any:
     """Test the method stops processing results when a result timestamp is gt
     `end_ts`.
     """
@@ -662,7 +670,7 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
         ),
     ]
 
-    def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.OK,
             f'[{{"type": "14", "datetime": "{gt_now_iso}"}}]',
@@ -688,7 +696,7 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_api_query_paginated_trades_pagination(mock_bitstamp):
+def test_api_query_paginated_trades_pagination(mock_bitstamp: Any) -> Any:
     """Test pagination logic for trades works as expected.
 
     First request: 2 results, 1 valid trade (id 2)
@@ -802,14 +810,14 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         ),
     ]
 
-    def get_paginated_response():
+    def get_paginated_response() -> Any:
         yield from [
             f'[{user_transaction_1},{user_transaction_2}]',
             f'[{user_transaction_3},{user_transaction_4}]',
             f'[{user_transaction_5},{user_transaction_6}]',
         ]
 
-    def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: Any, method: Any, options: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
@@ -933,7 +941,7 @@ def test_trade_query_flushes_completed_page_before_failure(mock_bitstamp: Bitsta
 
 
 @pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606995001, 6)])
-def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
+def test_query_online_trade_history(mock_bitstamp: Any, start_ts: Any, since_id: Any) -> None:
     """Test `since_id` value will change depending on `start_ts` value.
     Also tests that the swap events are sorted by `reference` (as int) in ascending mode.
     """
@@ -1220,7 +1228,11 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: Bitstamp) -> None:
 
 
 @pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606901401, 6)])
-def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
+def test_query_online_deposits_withdrawals(
+        mock_bitstamp: Any,
+        start_ts: Any,
+        since_id: Any,
+) -> None:
     """Test `since_id` value will change depending on `start_ts` value.
     Also tests that the asset movements are sorted by `reference` (as int) in ascending mode.
     """
@@ -1288,7 +1300,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
 
 def test_asset_movement_with_fee_works_correctly(mock_bitstamp: Bitstamp) -> None:
     """Regression test for https://github.com/rotki/rotki/issues/9777"""
-    def mock_query(endpoint, **kwargs):
+    def mock_query(endpoint: Any, **kwargs: Any) -> Any:
         if endpoint == 'user_transactions':
             return MockResponse(HTTPStatus.OK, """[{
                 "id": 5,
@@ -1343,7 +1355,7 @@ def test_bitstamp_flushes_movements_before_trade_query(
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
 @pytest.mark.parametrize('bitstamp_api_key', ['123456'])
 @pytest.mark.parametrize('bitstamp_api_secret', [str.encode('abcdefg')])
-def test_api_query_request_headers_checks(mock_bitstamp):
+def test_api_query_request_headers_checks(mock_bitstamp: Any) -> Any:
     """Test request headers are not polluted by previous requests
     """
     options = {
@@ -1358,7 +1370,13 @@ def test_api_query_request_headers_checks(mock_bitstamp):
     session = mock_bitstamp.session
     request_calls = []
 
-    def mock_request(method, url, data=None, headers=None, **_kwargs):  # pylint: disable=unused-argument
+    def mock_request(  # pylint: disable=unused-argument
+            method: Any,
+            url: Any,
+            data: Any = None,
+            headers: Any = None,
+            **_kwargs: Any,
+    ) -> Any:
         request_calls.append(headers or {})
         return MockResponse(HTTPStatus.OK, '{}')
 

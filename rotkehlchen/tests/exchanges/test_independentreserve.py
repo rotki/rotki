@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,15 +23,17 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
 
 
-def test_location():
-    exchange = Independentreserve('independentreserve1', 'a', b'a', object(), object())
+def test_location() -> None:
+    constructor_args: Any = ('independentreserve1', 'a', b'a', object(), object())
+    exchange = Independentreserve(*constructor_args)
     assert exchange.location == Location.INDEPENDENTRESERVE
     assert exchange.name == 'independentreserve1'
 
 
 @pytest.mark.asset_test
-def test_assets_are_known():
-    exchange = Independentreserve('independentreserve1', 'a', b'a', object(), object())
+def test_assets_are_known() -> None:
+    constructor_args: Any = ('independentreserve1', 'a', b'a', object(), object())
+    exchange = Independentreserve(*constructor_args)
     response = exchange._api_query('get', 'Public', 'GetValidPrimaryCurrencyCodes')
     for currency in response:
         try:
@@ -52,7 +55,7 @@ def test_assets_are_known():
             ))
 
 
-def test_missing_mapping_assets():
+def test_missing_mapping_assets() -> None:
     """Regression test for #10602. TODO: @yabirgb remove in develop
     https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=128888662
     """
@@ -62,13 +65,13 @@ def test_missing_mapping_assets():
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances(
-        function_scope_independentreserve,
-        inquirer,  # pylint: disable=unused-argument
-):
+        function_scope_independentreserve: Any,
+        inquirer: Any,  # pylint: disable=unused-argument
+) -> Any:
     """Test all balances returned by IndependentReserve are processed properly"""
     exchange = function_scope_independentreserve
 
-    def mock_api_return(method, url, **kwargs):    # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:    # pylint: disable=unused-argument
         assert method == 'post'
         response = """[{"AccountGuid": "foo", "AccountStatus": "Active", "AvailableBalance": 150.55, "CurrencyCode": "Aud", "TotalBalance": 150.55},
 {"AccountGuid": "foo", "AccountStatus": "Active", "AvailableBalance": 150.55, "CurrencyCode": "Usd", "TotalBalance": 150.55},
@@ -114,13 +117,13 @@ def test_query_balances(
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_some_balances(
-        function_scope_independentreserve,
-        inquirer,  # pylint: disable=unused-argument
-):
+        function_scope_independentreserve: Any,
+        inquirer: Any,  # pylint: disable=unused-argument
+) -> Any:
     """Just like test_query_balances but make sure 0 balances are skipped"""
     exchange = function_scope_independentreserve
 
-    def mock_api_return(method, url, **kwargs):    # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:    # pylint: disable=unused-argument
         assert method == 'post'
         response = """[{"AccountGuid": "foo", "AccountStatus": "Active", "AvailableBalance": 1.2, "CurrencyCode": "Aud", "TotalBalance": 2.5},
 {"AccountGuid": "foo", "AccountStatus": "Active", "AvailableBalance": 0.0, "CurrencyCode": "Usd", "TotalBalance": 0.0},
@@ -163,11 +166,11 @@ def test_query_some_balances(
     }
 
 
-def test_query_trade_history(function_scope_independentreserve):
+def test_query_trade_history(function_scope_independentreserve: Any) -> Any:
     """Happy path test for independentreserve trade history querying"""
     exchange = function_scope_independentreserve
 
-    def mock_api_return(method, url, **kwargs):    # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:    # pylint: disable=unused-argument
         assert method == 'post'
         response = """{"Data": [
         {"TradeGuid": "foo1",

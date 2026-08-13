@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Final
+from typing import Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -100,10 +100,10 @@ FIAT_WALLETS_RESPONSE = """{"data":[{"type":"fiat_wallet","attributes":{"fiat_id
     (A_AXS, A_EUR): FVal(40),
     (A_TRY, A_EUR): FVal(0.103),
 }])
-def test_balances(mock_bitpanda, inquirer):
+def test_balances(mock_bitpanda: Any, inquirer: Any) -> Any:
     """Test that balances are correctly queried"""
 
-    def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
+    def mock_bitpanda_query(url: str, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/wallets' in url:
             return MockResponse(status_code=HTTPStatus.OK, text=WALLETS_RESPONSE)
         if '/fiatwallets' in url:
@@ -141,10 +141,10 @@ TRADES_RESPONSE = """{"data":[
 EMPTY_RESPONSE: Final = '{"data":[],"meta":{"total_count":0}}'
 
 
-def test_trades(mock_bitpanda):
+def test_trades(mock_bitpanda: Any) -> Any:
     """Test that trades are correctly queried"""
 
-    def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
+    def mock_bitpanda_query(url: str, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/wallets/transactions' in url:
             return MockResponse(status_code=HTTPStatus.OK, text=EMPTY_RESPONSE)
         if '/wallets' in url:
@@ -241,10 +241,10 @@ WALLET_TX_RESPONSE = """{"data":[{"type":"wallet_transaction","attributes":{"amo
 "meta":{"total_count":2,"page":1,"page_size":10},"links":{"next":"?page=2&page_size=10","last":"?page=20&page_size=10","self":"?page=1&page_size=10"}}"""  # noqa: E501
 
 
-def test_asset_movements(database, mock_bitpanda):
+def test_asset_movements(database: Any, mock_bitpanda: Any) -> Any:
     """Test that deposits/withdrawals are correctly queried"""
 
-    def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
+    def mock_bitpanda_query(url: str, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if '/wallets/transactions' in url:
             return MockResponse(status_code=HTTPStatus.OK, text=WALLET_TX_RESPONSE)
         if '/wallets' in url:

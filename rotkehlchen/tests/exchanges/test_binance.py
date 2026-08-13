@@ -4,7 +4,7 @@ import hmac
 import json
 import os
 import warnings as test_warnings
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 from urllib.parse import urlencode
 
@@ -55,13 +55,14 @@ if TYPE_CHECKING:
     from rotkehlchen.history.price import PriceHistorian
 
 
-def test_name():
-    exchange = Binance('binance1', 'a', b'a', object(), object())
+def test_name() -> None:
+    constructor_args: Any = ('binance1', 'a', b'a', object(), object())
+    exchange = Binance(*constructor_args)
     assert exchange.location == Location.BINANCE
     assert exchange.name == 'binance1'
 
 
-def test_trade_from_binance(function_scope_binance):
+def test_trade_from_binance(function_scope_binance: Any) -> None:
     binance = function_scope_binance
     binance_trades_list = [
         {
@@ -269,7 +270,7 @@ def test_trade_from_binance(function_scope_binance):
     reason='https://twitter.com/LefterisJP/status/1598107187184037888',
 )
 @pytest.mark.asset_test
-def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
+def test_binance_assets_are_known(inquirer: Any) -> None:  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api3.binance.com/api/v3/exchangeInfo').json()
     binance_assets = set()
     assets_starting_with_ld = set()
@@ -298,7 +299,7 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     assert assets_starting_with_ld == set(BINANCE_ASSETS_STARTING_WITH_LD)
 
 
-def test_binance_query_balances_include_features(function_scope_binance: Binance):
+def test_binance_query_balances_include_features(function_scope_binance: Binance) -> None:
     """Test that querying binance balances includes the futures wallet"""
     binance = function_scope_binance
     with patch.object(
@@ -319,11 +320,11 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
     assert balances[A_AXS].amount == FVal('122.09202928')
 
 
-def test_binance_query_trade_history(function_scope_binance: Binance):
+def test_binance_query_trade_history(function_scope_binance: Binance) -> Any:
     """Test that turning a binance trade as returned by the server to our format works"""
     binance = function_scope_binance
 
-    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_trades(url: Any, params: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'myTrades' in url:
             if params.get('symbol') == 'BNBBTC':
                 text = BINANCE_MYTRADES_RESPONSE
@@ -465,7 +466,7 @@ def test_binance_query_trade_history(function_scope_binance: Binance):
     )]
 
 
-def test_binance_query_history_events_failure_keeps_range(function_scope_binance):
+def test_binance_query_history_events_failure_keeps_range(function_scope_binance: Any) -> Any:
     """Test that a failing sub-query makes query_online_history_events report no progress,
     so the base class does not mark the range as queried.
 
@@ -473,10 +474,10 @@ def test_binance_query_history_events_failure_keeps_range(function_scope_binance
     raised: the failed window was saved as queried and its deposits/withdrawals/fiat
     movements were never fetched again.
     """
-    def query_success(**kwargs):
+    def query_success(**kwargs: Any) -> Any:
         return []
 
-    def query_failure(**kwargs):
+    def query_failure(**kwargs: Any) -> None:
         raise RemoteError('boom')
 
     binance = function_scope_binance
@@ -645,13 +646,13 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
         ).fetchone()[0] == 1
 
 
-def test_binance_query_trade_history_unexpected_data(function_scope_binance):
+def test_binance_query_trade_history_unexpected_data(function_scope_binance: Any) -> Any:
     """Test that turning a binance trade that contains unexpected data is handled gracefully"""
     binance = function_scope_binance
     binance.cache_ttl_secs = 0
     original_selected_pairs = binance.selected_pairs
 
-    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_trades(url: Any, params: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if params.get('symbol') == 'BNBBTC' or params.get('symbol') == 'doesnotexist':
             text = BINANCE_MYTRADES_RESPONSE
         else:
@@ -659,7 +660,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
 
         return MockResponse(200, text)
 
-    def query_binance_and_test(input_trade_str, query_specific_markets=None):
+    def query_binance_and_test(input_trade_str: Any, query_specific_markets: Any = None) -> None:
         patch_get = patch.object(binance.session, 'request', side_effect=mock_my_trades)
         patch_response = patch(
             'rotkehlchen.tests.exchanges.test_binance.BINANCE_MYTRADES_RESPONSE',
@@ -729,7 +730,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance: Binance) -> 
     end_ts = 1636400907
     binance = function_scope_binance
 
-    def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_history_events(url: Any, params: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         from_ts, to_ts = params.get('startTime'), params.get('endTime')
         if 'capital/deposit' in url:
             if from_ts >= 1508022000000 and to_ts <= 1515797999999:
@@ -779,7 +780,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance: Binance) -> 
     )
 
 
-def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binance):
+def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binance: Any) -> Any:
     """Test that we handle unexpected deposit withdrawal query data gracefully
 
     NB: set `start_ts` and `end_ts` with a difference less than 90 days to
@@ -789,9 +790,14 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
     end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
-    def mock_binance_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
+    def mock_binance_and_query(
+            deposits: Any,
+            withdrawals: Any,
+            expected_warnings_num: Any,
+            expected_errors_num: Any,
+    ) -> Any:
 
-        def mock_get_history_events(url, **kwargs):  # pylint: disable=unused-argument
+        def mock_get_history_events(url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
             if 'deposit' in url:
                 response_str = deposits
             else:
@@ -813,7 +819,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
         else:
             assert len(movements) == 0
 
-    def check_permutations_of_input_invalid_data(deposits, withdrawals):
+    def check_permutations_of_input_invalid_data(deposits: Any, withdrawals: Any) -> None:
         # First make sure it works with normal data
         mock_binance_and_query(
             deposits,
@@ -927,7 +933,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
     )
 
 
-def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
+def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance: Any) -> Any:
     """Test the not so happy case of binance deposit withdrawal query
 
     From `start_ts` to `end_ts` there is a difference gte 89 days, which forces
@@ -942,40 +948,40 @@ def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
     end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 89 days after
     binance = function_scope_binance
 
-    def get_time_delta_deposit_result():
+    def get_time_delta_deposit_result() -> Any:
         yield from [
             BINANCE_DEPOSITS_HISTORY_RESPONSE,
             '[]',
         ]
 
-    def get_time_delta_withdraw_result():
+    def get_time_delta_withdraw_result() -> Any:
         yield from [
             '[]',
             BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
         ]
 
-    def get_fiat_deposit_result():
+    def get_fiat_deposit_result() -> Any:
         yield from [
             '[]',
             BINANCE_FIATDEPOSITS_RESPONSE,
         ]
 
-    def get_fiat_withdraw_result():
+    def get_fiat_withdraw_result() -> Any:
         yield from [
             BINANCE_FIATWITHDRAWS_RESPONSE,
             '[]',
         ]
 
-    def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_history_events(url: Any, params: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'capital/deposit' in url:
-            response_str = next(get_deposit_result)
+            response_str = next(deposit_results)
         elif 'capital/withdraw' in url:
-            response_str = next(get_withdraw_result)
+            response_str = next(withdraw_results)
         elif 'fiat/orders' in url:
             if params.get('transactionType') == 0:
-                response_str = next(get_fiat_deposit_result)
+                response_str = next(fiat_deposit_results)
             elif params.get('transactionType') == 1:
-                response_str = next(get_fiat_withdraw_result)
+                response_str = next(fiat_withdraw_results)
             else:
                 raise AssertionError('Unexpected binance request in test')
         elif 'myTrades' in url or 'fiat/payments' in url or 'convert/tradeFlow' in url:
@@ -985,10 +991,10 @@ def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
 
         return MockResponse(200, response_str)
 
-    get_deposit_result = get_time_delta_deposit_result()
-    get_withdraw_result = get_time_delta_withdraw_result()
-    get_fiat_deposit_result = get_fiat_deposit_result()
-    get_fiat_withdraw_result = get_fiat_withdraw_result()
+    deposit_results: Any = get_time_delta_deposit_result()
+    withdraw_results: Any = get_time_delta_withdraw_result()
+    fiat_deposit_results: Any = get_fiat_deposit_result()
+    fiat_withdraw_results: Any = get_fiat_withdraw_result()
 
     with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
         movements, _ = binance.query_online_history_events(
@@ -1005,7 +1011,7 @@ def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
-def test_api_query_list_calls_with_time_delta(function_scope_binance):
+def test_api_query_list_calls_with_time_delta(function_scope_binance: Any) -> None:
     """Test the `api_query_list()` arguments when deposit/withdraw history
     requests involve a time delta.
 
@@ -1105,7 +1111,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
 @pytest.mark.parametrize('db_settings', [{'query_retry_limit': 2}])
-def test_api_query_retry_on_status_code_429(function_scope_binance):
+def test_api_query_retry_on_status_code_429(function_scope_binance: Any) -> Any:
     """Test when Binance API returns 429 and the request is retried, the
     signature is not polluted by any attribute from the previous call.
     """
@@ -1131,10 +1137,10 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         call(method='GET', url=base_url, params=call_options, timeout=(30, 30)),
     ] * 3
 
-    def get_mocked_response():
+    def get_mocked_response() -> Any:
         yield from [MockResponse(429, '[]'), MockResponse(418, '[]'), MockResponse(418, '[]')]
 
-    def mock_response(url, timeout, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_response(url: Any, timeout: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return next(get_response)
 
     get_response = get_mocked_response()
@@ -1157,7 +1163,7 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         assert binance_mock_get.call_args_list == expected_calls
 
 
-def test_binance_query_trade_history_custom_markets(function_scope_binance):
+def test_binance_query_trade_history_custom_markets(function_scope_binance: Any) -> Any:
     """Test that custom pairs are queried correctly"""
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
@@ -1174,7 +1180,7 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
     count = 0
     seen = set()
 
-    def mock_my_trades(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_trades(url: Any, params: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         nonlocal count
         if 'myTrades' in url:
             count += 1
@@ -1372,7 +1378,7 @@ def test_binance_trade_id_pagination_stops_at_query_end(
 def test_binance_query_lending_interests_history(
         function_scope_binance: Binance,
         price_historian: PriceHistorian,
-):
+) -> Any:
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
     function_scope_binance.db.add_exchange(
@@ -1383,7 +1389,7 @@ def test_binance_query_lending_interests_history(
     )
     binance = function_scope_binance
 
-    def mock_my_lendings(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_lendings(url: Any, params: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'simple-earn/flexible/history/rewardsRecord' in url:
             if (request_type := params.get('type')) == 'BONUS':
                 return MockResponse(200, """{
@@ -1459,7 +1465,7 @@ def test_binance_query_lending_interests_history(
 def test_binance_query_lending_interests_history_chunks_30_days(
         function_scope_binance: Binance,
         price_historian: PriceHistorian,  # pylint: disable=unused-argument
-):
+) -> Any:
     """Regression test for https://github.com/rotki/rotki/issues/12416
 
     The Simple Earn rewards history endpoints (flexible & locked) reject ranges larger than
@@ -1476,7 +1482,7 @@ def test_binance_query_lending_interests_history_chunks_30_days(
     requested_windows: list[tuple[int, int]] = []
     max_window_ms = BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS * 1000
 
-    def mock_my_lendings(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_my_lendings(url: Any, params: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'simple-earn' in url and 'rewardsRecord' in url:
             window = params['endTime'] - params['startTime']
             requested_windows.append((params['startTime'], params['endTime']))
@@ -1509,7 +1515,7 @@ def test_binance_query_lending_interests_history_chunks_30_days(
 
 def test_binance_query_convert_trades(function_scope_binance: Binance) -> None:
     """Test that Binance Convert trades are queried and deserialized correctly"""
-    def mock_convert_trades(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_convert_trades(url: Any, params: Any, *args: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'convert/tradeFlow' in url:
             return MockResponse(200, BINANCE_CONVERT_TRADES_RESPONSE)
         elif 'myTrades' in url:

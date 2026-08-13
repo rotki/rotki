@@ -19,7 +19,7 @@ EXCHANGE_METHODS_TO_CHECK = (
 )
 
 
-def test_all_methods_implemented():
+def test_all_methods_implemented() -> None:
     """Tests all methods needed by the exchange interface are implemented by all exchanges"""
 
     for name in SUPPORTED_EXCHANGES:

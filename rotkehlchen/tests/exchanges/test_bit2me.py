@@ -1,4 +1,6 @@
 """Tests for Bit2me exchange integration."""
+
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -327,18 +329,18 @@ BIT2ME_TRADES_RESPONSE = """{
 EMPTY_TRADES_RESPONSE = """{"count": 0, "data": []}"""
 
 
-def test_bit2me_location(bit2me):
+def test_bit2me_location(bit2me: Any) -> None:
     """Test that Bit2me has the correct location."""
     assert bit2me.location == Location.BIT2ME
     assert bit2me.location_id().location == Location.BIT2ME
 
 
-def test_bit2me_name(bit2me):
+def test_bit2me_name(bit2me: Any) -> None:
     """Test that Bit2me has the correct name."""
     assert bit2me.name == 'bit2me'
 
 
-def test_bit2me_signature_generation(bit2me):
+def test_bit2me_signature_generation(bit2me: Any) -> None:
     """Test signature generation for Bit2me API."""
     path = '/v1/wallet/pocket'
     nonce, signature = bit2me._generate_signature(path)
@@ -353,7 +355,7 @@ def test_bit2me_signature_generation(bit2me):
     assert len(signature) > 0
 
 
-def test_bit2me_signature_with_body(bit2me):
+def test_bit2me_signature_with_body(bit2me: Any) -> None:
     """Test signature generation with request body."""
     path = '/v1/trading/order'
     body = {'symbol': 'BTC/EUR', 'side': 'buy'}
@@ -364,10 +366,10 @@ def test_bit2me_signature_with_body(bit2me):
     assert signature != signature2
 
 
-def test_bit2me_query_balances(bit2me):
+def test_bit2me_query_balances(bit2me: Any) -> Any:
     """Test querying balances from Bit2me."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BIT2ME_BALANCES_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
@@ -388,14 +390,14 @@ def test_bit2me_query_balances(bit2me):
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_bit2me_query_balances_unknown_asset(bit2me):
+def test_bit2me_query_balances_unknown_asset(bit2me: Any) -> Any:
     """Test that if a Bit2me balance query returns unknown asset no exception
     is raised and a warning is logged."""
     response = BIT2ME_BALANCES_RESPONSE.replace(
         '"currency": "BTC"', '"currency": "UNKNOWN_ASSET_XYZ"',
     )
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, response)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
@@ -408,10 +410,10 @@ def test_bit2me_query_balances_unknown_asset(bit2me):
     assert A_ETH in balances
 
 
-def test_bit2me_query_deposits_withdrawals(bit2me):
+def test_bit2me_query_deposits_withdrawals(bit2me: Any) -> Any:
     """Test querying deposit/withdrawal history from Bit2me."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BIT2ME_TRANSACTIONS_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
@@ -441,10 +443,10 @@ def test_bit2me_query_deposits_withdrawals(bit2me):
     assert fee_events[0].amount == FVal('0.001')
 
 
-def test_bit2me_query_brokerage_trades(bit2me):
+def test_bit2me_query_brokerage_trades(bit2me: Any) -> Any:
     """Test querying brokerage trades (purchases) from Bit2me."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BIT2ME_TRANSACTIONS_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
@@ -485,10 +487,10 @@ def test_bit2me_query_brokerage_trades(bit2me):
     assert fee_event.amount == expected_fee
 
 
-def test_bit2me_query_trades(bit2me):
+def test_bit2me_query_trades(bit2me: Any) -> Any:
     """Test querying spot trades from /v1/trading/trade."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BIT2ME_TRADES_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
@@ -511,10 +513,10 @@ def test_bit2me_query_trades(bit2me):
     assert fee_event.amount == FVal('0.5')
 
 
-def test_bit2me_query_history_events(bit2me):
+def test_bit2me_query_history_events(bit2me: Any) -> Any:
     """Test querying all history events combines trades and movements."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         if 'transaction' in url:
             return MockResponse(200, BIT2ME_TRANSACTIONS_RESPONSE)
         elif 'trade' in url:
@@ -532,7 +534,7 @@ def test_bit2me_query_history_events(bit2me):
     assert len(events) >= 4  # At minimum movements
 
 
-def test_bit2me_history_query_should_report_transaction_errors(bit2me) -> None:
+def test_bit2me_history_query_should_report_transaction_errors(bit2me: Any) -> None:
     with (
         patch.object(
             bit2me,
@@ -553,7 +555,7 @@ def test_bit2me_history_query_should_report_transaction_errors(bit2me) -> None:
     ]
 
 
-def test_bit2me_internal_transfers_skipped(bit2me):
+def test_bit2me_internal_transfers_skipped(bit2me: Any) -> Any:
     """Test that internal transfers (pocket to pocket) are properly skipped."""
     # Response with only internal transfer
     internal_only = """{
@@ -572,7 +574,7 @@ def test_bit2me_internal_transfers_skipped(bit2me):
       ]
     }"""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, internal_only)
 
     with (
@@ -596,7 +598,7 @@ def test_bit2me_internal_transfers_skipped(bit2me):
     assert len(movements) == 0
 
 
-def test_asset_from_bit2me():
+def test_asset_from_bit2me() -> None:
     """Test asset conversion from Bit2me symbols."""
     # Standard assets
     assert asset_from_bit2me('BTC').identifier == A_BTC.identifier
@@ -608,16 +610,16 @@ def test_asset_from_bit2me():
     assert asset_from_bit2me('Eth').identifier == A_ETH.identifier
 
 
-def test_asset_from_bit2me_unknown():
+def test_asset_from_bit2me_unknown() -> None:
     """Test that unknown assets raise proper exception."""
     with pytest.raises(UnknownAsset):
         asset_from_bit2me('COMPLETELY_UNKNOWN_ASSET_12345')
 
 
-def test_bit2me_query_earn_movements(bit2me):
+def test_bit2me_query_earn_movements(bit2me: Any) -> Any:
     """Test querying EARN (staking) movements from Bit2me."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BIT2ME_EARN_TRANSACTIONS_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
@@ -668,10 +670,10 @@ def test_bit2me_query_earn_movements(bit2me):
     assert 'Withdrawal from Bit2Me Earn' in btc_withdrawal.notes
 
 
-def test_bit2me_query_airdrops(bit2me):
+def test_bit2me_query_airdrops(bit2me: Any) -> Any:
     """Test querying airdrops (social-pay) from Bit2me."""
 
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+    def mock_api_return(method: Any, url: Any, **kwargs: Any) -> Any:  # pylint: disable=unused-argument
         return MockResponse(200, BIT2ME_AIRDROP_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
