@@ -159,6 +159,35 @@ describe('starlingHandler', () => {
     );
   });
 
+  // The dev-proxy sits between starling and core, so starling has to be told its
+  // port. The renderer keeps the proxy origin either way — it is starling that
+  // routes through the dev tool, not the app.
+  it('should not name a core upstream when no dev-proxy was started', async () => {
+    spawnMock.mockImplementation(() => makeFakeChild(nullResponder));
+    const handler = new StarlingHandler(makeLogger(), makeConfig());
+
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ coreUpstreamPort: undefined }),
+    );
+  });
+
+  it('should pass the dev-proxy port through to starling when one was started', async () => {
+    spawnMock.mockImplementation(() => makeFakeChild(nullResponder));
+    const config = makeConfig();
+    const handler = new StarlingHandler(
+      makeLogger(),
+      { ...config, ports: { ...config.ports, coreUpstreamPort: 4243 } },
+    );
+
+    await handler.restartBackend({}, { onProcessError: vi.fn() });
+
+    expect(buildStarlingInvocationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ coreUpstreamPort: 4243, corePort: 4242 }),
+    );
+  });
+
   it('should publish and launch MCP on an available port', async () => {
     selectPortMock.mockImplementation(async (port: number) => port === 4445 ? 4450 : port);
     const child = makeFakeChild(nullResponder);

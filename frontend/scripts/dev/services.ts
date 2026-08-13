@@ -213,16 +213,16 @@ function spawnProxyForBackend(instance: InstanceRuntime | null, corePort: number
 }
 
 function spawnProxyForElectron(instance: InstanceRuntime | null): void {
-  // Electron mode — electron's main process spawns its own backend. In instance
-  // mode we tell electron which ports to bind (via instanceEnvForElectron), so
-  // the proxy fronts those same ports; otherwise fall back to the defaults
-  // (backend on restApi, proxy on proxy). Set VITE_BACKEND_URL so the
-  // Vite-served renderer hits the proxy.
-  const proxyPort = instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
+  // Electron spawns its own starling, which routes `/api/1/*` through this proxy
+  // once it is told the port (ROTKI_DEV_CORE_UPSTREAM_PORT, below). The renderer
+  // is handed starling's origin over IPC and must keep it, so nothing here
+  // touches VITE_BACKEND_URL: redirecting it would only be overridden by that
+  // IPC value anyway, which is how the proxy came to be bypassed entirely.
+  //
+  // The backend port is the one electron is told to bind, or the default.
   const backendPort = instance?.ports.restApi ?? DEFAULT_PORTS.restApi;
-  process.env.VITE_BACKEND_URL = `http://127.0.0.1:${proxyPort}`;
   startDevProxy({
-    PORT: String(proxyPort),
+    PORT: String(devProxyPort(instance)),
     BACKEND: `http://127.0.0.1:${backendPort}`,
   });
 }
@@ -233,9 +233,9 @@ function spawnProxyForElectron(instance: InstanceRuntime | null): void {
  * bind there instead of the shared defaults. Returns undefined outside instance
  * mode, leaving electron on its default ports / configured data dir.
  */
-function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string, string> | undefined {
+function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string, string> {
   if (!instance)
-    return undefined;
+    return {};
   return {
     ROTKI_INSTANCE_CORE_PORT: String(instance.ports.restApi),
     ROTKI_INSTANCE_COLIBRI_PORT: String(instance.ports.colibri),
@@ -243,6 +243,19 @@ function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string
     ROTKI_INSTANCE_MCP_PORT: String(instance.ports.mcp),
     ROTKI_INSTANCE_DATA_DIR: instance.dir,
   };
+}
+
+/**
+ * Env for the electron child: the instance's ports when there is one, plus the
+ * dev-proxy port when the proxy is on — that one is independent of instance mode,
+ * since a plain `pnpm dev` can enable the proxy too.
+ */
+function envForElectron(instance: InstanceRuntime | null, useProxy: boolean): Record<string, string> | undefined {
+  const env: Record<string, string> = { ...instanceEnvForElectron(instance) };
+  if (useProxy)
+    env.ROTKI_DEV_CORE_UPSTREAM_PORT = String(devProxyPort(instance));
+
+  return Object.keys(env).length > 0 ? env : undefined;
 }
 
 function pointFrontendAtBackend(backendEnv: StarlingDevEnv): void {
@@ -274,7 +287,7 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
     // binds there rather than on the shared defaults, and run the Vite dev
     // server on the instance's dev port (electron loads that origin). Plain
     // `pnpm dev` leaves devPort undefined, keeping the default 8080.
-    extraEnv = instanceEnvForElectron(instance);
+    extraEnv = envForElectron(instance, useProxy);
     devPort = instance?.ports.dev;
     if (useProxy)
       spawnProxyForElectron(instance);
