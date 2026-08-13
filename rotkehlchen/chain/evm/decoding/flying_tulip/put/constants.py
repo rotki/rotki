@@ -26,6 +26,3 @@ INVESTED_TOPIC: Final = b'k7\x8b\xa7\xb8\xae\xe8\xcd\xecb\\\xbd\x9a}\xa8\xc6\xb7
 # Divested(address divestor, uint256 id, uint256 amount, uint256 strike, address token, uint256 amountDivested)  # noqa: E501
 # 0x4ad9503b7764b141ca283f7a7aa34fc52a3ba953b692db4f46a25ff846b4ef8b
 DIVESTED_TOPIC: Final = b'J\xd9P;wd\xb1A\xca(?zz\xa3O\xc5*;\xa9S\xb6\x92\xdbOF\xa2_\xf8F\xb4\xef\x8b'  # noqa: E501
-# Withdraw(address owner, uint256 id, uint256 amount)
-# 0xf279e6a1f5e320cca91135676d9cb6e44ca8a08c0b88342bcdb1144f6511b568
-PUT_WITHDRAW_FT_TOPIC: Final = b'\xf2y\xe6\xa1\xf5\xe3 \xcc\xa9\x115gm\x9c\xb6\xe4L\xa8\xa0\x8c\x0b\x884+\xcd\xb1\x14Oe\x11\xb5h'  # noqa: E501

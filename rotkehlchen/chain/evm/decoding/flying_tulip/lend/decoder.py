@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.utils import token_normalized_value
-from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V3, WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.decoding.flying_tulip.constants import (
     CPT_FLYING_TULIP,
     FLYING_TULIP_LABEL,
@@ -17,7 +17,6 @@ from .constants import (
     FLYING_TULIP_LEND_DEPLOYMENTS,
     PM_BORROW_TOPIC,
     PM_DEPOSIT_FOR_TOPIC,
-    PM_DEPOSIT_TOPIC,
     PM_REPAY_FOR_TOPIC,
     PM_REPAY_TOPIC,
 )
@@ -194,7 +193,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                 continue
 
             beneficiary = None
-            if (topic := tx_log.topics[0]) in (PM_DEPOSIT_TOPIC, WITHDRAW_TOPIC, PM_BORROW_TOPIC, PM_REPAY_TOPIC):  # noqa: E501
+            if (topic := tx_log.topics[0]) in (DEPOSIT_TOPIC_V3, WITHDRAW_TOPIC, PM_BORROW_TOPIC, PM_REPAY_TOPIC):  # noqa: E501
                 if not self.base.is_tracked(user := bytes_to_address(tx_log.topics[1])):
                     continue
                 token = self.base.get_or_create_evm_token(
@@ -218,8 +217,8 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                 token_amount=int.from_bytes(tx_log.data[0:32]),
                 token=token,
             )
-            if topic in (PM_DEPOSIT_TOPIC, PM_DEPOSIT_FOR_TOPIC, PM_REPAY_TOPIC, PM_REPAY_FOR_TOPIC):  # noqa: E501
-                if topic in (PM_DEPOSIT_TOPIC, PM_DEPOSIT_FOR_TOPIC):
+            if topic in (DEPOSIT_TOPIC_V3, PM_DEPOSIT_FOR_TOPIC, PM_REPAY_TOPIC, PM_REPAY_FOR_TOPIC):  # noqa: E501
+                if topic in (DEPOSIT_TOPIC_V3, PM_DEPOSIT_FOR_TOPIC):
                     notes = f'Deposit {amount} {token.symbol} in {LEND_LABEL}'
                     to_event_type = HistoryEventType.DEPOSIT
                     to_event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
