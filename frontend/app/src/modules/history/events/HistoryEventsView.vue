@@ -3,6 +3,7 @@ import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
 import type { Filters } from '@/modules/history/events/use-events-filter';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
@@ -32,6 +33,7 @@ import {
   type EventPriceUpdatePayload,
   provideEventPriceUpdate,
 } from '@/modules/history/events/prices/use-event-price-update-trigger';
+import { provideHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -119,6 +121,23 @@ const actions = useHistoryEventsActions({
 });
 
 const selectionMode = useHistoryEventsSelectionMode();
+
+// Read at the leaves (the row checkboxes) rather than threaded through the table and row switch.
+provideHistoryEventsSelection(selectionMode);
+
+const tableSource = computed<HistoryEventsTableSource>(() => ({
+  excludeIgnored: !get(toggles).showIgnoredAssets,
+  groupLoading: get(groupLoading),
+  groups: get(groups),
+  identifiers: get(identifiers),
+  requestPayload: get(toggles).matchExactEvents ? get(requestPayload) : undefined,
+}));
+
+const tableHighlight = computed<HistoryEventsTableHighlight>(() => ({
+  groupIdentifier: get(highlightedGroupIdentifier),
+  identifiers: get(highlightedIdentifiers),
+  types: get(highlightTypes),
+}));
 
 // Store grouped events for checking complete EVM transactions
 const groupedEventsByTxRef = ref<Record<string, HistoryEventRow[]>>({});
@@ -285,17 +304,10 @@ watchDebounced(route, async () => {
               v-model:sort="sort"
               v-model:pagination="pagination"
               :table-height-offset="tableHeightOffset"
-              :group-loading="groupLoading"
               :processing="processing || refreshing"
-              :groups="groups"
-              :request-payload="toggles.matchExactEvents ? requestPayload : undefined"
-              :exclude-ignored="!toggles.showIgnoredAssets"
+              :source="tableSource"
+              :highlight="tableHighlight"
               :has-active-filters="hasActiveFilters"
-              :identifiers="identifiers"
-              :highlighted-group-identifier="highlightedGroupIdentifier"
-              :highlighted-identifiers="highlightedIdentifiers"
-              :highlight-types="highlightTypes"
-              :selection="selectionMode"
               :duplicate-handling-status="duplicateHandlingStatus"
               @clear-filters="clearFilters()"
               @show:dialog="dialogContainer?.show($event)"

@@ -8,7 +8,6 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type { HistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import { useHistoryEventsData } from '@/modules/history/events/use-history-events-data';
 import { useHistoryEventsForms } from '@/modules/history/events/use-history-events-forms';
 import { useHistoryEventsOperations } from '@/modules/history/events/use-history-events-operations';
@@ -30,8 +29,6 @@ export interface UseHistoryEventsTableOptions {
   hideActions: MaybeRefOrGetter<boolean | undefined>;
   /** Duplicate-handling state a group header shows, when the view is triaging duplicates. */
   duplicateHandlingStatus: MaybeRefOrGetter<DuplicateHandlingStatus | undefined>;
-  /** Multi-select state owned by the view; undefined when the embedding has no selection mode. */
-  selection: MaybeRefOrGetter<UseHistoryEventsSelectionModeReturn | undefined>;
   /** Group to highlight as a whole; the auto-scroll falls back to it when no identifiers are given. */
   highlightedGroupIdentifier: MaybeRefOrGetter<string | undefined>;
   /** Individual event identifiers to highlight and scroll to. */
@@ -94,7 +91,6 @@ export function useHistoryEventsTable(
     identifiers,
     pagination,
     requestPayload,
-    selection,
   } = options;
 
   const data = useHistoryEventsData({
@@ -175,7 +171,6 @@ export function useHistoryEventsTable(
       duplicateHandlingStatus: computed<DuplicateHandlingStatus | undefined>(() => toValue(duplicateHandlingStatus)),
       eventsLoading: data.eventsLoading,
       hideActions: computed<boolean>(() => toValue(hideActions) ?? false),
-      selection: computed<UseHistoryEventsSelectionModeReturn | undefined>(() => toValue(selection)),
       variant,
     },
     highlight: {

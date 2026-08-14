@@ -3,7 +3,6 @@ import type { DuplicateHandlingStatus, HighlightType } from '@/modules/history/e
 import type { LocationAndTxRef, PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 
 /** Presentation state shared by every row, regardless of its kind. */
@@ -13,7 +12,6 @@ export interface HistoryEventsRowDisplay {
   hideActions: ComputedRef<boolean>;
   eventsLoading: Readonly<Ref<boolean>>;
   duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
-  selection: ComputedRef<UseHistoryEventsSelectionModeReturn | undefined>;
 }
 
 /** Reads into the loaded event data. All are map lookups, safe to call per row. */

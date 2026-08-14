@@ -16,7 +16,7 @@ defineProps<{
 const { actions, display, highlight, lookups } = injectHistoryEventsRowContext();
 
 // Lifted to the top level so the template unwraps them; a ref nested in an object does not.
-const { duplicateHandlingStatus, eventsLoading, hideActions, selection, variant } = display;
+const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display;
 </script>
 
 <template>
@@ -58,7 +58,6 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, selection, variant 
     :matched-movement="row.matchedMovement"
     :hide-actions="hideActions"
     :highlight-type="highlight.isHighlighted(row.data) ? highlight.getHighlightType(row.data) : undefined"
-    :selection="selection"
     :variant="variant"
     @edit-event="actions.editEvent($event, row.groupId)"
     @delete-event="actions.deleteEvents($event)"
@@ -75,7 +74,6 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, selection, variant 
     :hide-actions="hideActions"
     :highlight="highlight.isSwapHighlighted(row.events)"
     :highlight-type="highlight.getSwapHighlightType(row.events)"
-    :selection="selection"
     :variant="variant"
     @edit-event="actions.editEvent($event, row.groupId)"
     @delete-event="actions.deleteEvents($event)"
@@ -102,7 +100,6 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, selection, variant 
     :hide-actions="hideActions"
     :highlight="highlight.isSwapHighlighted(row.events)"
     :highlight-type="highlight.getSwapHighlightType(row.events)"
-    :selection="selection"
     :variant="variant"
     @edit-event="actions.editEvent($event, row.groupId)"
     @delete-event="actions.deleteEvents($event)"
