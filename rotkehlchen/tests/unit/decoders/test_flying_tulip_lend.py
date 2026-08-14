@@ -6,7 +6,9 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.constants import CPT_FLYING_TUL
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
     FLYING_TULIP_LEND_DEPLOYMENTS,
 )
+from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WETH, A_WSTETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -18,6 +20,7 @@ A_FTUSD = Asset('eip155:1/erc20:0xF7D85EC4E7710f71992752eac2111312e73E9C9C')
 POSITIONS_MANAGER = FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.ETHEREUM].positions_manager
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c42749709BF354B3aE0Db29Fd2dd88089b21B4E']])
 def test_lend_deposit(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -54,6 +57,7 @@ def test_lend_deposit(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD28b633345340334782521Eb769DfBdb23178308']])
 def test_lend_deposit_via_session(ethereum_inquirer, ethereum_accounts):
     """A relayed (session) deposit: the user's single transfer carries the deposit
@@ -105,6 +109,7 @@ def test_lend_deposit_via_session(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD0CA88388d1732594D611535314e9B6745396f5A']])
 def test_lend_withdraw(ethereum_inquirer, ethereum_accounts):
     """A relayed withdrawal: the relayer fee is deducted from the payout before it
@@ -144,6 +149,7 @@ def test_lend_withdraw(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
 def test_lend_borrow(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -181,6 +187,7 @@ def test_lend_borrow(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x268c0342c0151830c6963FE095cec630b3Ac3854']])
 def test_lend_repay(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -217,6 +224,7 @@ def test_lend_repay(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x031f3bAb8f21057D1D7218E3B90cec42aEF3C885']])
 def test_lend_full_repay_with_refund(ethereum_inquirer, ethereum_accounts):
     """A relayed full repayment that uses less than the sent amount: the unused
@@ -256,6 +264,7 @@ def test_lend_full_repay_with_refund(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe0E445967256EE60111e243e0F0F94DD1D351A59']])
 def test_leverage_open_fill(ethereum_inquirer, ethereum_accounts):
     """A leverage RFQ engine open fill: the funds move inside the positions
@@ -281,6 +290,101 @@ def test_leverage_open_fill(ethereum_inquirer, ethereum_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x66613091b75e54954f77746e160c98391f99701c']])
+def test_lend_deposit_for_untracked_payer(ethereum_inquirer, ethereum_accounts):
+    """A deposit someone else paid for: the payer is untracked, so their transfer
+    is never decoded and the position owner is only known from the positions
+    manager event. It is recorded so that balance discovery finds the position."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=64,
+            timestamp=TimestampMS(1782045851000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_WETH,
+            amount=FVal(amount := '212.851154726968618944'),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive a deposit of {amount} WETH in Flying Tulip Lend paid by 0x1118e1c057211306a40A4d7006C040dbfE1370Cb',  # noqa: E501
+            counterparty=CPT_FLYING_TULIP,
+            address=POSITIONS_MANAGER,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x1118e1c057211306a40A4d7006C040dbfE1370Cb']])
+def test_lend_deposit_for_beneficiary(ethereum_inquirer, ethereum_accounts):
+    """The paying side of the same deposit: the funds left the payer's wallet, so
+    the transfer stays theirs and the position owner is recorded beside it."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060')),  # noqa: E501
+    )
+    beneficiary = '0x66613091b75e54954f77746e160c98391f99701c'
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=53,
+            timestamp=(timestamp := TimestampMS(1782045851000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=A_WETH,
+            amount=FVal(amount := '212.851154726968618944'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Withdraw {amount} WETH from Flying Tulip Lend',
+            counterparty=CPT_FLYING_TULIP,
+            address=POSITIONS_MANAGER,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=56,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_WETH,
+            amount=FVal(amount),
+            location_label=user_address,
+            notes=f'Set WETH spending approval of {user_address} by {POSITIONS_MANAGER} to {amount}',  # noqa: E501
+            address=POSITIONS_MANAGER,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=57,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=A_WETH,
+            amount=FVal(amount),
+            location_label=user_address,
+            notes=f'Deposit {amount} WETH in Flying Tulip Lend for {beneficiary}',
+            counterparty=CPT_FLYING_TULIP,
+            address=POSITIONS_MANAGER,
+            extra_data={'beneficiary': beneficiary},
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=65,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label='0xD0CA88388d1732594D611535314e9B6745396f5A',
+            notes=f'Successfully executed safe transaction 0x6e32e53960dfaf52151280190e790696341a98266ea575e7ef0210074fb14785 for multisig {user_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=user_address,
+        ),
+    ]
+
+
 def test_binance_sc_registration(binance_sc_transaction_decoder):
     """The lending deployment is the only Flying Tulip module on Binance SC, so
     only the lend decoder is registered there and it is keyed to the Binance SC
@@ -291,7 +395,10 @@ def test_binance_sc_registration(binance_sc_transaction_decoder):
     assert 'FlyingTulipPut' not in binance_sc_transaction_decoder.decoders
     lend_decoder = binance_sc_transaction_decoder.decoders['FlyingTulipLend']
     assert lend_decoder.deployment == (deployment := FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.BINANCE_SC])  # noqa: E501
-    assert lend_decoder.addresses_to_decoders().keys() == {deployment.leverage_engine}
+    assert lend_decoder.addresses_to_decoders().keys() == {
+        deployment.leverage_engine,
+        deployment.positions_manager,
+    }
     assert set(lend_decoder.addresses_to_counterparties()) == (
         {deployment.positions_manager} | deployment.meta_actions | deployment.yield_wrappers
     )

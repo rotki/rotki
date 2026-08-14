@@ -110,7 +110,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         candidate = None
         for event in decoded_events:
             if (
-                    id(event) not in consumed and
+                    event.sequence_index not in consumed and
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
@@ -139,7 +139,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             refund_event = next((
                 event for event in decoded_events
                 if (
-                    id(event) not in consumed and
+                    event.sequence_index not in consumed and
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
@@ -167,7 +167,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     address=self.deployment.positions_manager,
                 ))
 
-        consumed.add(id(candidate))
+        consumed.add(candidate.sequence_index)
         candidate.event_type = to_event_type
         candidate.event_subtype = to_event_subtype
         candidate.notes = notes
@@ -198,7 +198,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         candidate = None
         for event in decoded_events:
             if (
-                    id(event) not in consumed and
+                    event.sequence_index not in consumed and
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
@@ -221,7 +221,7 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             log.debug('Found no matching transfer for a lend event in %s', transaction)
             return
 
-        consumed.add(id(candidate))
+        consumed.add(candidate.sequence_index)
         if (fee_amount := amount - candidate.amount) > ZERO:
             candidate.amount = amount
             decoded_events.append(self.base.make_event_next_index(
@@ -291,7 +291,10 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         for _, _, _, _, token, _ in parsed_events:
             token_counts[token.evm_address] += 1
 
-        consumed: set[int] = set()  # ids of transfer events already claimed by an event
+        # sequence indexes of the transfer events already claimed by an event.
+        # They are unique within a transaction and, unlike the DB identifier,
+        # they exist while decoding, before any of these events is written.
+        consumed: set[int] = set()
         for topic, user, payer, beneficiary, token, amount in parsed_events:
             if topic in spend_topics:
                 if topic in (DEPOSIT_TOPIC_V3, PM_DEPOSIT_FOR_TOPIC):
@@ -319,13 +322,14 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                         beneficiary is not None and
                         matched.location_label != beneficiary
                 ):
-                    if topic == PM_DEPOSIT_FOR_TOPIC and self.base.is_tracked(beneficiary):
-                        # Attribute an on-behalf deposit to the position owner
-                        # so it is found when querying their balances.
-                        matched.notes = f'{notes} paid by {matched.location_label}'
-                        matched.location_label = beneficiary
-                    else:
-                        matched.notes = f'{notes} for {beneficiary}'
+                    # The transfer stays the payer's, since that is whose wallet
+                    # the funds left; the position owner is recorded beside it
+                    # rather than in the label balances are debited from. The
+                    # owner's own entry comes from _decode_deposit_for.
+                    matched.notes = f'{notes} for {beneficiary}'
+                    matched.extra_data = (matched.extra_data or {}) | {
+                        'beneficiary': beneficiary,
+                    }
             else:  # WITHDRAW_TOPIC or PM_BORROW_TOPIC
                 if topic == WITHDRAW_TOPIC:
                     notes = f'Withdraw {amount} {token.symbol} from {LEND_LABEL}'
@@ -349,6 +353,50 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                 )
 
         return decoded_events
+
+    def _decode_deposit_for(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Give the owner of a position funded by someone else an entry of their own.
+
+        A deposit made for another address is the payer's transfer, so it stays
+        theirs, and the position it opens belongs to the beneficiary. This runs
+        while decoding rather than in the post-decoding rule because a payer
+        nobody tracks leaves no wallet transfer at all: the rule would never be
+        reached, and the position would never be found by balance discovery.
+        """
+        if context.tx_log.topics[0] != PM_DEPOSIT_FOR_TOPIC:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        payer = bytes_to_address(context.tx_log.topics[1])
+        if (
+                payer == (beneficiary := bytes_to_address(context.tx_log.topics[2])) or
+                not self.base.is_tracked(beneficiary) or
+                # A relayed deposit is paid by an entry point on the owner's own
+                # behalf, and their transfer is already decoded as the deposit.
+                payer in self.protocol_addresses or
+                payer in self.deployment.engines
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        token = self.base.get_or_create_evm_token(
+            address=bytes_to_address(context.tx_log.topics[3]),
+        )
+        amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token=token,
+        )
+        context.decoded_events.append(self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=token,
+            amount=amount,
+            location_label=beneficiary,
+            notes=f'Receive a deposit of {amount} {token.symbol} in {LEND_LABEL} paid by {payer}',
+            counterparty=CPT_FLYING_TULIP,
+            address=context.tx_log.address,
+        ))
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_leverage_fill(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode leverage RFQ engine fills into informational history entries.
@@ -393,7 +441,10 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {self.deployment.leverage_engine: (self._decode_leverage_fill,)}
+        return {
+            self.deployment.leverage_engine: (self._decode_leverage_fill,),
+            self.deployment.positions_manager: (self._decode_deposit_for,),
+        }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         # The yield wrappers are included so that transactions routed through
