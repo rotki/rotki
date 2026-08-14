@@ -734,4 +734,11 @@ WHERE key = 'proxies' AND instr(value, ':') > 1;
 """)
         write_cursor.execute("DELETE FROM evm_accounts_details WHERE key = 'proxies';")
 
+    @progress_step(description='Remove obsolete unsupported-assets update setting.')
+    def _remove_obsolete_setting(write_cursor: DBCursor) -> None:
+        """Remove the cursor for the retired exchange unsupported-asset blocklist."""
+        write_cursor.execute(
+            "DELETE FROM settings WHERE name='location_unsupported_assets_version'",
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

@@ -3320,6 +3320,10 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
     views_before = {x[0] for x in result}
 
+    assert cursor.execute(
+        "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
+    ).fetchone()[0] == 1
+
     last_db.logout()
 
     # Execute upgrade
@@ -3353,6 +3357,9 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
+    assert cursor.execute(
+        "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
+    ).fetchone()[0] == 0
     removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
