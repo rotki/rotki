@@ -23,6 +23,7 @@ A_ETH_USDC = Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 DEPLOYMENT = FLYING_TULIP_FTUSD_DEPLOYMENTS[ChainID.ETHEREUM]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
 def test_ftusd_mint(ethereum_inquirer, ethereum_accounts):
     """Mint is relayer-submitted, so the user pays no gas in this transaction."""
@@ -59,6 +60,7 @@ def test_ftusd_mint(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
 def test_ftusd_redeem(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -94,6 +96,7 @@ def test_ftusd_redeem(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
 def test_sftusd_stake(ethereum_inquirer, ethereum_accounts):
     """The relayer fee is carved out of the user's gross transfer into the vault."""
@@ -145,6 +148,7 @@ def test_sftusd_stake(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
 def test_sftusd_unstake(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -195,6 +199,7 @@ def test_sftusd_unstake(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x966bD381BbA921B6728C5548F0BCD01CE3381974']])
 def test_sftusd_claim_rewards(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -232,6 +237,7 @@ def test_sftusd_claim_rewards(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3FfEBdC5130f6072A582f79f3FB61581D3D846ee']])
 def test_sftusd_unstake_queued(ethereum_inquirer, ethereum_accounts):
     """A rate-limited unstake: the shares burn now while the circuit breaker
@@ -270,6 +276,61 @@ def test_sftusd_unstake_queued(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x432FCd67815D5cC72808A7815a02373FDEE7d740']])
+def test_sftusd_unstake_queued_relayed(ethereum_inquirer, ethereum_accounts):
+    """A relayed unstake whose payout the circuit breaker queues: the relayer is
+    paid out of the withdrawal before the rest of it is queued, so that part of
+    the payout is settled here and the fee stays an expense accounting can see."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2e2e9d1c9050bd0af962285258e744244b0c109425175bd0da44972865095582')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1772085311000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_SFTUSD,
+            amount=FVal(shares_amount := '19999.895613'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Return {shares_amount} sftUSD to the Flying Tulip sftUSD vault with the payout of 19999.846401 ftUSD queued by the circuit breaker after a {(fee_amount := "0.049212")} ftUSD relayer fee',  # noqa: E501
+            counterparty=CPT_FLYING_TULIP,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_FTUSD,
+            amount=FVal(fee_amount),
+            location_label=user_address,
+            notes=f'Withdraw {fee_amount} ftUSD from the Flying Tulip sftUSD vault to pay the relayer',  # noqa: E501
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.staking_vault,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_FTUSD,
+            amount=FVal(fee_amount),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} ftUSD as a Flying Tulip relayer fee',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.staking_vault,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3FfEBdC5130f6072A582f79f3FB61581D3D846ee']])
 def test_circuit_breaker_release_unstake(ethereum_inquirer, ethereum_accounts):
     """The later transaction paying out the queued unstake from the circuit breaker."""
@@ -307,6 +368,7 @@ def test_circuit_breaker_release_unstake(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x072ab8B22c7C7b4DD2b3367C6E7445d6c9e3cB2F']])
 def test_ftusd_redeem_queued(ethereum_inquirer, ethereum_accounts):
     """A rate-limited redemption: the ftUSD is spent now while the circuit
@@ -345,6 +407,7 @@ def test_ftusd_redeem_queued(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x072ab8B22c7C7b4DD2b3367C6E7445d6c9e3cB2F']])
 def test_circuit_breaker_release_redeem(ethereum_inquirer, ethereum_accounts):
     """The later transaction paying out the queued redemption collateral."""
