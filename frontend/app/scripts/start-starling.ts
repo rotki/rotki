@@ -2,10 +2,9 @@ import path from 'node:path';
 import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
-import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
-import { requestStarlingStart, spawnStarling } from '../shared/starling/starling-launch';
+import { buildStarlingInvocation, type StarlingBackendOptions, type StarlingInvocation } from '../shared/starling/starling-args';
+import { requestStarlingStart, spawnStarling, stopStarling } from '../shared/starling/starling-launch';
 import { describeResolvedCore } from '../shared/starling/starling-launchers';
-import { StarlingMethod } from '../shared/starling/starling-protocol';
 import { StarlingRpc } from '../shared/starling/starling-rpc';
 
 /**
@@ -102,6 +101,10 @@ async function startStarling(options: StarlingE2eOptions): Promise<void> {
     onStderr: line => process.stderr.write(`${line}\n`),
   });
 
+  const stopLogger = {
+    debug: (message: string): void => consola.info(message),
+    warn: (message: string): void => consola.warn(message),
+  };
   let stopping = false;
 
   function cleanup(signal: string): void {
@@ -109,18 +112,12 @@ async function startStarling(options: StarlingE2eOptions): Promise<void> {
       return;
     stopping = true;
     consola.info(`Received ${signal}, stopping starling...`);
-    // Ask for the ordered teardown and let starling tree-kill core and colibri
-    // itself: they run in their own process groups, so nothing else reaches them
-    // and killing the supervisor early strands both. Escalate only once its own
-    // grace has elapsed. The `exited` await below holds this process open until
-    // the tree is actually down.
-    rpc.request(StarlingMethod.STOP).catch(() => undefined);
-    setTimeout(() => {
-      if (child.exitCode === null) {
-        consola.warn('starling did not exit within its grace period, killing it');
-        child.kill('SIGKILL');
-      }
-    }, SHUTDOWN_GRACE_SECS * 1000);
+    // A signal handler cannot await, so the teardown is deliberately left running: the `exited`
+    // await at the end of this function is what holds the process open until the tree is down.
+    // Previously this fired `stop` and started a kill timer in parallel, so it never learned whether
+    // the request was even accepted and escalated on a clock rather than on the child.
+    stopStarling({ child, exited, logger: stopLogger, rpc })
+      .catch(error => consola.error(`stopping starling failed: ${error instanceof Error ? error.message : String(error)}`));
   }
 
   process.on('SIGTERM', () => cleanup('SIGTERM'));
