@@ -396,7 +396,9 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             counterparty=CPT_FLYING_TULIP,
             address=context.tx_log.address,
         ))
-        return DEFAULT_EVM_DECODING_OUTPUT
+        # this event is what makes the owner known to lending balance discovery, and it
+        # can appear long after the deposit, so ask for a balance refresh right away
+        return EvmDecodingOutput(refresh_balances=True)
 
     def _decode_leverage_fill(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode leverage RFQ engine fills into informational history entries.
