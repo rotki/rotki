@@ -264,7 +264,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.HYPERLIQUID: (KinetiqBalances,),
     ChainID.SCROLL: (Compoundv3Balances,),
-    ChainID.BINANCE_SC: (WoofiBalances,),
+    ChainID.BINANCE_SC: (WoofiBalances, FlyingTulipLendBalances),
     ChainID.MONAD: (),
 }
 

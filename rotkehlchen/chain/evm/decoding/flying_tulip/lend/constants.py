@@ -56,6 +56,27 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
             string_to_evm_address('0x1A5730c71576D77048E9FdC79DD40e4B1E8Fe042'),  # wBTC
         )),
     ),
+    ChainID.BINANCE_SC: FlyingTulipLendDeployment(
+        positions_manager=string_to_evm_address('0xB36d39C72d66153B7f32E1320BEe3280657353Bd'),
+        lending_lens=string_to_evm_address('0xc374d2aE274f31bf53C561d0b4024136cC692f48'),
+        engines=frozenset((
+            string_to_evm_address('0x01916c31dEF593cD94D707724FAcdf7add121Bf1'),  # LeverageRfqEngine  # noqa: E501
+            string_to_evm_address('0xa0DBD53aEeC3F5acD16c69C3001114eE51813E58'),  # RfqEngine
+        )),
+        leverage_engine=string_to_evm_address('0x01916c31dEF593cD94D707724FAcdf7add121Bf1'),
+        meta_actions=frozenset((
+            string_to_evm_address('0xdbF637ec1400Eeb020e862D6aB6B8914D1931AbB'),  # MetaActions
+            string_to_evm_address('0x97fa3B5A531f4E2Fa84CcaF1B53F5c4e512c4077'),  # MetaSessionActions  # noqa: E501
+        )),
+        yield_wrappers=frozenset((
+            string_to_evm_address('0x39285FA9992A3A87e1C2e1476C1404E2cfdD1931'),  # USDC
+            string_to_evm_address('0xa07adCaFc7709685836CF357Fa537AE2B3061156'),  # WBNB
+            string_to_evm_address('0x2D3587Fbd9A8fD4d4dD76e0102BC0063776E5BF6'),  # asBNB
+            string_to_evm_address('0xFe040BEeF432FB924f871e9C76180b557a13533c'),  # USDT
+            string_to_evm_address('0x41CB54680d1Baa26b85bc97641854E59964dBe38'),  # FDUSD
+            string_to_evm_address('0xdfFD30B2595044e16c5EDf193A746D582783793d'),  # FT
+        )),
+    ),
 }
 
 # DepositFor(address indexed from, address indexed beneficiary, address indexed asset, uint256 amount)  # noqa: E501

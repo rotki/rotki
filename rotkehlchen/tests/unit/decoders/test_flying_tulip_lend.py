@@ -279,3 +279,23 @@ def test_leverage_open_fill(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_FLYING_TULIP,
         address=FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.ETHEREUM].leverage_engine,
     )]
+
+
+def test_binance_sc_registration(binance_sc_transaction_decoder):
+    """The lending deployment is the only Flying Tulip module on Binance SC, so
+    only the lend decoder is registered there and it is keyed to the Binance SC
+    contracts. The markets have no user transactions yet, so the event decoding
+    itself is exercised by the ethereum tests above."""
+    assert 'FlyingTulipLend' in binance_sc_transaction_decoder.decoders
+    assert 'FlyingTulipFtusd' not in binance_sc_transaction_decoder.decoders
+    assert 'FlyingTulipPut' not in binance_sc_transaction_decoder.decoders
+    lend_decoder = binance_sc_transaction_decoder.decoders['FlyingTulipLend']
+    assert lend_decoder.deployment == (deployment := FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.BINANCE_SC])  # noqa: E501
+    assert lend_decoder.addresses_to_decoders().keys() == {deployment.leverage_engine}
+    assert set(lend_decoder.addresses_to_counterparties()) == (
+        {deployment.positions_manager} | deployment.meta_actions | deployment.yield_wrappers
+    )
+    assert CPT_FLYING_TULIP in {
+        counterparty.identifier
+        for counterparty in binance_sc_transaction_decoder.rules.all_counterparties
+    }
