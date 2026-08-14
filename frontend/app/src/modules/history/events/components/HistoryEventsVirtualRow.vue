@@ -113,7 +113,6 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display
   <HistoryEventsSwapCollapseRow
     v-else-if="row.type === 'matched-movement-collapse'"
     :event-count="row.eventCount"
-    :events="lookups.groupEvents(row.groupId)"
     label-type="movement"
     @unlink-event="actions.unlinkGroup(row.groupId)"
     @collapse="actions.toggleMovementExpanded(row.movementKey)"
@@ -123,7 +122,6 @@ const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display
   <HistoryEventsLoadMoreRow
     v-else-if="row.type === 'load-more'"
     :hidden-count="row.hiddenCount"
-    :total-count="row.totalCount"
     @load-more="actions.loadMore(row.groupId)"
   />
 </template>
