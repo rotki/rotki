@@ -1,13 +1,10 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { isValidSolanaAddress } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
+import { solanaTokenMigrationSchema } from '@/modules/assets/admin/solana-token-migration/solana-token-migration-form';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { solanaTokenKindsData } from '@/modules/core/common/chains';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 interface SolanaTokenMigrationData {
@@ -27,10 +24,21 @@ const { loading, oldAsset } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const address = useRefPropVModel(modelValue, 'address');
-const decimals = useRefPropVModel(modelValue, 'decimals');
-const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
 const { getAssetInfo } = useAssetInfoRetrieval();
+
+const schema = computed<ZodType>(() => solanaTokenMigrationSchema({
+  addressInvalid: t('asset_management.solana_token_migration.validation.address_invalid'),
+  addressMissing: t('asset_management.solana_token_migration.validation.address_non_empty'),
+  decimalsMissing: t('asset_management.solana_token_migration.validation.decimals_non_empty'),
+  tokenKindMissing: t('asset_management.solana_token_migration.validation.token_kind_non_empty'),
+}));
+
+const form = useModelForm<SolanaTokenMigrationData>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+});
 
 const assetDetails = computed<string | undefined>(() => {
   if (!oldAsset) {
@@ -49,35 +57,16 @@ const assetDetails = computed<string | undefined>(() => {
   return `${description}${details.name} (${oldAsset})`;
 });
 
-const decimalsModel = computed({
+const decimalsModel = computed<string>({
   get() {
-    const value = get(decimals);
+    const value = form.state.decimals;
     return value !== null ? `${value}` : '';
   },
   set(value: string) {
-    const parsedValue = parseDecimals(value);
-    set(decimals, parsedValue);
+    form.state.decimals = parseDecimals(value);
+    form.touch('decimals');
   },
 });
-
-const states = {
-  address,
-  decimals,
-  tokenKind,
-};
-
-const v$ = useVuelidate({
-  address: {
-    required,
-    validated: (v: string) => !v || isValidSolanaAddress(v),
-  },
-  decimals: {
-    required,
-  },
-  tokenKind: { required },
-}, states, { $autoDirty: true, $externalResults: errors });
-
-useFormStateWatcher(states, stateUpdated);
 
 function parseDecimals(value?: string): number | null {
   if (!value)
@@ -96,7 +85,7 @@ function clearFieldError(field: keyof SolanaTokenMigrationData) {
 }
 
 defineExpose({
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -116,13 +105,13 @@ defineExpose({
         data-testid="address-input"
       >
         <RuiTextField
-          v-model="address"
+          v-model="form.state.address"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.address)"
+          :error-messages="form.errors('address')"
           :label="t('asset_management.solana_token_migration.solana_address')"
           :disabled="loading"
-          @blur="v$.address.$touch()"
+          @update:model-value="form.touch('address')"
           @input="clearFieldError('address')"
         />
       </div>
@@ -137,9 +126,8 @@ defineExpose({
           color="primary"
           integer
           :label="t('asset_form.labels.decimals')"
-          :error-messages="toMessages(v$.decimals)"
+          :error-messages="form.errors('decimals')"
           :disabled="loading"
-          @blur="v$.decimals.$touch()"
           @input="clearFieldError('decimals')"
         />
       </div>
@@ -149,15 +137,15 @@ defineExpose({
         data-testid="token-kind-select"
       >
         <RuiMenuSelect
-          v-model="tokenKind"
+          v-model="form.state.tokenKind"
           :label="t('asset_form.labels.token_kind')"
           :options="solanaTokenKindsData"
-          :error-messages="toMessages(v$.tokenKind)"
+          :error-messages="form.errors('tokenKind')"
           :disabled="loading"
           key-attr="identifier"
           text-attr="label"
           variant="outlined"
-          @update:model-value="clearFieldError('tokenKind')"
+          @update:model-value="form.touch('tokenKind'); clearFieldError('tokenKind')"
         />
       </div>
     </div>
