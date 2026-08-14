@@ -6,7 +6,7 @@ use rusqlite::types::Value;
 use serde::Serialize;
 use strsim::levenshtein;
 
-use crate::api::schemas::assets::{AssetsIdentifier, AssetsLevenshteinSearch};
+use crate::api::schemas::assets::{AssetsIdentifier, AssetsLevenshteinSearch, NftHandling};
 use crate::api::utils::ApiResponse;
 use crate::api::AppState;
 use crate::blockchain::SupportedBlockchain;
@@ -266,138 +266,146 @@ pub async fn search_assets_levenshtein(
         );
     }
 
-    let assets_result: Result<BinaryHeap<RankedSearchResult>, rusqlite::Error> = async {
-        let conn_guard = state.globaldb.conn.lock().await;
+    // Skipped entirely when only nfts are wanted: the two searches are independent, so there is no
+    // reason to scan the globaldb for results that would all be discarded.
+    let assets_result: Result<BinaryHeap<RankedSearchResult>, rusqlite::Error> = if payload
+        .nft_handling
+        == NftHandling::ShowOnly
+    {
+        Ok(BinaryHeap::<RankedSearchResult>::with_capacity(limit + 1))
+    } else {
+        async {
+            let conn_guard = state.globaldb.conn.lock().await;
 
-        // Step 1: find candidate identifiers with a minimal scan — no extra JOINs,
-        // no LOWER() (SQLite LIKE is already case-insensitive for ASCII).
-        let candidate_ids: Vec<String> = if has_substring {
-            let like_value = format!("%{}%", escape_like_pattern(search_needle));
-            let mut stmt = conn_guard.prepare(
-                "SELECT identifier FROM assets WHERE name LIKE ? ESCAPE '\\'
+            // Step 1: find candidate identifiers with a minimal scan — no extra JOINs,
+            // no LOWER() (SQLite LIKE is already case-insensitive for ASCII).
+            let candidate_ids: Vec<String> = if has_substring {
+                let like_value = format!("%{}%", escape_like_pattern(search_needle));
+                let mut stmt = conn_guard.prepare(
+                    "SELECT identifier FROM assets WHERE name LIKE ? ESCAPE '\\'
                  UNION
                  SELECT identifier FROM common_asset_details WHERE symbol LIKE ? ESCAPE '\\'",
-            )?;
-            let mut rows = stmt.query(rusqlite::params![like_value, like_value])?;
-            let mut ids = Vec::new();
-            while let Some(row) = rows.next()? {
-                ids.push(row.get::<_, String>(0)?);
-            }
-            ids
-        } else {
-            // Address-only: direct lookup in the appropriate token table.
-            let address = payload.address.as_ref().unwrap(); // safe: validated above
-            let query = if is_hyperliquid_token_address(address) {
-                "SELECT identifier FROM hyperliquid_tokens WHERE address = ?"
-            } else if is_hex_address(address) {
-                "SELECT identifier FROM evm_tokens WHERE address = ?"
+                )?;
+                let mut rows = stmt.query(rusqlite::params![like_value, like_value])?;
+                let mut ids = Vec::new();
+                while let Some(row) = rows.next()? {
+                    ids.push(row.get::<_, String>(0)?);
+                }
+                ids
             } else {
-                "SELECT identifier FROM solana_tokens WHERE address = ?"
-            };
-            let mut stmt = conn_guard.prepare(query)?;
-            let normalized_address =
-                is_hyperliquid_token_address(address).then(|| address.to_ascii_lowercase());
-            let mut rows = stmt.query(rusqlite::params![normalized_address
-                .as_deref()
-                .unwrap_or(address)])?;
-            let mut ids = Vec::new();
-            while let Some(row) = rows.next()? {
-                ids.push(row.get::<_, String>(0)?);
-            }
-            ids
-        };
-
-        if candidate_ids.is_empty() {
-            return Ok(BinaryHeap::new());
-        }
-
-        // Step 2: fetch full data for candidates in bounded batches via PK
-        // lookups, then apply any chain / type / address filters.
-        let mut static_conditions: Vec<String> = Vec::new();
-        let mut static_bindings: Vec<Value> = Vec::new();
-
-        // When both substring and address are provided, apply the address
-        // filter in step 2 (step 1 already narrowed by name/symbol).
-        let need_solana_join = has_substring
-            && payload
-                .address
-                .as_ref()
-                .is_some_and(|address| !is_hex_address(address));
-        let need_hyperliquid_join = has_substring
-            && payload
-                .address
-                .as_ref()
-                .is_some_and(|address| is_hyperliquid_token_address(address));
-        if has_substring {
-            if let Some(address) = payload.address.as_ref() {
-                let col = if is_hyperliquid_token_address(address) {
-                    "ht.address"
+                // Address-only: direct lookup in the appropriate token table.
+                let address = payload.address.as_ref().unwrap(); // safe: validated above
+                let query = if is_hyperliquid_token_address(address) {
+                    "SELECT identifier FROM hyperliquid_tokens WHERE address = ?"
                 } else if is_hex_address(address) {
-                    "et.address"
+                    "SELECT identifier FROM evm_tokens WHERE address = ?"
                 } else {
-                    "st.address"
+                    "SELECT identifier FROM solana_tokens WHERE address = ?"
                 };
-                static_conditions.push(format!("{col} = ?"));
-                static_bindings.push(Value::Text(if is_hyperliquid_token_address(address) {
-                    address.to_ascii_lowercase()
+                let mut stmt = conn_guard.prepare(query)?;
+                let normalized_address =
+                    is_hyperliquid_token_address(address).then(|| address.to_ascii_lowercase());
+                let mut rows = stmt.query(rusqlite::params![normalized_address
+                    .as_deref()
+                    .unwrap_or(address)])?;
+                let mut ids = Vec::new();
+                while let Some(row) = rows.next()? {
+                    ids.push(row.get::<_, String>(0)?);
+                }
+                ids
+            };
+
+            if candidate_ids.is_empty() {
+                return Ok(BinaryHeap::new());
+            }
+
+            // Step 2: fetch full data for candidates in bounded batches via PK
+            // lookups, then apply any chain / type / address filters.
+            let mut static_conditions: Vec<String> = Vec::new();
+            let mut static_bindings: Vec<Value> = Vec::new();
+
+            // When both substring and address are provided, apply the address
+            // filter in step 2 (step 1 already narrowed by name/symbol).
+            let need_solana_join = has_substring
+                && payload
+                    .address
+                    .as_ref()
+                    .is_some_and(|address| !is_hex_address(address));
+            let need_hyperliquid_join = has_substring
+                && payload
+                    .address
+                    .as_ref()
+                    .is_some_and(|address| is_hyperliquid_token_address(address));
+            if has_substring {
+                if let Some(address) = payload.address.as_ref() {
+                    let col = if is_hyperliquid_token_address(address) {
+                        "ht.address"
+                    } else if is_hex_address(address) {
+                        "et.address"
+                    } else {
+                        "st.address"
+                    };
+                    static_conditions.push(format!("{col} = ?"));
+                    static_bindings.push(Value::Text(if is_hyperliquid_token_address(address) {
+                        address.to_ascii_lowercase()
+                    } else {
+                        address.clone()
+                    }));
+                }
+            }
+
+            let mut chain_type_conds: Vec<String> = Vec::new();
+            if let Some(c) = filter_chain {
+                chain_type_conds.push("et.chain = ?".to_string());
+                static_bindings.push(Value::Integer(c as u32 as i64));
+            }
+            if let Some(ref at) = asset_type_db {
+                chain_type_conds.push("a.type = ?".to_string());
+                static_bindings.push(Value::Text(at.clone()));
+            }
+            if !chain_type_conds.is_empty() {
+                if let Some(ref ntid) = native_token_id {
+                    static_conditions.push(format!(
+                        "(({}) OR a.identifier = ?)",
+                        chain_type_conds.join(" AND ")
+                    ));
+                    static_bindings.push(Value::Text(ntid.clone()));
                 } else {
-                    address.clone()
-                }));
+                    static_conditions.push(format!("({})", chain_type_conds.join(" AND ")));
+                }
             }
-        }
 
-        let mut chain_type_conds: Vec<String> = Vec::new();
-        if let Some(c) = filter_chain {
-            chain_type_conds.push("et.chain = ?".to_string());
-            static_bindings.push(Value::Integer(c as u32 as i64));
-        }
-        if let Some(ref at) = asset_type_db {
-            chain_type_conds.push("a.type = ?".to_string());
-            static_bindings.push(Value::Text(at.clone()));
-        }
-        if !chain_type_conds.is_empty() {
-            if let Some(ref ntid) = native_token_id {
-                static_conditions.push(format!(
-                    "(({}) OR a.identifier = ?)",
-                    chain_type_conds.join(" AND ")
-                ));
-                static_bindings.push(Value::Text(ntid.clone()));
+            let solana_join = if need_solana_join {
+                "LEFT JOIN solana_tokens st ON st.identifier = a.identifier"
             } else {
-                static_conditions.push(format!("({})", chain_type_conds.join(" AND ")));
-            }
-        }
+                ""
+            };
+            let hyperliquid_join = if need_hyperliquid_join {
+                "LEFT JOIN hyperliquid_tokens ht ON ht.identifier = a.identifier"
+            } else {
+                ""
+            };
+            let chunk_size = SQLITE_SAFE_VARIABLE_LIMIT
+                .saturating_sub(static_bindings.len())
+                .max(1);
+            let mut found_eth = false;
+            let mut heap = BinaryHeap::<RankedSearchResult>::with_capacity(limit + 1);
+            for candidate_chunk in candidate_ids.chunks(chunk_size) {
+                let placeholders: String = std::iter::repeat_n("?", candidate_chunk.len())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                let mut step2_conditions: Vec<String> =
+                    vec![format!("a.identifier IN ({placeholders})")];
+                step2_conditions.extend(static_conditions.iter().cloned());
+                let mut step2_bindings: Vec<Value> = candidate_chunk
+                    .iter()
+                    .map(|id| Value::Text(id.clone()))
+                    .collect();
+                step2_bindings.extend(static_bindings.iter().cloned());
 
-        let solana_join = if need_solana_join {
-            "LEFT JOIN solana_tokens st ON st.identifier = a.identifier"
-        } else {
-            ""
-        };
-        let hyperliquid_join = if need_hyperliquid_join {
-            "LEFT JOIN hyperliquid_tokens ht ON ht.identifier = a.identifier"
-        } else {
-            ""
-        };
-        let chunk_size = SQLITE_SAFE_VARIABLE_LIMIT
-            .saturating_sub(static_bindings.len())
-            .max(1);
-        let mut found_eth = false;
-        let mut heap = BinaryHeap::<RankedSearchResult>::with_capacity(limit + 1);
-        for candidate_chunk in candidate_ids.chunks(chunk_size) {
-            let placeholders: String = std::iter::repeat_n("?", candidate_chunk.len())
-                .collect::<Vec<_>>()
-                .join(",");
-            let mut step2_conditions: Vec<String> =
-                vec![format!("a.identifier IN ({placeholders})")];
-            step2_conditions.extend(static_conditions.iter().cloned());
-            let mut step2_bindings: Vec<Value> = candidate_chunk
-                .iter()
-                .map(|id| Value::Text(id.clone()))
-                .collect();
-            step2_bindings.extend(static_bindings.iter().cloned());
-
-            let where_clause = step2_conditions.join(" AND ");
-            let step2_query = format!(
-                "SELECT a.identifier, a.name, cad.symbol, et.chain, a.type, ca.type
+                let where_clause = step2_conditions.join(" AND ");
+                let step2_query = format!(
+                    "SELECT a.identifier, a.name, cad.symbol, et.chain, a.type, ca.type
                  FROM assets a
                  LEFT JOIN common_asset_details cad ON a.identifier = cad.identifier
                  LEFT JOIN evm_tokens et ON et.identifier = a.identifier
@@ -405,106 +413,107 @@ pub async fn search_assets_levenshtein(
                  {solana_join}
                  {hyperliquid_join}
                  WHERE {where_clause}"
-            );
-
-            let mut stmt = conn_guard.prepare(&step2_query)?;
-            let mut rows = stmt.query(rusqlite::params_from_iter(step2_bindings.iter()))?;
-            while let Some(row) = rows.next()? {
-                let identifier: String = row.get(0)?;
-                if ignored_assets.contains(&identifier) {
-                    continue;
-                }
-
-                let name: Option<String> = row.get(1)?;
-                let symbol: Option<String> = row.get(2)?;
-                let chain: Option<u32> = row.get(3)?;
-                let db_asset_type: String = row.get(4)?;
-                let custom_asset_type: Option<String> = row.get(5)?;
-
-                let asset_type = AssetType::deserialize_from_db(&db_asset_type)
-                    .map(|at| at.serialize())
-                    .unwrap_or(db_asset_type);
-                let is_fiat = asset_type == "fiat";
-                let is_native = is_native_token(&identifier);
-
-                // Skip rows that cannot improve the bounded heap even with a
-                // perfect levenshtein distance of 0.
-                if heap.len() >= limit {
-                    let worst = heap.peek().unwrap();
-                    let best_possible = (u8::from(!is_fiat), u8::from(!is_native), 0usize);
-                    let worst_key = (
-                        u8::from(!worst.is_fiat),
-                        u8::from(!worst.is_native),
-                        worst.lev_distance,
-                    );
-                    if best_possible >= worst_key {
-                        continue;
-                    }
-                }
-
-                let mut lev_distance = MAX_LEV_DISTANCE;
-                if has_substring {
-                    if let Some(name) = name.as_ref() {
-                        lev_distance =
-                            lev_distance.min(levenshtein(search_needle, &name.to_lowercase()));
-                    }
-                    if let Some(symbol) = symbol.as_ref() {
-                        lev_distance =
-                            lev_distance.min(levenshtein(search_needle, &symbol.to_lowercase()));
-                    }
-
-                    if treat_eth2_as_eth && (identifier == "ETH" || identifier == "ETH2") {
-                        if !found_eth {
-                            push_to_bounded_heap(
-                                &mut heap,
-                                RankedSearchResult {
-                                    lev_distance,
-                                    is_fiat: false,
-                                    is_native: true,
-                                    entry: SearchResultEntry {
-                                        identifier: "ETH".to_string(),
-                                        name: Some("Ethereum".to_string()),
-                                        symbol: Some("ETH".to_string()),
-                                        asset_type: AssetType::OwnChain.serialize(),
-                                        evm_chain: None,
-                                        custom_asset_type: None,
-                                        collection_name: None,
-                                    },
-                                },
-                                limit,
-                            );
-                            found_eth = true;
-                        }
-                        continue;
-                    }
-                }
-
-                push_to_bounded_heap(
-                    &mut heap,
-                    RankedSearchResult {
-                        lev_distance,
-                        is_fiat,
-                        is_native,
-                        entry: SearchResultEntry {
-                            identifier,
-                            name,
-                            symbol,
-                            asset_type,
-                            evm_chain: chain
-                                .and_then(|chain| ChainID::deserialize_from_db(chain).ok())
-                                .map(|chain| chain.to_name()),
-                            custom_asset_type,
-                            collection_name: None,
-                        },
-                    },
-                    limit,
                 );
-            }
-        }
 
-        Ok(heap)
-    }
-    .await;
+                let mut stmt = conn_guard.prepare(&step2_query)?;
+                let mut rows = stmt.query(rusqlite::params_from_iter(step2_bindings.iter()))?;
+                while let Some(row) = rows.next()? {
+                    let identifier: String = row.get(0)?;
+                    if ignored_assets.contains(&identifier) {
+                        continue;
+                    }
+
+                    let name: Option<String> = row.get(1)?;
+                    let symbol: Option<String> = row.get(2)?;
+                    let chain: Option<u32> = row.get(3)?;
+                    let db_asset_type: String = row.get(4)?;
+                    let custom_asset_type: Option<String> = row.get(5)?;
+
+                    let asset_type = AssetType::deserialize_from_db(&db_asset_type)
+                        .map(|at| at.serialize())
+                        .unwrap_or(db_asset_type);
+                    let is_fiat = asset_type == "fiat";
+                    let is_native = is_native_token(&identifier);
+
+                    // Skip rows that cannot improve the bounded heap even with a
+                    // perfect levenshtein distance of 0.
+                    if heap.len() >= limit {
+                        let worst = heap.peek().unwrap();
+                        let best_possible = (u8::from(!is_fiat), u8::from(!is_native), 0usize);
+                        let worst_key = (
+                            u8::from(!worst.is_fiat),
+                            u8::from(!worst.is_native),
+                            worst.lev_distance,
+                        );
+                        if best_possible >= worst_key {
+                            continue;
+                        }
+                    }
+
+                    let mut lev_distance = MAX_LEV_DISTANCE;
+                    if has_substring {
+                        if let Some(name) = name.as_ref() {
+                            lev_distance =
+                                lev_distance.min(levenshtein(search_needle, &name.to_lowercase()));
+                        }
+                        if let Some(symbol) = symbol.as_ref() {
+                            lev_distance = lev_distance
+                                .min(levenshtein(search_needle, &symbol.to_lowercase()));
+                        }
+
+                        if treat_eth2_as_eth && (identifier == "ETH" || identifier == "ETH2") {
+                            if !found_eth {
+                                push_to_bounded_heap(
+                                    &mut heap,
+                                    RankedSearchResult {
+                                        lev_distance,
+                                        is_fiat: false,
+                                        is_native: true,
+                                        entry: SearchResultEntry {
+                                            identifier: "ETH".to_string(),
+                                            name: Some("Ethereum".to_string()),
+                                            symbol: Some("ETH".to_string()),
+                                            asset_type: AssetType::OwnChain.serialize(),
+                                            evm_chain: None,
+                                            custom_asset_type: None,
+                                            collection_name: None,
+                                        },
+                                    },
+                                    limit,
+                                );
+                                found_eth = true;
+                            }
+                            continue;
+                        }
+                    }
+
+                    push_to_bounded_heap(
+                        &mut heap,
+                        RankedSearchResult {
+                            lev_distance,
+                            is_fiat,
+                            is_native,
+                            entry: SearchResultEntry {
+                                identifier,
+                                name,
+                                symbol,
+                                asset_type,
+                                evm_chain: chain
+                                    .and_then(|chain| ChainID::deserialize_from_db(chain).ok())
+                                    .map(|chain| chain.to_name()),
+                                custom_asset_type,
+                                collection_name: None,
+                            },
+                        },
+                        limit,
+                    );
+                }
+            }
+
+            Ok(heap)
+        }
+        .await
+    };
 
     let mut heap = match assets_result {
         Ok(heap) => heap,
@@ -520,7 +529,7 @@ pub async fn search_assets_levenshtein(
         }
     };
 
-    if payload.search_nfts && has_substring {
+    if payload.nft_handling != NftHandling::Exclude && has_substring {
         let nfts = {
             let userdb = state.userdb.read().await;
             userdb
@@ -711,7 +720,7 @@ mod tests {
                 asset_type: None,
                 address: None,
                 limit: 10,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -737,7 +746,7 @@ mod tests {
                 asset_type: None,
                 address: None,
                 limit: 25,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -766,7 +775,7 @@ mod tests {
                 asset_type: None,
                 address: None,
                 limit: 25,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -793,7 +802,7 @@ mod tests {
                 asset_type: Some("evm token".to_string()),
                 address: None,
                 limit: 50,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -822,7 +831,7 @@ mod tests {
                 asset_type: None,
                 address: Some("0x6B175474E89094C44Da98b954EedeAC495271d0F".to_string()),
                 limit: 25,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -848,7 +857,7 @@ mod tests {
                 asset_type: Some("hyperliquid token".to_string()),
                 address: None,
                 limit: 25,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -869,7 +878,7 @@ mod tests {
                 asset_type: None,
                 address: Some("0xDEADBEEFDEADBEEFDEADBEEFDEADBEEF".to_string()),
                 limit: 25,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -933,14 +942,14 @@ mod tests {
         }
 
         let (status, body) = call_search(
-            state,
+            state.clone(),
             AssetsLevenshteinSearch {
                 value: Some("edge nft".to_string()),
                 evm_chain: None,
                 asset_type: None,
                 address: None,
                 limit: 50,
-                search_nfts: true,
+                nft_handling: NftHandling::Include,
             },
         )
         .await;
@@ -954,6 +963,29 @@ mod tests {
         assert!(result
             .iter()
             .any(|entry| { entry.get("asset_type").and_then(|v| v.as_str()) != Some("nft") }));
+
+        // show_only keeps the nfts and drops the assets that shared the result above. Filtering
+        // that response would not do: both sets are ranked into one bounded heap, so an asset
+        // ranking better than an nft can push it out before the caller ever sees it.
+        let (status, body) = call_search(
+            state,
+            AssetsLevenshteinSearch {
+                value: Some("edge nft".to_string()),
+                evm_chain: None,
+                asset_type: None,
+                address: None,
+                limit: 50,
+                nft_handling: NftHandling::ShowOnly,
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        let result = body.get("result").and_then(|v| v.as_array()).unwrap();
+        assert!(!result.is_empty());
+        assert!(result
+            .iter()
+            .all(|entry| { entry.get("asset_type").and_then(|v| v.as_str()) == Some("nft") }));
     }
 
     #[tokio::test]
@@ -980,7 +1012,7 @@ mod tests {
                 asset_type: None,
                 address: None,
                 limit: 10,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
@@ -1025,7 +1057,7 @@ mod tests {
                 asset_type: None,
                 address: None,
                 limit: 10,
-                search_nfts: false,
+                nft_handling: NftHandling::Exclude,
             },
         )
         .await;
