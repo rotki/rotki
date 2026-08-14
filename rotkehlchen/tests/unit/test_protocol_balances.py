@@ -1829,6 +1829,7 @@ def test_kinetiq_earn_pending_withdrawal_balances(
     assert protocol_balances[hyperliquid_accounts[0]].assets[khype][CPT_KINETIQ] == expected_balance  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
 def test_flying_tulip_lend_balances(
         ethereum_inquirer: EthereumInquirer,
@@ -1888,6 +1889,66 @@ def test_flying_tulip_lend_balances(
     assert protocol_balances[user_address].liabilities[ftusd][CPT_FLYING_TULIP] == expected_debt
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
+def test_flying_tulip_lend_balances_ignore_other_products(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Every Flying Tulip product shares one counterparty, so a staker or a put
+    investor who never touched the lending market must not be asked about."""
+    ftusd = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xF7D85EC4E7710f71992752eac2111312e73E9C9C'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='ftUSD',
+        decimals=6,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        for sequence_index, (event_type, event_subtype, address) in enumerate((
+            (  # an ftUSD staking deposit
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                string_to_evm_address('0xeb48218a4c35C814C7678cBcae88C6Ee037F7625'),
+            ), (  # an ftPUT investment
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                string_to_evm_address('0xbA49d0AC42f4fBA4e24A8677a22218a4dF75ebaA'),
+            ), (  # a queued ftUSD redemption released by the circuit breaker
+                HistoryEventType.INFORMATIONAL,
+                HistoryEventSubType.NONE,
+                string_to_evm_address('0x6Cf5A1DE9Bb8bC2D3F1F3fBb8C1c8C6dB1c11eF2'),
+            ),
+        )):
+            events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+                tx_ref=deserialize_evm_tx_hash('0xda81303cc65040a0fbd75b97cae82f61d068d32d61e52f0e836f664d9858cfcd'),
+                sequence_index=sequence_index,
+                timestamp=TimestampMS(1782585431000),
+                location=Location.ETHEREUM,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=ftusd,
+                amount=FVal('105.455116'),
+                location_label=ethereum_accounts[0],
+                counterparty=CPT_FLYING_TULIP,
+                address=address,
+            ))
+
+    with patch.object(ethereum_inquirer, 'multicall') as multicall:
+        protocol_balances = FlyingTulipLendBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+
+    assert multicall.call_count == 0
+    assert protocol_balances == {}
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
 def test_flying_tulip_staking_balances(
         ethereum_inquirer: EthereumInquirer,
@@ -1943,6 +2004,51 @@ def test_flying_tulip_staking_balances(
     assert protocol_balances[user_address].assets[ft_token][CPT_FLYING_TULIP] == expected_balance
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_flying_tulip_staking_balances_ignore_other_products(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """An ftPUT position is also a deposit for a wrapped token, so its investor
+    must not be asked about rewards from the sftUSD vault they never staked in."""
+    usdt = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='USDT',
+        decimals=6,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+            tx_ref=deserialize_evm_tx_hash('0x2b1ce9db1e985429e3d0103113f64e1aa21145650fcc5944edd03ca0e2430d59'),
+            sequence_index=614,
+            timestamp=TimestampMS(1771346099000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=usdt,
+            amount=FVal('25'),
+            location_label=ethereum_accounts[0],
+            counterparty=CPT_FLYING_TULIP,
+            address=string_to_evm_address('0xbA49d0AC42f4fBA4e24A8677a22218a4dF75ebaA'),
+        ))
+
+    with patch.object(ethereum_inquirer, 'multicall') as multicall:
+        protocol_balances = FlyingTulipStakingBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+
+    assert multicall.call_count == 0
+    assert protocol_balances == {}
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
 def test_flying_tulip_lend_balances_binance_sc(
         binance_sc_inquirer: BinanceSCInquirer,
