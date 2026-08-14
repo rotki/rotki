@@ -228,7 +228,7 @@ defineExpose({
         data-testid="account-address-field"
         variant="outlined"
         color="primary"
-        class="account-form__address flex-1"
+        class="flex-1"
         :label="t('common.account')"
         :rules="rules"
         autocomplete="off"

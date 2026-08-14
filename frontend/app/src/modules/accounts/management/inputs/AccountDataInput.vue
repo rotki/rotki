@@ -19,7 +19,6 @@ const { t } = useI18n({ useScope: 'global' });
     data-testid="account-label-field"
     color="primary"
     variant="outlined"
-    class="account-form__label"
     :label="t('common.name')"
     :disabled="disabled"
   />
