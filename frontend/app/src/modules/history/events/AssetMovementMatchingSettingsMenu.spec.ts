@@ -108,13 +108,17 @@ describe('assetMovementMatchingSettingsMenu', () => {
     expect(get(tolerance)).toBe('0.000001');
   });
 
-  // Pinned as it stands: `callIfValid` asks the whole validator whether anything is wrong, not the
-  // field being written, so one bad field silently stops the other from saving.
-  it('should stop a valid time range saving while the tolerance is invalid', async () => {
+  // Deliberately flipped in the zod swap. `callIfValid` asked the whole validator whether anything
+  // was wrong rather than the field being written, so an out-of-range tolerance silently stopped
+  // the time range from saving, and the two settings have nothing to do with each other.
+  it('should save a valid time range while the tolerance is invalid', async () => {
     await edit(0, '200');
 
     await edit(1, '5');
 
-    expect(get(timeRange)).toBe(7200);
+    expect(get(timeRange)).toBe(18000);
+    // The tolerance is still refused, and still says why.
+    expect(get(tolerance)).toBe('0.05');
+    expect(messages(0)).toEqual(['asset_movement_matching.settings.amount_tolerance.validations.max']);
   });
 });

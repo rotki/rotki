@@ -51,8 +51,6 @@
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "catalog:",
     "@types/ws": "catalog:",
-    "@vuelidate/core": "catalog:",
-    "@vuelidate/validators": "catalog:",
     "@vueuse/core": "catalog:",
     "@vueuse/math": "catalog:",
     "@vueuse/shared": "catalog:",

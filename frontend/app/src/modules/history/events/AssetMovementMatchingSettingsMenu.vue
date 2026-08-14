@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import { bigNumberify } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, maxValue, minValue } from '@vuelidate/validators';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import {
+  checkSetting,
+  type MatchingSettingsMessages,
+  timeRangeHoursSchema,
+  tolerancePercentageSchema,
+} from '@/modules/history/events/asset-movement-matching-settings';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -47,18 +50,30 @@ const showMenu = ref<boolean>(false);
 const tolerancePercentage = ref<string>('');
 const timeRangeHours = ref<string>('');
 
-const rules = {
-  timeRangeHours: {
-    min: helpers.withMessage(t('asset_movement_matching.settings.time_range.validations.min'), minValue(1)),
-  },
-  tolerancePercentage: {
-    max: helpers.withMessage(t('asset_movement_matching.settings.amount_tolerance.validations.max'), maxValue(100)),
-    min: helpers.withMessage(t('asset_movement_matching.settings.amount_tolerance.validations.min'), minValue(0.0001)),
-  },
+const messages: MatchingSettingsMessages = {
+  timeRangeMin: t('asset_movement_matching.settings.time_range.validations.min'),
+  toleranceMax: t('asset_movement_matching.settings.amount_tolerance.validations.max'),
+  toleranceMin: t('asset_movement_matching.settings.amount_tolerance.validations.min'),
 };
 
-const v$ = useVuelidate(rules, { timeRangeHours, tolerancePercentage }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
+const toleranceRuleErrors = computed<string[]>(
+  () => checkSetting(tolerancePercentageSchema(messages), get(tolerancePercentage)),
+);
+const timeRangeRuleErrors = computed<string[]>(
+  () => checkSetting(timeRangeHoursSchema(messages), get(timeRangeHours)),
+);
+
+/**
+ * Writes the setting only when the value it was given is one the backend takes.
+ *
+ * Each field answers for itself. The rule it replaces asked the whole validator whether anything
+ * was wrong, so an out-of-range tolerance stopped the time range from saving too, and the two have
+ * nothing to do with each other.
+ */
+function writeIfValid(value: string, schema: ZodType<string>, write: (value: string) => void): void {
+  if (checkSetting(schema, value).length === 0)
+    write(value);
+}
 
 function decimalToPercentage(decimal: string): string {
   const value = bigNumberify(decimal);
@@ -177,10 +192,10 @@ onMounted(() => {
         step="0.001"
         :label="t('asset_movement_matching.settings.amount_tolerance.label')"
         :hint="t('asset_movement_matching.settings.amount_tolerance.hint')"
-        :error-messages="toleranceError || toMessages(v$.tolerancePercentage)"
+        :error-messages="toleranceError || toleranceRuleErrors"
         :success-messages="toleranceSuccess"
         class="min-h-[12rem]"
-        @update:model-value="callIfValid($event, updateTolerance)"
+        @update:model-value="writeIfValid($event, tolerancePercentageSchema(messages), updateTolerance)"
       />
       <AmountInput
         v-model="timeRangeHours"
@@ -189,9 +204,9 @@ onMounted(() => {
         class="min-h-[8rem]"
         :label="t('asset_movement_matching.settings.time_range.label')"
         :hint="t('asset_movement_matching.settings.time_range.hint')"
-        :error-messages="timeRangeError || toMessages(v$.timeRangeHours)"
+        :error-messages="timeRangeError || timeRangeRuleErrors"
         :success-messages="timeRangeSuccess"
-        @update:model-value="callIfValid($event, updateTimeRange)"
+        @update:model-value="writeIfValid($event, timeRangeHoursSchema(messages), updateTimeRange)"
       />
       <div class="flex justify-end mt-4">
         <RuiButton
