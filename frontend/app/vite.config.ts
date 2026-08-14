@@ -14,10 +14,14 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
 import { VueRouterAutoImports } from 'vue-router/unplugin';
 import VueRouter from 'vue-router/vite';
-import { backendIcons } from './backend-icons.generated';
-import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups';
-import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
+import { backendIcons } from './backend-icons.generated.ts';
+import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups.ts';
+import { backendIconsCachePlugin } from './scripts/extract-backend-icons.ts';
 
+// The three relative imports above keep their `.ts` extension on purpose: vite 8 loads this config
+// natively instead of bundling it, and warns about every extensionless relative import. The
+// `@rotki/no-dot-ts-imports` autofix would strip them back off, so it is disabled for config files
+// in eslint.config.js, and tsconfig.node.json sets `allowImportingTsExtensions` for vue-tsc.
 const PACKAGE_ROOT = import.meta.dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
 
