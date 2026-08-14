@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { PremiumSetup } from '@/modules/auth/login';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf } from '@vuelidate/validators';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { premiumSetupSchema } from '@/modules/auth/create-account/premium/premium-setup-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 
 const form = defineModel<PremiumSetup>('form', { required: true });
 const valid = defineModel<boolean>('valid', { required: true });
@@ -15,48 +14,43 @@ const { loading, enabled } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const apiKey = useRefPropVModel(form, 'apiKey');
-const apiSecret = useRefPropVModel(form, 'apiSecret');
+const schema = computed<ZodType>(() => premiumSetupSchema({
+  apiKey: t('premium_credentials.validation.non_empty_key'),
+  apiSecret: t('premium_credentials.validation.non_empty_secret'),
+}, enabled));
 
-const rules = {
-  apiKey: {
-    required: helpers.withMessage(t('premium_credentials.validation.non_empty_key'), requiredIf(() => enabled)),
-  },
-  apiSecret: {
-    required: helpers.withMessage(t('premium_credentials.validation.non_empty_secret'), requiredIf(() => enabled)),
-  },
-};
-
-const v$ = useVuelidate(rules, form, {
-  $autoDirty: true,
-  $stopPropagation: true,
+const { errors, state, touch, valid: parses } = useModelForm<PremiumSetup>({
+  model: form,
+  schema,
 });
 
-watchImmediate(v$, ({ $invalid }) => {
-  set(valid, !$invalid);
-});
+// Immediate, so the step above starts with a real answer. A plain watch would leave `valid` at
+// whatever the wizard defaulted it to, and Continue would gate on a stale value.
+syncRefs(parses, valid);
 </script>
 
 <template>
   <div v-if="enabled">
     <div class="space-y-3">
       <RuiRevealableTextField
-        v-model.trim="apiKey"
+        v-model.trim="state.apiKey"
         dense
         variant="outlined"
         :disabled="loading"
         color="primary"
         :label="t('premium_credentials.label_api_key')"
-        :error-messages="toMessages(v$.apiKey)"
+        :error-messages="errors('apiKey')"
+        @update:model-value="touch('apiKey')"
       />
       <RuiRevealableTextField
-        v-model.trim="apiSecret"
+        v-model.trim="state.apiSecret"
         dense
         variant="outlined"
         :disabled="loading"
         color="primary"
         :label="t('premium_credentials.label_api_secret')"
-        :error-messages="toMessages(v$.apiSecret)"
+        :error-messages="errors('apiSecret')"
+        @update:model-value="touch('apiSecret')"
       />
     </div>
   </div>
