@@ -24,20 +24,24 @@ interface ManagedTokenLookupReturn {
   readonly suppressNextLookup: () => void;
 }
 
-const FILLED_FIELDS: Array<keyof SupportedAsset> = ['decimals', 'name', 'symbol'];
+const FILLED_FIELDS = ['decimals', 'name', 'symbol'] as const;
 
 /**
  * What the lookup found, or what the form already had.
  *
- * A field the chain knows nothing about comes back as an empty string, and decimals as a zero, so
- * both read as "not found" here. That does mean a genuine zero-decimal token keeps whatever the
- * form was showing, which is how this has always behaved.
+ * A contract that does not answer for a field reports it as null, which the response type does not
+ * admit but the backend documents and returns, so it is checked for at runtime rather than trusted
+ * away. An empty string and a zero mean the same thing here, which does leave a genuine
+ * zero-decimal token showing whatever the form had, as it always has.
  */
 function looked<T extends string | number>(
-  found: T | undefined,
+  found: T | null | undefined,
   current: T | null | undefined,
 ): T | null | undefined {
-  return found === undefined || found === '' || found === 0 ? current : found;
+  if (found === undefined || found === null || found === '' || found === 0)
+    return current;
+
+  return found;
 }
 
 /**
@@ -77,7 +81,7 @@ export function useManagedTokenLookup(options: ManagedTokenLookupOptions): Manag
         name: looked(details.name, current.name),
         symbol: looked(details.symbol, current.symbol),
       });
-      onFilled(FILLED_FIELDS);
+      onFilled([...FILLED_FIELDS]);
     }
     finally {
       // Always re-enable the fields, even if the lookup throws, so the form never stays locked.
