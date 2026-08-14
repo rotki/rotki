@@ -19,6 +19,9 @@ class FlyingTulipFtusdDeployment(NamedTuple):
     # the user, so they are valid counterparties of payout transfers. This
     # list has to track the protocol's deployments.
     wrappers: frozenset[ChecksumEvmAddress]
+    # CircuitBreakerV2: rate-limited payouts are queued here and paid out to
+    # the recipient in a later transaction.
+    circuit_breaker: ChecksumEvmAddress
 
 
 FLYING_TULIP_FTUSD_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipFtusdDeployment]] = {
@@ -32,6 +35,7 @@ FLYING_TULIP_FTUSD_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipFtusdDeployment]]
             string_to_evm_address('0x6aaf84563Cdb03a22Cd92EE2553698beE87E837D'),  # WrapperUSDC
             string_to_evm_address('0x28CCa8eEA2cD0498cE91A9da15772A1ce42347D6'),  # WrapperUSDT
         )),
+        circuit_breaker=string_to_evm_address('0xCB210509F5AE2b3843B7Fb8Bb90bAFF9cE4f7355'),
     ),
 }
 
@@ -57,3 +61,10 @@ STAKING_VAULT_ABI: Final[ABI] = [
         'type': 'function',
     },
 ]
+
+# OutflowQueued(uint256 indexed queueId, address indexed asset, address indexed recipient, uint256 amount, uint256 settlesAt)  # noqa: E501
+# 0x78aaf104c48223418f804d51391e35441b7277ff72b42187446efb7469b6383b
+OUTFLOW_QUEUED_TOPIC: Final = b'x\xaa\xf1\x04\xc4\x82#A\x8f\x80MQ9\x1e5D\x1brw\xffr\xb4!\x87Dn\xfbti\xb68;'  # noqa: E501
+# OutflowExecuted(uint256 indexed queueId, address indexed recipient, address indexed asset, uint256 amount)  # noqa: E501
+# 0x6683eb3425d0fa38df2efe81ecf86f2a2d421bbdcc1cc63afad4f6ca9c796cdd
+OUTFLOW_EXECUTED_TOPIC: Final = b'f\x83\xeb4%\xd0\xfa8\xdf.\xfe\x81\xec\xf8o*-B\x1b\xbd\xcc\x1c\xc6:\xfa\xd4\xf6\xca\x9cyl\xdd'  # noqa: E501

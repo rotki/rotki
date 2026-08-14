@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value
@@ -10,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -23,6 +25,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
@@ -48,11 +53,10 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
 
     def _decode_put_manager(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == INVESTED_TOPIC:
+            # No tracked-participant gate here: the funder of a proxy invest for
+            # another recipient appears only in the wallet transfer, which the
+            # matcher below requires to belong to a tracked wallet anyway.
             investor = bytes_to_address(context.tx_log.data[0:32])
-            recipient = bytes_to_address(context.tx_log.data[32:64])  # position recipient
-            if not self.base.any_tracked([investor, recipient]):
-                return DEFAULT_EVM_DECODING_OUTPUT
-
             position_id = int.from_bytes(context.tx_log.data[64:96])
             token = self.base.get_or_create_evm_token(
                 address=bytes_to_address(context.tx_log.data[160:192]),
@@ -64,17 +68,20 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
             # An investment is either funded straight into the manager, or the
             # user funds an investing proxy which then appears as the investor,
             # so the eligible transfer counterparties are exactly those two.
-            self._transform_matching_event(
+            # Any tracked wallet may be the funder (the proxy also allows
+            # investing for a different position recipient).
+            if not self._transform_matching_event(
                 context=context,
                 from_event_type=HistoryEventType.SPEND,
                 token=token,
                 amount=amount,
-                allowed_labels=(investor, recipient),
+                allowed_labels=None,
                 allowed_addresses=(self.deployment.put_manager, investor),
                 to_event_type=HistoryEventType.DEPOSIT,
                 to_event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 notes=f'Invest {amount} {token.symbol} in {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
-            )
+            ):
+                log.debug('Found no matching transfer for a put event in %s', context.transaction)
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == DIVESTED_TOPIC:
@@ -91,7 +98,7 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 token_amount=int.from_bytes(context.tx_log.data[160:192]),
                 token=token,
             )
-            self._transform_matching_event(
+            if not self._transform_matching_event(
                 context=context,
                 from_event_type=HistoryEventType.RECEIVE,
                 token=token,
@@ -101,7 +108,8 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 notes=f'Divest {amount} {token.symbol} from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
-            )
+            ):
+                log.debug('Found no matching transfer for a put event in %s', context.transaction)
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == UNSTAKE_TOPIC:  # Withdraw(address,uint256,uint256)
@@ -116,7 +124,7 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 token_amount=int.from_bytes(context.tx_log.data[64:96]),
                 token=ft_token,
             )
-            self._transform_matching_event(
+            if not self._transform_matching_event(
                 context=context,
                 from_event_type=HistoryEventType.RECEIVE,
                 token=ft_token,
@@ -126,7 +134,8 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 notes=f'Withdraw {amount} FT from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
-            )
+            ):
+                log.debug('Found no matching transfer for a put event in %s', context.transaction)
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

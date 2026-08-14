@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V3, WITHDRAW_TOPIC
@@ -9,13 +9,24 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.constants import (
     FLYING_TULIP_LABEL,
 )
 from rotkehlchen.chain.evm.decoding.flying_tulip.decoder import FlyingTulipCommonDecoder
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_EVM_DECODING_OUTPUT,
+    DecoderContext,
+    EvmDecodingOutput,
+)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    CLOSE_LEVERAGE_FILLED_TOPIC,
+    CLOSE_LEVERAGE_FLASH_FILLED_TOPIC,
+    COLLATERAL_SWAP_FILLED_TOPIC,
+    COLLATERAL_SWAP_FLASH_FILLED_TOPIC,
     FLYING_TULIP_LEND_DEPLOYMENTS,
+    OPEN_LEVERAGE_FILLED_TOPIC,
+    OPEN_LEVERAGE_FLASH_FILLED_TOPIC,
     PM_BORROW_TOPIC,
     PM_DEPOSIT_FOR_TOPIC,
     PM_REPAY_FOR_TOPIC,
@@ -118,7 +129,9 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     candidate = event
 
         if candidate is None:
-            return None  # a movement inside the protocol that never touched the wallet
+            # a movement inside the protocol that never touched the wallet
+            log.debug('Found no matching transfer for a lend event in %s', transaction)
+            return None
 
         if (fee_amount := candidate.amount - amount) > ZERO:
             # Fold an eventual refund of unused funds (a transfer straight back
@@ -204,7 +217,9 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                     candidate = event
 
         if candidate is None:
-            return  # a movement inside the protocol that never touched the wallet
+            # a movement inside the protocol that never touched the wallet
+            log.debug('Found no matching transfer for a lend event in %s', transaction)
+            return
 
         consumed.add(id(candidate))
         if (fee_amount := amount - candidate.amount) > ZERO:
@@ -334,6 +349,51 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                 )
 
         return decoded_events
+
+    def _decode_leverage_fill(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode leverage RFQ engine fills into informational history entries.
+
+        The funds of a leverage fill move inside the positions manager (opens
+        are flash-funded), so there is no wallet transfer to transform. The
+        informational entry gives the position activity Flying Tulip
+        attribution and seeds balance discovery, through which the position's
+        actual collateral and debt are queried from the positions manager.
+        """
+        if (topic := context.tx_log.topics[0]) in (OPEN_LEVERAGE_FILLED_TOPIC, OPEN_LEVERAGE_FLASH_FILLED_TOPIC):  # noqa: E501
+            action = 'Open'
+        elif topic in (CLOSE_LEVERAGE_FILLED_TOPIC, CLOSE_LEVERAGE_FLASH_FILLED_TOPIC):
+            action = 'Close'
+        elif topic in (COLLATERAL_SWAP_FILLED_TOPIC, COLLATERAL_SWAP_FLASH_FILLED_TOPIC):
+            action = 'Swap collateral in'
+        else:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        sell_token = self.base.get_or_create_evm_token(
+            address=bytes_to_address(context.tx_log.data[0:32]),
+        )
+        sell_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[64:96]),
+            token=sell_token,
+        )
+        context.decoded_events.append(self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=sell_token,
+            amount=sell_amount,
+            location_label=user,
+            notes=f'{action} a {FLYING_TULIP_LABEL} leverage position selling {sell_amount} {sell_token.symbol}',  # noqa: E501
+            counterparty=CPT_FLYING_TULIP,
+            address=context.tx_log.address,
+        ))
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {self.deployment.leverage_engine: (self._decode_leverage_fill,)}
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         # The yield wrappers are included so that transactions routed through

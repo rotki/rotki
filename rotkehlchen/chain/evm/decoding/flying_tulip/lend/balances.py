@@ -97,6 +97,9 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
             list(self.addresses_with_deposits()) +
             list(self.addresses_with_activity(event_types={
                 (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
+                # leverage fills move funds inside the protocol, so users whose
+                # position was opened engine-side only have informational events
+                (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
             })),
         ))
         if len(addresses) == 0:

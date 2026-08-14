@@ -17,6 +17,10 @@ class FlyingTulipLendDeployment(NamedTuple):
     # when filling leverage orders. Events they drive are position-internal
     # rebalancing, not wallet-level lending activity, and are skipped.
     engines: frozenset[ChecksumEvmAddress]
+    # The engine whose leverage fill events are decoded into informational
+    # history entries, which also seed the balance discovery for users whose
+    # position was opened purely engine-side.
+    leverage_engine: ChecksumEvmAddress
     # Entry points for direct and session (relayed) lending actions, used to
     # trigger the post-decoding rule when a transaction is sent through them
     # and to recognize relayed transfers that carry a relayer fee. This list
@@ -37,6 +41,7 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
             string_to_evm_address('0x8263a07504d93cB95e0a74f3627bb15faaf140e2'),  # LeverageRfqEngine  # noqa: E501
             string_to_evm_address('0xEB00B335Ca52216Fb60fdFFA361397367C39Dc32'),  # RfqEngine
         )),
+        leverage_engine=string_to_evm_address('0x8263a07504d93cB95e0a74f3627bb15faaf140e2'),
         meta_actions=frozenset((
             string_to_evm_address('0x3633EB60D08756674472e2D34d6fFb5f4c1c29f2'),  # MetaActions
             string_to_evm_address('0x4f83aC5c8A79986D0916a8849730d9CEF63a3497'),  # MetaSessionActions  # noqa: E501
@@ -106,3 +111,23 @@ LENDING_LENS_ABI: Final[ABI] = [
         'type': 'function',
     },
 ]
+
+# The leverage fill events all share the layout (address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, ...)  # noqa: E501
+# OpenLeverageFilled(address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmountIn, uint256 buyAmountMin, uint256 feeAmount, bytes32 digest)  # noqa: E501
+# 0xf10165a5b14f33e30ae647cf5eb988c5ce7122a13fba12e6fb5b9586278c3d09
+OPEN_LEVERAGE_FILLED_TOPIC: Final = b'\xf1\x01e\xa5\xb1O3\xe3\n\xe6G\xcf^\xb9\x88\xc5\xceq"\xa1?\xba\x12\xe6\xfb[\x95\x86\'\x8c=\t'  # noqa: E501
+# OpenLeverageFlashFilled(address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmountMin, uint256 feeAmount, address fillTarget, bytes32 digest)  # noqa: E501
+# 0xcc26eea29ec6f7d5c4ff51f3c9b3ff6bd4b0575e7e2ab99e25b3f07613a4832f
+OPEN_LEVERAGE_FLASH_FILLED_TOPIC: Final = b'\xcc&\xee\xa2\x9e\xc6\xf7\xd5\xc4\xffQ\xf3\xc9\xb3\xffk\xd4\xb0W^~*\xb9\x9e%\xb3\xf0v\x13\xa4\x83/'  # noqa: E501
+# CloseLeverageFilled(address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmountIn, uint256 buyAmountMin, uint256 feeAmount, bytes32 digest)  # noqa: E501
+# 0x22f41c76561b0c426efdb1355e73725b3c1b63ae56d743cdafa06b3572b65971
+CLOSE_LEVERAGE_FILLED_TOPIC: Final = b'"\xf4\x1cvV\x1b\x0cBn\xfd\xb15^sr[<\x1bc\xaeV\xd7C\xcd\xaf\xa0k5r\xb6Yq'  # noqa: E501
+# CloseLeverageFlashFilled(address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmountMin, uint256 feeAmount, address fillTarget, bytes32 digest)  # noqa: E501
+# 0xa9d270f97b84471fed88da0dd9e0936a7dcb3ebfc6de1b1943d58d16ce6d6be8
+CLOSE_LEVERAGE_FLASH_FILLED_TOPIC: Final = b'\xa9\xd2p\xf9{\x84G\x1f\xed\x88\xda\r\xd9\xe0\x93j}\xcb>\xbf\xc6\xde\x1b\x19C\xd5\x8d\x16\xcemk\xe8'  # noqa: E501
+# CollateralSwapFilled(address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmountIn, uint256 buyAmountMin, uint256 feeAmount, bytes32 digest)  # noqa: E501
+# 0x71674d065a34912f8c1f16e8ef1274486beba4d0349ccf209b5989ff3c3892ec
+COLLATERAL_SWAP_FILLED_TOPIC: Final = b'qgM\x06Z4\x91/\x8c\x1f\x16\xe8\xef\x12tHk\xeb\xa4\xd04\x9c\xcf \x9bY\x89\xff<8\x92\xec'  # noqa: E501
+# CollateralSwapFlashFilled(address indexed filler, address indexed user, address indexed receiver, address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmountMin, uint256 feeAmount, address fillTarget, bytes32 digest)  # noqa: E501
+# 0xb4a8c723294d64215bd89bb6f8d10809a1af3373f7fea1b4b65d9455b1ab6876
+COLLATERAL_SWAP_FLASH_FILLED_TOPIC: Final = b'\xb4\xa8\xc7#)Md![\xd8\x9b\xb6\xf8\xd1\x08\t\xa1\xaf3s\xf7\xfe\xa1\xb4\xb6]\x94U\xb1\xabhv'  # noqa: E501

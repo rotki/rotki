@@ -23,6 +23,8 @@ from .constants import (
     CLAIMED_TOPIC,
     FLYING_TULIP_FTUSD_DEPLOYMENTS,
     MINTED_TOPIC,
+    OUTFLOW_EXECUTED_TOPIC,
+    OUTFLOW_QUEUED_TOPIC,
     REDEEMED_TOPIC,
     VAULT_RELAYER_FEE_PAID_TOPIC,
 )
@@ -123,6 +125,20 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             if out_event is not None and in_event is not None:
                 break
 
+        if in_event is None and out_event is not None and (queued_amount := self._find_queued_outflow(  # noqa: E501
+            context=context,
+            recipient=to_address,
+            token=in_asset,
+        )) is not None:
+            # A rate-limited payout: the circuit breaker holds the output and
+            # pays it out in a later transaction, so only the spend leg exists.
+            out_event.event_type = HistoryEventType.DEPOSIT
+            out_event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+            out_event.notes = f'Swap {out_amount} {out_asset.symbol} in {FLYING_TULIP_LABEL} for {queued_amount} {in_asset.symbol} queued by the circuit breaker'  # noqa: E501
+            out_event.counterparty = CPT_FLYING_TULIP
+            out_event.address = context.tx_log.address
+            return DEFAULT_EVM_DECODING_OUTPUT
+
         if out_event is None or in_event is None:
             # Only decode complete swaps: with a single leg (the other party is
             # untracked) the wallet movement is left as a plain transfer.
@@ -149,6 +165,69 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             events_list=context.decoded_events,
         )
         return EvmDecodingOutput(process_swaps=True)
+
+    def _find_queued_outflow(
+            self,
+            context: DecoderContext,
+            recipient: ChecksumEvmAddress,
+            token: EvmToken,
+    ) -> FVal | None:
+        """Return the amount of a rate-limited payout the circuit breaker queued
+        for the recipient in this transaction, if any. The queued funds are paid
+        out from the circuit breaker in a later transaction.
+        """
+        for tx_log in context.all_logs:
+            if (
+                    tx_log.address == self.deployment.circuit_breaker and
+                    tx_log.topics[0] == OUTFLOW_QUEUED_TOPIC and
+                    bytes_to_address(tx_log.topics[2]) == token.evm_address and
+                    bytes_to_address(tx_log.topics[3]) == recipient
+            ):
+                return token_normalized_value(
+                    token_amount=int.from_bytes(tx_log.data[0:32]),
+                    token=token,
+                )
+
+        return None
+
+    def _decode_circuit_breaker(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode the delayed payout of a rate-limited mint/redeem/unstake."""
+        if context.tx_log.topics[0] != OUTFLOW_EXECUTED_TOPIC:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        token = self.base.get_or_create_evm_token(
+            address=bytes_to_address(context.tx_log.topics[3]),
+        )
+        amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token=token,
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == recipient and
+                    event.asset == token and
+                    event.amount == amount and
+                    event.address == self.deployment.circuit_breaker
+            ):
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+                event.notes = f'Receive {amount} {token.symbol} released from the {FLYING_TULIP_LABEL} circuit breaker queue'  # noqa: E501
+                event.counterparty = CPT_FLYING_TULIP
+                break
+        else:
+            log.warning(
+                'Failed to find the released payout of a %s circuit breaker '
+                'queue in transaction %s',
+                FLYING_TULIP_LABEL,
+                context.transaction,
+            )
+
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_staking_vault(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == VAULT_RELAYER_FEE_PAID_TOPIC:
@@ -351,7 +430,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             )),
         )
         out_event = in_event = None
-        for event in context.decoded_events:
+        for event in context.decoded_events:  # find both legs before mutating anything
             if (
                     out_event is None and
                     event.event_type == HistoryEventType.SPEND and
@@ -361,9 +440,6 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.amount == shares_amount and
                     event.address == ZERO_ADDRESS  # the share burn
             ):
-                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Return {shares_amount} sftUSD to the {FLYING_TULIP_LABEL} sftUSD vault'  # noqa: E501
-                event.counterparty = CPT_FLYING_TULIP
                 out_event = event
             elif (
                     in_event is None and
@@ -377,6 +453,33 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                 in_event = event
             if out_event is not None and in_event is not None:
                 break
+
+        queued_amount = None
+        if in_event is None:
+            queued_amount = self._find_queued_outflow(
+                context=context,
+                recipient=receiver,
+                token=self.ftusd,
+            )
+            if queued_amount is None:
+                # Do not half-decode: without a payout (and no queue marker) the
+                # share burn is left as a plain transfer too.
+                log.warning(
+                    'Failed to find the payout of a %s sftUSD withdrawal in transaction %s',
+                    FLYING_TULIP_LABEL,
+                    context.transaction,
+                )
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+        if out_event is not None:
+            out_event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+            notes = f'Return {shares_amount} sftUSD to the {FLYING_TULIP_LABEL} sftUSD vault'
+            if queued_amount is not None:
+                # A rate-limited payout: the circuit breaker holds the ftUSD and
+                # pays it out in a later transaction.
+                notes += f' with the payout of {queued_amount} ftUSD queued by the circuit breaker'
+            out_event.notes = notes
+            out_event.counterparty = CPT_FLYING_TULIP
 
         fee_event = None
         if in_event is not None:
@@ -459,4 +562,5 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
         return {
             self.deployment.mint_and_redeem: (self._decode_mint_redeem,),
             self.deployment.staking_vault: (self._decode_staking_vault,),
+            self.deployment.circuit_breaker: (self._decode_circuit_breaker,),
         }
