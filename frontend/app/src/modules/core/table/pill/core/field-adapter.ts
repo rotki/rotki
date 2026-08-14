@@ -39,6 +39,7 @@ export interface ParamFieldSpec {
   readonly fromLegacy?: FieldDef['fromLegacy'];
   readonly resolveLabel?: (value: string) => string;
   readonly resolveCaption?: (value: string) => string | undefined;
+  readonly captionScope?: FieldDef['captionScope'];
   readonly resolveKeywords?: FieldDef['resolveKeywords'];
   readonly suggest?: () => string[];
   readonly searchAsset?: (value: string) => Promise<AssetsWithId>;
@@ -79,6 +80,7 @@ export interface MatchFieldSpec {
   readonly resolveIcon?: FieldDef['resolveIcon'];
   readonly resolveLabel?: (value: string) => string;
   readonly resolveCaption?: (value: string) => string | undefined;
+  readonly captionScope?: FieldDef['captionScope'];
   readonly resolveKeywords?: FieldDef['resolveKeywords'];
   readonly resolveLoading?: FieldDef['resolveLoading'];
 }
@@ -191,6 +193,7 @@ export function toParamFieldDef(spec: ParamFieldSpec): FieldDef {
   return {
     allowExclusion: false,
     binding: { kind: 'param', paramKey: spec.paramKey, to: spec.to },
+    captionScope: spec.captionScope,
     display: spec.display,
     excludes: spec.excludes,
     freeText: spec.freeText,
@@ -225,6 +228,7 @@ export function toMatchFieldDef(spec: MatchFieldSpec): FieldDef {
     admits: spec.admits,
     allowExclusion,
     binding: { kind: 'filter' },
+    captionScope: spec.captionScope,
     deserializer: spec.deserializer,
     display: spec.display,
     excludes: spec.excludes,
