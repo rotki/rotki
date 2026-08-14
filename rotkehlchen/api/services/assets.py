@@ -102,6 +102,7 @@ CURRENT_TO_HISTORICAL_PRICE_ORACLES: Final = {
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from rotkehlchen.assets.nft_handling import NftHandling
     from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.filtering import (
@@ -210,13 +211,13 @@ class AssetsService:
             self,
             filter_query: LevenshteinFilterQuery,
             limit: int | None,
-            search_nfts: bool,
+            nft_handling: NftHandling,
     ) -> dict[str, Any]:
         result = search_assets_levenshtein(
             db=self.rotkehlchen.data.db,
             filter_query=filter_query,
             limit=limit,
-            search_nfts=search_nfts,
+            nft_handling=nft_handling,
         )
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 

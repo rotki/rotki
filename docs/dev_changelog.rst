@@ -7,6 +7,14 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Asset Search NFT Handling
+-------------------------
+
+* **Changed Endpoint**: ``POST /api/(version)/assets/search/levenshtein``
+
+  - The boolean ``search_nfts`` is replaced by ``nft_handling``, which takes ``'exclude'`` (the default, matching ``search_nfts: false``), ``'include'`` (matching ``search_nfts: true``) and the new ``'show_only'``. Callers sending ``search_nfts`` must migrate; the field is no longer accepted.
+  - ``'show_only'`` searches nfts alone. It cannot be reproduced by filtering an ``'include'`` response: assets and nfts are searched by separate queries whose results are merged and truncated to ``limit`` together, so the nfts can be cut off entirely when enough assets sort ahead of them.
+
 Session Cookie Authentication (Docker)
 --------------------------------------
 

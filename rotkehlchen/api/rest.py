@@ -244,6 +244,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
     from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.assets.nft_handling import NftHandling
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
     from rotkehlchen.chain.balances import BlockchainBalancesUpdate
@@ -1586,12 +1587,12 @@ class RestAPI:
             self,
             filter_query: LevenshteinFilterQuery,
             limit: int | None,
-            search_nfts: bool,
+            nft_handling: NftHandling,
     ) -> Response:
         response_data = self.assets_service.search_assets_levenshtein(
             filter_query=filter_query,
             limit=limit,
-            search_nfts=search_nfts,
+            nft_handling=nft_handling,
         )
         return make_response_from_dict(response_data)
 

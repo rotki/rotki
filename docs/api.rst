@@ -4345,6 +4345,7 @@ Search for assets(Levenshtein)
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
    :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   :reqjson string[optional] nft_handling: A flag to specify how to handle nfts. Possible values are `'exclude'`, `'include'` and `'show_only'`. You can write 'exclude' to leave nfts out of the result, which is the default. You can write 'include' to search nfts alongside the other assets. And you can write 'show_only' to search nfts alone. Note that 'show_only' is not the same as filtering the result of an 'include' search: nfts and assets are searched by separate queries whose results are merged and truncated to ``limit`` together, so the nfts can be cut off entirely when enough assets sort ahead of them.
 
    .. note::
       Either value or address need to be provided when calling this endpoint.

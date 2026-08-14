@@ -285,6 +285,7 @@ if TYPE_CHECKING:
         EvmToken,
         SolanaToken,
     )
+    from rotkehlchen.assets.nft_handling import NftHandling
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
@@ -1117,12 +1118,12 @@ class AssetsSearchLevenshteinResource(BaseMethodView):
             self,
             filter_query: LevenshteinFilterQuery,
             limit: int | None,
-            search_nfts: bool,
+            nft_handling: NftHandling,
     ) -> Response:
         return self.rest_api.search_assets_levenshtein(
             filter_query=filter_query,
             limit=limit,
-            search_nfts=search_nfts,
+            nft_handling=nft_handling,
         )
 
 

@@ -4,6 +4,7 @@ import subprocess  # noqa: S404  # is only used to execute rotki code here
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.nft_handling import NftHandling
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
@@ -27,7 +28,7 @@ def test_search_assets_levenshtein_multiple(globaldb, database):  # pylint: disa
             db=database,
             filter_query=filter_query,
             limit=None,
-            search_nfts=False,
+            nft_handling=NftHandling.EXCLUDE,
         )
 
     tasks = [

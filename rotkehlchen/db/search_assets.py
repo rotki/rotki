@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from polyleven import levenshtein
 
+from rotkehlchen.assets.nft_handling import NftHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.resolver import ChainID
@@ -113,17 +114,18 @@ def search_assets_levenshtein(
         db: DBHandler,
         filter_query: LevenshteinFilterQuery,
         limit: int | None,
-        search_nfts: bool,
+        nft_handling: NftHandling,
 ) -> list[dict[str, Any]]:
     """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
     search_result = []
     with db.conn.read_ctx() as cursor:
-        search_result = _search_only_assets_levenstein(
-            userdb_cursor=cursor,
-            userdb=db,
-            filter_query=filter_query,
-        )
-        if search_nfts is True:
+        if nft_handling != NftHandling.SHOW_ONLY:
+            search_result = _search_only_assets_levenstein(
+                userdb_cursor=cursor,
+                userdb=db,
+                filter_query=filter_query,
+            )
+        if nft_handling != NftHandling.EXCLUDE:
             search_result += _search_only_nfts_levenstein(cursor=cursor, filter_query=filter_query)
 
     fiat_asset_type = AssetType.FIAT.serialize()
