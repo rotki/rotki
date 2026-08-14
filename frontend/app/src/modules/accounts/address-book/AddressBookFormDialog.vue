@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AddressBookPayload } from '@/modules/accounts/address-book/eth-names';
-import type LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
 import { useTemplateRef } from 'vue';
 import { type MessageKey, msg } from '@/message-key';
 import AddressBookForm from '@/modules/accounts/address-book/AddressBookForm.vue';
@@ -36,7 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
 const modelValue = ref<AddressBookPayload>();
 const loading = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});
-const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
+const form = useTemplateRef<InstanceType<typeof AddressBookForm>>('form');
 const stateUpdated = ref(false);
 
 const emptyForm: () => AddressBookPayload = () => ({

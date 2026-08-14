@@ -2,9 +2,8 @@
 import type { ZodType } from 'zod';
 import type { BalanceSnapshotPayload } from '@/modules/dashboard/snapshots';
 import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
-import { isEqual } from 'es-toolkit';
 import { isNft } from '@/modules/assets/nft-utils';
-import { useForm } from '@/modules/core/form/use-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import EditBalancesSnapshotAssetPriceForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import {
@@ -55,12 +54,10 @@ const schema = computed<ZodType>(() => balanceSnapshotSchema({
   },
 }));
 
-/** The dialog owns the persist and reads the entry off the model, so submitting here is a no-op. */
-const form = useForm<BalanceSnapshotFormState, BalanceSnapshotFormState>({
-  initial: (): BalanceSnapshotFormState => ({ ...get(model) }),
+const form = useModelForm<BalanceSnapshotFormState>({
+  model,
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
-  transform: (state): BalanceSnapshotFormState => ({ ...state }),
+  stateUpdated,
   // Only the fields this form gates count as an edit. The asset, amount and value are derived and
   // rewritten by the price fetch on mount, which must not arm the dialog's unsaved-changes prompt.
   transientKeys: ['amount', 'assetIdentifier', 'timestamp', 'usdValue'],
@@ -86,27 +83,11 @@ watch(assetType, (assetType) => {
     form.state.amount = '1';
 });
 
-// The dialog reads the entry it saves straight off the model, so every edit is written back to it.
-watch(() => form.state, (state) => {
-  set(model, { ...state });
-}, { deep: true });
-
-// And an edit made outside the form (a reset, a different row) is pulled back in.
-watchImmediate(model, (value) => {
-  if (!isEqual(value, form.state))
-    Object.assign(form.state, value);
-
+// An NFT seeded from outside switches the asset input over; the model round trip itself is handled
+// by useModelForm.
+watchImmediate(model, () => {
   checkAssetType();
 }, { deep: true });
-
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
-
-// The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
-onUnmounted(() => {
-  set(stateUpdated, false);
-});
 
 defineExpose({
   submitPrice,

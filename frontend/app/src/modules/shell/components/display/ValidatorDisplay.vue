@@ -23,28 +23,25 @@ const { scrambleAddress, scrambleIdentifier, shouldShowAmount } = useScramble();
 </script>
 
 <template>
+  <!--
+    Stacked, this is a menu row: the same two-line treatment every other list row uses, so the key
+    reads as the title and the index as its caption. Inline, it is one line inside a chip.
+  -->
   <div
-    :class="{
-      flex: horizontal,
-      blur: !shouldShowAmount,
-    }"
+    class="text-truncate"
+    :class="[
+      horizontal ? 'flex items-baseline gap-1' : 'flex flex-col leading-[1.25em]',
+      { blur: !shouldShowAmount },
+    ]"
   >
-    <div class="font-medium text-truncate text-rui-text">
+    <div class="font-medium text-truncate text-sm text-rui-text">
       {{ truncateAddress(scrambleAddress(validator.publicKey), length) }}
     </div>
-    <div>
-      <span
-        v-if="horizontal"
-        class="px-1"
-      >
-        -
-      </span>
-      <span
-        v-else
-        class="text-caption"
-      >
-        {{ t('common.validator_index') }}:
-      </span>
+    <!-- One size and one colour for the whole line: the label used to be a caption while the
+         index beside it inherited the larger body size. -->
+    <div class="text-rui-text-secondary text-caption text-truncate">
+      <span v-if="horizontal">-</span>
+      <span v-else>{{ t('common.validator_index') }}:</span>
       {{ scrambleIdentifier(validator.index) }}
     </div>
   </div>

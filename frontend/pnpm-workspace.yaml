@@ -47,8 +47,6 @@ catalog:
   '@rotki/eslint-plugin': 1.5.1
   '@rotki/ui-library': 2.23.4
   '@tsconfig/node24': 24.0.4
-  '@types/body-parser': 1.19.6
-  '@types/express': 5.0.6
   '@types/node': 24.13.3
   '@types/qrcode': 1.5.6
   '@types/semver': 7.8.0
@@ -68,7 +66,6 @@ catalog:
   '@walletconnect/universal-provider': 2.23.10
   autoprefixer: 10.5.4
   bignumber.js: 11.1.5
-  body-parser: 2.3.0
   bufferutil: 4.1.0
   c8: 12.0.0
   cac: 7.0.0
@@ -84,12 +81,10 @@ catalog:
   electron-window-state: 5.0.3
   es-toolkit: 1.50.0
   eslint: 10.8.0
-  express: 5.2.1
   fake-indexeddb: 6.2.5
   flag-icons: 7.5.0
   flush-promises: 1.0.2
   happy-dom: 20.11.1
-  http-proxy-middleware: 4.2.0
   httpxy: 0.5.5
   husky: 9.1.7
   imask: 7.6.1

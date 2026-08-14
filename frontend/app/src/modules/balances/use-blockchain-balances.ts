@@ -16,7 +16,7 @@ import { useActivityBatch } from '@/modules/task-center/use-activity-batch';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 
-export interface RefreshOptions {
+interface RefreshOptions {
   /**
    * Run token detection before the network query. Per §6 this is a flow parameter, not a property
    * of the chain: the same chain detects on a login refresh and does not on a periodic one.

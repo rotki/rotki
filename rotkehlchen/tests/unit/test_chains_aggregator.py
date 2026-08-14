@@ -12,17 +12,13 @@ from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.chain.evm.constants import LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
-    NodeName,
     SerializableChainIndexerOrder,
-    WeightedNode,
     string_to_evm_address,
 )
-from rotkehlchen.constants import ONE
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.polygon_pos import ALCHEMY_RPC_ENDPOINT
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     SPAM_PROTOCOL,
@@ -37,18 +33,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
-
-
-ALCHEMY_POLYGON_NODE = WeightedNode(
-    node_info=NodeName(
-        name='alchemy',
-        endpoint=ALCHEMY_RPC_ENDPOINT,
-        owned=False,
-        blockchain=SupportedBlockchain.POLYGON_POS,
-    ),
-    active=True,
-    weight=ONE,
-)
 
 
 @pytest.mark.parametrize('ethereum_modules', [[]])
@@ -227,8 +211,8 @@ def test_detect_evm_accounts(blockchain: ChainsAggregator) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2023-06-19 05:16:10 GMT')
-@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(ALCHEMY_POLYGON_NODE,)])
 @pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])  # to connect to nodes
+@pytest.mark.skip(reason='requires a credentialed Polygon RPC cassette')
 def test_detect_evm_accounts_spam_tx(polygon_pos_manager: PolygonPOSManager) -> None:
     """
     Test that an account with only erc20 transfers of spam tokens gets marked as spam

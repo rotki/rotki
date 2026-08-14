@@ -65,7 +65,7 @@ export function dropCompletions(
 }
 
 /** Does `producer` satisfy any of the consumer's declared edges? */
-export function edgesMatch(edges: readonly StaleAfterEdge[], producer: ActivityId): boolean {
+function edgesMatch(edges: readonly StaleAfterEdge[], producer: ActivityId): boolean {
   return edges.some(edge => activityIdHasPrefix(producer, edge.kind, ...(edge.parts ?? [])));
 }
 

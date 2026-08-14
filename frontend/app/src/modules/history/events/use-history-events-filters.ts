@@ -1,4 +1,3 @@
-import type { Account, HistoryEventEntryType } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
@@ -19,10 +18,9 @@ import {
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus, type HighlightType } from '@/modules/history/events/action-types';
 import { buildHistoryEventSources } from '@/modules/history/events/history-event-query';
+import { type HistoryEventsRestrictions, toRestrictionGetters } from '@/modules/history/events/history-events-restrictions';
 import { useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
-
-type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
 /**
  * The payload without its sorting, so a re-sort is not read as a change of what is being asked for.
@@ -35,7 +33,6 @@ function withoutSorting(
 }
 
 interface HistoryEventsFiltersOptions {
-  entryTypes: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
   /**
    * The pill-bar fields, and the filter bag they are bound to. Both are built by the view: the
    * fields read the bag to scope their option lists, and the table reads the url shape of the bag
@@ -44,15 +41,9 @@ interface HistoryEventsFiltersOptions {
    */
   fields: MaybeRefOrGetter<FieldDef[]>;
   filters: Ref<Filters>;
-  eventSubTypes: MaybeRefOrGetter<string[]>;
-  eventTypes: MaybeRefOrGetter<string[]>;
-  externalAccountFilter: MaybeRefOrGetter<Account[]>;
-  location: MaybeRefOrGetter<string | undefined>;
   mainPage: MaybeRefOrGetter<boolean>;
-  period: MaybeRefOrGetter<Period | undefined>;
-  protocols: MaybeRefOrGetter<string[]>;
-  useExternalAccountFilter: MaybeRefOrGetter<boolean | undefined>;
-  validators: MaybeRefOrGetter<number[] | undefined>;
+  /** What the view fixes; the same bag the pill bar reads. */
+  restrictions: MaybeRefOrGetter<HistoryEventsRestrictions>;
 }
 
 export function getDefaultToggles(): HistoryEventsToggles {
@@ -98,20 +89,16 @@ export function useHistoryEventsFilters(
   // restored from the route, so it cannot be widened to MaybeRefOrGetter.
   overlayMode: WritableRef<OverlayMode> = ref<OverlayMode>(OverlayMode.NONE),
 ): UseHistoryEventsFiltersReturn {
+  const { fields, filters: modelFilters, mainPage } = options;
   const {
     entryTypes,
-    eventSubTypes,
     eventTypes,
-    externalAccountFilter,
-    fields,
-    filters: modelFilters,
+    externalAccounts,
     location,
-    mainPage,
     period,
     protocols,
-    useExternalAccountFilter,
     validators,
-  } = options;
+  } = toRestrictionGetters(options.restrictions);
 
   const locationLabels = ref<string[]>([]);
 
@@ -159,11 +146,11 @@ export function useHistoryEventsFilters(
     return undefined;
   });
 
+  // A view that selects accounts for the user owns this axis outright, so its (possibly empty) set
+  // replaces the bar's, rather than being merged with it.
   const usedLocationLabels = computed<string[]>(() => {
-    if (toValue(useExternalAccountFilter))
-      return toValue(externalAccountFilter).map(account => account.address);
-
-    return get(locationLabels);
+    const pinned = externalAccounts();
+    return pinned ? pinned.map(account => account.address) : get(locationLabels);
   });
 
   // Owned here rather than by the caller: it is written back from the route like locationLabels,
@@ -174,7 +161,6 @@ export function useHistoryEventsFilters(
     action,
     duplicateHandlingStatusFromQuery,
     entryTypes,
-    eventSubTypes,
     eventTypes,
     groupIdentifiersFromQuery,
     location,
@@ -250,7 +236,7 @@ export function useHistoryEventsFilters(
   const { highlightedGroupIdentifier, highlightedIdentifiers, highlightTypes } = useHistoryEventHighlights();
 
   const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
-    const entryTypesValue = toValue(entryTypes);
+    const entryTypesValue = entryTypes();
     return {
       evmEvents: entryTypesValue ? entryTypesValue.some(type => isEvmEventType(type)) : true,
       onlineEvents: entryTypesValue ? entryTypesValue.some(type => isOnlineHistoryEventType(type)) : true,

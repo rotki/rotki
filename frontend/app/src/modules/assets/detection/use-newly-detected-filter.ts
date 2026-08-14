@@ -9,7 +9,7 @@ export const NewlyDetectedFilterKeys = {
   TOKEN_KIND: 'tokenKind',
 } as const;
 
-export type NewlyDetectedFilterKey = typeof NewlyDetectedFilterKeys[keyof typeof NewlyDetectedFilterKeys];
+type NewlyDetectedFilterKey = typeof NewlyDetectedFilterKeys[keyof typeof NewlyDetectedFilterKeys];
 
 export type Filters = MatchedKeyword<NewlyDetectedFilterKey>;
 

@@ -120,7 +120,8 @@ const showWalletImport = computed<boolean>(() => {
   return isEvm(model.chain) || model.chain === 'all';
 });
 
-function validate(): Promise<boolean> {
+/** The input validates synchronously now; the account form still awaits every child alike. */
+async function validate(): Promise<boolean> {
   assert(isDefined(address));
   return get(address).validate();
 }

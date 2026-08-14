@@ -13,7 +13,7 @@ import { type ActivityId, type ActivityKind, ActivityPart, makeActivityId } from
  * a type (both `string`), passing them in the wrong order is well-typed. Branded components would
  * close that; until then it is a review concern, not a compiler one.
  */
-export type Prefixes<T extends readonly unknown[]> =
+type Prefixes<T extends readonly unknown[]> =
   T extends readonly [infer Head, ...infer Rest]
     ? readonly [] | readonly [Head, ...Prefixes<Rest>]
     : readonly [];

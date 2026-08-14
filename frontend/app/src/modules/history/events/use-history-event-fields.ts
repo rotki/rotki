@@ -1,4 +1,3 @@
-import type { HistoryEventEntryType } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
@@ -8,6 +7,7 @@ import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { type ActionFieldOption, toHistoryAccountField, toHistoryActionField, toHistoryEventFields, toHistoryIgnoredField, toHistoryStateField } from '@/modules/history/events/history-event-fields';
+import { type HistoryEventsRestrictions, toRestrictionGetters } from '@/modules/history/events/history-events-restrictions';
 import { subtypesForTypes } from '@/modules/history/events/mapping/event-type-subtypes';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
@@ -16,26 +16,18 @@ import { HistoryEventState } from '@/modules/history/events/schemas';
 import { useAccountFilterOptions } from '@/modules/history/use-account-filter-options';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
-/**
- * What the view has already decided for the user. It is the same object the table's own filters
- * take, so a page states its restrictions once and both read them: a page pinned to one protocol,
- * location, period, validator set or event type has nothing left to offer a pill for.
- */
 export interface HistoryEventFieldsOptions {
-  entryTypes: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
+  /**
+   * What the view has already decided for the user. The table's own filters take the same bag, so a
+   * page states its restrictions once and both read them: a page pinned to one protocol, location,
+   * period, validator set or event type has nothing left to offer a pill for.
+   */
+  restrictions: MaybeRefOrGetter<HistoryEventsRestrictions>;
   /**
    * The table's filter bag, writable: what is picked scopes the asset search and the offered
    * subtypes, and a narrowing subtype set prunes what it no longer admits.
    */
   modelFilters: Ref<Filters>;
-  eventSubTypes: MaybeRefOrGetter<string[]>;
-  eventTypes: MaybeRefOrGetter<string[]>;
-  location: MaybeRefOrGetter<string | undefined>;
-  period: MaybeRefOrGetter<unknown>;
-  protocols: MaybeRefOrGetter<string[]>;
-  /** True when the view is pinned to an external account set, which replaces the account pill. */
-  useExternalAccountFilter: MaybeRefOrGetter<boolean | undefined>;
-  validators: MaybeRefOrGetter<number[] | undefined>;
 }
 
 /**
@@ -44,16 +36,24 @@ export interface HistoryEventFieldsOptions {
  * The account pill is omitted when the view is already pinned to an external account set.
  */
 export function useHistoryEventFields(options: HistoryEventFieldsOptions): ComputedRef<FieldDef[]> {
-  const { entryTypes, modelFilters: filters, useExternalAccountFilter } = options;
+  const { modelFilters: filters } = options;
+  const {
+    entryTypes,
+    eventTypes,
+    externalAccounts,
+    location: pinnedLocation,
+    period,
+    protocols,
+    validators,
+  } = toRestrictionGetters(options.restrictions);
 
   // What the view fixes, and so the bar does not offer.
   const disabled = computed(() => ({
-    eventSubtypes: (toValue(options.eventSubTypes) || []).length > 0,
-    eventTypes: (toValue(options.eventTypes) || []).length > 0,
-    locations: !!toValue(options.location),
-    period: !!toValue(options.period),
-    protocols: (toValue(options.protocols) || []).length > 0,
-    validators: !!toValue(options.validators),
+    eventTypes: eventTypes().length > 0,
+    locations: !!pinnedLocation(),
+    period: !!period(),
+    protocols: protocols().length > 0,
+    validators: !!validators(),
   }));
 
   const { t } = useI18n({ useScope: 'global' });
@@ -146,7 +146,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
     }, {
       counterparties: (): string[] => get(counterparties),
       disabled: get(disabled),
-      entryTypes: toValue(entryTypes),
+      entryTypes: entryTypes(),
       eventSubtypes: (): string[] => subtypesFor(get(selectedEventTypes)),
       eventTypes: (): string[] => get(historyEventTypes),
       locations: (): string[] => get(associatedLocations),
@@ -154,6 +154,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
       subtypesFor,
     });
     const withParams = [...base, actionField, stateField, ignoredField];
-    return toValue(useExternalAccountFilter) ? withParams : [...withParams, accountField];
+    // The view selects accounts itself, so the bar has no account pill to offer.
+    return externalAccounts() ? withParams : [...withParams, accountField];
   });
 }

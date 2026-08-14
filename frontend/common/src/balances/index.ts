@@ -1,9 +1,15 @@
 import z from 'zod';
-import { bigNumberify, NumericString } from '../numbers';
+import { NumericString } from '../numbers';
 
+/**
+ * Mirrors the backend's `Balance.serialize()`, which always emits both fields. `value` used to
+ * default to zero when absent, which turned a schema that did not match its endpoint into a silent
+ * zero instead of a parse error, and hid the same bug twice (#11766, #12822). A missing `value` now
+ * fails loudly: an endpoint that sends something else needs its own schema, not this one.
+ */
 export const Balance = z.object({
   amount: NumericString,
-  value: NumericString.optional().default(bigNumberify(0)),
+  value: NumericString,
 });
 
 export type Balance = z.infer<typeof Balance>;

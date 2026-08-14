@@ -32,7 +32,7 @@ function closeDialog(): void {
 async function save() {
   set(submitting, true);
   const newTag = get(modelValue);
-  if (!await get(form)?.validate() || !newTag) {
+  if (!get(form)?.validate() || !newTag) {
     set(submitting, false);
     return;
   }
@@ -65,7 +65,6 @@ async function save() {
       ref="form"
       v-model="modelValue"
       v-model:state-updated="stateUpdated"
-      :edit-mode="editMode"
     />
   </BigDialog>
 </template>

@@ -16,7 +16,7 @@ import {
 } from '../types';
 import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunnable } from './errors';
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
-import { endedIncomplete, liveChildrenOf, runActivity, terminalStatus } from './lifecycle';
+import { endedIncomplete, liveChildrenOf, runActivity, terminalReason, terminalStatus } from './lifecycle';
 import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
 import { allRulesPass, DEFAULT_RULES } from './rules';
 import { createScheduler } from './scheduler';
@@ -27,6 +27,11 @@ interface ActivityRecord {
   status: ActivityStatus;
   steps?: ActivitySteps;
   startedAt?: number;
+  /**
+   * Why this activity failed or was skipped, in the producer's words. Cleared on re-run — see
+   * {@link terminalReason} for which outcomes get one.
+   */
+  reason?: string;
   /** Set when the user cancelled a running activity; forces the terminal status to CANCELLED. */
   cancelRequested: boolean;
   /** Guards the spec's `cleanup` to fire once per run-cycle; re-armed on re-run. */
@@ -73,11 +78,12 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
    * and fired `markStaleAfter` for work that had barely started, so `everCompleted` read true and
    * downstream consumers were invalidated off a run that was not theirs.
    */
-  function settleTerminal(record: ActivityRecord, status: ActivityStatus): void {
+  function settleTerminal(record: ActivityRecord, status: ActivityStatus, reason?: string): void {
     if (records.get(record.spec.id) !== record)
       return;
 
     record.status = status;
+    record.reason = reason;
     // A container groups work and produces nothing of its own, so it never claims freshness for
     // its kind — see {@link ActivitySpec.container}.
     if (!record.spec.container)
@@ -211,7 +217,8 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     const report: ReportProgress = steps => reportProgress(record.spec.id, steps);
     const outcome = await runActivity(record.spec, report);
 
-    settleTerminal(record, terminalStatus(record.cancelRequested, outcome));
+    const status = terminalStatus(record.cancelRequested, outcome);
+    settleTerminal(record, status, terminalReason(status, outcome));
   }
 
   function schedule(record: ActivityRecord): void {
@@ -319,6 +326,9 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     record.status = Status.PENDING;
     record.steps = undefined;
     record.startedAt = undefined;
+    // 🔴 The record is reused, so a stale reason would outlive the run it described and caption a
+    // re-run that succeeded with the previous attempt's failure.
+    record.reason = undefined;
     record.cancelRequested = false;
     record.cleanedUp = false;
     schedule(record);

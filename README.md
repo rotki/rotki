@@ -20,7 +20,6 @@
 [![GitHub forks](https://img.shields.io/github/forks/rotki/rotki)](https://github.com/rotki/rotki/forks)
 [![GitHub stars](https://img.shields.io/github/stars/rotki/rotki)](https://github.com/rotki/rotki/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki)](https://github.com/rotki/rotki/commits/master)
-[![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
 [![Github downloads](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
 [![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen)](https://rotki.com/jobs/)
 [![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://x.com/rotkiapp)
@@ -129,9 +128,6 @@ We welcome contributions from the community! 🎉
 - Read the [Contribution Guide](CONTRIBUTING.md)
 - Explore the [Developer Guide](https://docs.rotki.com/contribution-guides/)
 - Check out [Open Issues](https://github.com/rotki/rotki/issues)
-
-📌 **Claim Your Contributor Badge!**  
-Contributors receive a **GitPOAP Badge** for each year they contribute! 🎖 [Claim yours here](https://www.gitpoap.io/rp/62).
 
 ---
 

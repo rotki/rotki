@@ -24,7 +24,7 @@ export const CommaSeparatedStringSchema = z.string()
  * How many values a filter key carries: exactly one, or a list. A url can repeat a key, so `MANY`
  * accepts both a single value and a list and always reads as a list.
  */
-export const FilterKeyArities = {
+const FilterKeyArities = {
   MANY: 'many',
   ONE: 'one',
 } as const;

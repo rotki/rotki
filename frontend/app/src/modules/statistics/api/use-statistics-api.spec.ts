@@ -90,6 +90,10 @@ describe('composables/api/statistics/statistics-api', () => {
         asset: 'ETH',
       });
       expect(result).toHaveLength(1);
+      // The endpoint sends usd_value, not value. Asserting the parsed number is what discriminates:
+      // the schema used to drop it and default to zero, and a length check could not see that (#12822).
+      expect(result[0].usdValue.toString()).toBe('1050');
+      expect(result[0].amount.toString()).toBe('10.5');
     });
 
     it('should send POST request with collection_id when provided', async () => {

@@ -65,10 +65,12 @@ function notifyTabChange(payload: ManualBalance | RawManualBalance): void {
  * Field-level errors go back to the form so it can mark the offending inputs; a plain string has no
  * field to attach to and is surfaced as a message instead.
  */
-async function reportSaveFailure(message: string | ValidationErrors, formRef: ManualBalanceForm): Promise<void> {
+function reportSaveFailure(message: string | ValidationErrors, formRef: ManualBalanceForm): void {
   if (typeof message !== 'string') {
     set(errorMessages, message);
-    await formRef?.validate();
+    // The form renders the errors as they arrive; this only reveals the fields the user has not
+    // touched yet, so a rejected save marks every offending input rather than the visited ones.
+    formRef?.validate();
     return;
   }
 
@@ -85,7 +87,7 @@ async function save(): Promise<boolean> {
     return false;
 
   const formRef = get(form);
-  const valid = await formRef?.validate();
+  const valid = formRef?.validate();
   if (!valid)
     return false;
 
@@ -103,7 +105,7 @@ async function save(): Promise<boolean> {
   }
 
   if (status.message)
-    await reportSaveFailure(status.message, formRef);
+    reportSaveFailure(status.message, formRef);
 
   set(loading, false);
   return false;

@@ -2,13 +2,13 @@
 import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { BtcChains } from '@/modules/core/common/chains';
-import { Blockchain } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { isEmpty } from 'es-toolkit/compat';
-import { type DetectionResult, detectXpubType, getKeyType, getPrefix, XpubPrefix } from '@/modules/accounts/xpub';
+import { z, type ZodType } from 'zod';
+import { useXpubInput, type XpubFormState } from '@/modules/accounts/blockchain/use-xpub-input';
+import { XpubPrefix } from '@/modules/accounts/xpub';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { requiredField } from '@/modules/core/form/fields';
+import { toServerErrors } from '@/modules/core/form/server-errors';
+import { useForm } from '@/modules/core/form/use-form';
 
 interface DisambiguationOption {
   readonly value: XpubPrefix;
@@ -31,32 +31,36 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const xpubKey = ref<string>('');
-const derivationPath = ref<string>('');
-const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.ZPUB);
 const advanced = ref<boolean>(false);
-const detectedType = ref<DetectionResult>();
-const showDisambiguation = ref<boolean>(false);
 
-const v$ = useVuelidate(
-  {
-    derivationPath: {
-      basic: () => true,
-    },
-    xpub: {
-      required: helpers.withMessage(t('account_form.validation.xpub_non_empty'), required),
-    },
+/**
+ * Only the key is validated. The derivation path had a rule that always passed, whose one purpose
+ * was to give the backend's errors for that field somewhere to render; the core keys those by
+ * field rather than by rule, so it needs nothing here.
+ */
+const schema = computed<ZodType>(() => z.object({
+  xpub: requiredField(t('account_form.validation.xpub_non_empty')),
+}));
+
+const { errors: fieldErrors, setServerErrors, state, touch, validate } = useForm<XpubFormState, XpubFormState>({
+  initial: (): XpubFormState => ({ derivationPath: '', xpub: '' }),
+  schema,
+  // The assembled payload is handed to the parent as it is typed; there is nothing to submit here.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): XpubFormState => ({ ...state }),
+});
+
+const { detectedType, prefix, resolveDisambiguation, showDisambiguation } = useXpubInput(state, xpub, {
+  blockchain: () => blockchain,
+  disabled: () => disabled,
+  onAddressDetected: (address: string): void => {
+    emit('detected-address', address);
   },
-  {
-    derivationPath,
-    xpub,
-  },
-  {
-    $autoDirty: true,
-    $externalResults: errors,
-    $stopPropagation: true,
-  },
-);
+});
+
+watchImmediate(errors, (value) => {
+  setServerErrors(toServerErrors(value));
+}, { deep: true });
 
 const detectedHint = computed<string | undefined>(() => {
   const detected = get(detectedType);
@@ -90,107 +94,14 @@ const disambiguationOptions = computed<DisambiguationOption[]>(() => [
   },
 ]);
 
-function defaultPrefixFor(chain: BtcChains): XpubPrefix {
-  return chain === Blockchain.BCH ? XpubPrefix.XPUB : XpubPrefix.ZPUB;
-}
-
-function normalizeDerivationPath(path: string): string {
-  return path.replace(/'/g, '').replace(/\/$/, '');
-}
-
-function runDetection(value: string): void {
-  const result = detectXpubType(value);
-  set(detectedType, result);
-  set(showDisambiguation, false);
-
-  if (result === 'address') {
-    emit('detected-address', value.trim());
-    return;
-  }
-
-  if (result === XpubPrefix.YPUB || result === XpubPrefix.ZPUB) {
-    set(xpubKeyPrefix, result);
-    return;
-  }
-
-  if (result === 'ambiguous') {
-    set(xpubKeyPrefix, defaultPrefixFor(blockchain));
-    if (blockchain !== Blockchain.BCH)
-      set(showDisambiguation, true);
-  }
-}
-
-function resolveDisambiguation(choice: XpubPrefix): void {
-  set(xpubKeyPrefix, choice);
-  set(detectedType, choice);
-}
-
 function onPasteXpub(event: ClipboardEvent): void {
   if (disabled)
     return;
 
   const paste = trimOnPaste(event);
   if (paste)
-    set(xpubKey, paste);
+    state.xpub = paste;
 }
-
-function samePayload(a: XpubPayload | undefined, b: XpubPayload | undefined): boolean {
-  return a?.xpub === b?.xpub
-    && a?.xpubType === b?.xpubType
-    && a?.derivationPath === b?.derivationPath;
-}
-
-function validate(): Promise<boolean> {
-  return get(v$).$validate();
-}
-
-watch(errors, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
-watchImmediate(xpub, (xpubVal: XpubPayload | undefined) => {
-  const nextXpub = xpubVal?.xpub ?? '';
-  const nextPath = xpubVal?.derivationPath ?? '';
-  set(xpubKey, nextXpub);
-
-  if (normalizeDerivationPath(get(derivationPath)) !== nextPath)
-    set(derivationPath, nextPath);
-
-  if (!xpubVal?.xpubType)
-    return;
-
-  const prefix = getPrefix(xpubVal.xpubType);
-  set(xpubKeyPrefix, prefix);
-  if (disabled && nextXpub)
-    set(detectedType, prefix);
-});
-
-watch(() => blockchain, (chain) => {
-  set(xpubKeyPrefix, defaultPrefixFor(chain));
-});
-
-watch(xpubKey, (newKey) => {
-  if (!newKey) {
-    set(detectedType, undefined);
-    set(showDisambiguation, false);
-    return;
-  }
-  runDetection(newKey);
-});
-
-watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, key, path]) => {
-  const next: XpubPayload | undefined = key
-    ? {
-        derivationPath: normalizeDerivationPath(path),
-        xpub: key.trim(),
-        xpubType: getKeyType(prefix),
-      }
-    : undefined;
-
-  if (!samePayload(get(xpub), next))
-    set(xpub, next);
-});
 
 defineExpose({
   validate,
@@ -201,16 +112,17 @@ defineExpose({
   <div class="mt-2 flex flex-col gap-4">
     <div class="flex gap-4">
       <RuiTextField
-        v-model="xpubKey"
+        v-model="state.xpub"
         variant="outlined"
         color="primary"
-        class="account-form__xpub flex-1"
+        class="flex-1"
+        data-testid="xpub-key"
         :label="t('account_form.labels.btc.xpub')"
         autocomplete="off"
         :hint="detectedHint"
-        :error-messages="toMessages(v$.xpub)"
+        :error-messages="fieldErrors('xpub')"
         :disabled="disabled"
-        @blur="v$.xpub.$touch()"
+        @update:model-value="touch('xpub')"
         @paste="onPasteXpub($event)"
       />
       <div>
@@ -219,7 +131,7 @@ defineExpose({
           :open-delay="400"
         >
           <template #activator>
-            <div class="account-form__advanced">
+            <div data-testid="xpub-advanced-toggle">
               <RuiButton
                 variant="text"
                 icon
@@ -249,7 +161,7 @@ defineExpose({
         <RuiButton
           v-for="option in disambiguationOptions"
           :key="option.value"
-          :variant="xpubKeyPrefix === option.value ? 'default' : 'outlined'"
+          :variant="prefix === option.value ? 'default' : 'outlined'"
           color="primary"
           size="sm"
           :disabled="disabled"
@@ -261,7 +173,7 @@ defineExpose({
             <span>{{ option.label }}</span>
             <span
               class="text-caption"
-              :class="xpubKeyPrefix === option.value ? 'opacity-70' : 'text-rui-text-secondary'"
+              :class="prefix === option.value ? 'opacity-70' : 'text-rui-text-secondary'"
             >
               {{ option.description }}
             </span>
@@ -278,16 +190,15 @@ defineExpose({
 
     <div v-if="advanced">
       <RuiTextField
-        v-model="derivationPath"
+        v-model="state.derivationPath"
         variant="outlined"
         color="primary"
-        class="account-form__derivation-path"
+        data-testid="xpub-derivation-path"
         :label="t('account_form.labels.btc.derivation_path')"
-        :error-messages="toMessages(v$.derivationPath)"
+        :error-messages="fieldErrors('derivationPath')"
         autocomplete="off"
         :disabled="disabled"
         :hint="t('common.optional')"
-        @blur="v$.derivationPath.$touch()"
       />
     </div>
   </div>

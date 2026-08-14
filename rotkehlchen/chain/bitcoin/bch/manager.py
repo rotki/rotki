@@ -23,6 +23,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -228,6 +229,11 @@ class BitcoinCashManager(BitcoinCommonManager):
                 )
 
             raw_txs.append(response)
+            if (progress_callback := options.get('progress_callback')) is not None and len(response) != 0:  # noqa: E501
+                try:
+                    progress_callback(min(deserialize_timestamp(tx['time']) for tx in response))
+                except (DeserializationError, KeyError, ValueError) as e:
+                    log.debug('Unable to report haskoin query progress due to %s', e)
 
         return self._process_raw_tx_lists(
             raw_tx_lists=raw_txs,

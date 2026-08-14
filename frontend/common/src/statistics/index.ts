@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AssetBalance, AssetEntry, Balance } from '../balances';
+import { AssetEntry } from '../balances';
 import { NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
@@ -9,9 +9,15 @@ const AssetDistribution = z.object({
   usdValue: NumericString,
 });
 
+/**
+ * A row of `/statistics/balance`, which serializes a `SingleDBAssetBalance` (a timed_balances row)
+ * rather than a `Balance`, so it sends `usd_value` and no `value`. This was built on the shared
+ * `Balance` schema until 1.44: zod dropped the undeclared `usdValue` and `value` fell back to its
+ * default of zero, so every point parsed as zero-valued. See #12822.
+ */
 const TimedBalance = z.object({
-  ...Balance.shape,
-  ...TimedEntry.shape,
+  amount: NumericString,
+  ...AssetDistribution.shape,
 });
 
 export type TimedBalance = z.infer<typeof TimedBalance>;
@@ -33,23 +39,12 @@ export const LocationData = z.array(LocationDataItem);
 
 export type LocationData = z.infer<typeof LocationData>;
 
-/**
- * Legacy schema (PREMIUM_COMPONENTS_VERSION <= 27): had AssetBalance (asset, amount, value) + time.
- * This was incorrect as the API returns {asset, time, usdValue} without amount/value.
- * Kept for backward compatibility with premium components using version 27.
- * TODO: Remove LegacyTimedAssetBalance and the union when we bump components to v16.
- */
-const LegacyTimedAssetBalance = z.object({
-  ...AssetBalance.shape,
-  ...TimedEntry.shape,
-});
-
 const TimedAssetBalance = z.object({
   ...AssetEntry.shape,
   ...AssetDistribution.shape,
 });
 
-export const TimedAssetBalances = z.union([z.array(TimedAssetBalance), z.array(LegacyTimedAssetBalance)]);
+export const TimedAssetBalances = z.array(TimedAssetBalance);
 
 export type TimedAssetBalances = z.infer<typeof TimedAssetBalances>;
 

@@ -2087,6 +2087,57 @@ class DBHandler:
 
         return returned_list, last_queried_ts
 
+    def get_evm_account_proxies(
+            self,
+            cursor: DBCursor,
+            blockchain: SupportedBlockchain,
+    ) -> dict[str, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:
+        """Return the cached proxy mappings grouped by proxy type and owner address."""
+        cursor.execute(
+            'SELECT account, proxy_type, proxy_address FROM evm_account_proxies WHERE chain_id=?',
+            (blockchain.to_chain_id().serialize_for_db(),),
+        )
+        mappings: dict[str, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]] = defaultdict(
+            lambda: defaultdict(set),
+        )
+        for account, proxy_type, proxy_address in cursor:
+            mappings[proxy_type][account].add(proxy_address)
+
+        return mappings
+
+    def save_evm_account_proxies(
+            self,
+            write_cursor: DBCursor,
+            blockchain: SupportedBlockchain,
+            accounts: Sequence[ChecksumEvmAddress],
+            mappings: dict[str, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]],
+            proxy_types: Sequence[str],
+    ) -> None:
+        """Replace the cached mappings of the given proxy types for the given accounts."""
+        if len(accounts) == 0:
+            return
+
+        chain_id = blockchain.to_chain_id().serialize_for_db()
+        placeholders = ', '.join('?' for _ in accounts)
+        for proxy_type in proxy_types:
+            write_cursor.execute(
+                f'DELETE FROM evm_account_proxies WHERE chain_id=? AND proxy_type=? AND account IN ({placeholders})',  # noqa: E501
+                (chain_id, proxy_type, *accounts),
+            )
+        rows = [
+            (account, chain_id, proxy_type, proxy_address)
+            for proxy_type, owners_to_proxies in mappings.items()
+            if proxy_type in proxy_types
+            for account, proxies in owners_to_proxies.items()
+            for proxy_address in proxies
+        ]
+        if len(rows) != 0:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO evm_account_proxies '
+                '(account, chain_id, proxy_type, proxy_address) VALUES (?, ?, ?, ?)',
+                rows,
+            )
+
     def save_tokens_for_address(
             self,
             write_cursor: DBCursor,
@@ -3163,6 +3214,10 @@ class DBHandler:
 
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
+            (address, blockchain.to_chain_id().serialize_for_db()),
+        )
+        write_cursor.execute(
+            'DELETE FROM evm_account_proxies WHERE account=? AND chain_id=?',
             (address, blockchain.to_chain_id().serialize_for_db()),
         )
 

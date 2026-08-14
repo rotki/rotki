@@ -268,6 +268,16 @@ CREATE TABLE IF NOT EXISTS evm_accounts_details (
 );
 """
 
+DB_CREATE_EVM_ACCOUNT_PROXIES = """
+CREATE TABLE IF NOT EXISTS evm_account_proxies (
+    account VARCHAR[42] NOT NULL,
+    chain_id INTEGER NOT NULL,
+    proxy_type TEXT NOT NULL,
+    proxy_address VARCHAR[42] NOT NULL,
+    PRIMARY KEY (account, chain_id, proxy_type, proxy_address)
+);
+"""
+
 DB_CREATE_MANUALLY_TRACKED_BALANCES = """
 CREATE TABLE IF NOT EXISTS manually_tracked_balances (
     id INTEGER PRIMARY KEY,
@@ -1088,6 +1098,7 @@ CREATE INDEX IF NOT EXISTS idx_timed_balances_currency_timestamp_category_value 
 CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_events_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_tx_io_address ON bitcoin_tx_io(address);
 CREATE INDEX IF NOT EXISTS idx_evm_transactions_chain_timestamp ON evm_transactions(chain_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evm_account_proxies_chain_account ON evm_account_proxies(chain_id, account);
 CREATE INDEX IF NOT EXISTS idx_evmtx_address_mappings_address ON evmtx_address_mappings(address, tx_id);
 CREATE INDEX IF NOT EXISTS idx_zksynclite_transactions_from_timestamp ON zksynclite_transactions(from_address, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_zksynclite_transactions_to_timestamp ON zksynclite_transactions(to_address, timestamp DESC);
@@ -1131,6 +1142,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS}
 {DB_CREATE_BLOCKCHAIN_ACCOUNTS}
 {DB_CREATE_EVM_ACCOUNTS_DETAILS}
+{DB_CREATE_EVM_ACCOUNT_PROXIES}
 {DB_CREATE_MULTISETTINGS}
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_EVM_TRANSACTIONS}

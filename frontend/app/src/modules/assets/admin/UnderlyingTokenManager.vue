@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { EvmTokenKind, isValidEthAddress, type UnderlyingToken } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { between, helpers, numeric, required } from '@vuelidate/validators';
+import { z, type ZodType } from 'zod';
 import UnderlyingTokenWeightHint from '@/modules/assets/admin/UnderlyingTokenWeightHint.vue';
 import { evmTokenKindsData } from '@/modules/core/common/chains';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
@@ -12,69 +11,88 @@ const modelValue = defineModel<UnderlyingToken[]>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 
-const underlyingAddress = ref<string>('');
-const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
-const underlyingWeight = ref<string>('');
-
-const rules = {
-  address: {
-    isValidEthAddress: helpers.withMessage(t('underlying_token_manager.validation.valid'), isValidEthAddress),
-    required: helpers.withMessage(t('underlying_token_manager.validation.address_non_empty'), required),
-  },
-  weight: {
-    minMax: helpers.withMessage(t('underlying_token_manager.validation.out_of_range'), between(1, 100)),
-    notNaN: helpers.withMessage(t('underlying_token_manager.validation.not_valid'), numeric),
-    required: helpers.withMessage(t('underlying_token_manager.validation.non_empty'), required),
-  },
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    address: underlyingAddress,
-    weight: underlyingWeight,
-  },
-  { $autoDirty: true, $stopPropagation: true },
-);
-
-function addToken() {
-  const underlyingTokens = [...get(modelValue)];
-  const index = underlyingTokens.findIndex(({ address }) => address === get(underlyingAddress));
-
-  const token = {
-    address: get(underlyingAddress),
-    tokenKind: get(tokenKind),
-    weight: get(underlyingWeight),
-  };
-
-  if (index >= 0)
-    underlyingTokens[index] = token;
-  else underlyingTokens.push(token);
-
-  resetForm();
-  get(v$).$reset();
-  set(modelValue, underlyingTokens);
+/** Vuelidate's `req`, which reports presence without trimming, so `'  '` counts as present. */
+function isPresent(value: string): boolean {
+  return value.length > 0;
 }
 
-function editToken(token: UnderlyingToken) {
-  set(underlyingAddress, token.address);
-  set(tokenKind, token.tokenKind);
-  set(underlyingWeight, token.weight);
-  deleteToken(token.address);
-}
+/**
+ * The staging row, not the list it feeds. Both fields report every rule they break, in the order
+ * vuelidate evaluated them, so an emptied address is still both malformed and missing.
+ *
+ * The range rule rejects any value carrying whitespace, which is what `between` did before
+ * comparing, so `' 50'` is out of range rather than merely oddly typed.
+ */
+const schema = computed<ZodType>(() => z.object({
+  address: z.string().superRefine((value, ctx) => {
+    if (!isValidEthAddress(value))
+      ctx.addIssue({ code: 'custom', message: t('underlying_token_manager.validation.valid') });
 
-function deleteToken(address: string) {
-  const underlyingTokens = [...get(modelValue)];
+    if (value.trim() === '')
+      ctx.addIssue({ code: 'custom', message: t('underlying_token_manager.validation.address_non_empty') });
+  }),
+  tokenKind: z.enum(EvmTokenKind),
+  weight: z.string().superRefine((value, ctx) => {
+    const weight = Number(value);
+    if (isPresent(value) && (/\s/.test(value) || !(weight >= 1 && weight <= 100)))
+      ctx.addIssue({ code: 'custom', message: t('underlying_token_manager.validation.out_of_range') });
+
+    if (isPresent(value) && !/^\d*(?:\.\d+)?$/.test(value))
+      ctx.addIssue({ code: 'custom', message: t('underlying_token_manager.validation.not_valid') });
+
+    if (value.trim() === '')
+      ctx.addIssue({ code: 'custom', message: t('underlying_token_manager.validation.non_empty') });
+  }),
+}));
+
+/**
+ * The row is invalid whenever it is empty, which is most of the time, and it must never block the
+ * asset form that owns the list. Vuelidate needed $stopPropagation for that; a zod form joins no
+ * parent tree, so the isolation comes for free.
+ */
+const form = useForm<UnderlyingToken, UnderlyingToken>({
+  initial: (): UnderlyingToken => ({ address: '', tokenKind: EvmTokenKind.ERC20, weight: '' }),
+  schema,
+  submit: async (token: UnderlyingToken): Promise<{ success: boolean }> => {
+    const underlyingTokens = [...get(modelValue)];
+    const index = underlyingTokens.findIndex(({ address }) => address === token.address);
+
+    if (index >= 0)
+      underlyingTokens[index] = token;
+    else underlyingTokens.push(token);
+
+    set(modelValue, underlyingTokens);
+    return Promise.resolve({ success: true });
+  },
+  transform: (state): UnderlyingToken => ({
+    address: state.address,
+    tokenKind: state.tokenKind,
+    weight: state.weight,
+  }),
+});
+
+// Destructured, because a ref reached through `form.` in the template is not unwrapped and would
+// read as permanently truthy.
+const { valid } = form;
+
+function deleteToken(address: string): void {
   set(
     modelValue,
-    underlyingTokens.filter(({ address: tokenAddress }) => tokenAddress !== address),
+    [...get(modelValue)].filter(({ address: tokenAddress }) => tokenAddress !== address),
   );
 }
 
-function resetForm() {
-  set(underlyingAddress, '');
-  set(underlyingWeight, '');
-  set(tokenKind, EvmTokenKind.ERC20);
+async function addToken(): Promise<void> {
+  const result = await form.submit();
+  if (result.outcome === 'success')
+    form.reset();
+}
+
+function editToken(token: UnderlyingToken): void {
+  form.state.address = token.address;
+  form.state.tokenKind = token.tokenKind;
+  form.state.weight = token.weight;
+  deleteToken(token.address);
 }
 </script>
 
@@ -91,17 +109,19 @@ function resetForm() {
     >
       <div class="md:col-span-2">
         <RuiTextField
-          v-model="underlyingAddress"
-          :error-messages="toMessages(v$.address)"
+          v-model="form.state.address"
+          :error-messages="form.errors('address')"
+          data-testid="underlying-token-address"
           variant="outlined"
           color="primary"
           :label="t('common.address')"
+          @update:model-value="form.touch('address')"
         />
       </div>
 
       <div class="col-span-1">
         <RuiMenuSelect
-          v-model="tokenKind"
+          v-model="form.state.tokenKind"
           :label="t('asset_form.labels.token_kind')"
           :options="evmTokenKindsData"
           key-attr="identifier"
@@ -112,14 +132,16 @@ function resetForm() {
 
       <div class="col-span-1">
         <RuiTextField
-          v-model="underlyingWeight"
+          v-model="form.state.weight"
           variant="outlined"
           color="primary"
           type="number"
           max="100"
           min="1"
-          :error-messages="toMessages(v$.weight)"
+          :error-messages="form.errors('weight')"
+          data-testid="underlying-token-weight"
           :label="t('underlying_token_manager.labels.weight')"
+          @update:model-value="form.touch('weight')"
         >
           <template #append>
             <UnderlyingTokenWeightHint />
@@ -130,8 +152,9 @@ function resetForm() {
       <RuiButton
         color="primary"
         class="col-span-2 lg:col-span-4"
-        :disabled="v$.$invalid"
+        :disabled="!valid"
         type="submit"
+        data-testid="underlying-token-add"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />

@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { z, type ZodType } from 'zod';
 import { useAssets } from '@/modules/assets/use-assets';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { requiredField } from '@/modules/core/form/fields';
+import { toServerErrors } from '@/modules/core/form/server-errors';
+import { useForm } from '@/modules/core/form/use-form';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
-type Errors = Partial<Record<'targetIdentifier' | 'sourceIdentifier', string[]>>;
+interface MergePayload {
+  sourceIdentifier: string;
+  targetIdentifier: string;
+}
 
 const display = defineModel<boolean>({ required: true });
 
@@ -16,103 +21,83 @@ const { sourceIdentifier: propSourceIdentifier, targetIdentifier: propTargetIden
 }>();
 
 const emit = defineEmits<{
-  merged: [events: { sourceIdentifier: string; targetIdentifier: string }];
+  merged: [events: MergePayload];
 }>();
 
-const done = ref(false);
-const errorMessages = ref<Errors>({});
-const targetIdentifier = ref('');
-const target = ref<AssetInfoWithId>();
-const sourceIdentifier = ref('');
-const pending = ref(false);
-
-const { mergeAssets } = useAssets();
 const { t } = useI18n({ useScope: 'global' });
 
-const rules = {
-  sourceIdentifier: {
-    required: helpers.withMessage(t('merge_dialog.source.non_empty'), required),
-  },
-  targetIdentifier: {
-    required: helpers.withMessage(t('merge_dialog.target.non_empty'), required),
-  },
-};
+const { mergeAssets } = useAssets();
 
-const v$ = useVuelidate(
-  rules,
-  {
-    sourceIdentifier,
-    targetIdentifier,
-  },
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const done = ref<boolean>(false);
+const target = ref<AssetInfoWithId>();
 
-function reset() {
+const schema = computed<ZodType>(() => z.object({
+  sourceIdentifier: requiredField(t('merge_dialog.source.non_empty')),
+  targetIdentifier: requiredField(t('merge_dialog.target.non_empty')),
+}));
+
+const form = useForm<MergePayload, MergePayload, string | ValidationErrors>({
+  initial: (): MergePayload => ({ sourceIdentifier: '', targetIdentifier: '' }),
+  schema,
+  submit: async (payload: MergePayload) => mergeAssets(payload),
+  transform: (state): MergePayload => ({
+    sourceIdentifier: state.sourceIdentifier,
+    targetIdentifier: state.targetIdentifier,
+  }),
+});
+
+// Destructured, because a ref reached through `form.` in the template is not unwrapped and
+// would read as permanently truthy.
+const { errorCount, submitting, valid } = form;
+
+// The button is also blocked while a server error stands, which vuelidate did through
+// $externalResults feeding $invalid. The core keeps the two apart, so the count is read here.
+const blocked = computed<boolean>(() => !get(valid) || get(errorCount) > 0 || get(submitting));
+
+const excluded = computed<string[]>(() => {
+  const source = form.state.sourceIdentifier;
+  return source ? [source] : [];
+});
+
+function reset(): void {
   set(done, false);
-  set(targetIdentifier, '');
-  set(sourceIdentifier, '');
-  set(pending, false);
-  set(errorMessages, {});
-  get(v$).$reset();
+  form.reset();
   set(target, undefined);
 }
 
-function clearErrors() {
+function clearErrors(): void {
   set(done, false);
-  set(errorMessages, {});
+  form.setServerErrors({});
 }
 
-async function merge() {
-  set(pending, true);
-  const source = get(sourceIdentifier);
-  const target = get(targetIdentifier);
+async function merge(): Promise<void> {
+  const result = await form.submit();
 
-  const result = await mergeAssets({
-    sourceIdentifier: source,
-    targetIdentifier: target,
-  });
-
-  if (result.success) {
-    emit('merged', { sourceIdentifier: source, targetIdentifier: target });
+  if (result.outcome === 'success') {
+    emit('merged', result.payload);
     reset();
     set(done, true);
   }
-  else {
-    set(
-      errorMessages,
-      typeof result.message === 'string'
-        ? ({
-            sourceIdentifier: [result.message || t('merge_dialog.error')],
-          } satisfies Errors)
-        : result.message,
-    );
-    await get(v$).$validate();
+  else if (result.outcome === 'error') {
+    const { message } = result;
+    form.setServerErrors(typeof message === 'object'
+      ? toServerErrors(message)
+      : { sourceIdentifier: [message || t('merge_dialog.error')] });
   }
-  set(pending, false);
 }
 
-function input(value: boolean) {
+function input(value: boolean): void {
   set(display, value);
   setTimeout(reset, 100);
 }
 
-const excluded = computed(() => {
-  const source = get(sourceIdentifier);
-  if (!source)
-    return [];
-  return [source];
-});
-
 watch([display, () => propSourceIdentifier, () => propTargetIdentifier], ([isDisplayed, propSource, propTarget]) => {
   if (isDisplayed) {
     if (propSource) {
-      set(sourceIdentifier, propSource);
+      form.state.sourceIdentifier = propSource;
     }
     if (propTarget) {
-      set(targetIdentifier, propTarget);
+      form.state.targetIdentifier = propTarget;
     }
   }
 });
@@ -147,30 +132,32 @@ watch(display, (isDisplayed) => {
         <!-- We use `RuiTextField` here instead `asset-select` -->
         <!-- because the source can be filled with unknown identifier -->
         <RuiTextField
-          v-model="sourceIdentifier"
+          v-model="form.state.sourceIdentifier"
           :label="t('merge_dialog.source.label')"
-          :error-messages="toMessages(v$.sourceIdentifier)"
+          :error-messages="form.errors('sourceIdentifier')"
           variant="outlined"
           color="primary"
-          :disabled="pending"
+          :disabled="submitting"
           :hint="t('merge_dialog.source_hint')"
+          data-testid="merge-source"
           @focus="clearErrors()"
-          @blur="v$.sourceIdentifier.$touch()"
+          @update:model-value="form.touch('sourceIdentifier')"
         />
         <div class="my-4 flex justify-center">
           <RuiIcon name="lu-arrow-down" />
         </div>
         <AssetSelect
-          v-model="targetIdentifier"
+          v-model="form.state.targetIdentifier"
           v-model:asset="target"
           outlined
-          :error-messages="toMessages(v$.targetIdentifier)"
+          :error-messages="form.errors('targetIdentifier')"
           :label="t('merge_dialog.target.label')"
-          :disabled="pending"
+          :disabled="submitting"
           :excludes="excluded"
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
+          data-testid="merge-target"
           @focus="clearErrors()"
-          @blur="v$.targetIdentifier.$touch()"
+          @update:model-value="form.touch('targetIdentifier')"
         />
 
         <RuiAlert
@@ -191,9 +178,10 @@ watch(display, (isDisplayed) => {
           </RuiButton>
           <RuiButton
             color="primary"
-            :disabled="v$.$invalid || pending"
-            :loading="pending"
+            :disabled="blocked"
+            :loading="submitting"
             type="submit"
+            data-testid="merge-submit"
           >
             {{ t('merge_dialog.merge') }}
           </RuiButton>

@@ -147,6 +147,15 @@ pub struct ProxyConfig {
     pub port: u16,
     /// Loopback port of the rotki-core backend.
     pub core_port: u16,
+    /// Development-only override for where `/api/1/*` is forwarded. `None` (the
+    /// only production value) forwards to `core_port` directly.
+    ///
+    /// Set in dev to put the premium dev-proxy between this proxy and core, so
+    /// it can serve locally built premium components while the renderer still
+    /// addresses one origin. It moves the **data route only**: session
+    /// validation and the health probe keep talking to `core_port`, so a dev
+    /// tool never sits in the authentication path.
+    pub api_upstream_port: Option<u16>,
     /// Loopback port of colibri.
     pub colibri_port: u16,
     /// Loopback port of the authenticated MCP server.
@@ -187,7 +196,12 @@ type HttpClient = Client<HttpConnector, Body>;
 #[derive(Clone)]
 pub(crate) struct ProxyState {
     pub(crate) client: HttpClient,
+    /// Core itself: the session-validate call and anything else that must reach
+    /// the backend directly, never through a dev hop.
     pub(crate) core_addr: String,
+    /// Where `/api/1/*` is forwarded. Equals `core_addr` unless a dev upstream
+    /// was configured.
+    api_addr: String,
     colibri_addr: String,
     mcp_addr: String,
     mcp_enabled: bool,
@@ -324,6 +338,10 @@ fn router(config: &ProxyConfig) -> Router {
     let state = ProxyState {
         client: Client::builder(TokioExecutor::new()).build_http(),
         core_addr: format!("127.0.0.1:{}", config.core_port),
+        api_addr: format!(
+            "127.0.0.1:{}",
+            config.api_upstream_port.unwrap_or(config.core_port)
+        ),
         colibri_addr: format!("127.0.0.1:{}", config.colibri_port),
         mcp_addr: format!("127.0.0.1:{}", config.mcp_port),
         mcp_enabled: config.mcp_enabled,
@@ -561,10 +579,11 @@ async fn health(State(state): State<ProxyState>) -> Response {
         .into_response()
 }
 
-/// `/api/1/*` → core, path preserved.
+/// `/api/1/*` → core, path preserved. Goes to `api_addr`, which is core unless a
+/// dev upstream was configured.
 async fn proxy_core(State(state): State<ProxyState>, mut req: Request) -> Response {
     req.headers_mut().remove(MCP_BACKEND_PROOF_HEADER);
-    let target = format!("http://{}{}", state.core_addr, path_and_query(&req));
+    let target = format!("http://{}{}", state.api_addr, path_and_query(&req));
     let peer = peer_addr(&req);
     let req = req_with_target(req, target, peer, &state.trusted_proxies);
     forward(&state, req).await
@@ -1047,6 +1066,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: upstream,
+            api_upstream_port: None,
             colibri_port: upstream,
             mcp_port: upstream,
             mcp_enabled: true,
@@ -1218,6 +1238,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: port,
+            api_upstream_port: None,
             colibri_port: port,
             mcp_port: port,
             mcp_enabled: true,
@@ -1304,6 +1325,7 @@ mod tests {
         router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -1450,6 +1472,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: port,
+            api_upstream_port: None,
             colibri_port: port,
             mcp_port: port,
             mcp_enabled: true,
@@ -1478,6 +1501,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: port,
+            api_upstream_port: None,
             colibri_port: port,
             mcp_port: port,
             mcp_enabled: true,
@@ -1534,6 +1558,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: port,
             mcp_enabled: true,
@@ -1570,6 +1595,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -1600,6 +1626,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: false,
@@ -1630,6 +1657,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -1705,6 +1733,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -1737,6 +1766,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -1772,6 +1802,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -1806,6 +1837,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 9,
+            api_upstream_port: None,
             colibri_port: 9,
             mcp_port: 9,
             mcp_enabled: true,
@@ -1835,6 +1867,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 9, // discard port; connect refused
+            api_upstream_port: None,
             colibri_port: 9,
             mcp_port: 9,
             mcp_enabled: true,
@@ -1904,6 +1937,7 @@ mod tests {
         let config = ProxyConfig {
             port: proxy_port,
             core_port: upstream_port,
+            api_upstream_port: None,
             colibri_port: upstream_port,
             mcp_port: upstream_port,
             mcp_enabled: true,
@@ -1945,6 +1979,7 @@ mod tests {
         let config = ProxyConfig {
             port: proxy_port,
             core_port: 9,
+            api_upstream_port: None,
             colibri_port: 9,
             mcp_port: 9,
             mcp_enabled: true,
@@ -1996,6 +2031,110 @@ mod tests {
         }
     }
 
+    // ---- dev api upstream -----------------------------------------------
+
+    /// A stub that answers every request with `name`, so a test can tell which
+    /// upstream a route actually reached.
+    async fn spawn_naming_upstream(name: &'static str) -> u16 {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let app = Router::new().fallback(any(move || async move { name }));
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        port
+    }
+
+    fn dev_upstream_router(core_port: u16, api_upstream_port: Option<u16>) -> Router {
+        router(&ProxyConfig {
+            port: 0,
+            core_port,
+            api_upstream_port,
+            colibri_port: core_port,
+            mcp_port: core_port,
+            mcp_enabled: true,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: None,
+            control: None,
+        })
+    }
+
+    async fn get_api_1_ping(app: Router) -> String {
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/1/ping")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        body_string(resp).await
+    }
+
+    #[tokio::test]
+    async fn the_api_route_reaches_core_without_a_dev_upstream() {
+        let core = spawn_naming_upstream("core").await;
+        let dev = spawn_naming_upstream("dev-proxy").await;
+        // `dev` is spawned but never named in the config: the default must not
+        // reach it, which is what keeps production behaviour unchanged.
+        let _ = dev;
+
+        assert_eq!(
+            get_api_1_ping(dev_upstream_router(core, None)).await,
+            "core"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_api_route_follows_the_dev_upstream() {
+        let core = spawn_naming_upstream("core").await;
+        let dev = spawn_naming_upstream("dev-proxy").await;
+
+        assert_eq!(
+            get_api_1_ping(dev_upstream_router(core, Some(dev))).await,
+            "dev-proxy",
+        );
+    }
+
+    #[tokio::test]
+    async fn session_validation_bypasses_the_dev_upstream() {
+        // The dev-proxy must never sit in the authentication path: the control
+        // surface validates the cookie against core itself, whatever the data
+        // route was pointed at.
+        let (core, calls) = spawn_validating_core(StatusCode::OK).await;
+        let dev = spawn_naming_upstream("dev-proxy").await;
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: core,
+            api_upstream_port: Some(dev),
+            colibri_port: 1,
+            mcp_port: 1,
+            mcp_enabled: true,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: None,
+            control: Some(echo_dispatch()),
+        });
+
+        let resp = app
+            .oneshot(control_post(r#"{"method":"status"}"#))
+            .await
+            .unwrap();
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            calls.load(Ordering::Relaxed),
+            1,
+            "core must be the one asked to validate the cookie",
+        );
+    }
+
     // ---- /_control ------------------------------------------------------
 
     /// A stub core that answers `/api/1/session/validate` with `status` and
@@ -2029,6 +2168,7 @@ mod tests {
         router(&ProxyConfig {
             port: 0,
             core_port,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
@@ -2091,6 +2231,7 @@ mod tests {
         let app = router(&ProxyConfig {
             port: 0,
             core_port: 1,
+            api_upstream_port: None,
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,

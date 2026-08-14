@@ -303,6 +303,22 @@
       "title": "Trade Settings"
     }
   },
+  "action_center": {
+    "button": "Actions needed",
+    "button_checking": "Checking for actions",
+    "button_clear": "All clear",
+    "cleared": "Checked:",
+    "locked": "Premium",
+    "locked_hint": "This requires the {tier} tier.",
+    "locked_hint_generic": "This requires a premium subscription.",
+    "rescan": "Re-scan",
+    "subtitle": "{count} category needs your attention | {count} categories need your attention",
+    "subtitle_checking": "Checking for anything that needs your attention.",
+    "subtitle_clear": "Everything has been checked.",
+    "title": "Actions needed",
+    "title_checking": "Checking for actions",
+    "title_clear": "No actions needed"
+  },
   "actions": {
     "accounting_rules": {
       "export": {
@@ -1213,6 +1229,12 @@
       "migration_error": "Migration failed",
       "migration_success": "Token migrated successfully",
       "solana_address": "Solana Address",
+      "validation": {
+        "address_invalid": "The address is not a valid Solana address",
+        "address_non_empty": "The Solana address cannot be empty",
+        "decimals_non_empty": "The number of decimals cannot be empty",
+        "token_kind_non_empty": "The token kind cannot be empty"
+      },
       "validation_error": "Please fill in all required fields"
     }
   },
@@ -1941,6 +1963,10 @@
         "message": "There was a problem fetching the reminder: {message}",
         "title": "Fetching calendar reminder"
       },
+      "labels": {
+        "amount": "Amount",
+        "unit": "Unit"
+      },
       "notify": "Notify me at event time",
       "title": "Reminder",
       "units": {
@@ -1954,9 +1980,6 @@
           "max_value": "Cannot set reminder more than {amount} {unit}",
           "min_value": "Cannot set reminder less than 1 minute",
           "non_empty": "The amount field should not be empty"
-        },
-        "unit": {
-          "non_empty": "The unit field should not be empty"
         }
       }
     },
@@ -2332,17 +2355,6 @@
         "substrate": "Substrate Address"
       },
       "title": "blockchain"
-    },
-    "completeness": {
-      "missing_prices": "{count} asset without a price | {count} assets without a price",
-      "missing_prices_dialog": {
-        "add_price": "Add price",
-        "description": "These assets had an oracle price before but currently report none. Add a manual price to restore their value.",
-        "empty": "All prices resolved",
-        "open_manager": "Open price manager",
-        "title": "Missing prices"
-      },
-      "undecoded": "{count} undecoded transaction | {count} undecoded transactions"
     },
     "exchange_balances": {
       "add": "Add an exchange",
@@ -2938,20 +2950,19 @@
     },
     "ownership_percentage": "Ownership Percentage",
     "public_key": "Public Key",
+    "validation": {
+      "required": "The value is required"
+    },
     "validator_index": {
       "validation": "Validator index can be filled with numeric value only."
     }
   },
   "eth2_page": {
-    "no_premium": "The ETH staking view is not available",
-    "toggle": {
-      "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
-      "key": "Validator",
-      "withdrawal": "Withdrawal Address"
-    }
-  },
-  "eth2_validator_filter": {
-    "label": "Select Withdrawal address"
+    "filter": {
+      "validator": "Validator",
+      "withdrawal_address": "Withdrawal Address"
+    },
+    "no_premium": "The ETH staking view is not available"
   },
   "eth2_validator_limit_row": {
     "complete": "Only showing balances for {limit} out of {total} validators. Click {button} to purchase rotki Premium and view the complete validator balances.",
@@ -4567,7 +4578,8 @@
       "amount": "The amount cannot be empty",
       "asset": "The asset cannot be empty",
       "label_empty": "The label cannot be empty",
-      "label_exists": "Label {label} already exists"
+      "label_exists": "Label {label} already exists",
+      "location": "The location cannot be empty"
     }
   },
   "manual_balances_table": {
@@ -5056,6 +5068,7 @@
       "source": "Source"
     },
     "refresh_tooltip": "Refresh the oracle prices list",
+    "settings_tooltip": "Price oracle settings: choose which oracles are used, and in which order",
     "sources": {
       "cryptocompare": "CryptoCompare"
     },
@@ -5112,7 +5125,8 @@
       "failed": "Failed",
       "queued": "Queued",
       "running": "Running",
-      "skipped": "Skipped"
+      "skipped": "Skipped",
+      "with_reason": "{status}: {reason}"
     },
     "steps": "{current} of {total}"
   },
@@ -6274,10 +6288,6 @@
       "redecode_with_options": "Redecode with options"
     },
     "alerts": {
-      "button": "Actions needed",
-      "button_checking": "Checking for actions",
-      "button_clear": "All clear",
-      "cleared": "Checked:",
       "ignored_description": "Nothing left to match. Open to restore anything you ignored.",
       "issues": {
         "auto_fix_duplicates": {
@@ -6300,6 +6310,11 @@
           "description": "Duplicated customized events that need your decision.",
           "title": "Duplicates needing review"
         },
+        "no_tracked_accounts": {
+          "action": "Add an account",
+          "description": "rotki has no blockchain account or exchange to sync history from.",
+          "title": "Tracked accounts"
+        },
         "undecoded": {
           "action": "View status",
           "description": "Missing from your history and reports until they are decoded.",
@@ -6316,17 +6331,9 @@
           "title": "Unmatched asset movements"
         }
       },
-      "locked": "Premium",
-      "locked_hint": "Matching these requires the {tier} tier.",
-      "locked_hint_generic": "Matching these requires a premium subscription.",
-      "rescan": "Re-scan",
       "review_ignored": "Review ignored",
-      "subtitle": "{count} category needs your attention | {count} categories need your attention",
       "subtitle_checking": "Waiting for the history sync to finish.",
-      "subtitle_clear": "Everything in your history has been checked.",
-      "title": "Actions needed",
-      "title_checking": "Checking for actions",
-      "title_clear": "No actions needed"
+      "subtitle_clear": "Everything in your history has been checked."
     },
     "dialog": {
       "add_tx": "Add transaction by tx hash",
@@ -6342,7 +6349,7 @@
     "empty_state": {
       "clear_filters": "Clear filters",
       "no_data_with_filters": "No events match the current filters",
-      "no_events": "No events found.\nAdd exchanges, track blockchain addresses, or manually add events to get started.",
+      "no_events": "No events found.\nConnect an exchange or track a blockchain address to sync your history, or add an event manually.",
       "syncing": "Your history is being queried and decoded.\nEvents will appear here as they are processed. This can take a while on the first sync."
     },
     "events": {
@@ -6706,6 +6713,11 @@
           "non_empty": "The account field cannot be empty"
         }
       },
+      "chain": {
+        "validation": {
+          "non_empty": "The chain field cannot be empty"
+        }
+      },
       "no_accounts": "No accounts to add the transaction. Please add an account first before continuing.",
       "tx_hash": {
         "validation": {
@@ -6750,7 +6762,12 @@
       },
       "loading_tooltip": "Re-pulling is currently disabled because the transactions are still being fetched. Please wait a moment.",
       "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",
-      "no_exchanges": "You don't have any exchanges connected. Please {link} first."
+      "no_exchanges": "You don't have any exchanges connected. Please {link} first.",
+      "validation": {
+        "date_non_empty": "The date cannot be empty",
+        "entry_type_non_empty": "Please select an event type",
+        "exchange_non_empty": "Please select an exchange"
+      }
     },
     "title": "History Events",
     "unignore": "Include in Accounting"

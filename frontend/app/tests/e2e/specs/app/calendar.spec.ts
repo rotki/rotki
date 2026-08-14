@@ -56,6 +56,87 @@ test.describe.serial('calendar', () => {
     await page.cancelDialog();
   });
 
+  // The reminder rows validate as part of the event form. That used to happen implicitly, because
+  // each row registered itself with the form's validator; it is now an explicit call, and this is
+  // what proves the save is still gated on it.
+  test('blocks saving while a reminder is out of range', async () => {
+    await page.openAddDialog();
+    await page.createEventFields({ name: 'quarterly review' });
+    // Out of range by the amount, not by the unit: the row starts at 15 minutes, and 15 of any
+    // larger unit is over the ceiling too, so a test that never got its own amount in would still
+    // see the error and pass.
+    await page.addReminder('99', 'Weeks');
+
+    await page.submitDialog();
+
+    await page.expectDialogOpen();
+    await page.expectReminderError('Cannot set reminder more than 4 Weeks');
+    await page.cancelDialog();
+  });
+
+  test('keeps a reminder attached to the event it was created with', async () => {
+    await page.openAddDialog();
+    await page.createEventFields({ name: 'release cut' });
+    await page.addReminder('3', 'Days');
+    await page.confirmDialog();
+
+    await page.expectEventInSelected('release cut');
+
+    // Reopening refetches the stored reminders, so this asserts what was persisted.
+    await page.openEventByName('release cut');
+    await page.expectReminderCount(1);
+    await page.expectReminder('3', 'Days');
+    await page.cancelDialog();
+
+    await page.deleteEvent('release cut');
+  });
+
+  // The three below cover the persistence paths, which differ between creating and editing an
+  // event: a new event's reminders are held back until it has an id, an existing one's are written
+  // per row as they change.
+  test('persists a reminder edited on an existing event', async () => {
+    await page.createEvent({ name: 'sprint demo' });
+    await page.openEventByName('sprint demo');
+    await page.addReminder('2', 'Hours');
+    await page.confirmDialog();
+
+    await page.openEventByName('sprint demo');
+    await page.changeReminderAmount('2', '5');
+    await page.confirmDialog();
+
+    await page.openEventByName('sprint demo');
+    await page.expectReminder('5', 'Hours');
+    await page.cancelDialog();
+  });
+
+  test('deletes a reminder that was already saved', async () => {
+    await page.openEventByName('sprint demo');
+    await page.expectReminderCount(1);
+    await page.deleteReminder('5');
+    await page.expectReminderCount(0);
+    await page.confirmDialog();
+
+    await page.openEventByName('sprint demo');
+    await page.expectReminderCount(0);
+    await page.cancelDialog();
+  });
+
+  test('adds a second reminder to an event that already has one', async () => {
+    await page.openEventByName('sprint demo');
+    await page.addReminder('1', 'Hours');
+    await page.confirmDialog();
+
+    await page.openEventByName('sprint demo');
+    await page.addReminder('3', 'Hours');
+    await page.confirmDialog();
+
+    await page.openEventByName('sprint demo');
+    await page.expectReminderAmounts(['1', '3']);
+    await page.cancelDialog();
+
+    await page.deleteEvent('sprint demo');
+  });
+
   test('cancel button closes the add dialog', async () => {
     await page.openAddDialog();
     await page.cancelDialog();

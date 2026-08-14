@@ -64,7 +64,7 @@ export interface ValueSwatch {
  *   how *external* filters (e.g. history account `locationLabels`) are transported. Modelling
  *   them as fields is what lets the pill bar absorb external filters into one bar.
  */
-export type FieldBinding =
+type FieldBinding =
   | { readonly kind: 'filter' }
   | { readonly kind: 'param'; readonly paramKey: string; readonly to: 'request' | 'url' | 'both' };
 
@@ -165,6 +165,16 @@ export interface FieldDef {
    * under its name). Only rendered when exactly one value is active. Absent = no secondary text.
    */
   readonly resolveCaption?: (value: string) => string | undefined;
+  /**
+   * Where {@link resolveCaption} applies. `both` (the default) captions the option rows and the
+   * collapsed pill alike, which is what an account wants: its address disambiguates the name
+   * everywhere it is shown.
+   *
+   * `list` captions only the option rows. A validator is the case that needs it: the public key
+   * tells two indices apart while picking, but the index alone already names the validator, and a
+   * 66-character key on the pill pushes every other pill off the bar.
+   */
+  readonly captionScope?: 'both' | 'list';
   /**
    * Extra text the bar's narrowing input matches a value on, beyond its display label. An account
    * is the case that needs it: its label is a name, or a truncated and scrambled address, so

@@ -27,6 +27,12 @@ export interface StarlingDevOptions {
   /** Port starling's MCP server binds, or starts probing from. */
   mcpPort: number;
   /**
+   * Port of the premium dev-proxy, when it is enabled. starling forwards
+   * `/api/1/*` there instead of straight to core, so the proxy can serve locally
+   * built premium components without the renderer changing origin.
+   */
+  coreUpstreamPort?: number;
+  /**
    * Bind the given ports exactly rather than probing upward. Set for
    * `--instance` runs, which reserve a slot and must land on it.
    */
@@ -36,6 +42,12 @@ export interface StarlingDevOptions {
 export interface StarlingDevEnv {
   /** The single origin the renderer talks to: starling's reverse proxy. */
   VITE_BACKEND_URL: string;
+}
+
+/** What starling resolved, for callers that need to reach a backend directly. */
+export interface StarlingDevPorts {
+  /** The port core actually bound, after any probing. */
+  corePort: number;
 }
 
 async function wait(ms: number): Promise<void> {
@@ -52,7 +64,9 @@ async function wait(ms: number): Promise<void> {
  * The `start` request is the readiness gate — it resolves only once the whole
  * tree is up — so there is nothing here to poll.
  */
-export async function startStarlingSupervisor(options: StarlingDevOptions): Promise<StarlingDevEnv> {
+export async function startStarlingSupervisor(
+  options: StarlingDevOptions,
+): Promise<{ env: StarlingDevEnv; ports: StarlingDevPorts }> {
   // In instance mode every port is reserved by the slot, so bind it exactly and
   // fail loudly if something else holds it. Otherwise the caller's values are
   // only a starting point and a busy port walks up, which is how two concurrent
@@ -91,6 +105,7 @@ export async function startStarlingSupervisor(options: StarlingDevOptions): Prom
     colibriPort,
     mcpPort,
     proxyPort,
+    coreUpstreamPort: options.coreUpstreamPort,
     apiHost: API_HOST,
     logsDir: options.logDir,
     options: backendOptions,
@@ -103,7 +118,12 @@ export async function startStarlingSupervisor(options: StarlingDevOptions): Prom
     repoRoot: path.resolve(process.cwd(), '..'),
   });
 
-  logger.info(`Starting starling supervisor (proxy on ${proxyPort}, core ${corePort}, colibri ${colibriPort})`);
+  const upstreamNote = options.coreUpstreamPort === undefined
+    ? ''
+    : `, /api/1/* via dev-proxy ${options.coreUpstreamPort}`;
+  logger.info(
+    `Starting starling supervisor (proxy on ${proxyPort}, core ${corePort}, colibri ${colibriPort}${upstreamNote})`,
+  );
 
   const rpc = new StarlingRpc({ warn: message => logger.warn(message) }, (method) => {
     // The `start` reply is the readiness gate, so events are informational here;
@@ -156,6 +176,7 @@ export async function startStarlingSupervisor(options: StarlingDevOptions): Prom
   const proxyOrigin = `http://${API_HOST}:${proxyPort}`;
   logger.info(`backend services ready behind ${proxyOrigin}`);
   return {
-    VITE_BACKEND_URL: proxyOrigin,
+    env: { VITE_BACKEND_URL: proxyOrigin },
+    ports: { corePort },
   };
 }

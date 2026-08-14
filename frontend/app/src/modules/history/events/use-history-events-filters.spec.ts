@@ -1,7 +1,7 @@
-import type { Account, HistoryEventEntryType } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
+import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Filters } from '@/modules/history/events/use-events-filter';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -88,48 +88,33 @@ vi.mock('@/modules/history/events/action-picker/use-event-action-picker', () => 
 
 interface DefaultOptions {
   options: {
-    entryTypes: Ref<HistoryEventEntryType[] | undefined>;
-    eventSubTypes: Ref<string[]>;
-    eventTypes: Ref<string[]>;
-    externalAccountFilter: Ref<Account[]>;
     fields: Ref<FieldDef[]>;
     filters: Ref<Filters>;
-    location: Ref<string | undefined>;
     mainPage: Ref<boolean>;
-    period: Ref<undefined>;
-    protocols: Ref<string[]>;
-    useExternalAccountFilter: Ref<boolean | undefined>;
-    validators: Ref<number[] | undefined>;
+    restrictions: Ref<HistoryEventsRestrictions>;
   };
   toggles: Ref<HistoryEventsToggles>;
-  locationRef: Ref<string | undefined>;
+  /** The same ref the options carry, exposed so a test can re-state what the view fixes. */
+  restrictions: Ref<HistoryEventsRestrictions>;
 }
 
 function createDefaultOptions(locationValue?: string): DefaultOptions {
-  const locationRef = ref<string | undefined>(locationValue);
+  const restrictions = ref<HistoryEventsRestrictions>({ location: locationValue });
   const toggles = ref<HistoryEventsToggles>({
     matchExactEvents: false,
     showIgnoredAssets: false,
     stateMarkers: [],
   });
   return {
-    locationRef,
     options: {
-      entryTypes: ref(undefined),
-      eventSubTypes: ref<string[]>([]),
-      eventTypes: ref<string[]>([]),
-      externalAccountFilter: ref([]),
       // The view builds both and hands them in: the fields are what the table reads its url shape
       // off, and nothing here exercises the URL.
       fields: ref<FieldDef[]>([]),
       filters: ref<Filters>({}),
-      location: locationRef,
       mainPage: ref(false),
-      period: ref(undefined),
-      protocols: ref<string[]>([]),
-      useExternalAccountFilter: ref(undefined),
-      validators: ref(undefined),
+      restrictions,
     },
+    restrictions,
     toggles,
   };
 }
@@ -157,9 +142,9 @@ describe('useHistoryEventsFilters', () => {
       expect(get(usedLocationLabels)).toEqual(['0xABC']);
     });
 
-    it('should use local locationLabels when useExternalAccountFilter is false', () => {
-      const { options, toggles } = createDefaultOptions();
-      set(options.useExternalAccountFilter, false);
+    it('should use local locationLabels when the view pins no accounts', () => {
+      const { options, restrictions, toggles } = createDefaultOptions();
+      set(restrictions, {});
       const { onLocationLabelsChanged, usedLocationLabels } = useHistoryEventsFilters(options, toggles);
 
       onLocationLabelsChanged(['0xABC']);
@@ -167,13 +152,24 @@ describe('useHistoryEventsFilters', () => {
       expect(get(usedLocationLabels)).toEqual(['0xABC']);
     });
 
-    it('should use external account filter when useExternalAccountFilter is true', () => {
-      const { options, toggles } = createDefaultOptions();
-      set(options.useExternalAccountFilter, true);
-      set(options.externalAccountFilter, [{ address: '0xDEF', chain: 'eth' }]);
+    it('should use the accounts the view pins', () => {
+      const { options, restrictions, toggles } = createDefaultOptions();
+      set(restrictions, { externalAccounts: [{ address: '0xDEF', chain: 'eth' }] });
       const { usedLocationLabels } = useHistoryEventsFilters(options, toggles);
 
       expect(get(usedLocationLabels)).toEqual(['0xDEF']);
+    });
+
+    // Kraken's shape: it owns the account axis without naming an address, which an empty array has
+    // to express. Defaulting the key would collapse this onto the unrestricted case.
+    it('should ignore local locationLabels when the view pins an empty account set', () => {
+      const { options, restrictions, toggles } = createDefaultOptions();
+      set(restrictions, { externalAccounts: [] });
+      const { onLocationLabelsChanged, usedLocationLabels } = useHistoryEventsFilters(options, toggles);
+
+      onLocationLabelsChanged(['0xABC']);
+
+      expect(get(usedLocationLabels)).toEqual([]);
     });
 
     it('should reactively update when locationLabels change', async () => {
@@ -240,13 +236,13 @@ describe('useHistoryEventsFilters', () => {
     });
 
     it('should reactively update requestParams when location prop changes', async () => {
-      const { locationRef, options, toggles } = createDefaultOptions('ethereum');
+      const { options, restrictions, toggles } = createDefaultOptions('ethereum');
 
       useHistoryEventsFilters(options, toggles);
 
       expect(get(capturedRequestParams!).location).toBe('ethereum');
 
-      set(locationRef, 'optimism');
+      set(restrictions, { location: 'optimism' });
       await nextTick();
 
       expect(get(capturedRequestParams!).location).toBe('optimism');

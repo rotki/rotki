@@ -345,7 +345,11 @@ class EvmTokens(ABC):  # noqa: B024
 
         return TokenChunkQueryResult(balances=total_token_balances, had_failures=had_failures)
 
-    def _compute_detected_tokens_info(self, addresses: Sequence[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
+    def _compute_detected_tokens_info(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+            only_cache: bool = False,  # pylint: disable=unused-argument
+    ) -> DetectedTokensType:
         """
         Generate a structure that contains information about the addresses that tokens
         were requested for.
@@ -506,7 +510,7 @@ class EvmTokens(ABC):  # noqa: B024
         if only_cache is False:
             self._query_new_tokens(addresses)
 
-        return self._compute_detected_tokens_info(addresses)
+        return self._compute_detected_tokens_info(addresses, only_cache=only_cache)
 
     def _get_token_detection_chunk_size_call_order(self) -> tuple[int, list[WeightedNode]]:
         """Return chunk size and call order used by token detection queries.
@@ -682,7 +686,11 @@ class EvmTokensWithProxies(EvmTokens, ABC):
         """Subclasses may implement this method to detect tokens for proxies"""
         return None
 
-    def _compute_detected_tokens_info(self, addresses: Sequence[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
+    def _compute_detected_tokens_info(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+            only_cache: bool = False,
+    ) -> DetectedTokensType:
         """
         Generate a structure that contains information about the addresses that tokens
         were requested for.
@@ -693,7 +701,9 @@ class EvmTokensWithProxies(EvmTokens, ABC):
         the proxies.
         """
         addresses_info_without_proxies = super()._compute_detected_tokens_info(addresses)
-        proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
+        proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy(
+            only_cache=only_cache,
+        )
 
         addresses_info = {}
         token_exceptions = self._per_chain_token_exceptions()

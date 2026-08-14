@@ -13,7 +13,7 @@ export const SnapshotBalanceFilterKeys = {
   ZERO_VALUE: 'zeroValue',
 } as const;
 
-export type SnapshotBalanceFilterKey =
+type SnapshotBalanceFilterKey =
   typeof SnapshotBalanceFilterKeys[keyof typeof SnapshotBalanceFilterKeys];
 
 export type Filters = MatchedKeyword<SnapshotBalanceFilterKey>;

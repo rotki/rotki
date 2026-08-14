@@ -121,6 +121,54 @@ describe('createTaskOrchestrator', () => {
     expect(orchestrator.statusOf(Kind.OTHER, 's').everCompleted).toBe(false);
   });
 
+  it('should carry the producer reason onto a failed and a skipped activity', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const failed = controllable('r1');
+    const skipped = controllable('r2');
+    const failedId = orchestrator.submit(failed.spec);
+    const skippedId = orchestrator.submit(skipped.spec);
+
+    failed.settle({ error: TaskFailed({ message: 'network unreachable after retries' }), ok: false });
+    skipped.settle({ error: Skipped({ message: 'disabled in settings' }), ok: false });
+    await flush();
+
+    // Without this the row renders a bare "Failed"/"Skipped" chip. A skip raises no notification
+    // either, so dropping it here drops the reason everywhere.
+    expect(byId(orchestrator, failedId)?.reason).toBe('network unreachable after retries');
+    expect(byId(orchestrator, skippedId)?.reason).toBe('disabled in settings');
+  });
+
+  it('should leave a success and a cancellation without a reason', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const done = controllable('r3');
+    const cancelled = controllable('r4');
+    const doneId = orchestrator.submit(done.spec);
+    const cancelledId = orchestrator.submit(cancelled.spec);
+
+    done.settle({ ok: true, value: 1 });
+    // The user asked for the cancel, so captioning the row with the reason is noise.
+    cancelled.settle({ error: Cancelled({ message: 'cancelled by user' }), ok: false });
+    await flush();
+
+    expect(byId(orchestrator, doneId)?.reason).toBeUndefined();
+    expect(byId(orchestrator, cancelledId)?.reason).toBeUndefined();
+  });
+
+  it('should clear a stale reason when a failed activity is rerun', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const work = controllable('r5', { rerunnable: true });
+    const id = orchestrator.submit(work.spec);
+
+    work.settle({ error: TaskFailed({ message: 'network unreachable after retries' }), ok: false });
+    await flush();
+    expect(byId(orchestrator, id)?.reason).toBe('network unreachable after retries');
+
+    // `rerun` reuses the record, so a reason left behind would caption the new run — and survive it
+    // to caption a success.
+    orchestrator.rerun(id);
+    expect(byId(orchestrator, id)?.reason).toBeUndefined();
+  });
+
   it('should keep an earlier success when work is later skipped', async () => {
     const orchestrator = createTaskOrchestrator();
     const first = controllable('s2');

@@ -1,34 +1,34 @@
-import type * as http from 'node:http';
 import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
+import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import net from 'node:net';
 import process from 'node:process';
-import * as querystring from 'node:querystring';
-import bodyParser from 'body-parser';
+import { Readable } from 'node:stream';
 import consola, { LogLevels } from 'consola';
-import express, { type Request, type Response } from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import { statistics } from './mocked-apis/statistics';
-import { enableCors } from './setup';
+import { createProxyServer } from 'httpxy';
+import { parseBody, readBody } from './body';
+import { createMockEngine, type MockedAsyncCalls, type MockRequest } from './mock-engine';
+import { serveStatisticsRenderer, STATISTICS_RENDERER_PATH } from './mocked-apis/statistics';
+import { applyCors } from './setup';
 
 consola.level = LogLevels.debug;
 
-const server = express();
+const HTTP_BAD_GATEWAY = 502;
 
-const port = process.env.PORT ?? 4243;
+const port = Number.parseInt(process.env.PORT ?? '4243', 10);
 const backend = process.env.BACKEND ?? 'http://127.0.0.1:4242';
 const componentsDir = process.env.PREMIUM_COMPONENT_DIR;
 
-enableCors(server);
-
+let statisticsRendererDir: string | undefined;
 if (componentsDir && fs.existsSync(componentsDir) && fs.statSync(componentsDir).isDirectory()) {
   consola.info('Enabling statistics renderer support');
-  statistics(server, componentsDir);
+  statisticsRendererDir = componentsDir;
 }
 else {
   consola.warn('PREMIUM_COMPONENT_DIR was not a valid directory, disabling statistics renderer support.');
 }
 
-let mockedAsyncCalls: { [url: string]: any } = {};
+let mockedAsyncCalls: MockedAsyncCalls = {};
 if (fs.existsSync('async-mock.json')) {
   try {
     consola.info('Loading mock data from async-mock.json');
@@ -43,280 +43,206 @@ else {
   consola.info('async-mock.json doesnt exist. No async_query mocking is enabled');
 }
 
-function manipulateResponse(res: Response, callback: (original: any) => any): void {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const originalWrite = res.write;
+const engine = createMockEngine(mockedAsyncCalls);
 
-  res.write = (chunk: any): boolean => {
-    const response = chunk.toString();
-    try {
-      const payload = JSON.stringify(callback(JSON.parse(response)));
-      res.header('content-length', payload.length.toString());
-      res.status(200);
-      res.statusMessage = 'OK';
-      originalWrite.call(res, payload);
-      return true;
-    }
-    catch (error: any) {
-      consola.error(error);
-      return false;
-    }
+/** Bodies are read off the request stream, so they are kept here for the response handlers. */
+const requestBodies = new WeakMap<IncomingMessage, unknown>();
+
+function describe(req: IncomingMessage): MockRequest {
+  const url = req.url ?? '';
+  return {
+    body: requestBodies.get(req),
+    method: req.method ?? 'GET',
+    path: url.split('?')[0],
+    url,
   };
 }
 
-let mockTaskId = 100000;
-const mockAsync: {
-  pending: number[];
-  completed: number[];
+/**
+ * Per-connection headers, which describe the hop they arrived on and must not be
+ * forwarded to the next one. `selfHandleResponse` skips httpxy's own outgoing
+ * passes, which would otherwise strip these, so this is the only thing between
+ * the backend and the client: an upstream `Connection: close` copied through
+ * would tear down the client's keep-alive for no reason.
+ */
+const HOP_BY_HOP_HEADERS = [
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+];
 
-  taskResponses: { [task: number]: any };
-} = {
-  completed: [],
-  pending: [],
-  taskResponses: {},
-};
+function copyHeaders(proxyRes: IncomingMessage, res: ServerResponse, omit: string[] = []): void {
+  for (const [key, value] of Object.entries(proxyRes.headers)) {
+    const name = key.toLocaleLowerCase();
+    if (value === undefined || omit.includes(name) || HOP_BY_HOP_HEADERS.includes(name))
+      continue;
 
-const counter: { [url: string]: { [method: string]: number } } = {};
+    res.setHeader(key, value);
+  }
+}
 
-setInterval(() => {
-  const pending = mockAsync.pending;
-  const completed = mockAsync.completed;
-  if (pending.length > 0)
-    consola.log(`detected ${pending.length} pending tasks: ${pending.toString()}`);
+/**
+ * Reading the whole body is what lets a mock rewrite it with a correct
+ * content-length, but it also breaks streaming, so it is only done for requests
+ * the engine can actually rewrite. A compressed body is passed through: it would
+ * have to be inflated to be parsed, and the backend does not compress in dev.
+ */
+function canRewrite(req: IncomingMessage, proxyRes: IncomingMessage): boolean {
+  const request = describe(req);
+  if (!engine.handles(request))
+    return false;
 
-  while (pending.length > 0) {
-    const task = pending.pop();
-    if (task)
-      completed.push(task);
+  if (proxyRes.headers['content-encoding'])
+    return false;
+
+  // A declared mock replaces the response outright, so it applies whatever the
+  // backend said — faking an endpoint the dev backend rejects (a premium 402, an
+  // unimplemented 404) is most of what async-mock.json is for.
+  if (engine.isMocked(request))
+    return true;
+
+  // The task endpoints merge into the backend's own answer, so they need it to be
+  // one: rewriting an error into a 200 would report "no tasks running" for what
+  // is actually a failure.
+  const status = proxyRes.statusCode ?? 200;
+  if (status < 200 || status > 299)
+    return false;
+
+  return (proxyRes.headers['content-type'] ?? '').toLocaleLowerCase().includes('application/json');
+}
+
+function onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse): void {
+  if (!canRewrite(req, proxyRes)) {
+    res.statusCode = proxyRes.statusCode ?? 200;
+    copyHeaders(proxyRes, res);
+    proxyRes.pipe(res);
+    return;
   }
 
-  if (completed.length > 0)
-    consola.log(`detected ${completed.length} completed tasks: ${completed.toString()}`);
-}, 8000);
+  const chunks: Buffer[] = [];
+  proxyRes.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
+  proxyRes.on('end', () => {
+    const raw = Buffer.concat(chunks);
+    // A rejected or non-JSON body is still worth handing to the engine: a mock
+    // ignores it entirely. Only the task merge needs it, and that path is gated
+    // on a 2xx JSON response above.
+    let backend: unknown;
+    try {
+      backend = JSON.parse(raw.toString());
+    }
+    catch {
+      backend = undefined;
+    }
 
-function createResult(result: unknown): Record<string, unknown> {
-  return {
-    message: '',
-    result,
-  };
-}
+    let rewritten: unknown;
+    try {
+      rewritten = engine.transformResponse(describe(req), backend);
+    }
+    catch (error) {
+      consola.error(error);
+    }
 
-function handleTasksStatus(res: Response): void {
-  manipulateResponse(res, (data) => {
-    const result = data.result;
-    if (result?.pending)
-      result.pending.push(...mockAsync.pending);
-    else result.pending = mockAsync.pending;
+    if (rewritten === undefined) {
+      res.statusCode = proxyRes.statusCode ?? 200;
+      copyHeaders(proxyRes, res);
+      res.end(raw);
+      return;
+    }
 
-    if (result?.completed)
-      result.completed.push(...mockAsync.completed);
-    else result.completed = mockAsync.completed;
-
-    return data;
+    const payload = Buffer.from(JSON.stringify(rewritten));
+    res.statusCode = 200;
+    res.statusMessage = 'OK';
+    // The rewritten payload has its own length.
+    copyHeaders(proxyRes, res, ['content-length']);
+    res.setHeader('content-length', payload.byteLength.toString());
+    // Deliberately unlogged: the task poll runs on a timer, so a line per
+    // rewrite is one every couple of seconds and drowns everything else. What is
+    // worth seeing already logs itself — a mock task appearing and completing,
+    // and each renderer bundle served.
+    res.end(payload);
   });
 }
 
-function handleTaskRequest(url: string, tasks: string, res: Response): void {
-  const task = url.replace(tasks, '');
-  try {
-    const taskId = Number.parseInt(task);
-    if (Number.isNaN(taskId))
-      return;
+const proxy = createProxyServer({ selfHandleResponse: true, target: backend, ws: true });
 
-    if (mockAsync.completed.includes(taskId)) {
-      const outcome = mockAsync.taskResponses[taskId];
-      manipulateResponse(res, () =>
-        createResult({
-          outcome,
-          status: 'completed',
-        }));
-      delete mockAsync.taskResponses[taskId];
-      const index = mockAsync.completed.indexOf(taskId);
-      mockAsync.completed.splice(index, 1);
-    }
-    else if (mockAsync.pending.includes(taskId)) {
-      manipulateResponse(res, () =>
-        createResult({
-          outcome: null,
-          status: 'pending',
-        }));
-    }
-  }
-  catch (error) {
-    consola.error(error);
-  }
-}
+proxy.on('proxyRes', onProxyRes);
 
-function increaseCounter(baseUrl: string, method: string): void {
-  if (!counter[baseUrl])
-    counter[baseUrl] = { [method]: 1 };
-  else if (!counter[baseUrl][method])
-    counter[baseUrl][method] = 1;
-  else counter[baseUrl][method] += 1;
-}
-
-function getCounter(baseUrl: string, method: string): number {
-  return counter[baseUrl]?.[method] ?? 0;
-}
-
-function handleAsyncQuery(url: string, req: Request, res: Response): void {
-  const mockedUrls = Object.keys(mockedAsyncCalls);
-  const baseUrl = url.split('?')[0];
-  const index = mockedUrls.findIndex(value => value.includes(baseUrl));
-
-  if (index < 0)
+// httpxy emits `error` and resolves; it writes no response of its own, and with
+// an `error` listener registered it never will. Without this the client is left
+// hanging until it times out — and since starling now routes every `/api/1/*`
+// through here, a core that is down or restarting would hang the whole app
+// rather than failing fast. http-proxy-middleware answered 502 for us before.
+proxy.on('error', (error, _req, res) => {
+  consola.error(error);
+  if (!res)
     return;
 
-  increaseCounter(baseUrl, req.method);
-
-  const response = mockedAsyncCalls[mockedUrls[index]]?.[req.method];
-  if (!response)
+  if (res instanceof net.Socket) {
+    res.destroy();
     return;
-
-  let pendingResponse: any;
-  if (Array.isArray(response)) {
-    const number = getCounter(baseUrl, req.method) - 1;
-    if (number < response.length)
-      pendingResponse = response[number];
-    else pendingResponse = response.at(-1);
-  }
-  else if (typeof response === 'object') {
-    pendingResponse = response;
-  }
-  else {
-    pendingResponse = {
-      message: 'There is something wrong with this mock',
-      result: null,
-    };
   }
 
-  const taskId = mockTaskId++;
-  mockAsync.pending.push(taskId);
-  mockAsync.taskResponses[taskId] = pendingResponse;
-  manipulateResponse(res, () => ({
-    message: '',
-    result: {
-      task_id: taskId,
-    },
+  if (res.headersSent) {
+    res.end();
+    return;
+  }
+
+  res.statusCode = HTTP_BAD_GATEWAY;
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify({
+    message: `dev-proxy could not reach the backend at ${backend}: ${error.message}`,
+    result: null,
   }));
-}
+});
 
-function isAsyncQuery(req: Request): boolean {
-  return (
-    req.method !== 'GET'
-    && req.rawHeaders.findIndex(h => h.toLocaleLowerCase().includes('application/json'))
-    && req.body?.async_query === true
-  );
-}
+const server = http.createServer((req, res) => {
+  applyCors(res);
 
-function isPreflight(req: Request): boolean {
-  const mockedUrls = Object.keys(mockedAsyncCalls);
-  const baseUrl = req.url.split('?')[0];
-  const index = mockedUrls.findIndex(value => value.includes(baseUrl));
-  return req.method === 'OPTIONS' && index >= 0;
-}
+  const request = describe(req);
 
-function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response): void {
-  if (!req.body)
+  if (statisticsRendererDir && request.method === 'GET' && request.path === STATISTICS_RENDERER_PATH) {
+    serveStatisticsRenderer(statisticsRendererDir, res);
     return;
-
-  const contentType = proxyReq.getHeader('Content-Type') ?? '';
-  const writeBody = (bodyData: string): void => {
-    proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-    proxyReq.write(bodyData);
-  };
-
-  const ct = contentType.toString().toLocaleLowerCase();
-  if (ct.startsWith('application/json'))
-    writeBody(JSON.stringify(req.body));
-
-  if (ct.startsWith('application/x-www-form-urlencoded'))
-    writeBody(querystring.stringify(req.body));
-}
-
-function mockPreflight(res: Response): void {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const originalWrite = res.write;
-
-  res.write = (chunk: any): boolean => {
-    try {
-      res.header('Access-Control-Allow-Origin', '*');
-      res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.status(200);
-      res.statusMessage = 'OK';
-      originalWrite.call(res, chunk);
-      return true;
-    }
-    catch {
-      return false;
-    }
-  };
-}
-
-function hasResponse(req: Request): boolean {
-  const mockResponse = mockedAsyncCalls[req.url];
-  return !!mockResponse && !!mockResponse[req.method];
-}
-
-function onProxyRes(_proxyRes: http.IncomingMessage, req: Request, res: Response): void {
-  let handled = false;
-  const url = req.url;
-  const tasks = '/api/1/tasks/';
-  if (url.indexOf('async_query') > 0) {
-    handleAsyncQuery(url, req, res);
-    handled = true;
-  }
-  else if (url === tasks) {
-    handleTasksStatus(res);
-    handled = true;
-  }
-  else if (url.startsWith(tasks)) {
-    handleTaskRequest(url, tasks, res);
-    handled = true;
-  }
-  else if (isAsyncQuery(req)) {
-    handleAsyncQuery(url, req, res);
-    handled = true;
-  }
-  else if (isPreflight(req)) {
-    mockPreflight(res);
-    handled = true;
-  }
-  else if (hasResponse(req)) {
-    manipulateResponse(res, () => {
-      const response = mockedAsyncCalls[req.url][req.method];
-      if (Array.isArray(response)) {
-        const index = getCounter(req.url, req.method);
-        let responseIndex = index;
-        if (index > response.length - 1)
-          responseIndex = response.length - 1;
-
-        increaseCounter(req.url, req.method);
-        return response[responseIndex];
-      }
-      return response;
-    });
-    handled = true;
   }
 
-  if (handled)
-    consola.info('Handled request:', req.method, req.url);
-}
+  // A preflight for a mocked endpoint is answered here: the CORS headers above
+  // are the whole response, so the backend hop would add nothing.
+  if (request.method === 'OPTIONS' && engine.isMocked(request)) {
+    res.statusCode = 200;
+    res.end();
+    return;
+  }
 
-server.use(bodyParser.urlencoded({ extended: true }));
-server.use(bodyParser.json());
+  if (request.method === 'GET' || request.method === 'HEAD') {
+    proxy.web(req, res).catch(error => consola.error(error));
+    return;
+  }
 
-server.use(createProxyMiddleware({
-  logger: consola,
-  on: {
-    proxyReq: onProxyReq,
-    proxyRes: onProxyRes,
-  },
-  target: backend,
-  ws: true,
-}));
+  readBody(req)
+    .then(async (raw) => {
+      requestBodies.set(req, parseBody(raw, req.headers['content-type'] ?? ''));
+      await proxy.web(req, res, { buffer: Readable.from(raw) });
+    })
+    .catch(error => consola.error(error));
+});
+
+server.on('upgrade', (req, socket, head) => {
+  // Node types the upgrade socket as Duplex, but HTTP/1.1 upgrades are always
+  // net.Socket, which is what httpxy expects.
+  if (!(socket instanceof net.Socket)) {
+    socket.destroy();
+    return;
+  }
+  proxy.ws(req, socket, {}, head).catch((error) => {
+    consola.error(error);
+    socket.destroy();
+  });
+});
 
 server.listen(port, () => {
   consola.log(`Proxy server is running at http://127.0.0.1:${port}`);

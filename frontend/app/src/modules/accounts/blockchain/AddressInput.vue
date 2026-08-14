@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf } from '@vuelidate/validators';
-import { isEmpty } from 'es-toolkit/compat';
+import {
+  addressEntrySchema,
+  type AddressFormState,
+  isXpubPrefix,
+  parseAddressEntries,
+  replaceSelection,
+} from '@/modules/accounts/blockchain/address-entries';
 import WalletAddressesImport from '@/modules/accounts/blockchain/WalletAddressesImport.vue';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { toServerErrors } from '@/modules/core/form/server-errors';
+import { useForm } from '@/modules/core/form/use-form';
 
 const addresses = defineModel<string[]>('addresses', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -23,26 +29,22 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const address = ref<string>('');
-const userAddresses = ref<string>('');
 const multiple = ref<boolean>(forceMultiple);
 
-const entries = computed(() => {
-  const allAddresses = get(userAddresses)
-    .split(/[\n,]+/)
-    .map(value => value.trim())
-    .filter(entry => entry.length > 0);
+const schema = computed<ZodType>(() => addressEntrySchema(
+  t('account_form.validation.address_non_empty'),
+  get(multiple),
+));
 
-  const entries: Record<string, string> = {};
-  for (const address of allAddresses) {
-    const lowerCase = address.toLocaleLowerCase();
-    if (entries[lowerCase])
-      continue;
-
-    entries[lowerCase] = address;
-  }
-  return Object.values(entries);
+const { errors: fieldErrors, setServerErrors, state, touch, validate } = useForm<AddressFormState, AddressFormState>({
+  initial: (): AddressFormState => ({ address: '', userAddresses: '' }),
+  schema,
+  // The addresses are handed to the parent as they are entered; there is nothing to submit here.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): AddressFormState => ({ ...state }),
 });
+
+const entries = computed<string[]>(() => parseAddressEntries(state.userAddresses));
 
 function onPasteMulti(event: ClipboardEvent): void {
   if (disabled)
@@ -59,21 +61,12 @@ function onPasteMulti(event: ClipboardEvent): void {
   }
 
   const { target } = event;
-  const current = get(userAddresses);
+  const current = state.userAddresses;
   const replacement = paste.replace(/,(0x)/g, ',\n0x');
 
-  if (target instanceof HTMLTextAreaElement && target.selectionStart !== target.selectionEnd) {
-    const before = current.slice(0, target.selectionStart);
-    const after = current.slice(target.selectionEnd);
-    set(userAddresses, before + replacement + after);
-  }
-  else {
-    set(userAddresses, current + replacement);
-  }
-}
-
-function isXpubPrefix(value: string): boolean {
-  return value.startsWith('xpub') || value.startsWith('ypub') || value.startsWith('zpub');
+  state.userAddresses = target instanceof HTMLTextAreaElement && target.selectionStart !== target.selectionEnd
+    ? replaceSelection(current, replacement, target.selectionStart, target.selectionEnd)
+    : current + replacement;
 }
 
 function onPasteAddress(event: ClipboardEvent): void {
@@ -90,116 +83,68 @@ function onPasteAddress(event: ClipboardEvent): void {
     return;
   }
 
-  set(address, paste);
+  state.address = paste;
 }
 
-function updateErrorMessages(newErrors: ValidationErrors): void {
-  set(errorMessages, newErrors);
+/**
+ * An edit answers whatever the backend last said about the addresses, so the errors the parent is
+ * holding go with it. The core drops the message under the field on its own; this is what stops a
+ * stale one being handed back to the next form the dialog opens.
+ */
+function updateAddresses(newAddresses: string[]): void {
+  set(errorMessages, {});
+  set(addresses, newAddresses);
 }
-
-watch(entries, addresses => updateAddresses(addresses));
-watch(address, (address) => {
-  updateAddresses(address ? [address.trim()] : []);
-});
 
 function setAddress(addresses: string[]): void {
   if (addresses.length === 1) {
     if (get(multiple)) {
-      if (!get(userAddresses))
-        set(userAddresses, addresses[0]);
+      if (!state.userAddresses)
+        state.userAddresses = addresses[0];
     }
     else {
-      set(address, addresses[0]);
+      state.address = addresses[0];
     }
   }
   else if (addresses.length === 0) {
-    set(address, '');
-    set(userAddresses, '');
+    state.address = '';
+    state.userAddresses = '';
   }
 }
+
+// The backend reports one flat `address` key for both, so its message is shown against whichever
+// field is on screen rather than being keyed to the one the state happens to call it.
+watchImmediate(errorMessages, (value) => {
+  const messages = toServerErrors(value).address ?? [];
+  setServerErrors({ address: messages, userAddresses: messages });
+}, { deep: true });
+
+watch(entries, addresses => updateAddresses(addresses));
+
+watch(() => state.address, (address) => {
+  updateAddresses(address ? [address.trim()] : []);
+});
 
 watch(addresses, addresses => setAddress(addresses));
 onMounted(() => setAddress(get(addresses)));
 
-const rules = {
-  address: {
-    required: helpers.withMessage(
-      t('account_form.validation.address_non_empty'),
-      requiredIf(logicNot(multiple)),
-    ),
-  },
-  userAddresses: {
-    required: helpers.withMessage(
-      t('account_form.validation.address_non_empty'),
-      requiredIf(logicAnd(multiple)),
-    ),
-  },
-};
-
-const errorMessagesModel = computed({
-  get() {
-    const errors = get(errorMessages);
-    return {
-      address: errors.address || '',
-      userAddresses: errors.address || '',
-    };
-  },
-  set(newErrors) {
-    const error = newErrors.address;
-    if (error) {
-      updateErrorMessages({
-        address: error,
-      });
-    }
-    else {
-      updateErrorMessages({});
-    }
-  },
-});
-
-const v$ = useVuelidate(
-  rules,
-  {
-    address,
-    userAddresses,
-  },
-  {
-    $autoDirty: true,
-    $externalResults: errorMessagesModel,
-    $stopPropagation: true,
-  },
-);
-
-function updateAddresses(newAddresses: string[]): void {
-  get(v$).$clearExternalResults();
-  set(addresses, newAddresses);
-}
-
-function validate(): Promise<boolean> {
-  return get(v$).$validate();
-}
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
 watch(multiple, () => {
-  get(v$).$clearExternalResults();
-  set(userAddresses, '');
+  set(errorMessages, {});
+  state.userAddresses = '';
 });
 
-function updateAddressesFromWalletImport(addresses: string[]) {
+/** Waits a tick, because switching mode empties the field the imported addresses are written to. */
+function updateAddressesFromWalletImport(addresses: string[]): void {
   if (addresses.length > 1) {
     set(multiple, true);
     nextTick(() => {
-      set(userAddresses, addresses.join(',\n'));
+      state.userAddresses = addresses.join(',\n');
     });
   }
   else if (addresses.length === 1) {
     set(multiple, false);
     nextTick(() => {
-      set(address, addresses[0]);
+      state.address = addresses[0];
     });
   }
 }
@@ -224,33 +169,32 @@ defineExpose({
     <div class="flex items-start gap-2">
       <RuiTextField
         v-if="!multiple"
-        v-model="address"
+        v-model="state.address"
         data-testid="account-address-field"
         variant="outlined"
         color="primary"
-        class="account-form__address flex-1"
+        class="flex-1"
         :label="t('common.account')"
-        :rules="rules"
         autocomplete="off"
         :disabled="disabled"
-        :error-messages="toMessages(v$.address)"
+        :error-messages="fieldErrors('address')"
         @paste="onPasteAddress($event)"
-        @blur="v$.address.$touch()"
+        @update:model-value="touch('address')"
       />
       <RuiTextArea
         v-else
-        v-model="userAddresses"
+        v-model="state.userAddresses"
         data-testid="account-address-field"
         variant="outlined"
         color="primary"
         class="flex-1"
         :min-rows="forceMultiple ? (entries.length > 1 ? 4 : 2) : 5"
         :disabled="disabled"
-        :error-messages="toMessages(v$.userAddresses)"
+        :error-messages="fieldErrors('userAddresses')"
         :hint="t('account_form.labels.addresses_hint')"
         :placeholder="forceMultiple ? t('account_form.labels.btc.placeholder') : undefined"
         :label="forceMultiple ? t('account_form.labels.btc.addresses') : t('account_form.labels.addresses')"
-        @blur="v$.userAddresses.$touch()"
+        @update:model-value="touch('userAddresses')"
         @paste="onPasteMulti($event)"
       />
       <WalletAddressesImport

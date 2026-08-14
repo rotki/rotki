@@ -8,7 +8,7 @@ import { useTaskCenter } from './use-task-center';
  * One thing the user started, with its subtree rolled up. A "job" is a root activity: the history
  * refresh, not the eleven chain syncs and forty account queries it fans out into.
  */
-export interface PendingJob {
+interface PendingJob {
   readonly activity: Activity;
   /** The integer leaf tally the row's text shows. See {@link subtreeSteps}. */
   readonly steps: ActivitySteps;

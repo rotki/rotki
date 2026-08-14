@@ -5,7 +5,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
  * takes a list per path. An empty message carries no information and would only reserve space under
  * the field, so it is dropped.
  */
-export function toMessageList(value: ValidationErrors[string] | undefined): string[] {
+function toMessageList(value: ValidationErrors[string] | undefined): string[] {
   if (value === undefined)
     return [];
 

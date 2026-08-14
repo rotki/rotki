@@ -1,5 +1,5 @@
 import type { FieldText } from '@/modules/core/table/pill/core/text';
-import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
+import { toMatchFieldDef, toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/types';
 
 /** What an account field needs from its table's account list, grouped so the argument list stays short. */
@@ -36,6 +36,40 @@ export interface AccountFieldBinding {
  * accounts its events mention, the balances table the accounts of the category being shown. Only
  * how they read is shared, which is the point — the two pills looked alike and were not.
  */
+/** What a filter-bound account field needs beyond how its accounts read. */
+export interface FilterAccountFieldBinding {
+  readonly key: string;
+  readonly label: FieldText;
+  /** Fields this one cannot coexist with, e.g. the other half of a one-axis pair. */
+  readonly excludes?: readonly string[];
+}
+
+/**
+ * The same account pill, for a bar that carries its values in the filter bag rather than through a
+ * `useServerTable` param source.
+ *
+ * The eth staking bar is the case that needs it: it has no server table behind it, it bridges its
+ * two pills into the page's own `EthStakingFilter` model by hand. Only the transport differs, so
+ * the resolution is the shared one and the pill reads exactly like every other account pill.
+ */
+export function toFilterAccountField(
+  binding: FilterAccountFieldBinding,
+  accounts: AccountFieldOptions,
+): FieldDef {
+  return toMatchFieldDef({
+    display: DisplayKinds.ACCOUNT,
+    excludes: binding.excludes,
+    key: binding.key,
+    label: binding.label,
+    multiple: true,
+    resolveCaption: accounts.resolveCaption,
+    resolveKeywords: accounts.resolveKeywords,
+    resolveLabel: accounts.resolveLabel,
+    resolveLoading: accounts.resolveLoading,
+    suggest: accounts.suggest,
+  });
+}
+
 export function toAccountField(binding: AccountFieldBinding, accounts: AccountFieldOptions): FieldDef {
   return toParamFieldDef({
     // The accounts table's old matcher stored `label (address)`, or a bare address when the

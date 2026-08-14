@@ -69,8 +69,8 @@ describe('composables/api/staking/kraken', () => {
               entries_limit: 100,
               entries_total: 50,
               received: [
-                { asset: 'ETH', amount: '1.5', usd_value: '3000' },
-                { asset: 'DOT', amount: '100', usd_value: '500' },
+                { asset: 'ETH', amount: '1.5', value: '3000' },
+                { asset: 'DOT', amount: '100', value: '500' },
               ],
               total_value: '3500',
             },
@@ -99,6 +99,9 @@ describe('composables/api/staking/kraken', () => {
       expect(result.entriesFound).toBe(10);
       expect(result.entriesTotal).toBe(50);
       expect(result.received).toHaveLength(2);
+      // The endpoint sends `value`; a length check alone passed while the schema defaulted a
+      // missing one to zero, which is how the fixture kept the pre-1.42 `usd_value` name.
+      expect(result.received[0].value.toString()).toBe('3000');
       expect(result.totalValue).toBeInstanceOf(BigNumber);
       expect(result.totalValue.toString()).toBe('3500');
     });
@@ -116,7 +119,7 @@ describe('composables/api/staking/kraken', () => {
               entries_limit: 50,
               entries_total: 20,
               received: [
-                { asset: 'ETH', amount: '0.5', usd_value: '1000' },
+                { asset: 'ETH', amount: '0.5', value: '1000' },
               ],
               total_value: '1000',
             },

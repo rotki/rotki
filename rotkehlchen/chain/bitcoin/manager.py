@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from functools import partial
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 
 import requests
@@ -226,6 +227,23 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             },
         )
 
+    def _send_tx_query_progress(
+            self,
+            addresses: list[BTCAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            cursor: Timestamp,
+    ) -> None:
+        """Report explorer pagination progress for a transaction query."""
+        if (cursor := min(to_timestamp, cursor)) == to_timestamp:
+            return  # This page did not advance beyond the requested end yet.
+
+        self._send_tx_ws_status(
+            addresses=addresses,
+            period=(from_timestamp, cursor),
+            status=TransactionStatusStep.QUERYING_TRANSACTIONS,
+        )
+
     def query_transactions(
             self,
             addresses: list[BTCAddress],
@@ -271,7 +289,16 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             block_height, accounts_txs = self._query(
                 action=BtcQueryAction.TRANSACTIONS,
                 accounts=accounts,
-                options={'to_timestamp': to_timestamp, 'last_queried_block': last_queried_block},
+                options={
+                    'to_timestamp': to_timestamp,
+                    'last_queried_block': last_queried_block,
+                    'progress_callback': partial(
+                        self._send_tx_query_progress,
+                        accounts,
+                        from_timestamp,
+                        to_timestamp,
+                    ),
+                },
             )
             if len(accounts_txs) == 0:
                 new_block_height = max(new_block_height, last_queried_block)
@@ -279,11 +306,6 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
             new_block_height = max(new_block_height, block_height)
             tx_list.extend(accounts_txs)
-            self._send_tx_ws_status(
-                addresses=accounts,
-                period=(from_timestamp, accounts_txs[-1].timestamp),
-                status=TransactionStatusStep.QUERYING_TRANSACTIONS,
-            )
 
         self._send_tx_ws_status(
             addresses=addresses,

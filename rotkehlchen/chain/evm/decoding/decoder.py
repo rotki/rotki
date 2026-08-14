@@ -30,6 +30,12 @@ from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCom
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
+from rotkehlchen.chain.evm.decoding.frankencoin.savings.constants import (
+    SUPPORTED_ZCHF_SAVINGS_CHAINS,
+)
+from rotkehlchen.chain.evm.decoding.frankencoin.savings.decoder import (
+    FrankencoinSavingsCommonDecoder,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.lifi.decoder import LifiDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
@@ -273,6 +279,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             )
         if self.evm_inquirer.chain_id in SUPPORTED_BEEFY_CHAINS:
             self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in SUPPORTED_ZCHF_SAVINGS_CHAINS:
+            self._add_single_decoder(class_name='FrankencoinSavings', decoder_class=FrankencoinSavingsCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
         if self.evm_inquirer.chain_id in CFA_V1_ADDRESSES:
             self._add_single_decoder(class_name='Superfluid', decoder_class=SuperfluidCommonDecoder, rules=rules)  # noqa: E501
@@ -599,7 +607,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         for idx, tx_log in enumerate(tx_receipt.logs):
             if (
                 monerium_special_handling_event is False and
-                self.evm_inquirer.chain_id in {ChainID.GNOSIS, ChainID.POLYGON_POS} and
+                self.evm_inquirer.chain_id in {
+                    ChainID.ETHEREUM,
+                    ChainID.GNOSIS,
+                    ChainID.POLYGON_POS,
+                } and
                 (block_number := self.addresses_exceptions.get(tx_log.address)) is not None and
                 block_number < transaction.block_number
             ):
@@ -1427,6 +1439,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             beacon_chain: BeaconChain | None = None,
             premium: Premium | None = None,
             monerium: Monerium | None = None,
+            addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
     ):
         super().__init__(
             database=database,
@@ -1439,6 +1452,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             premium=premium,
             beacon_chain=beacon_chain,
             monerium=monerium,
+            addresses_exceptions=addresses_exceptions,
         )
         self.evm_inquirer: EvmNodeInquirerWithProxies  # Set explicit type
         self.base: BaseEvmDecoderToolsWithProxy  # Set explicit type

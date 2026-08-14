@@ -150,7 +150,7 @@ export type ActivitySourceType = (typeof ActivitySourceType)[keyof typeof Activi
  * EXCHANGE_EVENTS, PROTOCOL_CACHE, BALANCE_QUERY, REQUEST_TAG, INFO) were declared for a
  * per-producer routing scheme that native migration made unnecessary, and were deleted in W0.
  */
-export interface ActivitySource {
+interface ActivitySource {
   type: typeof ActivitySourceType.NATIVE;
 }
 
@@ -176,6 +176,8 @@ export interface Activity {
   readonly subtitle?: ActivityText;
   readonly status: ActivityStatus;
   readonly steps?: ActivitySteps;
+  /** Why a FAILED or SKIPPED activity ended so, already translated. See {@link terminalReason}. */
+  readonly reason?: string;
   /** Derived 0-100; `-1` for indeterminate kinds. */
   readonly percentage: number;
   /** Whether the controller knows how to cancel this item. */

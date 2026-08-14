@@ -30,6 +30,17 @@ export const StarlingServiceStatus = {
 
 export type StarlingServiceStatus = typeof StarlingServiceStatus[keyof typeof StarlingServiceStatus];
 
+/**
+ * Groups of browser-storage keys the debug menu can wipe. The main process only
+ * names a group; the renderer owns which keys belong to it, since the patterns
+ * live next to the code that writes them and some are user-id scoped.
+ */
+export const DebugStateGroup = {
+  FIRST_RUN: 'firstRun',
+} as const;
+
+export type DebugStateGroup = typeof DebugStateGroup[keyof typeof DebugStateGroup];
+
 export interface McpServerStatus {
   autoStart: boolean;
   endpoint: string;
@@ -130,6 +141,11 @@ export interface Listeners {
    * shutdown screen and stop talking to a backend that is going down.
    */
   onAppClosing?: () => void;
+  /**
+   * Invoked from the (development-only) debug menu to wipe a group of
+   * localStorage/sessionStorage keys and reload.
+   */
+  onResetDebugState?: (group: DebugStateGroup) => void;
 }
 
 export interface Interop {

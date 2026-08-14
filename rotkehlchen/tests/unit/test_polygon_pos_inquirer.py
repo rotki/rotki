@@ -5,7 +5,6 @@ import pytest
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.polygon_pos import (
-    ALCHEMY_RPC_ENDPOINT,
     POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
 )
 from rotkehlchen.types import SupportedBlockchain
@@ -33,7 +32,7 @@ def test_polygon_pos_nodes_prune_and_archive_status(
         if node_name.endpoint == 'https://polygon-bor.publicnode.com':
             assert web3_node.is_pruned
             assert not web3_node.is_archive
-        elif node_name.endpoint in ('https://rpc.ankr.com/polygon', ALCHEMY_RPC_ENDPOINT):
+        elif node_name.endpoint == 'https://rpc.ankr.com/polygon':
             assert not web3_node.is_pruned
             assert web3_node.is_archive
         else:

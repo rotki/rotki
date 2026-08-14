@@ -1,3 +1,4 @@
+import type { Ref } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface UseAccountLoadStateReturn {
@@ -5,6 +6,8 @@ interface UseAccountLoadStateReturn {
   release: () => void;
   track: (load: Promise<void>) => Promise<void>;
   pending: () => Promise<void> | undefined;
+  /** The same answer as {@link pending}, for a consumer that renders it rather than awaits it. */
+  ready: Readonly<Ref<boolean>>;
   reset: () => void;
 }
 
@@ -46,6 +49,10 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
   let openGate: (() => void) | undefined;
   let unstarted: ReturnType<typeof setTimeout> | undefined;
 
+  // Starts open, for the same reason `pending()` returns undefined when nothing is armed: a
+  // session that never promised a read has nothing to wait for. Only `arm` closes it.
+  const ready = ref<boolean>(true);
+
   const clearTimer = (): void => {
     if (unstarted === undefined)
       return;
@@ -63,6 +70,7 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
     openGate?.();
     gate = undefined;
     openGate = undefined;
+    set(ready, true);
   };
 
   /**
@@ -81,6 +89,7 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
     if (gate)
       return;
 
+    set(ready, false);
     gate = new Promise<void>((resolve) => {
       openGate = resolve;
     });
@@ -139,5 +148,5 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
     current = undefined;
   };
 
-  return { arm, pending, release, reset, track };
+  return { arm, pending, ready: readonly(ready), release, reset, track };
 });

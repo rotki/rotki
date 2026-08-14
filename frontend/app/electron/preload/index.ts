@@ -1,4 +1,4 @@
-import type { Credentials, Interop, Listeners, StartupError, TrayUpdate } from '@shared/ipc';
+import type { Credentials, DebugStateGroup, Interop, Listeners, StartupError, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld('interop', {
 
     ipcRenderer.on(IpcCommands.APP_CLOSING, () => {
       listeners.onAppClosing?.();
+    });
+
+    ipcRenderer.on(IpcCommands.RESET_DEBUG_STATE, (_event, group: DebugStateGroup) => {
+      listeners.onResetDebugState?.(group);
     });
 
     // Signal to main process that renderer is ready for async messages
