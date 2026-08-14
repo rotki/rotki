@@ -2949,15 +2949,11 @@
     }
   },
   "eth2_page": {
-    "no_premium": "The ETH staking view is not available",
-    "toggle": {
-      "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
-      "key": "Validator",
-      "withdrawal": "Withdrawal Address"
-    }
-  },
-  "eth2_validator_filter": {
-    "label": "Select Withdrawal address"
+    "filter": {
+      "validator": "Validator",
+      "withdrawal_address": "Withdrawal Address"
+    },
+    "no_premium": "The ETH staking view is not available"
   },
   "eth2_validator_limit_row": {
     "complete": "Only showing balances for {limit} out of {total} validators. Click {button} to purchase rotki Premium and view the complete validator balances.",

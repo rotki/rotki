@@ -1413,16 +1413,6 @@
     "ownership_percentage": "所有权百分比",
     "public_key": "公钥"
   },
-  "eth2_page": {
-    "toggle": {
-      "hint": "在 ETH 抵押驗證器和 ETH1 地址之間切換過濾和顯示模式",
-      "key": "验证器",
-      "withdrawal": "提币地址"
-    }
-  },
-  "eth2_validator_filter": {
-    "label": "选择提款地址"
-  },
   "eth2_validator_limit_row": {
     "label": "信标链验证者"
   },

@@ -5,9 +5,9 @@ import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-ext
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import EthStakingFilterBar from './components/EthStakingFilterBar.vue';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
-import EthValidatorFilter from './components/EthValidatorFilter.vue';
 import { useEthStakingAccess } from './use-eth-staking-access';
 import { useEthStakingPerformance } from './use-eth-staking-performance';
 import { useEthStakingRefresh } from './use-eth-staking-refresh';
@@ -106,7 +106,7 @@ onBeforeMount(async () => {
         :performance-loading="performanceLoading"
       >
         <template #selection>
-          <EthValidatorFilter
+          <EthStakingFilterBar
             v-model="modelSelection"
             v-model:filter="modelFilter"
           />
