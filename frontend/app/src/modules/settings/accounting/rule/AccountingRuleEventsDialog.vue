@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventsTableSource } from '@/modules/history/events/types';
 import type { Filters } from '@/modules/history/events/use-events-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
@@ -48,6 +49,14 @@ const {
   }],
 });
 
+const source = computed<HistoryEventsTableSource>(() => ({
+  excludeIgnored: false,
+  groupLoading: get(groupLoading),
+  groups: get(groups),
+  identifiers: get(eventIdentifiers),
+  requestPayload: get(requestPayload),
+}));
+
 onMounted(() => {
   refetch();
 });
@@ -73,11 +82,7 @@ watch(display, (value) => {
         v-model:sort="sort"
         v-model:pagination="pagination"
         hide-actions
-        :groups="groups"
-        :exclude-ignored="false"
-        :group-loading="groupLoading"
-        :request-payload="requestPayload"
-        :identifiers="eventIdentifiers"
+        :source="source"
         @set-page="setPage($event)"
       />
 

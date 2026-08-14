@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Collection } from '@/modules/core/common/collection';
-import type { DuplicateHandlingStatus, HighlightType } from '@/modules/history/events/action-types';
-import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
-import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
+import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
 import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { useHistoryEventsTable } from '@/modules/history/events/use-history-events-table';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
@@ -16,34 +13,22 @@ const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { require
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
 const {
-  groups: rawGroups,
-  requestPayload,
-  excludeIgnored,
-  groupLoading,
+  source,
+  highlight,
   hasActiveFilters,
   processing,
   tableHeightOffset,
-  identifiers,
-  highlightedGroupIdentifier,
-  highlightedIdentifiers,
-  highlightTypes,
   hideActions,
-  selection,
   duplicateHandlingStatus,
 } = defineProps<{
-  groups: Collection<HistoryEventRow>;
-  requestPayload: HistoryEventRequestPayload | undefined;
-  excludeIgnored: boolean;
-  groupLoading: boolean;
+  /** What to render: the groups plus everything scoping the per-group event fetch. */
+  source: HistoryEventsTableSource;
+  /** Which rows to call out, and how. */
+  highlight?: HistoryEventsTableHighlight;
   hasActiveFilters?: boolean;
   processing?: boolean;
   tableHeightOffset?: number;
-  identifiers?: string[];
-  highlightedGroupIdentifier?: string;
-  highlightedIdentifiers?: string[];
-  highlightTypes?: Record<string, HighlightType>;
   hideActions?: boolean;
-  selection?: UseHistoryEventsSelectionModeReturn;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
 
@@ -61,17 +46,16 @@ const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./Redecode
 
 const { redecode, rowContext, shell, virtual } = useHistoryEventsTable({
   duplicateHandlingStatus: () => duplicateHandlingStatus,
-  excludeIgnored: () => excludeIgnored,
-  groupLoading: () => groupLoading,
-  groups: () => rawGroups,
+  excludeIgnored: () => source.excludeIgnored,
+  groupLoading: () => source.groupLoading,
+  groups: () => source.groups,
   hideActions: () => hideActions,
-  highlightedGroupIdentifier: () => highlightedGroupIdentifier,
-  highlightedIdentifiers: () => highlightedIdentifiers,
-  highlightTypes: () => highlightTypes,
-  identifiers: () => identifiers,
+  highlightedGroupIdentifier: () => highlight?.groupIdentifier,
+  highlightedIdentifiers: () => highlight?.identifiers,
+  highlightTypes: () => highlight?.types,
+  identifiers: () => source.identifiers,
   pagination,
-  requestPayload: () => requestPayload,
-  selection: () => selection,
+  requestPayload: () => source.requestPayload,
 }, emit);
 
 const { entriesFoundTotal, found, groups, loading, showUpgradeRow, total } = shell;

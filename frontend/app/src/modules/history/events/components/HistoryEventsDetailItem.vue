@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
@@ -9,6 +8,7 @@ import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/modules/history/events/HistoryEventType.vue';
+import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import { useHistoryEventItem } from '../use-history-event-item';
 
 const {
@@ -19,7 +19,6 @@ const {
   matchedMovement,
   hideActions,
   highlightType,
-  selection,
   variant = 'row',
 } = defineProps<{
   event: HistoryEventEntry;
@@ -35,7 +34,6 @@ const {
   hideActions?: boolean;
   /** The highlight colour. Its presence is what highlights the row. */
   highlightType?: HighlightType;
-  selection?: UseHistoryEventsSelectionModeReturn;
   variant?: 'row' | 'card';
 }>();
 
@@ -45,6 +43,8 @@ const emit = defineEmits<{
   'show:missing-rule-action': [data: HistoryEventEditData];
   'refresh': [];
 }>();
+
+const selection = injectHistoryEventsSelection();
 
 const {
   blockNumber,
