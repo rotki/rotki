@@ -471,6 +471,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                 )
                 return DEFAULT_EVM_DECODING_OUTPUT
 
+        queued_fee_events: list[EvmEvent] = []
         if out_event is not None:
             out_event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
             notes = f'Return {shares_amount} sftUSD to the {FLYING_TULIP_LABEL} sftUSD vault'
@@ -482,13 +483,39 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     context=context,
                     user=owner,
                     token=self.ftusd,
-                )) > ZERO:
-                    # A relayed queued unstake pays the relayer fee before
-                    # queueing, so the fee never touches the wallet in either
-                    # transaction of the lifecycle. It is recorded in the notes
-                    # instead of as a fee event, keeping the decoded events
-                    # equal to the actual transfers.
+                )) > ZERO and self.base.is_tracked(receiver):
+                    # The payout is the receiver's, so there is nothing to
+                    # record when it belongs to a wallet nobody tracks.
+                    #
+                    # A relayed queued unstake pays the relayer out of the
+                    # withdrawal before the rest of it is queued, so that part
+                    # of the payout is settled here while the remainder waits.
+                    # Decoding both of its legs keeps the fee an expense
+                    # accounting can see and leaves the wallet unchanged, which
+                    # is the same economics an immediate relayed payout gets
+                    # from grossing its transfer up.
                     notes += f' after a {fee_amount} ftUSD relayer fee'
+                    queued_fee_events = [
+                        self.base.make_event_next_index(
+                            tx_ref=context.transaction.tx_hash,
+                            timestamp=context.transaction.timestamp,
+                            event_type=HistoryEventType.WITHDRAWAL,
+                            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+                            asset=self.ftusd,
+                            amount=fee_amount,
+                            location_label=receiver,
+                            notes=f'Withdraw {fee_amount} ftUSD from the {FLYING_TULIP_LABEL} sftUSD vault to pay the relayer',  # noqa: E501
+                            counterparty=CPT_FLYING_TULIP,
+                            address=context.tx_log.address,
+                        ),
+                        self._make_relayer_fee_event(
+                            context=context,
+                            token=self.ftusd,
+                            fee_amount=fee_amount,
+                            location_label=receiver,
+                        ),
+                    ]
+                    context.decoded_events.extend(queued_fee_events)
             out_event.notes = notes
             out_event.counterparty = CPT_FLYING_TULIP
 
@@ -519,7 +546,7 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             in_event.address = context.tx_log.address
 
         maybe_reshuffle_events(
-            ordered_events=[out_event, in_event, fee_event],
+            ordered_events=[out_event, *queued_fee_events, in_event, fee_event],
             events_list=context.decoded_events,
         )
         return DEFAULT_EVM_DECODING_OUTPUT
