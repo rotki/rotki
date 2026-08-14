@@ -28,7 +28,7 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
             from_event_type: HistoryEventType,
             token: EvmToken,
             amount: FVal,
-            allowed_labels: Container[ChecksumEvmAddress],
+            allowed_labels: Container[ChecksumEvmAddress] | None,  # None allows any tracked wallet
             allowed_addresses: Container[ChecksumEvmAddress],
             to_event_type: HistoryEventType,
             to_event_subtype: HistoryEventSubType,
@@ -47,7 +47,7 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
                     event.amount == amount and
-                    event.location_label in allowed_labels and
+                    (allowed_labels is None or event.location_label in allowed_labels) and
                     event.address in allowed_addresses
             ):
                 event.event_type = to_event_type

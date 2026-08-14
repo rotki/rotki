@@ -1,11 +1,13 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.flying_tulip.constants import CPT_FLYING_TULIP
 from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.constants import (
     FLYING_TULIP_FTUSD_DEPLOYMENTS,
 )
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -226,5 +228,155 @@ def test_sftusd_claim_rewards(ethereum_inquirer, ethereum_accounts):
             notes=f'Spend {fee_amount} FT as a Flying Tulip relayer fee',
             counterparty=CPT_FLYING_TULIP,
             address=DEPLOYMENT.staking_vault,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3FfEBdC5130f6072A582f79f3FB61581D3D846ee']])
+def test_sftusd_unstake_queued(ethereum_inquirer, ethereum_accounts):
+    """A rate-limited unstake: the shares burn now while the circuit breaker
+    queues the ftUSD payout for a later transaction."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x52b1c85f91e1247bc6af0cc1e17b129ec5fc0aa1d6b62e2ee825c1c852d96d99')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1781743715000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.000264618530553404'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=133,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_SFTUSD,
+            amount=FVal(shares_amount := '200000'),
+            location_label=user_address,
+            notes=f'Return {shares_amount} sftUSD to the Flying Tulip sftUSD vault with the payout of 200000 ftUSD queued by the circuit breaker',  # noqa: E501
+            counterparty=CPT_FLYING_TULIP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x3FfEBdC5130f6072A582f79f3FB61581D3D846ee']])
+def test_circuit_breaker_release_unstake(ethereum_inquirer, ethereum_accounts):
+    """The later transaction paying out the queued unstake from the circuit breaker."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x53369bc39fc906041640e4d62e2e2310ed1a6789534af7f59737b116068c035f')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1781778467000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.000069128536608282'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=421,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=A_FTUSD,
+            amount=FVal(amount := '200000'),
+            location_label=user_address,
+            notes=f'Receive {amount} ftUSD released from the Flying Tulip circuit breaker queue',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.circuit_breaker,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x072ab8B22c7C7b4DD2b3367C6E7445d6c9e3cB2F']])
+def test_ftusd_redeem_queued(ethereum_inquirer, ethereum_accounts):
+    """A rate-limited redemption: the ftUSD is spent now while the circuit
+    breaker queues the collateral payout for a later transaction."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa58bad57aeec3377b47fc47b474386d3afc17d73be7b8ef232d3c26aa06b9296')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1773803615000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.000069450523131154'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=675,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=A_FTUSD,
+            amount=FVal(amount := '25030.217528'),
+            location_label=user_address,
+            notes=f'Swap {amount} ftUSD in Flying Tulip for 24999.429441 USDT queued by the circuit breaker',  # noqa: E501
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.mint_and_redeem,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x072ab8B22c7C7b4DD2b3367C6E7445d6c9e3cB2F']])
+def test_circuit_breaker_release_redeem(ethereum_inquirer, ethereum_accounts):
+    """The later transaction paying out the queued redemption collateral."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xaed560582dca59c7453340c7f92af729e8af989cfcf24c076dcf04ac0282a083')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1773825263000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.00001493588304054'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=449,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=A_ETH_USDT,
+            amount=FVal(amount := '24999.429441'),
+            location_label=user_address,
+            notes=f'Receive {amount} USDT released from the Flying Tulip circuit breaker queue',
+            counterparty=CPT_FLYING_TULIP,
+            address=DEPLOYMENT.circuit_breaker,
         ),
     ]

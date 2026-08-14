@@ -41,6 +41,8 @@ class FlyingTulipStakingBalances(ProtocolWithBalance):
             counterparty=CPT_FLYING_TULIP,
             deposit_event_types={
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
+                # covers share owners of deposits funded by another address
+                (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
             },
         )
         self.deployment = FLYING_TULIP_FTUSD_DEPLOYMENTS[evm_inquirer.chain_id]

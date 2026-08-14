@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
     FLYING_TULIP_LEND_DEPLOYMENTS,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WSTETH
+from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WETH, A_WSTETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -254,3 +254,28 @@ def test_lend_full_repay_with_refund(ethereum_inquirer, ethereum_accounts):
             address=POSITIONS_MANAGER,
         ),
     ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xe0E445967256EE60111e243e0F0F94DD1D351A59']])
+def test_leverage_open_fill(ethereum_inquirer, ethereum_accounts):
+    """A leverage RFQ engine open fill: the funds move inside the positions
+    manager, so the fill decodes into an informational entry that attributes
+    the activity and seeds the balance discovery of the position owner."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc570ee469d3e187fa1e5d0782a38dc75288e1cf6fa510ce3edaa4dd69edabbef')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=170,
+        timestamp=TimestampMS(1786546955000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WETH,
+        amount=FVal(sell_amount := '10'),
+        location_label=ethereum_accounts[0],
+        notes=f'Open a Flying Tulip leverage position selling {sell_amount} WETH',
+        counterparty=CPT_FLYING_TULIP,
+        address=FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.ETHEREUM].leverage_engine,
+    )]
