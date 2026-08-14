@@ -1,6 +1,6 @@
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
 import { describe, expect, it } from 'vitest';
-import { pillOperator, pillStateSummary, pillValueSummary } from '@/modules/core/table/pill/core/format';
+import { pillOperator, pillStateSummary, pillValueCaption, pillValueSummary } from '@/modules/core/table/pill/core/format';
 
 // The core works in operators; the words come from the Vue layer, which is what makes them
 // translatable. These stand in for it.
@@ -70,6 +70,32 @@ describe('pill format', () => {
       expect(pillValueSummary(field({ valueType: 'date' }), filter({ date: { preset: 'last 7 days' } }))).toBe('last 7 days');
       expect(pillValueSummary(field({ valueType: 'date' }), filter({ date: { from: '2024' } }))).toBe('≥ 2024');
       expect(pillValueSummary(field({ valueType: 'date' }), filter({}))).toBe('');
+    });
+  });
+
+  describe('pillValueCaption', () => {
+    const resolveCaption = (value: string): string => `caption for ${value}`;
+
+    it('should caption a single value', () => {
+      expect(pillValueCaption(field({ resolveCaption }), filter({ values: ['a'] }))).toBe('caption for a');
+    });
+
+    // No room for it beside several values, and no single value it would describe.
+    it('should drop the caption once a pill holds more than one value', () => {
+      expect(pillValueCaption(field({ resolveCaption }), filter({ values: ['a', 'b'] }))).toBe('');
+    });
+
+    // A validator's public key annotates the option while picking, but the index alone names it on
+    // the pill, and a 66-character key there pushes every other pill off the bar.
+    it('should drop the caption on the pill for a list-scoped field', () => {
+      const listScoped = field({ captionScope: 'list', resolveCaption });
+
+      expect(pillValueCaption(listScoped, filter({ values: ['a'] }))).toBe('');
+    });
+
+    it('should keep captioning the pill when the scope is left unset', () => {
+      expect(pillValueCaption(field({ captionScope: 'both', resolveCaption }), filter({ values: ['a'] })))
+        .toBe('caption for a');
     });
   });
 

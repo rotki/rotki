@@ -62,7 +62,7 @@ function valuesSummary(field: FieldDef, values: string[]): string {
  * Empty for multi-value pills (no room) or fields without a caption resolver.
  */
 export function pillValueCaption(field: FieldDef, filter: ActiveFilter): string {
-  if (!field.resolveCaption || filter.values.length !== 1)
+  if (!field.resolveCaption || field.captionScope === 'list' || filter.values.length !== 1)
     return '';
   return field.resolveCaption(filter.values[0]) ?? '';
 }
