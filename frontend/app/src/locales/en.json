@@ -1229,6 +1229,12 @@
       "migration_error": "Migration failed",
       "migration_success": "Token migrated successfully",
       "solana_address": "Solana Address",
+      "validation": {
+        "address_invalid": "The address is not a valid Solana address",
+        "address_non_empty": "The Solana address cannot be empty",
+        "decimals_non_empty": "The number of decimals cannot be empty",
+        "token_kind_non_empty": "The token kind cannot be empty"
+      },
       "validation_error": "Please fill in all required fields"
     }
   },

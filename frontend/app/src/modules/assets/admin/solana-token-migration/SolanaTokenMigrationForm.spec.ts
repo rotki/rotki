@@ -138,30 +138,38 @@ describe('solanaTokenMigrationForm', () => {
     expect(messages('token-kind-select')).toEqual([]);
   });
 
-  it('should report a missing value in vuelidate english', async () => {
+  // The three messages below replace vuelidate's untranslated "Value is required", which is what
+  // every one of these rules reported before the swap.
+  it('should report each missing value under its own message', async () => {
     wrapper = createWrapper({ address: '', decimals: null, tokenKind: '' });
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.vm.validate();
     await vi.advanceTimersToNextTimerAsync();
 
-    // None of the three rules was given a message, so all three fall back to the library's own
-    // untranslated string.
-    expect(messages('address-input')).toEqual(['Value is required']);
-    expect(messages('decimals-input')).toEqual(['Value is required']);
-    expect(messages('token-kind-select')).toEqual(['Value is required']);
+    expect(messages('address-input')).toEqual([
+      'asset_management.solana_token_migration.validation.address_non_empty',
+    ]);
+    expect(messages('decimals-input')).toEqual([
+      'asset_management.solana_token_migration.validation.decimals_non_empty',
+    ]);
+    expect(messages('token-kind-select')).toEqual([
+      'asset_management.solana_token_migration.validation.token_kind_non_empty',
+    ]);
   });
 
-  it('should say nothing at all about a malformed address', async () => {
+  // Before the swap the base58 rule was a bare function, which vuelidate defaults to an empty
+  // message, so a malformed address turned the field red and said nothing.
+  it('should say what is wrong with a malformed address', async () => {
     wrapper = createWrapper({ ...baseModel(), address: 'not-a-solana-address' });
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.vm.validate();
     await vi.advanceTimersToNextTimerAsync();
 
-    // The base58 rule is a bare function, and vuelidate defaults a bare rule's message to the empty
-    // string, so the field goes red with nothing written under it.
-    expect(messages('address-input')).toEqual(['']);
+    expect(messages('address-input')).toEqual([
+      'asset_management.solana_token_migration.validation.address_invalid',
+    ]);
   });
 
   it('should parse the typed decimals into a number', async () => {
