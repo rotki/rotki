@@ -1528,16 +1528,6 @@
     "ownership_percentage": "Pourcentage de propriété",
     "public_key": "Clé publique"
   },
-  "eth2_page": {
-    "toggle": {
-      "hint": "Changer le mode de filtrage et d'affichage entre les validateurs ETH2 et les adresses ETH1",
-      "key": "Validateur",
-      "withdrawal": "Dépositaire"
-    }
-  },
-  "eth2_validator_filter": {
-    "label": "Sélectionner l'adresse du dépositaire"
-  },
   "eth2_validator_limit_row": {
     "label": "Validateurs"
   },
