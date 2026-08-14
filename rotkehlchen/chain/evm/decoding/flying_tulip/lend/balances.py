@@ -18,6 +18,7 @@ from .constants import FLYING_TULIP_LEND_DEPLOYMENTS, LENDING_LENS_ABI, POSITION
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
@@ -40,27 +41,35 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
             },
         )
-        deployment = FLYING_TULIP_LEND_DEPLOYMENTS[evm_inquirer.chain_id]
-        self.positions_manager = EvmContract(
-            address=deployment.positions_manager,
-            abi=POSITIONS_MANAGER_ABI,
-            deployed_block=0,  # not used for calls
-        )
-        self.lending_lens = EvmContract(
-            address=deployment.lending_lens,
-            abi=LENDING_LENS_ABI,
-            deployed_block=0,  # not used for calls
-        )
+        self.deployment = FLYING_TULIP_LEND_DEPLOYMENTS[evm_inquirer.chain_id]
+
+    @staticmethod
+    def _addresses_at(
+            events_by_address: dict[ChecksumEvmAddress, list[EvmEvent]],
+            contract: ChecksumEvmAddress,
+    ) -> list[ChecksumEvmAddress]:
+        """Keep the addresses whose events belong to the given contract.
+
+        Every Flying Tulip product shares one counterparty, so filtering by it
+        alone would send ftPUT investors and ftUSD stakers into the lending
+        multicalls of a market they never touched.
+        """
+        return [
+            address
+            for address, events in events_by_address.items()
+            if any(event.address == contract for event in events)
+        ]
 
     def _query_asset_lists(
             self,
+            positions_manager: EvmContract,
             addresses: list[ChecksumEvmAddress],
     ) -> tuple[list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]], list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]]]:  # noqa: E501
         """Return the (address, asset) pairs with deposited collateral and with open debt."""
         calls = [
             (
-                self.positions_manager.address,
-                self.positions_manager.encode(method_name=method_name, arguments=[address]),
+                positions_manager.address,
+                positions_manager.encode(method_name=method_name, arguments=[address]),
             )
             for address in addresses
             for method_name in ('userCollateralAssets', 'userDebtAssets')
@@ -75,14 +84,14 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
             strict=True,
         ):
             collateral_pairs.extend(
-                (address, asset) for asset in self.positions_manager.decode(
+                (address, asset) for asset in positions_manager.decode(
                     result=collateral_result,
                     method_name='userCollateralAssets',
                     arguments=[address],
                 )[0]
             )
             debt_pairs.extend(
-                (address, asset) for asset in self.positions_manager.decode(
+                (address, asset) for asset in positions_manager.decode(
                     result=debt_result,
                     method_name='userDebtAssets',
                     arguments=[address],
@@ -94,26 +103,57 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
     def query_balances(self) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         addresses = list(dict.fromkeys(
-            list(self.addresses_with_deposits()) +
-            list(self.addresses_with_activity(event_types={
-                (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
-                # leverage fills move funds inside the protocol, so users whose
-                # position was opened engine-side only have informational events
-                (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
-            })),
+            self._addresses_at(
+                events_by_address=self.addresses_with_activity(event_types={
+                    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+                    (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
+                }),
+                contract=self.deployment.positions_manager,
+            ) +
+            # Leverage fills move funds inside the protocol, so users whose
+            # position was opened engine-side only have informational events.
+            self._addresses_at(
+                events_by_address=self.addresses_with_activity(event_types={
+                    (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+                }),
+                contract=self.deployment.leverage_engine,
+            ) +
+            # A deposit made for someone else by an untracked payer leaves the
+            # position owner only this discovery event.
+            self._addresses_at(
+                events_by_address=self.addresses_with_activity(event_types={
+                    (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+                }),
+                contract=self.deployment.positions_manager,
+            ),
         ))
         if len(addresses) == 0:
             return balances
 
+        # Built here rather than kept on the instance: a user without a lending
+        # position never needs them, and an unused contract is only memory.
+        positions_manager = EvmContract(
+            address=self.deployment.positions_manager,
+            abi=POSITIONS_MANAGER_ABI,
+            deployed_block=0,  # not used for calls
+        )
+        lending_lens = EvmContract(
+            address=self.deployment.lending_lens,
+            abi=LENDING_LENS_ABI,
+            deployed_block=0,  # not used for calls
+        )
         try:
-            collateral_pairs, debt_pairs = self._query_asset_lists(addresses)
+            collateral_pairs, debt_pairs = self._query_asset_lists(
+                positions_manager=positions_manager,
+                addresses=addresses,
+            )
             if len(collateral_pairs) + len(debt_pairs) == 0:
                 return balances
 
             results = self.evm_inquirer.multicall(calls=[
                 (
-                    self.positions_manager.address,
-                    self.positions_manager.encode(
+                    positions_manager.address,
+                    positions_manager.encode(
                         method_name='getBalance',
                         arguments=[address, asset],
                     ),
@@ -121,8 +161,8 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
                 for address, asset in collateral_pairs
             ] + [
                 (
-                    self.lending_lens.address,
-                    self.lending_lens.encode(method_name='debt', arguments=[address, asset]),
+                    lending_lens.address,
+                    lending_lens.encode(method_name='debt', arguments=[address, asset]),
                 )
                 for address, asset in debt_pairs
             ])
@@ -148,14 +188,14 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
                     chain_id=self.evm_inquirer.chain_id,
                 )
                 if is_collateral:
-                    avail, hold = self.positions_manager.decode(
+                    avail, hold = positions_manager.decode(
                         result=result,
                         method_name='getBalance',
                         arguments=[address, asset_address],
                     )
                     amount_raw = avail + hold
                 else:
-                    (amount_raw,) = self.lending_lens.decode(
+                    (amount_raw,) = lending_lens.decode(
                         result=result,
                         method_name='debt',
                         arguments=[address, asset_address],

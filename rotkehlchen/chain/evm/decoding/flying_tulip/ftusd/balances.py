@@ -46,22 +46,32 @@ class FlyingTulipStakingBalances(ProtocolWithBalance):
             },
         )
         self.deployment = FLYING_TULIP_FTUSD_DEPLOYMENTS[evm_inquirer.chain_id]
-        self.staking_vault = EvmContract(
+
+    def query_balances(self) -> BalancesSheetType:
+        balances: BalancesSheetType = defaultdict(BalanceSheet)
+        # Filtered by the vault rather than by the shared counterparty: an ftPUT
+        # position is also a deposit for a wrapped token, and its investor has
+        # no rewards to claim here.
+        addresses = list(dict.fromkeys(
+            address
+            for address, events in self.addresses_with_deposits().items()
+            if any(event.address == self.deployment.staking_vault for event in events)
+        ))
+        if len(addresses) == 0:
+            return balances
+
+        # Built here rather than kept on the instance: without a staker there is
+        # nothing to ask the vault, and an unused contract is only memory.
+        staking_vault = EvmContract(
             address=self.deployment.staking_vault,
             abi=STAKING_VAULT_ABI,
             deployed_block=0,  # not used for calls
         )
-
-    def query_balances(self) -> BalancesSheetType:
-        balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses := list(dict.fromkeys(self.addresses_with_deposits()))) == 0:
-            return balances
-
         try:
             results = self.evm_inquirer.multicall(calls=[
                 (
-                    self.staking_vault.address,
-                    self.staking_vault.encode(
+                    staking_vault.address,
+                    staking_vault.encode(
                         method_name='previewClaimable',
                         arguments=[address],
                     ),
@@ -79,7 +89,7 @@ class FlyingTulipStakingBalances(ProtocolWithBalance):
         ft_token, amounts = None, []
         for address, result in zip(addresses, results, strict=True):
             try:
-                (claimable_raw,) = self.staking_vault.decode(
+                (claimable_raw,) = staking_vault.decode(
                     result=result,
                     method_name='previewClaimable',
                     arguments=[address],
