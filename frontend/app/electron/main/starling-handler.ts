@@ -11,10 +11,9 @@ import { eventLastError, getMcpServerState, isMcpCrash, isServiceLive, setMcpSer
 import { BackendCode, type BackendOptions, StarlingServiceStatus } from '@shared/ipc';
 import { selectPort } from '@shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingInvocation } from '@shared/starling/starling-args';
-import { definedOptions, spawnStarling } from '@shared/starling/starling-launch';
+import { definedOptions, spawnStarling, stopStarling } from '@shared/starling/starling-launch';
 import { StarlingEvent, StarlingMethod, StarlingService } from '@shared/starling/starling-protocol';
 import { StarlingRpc } from '@shared/starling/starling-rpc';
-import { wait } from '@shared/utils';
 
 /** starling exits with this code when the data dir is already locked (main.rs). */
 const EXIT_DATADIR_IN_USE = 3;
@@ -322,23 +321,20 @@ export class StarlingHandler {
     if (!child)
       return;
 
+    // `exiting` stays here rather than moving into stopStarling: the exit handler reads it to tell
+    // an expected teardown from a crash, which is this class's business, not the helper's.
     this.exiting = true;
-    this.logger.debug('Stopping starling');
-    try {
-      await Promise.race([this.rpc.request(StarlingMethod.STOP).catch(() => undefined), wait(STOP_REQUEST_TIMEOUT)]);
-    }
-    catch {
-      // best-effort; fall through to wait/kill
-    }
-
-    if (this.child) {
-      const exited = this.exited ?? Promise.resolve(null);
-      const timedOut = await Promise.race([exited.then(() => false), wait(EXIT_MARGIN).then(() => true)]);
-      if (timedOut && this.child) {
-        this.logger.warn('starling did not exit in time, killing it');
-        this.child.kill('SIGKILL');
-      }
-    }
+    await stopStarling({
+      child,
+      exited: this.exited ?? Promise.resolve(null),
+      exitMarginMs: EXIT_MARGIN,
+      logger: {
+        debug: message => this.logger.debug(message),
+        warn: message => this.logger.warn(message),
+      },
+      rpc: this.rpc,
+      stopTimeoutMs: STOP_REQUEST_TIMEOUT,
+    });
     this.child = undefined;
     this.exiting = false;
   }

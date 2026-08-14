@@ -2,8 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { selectPort } from '../../app/shared/port-utils';
 import { buildStarlingInvocation, SHUTDOWN_GRACE_SECS, type StarlingBackendOptions } from '../../app/shared/starling/starling-args';
-import { requestStarlingStart, spawnStarling } from '../../app/shared/starling/starling-launch';
-import { StarlingMethod } from '../../app/shared/starling/starling-protocol';
+import { requestStarlingStart, spawnStarling, stopStarling } from '../../app/shared/starling/starling-launch';
 import { StarlingRpc } from '../../app/shared/starling/starling-rpc';
 import { createDevLogger, formatDevLine } from './logger';
 import { registerShutdownHook } from './process-pool';
@@ -48,10 +47,6 @@ export interface StarlingDevEnv {
 export interface StarlingDevPorts {
   /** The port core actually bound, after any probing. */
   corePort: number;
-}
-
-async function wait(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -149,12 +144,15 @@ export async function startStarlingSupervisor(
     if (stopping || child.exitCode !== null)
       return;
     stopping = true;
-    logger.info('stopping starling');
-    // Ask for the ordered teardown, then outwait the grace starling gives its
-    // own children. Killing it earlier orphans the very processes it reaps.
-    await Promise.race([rpc.request(StarlingMethod.STOP).catch(() => undefined), wait(STOP_REQUEST_TIMEOUT_MS)]);
-    if (child.exitCode === null)
-      child.kill('SIGKILL');
+    // The teardown rule lives in stopStarling. This used to kill as soon as the stop race resolved,
+    // which SIGKILLed a supervisor that was still reaping core and colibri.
+    await stopStarling({
+      child,
+      exited,
+      logger: { debug: message => logger.info(message), warn: message => logger.warn(message) },
+      rpc,
+      stopTimeoutMs: STOP_REQUEST_TIMEOUT_MS,
+    });
   });
 
   // A supervisor that dies before `start` replies rejects the request below, but
