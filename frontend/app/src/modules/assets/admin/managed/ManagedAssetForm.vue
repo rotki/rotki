@@ -4,7 +4,6 @@ import type { SelectOption } from '@/modules/core/common/common-types';
 import {
   EvmTokenKind,
   isValidEthAddress,
-  onlyIfTruthy,
   type SupportedAsset,
   toSentenceCase,
   type UnderlyingToken,
@@ -13,10 +12,10 @@ import { externalLinks } from '@shared/external-links';
 import { omit, pick } from 'es-toolkit';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
-import { prepareNonEvmAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
+import { buildManagedAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
 import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
-import { type ManagedAssetPayload, useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
+import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
@@ -135,47 +134,16 @@ function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
   fields.forEach(clearFieldError);
 }
 
-async function saveAsset() {
-  let newIdentifier: string;
-  const data = get(modelValue);
-
-  const payload: SupportedAsset = omit({
-    ...data,
-    coingecko: get(coingecko),
-    cryptocompare: get(cryptocompare),
-    evmChain: get(evmChain) || null,
-    forked: get(forked) || undefined,
-    protocol: onlyIfTruthy(get(protocol)),
-    swappedFor: onlyIfTruthy(get(swappedFor)),
-    tokenKind: get(tokenKind) || null,
-    underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
-  }, ['ended', 'active', 'customAssetType']);
-
-  let assetPayload: ManagedAssetPayload = payload;
-
-  if (!get(isEvmToken)) {
-    assetPayload = {
-      ...prepareNonEvmAssetPayload(assetPayload),
-      isRebasing: false,
-    };
-  }
-  else if (get(isNft)) {
-    assetPayload = {
-      ...assetPayload,
-      isRebasing: false,
-    };
-  }
-  else {
-    assetPayload = omit(assetPayload, ['collectibleId']);
-  }
+async function saveAsset(): Promise<string> {
+  const payload = buildManagedAssetPayload(get(modelValue), get(underlyingTokens));
 
   if (editMode) {
-    newIdentifier = get(identifier);
-    await editAsset({ ...assetPayload, identifier: newIdentifier });
+    const currentIdentifier = get(identifier);
+    await editAsset({ ...payload, identifier: currentIdentifier });
+    return currentIdentifier;
   }
-  else {
-    ({ identifier: newIdentifier } = await addAsset(omit(assetPayload, ['identifier'])));
-  }
+
+  const { identifier: newIdentifier } = await addAsset(omit(payload, ['identifier']));
   return newIdentifier;
 }
 
