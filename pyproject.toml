@@ -36,7 +36,7 @@ dependencies = [
     "beautifulsoup4==4.14.2",
     "defusedxml==0.7.1",
     "maxminddb==3.1.1",
-    "cryptography==48.0.1",
+    "cryptography==50.0.0",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
@@ -64,7 +64,7 @@ dependencies = [
     "construct==2.10.68",
     "tzdata==2025.2 ; sys_platform == 'win32'",
     # enfore transitive deps versions
-    "aiohttp==3.14.1",  # dependency of web3.py that has security issues before this version
+    "aiohttp==3.14.3",  # dependency of web3.py that has security issues before this version
     "urllib3==2.7.0",  # enforced due to dependabot reports
     "idna==3.18",  # enforced due to dependabot reports
     "cbor2==5.9.0",  # enforced due to dependabot reports
