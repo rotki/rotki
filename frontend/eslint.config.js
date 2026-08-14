@@ -93,6 +93,15 @@ export default rotki({
     }],
   },
 }, {
+  // Vite 8 loads the config file natively rather than bundling it, so a relative import without an
+  // extension is a warning on every startup. `@rotki/no-dot-ts-imports` wants the opposite and would
+  // autofix the extensions straight back off, so it is off for the config files themselves. It stays
+  // on everywhere else, including the `scripts/` modules the config imports.
+  files: ['**/vite.config.ts', '**/vite.config.*.ts', '**/vitest.config.ts', '**/vitest.*.config.ts'],
+  rules: {
+    '@rotki/no-dot-ts-imports': 'off',
+  },
+}, {
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
