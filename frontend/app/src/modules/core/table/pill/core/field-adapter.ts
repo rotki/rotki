@@ -80,6 +80,7 @@ export interface MatchFieldSpec {
   readonly resolveLabel?: (value: string) => string;
   readonly resolveCaption?: (value: string) => string | undefined;
   readonly resolveKeywords?: FieldDef['resolveKeywords'];
+  readonly resolveLoading?: FieldDef['resolveLoading'];
 }
 
 export interface BoundsFieldSpec {
@@ -238,6 +239,7 @@ export function toMatchFieldDef(spec: MatchFieldSpec): FieldDef {
     resolveIcon: spec.resolveIcon,
     resolveKeywords: spec.resolveKeywords,
     resolveLabel: spec.resolveLabel,
+    resolveLoading: spec.resolveLoading,
     searchAsset: spec.searchAsset,
     serializer: spec.serializer,
     suggest: spec.suggest,
