@@ -31,6 +31,9 @@ class FlyingTulipLendDeployment(NamedTuple):
     # They can be the direct counterparty of a payout transfer, so they both
     # qualify transfers for matching and trigger the post-decoding rule.
     yield_wrappers: frozenset[ChecksumEvmAddress]
+    # Block the positions manager was deployed at. Floor of the DepositFor log
+    # scan, so a first run does not walk the chain from genesis.
+    deployment_block: int
 
 
 FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] = {
@@ -55,6 +58,7 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
             string_to_evm_address('0xc67D966f761e8cf13Faa0a1E774425290c8453d9'),  # ftUSD
             string_to_evm_address('0x1A5730c71576D77048E9FdC79DD40e4B1E8Fe042'),  # wBTC
         )),
+        deployment_block=24974967,
     ),
     ChainID.BINANCE_SC: FlyingTulipLendDeployment(
         positions_manager=string_to_evm_address('0xB36d39C72d66153B7f32E1320BEe3280657353Bd'),
@@ -76,6 +80,7 @@ FLYING_TULIP_LEND_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipLendDeployment]] =
             string_to_evm_address('0x41CB54680d1Baa26b85bc97641854E59964dBe38'),  # FDUSD
             string_to_evm_address('0xdfFD30B2595044e16c5EDf193A746D582783793d'),  # FT
         )),
+        deployment_block=115757429,
     ),
 }
 
@@ -91,6 +96,25 @@ PM_REPAY_TOPIC: Final = b"2\xb9\xf1\x92\xf0FP$7\xb6R\x80\xa1\xff\x8aCS'\xa7\xbb9
 # RepayFor(address indexed from, address indexed borrower, address indexed asset, uint256 amount, bool full)  # noqa: E501
 # 0xfe1b46ad82b670225ffdad07a6c5d6c091daed088a1c049d9e4a3dc82124e137
 PM_REPAY_FOR_TOPIC: Final = b'\xfe\x1bF\xad\x82\xb6p"_\xfd\xad\x07\xa6\xc5\xd6\xc0\x91\xda\xed\x08\x8a\x1c\x04\x9d\x9eJ=\xc8!$\xe17'  # noqa: E501
+
+# Used to scan for deposits made for a beneficiary who is not the payer. The
+# per-address transaction query cannot find those, the beneficiary is only a
+# log topic there.
+DEPOSIT_FOR_ABI: Final[ABI] = [
+    {
+        'anonymous': False,
+        'inputs': [
+            {'indexed': True, 'name': 'from', 'type': 'address'},
+            {'indexed': True, 'name': 'beneficiary', 'type': 'address'},
+            {'indexed': True, 'name': 'asset', 'type': 'address'},
+            {'indexed': False, 'name': 'amount', 'type': 'uint256'},
+        ],
+        'name': 'DepositFor',
+        'type': 'event',
+    },
+]
+# Name of the per-chain block checkpoint of the DepositFor scan.
+LAST_DEPOSIT_FOR_QUERY: Final = 'flying_tulip_deposit_for'
 
 POSITIONS_MANAGER_ABI: Final[ABI] = [
     {
