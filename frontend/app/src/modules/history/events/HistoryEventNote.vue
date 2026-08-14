@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ExplorerUrls } from '@/modules/assets/asset-urls';
-import { type BigNumber, Blockchain } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
-import { type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';
+import { type HistoryEventNoteContext, type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import Flag from '@/modules/shell/components/Flag.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
@@ -13,38 +13,30 @@ defineOptions({
 });
 
 const {
-  amount,
-  asset = '',
-  blockNumber,
   chain = Blockchain.ETH,
-  counterparty,
-  extraData,
+  context,
   notes = '',
-  noTxRef,
-  validatorIndex,
 } = defineProps<{
   notes?: string;
-  amount?: BigNumber | BigNumber[];
-  asset?: string;
+  /** The event the note describes, as far as resolving its placeholders needs it. */
+  context?: HistoryEventNoteContext;
+  /** Chain the explorer links resolve against; unlike `context` it is a display concern. */
   chain?: string;
-  noTxRef?: boolean;
-  validatorIndex?: number;
-  blockNumber?: number;
-  counterparty?: string;
-  extraData?: Record<string, any>;
 }>();
 
 const { formatNotes } = useHistoryEventNote();
 
+const asset = computed<string>(() => context?.asset ?? '');
+
 const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
-  amount: () => amount,
-  assetId: () => asset,
-  blockNumber: () => blockNumber,
-  counterparty: () => counterparty,
-  extraData: () => extraData,
+  amount: () => context?.amount,
+  assetId: asset,
+  blockNumber: () => context?.blockNumber,
+  counterparty: () => context?.counterparty,
+  extraData: () => context?.extraData,
   notes: () => notes,
-  noTxRef: () => noTxRef,
-  validatorIndex: () => validatorIndex,
+  noTxRef: () => context?.noTxRef ?? false,
+  validatorIndex: () => context?.validatorIndex,
 });
 
 function isLinkType(t: any): t is keyof ExplorerUrls {

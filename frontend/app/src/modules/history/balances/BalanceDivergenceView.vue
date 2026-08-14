@@ -153,7 +153,7 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         <HistoryEventNote
           :notes="error"
           :chain="modelSelectedChain"
-          :asset="modelSelectedAsset"
+          :context="{ asset: modelSelectedAsset }"
         />
       </RuiAlert>
     </div>

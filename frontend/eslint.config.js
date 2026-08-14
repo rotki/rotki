@@ -169,9 +169,6 @@ export default rotki({
   //
   // - ServiceKeyCard (12): primaryAction/actionDisabled/hideAction/addButtonText/editButtonText are
   //   all one action; 5 props become 1, which lands exactly on 8.
-  // - HistoryEventNote (9): every prop it takes is derived from `event` plus useHistoryEventItem, so
-  //   it could take the event instead. Gated on whether all six callers actually hold a
-  //   HistoryEventEntry: ProfitLossEvents and TradeHistoryItem look like they do not.
   // - BlockchainAccountSelector (17): the worst offender in the codebase, and NOT premium-frozen
   //   despite the group above having claimed it was. It is a field wrapper, so most of these are
   //   RuiAutoComplete pass-throughs (label/hint/customHint/outlined/dense/errorMessages/required)
@@ -183,7 +180,6 @@ export default rotki({
   //   number. AssetDetails is the same three groups plus a resolution `options`.
   files: [
     '**/src/modules/settings/api-keys/ServiceKeyCard.vue',
-    '**/src/modules/history/events/HistoryEventNote.vue',
     '**/src/modules/accounts/BlockchainAccountSelector.vue',
     '**/src/modules/balances/AssetBalances.vue',
   ],
