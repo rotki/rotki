@@ -4,7 +4,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { nullDefined, useRefPropVModel } from '@/modules/core/common/validation/model';
+import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
@@ -22,7 +22,17 @@ const { t } = useI18n({ useScope: 'global' });
 const asset = useRefPropVModel(modelValue, 'asset');
 const counterpartySymbol = useRefPropVModel(modelValue, 'counterpartySymbol');
 const counterparty = useRefPropVModel(modelValue, 'counterparty');
-const counterpartyModel = nullDefined(counterparty);
+/**
+ * The input clears to `undefined`, which used to be written back as `null` into a field the payload
+ * types as a string. Nothing downstream ever saw it, because save is gated on a `required` that a
+ * cleared field fails either way, so it empties instead of lying about its type.
+ */
+const counterpartyModel = computed<string | undefined>({
+  get: () => get(counterparty),
+  set: (value?: string) => {
+    set(counterparty, value ?? '');
+  },
+});
 
 const rules = {
   asset: {

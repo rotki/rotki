@@ -152,15 +152,13 @@ describe('manageCounterpartyMappingForm', () => {
     expect(lastModel().counterparty).toBe('uniswap-v2');
   });
 
-  it('should write a cleared counterparty back as null', async () => {
+  it('should empty a cleared counterparty rather than null it', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    // The input is wrapped in nullDefined, so clearing it does not leave the field a string. The
-    // payload type says otherwise, and the api is what the null reaches.
     await edit('counterparty', undefined);
 
-    expect(lastModel().counterparty).toBeNull();
+    expect(lastModel().counterparty).toBe('');
     expect(await wrapper.vm.validate()).toBe(false);
   });
 
