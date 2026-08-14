@@ -21,5 +21,3 @@ SONIC_CPT_DETAILS: Final = CounterpartyDetails(
     image='sonic.svg',
 )
 
-# BalanceScanner is not deployed on Sonic, so get_multi_balance queries each
-# account individually. Deploy BalanceScanner on Sonic first?

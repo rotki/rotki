@@ -23,4 +23,5 @@ SUPPORTED_BEEFY_CHAINS: Final[dict[ChainID, ChecksumEvmAddress]] = {
     ChainID.OPTIMISM: string_to_evm_address('0xE82343A116d2179F197111D92f9B53611B43C01c'),
     ChainID.BINANCE_SC: string_to_evm_address('0x1C482130A1205213ad130404221Dc9b5350Fe4BD'),
     ChainID.GNOSIS: string_to_evm_address('0x992Ccc9D9b8b76310E044660E96171116820F019'),
+    ChainID.SONIC: string_to_evm_address('0x03C2E2e84031d913d45B1F5b5dDC8E50Fcb28652'),
 }
