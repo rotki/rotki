@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import { BackendCode, type OAuthResult } from '@shared/ipc';
+import { BackendCode, type DebugStateGroup, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { api } from '@/modules/core/api';
@@ -7,6 +7,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { setMcpServerState } from '@/modules/settings/backend/use-mcp-server-state';
+import { resetDebugState } from '@/modules/shell/app/debug-state-reset';
 import { useAppQuitting } from '@/modules/shell/app/use-app-quitting';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
@@ -127,6 +128,16 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
         startQuitting();
         haltBackendActivity();
         api.stopRequests();
+      },
+      onResetDebugState: (group: DebugStateGroup) => {
+        // The storage-backed refs keep their value in memory, so the wipe only
+        // becomes visible after a reload. Nothing removed means nothing to show,
+        // including the unknown-group case, so don't throw the app through one.
+        // Best-effort rather than atomic: the reload is scheduled, not immediate,
+        // so a storage-backed ref that mutates before unload can write its key
+        // back. Acceptable for a development-only action.
+        if (resetDebugState(group).length > 0)
+          window.location.reload();
       },
       onRestart: () => {
         set(startupErrorMessage, '');
