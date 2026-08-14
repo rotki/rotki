@@ -120,7 +120,7 @@ defineExpose({
         v-model="state.asset"
         :label="t('common.asset')"
         data-testid="manual-balances-form-asset"
-        outlined
+        variant="outlined"
         :source="{ chain: state.location }"
         :error-messages="fieldErrors('asset')"
         :disabled="submitting"

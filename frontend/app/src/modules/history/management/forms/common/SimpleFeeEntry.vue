@@ -69,7 +69,7 @@ watchImmediate(() => location, (newLocation) => {
         />
         <AssetSelect
           v-model="modelValue.asset"
-          outlined
+          variant="outlined"
           :disabled="disabled"
           data-testid="fee-asset"
           :source="{ chain, showIgnored: true }"

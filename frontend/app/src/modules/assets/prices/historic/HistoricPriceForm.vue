@@ -52,7 +52,7 @@ defineExpose({
       <AssetSelect
         v-model="form.state.fromAsset"
         :label="t('price_form.from_asset')"
-        outlined
+        variant="outlined"
         :disabled="editMode"
         :error-messages="form.errors('fromAsset')"
         data-testid="historic-price-from-asset"
@@ -62,7 +62,7 @@ defineExpose({
         v-model="form.state.toAsset"
         :label="t('price_form.to_asset')"
         :disabled="editMode"
-        outlined
+        variant="outlined"
         :error-messages="form.errors('toAsset')"
         data-testid="historic-price-to-asset"
         @update:model-value="form.touch('toAsset')"

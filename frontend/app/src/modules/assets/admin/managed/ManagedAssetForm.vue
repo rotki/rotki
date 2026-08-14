@@ -549,7 +549,7 @@ defineExpose({
                 />
                 <AssetSelect
                   v-model="swappedFor"
-                  outlined
+                  variant="outlined"
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
                   :error-messages="toMessages(v$.swappedFor)"
@@ -558,7 +558,7 @@ defineExpose({
                 <AssetSelect
                   v-if="!isEvmToken && assetType"
                   v-model="forked"
-                  outlined
+                  variant="outlined"
                   clearable
                   :label="t('asset_form.labels.forked')"
                   :error-messages="toMessages(v$.forked)"

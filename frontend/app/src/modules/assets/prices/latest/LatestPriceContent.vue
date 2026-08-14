@@ -143,7 +143,7 @@ onMounted(async () => {
           v-model="filter"
           class="max-w-[360px]"
           dense
-          outlined
+          variant="outlined"
           :source="{ nfts: 'include' }"
           :label="t('price_management.from_asset')"
           clearable

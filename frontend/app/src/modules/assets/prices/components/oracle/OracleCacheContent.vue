@@ -236,7 +236,7 @@ defineExpose({
           class="flex-1"
           dense
           :label="t('price_management.from_asset')"
-          outlined
+          variant="outlined"
           hide-details
           :disabled="cachePending"
         />
@@ -245,7 +245,7 @@ defineExpose({
           class="flex-1"
           dense
           :label="t('price_management.to_asset')"
-          outlined
+          variant="outlined"
           hide-details
           :disabled="cachePending"
         />

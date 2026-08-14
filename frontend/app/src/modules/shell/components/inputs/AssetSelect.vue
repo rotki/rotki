@@ -28,7 +28,7 @@ const {
   hideDetails = false,
   hint = '',
   label,
-  outlined = false,
+  variant = 'default',
   required = false,
   source,
   successMessages = '',
@@ -47,7 +47,11 @@ const {
   errorMessages?: string[];
   label?: string;
   disabled?: boolean;
-  outlined?: boolean;
+  /**
+   * Passed straight to `RuiAutoComplete`, whose own variant this mirrors. It used to be an
+   * `outlined` boolean, which could name only two of the three the field actually has.
+   */
+  variant?: 'default' | 'filled' | 'outlined';
   clearable?: boolean;
   required?: boolean;
   hideDetails?: boolean;
@@ -119,7 +123,7 @@ function onUpdateModelValue(value: string): void {
     auto-select-first
     :dense="dense"
     :loading="loading"
-    :variant="outlined ? 'outlined' : 'default'"
+    :variant="variant"
     :item-height="dense ? 44 : 50"
     v-bind="$attrs"
     no-filter

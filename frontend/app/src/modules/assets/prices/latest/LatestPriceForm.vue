@@ -49,7 +49,7 @@ defineExpose({
       <AssetSelect
         v-model="form.state.fromAsset"
         :label="t('price_form.from_asset')"
-        outlined
+        variant="outlined"
         :source="{ nfts: 'include' }"
         :disabled="editMode || disableFromAsset"
         :error-messages="form.errors('fromAsset')"
@@ -59,7 +59,7 @@ defineExpose({
       <AssetSelect
         v-model="form.state.toAsset"
         :label="t('price_form.to_asset')"
-        outlined
+        variant="outlined"
         :error-messages="form.errors('toAsset')"
         data-testid="latest-price-to-asset"
         @update:model-value="form.touch('toAsset')"

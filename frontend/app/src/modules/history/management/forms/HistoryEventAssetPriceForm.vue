@@ -108,7 +108,7 @@ watchImmediate(pendingPriceIntent, (intent) => {
       <div class="flex">
         <AssetSelect
           v-model="asset"
-          outlined
+          variant="outlined"
           :disabled="disabled || disableAsset"
           :data-testid="type ? 'sub-event-asset' : 'asset'"
           :data-key="type"

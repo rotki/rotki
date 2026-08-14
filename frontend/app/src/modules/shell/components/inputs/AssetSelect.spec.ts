@@ -119,13 +119,16 @@ describe('assetSelect', () => {
     wrapper.unmount();
   });
 
-  it('should draw outlined only when asked', () => {
+  // The variant used to be an `outlined` boolean, which could not name `filled` at all.
+  it('should pass each variant through, defaulting to the plain one', () => {
     const plain = createWrapper();
     expect(plain.get('.rui-auto-complete').attributes('data-variant')).toBe('default');
     plain.unmount();
 
-    const outlined = createWrapper({ outlined: true });
-    expect(outlined.get('.rui-auto-complete').attributes('data-variant')).toBe('outlined');
-    outlined.unmount();
+    for (const variant of ['outlined', 'filled'] as const) {
+      const wrapper = createWrapper({ variant });
+      expect(wrapper.get('.rui-auto-complete').attributes('data-variant')).toBe(variant);
+      wrapper.unmount();
+    }
   });
 });

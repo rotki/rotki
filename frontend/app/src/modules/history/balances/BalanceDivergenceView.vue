@@ -69,7 +69,7 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
 
         <AssetSelect
           v-model="modelSelectedAsset"
-          outlined
+          variant="outlined"
           clearable
           :label="t('balance_divergence.asset')"
           :source="{ chain: modelSelectedChain, showIgnored: true }"

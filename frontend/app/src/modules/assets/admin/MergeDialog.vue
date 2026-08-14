@@ -149,7 +149,7 @@ watch(display, (isDisplayed) => {
         <AssetSelect
           v-model="form.state.targetIdentifier"
           v-model:asset="target"
-          outlined
+          variant="outlined"
           :error-messages="form.errors('targetIdentifier')"
           :label="t('merge_dialog.target.label')"
           :disabled="submitting"

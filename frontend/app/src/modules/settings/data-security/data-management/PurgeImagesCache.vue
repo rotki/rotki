@@ -92,7 +92,7 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
       <AssetSelect
         v-if="source === PurgeableImageCache.ASSET_ICONS"
         v-model="assetToClear"
-        outlined
+        variant="outlined"
         :label="t('data_management.purge_images_cache.label.asset_to_clear')"
         :hint="t('data_management.purge_images_cache.hint')"
       />
