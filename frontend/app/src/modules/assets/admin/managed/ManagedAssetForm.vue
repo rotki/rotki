@@ -254,6 +254,7 @@ defineExpose({
           <RuiTextField
             v-if="isNft"
             v-model="collectibleId"
+            data-testid="collectible-id-input"
             class="sm:w-1/4"
             variant="outlined"
             color="primary"

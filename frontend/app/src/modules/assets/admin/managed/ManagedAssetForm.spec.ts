@@ -1,0 +1,240 @@
+import type { ComponentPublicInstance } from 'vue';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { EvmTokenKind, type SupportedAsset } from '@rotki/common';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
+import '@test/i18n';
+
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
+  useAssetInfoRetrieval: vi.fn().mockReturnValue({
+    fetchTokenDetails: vi.fn().mockResolvedValue({}),
+  }),
+}));
+
+vi.mock('@/modules/assets/api/use-asset-management-api', () => ({
+  useAssetManagementApi: vi.fn().mockReturnValue({
+    addAsset: vi.fn().mockResolvedValue({ identifier: 'new' }),
+    editAsset: vi.fn().mockResolvedValue(true),
+  }),
+}));
+
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: vi.fn().mockReturnValue({
+    allEvmChains: computed(() => [{ label: 'Ethereum', name: 'ethereum' }]),
+    txEvmChains: computed(() => [{ evmChainName: 'ethereum' }]),
+  }),
+}));
+
+const ManagedAssetForm = (await import('@/modules/assets/admin/managed/ManagedAssetForm.vue')).default;
+
+/** Real addresses, since the address rules run format checks on them. */
+const EVM_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+const SOLANA_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const HYPERLIQUID_ADDRESS = '0x0d01dc56dcaaca66ad901c959b4011ec';
+
+/** The stubs below declare their props at runtime, so their instances are typed loosely. */
+type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
+
+function inputStub(name: string): Record<string, unknown> {
+  return {
+    emits: ['update:modelValue', 'blur'],
+    name,
+    props: ['modelValue', 'errorMessages', 'disabled', 'options'],
+    template: '<div />',
+  };
+}
+
+describe('managedAssetForm', () => {
+  let wrapper: VueWrapper<InstanceType<typeof ManagedAssetForm>>;
+
+  const evmToken = (overrides: Partial<SupportedAsset> = {}): SupportedAsset => ({
+    address: EVM_ADDRESS,
+    assetType: EVM_TOKEN,
+    decimals: 6,
+    evmChain: 'ethereum',
+    identifier: 'test-asset',
+    isRebasing: false,
+    name: 'USD Coin',
+    symbol: 'USDC',
+    tokenKind: EvmTokenKind.ERC20,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    vi.useRealTimers();
+  });
+
+  function createWrapper(
+    modelValue: SupportedAsset = evmToken(),
+    props: Record<string, unknown> = {},
+  ): VueWrapper<InstanceType<typeof ManagedAssetForm>> {
+    return mount(ManagedAssetForm, {
+      global: {
+        stubs: {
+          AssetIconForm: true,
+          AssetSelect: inputStub('AssetSelect'),
+          ChainDisplay: true,
+          CopyButton: true,
+          DateTimePicker: inputStub('DateTimePicker'),
+          HelpLink: true,
+          RuiMenuSelect: inputStub('RuiMenuSelect'),
+          RuiTextField: inputStub('RuiTextField'),
+          UnderlyingTokenManager: true,
+        },
+      },
+      props: {
+        assetTypes: [EVM_TOKEN, SOLANA_TOKEN, HYPERLIQUID_TOKEN, CUSTOM_ASSET],
+        errorMessages: {},
+        modelValue,
+        ...props,
+      },
+    });
+  }
+
+  /** Some test ids sit on the field, some on the cell around it. */
+  function field(testId: string): VueWrapper<StubInstance> {
+    const found = wrapper.findComponent<StubInstance>(`[data-testid=${testId}]`);
+    return found.exists() ? found : wrapper.find(`[data-testid=${testId}]`).findComponent<StubInstance>('*');
+  }
+
+  function messages(testId: string): string[] {
+    const value: unknown = field(testId).props('errorMessages');
+    assert(Array.isArray(value));
+    return value.map(String);
+  }
+
+  it('should pass validation for a filled evm token', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(await wrapper.vm.validate()).toBe(true);
+  });
+
+  it.each([
+    [SOLANA_TOKEN, SOLANA_ADDRESS],
+    [HYPERLIQUID_TOKEN, HYPERLIQUID_ADDRESS],
+  ])('should pass validation for a filled %s', async (assetType, address) => {
+    wrapper = createWrapper(evmToken({ address, assetType }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(await wrapper.vm.validate()).toBe(true);
+  });
+
+  it('should fail validation with no asset type', async () => {
+    wrapper = createWrapper(evmToken({ assetType: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(await wrapper.vm.validate()).toBe(false);
+  });
+
+  it('should require an address from a token that has one', async () => {
+    wrapper = createWrapper(evmToken({ address: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(await wrapper.vm.validate()).toBe(false);
+  });
+
+  it.each([
+    [EVM_TOKEN, SOLANA_ADDRESS],
+    [SOLANA_TOKEN, EVM_ADDRESS],
+    [HYPERLIQUID_TOKEN, SOLANA_ADDRESS],
+  ])('should reject an address that is not %s shaped', async (assetType, address) => {
+    wrapper = createWrapper(evmToken({ address, assetType }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.vm.validate();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(messages('address-input')).toEqual(['asset_form.validation.valid_address']);
+  });
+
+  it('should require a collectible id from an nft', async () => {
+    wrapper = createWrapper(evmToken({ collectibleId: '', tokenKind: EvmTokenKind.ERC721 }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(await wrapper.vm.validate()).toBe(false);
+  });
+
+  it('should not ask a fungible token for a collectible id', async () => {
+    wrapper = createWrapper(evmToken({ collectibleId: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(await wrapper.vm.validate()).toBe(true);
+  });
+
+  it.each([
+    ['coingecko'],
+    ['cryptocompare'],
+    ['protocol'],
+    ['symbol'],
+    ['name'],
+  ] as const)('should not require %s', async (key) => {
+    wrapper = createWrapper(evmToken({ [key]: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    // These carry a rule that always returns true. It is where server errors land, not a rule.
+    expect(await wrapper.vm.validate()).toBe(true);
+  });
+
+  it('should show no message before anything is edited', async () => {
+    // The address fields only exist once a type is chosen, so the type stays set here.
+    wrapper = createWrapper(evmToken({ address: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(messages('address-input')).toEqual([]);
+    expect(messages('type-select')).toEqual([]);
+  });
+
+  it('should report a missing address in vuelidate english', async () => {
+    wrapper = createWrapper(evmToken({ address: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.vm.validate();
+    await vi.advanceTimersToNextTimerAsync();
+
+    // Two rules fail on an empty address and vuelidate reports both, in the order they are
+    // declared. The first was given no message, so it falls back to the library's own untranslated
+    // string, which differs from plain `required`'s by a word.
+    expect(messages('address-input')).toEqual([
+      'The value is required',
+      'asset_form.validation.valid_address',
+    ]);
+  });
+
+  it('should report a missing asset type in vuelidate english', async () => {
+    wrapper = createWrapper(evmToken({ assetType: '' }));
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.vm.validate();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(messages('type-select')).toEqual(['Value is required']);
+  });
+
+  it('should keep a server error hidden until its field is touched', async () => {
+    const errorMessages: ValidationErrors = { symbol: ['already taken'] };
+    wrapper = createWrapper(evmToken(), { errorMessages });
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(messages('symbol-input')).toEqual([]);
+  });
+
+  it('should clear the server errors when the asset type changes', async () => {
+    const errorMessages: ValidationErrors = { symbol: ['already taken'] };
+    wrapper = createWrapper(evmToken(), { errorMessages });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The messages differ per asset type, so what the server said about the last one cannot stand.
+    field('type-select').vm.$emit('update:modelValue', SOLANA_TOKEN);
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.emitted<[ValidationErrors]>('update:errorMessages')?.at(-1)).toEqual([{}]);
+  });
+});
