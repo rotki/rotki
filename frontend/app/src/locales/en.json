@@ -4572,7 +4572,8 @@
       "amount": "The amount cannot be empty",
       "asset": "The asset cannot be empty",
       "label_empty": "The label cannot be empty",
-      "label_exists": "Label {label} already exists"
+      "label_exists": "Label {label} already exists",
+      "location": "The location cannot be empty"
     }
   },
   "manual_balances_table": {
