@@ -66,6 +66,7 @@ from rotkehlchen.chain.optimism.modules.giveth.balances import (
 )
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
+from rotkehlchen.chain.sonic.modules.balancer.balances import BeetsV2Balances, BeetsV3Balances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.concurrency import exception_of, result_of, spawn, wait
@@ -254,7 +255,10 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances,),
     ChainID.MONAD: (),
-      ChainID.SONIC: (),
+      ChainID.SONIC: (
+        BeetsV2Balances,
+        BeetsV3Balances,
+    ),
 }
 
 
