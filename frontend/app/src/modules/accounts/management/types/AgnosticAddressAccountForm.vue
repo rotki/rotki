@@ -69,7 +69,8 @@ const addresses = computed<string[]>({
   },
 });
 
-function validate(): Promise<boolean> {
+/** The input validates synchronously now; the account form still awaits every child alike. */
+async function validate(): Promise<boolean> {
   assert(isDefined(address));
   return get(address).validate();
 }
