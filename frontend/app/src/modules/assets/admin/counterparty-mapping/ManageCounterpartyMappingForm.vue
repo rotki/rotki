@@ -65,6 +65,7 @@ defineExpose({
   <div class="flex flex-col gap-2">
     <CounterpartyInput
       v-model="counterpartyModel"
+      data-testid="counterparty"
       :label="t('common.counterparty')"
       :disabled="editMode"
       exclude-exchanges
@@ -83,6 +84,7 @@ defineExpose({
     />
     <AssetSelect
       v-model="asset"
+      data-testid="counterparty-asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
       outlined
       :error-messages="toMessages(v$.asset)"
