@@ -1,14 +1,14 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig, mergeConfig } from 'vitest/config';
-import viteConfig from './vite.config';
+import viteConfig from './vite.config.ts';
 
 export default mergeConfig(
   mergeConfig(viteConfig, {
     resolve: {
       alias: {
-        '@test': `${path.join(__dirname, 'tests', 'unit')}/`,
-        '@electron': `${path.join(__dirname, 'electron')}/`,
+        '@test': `${path.join(import.meta.dirname, 'tests', 'unit')}/`,
+        '@electron': `${path.join(import.meta.dirname, 'electron')}/`,
       },
     },
   }),

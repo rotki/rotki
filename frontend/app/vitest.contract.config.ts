@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { merge } from 'es-toolkit';
 import { defineConfig, mergeConfig } from 'vitest/config';
-import viteConfig from './vite.config';
+import viteConfig from './vite.config.ts';
 
 /**
  * Contract test mode (measurement framework §5.1).
@@ -21,7 +21,7 @@ export default mergeConfig(
   merge(viteConfig, {
     resolve: {
       alias: {
-        '@test': `${path.join(__dirname, 'tests', 'unit')}/`,
+        '@test': `${path.join(import.meta.dirname, 'tests', 'unit')}/`,
       },
     },
   }),
