@@ -189,11 +189,13 @@ describe('manageCounterpartyMappingForm', () => {
     expect(field('counterparty-asset').props('disabled')).toBeFalsy();
   });
 
-  it('should keep a server error hidden until its field is touched', async () => {
+  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
+  // rejected save said nothing at all on a field the user had not been in.
+  it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { counterpartySymbol: ['already mapped'] };
     wrapper = createWrapper(baseModel(), { errorMessages });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(messages('counterparty-symbol')).toEqual([]);
+    expect(messages('counterparty-symbol')).toEqual(['already mapped']);
   });
 });
