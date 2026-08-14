@@ -1,22 +1,17 @@
 <script setup lang="ts">
+import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { SelectOption } from '@/modules/core/common/common-types';
-import {
-  EvmTokenKind,
-  type SupportedAsset,
-  toSentenceCase,
-  type UnderlyingToken,
-} from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { omit } from 'es-toolkit';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
+import { decimalsTextModel, startedEpochModel } from '@/modules/assets/admin/asset-field-models';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
-import { buildManagedAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
+import { toAssetTypeOptions, useAssetKind } from '@/modules/assets/admin/managed/asset-kind';
 import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
+import { useManagedAssetSave } from '@/modules/assets/admin/managed/use-managed-asset-save';
 import { useManagedTokenLookup } from '@/modules/assets/admin/managed/use-managed-token-lookup';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
-import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
@@ -55,28 +50,17 @@ const isRebasing = refOptional(useRefPropVModel(modelValue, 'isRebasing'), false
 const started = useRefPropVModel(modelValue, 'started');
 const collectibleId = refOptional(useRefPropVModel(modelValue, 'collectibleId'), '');
 
-const startedModel = computed<number>({
-  get: () => {
-    const startedVal = get(started);
-    return startedVal || 0;
-  },
-  set: (value?: number) => {
-    set(started, value || 0);
-  },
-});
-
-const decimalsModel = computed({
-  get() {
-    return `${get(decimals)}`;
-  },
-  set(value: string) {
-    set(decimals, parseDecimals(value));
-  },
-});
+const startedModel = startedEpochModel(started);
+const decimalsModel = decimalsTextModel(decimals);
 
 const { t } = useI18n({ useScope: 'global' });
 const { allEvmChains } = useSupportedChains();
-const { addAsset, editAsset } = useAssetManagementApi();
+
+const { saveAsset } = useManagedAssetSave({
+  asset: modelValue,
+  editMode: () => editMode,
+  underlyingTokens,
+});
 
 const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup({
   address,
@@ -85,12 +69,13 @@ const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup
   onFilled: fields => clearFieldErrors(fields),
 });
 
-const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
-const isHyperliquidToken = computed<boolean>(() => get(assetType) === HYPERLIQUID_TOKEN);
-const isSolanaToken = computed<boolean>(() => get(assetType) === SOLANA_TOKEN);
-const isNft = computed<boolean>(() => get(tokenKind) === EvmTokenKind.ERC721);
-
-const isTokenRequiresAddress = logicOr(isEvmToken, isHyperliquidToken, isSolanaToken);
+const {
+  isEvmToken,
+  isHyperliquidToken,
+  isNft,
+  isSolanaToken,
+  requiresAddress: isTokenRequiresAddress,
+} = useAssetKind(assetType, tokenKind);
 
 const states = {
   address,
@@ -121,14 +106,6 @@ const { toMessages, v$ } = useManagedAssetFormValidation({
   stateUpdated,
 });
 
-function parseDecimals(value?: string): number | null {
-  if (!value)
-    return null;
-
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? null : parsedValue;
-}
-
 function clearFieldError(field: keyof SupportedAsset) {
   set(errors, omit(get(errors), [field]));
 }
@@ -137,25 +114,11 @@ function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
   fields.forEach(clearFieldError);
 }
 
-async function saveAsset(): Promise<string> {
-  const payload = buildManagedAssetPayload(get(modelValue), get(underlyingTokens));
-
-  if (editMode) {
-    const currentIdentifier = get(identifier);
-    await editAsset({ ...payload, identifier: currentIdentifier });
-    return currentIdentifier;
-  }
-
-  const { identifier: newIdentifier } = await addAsset(omit(payload, ['identifier']));
-  return newIdentifier;
-}
-
 function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
-const types = computed(() => assetTypes.filter(item => item !== CUSTOM_ASSET)
-  .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })));
+const types = computed<SelectOption[]>(() => toAssetTypeOptions(assetTypes));
 
 watch(assetType, () => {
   // clearing errors because the errors are unique based on the asset type

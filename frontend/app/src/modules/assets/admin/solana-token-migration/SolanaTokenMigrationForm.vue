@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { decimalsTextModel } from '@/modules/assets/admin/asset-field-models';
 import { solanaTokenMigrationSchema } from '@/modules/assets/admin/solana-token-migration/solana-token-migration-form';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { solanaTokenKindsData } from '@/modules/core/common/chains';
@@ -57,24 +58,10 @@ const assetDetails = computed<string | undefined>(() => {
   return `${description}${details.name} (${oldAsset})`;
 });
 
-const decimalsModel = computed<string>({
-  get() {
-    const value = form.state.decimals;
-    return value !== null ? `${value}` : '';
-  },
-  set(value: string) {
-    form.state.decimals = parseDecimals(value);
-    form.touch('decimals');
-  },
-});
-
-function parseDecimals(value?: string): number | null {
-  if (!value)
-    return null;
-
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? null : parsedValue;
-}
+const decimalsModel = decimalsTextModel(
+  toRef(form.state, 'decimals'),
+  () => form.touch('decimals'),
+);
 
 function clearFieldError(field: keyof SolanaTokenMigrationData) {
   const currentErrors = get(errors);
