@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
@@ -71,6 +72,11 @@ const isSelectedModel = computed<boolean>({
 });
 
 const isCard = computed<boolean>(() => variant === 'card');
+
+const noteContext = computed<HistoryEventNoteContext>(() => ({
+  amount: get(events).map(item => item.amount),
+  counterparty: get(counterparty),
+}));
 
 // A combined bridge row represents both legs, so show a neutral label instead
 // of the primary (out) leg's directional one.
@@ -180,8 +186,7 @@ const typeLabel = computed<string | undefined>(() =>
       <HistoryEventNote
         :notes="compactNotes"
         :chain="chain"
-        :amount="events.map(item => item.amount)"
-        :counterparty="counterparty"
+        :context="noteContext"
         class="flex-1 min-w-0 overflow-hidden line-clamp-2 text-sm text-rui-text-secondary"
       />
 
@@ -294,8 +299,7 @@ const typeLabel = computed<string | undefined>(() =>
       <HistoryEventNote
         :notes="compactNotes"
         :chain="chain"
-        :amount="events.map(item => item.amount)"
-        :counterparty="counterparty"
+        :context="noteContext"
         class="flex-1 min-w-0 overflow-hidden self-center line-clamp-2"
       />
     </div>

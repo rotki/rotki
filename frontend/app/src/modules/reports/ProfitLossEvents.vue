@@ -296,14 +296,16 @@ onMounted(async () => {
           <HistoryEventNote
             v-if="isTransactionEvent(row)"
             :notes="row.notes"
-            :amount="row.taxableAmount.isZero() ? row.freeAmount : row.taxableAmount"
-            :asset="row.assetIdentifier"
+            :context="{
+              amount: row.taxableAmount.isZero() ? row.freeAmount : row.taxableAmount,
+              asset: row.assetIdentifier,
+            }"
             :chain="getChain(row.location)"
           />
           <HistoryEventNote
             v-else
             :notes="row.notes"
-            :asset="row.assetIdentifier"
+            :context="{ asset: row.assetIdentifier }"
           />
         </div>
         <div
