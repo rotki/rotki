@@ -1,18 +1,20 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import {
+  type ManualBalanceFormState,
+  manualBalanceSchema,
+  toFormState,
+  toPayload,
+} from '@/modules/accounts/manual-balances/manual-balance-form';
 import ManualBalancesPriceForm from '@/modules/accounts/manual-balances/ManualBalancesPriceForm.vue';
+import { useSuggestedLocation } from '@/modules/accounts/manual-balances/use-suggested-location';
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
-import { useBigNumberModel, useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/modules/shell/components/inputs/BalanceTypeInput.vue';
@@ -31,105 +33,59 @@ const { t } = useI18n({ useScope: 'global' });
 const priceForm = useTemplateRef<InstanceType<typeof ManualBalancesPriceForm>>('priceForm');
 const openCustomAssetDialog = ref<boolean>(false);
 
-const asset = useRefPropVModel(modelValue, 'asset');
-const label = useRefPropVModel(modelValue, 'label');
-const balanceType = useRefPropVModel(modelValue, 'balanceType');
-const location = useRefPropVModel(modelValue, 'location');
-const rawAmount = useRefPropVModel(modelValue, 'amount');
+const { manualLabels } = useManualBalanceData();
 
-const locationTouched = ref<boolean>(false);
+const editing = computed<boolean>(() => 'identifier' in get(modelValue));
 
-const tags = computed<string[]>({
+const schema = computed<ZodType>(() => manualBalanceSchema({
+  amount: t('manual_balances_form.validation.amount'),
+  asset: t('manual_balances_form.validation.asset'),
+  labelEmpty: t('manual_balances_form.validation.label_empty'),
+  labelExists: (label: string) => t('manual_balances_form.validation.label_exists', { label }),
+  location: t('manual_balances_form.validation.location'),
+}, {
+  editing: get(editing),
+  takenLabels: get(manualLabels),
+}));
+
+/** The amount is text while it is typed and the tags use null for "none", so the two differ. */
+const formModel = computed<ManualBalanceFormState>({
   get() {
-    return get(modelValue).tags ?? [];
+    return toFormState(get(modelValue));
   },
-  set(tags: string[]) {
-    set(modelValue, {
-      ...get(modelValue),
-      tags: tags.length > 0 ? tags : null,
-    });
+  set(state: ManualBalanceFormState) {
+    set(modelValue, toPayload(get(modelValue), state));
   },
 });
 
-const amount = useBigNumberModel(rawAmount);
-const { manualLabels } = useManualBalanceData();
-const { tradeLocations } = storeToRefs(useLocationStore());
-const { getAssetInfo } = useAssetInfoRetrieval();
+const { errors: fieldErrors, state, touch, validate } = useModelForm<ManualBalanceFormState>({
+  model: formModel,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+});
 
-const rules = {
-  amount: {
-    required: helpers.withMessage(t('manual_balances_form.validation.amount'), required),
+const { markChosen } = useSuggestedLocation(() => state.asset, {
+  apply: (location: string): void => {
+    state.location = location;
   },
-  asset: {
-    required: helpers.withMessage(t('manual_balances_form.validation.asset'), required),
-  },
-  balanceType: {},
-  label: {
-    doesNotExist: helpers.withMessage(
-      ({ $model: label }) =>
-        t('manual_balances_form.validation.label_exists', {
-          label,
-        }),
-      (label: string) => 'identifier' in get(modelValue) || !get(manualLabels).includes(label),
-    ),
-    required: helpers.withMessage(t('manual_balances_form.validation.label_empty'), required),
-  },
-  location: {
-    required,
-  },
-  tags: {},
-};
-
-const states = {
-  amount,
-  asset,
-  balanceType,
-  label,
-  location,
-  tags,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  { $autoDirty: true, $externalResults: errors },
-);
-
-useFormStateWatcher(states, stateUpdated);
+  editing,
+});
 
 const customAssetTypes = ref<string[]>([]);
 
 const { getCustomAssetTypes } = useAssetManagementApi();
 
-async function openCustomAssetForm() {
+async function openCustomAssetForm(): Promise<void> {
   if (get(customAssetTypes).length === 0)
     set(customAssetTypes, await getCustomAssetTypes());
 
   set(openCustomAssetDialog, true);
 }
 
-async function validate(): Promise<boolean> {
-  return await get(v$).$validate();
-}
-
 async function savePrice(): Promise<boolean> {
-  return await get(priceForm)?.savePrice(get(asset)) || false;
+  return await get(priceForm)?.savePrice(state.asset) || false;
 }
-
-watch(asset, (asset) => {
-  if (!(asset && !('identifier' in get(modelValue)) && !get(locationTouched))) {
-    return;
-  }
-  const info = getAssetInfo(asset);
-  const evmChain = info?.evmChain;
-  if (!evmChain) {
-    return;
-  }
-  const foundLocation = get(tradeLocations).find(item => item.identifier === evmChain.split('_').join(' '));
-  if (foundLocation) {
-    set(location, foundLocation.identifier);
-  }
-});
 
 defineExpose({
   savePrice,
@@ -143,32 +99,32 @@ defineExpose({
     class="flex flex-col gap-2"
   >
     <RuiTextField
-      v-model="label"
+      v-model="state.label"
       data-testid="manual-balances-form-label"
       variant="outlined"
       color="primary"
       :label="t('manual_balances_form.fields.label')"
-      :error-messages="toMessages(v$.label)"
+      :error-messages="fieldErrors('label')"
       :disabled="submitting"
-      @blur="v$.label.$touch()"
+      @update:model-value="touch('label')"
     />
 
     <BalanceTypeInput
-      v-model="balanceType"
+      v-model="state.balanceType"
       :disabled="submitting"
       :label="t('manual_balances_form.fields.balance_type')"
     />
 
     <div class="flex items-start gap-4">
       <AssetSelect
-        v-model="asset"
+        v-model="state.asset"
         :label="t('common.asset')"
         data-testid="manual-balances-form-asset"
         outlined
-        :chain="location"
-        :error-messages="toMessages(v$.asset)"
+        :chain="state.location"
+        :error-messages="fieldErrors('asset')"
         :disabled="submitting"
-        @blur="v$.asset.$touch()"
+        @update:model-value="touch('asset')"
       />
       <RuiTooltip
         :popper="{ placement: 'top' }"
@@ -202,40 +158,39 @@ defineExpose({
     <ManualBalancesPriceForm
       ref="priceForm"
       :pending="submitting"
-      :asset="asset"
+      :asset="state.asset"
     />
 
     <AmountInput
-      v-model="amount"
+      v-model="state.amount"
       :label="t('common.amount')"
-      :error-messages="toMessages(v$.amount)"
+      :error-messages="fieldErrors('amount')"
       data-testid="manual-balances-form-amount"
       variant="outlined"
       autocomplete="off"
       :disabled="submitting"
-      @blur="v$.amount.$touch()"
+      @update:model-value="touch('amount')"
     />
 
     <TagInput
-      v-model="tags"
+      v-model="state.tags"
       :label="t('manual_balances_form.fields.tags')"
       :disabled="submitting"
       data-testid="manual-balances-form-tags"
     />
 
     <LocationSelector
-      v-model="location"
+      v-model="state.location"
       data-testid="manual-balances-form-location"
-      :error-messages="toMessages(v$.location)"
+      :error-messages="fieldErrors('location')"
       :disabled="submitting"
       :label="t('common.location')"
-      @blur="v$.location.$touch()"
-      @update:model-value="locationTouched = true"
+      @update:model-value="touch('location'); markChosen()"
     />
 
     <CustomAssetFormDialog
       v-model:open="openCustomAssetDialog"
-      v-model:saved-asset-id="asset"
+      v-model:saved-asset-id="state.asset"
       :types="customAssetTypes"
     />
   </div>
