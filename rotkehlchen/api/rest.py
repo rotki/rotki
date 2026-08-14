@@ -3772,7 +3772,6 @@ class RestAPI:
 
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
 
-    @accounting_update_required('Historical asset amounts are disabled', response=True)
     def get_historical_asset_amounts(
             self,
             asset: Asset | None,
@@ -3780,6 +3779,12 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
+        """Return graph balances by calculating them from history events on demand.
+
+        Keep this legacy graph endpoint outside the accounting-update feature flag.
+        Its event-metrics replacement depends on background processing that remains
+        experimental, whereas the frontend still exposes this historical source.
+        """
         assets: tuple[Asset, ...]
         try:
             if asset is not None:
@@ -3792,8 +3797,9 @@ class RestAPI:
                     )
                     assets = tuple(Asset(row[0]) for row in cursor)
 
-            manager = HistoricalBalancesManager(self.rotkehlchen.data.db)
-            processing_required, balances = manager.get_assets_amounts_event_metrics(
+            balances, last_group_identifier = HistoricalBalancesManager(
+                self.rotkehlchen.data.db,
+            ).get_assets_amounts(
                 assets=assets,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
@@ -3803,16 +3809,12 @@ class RestAPI:
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
 
-        result: dict[str, Any] = {'processing_required': processing_required}
-        if balances is not None:
-            result['times'] = list(balances)
-            result['values'] = [str(x) for x in balances.values()]
-        elif processing_required is False:
-            # No events exist for the given time range
-            return api_response(
-                wrap_in_fail_result('No historical data found'),
-                status_code=HTTPStatus.NOT_FOUND,
-            )
+        result: dict[str, Any] = {
+            'times': list(balances),
+            'values': [str(x) for x in balances.values()],
+        }
+        if last_group_identifier is not None:
+            result['last_group_identifier'] = last_group_identifier
 
         return api_response(_wrap_in_ok_result(result=result))
 
