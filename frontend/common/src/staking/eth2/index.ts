@@ -34,7 +34,16 @@ export type EthStakingPerformance = Omit<EthStakingPerformanceResponse, 'validat
   validators: EthStakingValidatorPerformance[];
 };
 
-export type EthValidatorStatus = 'all' | 'exited' | 'active' | 'consolidated';
+/**
+ * Every status a validator can be filtered by, as values rather than a bare union: the app offers
+ * them in a filter and has to enumerate them at runtime. It used to keep its own copy of this list
+ * beside the union here, so a status added on one side left the other silently offering a stale set.
+ *
+ * `all` is the absence of a filter rather than a status a validator holds.
+ */
+export const ethValidatorStatuses = ['all', 'exited', 'active', 'consolidated'] as const;
+
+export type EthValidatorStatus = typeof ethValidatorStatuses[number];
 
 export interface EthStakingPayload extends EthStakingPeriod {
   limit: number;
@@ -74,8 +83,6 @@ interface EthStakingValidatorFilter {
 }
 
 export type EthStakingFilter = EthStakingDepositorFilter | EthStakingValidatorFilter;
-
-export type EthStakingFilterType = 'address' | 'validator';
 
 export interface EthStakingPeriod {
   fromTimestamp?: number;
