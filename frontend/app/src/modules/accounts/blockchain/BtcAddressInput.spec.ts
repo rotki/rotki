@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { type ComponentPublicInstance, nextTick } from 'vue';
 import { XpubKeyType, type XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import BtcAddressInput from '@/modules/accounts/blockchain/BtcAddressInput.vue';
 import { XpubPrefix } from '@/modules/accounts/xpub';
@@ -11,7 +11,7 @@ const YPUB_KEY = 'ypub6Ww3ibxVfGzLrAH1PNcjyAWPKPPjLzQ7T9Mmfa18oF5dKaPSLDB6FghfZ1
 const XPUB_KEY = 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtyPWKiMJ7abWaX2ZFGvV3Gg7FbqXdRxivu1nQFCWEPa4UUgJGPkExPNm5';
 const BTC_ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 
-function createWrapper(blockchain: Blockchain.BTC | Blockchain.BCH = Blockchain.BTC): VueWrapper {
+function createWrapper(blockchain: Blockchain.BTC | Blockchain.BCH = Blockchain.BTC): VueWrapper<InstanceType<typeof BtcAddressInput>> {
   return mount(BtcAddressInput, {
     global: {
       stubs: {
@@ -29,10 +29,11 @@ function createWrapper(blockchain: Blockchain.BTC | Blockchain.BCH = Blockchain.
         },
         RuiTextField: {
           emits: ['update:modelValue', 'paste', 'blur'],
-          props: ['modelValue', 'disabled'],
-          template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+          props: ['modelValue', 'disabled', 'errorMessages'],
+          template: '<input :value="modelValue" :data-errors="(errorMessages ?? []).join(\'|\')" @input="$emit(\'update:modelValue\', $event.target.value)" />',
         },
-        RuiTooltip: true,
+        // Renders its activator, which is where the toggle for the advanced fields lives.
+        RuiTooltip: { template: '<div><slot name="activator" /><slot /></div>' },
       },
     },
     props: {
@@ -51,7 +52,7 @@ async function lastEmittedXpub(wrapper: VueWrapper): Promise<XpubPayload | undef
 }
 
 describe('modules/accounts/blockchain/BtcAddressInput', () => {
-  let wrapper: VueWrapper;
+  let wrapper: VueWrapper<InstanceType<typeof BtcAddressInput>>;
 
   afterEach(() => {
     wrapper?.unmount();
@@ -117,6 +118,55 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     expect(wrapper.find('[data-testid="xpub-disambiguation"]').exists()).toBe(false);
     const payload = await lastEmittedXpub(wrapper);
     expect(payload?.xpubType).toBe(XpubKeyType.XPUB);
+  });
+
+  /** The messages the field shows, read off the stub that receives them. */
+  function messages(selector: string): string[] {
+    const value = wrapper.find(selector).attributes('data-errors') ?? '';
+    return value === '' ? [] : value.split('|');
+  }
+
+  it('should reject an empty key', async () => {
+    wrapper = createWrapper(Blockchain.BTC);
+
+    expect(await wrapper.vm.validate()).toBe(false);
+    await nextTick();
+
+    expect(messages('[data-testid=xpub-key]')).toEqual(['account_form.validation.xpub_non_empty']);
+  });
+
+  it('should accept an entered key', async () => {
+    wrapper = createWrapper(Blockchain.BTC);
+    await setXpubValue(ZPUB_KEY);
+
+    expect(await wrapper.vm.validate()).toBe(true);
+    await nextTick();
+
+    expect(messages('[data-testid=xpub-key]')).toEqual([]);
+  });
+
+  it('should reject a whitespace-only key and clear the field', async () => {
+    wrapper = createWrapper(Blockchain.BTC);
+    await setXpubValue('   ');
+
+    // The payload is assembled from the trimmed key and fed straight back into the field, so the
+    // blanks are wiped and what is left is an empty key with no payload behind it.
+    expect(await lastEmittedXpub(wrapper)).toBeUndefined();
+    expect(await wrapper.vm.validate()).toBe(false);
+  });
+
+  it('should show a server error reported against the derivation path', async () => {
+    wrapper = createWrapper(Blockchain.BTC);
+    await setXpubValue(ZPUB_KEY);
+    // The derivation path has a rule that always passes, which exists only to give the backend's
+    // errors for that field somewhere to render.
+    await wrapper.setProps({ errorMessages: { derivationPath: ['Invalid derivation path'] } });
+    // Emitted rather than clicked: the toggle sits in the tooltip's activator slot, where a
+    // dispatched DOM event does not reach the listener the parent bound on the stub.
+    wrapper.findComponent<ComponentPublicInstance>('[data-testid=xpub-advanced-toggle] button').vm.$emit('click');
+    await nextTick();
+
+    expect(messages('[data-testid=xpub-derivation-path]')).toEqual(['Invalid derivation path']);
   });
 
   it('should emit detected-address when a plain BTC address is entered', async () => {
