@@ -121,7 +121,7 @@ defineExpose({
         :label="t('common.asset')"
         data-testid="manual-balances-form-asset"
         outlined
-        :chain="state.location"
+        :source="{ chain: state.location }"
         :error-messages="fieldErrors('asset')"
         :disabled="submitting"
         @update:model-value="touch('asset')"

@@ -1,4 +1,5 @@
 import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
+import type { NftHandling } from '@/modules/assets/nft-handling';
 import { AssetMap, AssetsWithId } from '@/modules/assets/types';
 import { RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
@@ -11,7 +12,7 @@ export interface AssetSearchParams {
   assetType?: string;
   address?: string;
   limit?: number;
-  searchNfts?: boolean;
+  nftHandling?: NftHandling;
   signal?: AbortSignal;
 }
 

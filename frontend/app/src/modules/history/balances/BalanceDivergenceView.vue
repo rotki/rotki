@@ -70,10 +70,9 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         <AssetSelect
           v-model="modelSelectedAsset"
           outlined
-          show-ignored
           clearable
           :label="t('balance_divergence.asset')"
-          :chain="modelSelectedChain"
+          :source="{ chain: modelSelectedChain, showIgnored: true }"
           data-testid="balance-divergence-asset"
         />
       </div>

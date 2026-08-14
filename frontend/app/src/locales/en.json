@@ -1351,6 +1351,7 @@
     }
   },
   "asset_select": {
+    "label": "Asset",
     "no_results": "No assets matching your search",
     "placeholder": "Search by asset symbol, name, or the contract address."
   },

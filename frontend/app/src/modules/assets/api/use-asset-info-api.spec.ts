@@ -158,17 +158,34 @@ describe('composables/api/assets/info', () => {
         assetType: 'evm token',
         address: '0x1234',
         limit: 10,
-        searchNfts: true,
+        nftHandling: 'include',
       });
 
+      // The wire form is what both colibri and the python api read, so the snake_case value is
+      // part of the contract rather than a formatting detail.
       expect(capturedBody).toEqual({
         value: 'test',
         evm_chain: 'ethereum',
         asset_type: 'evm token',
         address: '0x1234',
         limit: 10,
-        search_nfts: true,
+        nft_handling: 'include',
       });
+    });
+
+    it('should send the nft handling verbatim when asking for nfts alone', async () => {
+      let capturedBody: any;
+      server.use(
+        http.post(`${colibriUrl}/assets/search/levenshtein`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: [] });
+        }),
+      );
+
+      const { assetSearch } = await getApi();
+      await assetSearch({ limit: 10, nftHandling: 'show_only', value: 'test' });
+
+      expect(capturedBody).toMatchObject({ nft_handling: 'show_only' });
     });
 
     it('should handle empty search results', async () => {

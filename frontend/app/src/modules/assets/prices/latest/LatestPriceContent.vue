@@ -144,7 +144,7 @@ onMounted(async () => {
           class="max-w-[360px]"
           dense
           outlined
-          include-nfts
+          :source="{ nfts: 'include' }"
           :label="t('price_management.from_asset')"
           clearable
           hide-details

@@ -50,7 +50,7 @@ function setup(opts: { modelValue?: string; chain?: string; showIgnored?: boolea
       api = useAssetSearch({
         chain,
         excludes: () => opts.excludes ?? [],
-        includeNfts: () => false,
+        nftHandling: () => 'exclude',
         items: () => [],
         modelValue,
         showIgnored: () => opts.showIgnored ?? false,

@@ -50,7 +50,7 @@ defineExpose({
         v-model="form.state.fromAsset"
         :label="t('price_form.from_asset')"
         outlined
-        include-nfts
+        :source="{ nfts: 'include' }"
         :disabled="editMode || disableFromAsset"
         :error-messages="form.errors('fromAsset')"
         data-testid="latest-price-from-asset"

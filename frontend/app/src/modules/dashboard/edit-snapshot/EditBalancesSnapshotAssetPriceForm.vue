@@ -88,7 +88,7 @@ defineExpose({
         v-model="form.state.asset"
         outlined
         :disabled="disableAsset"
-        show-ignored
+        :source="{ showIgnored: true }"
         data-testid="asset"
         :error-messages="disableAsset ? [''] : form.errors('asset')"
         @blur="form.touch('asset')"
