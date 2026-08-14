@@ -379,6 +379,18 @@ describe('loginForm', () => {
       ]);
     });
 
+    // The core retires a server error once the field it was reported against is edited. Filling the
+    // name from the saved profile happens after the error is recorded and is not a user edit, so it
+    // must not count as one: the alert would go on naming the user while the field said nothing.
+    it('should keep a username error through the restore from storage', async () => {
+      set(storedUsername, 'saved-user');
+      wrapper = createWrapper({ errors: ['User saved-user does not exist'] });
+      await flushPromises();
+
+      expect(usernameField().props('modelValue')).toBe('saved-user');
+      expect(messagesOf(usernameField())).toStrictEqual(['User saved-user does not exist']);
+    });
+
     it('should route an unrecognised error to neither field', async () => {
       wrapper = createWrapper({ errors: ['Something else went wrong'] });
       await nextTick();
