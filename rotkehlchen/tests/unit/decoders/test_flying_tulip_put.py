@@ -20,6 +20,7 @@ DEPLOYMENT = FLYING_TULIP_PUT_DEPLOYMENTS[ChainID.ETHEREUM]
 PFT_TOKEN = '0xa4215Daaf3745E14E96E169E0E7706c479Ce04F2'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
 def test_put_invest(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -69,7 +70,7 @@ def test_put_invest(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_USDT,
             amount=FVal(invest_amount),
             location_label=user_address,
@@ -78,20 +79,22 @@ def test_put_invest(ethereum_inquirer, ethereum_accounts):
             address=DEPLOYMENT.put_manager,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=620,
+            sequence_index=615,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset(f'eip155:1/erc721:{PFT_TOKEN}/6264'),
             amount=ONE,
             location_label=user_address,
-            notes=f'Receive Flying Tulip PUT with id 6264 from {ZERO_ADDRESS} to {user_address}',
+            notes='Receive the Flying Tulip put position #6264',
+            counterparty=CPT_FLYING_TULIP,
             address=ZERO_ADDRESS,
         ),
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcdf78fd2195C90f24FE64ddd1426b97BFe62Baa8']])
 def test_put_divest(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -113,23 +116,24 @@ def test_put_divest(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=79,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset(f'eip155:1/erc721:{PFT_TOKEN}/3891'),
             amount=ONE,
             location_label=user_address,
-            notes=f'Send Flying Tulip PUT with id 3891 from {user_address} to {ZERO_ADDRESS}',
+            notes='Return the Flying Tulip put position #3891',
+            counterparty=CPT_FLYING_TULIP,
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=88,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_USDT,
             amount=FVal(divest_amount := '517'),
             location_label=user_address,
@@ -140,6 +144,7 @@ def test_put_divest(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xaC4AaDC0B865180A408E6C56f4FBDe30c1D078f5']])
 def test_put_withdraw_ft(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -161,23 +166,24 @@ def test_put_withdraw_ft(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=41,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset(f'eip155:1/erc721:{PFT_TOKEN}/671'),
             amount=ONE,
             location_label=user_address,
-            notes=f'Send Flying Tulip PUT with id 671 from {user_address} to {ZERO_ADDRESS}',
+            notes='Return the Flying Tulip put position #671',
+            counterparty=CPT_FLYING_TULIP,
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=42,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_FT,
             amount=FVal(ft_amount := '14943.952'),
             location_label=user_address,
@@ -188,6 +194,7 @@ def test_put_withdraw_ft(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xE366d92C6fbCAE91FD20E09179AdEbb59FD9BDb6']])
 def test_put_invest_via_proxy(ethereum_inquirer, ethereum_accounts):
     """An investment funded through an investing proxy: the user's transfer goes
@@ -212,11 +219,11 @@ def test_put_invest_via_proxy(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=300,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_USDT,
             amount=FVal(invest_amount := '1650'),
             location_label=user_address,
@@ -225,15 +232,16 @@ def test_put_invest_via_proxy(ethereum_inquirer, ethereum_accounts):
             address=DEPLOYMENT.put_manager,
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=308,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset(f'eip155:1/erc721:{PFT_TOKEN}/3150'),
             amount=ONE,
             location_label=user_address,
-            notes=f'Receive Flying Tulip PUT with id 3150 from {ZERO_ADDRESS} to {user_address}',
+            notes='Receive the Flying Tulip put position #3150',
+            counterparty=CPT_FLYING_TULIP,
             address=ZERO_ADDRESS,
         ),
     ]

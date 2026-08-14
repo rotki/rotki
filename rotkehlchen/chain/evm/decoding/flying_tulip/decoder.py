@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -33,13 +34,13 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
             to_event_type: HistoryEventType,
             to_event_subtype: HistoryEventSubType,
             notes: str,
-    ) -> bool:
+    ) -> EvmEvent | None:
         """Match the wallet transfer belonging to a protocol event and turn it
-        into the protocol movement. Only transfers with a known protocol
-        counterparty are eligible, so an unrelated equal-amount transfer in the
-        same transaction can never be claimed. Nothing is created when no
-        transfer matches, since such events move funds inside the protocol
-        without touching the wallet.
+        into the protocol movement, returning it. Only transfers with a known
+        protocol counterparty are eligible, so an unrelated equal-amount
+        transfer in the same transaction can never be claimed. Nothing is
+        created when no transfer matches, since such events move funds inside
+        the protocol without touching the wallet.
         """
         for event in context.decoded_events:
             if (
@@ -55,9 +56,9 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
                 event.notes = notes
                 event.counterparty = CPT_FLYING_TULIP
                 event.address = context.tx_log.address
-                return True
+                return event
 
-        return False
+        return None
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

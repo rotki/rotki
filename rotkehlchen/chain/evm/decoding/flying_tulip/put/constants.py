@@ -11,6 +11,9 @@ class FlyingTulipPutDeployment(NamedTuple):
     """Addresses of the ftPUT contracts on one chain."""
     put_manager: ChecksumEvmAddress
     ft_token: ChecksumEvmAddress
+    # The ERC-721 collection whose token id is the position id: investing mints
+    # one of these to the position recipient and closing a position burns it.
+    position_nft: ChecksumEvmAddress
     # The collateral wrappers pay out divested capital directly to the user,
     # so they are valid counterparties of divest payout transfers. This list
     # has to track the protocol's deployments.
@@ -21,6 +24,7 @@ FLYING_TULIP_PUT_DEPLOYMENTS: Final[dict[ChainID, FlyingTulipPutDeployment]] = {
     ChainID.ETHEREUM: FlyingTulipPutDeployment(
         put_manager=string_to_evm_address('0xbA49d0AC42f4fBA4e24A8677a22218a4dF75ebaA'),
         ft_token=string_to_evm_address('0x5DD1A7A369e8273371d2DBf9d83356057088082c'),
+        position_nft=string_to_evm_address('0xa4215Daaf3745E14E96E169E0E7706c479Ce04F2'),
         collateral_wrappers=frozenset((
             string_to_evm_address('0x095d8B8D4503D590F647343F7cD880Fa2abbbf59'),  # USDC
             string_to_evm_address('0x9d96bac8a4E9A5b51b5b262F316C4e648E44E305'),  # WNative
