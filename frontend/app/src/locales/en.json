@@ -1157,6 +1157,9 @@
     },
     "underlying_tokens": "Underlying tokens",
     "validation": {
+      "address_non_empty": "The address cannot be empty",
+      "asset_type_non_empty": "The type of the asset cannot be empty",
+      "collectible_id_non_empty": "The collectible id cannot be empty",
       "valid_address": "Please input valid address"
     }
   },

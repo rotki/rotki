@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
+import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import type { SelectOption } from '@/modules/core/common/common-types';
-import { externalLinks } from '@shared/external-links';
-import { omit } from 'es-toolkit';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { decimalsTextModel, startedEpochModel } from '@/modules/assets/admin/asset-field-models';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
 import { toAssetTypeOptions, useAssetKind } from '@/modules/assets/admin/managed/asset-kind';
-import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
+import { managedAssetSchema } from '@/modules/assets/admin/managed/managed-asset-form';
+import ManagedAssetOracleFields from '@/modules/assets/admin/managed/ManagedAssetOracleFields.vue';
+import { useManagedAssetErrors } from '@/modules/assets/admin/managed/use-managed-asset-errors';
 import { useManagedAssetSave } from '@/modules/assets/admin/managed/use-managed-asset-save';
 import { useManagedTokenLookup } from '@/modules/assets/admin/managed/use-managed-token-lookup';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
-import HelpLink from '@/modules/shell/components/HelpLink.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
@@ -62,11 +62,13 @@ const { saveAsset } = useManagedAssetSave({
   underlyingTokens,
 });
 
+const { clearFields } = useManagedAssetErrors(errors, assetType);
+
 const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup({
   address,
   asset: modelValue,
   evmChain,
-  onFilled: fields => clearFieldErrors(fields),
+  onFilled: clearFields,
 });
 
 const {
@@ -77,53 +79,28 @@ const {
   requiresAddress: isTokenRequiresAddress,
 } = useAssetKind(assetType, tokenKind);
 
-const states = {
-  address,
-  assetType,
-  coingecko,
-  collectibleId,
-  cryptocompare,
-  decimals,
-  evmChain,
-  forked,
-  isRebasing,
-  name,
-  protocol,
-  started,
-  swappedFor,
-  symbol,
-  tokenKind,
-};
+const schema = computed<ZodType>(() => managedAssetSchema({
+  addressInvalid: t('asset_form.validation.valid_address'),
+  addressMissing: t('asset_form.validation.address_non_empty'),
+  assetTypeMissing: t('asset_form.validation.asset_type_non_empty'),
+  collectibleIdMissing: t('asset_form.validation.collectible_id_non_empty'),
+}, {
+  isNft: get(isNft),
+  requiresAddress: get(isTokenRequiresAddress),
+}));
 
-const { toMessages, v$ } = useManagedAssetFormValidation({
-  errors,
-  isEvmToken,
-  isHyperliquidToken,
-  isNft,
-  isSolanaToken,
-  isTokenRequiresAddress,
-  states,
+const form = useModelForm<SupportedAsset>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
   stateUpdated,
 });
-
-function clearFieldError(field: keyof SupportedAsset) {
-  set(errors, omit(get(errors), [field]));
-}
-
-function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
-  fields.forEach(clearFieldError);
-}
 
 function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
-const types = computed<SelectOption[]>(() => toAssetTypeOptions(assetTypes));
-
-watch(assetType, () => {
-  // clearing errors because the errors are unique based on the asset type
-  set(errors, {});
-});
+const types = computed<ReturnType<typeof toAssetTypeOptions>>(() => toAssetTypeOptions(assetTypes));
 
 watchImmediate(modelValue, (asset: SupportedAsset) => {
   if (asset.underlyingTokens && asset.underlyingTokens.length > 0) {
@@ -143,7 +120,7 @@ onMounted(() => {
 defineExpose({
   saveAsset,
   saveIcon,
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -174,7 +151,7 @@ defineExpose({
           :label="t('asset_form.labels.asset_type')"
           :options="types"
           :disabled="types.length === 1 || editMode"
-          :error-messages="toMessages(v$.assetType)"
+          :error-messages="form.errors('assetType')"
           key-attr="key"
           text-attr="label"
           variant="outlined"
@@ -188,7 +165,7 @@ defineExpose({
             :label="t('asset_form.labels.chain')"
             :options="allEvmChains"
             :disabled="editMode"
-            :error-messages="toMessages(v$.evmChain)"
+            :error-messages="form.errors('evmChain')"
             auto-select-first
             key-attr="name"
             text-attr="label"
@@ -215,7 +192,7 @@ defineExpose({
             :label="t('asset_form.labels.token_kind')"
             :options="evmTokenKindsData"
             :disabled="editMode"
-            :error-messages="toMessages(v$.tokenKind)"
+            :error-messages="form.errors('tokenKind')"
             key-attr="identifier"
             text-attr="label"
             variant="outlined"
@@ -231,10 +208,10 @@ defineExpose({
             variant="outlined"
             color="primary"
             :loading="fetching"
-            :error-messages="toMessages(v$.address)"
+            :error-messages="form.errors('address')"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @blur="v$.address.$touch()"
+            @update:model-value="form.touch('address')"
           >
             <template
               v-if="editMode"
@@ -260,7 +237,7 @@ defineExpose({
             color="primary"
             type="number"
             :label="t('asset_form.labels.collectible_id')"
-            :error-messages="toMessages(v$.collectibleId)"
+            :error-messages="form.errors('collectibleId')"
             :disabled="loading || editMode"
           />
         </div>
@@ -276,7 +253,7 @@ defineExpose({
             :label="t('asset_form.labels.token_kind')"
             :options="solanaTokenKindsData"
             :disabled="editMode"
-            :error-messages="toMessages(v$.tokenKind)"
+            :error-messages="form.errors('tokenKind')"
             key-attr="identifier"
             text-attr="label"
             variant="outlined"
@@ -291,10 +268,10 @@ defineExpose({
             variant="outlined"
             color="primary"
             :loading="fetching"
-            :error-messages="toMessages(v$.address)"
+            :error-messages="form.errors('address')"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @blur="v$.address.$touch()"
+            @update:model-value="form.touch('address')"
           />
         </div>
       </template>
@@ -308,10 +285,10 @@ defineExpose({
           v-model="address"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.address)"
+          :error-messages="form.errors('address')"
           :label="t('common.address')"
           :disabled="loading || editMode"
-          @blur="v$.address.$touch()"
+          @update:model-value="form.touch('address')"
         />
       </div>
 
@@ -322,10 +299,10 @@ defineExpose({
           class="md:col-span-2"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.name)"
+          :error-messages="form.errors('name')"
           :label="t('common.name')"
           :disabled="loading || fetching"
-          @blur="v$.name.$touch()"
+          @update:model-value="form.touch('name')"
         />
 
         <RuiTextField
@@ -334,10 +311,10 @@ defineExpose({
           data-testid="symbol-input"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.symbol)"
+          :error-messages="form.errors('symbol')"
           :label="t('asset_form.labels.symbol')"
           :disabled="loading || fetching"
-          @blur="v$.symbol.$touch()"
+          @update:model-value="form.touch('symbol')"
         />
         <div
           v-if="isTokenRequiresAddress"
@@ -351,51 +328,19 @@ defineExpose({
             max="18"
             type="number"
             :label="t('asset_form.labels.decimals')"
-            :error-messages="toMessages(v$.decimals)"
+            :error-messages="form.errors('decimals')"
             :disabled="loading || fetching"
-            @blur="v$.decimals.$touch()"
+            @update:model-value="form.touch('decimals')"
           />
         </div>
-        <RuiTextField
-          v-model="coingecko"
-          variant="outlined"
-          color="primary"
-          clearable
-          class="col-span-2"
-          :hint="t('asset_form.labels.coingecko_hint')"
-          :label="t('asset_form.labels.coingecko')"
-          :error-messages="toMessages(v$.coingecko)"
+        <ManagedAssetOracleFields
+          v-model:coingecko="coingecko"
+          v-model:cryptocompare="cryptocompare"
+          :coingecko-errors="form.errors('coingecko')"
+          :cryptocompare-errors="form.errors('cryptocompare')"
           :disabled="loading"
-          @blur="v$.coingecko.$touch()"
-        >
-          <template #append>
-            <HelpLink
-              small
-              :url="externalLinks.contributeSection.coingecko"
-              :tooltip="t('asset_form.help_coingecko')"
-            />
-          </template>
-        </RuiTextField>
-        <RuiTextField
-          v-model="cryptocompare"
-          variant="outlined"
-          color="primary"
-          clearable
-          class="col-span-2"
-          :label="t('asset_form.labels.cryptocompare')"
-          :hint="t('asset_form.labels.cryptocompare_hint')"
-          :error-messages="toMessages(v$.cryptocompare)"
-          :disabled="loading"
-          @blur="v$.cryptocompare.$touch()"
-        >
-          <template #append>
-            <HelpLink
-              small
-              :url="externalLinks.contributeSection.cryptocompare"
-              :tooltip="t('asset_form.help_cryptocompare')"
-            />
-          </template>
-        </RuiTextField>
+          @touch="form.touch($event)"
+        />
       </div>
     </div>
 
@@ -418,7 +363,7 @@ defineExpose({
                 v-model="startedModel"
                 variant="outlined"
                 :label="t('asset_form.labels.started')"
-                :error-messages="toMessages(v$.started)"
+                :error-messages="form.errors('started')"
                 type="epoch"
                 :disabled="loading"
               />
@@ -431,16 +376,16 @@ defineExpose({
                   clearable
                   class="asset-form__protocol"
                   :label="t('common.protocol')"
-                  :error-messages="toMessages(v$.protocol)"
+                  :error-messages="form.errors('protocol')"
                   :disabled="loading"
-                  @blur="v$.protocol.$touch()"
+                  @update:model-value="form.touch('protocol')"
                 />
                 <AssetSelect
                   v-model="swappedFor"
                   variant="outlined"
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
-                  :error-messages="toMessages(v$.swappedFor)"
+                  :error-messages="form.errors('swappedFor')"
                   :disabled="loading"
                 />
                 <AssetSelect
@@ -449,7 +394,7 @@ defineExpose({
                   variant="outlined"
                   clearable
                   :label="t('asset_form.labels.forked')"
-                  :error-messages="toMessages(v$.forked)"
+                  :error-messages="form.errors('forked')"
                   :disabled="loading"
                 />
                 <RuiSwitch

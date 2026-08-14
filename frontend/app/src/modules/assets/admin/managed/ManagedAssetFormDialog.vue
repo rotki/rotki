@@ -81,7 +81,7 @@ async function save(): Promise<boolean> {
     return false;
 
   const formRef = get(form);
-  const valid = await formRef?.validate();
+  const valid = formRef?.validate();
   if (!valid)
     return false;
 

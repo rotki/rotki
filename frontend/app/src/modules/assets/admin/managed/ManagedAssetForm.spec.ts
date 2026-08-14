@@ -192,38 +192,36 @@ describe('managedAssetForm', () => {
     expect(messages('type-select')).toEqual([]);
   });
 
-  it('should report a missing address in vuelidate english', async () => {
+  // Before the swap this reported two of vuelidate's own untranslated strings: the empty field was
+  // called missing and malformed at once.
+  it('should report a missing address once, in this app words', async () => {
     wrapper = createWrapper(evmToken({ address: '' }));
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.vm.validate();
     await vi.advanceTimersToNextTimerAsync();
 
-    // Two rules fail on an empty address and vuelidate reports both, in the order they are
-    // declared. The first was given no message, so it falls back to the library's own untranslated
-    // string, which differs from plain `required`'s by a word.
-    expect(messages('address-input')).toEqual([
-      'The value is required',
-      'asset_form.validation.valid_address',
-    ]);
+    expect(messages('address-input')).toEqual(['asset_form.validation.address_non_empty']);
   });
 
-  it('should report a missing asset type in vuelidate english', async () => {
+  it('should report a missing asset type in this app words', async () => {
     wrapper = createWrapper(evmToken({ assetType: '' }));
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.vm.validate();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(messages('type-select')).toEqual(['Value is required']);
+    expect(messages('type-select')).toEqual(['asset_form.validation.asset_type_non_empty']);
   });
 
-  it('should keep a server error hidden until its field is touched', async () => {
+  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
+  // rejected save said nothing at all on a field the user had not been in.
+  it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { symbol: ['already taken'] };
     wrapper = createWrapper(evmToken(), { errorMessages });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(messages('symbol-input')).toEqual([]);
+    expect(messages('symbol-input')).toEqual(['already taken']);
   });
 
   it('should clear the server errors when the asset type changes', async () => {
