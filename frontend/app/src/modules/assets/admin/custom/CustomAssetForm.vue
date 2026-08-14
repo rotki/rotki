@@ -1,12 +1,10 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { customAssetSchema } from '@/modules/assets/admin/custom/custom-asset-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 
 const modelValue = defineModel<CustomAsset>({ required: true });
@@ -17,45 +15,37 @@ const { types } = defineProps<{
   types: string[];
 }>();
 
-const customAssetType = useRefPropVModel(modelValue, 'customAssetType');
-const name = useRefPropVModel(modelValue, 'name');
-const notes = refOptional(useRefPropVModel(modelValue, 'notes'), '');
-
 const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
 const { t } = useI18n({ useScope: 'global' });
 
-const rules = {
-  name: {
-    required: helpers.withMessage(t('asset_form.name_non_empty'), required),
+const schema = computed<ZodType>(() => customAssetSchema({
+  customAssetType: t('asset_form.type_non_empty'),
+  name: t('asset_form.name_non_empty'),
+}));
+
+const form = useModelForm<CustomAsset>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+});
+
+/** The field shows an empty box for an asset with no notes, and clearing it puts one back. */
+const notes = computed<string>({
+  get: () => form.state.notes ?? '',
+  set: (value?: string) => {
+    form.state.notes = value ?? null;
   },
-  notes: { externalServerValidation: () => true },
-  type: {
-    required: helpers.withMessage(t('asset_form.type_non_empty'), required),
-  },
-};
+});
 
-const states = {
-  name,
-  notes,
-  type: customAssetType,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  { $autoDirty: true, $externalResults: errors },
-);
-
-useFormStateWatcher(states, stateUpdated);
-
-function saveIcon(identifier: string) {
+function saveIcon(identifier: string): void {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
 defineExpose({
   saveIcon,
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -63,23 +53,23 @@ defineExpose({
   <div class="flex flex-col gap-2">
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <RuiTextField
-        v-model="name"
+        v-model="form.state.name"
         data-testid="name"
         variant="outlined"
         color="primary"
         clearable
         :label="t('common.name')"
-        :error-messages="toMessages(v$.name)"
-        @blur="v$.name.$touch()"
+        :error-messages="form.errors('name')"
+        @update:model-value="form.touch('name')"
       />
       <AutoCompleteWithSearchSync
-        v-model="customAssetType"
+        v-model="form.state.customAssetType"
         data-testid="type"
         :items="types"
         clearable
         :label="t('common.type')"
-        :error-messages="toMessages(v$.type)"
-        @blur="v$.type.$touch()"
+        :error-messages="form.errors('customAssetType')"
+        @update:model-value="form.touch('customAssetType')"
       />
     </div>
     <RuiTextArea
@@ -92,7 +82,6 @@ defineExpose({
       auto-grow
       clearable
       :label="t('common.notes')"
-      @blur="v$.notes.$touch()"
     />
 
     <AssetIconForm

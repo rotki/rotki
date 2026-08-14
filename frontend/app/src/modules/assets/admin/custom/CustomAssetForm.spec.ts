@@ -198,11 +198,13 @@ describe('customAssetForm', () => {
     expect(saveIcon).toHaveBeenCalledWith('custom-2');
   });
 
-  it('should keep a server error hidden until its field is touched', async () => {
+  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
+  // rejected save said nothing at all on a field the user had not been in.
+  it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { name: ['already taken'] };
     wrapper = createWrapper(baseModel(), { errorMessages });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(messages('name')).toEqual([]);
+    expect(messages('name')).toEqual(['already taken']);
   });
 });
