@@ -478,6 +478,17 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                 # A rate-limited payout: the circuit breaker holds the ftUSD and
                 # pays it out in a later transaction.
                 notes += f' with the payout of {queued_amount} ftUSD queued by the circuit breaker'
+                if (fee_amount := self._find_payout_relayer_fee(
+                    context=context,
+                    user=owner,
+                    token=self.ftusd,
+                )) > ZERO:
+                    # A relayed queued unstake pays the relayer fee before
+                    # queueing, so the fee never touches the wallet in either
+                    # transaction of the lifecycle. It is recorded in the notes
+                    # instead of as a fee event, keeping the decoded events
+                    # equal to the actual transfers.
+                    notes += f' after a {fee_amount} ftUSD relayer fee'
             out_event.notes = notes
             out_event.counterparty = CPT_FLYING_TULIP
 
