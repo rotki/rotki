@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
-import type { AssetSearchSource } from '@/modules/shell/components/inputs/use-asset-search';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
-import { NftHandling } from '@/modules/assets/nft-handling';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
+import { NftHandling } from '@/modules/assets/nft-handling';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
-import { useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
+import { type AssetSearchSource, useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
 
 defineOptions({
   inheritAttrs: false,
@@ -96,7 +95,6 @@ function onUpdateModelValue(value: string): void {
   set(modelValue, value);
   set(asset, getVisibleAsset(value));
 }
-
 </script>
 
 <template>

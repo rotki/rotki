@@ -1,16 +1,19 @@
 import type { AssetSearchSource } from '@/modules/shell/components/inputs/use-asset-search';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import '@test/i18n';
 
-const searchOptions = vi.fn();
+/** The options `AssetSelect` hands the search, kept as getters exactly as it passes them. */
+type SearchOptions = Record<string, () => unknown>;
+
+const searchOptions = vi.fn<(options: SearchOptions) => void>();
 
 vi.mock('@/modules/shell/components/inputs/use-asset-search', async (importOriginal) => {
   const original = await importOriginal<object>();
   return {
     ...original,
-    useAssetSearch: (options: Record<string, unknown>): object => {
+    useAssetSearch: (options: SearchOptions): object => {
       searchOptions(options);
       return {
         error: ref(''),
@@ -46,7 +49,7 @@ function createWrapper(props: Record<string, unknown> = {}): VueWrapper {
 
 /** The last `useAssetSearch` options, with its getters resolved to plain values. */
 function lastSource(): Record<string, unknown> {
-  const options = searchOptions.mock.lastCall?.[0] as Record<string, () => unknown>;
+  const options = searchOptions.mock.lastCall?.[0] ?? {};
   return {
     chain: options.chain(),
     excludes: options.excludes(),

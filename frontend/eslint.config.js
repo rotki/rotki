@@ -133,7 +133,10 @@ export default rotki({
   // Caps are restated per group because a flat config replaces a rule's options rather than merging
   // them, and dropping the cap here would stop the warning firing at all.
   //
-  // If another registered component crosses its cap, add it here rather than reshaping its props.
+  // If another registered component crosses its cap, add it here rather than reshaping its props —
+  // unless the matching premium change ships with it. That is how AssetSelect left this list: its
+  // five search props became one `source` object, and the bundle has to move to it in the same
+  // release, since the old props no longer reach the search.
   files: [
     '**/src/modules/history/events/HistoryEventsView.vue',
     '**/src/modules/accounts/BlockchainAccountSelector.vue',
@@ -141,12 +144,6 @@ export default rotki({
   ],
   rules: {
     'vue/max-props': ['warn', { maxProps: 8 }],
-  },
-}, {
-  // Registered too, but under the relaxed primitive cap above, so it keeps 12 and only warns.
-  files: ['**/src/modules/shell/components/inputs/AssetSelect.vue'],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 12 }],
   },
 }, {
   // A DIFFERENT GROUP from the premium-registered files above: these are internal, so their props

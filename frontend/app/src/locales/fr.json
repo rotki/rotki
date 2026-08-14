@@ -1345,7 +1345,6 @@
             "hints": {
               "location": "Ceci est facultatif. Si spécifié, les données de solde de localisation seront ajustées automatiquement. Sinon, vous devez mettre à jour les données de solde de localisation manuellement."
             },
-            "nft_hint": "Format accepté: \"_nft_{'ETH address'}_{'collection number'}\"",
             "preview": {
               "from": "De",
               "title": "Cette valeur de localisation sera mise à jour",

@@ -2579,7 +2579,6 @@
               "location": "The location's balance data is adjusted automatically to keep its subtotal reconciled with the total."
             },
             "nft": "NFT",
-            "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
             "only_show_existing": "Only show existing locations",
             "preview": {
               "from": "From",
