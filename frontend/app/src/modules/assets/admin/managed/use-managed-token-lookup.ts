@@ -66,8 +66,10 @@ export function useManagedTokenLookup(options: ManagedTokenLookupOptions): Manag
 
     set(fetching, true);
     try {
-      const current = pick(get(asset), FILLED_FIELDS);
       const details = await fetchTokenDetails({ address: tokenAddress, evmChain: chain });
+      // Read after the request, not before: the user goes on typing while it is in flight, and a
+      // copy taken beforehand would put the older value back.
+      const current = pick(get(asset), FILLED_FIELDS);
 
       set(asset, {
         ...get(asset),

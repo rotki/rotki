@@ -166,9 +166,7 @@ describe('useManagedTokenLookup', () => {
     expect(fetchTokenDetails).not.toHaveBeenCalled();
   });
 
-  // Pinned as it stands: the fallback is read before the request goes out, so a name typed while it
-  // was in flight is overwritten by the one that was there when it started.
-  it('should lose an edit made while the lookup was in flight', async () => {
+  it('should keep an edit made while the lookup was in flight', async () => {
     let release: (value: { symbol: string }) => void = () => {};
     fetchTokenDetails.mockReturnValue(new Promise((resolve) => {
       release = resolve;
@@ -182,6 +180,6 @@ describe('useManagedTokenLookup', () => {
     release({ symbol: 'USDC' });
     await flushPromises();
 
-    expect(get(asset).name).toBe('');
+    expect(get(asset).name).toBe('Typed while waiting');
   });
 });
