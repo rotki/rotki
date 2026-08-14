@@ -1,11 +1,9 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { counterpartyMappingSchema } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
@@ -19,55 +17,34 @@ const { editMode = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const asset = useRefPropVModel(modelValue, 'asset');
-const counterpartySymbol = useRefPropVModel(modelValue, 'counterpartySymbol');
-const counterparty = useRefPropVModel(modelValue, 'counterparty');
+const schema = computed<ZodType>(() => counterpartyMappingSchema({
+  asset: t('asset_management.cex_mapping.form.asset_non_empty'),
+  counterparty: t('asset_management.counterparty_mapping.form.counterparty_non_empty'),
+  counterpartySymbol: t('asset_management.counterparty_mapping.form.counterparty_symbol_non_empty'),
+}));
+
+const form = useModelForm<CounterpartyMapping>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+});
+
 /**
  * The input clears to `undefined`, which used to be written back as `null` into a field the payload
- * types as a string. Nothing downstream ever saw it, because save is gated on a `required` that a
- * cleared field fails either way, so it empties instead of lying about its type.
+ * types as a string. Nothing downstream ever saw it, because save is gated on a rule a cleared field
+ * fails either way, so it empties instead of lying about its type.
  */
 const counterpartyModel = computed<string | undefined>({
-  get: () => get(counterparty),
+  get: () => form.state.counterparty,
   set: (value?: string) => {
-    set(counterparty, value ?? '');
+    form.state.counterparty = value ?? '';
+    form.touch('counterparty');
   },
 });
 
-const rules = {
-  asset: {
-    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty'), required),
-  },
-  counterparty: {
-    required: helpers.withMessage(
-      t('asset_management.counterparty_mapping.form.counterparty_non_empty'),
-      required,
-    ),
-  },
-  counterpartySymbol: {
-    required: helpers.withMessage(
-      t('asset_management.counterparty_mapping.form.counterparty_symbol_non_empty'),
-      required,
-    ),
-  },
-};
-
-const states = {
-  asset,
-  counterparty,
-  counterpartySymbol,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  { $autoDirty: true, $externalResults: errors },
-);
-
-useFormStateWatcher(states, stateUpdated);
-
 defineExpose({
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -80,24 +57,26 @@ defineExpose({
       :disabled="editMode"
       exclude-exchanges
       clearable
-      :error-messages="toMessages(v$.counterparty)"
+      :error-messages="form.errors('counterparty')"
     />
     <RuiTextField
-      v-model="counterpartySymbol"
+      v-model="form.state.counterpartySymbol"
       data-testid="counterparty-symbol"
       variant="outlined"
       color="primary"
       :disabled="editMode"
       clearable
       :label="t('asset_management.counterparty_mapping.counterparty_symbol')"
-      :error-messages="toMessages(v$.counterpartySymbol)"
+      :error-messages="form.errors('counterpartySymbol')"
+      @update:model-value="form.touch('counterpartySymbol')"
     />
     <AssetSelect
-      v-model="asset"
+      v-model="form.state.asset"
       data-testid="counterparty-asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
       outlined
-      :error-messages="toMessages(v$.asset)"
+      :error-messages="form.errors('asset')"
+      @update:model-value="form.touch('asset')"
     />
   </div>
 </template>
