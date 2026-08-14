@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
 A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6')
+A_ETHEREUM_EURE_V2 = Asset('eip155:1/erc20:0x39b8B6385416f4cA36a20319F70D28621895279D')
 
 
 def test_monerium_decoder_initializes_without_api(
@@ -331,6 +332,26 @@ def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer, allow_gnosis_
             'AND value=?',
             (tx_hash, gnosis_inquirer.chain_id.serialize_for_db(), TX_DECODED),
         ).fetchone()[0] == 1
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xAc305b47BB34AD6BB566288050920e9307fd23A7']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_legacy_monerium_eure_transfer_on_ethereum(
+        ethereum_inquirer,
+        ethereum_accounts,
+        use_clean_caching_directory: bool,
+) -> None:
+    """Test that legacy EURe transfers do not create duplicate current EURe receives."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xd62b7eaabc11e85eed8b12d3b92f7524cf1921d4736de256dc00332590743595'),
+    )
+    assert [
+        event.amount
+        for event in events
+        if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETHEREUM_EURE_V2
+    ] == [FVal('703.315424608328819855')]
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
