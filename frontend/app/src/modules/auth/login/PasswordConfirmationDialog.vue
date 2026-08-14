@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { z, type ZodType } from 'zod';
+import { requiredField } from '@/modules/core/form/fields';
+import { useForm } from '@/modules/core/form/use-form';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+
+interface PasswordConfirmationState {
+  password: string;
+}
 
 const display = defineModel<boolean>({ required: true });
 
@@ -21,39 +25,44 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { getPassword } = useInterop();
 
-const password = ref<string>('');
 const storedPassword = ref<string>('');
 
-const rules = {
-  password: {
-    required: helpers.withMessage(
-      t('password_confirmation_dialog.validation.non_empty_password'),
-      required,
-    ),
-  },
-};
+const schema = computed<ZodType>(() => z.object({
+  password: requiredField(t('password_confirmation_dialog.validation.non_empty_password')),
+}));
 
-const v$ = useVuelidate(rules, { password }, { $autoDirty: true });
-
-const passwordErrors = computed<string[]>(() => {
-  const errors = toMessages(get(v$).password);
-  if (errorMessage)
-    return [errorMessage];
-
-  return errors;
+const form = useForm<PasswordConfirmationState, PasswordConfirmationState>({
+  initial: (): PasswordConfirmationState => ({ password: '' }),
+  schema,
+  // The dialog reports the password upwards and nothing else; the caller owns the attempt.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (state): PasswordConfirmationState => ({ ...state }),
 });
 
-async function confirmPassword(): Promise<void> {
-  if (!await get(v$).$validate())
+/**
+ * The rejection the caller is holding, shown on the field it belongs to. The core keys it apart
+ * from the schema so the two now show together, where the old computed replaced one with the other.
+ * It is re-applied on open because `reset()` drops it along with everything else.
+ */
+function showServerError(): void {
+  form.setServerErrors(errorMessage ? { password: [errorMessage] } : {});
+}
+
+function confirmPassword(): void {
+  if (!form.validate())
     return;
 
-  emit('confirm', get(password));
+  emit('confirm', form.state.password);
 }
+
+watchImmediate(() => errorMessage, () => {
+  showServerError();
+});
 
 watchImmediate(display, async (isDisplayed) => {
   if (isDisplayed) {
-    set(password, '');
-    get(v$).$reset();
+    form.reset();
+    showServerError();
     // Fetch stored password when dialog opens
     if (username)
       set(storedPassword, await getPassword(username));
@@ -84,14 +93,15 @@ watchImmediate(display, async (isDisplayed) => {
         </i18n-t>
 
         <RuiTextField
-          v-model="password"
+          v-model="form.state.password"
           variant="outlined"
           color="primary"
           :label="t('password_confirmation_dialog.password_label')"
-          :error-messages="passwordErrors"
+          :error-messages="form.errors('password')"
           type="password"
           autofocus
           data-testid="password-confirmation-input"
+          @update:model-value="form.touch('password')"
           @keydown.enter="confirmPassword()"
         />
       </div>

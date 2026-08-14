@@ -182,14 +182,19 @@ describe('passwordConfirmationDialog', () => {
   });
 
   describe('when the backend has reported an error', () => {
-    it('should show that error instead of the local message', async () => {
+    // Deliberately flipped in the zod swap. The old computed returned `[errorMessage]` and threw the
+    // field's own messages away, so clearing the box while a rejection was on screen said nothing at
+    // all about the box now being empty. The core keys the two channels apart and shows both.
+    it('should show that error alongside the local message', async () => {
       harness = createHarness({ errorMessage: 'Wrong password' });
       await confirm();
 
-      expect(messages()).toStrictEqual(['Wrong password']);
+      expect(messages()).toStrictEqual([
+        'password_confirmation_dialog.validation.non_empty_password',
+        'Wrong password',
+      ]);
     });
 
-    // The server error wins unconditionally, so it keeps showing over an untouched empty field.
     it('should show that error even before the user types', async () => {
       harness = createHarness({ errorMessage: 'Wrong password' });
       await nextTick();
@@ -202,6 +207,18 @@ describe('passwordConfirmationDialog', () => {
       await confirm();
 
       expect(harness.confirmed()).toStrictEqual([]);
+    });
+
+    // New under the core: a rejection is reported against the value that earned it, so retyping
+    // retires it. The old computed kept showing it until the caller replaced the prop.
+    it('should drop that error once the password is edited', async () => {
+      harness = createHarness({ errorMessage: 'Wrong password' });
+      await nextTick();
+      expect(messages()).toStrictEqual(['Wrong password']);
+
+      await type('another');
+
+      expect(messages()).toStrictEqual([]);
     });
   });
 
