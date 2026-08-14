@@ -1,13 +1,16 @@
 import json
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, CPT_POLONIEX, CPT_UPHOLD
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
 from rotkehlchen.chain.ethereum.modules.eth2.utils import timestamp_to_slot
-from rotkehlchen.chain.ethereum.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
+from rotkehlchen.chain.ethereum.modules.monerium.constants import (
+    ETHEREUM_MONERIUM_LEGACY_ADDRESSES,
+    V1_TO_V2_MONERIUM_MAPPINGS,
+)
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderToolsWithProxy
 from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION
@@ -37,6 +40,8 @@ from .constants import (
     POLONIEX_ADDRESS,
     UPHOLD_ADDRESS,
 )
+
+MONERIUM_V2_CONTRACTS_BLOCK: Final = 21412895
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -105,6 +110,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             premium=premium,
             beacon_chain=beacon_chain,
             monerium=monerium,
+            addresses_exceptions=dict.fromkeys(
+                ETHEREUM_MONERIUM_LEGACY_ADDRESSES,
+                MONERIUM_V2_CONTRACTS_BLOCK,
+            ),
         )
 
     def _get_beacon_node(self) -> BeaconNode | None:
