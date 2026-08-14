@@ -1,11 +1,9 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { CexMapping } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { useFormStateWatcher } from '@/modules/core/common/use-form';
-import { nullDefined, useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { cexMappingSchema } from '@/modules/assets/admin/cex-mapping/cex-mapping-form';
+import { useModelForm } from '@/modules/core/form/use-model-form';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import ExchangeInput from '@/modules/shell/components/inputs/ExchangeInput.vue';
@@ -27,13 +25,30 @@ const EXCLUDED_EXCHANGES = [
 
 const { t } = useI18n({ useScope: 'global' });
 
-const asset = useRefPropVModel(modelValue, 'asset');
-const locationSymbol = useRefPropVModel(modelValue, 'locationSymbol');
-const location = useRefPropVModel(modelValue, 'location');
-const locationModel = nullDefined(location);
+const schema = computed<ZodType>(() => cexMappingSchema({
+  asset: t('asset_management.cex_mapping.form.asset_non_empty'),
+  location: t('asset_management.cex_mapping.form.location_non_empty'),
+  locationSymbol: t('asset_management.cex_mapping.form.location_symbol_non_empty'),
+}, get(forAllExchanges)));
+
+const form = useModelForm<CexMapping>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+});
+
+/** The input clears to `undefined`, which this payload spells `null`: a mapping for every exchange. */
+const locationModel = computed<string | undefined>({
+  get: () => form.state.location ?? undefined,
+  set: (value?: string) => {
+    form.state.location = value ?? null;
+    form.touch('location');
+  },
+});
 
 const mappingAlertInfo = computed<{ primary: string; related: string } | undefined>(() => {
-  const currentLocation = get(location);
+  const currentLocation = form.state.location;
   if (!currentLocation || get(forAllExchanges))
     return undefined;
 
@@ -56,44 +71,12 @@ function checkPassedForm() {
   }
 }
 
-const rules = {
-  asset: {
-    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty'), required),
-  },
-  location: {
-    required: helpers.withMessage(
-      t('asset_management.cex_mapping.form.location_non_empty'),
-      requiredIf(logicNot(forAllExchanges)),
-    ),
-  },
-  locationSymbol: {
-    required: helpers.withMessage(
-      t('asset_management.cex_mapping.form.location_symbol_non_empty'),
-      required,
-    ),
-  },
-};
-
-const states = {
-  asset,
-  location,
-  locationSymbol,
-};
-
-const v$ = useVuelidate(
-  rules,
-  states,
-  { $autoDirty: true, $externalResults: errors },
-);
-
-useFormStateWatcher(states, stateUpdated);
-
 onBeforeMount(() => {
   checkPassedForm();
 });
 
 defineExpose({
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -112,23 +95,25 @@ defineExpose({
       :disabled="editMode || forAllExchanges"
       :excludes="EXCLUDED_EXCHANGES"
       clearable
-      :error-messages="toMessages(v$.location)"
+      :error-messages="form.errors('location')"
     />
     <RuiTextField
-      v-model="locationSymbol"
+      v-model="form.state.locationSymbol"
       data-testid="location-symbol"
       variant="outlined"
       color="primary"
       :disabled="editMode"
       clearable
       :label="t('asset_management.cex_mapping.location_symbol')"
-      :error-messages="toMessages(v$.locationSymbol)"
+      :error-messages="form.errors('locationSymbol')"
+      @update:model-value="form.touch('locationSymbol')"
     />
     <AssetSelect
-      v-model="asset"
+      v-model="form.state.asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
       outlined
-      :error-messages="toMessages(v$.asset)"
+      :error-messages="form.errors('asset')"
+      @update:model-value="form.touch('asset')"
     />
     <RuiAlert
       v-if="mappingAlertInfo"
