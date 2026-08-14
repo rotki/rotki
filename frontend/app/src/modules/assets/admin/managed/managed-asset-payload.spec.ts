@@ -76,6 +76,7 @@ describe('buildManagedAssetPayload', () => {
     decimals: 6,
     evmChain: 'ethereum',
     identifier: 'test-asset',
+    isRebasing: false,
     name: 'USD Coin',
     symbol: 'USDC',
     tokenKind: EvmTokenKind.ERC20,
@@ -129,7 +130,11 @@ describe('buildManagedAssetPayload', () => {
   });
 
   it('should carry underlying tokens only when there are some', () => {
-    const token = { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', weight: '100' };
+    const token = {
+      address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+      tokenKind: EvmTokenKind.ERC20,
+      weight: '100',
+    };
 
     expect(buildManagedAssetPayload(evmToken(), [token]).underlyingTokens).toEqual([token]);
     expect(buildManagedAssetPayload(evmToken(), []).underlyingTokens).toBeUndefined();

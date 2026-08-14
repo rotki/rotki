@@ -3,21 +3,20 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { SelectOption } from '@/modules/core/common/common-types';
 import {
   EvmTokenKind,
-  isValidEthAddress,
   type SupportedAsset,
   toSentenceCase,
   type UnderlyingToken,
 } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import { omit, pick } from 'es-toolkit';
+import { omit } from 'es-toolkit';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
 import { buildManagedAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
 import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
+import { useManagedTokenLookup } from '@/modules/assets/admin/managed/use-managed-token-lookup';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
-import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
@@ -36,8 +35,6 @@ const { editMode = false, assetTypes } = defineProps<{
   assetTypes: string[];
 }>();
 
-const fetching = ref<boolean>(false);
-const dontAutoFetch = ref<boolean>(false);
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
@@ -78,9 +75,15 @@ const decimalsModel = computed({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const { allEvmChains, txEvmChains } = useSupportedChains();
-const { fetchTokenDetails } = useAssetInfoRetrieval();
+const { allEvmChains } = useSupportedChains();
 const { addAsset, editAsset } = useAssetManagementApi();
+
+const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup({
+  address,
+  asset: modelValue,
+  evmChain,
+  onFilled: fields => clearFieldErrors(fields),
+});
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 const isHyperliquidToken = computed<boolean>(() => get(assetType) === HYPERLIQUID_TOKEN);
@@ -151,57 +154,8 @@ function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
-async function fetchTokenData(address: string, evmChain: string): Promise<void> {
-  if (!isValidEvmChain(evmChain)) {
-    return;
-  }
-  set(fetching, true);
-
-  try {
-    const tokenInfo = pick(get(modelValue), ['decimals', 'name', 'symbol']);
-    const tokenDetails = await fetchTokenDetails({ address, evmChain });
-
-    const updateTokenInfo = {
-      decimals: tokenDetails.decimals ? tokenDetails.decimals : tokenInfo.decimals,
-      name: tokenDetails.name ? tokenDetails.name : tokenInfo.name,
-      symbol: tokenDetails.symbol ? tokenDetails.symbol : tokenInfo.symbol,
-    };
-
-    set(modelValue, { ...get(modelValue), ...updateTokenInfo });
-    clearFieldErrors(['decimals', 'name', 'symbol']);
-  }
-  finally {
-    // Always re-enable the fields, even if the lookup throws, so the form never stays locked.
-    set(fetching, false);
-  }
-}
-
-async function refreshTokenData() {
-  if (!isDefined(evmChain)) {
-    return;
-  }
-
-  await fetchTokenData(get(address), get(evmChain));
-}
-
-function isValidEvmChain(evmChain: string) {
-  return get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain);
-}
-
 const types = computed(() => assetTypes.filter(item => item !== CUSTOM_ASSET)
   .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })));
-
-watch([address, evmChain], async ([address, evmChain]) => {
-  if (!evmChain)
-    return;
-
-  if (get(dontAutoFetch) || !isValidEthAddress(address)) {
-    set(dontAutoFetch, false);
-    return;
-  }
-
-  await fetchTokenData(address, evmChain);
-});
 
 watch(assetType, () => {
   // clearing errors because the errors are unique based on the asset type
@@ -218,7 +172,9 @@ watchImmediate(modelValue, (asset: SupportedAsset) => {
 });
 
 onMounted(() => {
-  set(dontAutoFetch, editMode);
+  // An opened edit dialog seeds the address it already has, which must not read as a fresh one.
+  if (editMode)
+    suppressNextLookup();
 });
 
 defineExpose({
