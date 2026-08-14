@@ -181,30 +181,14 @@ export default rotki({
   //   AssetDetailsBase left this list at 12 -> 4 props: `asset` plus display/actions/resolution,
   //   grouped because those three ARE the boundary AssetDetails forwards across, not to win a
   //   number. AssetDetails is the same three groups plus a resolution `options`.
-  // - HistoryEventsDetailItem (9): already reduced from 10, and the rest are independent
-  //   (groupLocationLabel and matchedMovement are unrelated in both this component and
-  //   HistoryEventType; `index` carries swap sub-event ordering). Fold into the facade work below.
-  // - HistoryEventsVirtualTable (14): deferred to the facade redesign, which also owns its 8
-  //   max-template-depth errors and its 20/20 @rotki/max-dependencies ceiling.
   files: [
     '**/src/modules/settings/api-keys/ServiceKeyCard.vue',
     '**/src/modules/history/events/HistoryEventNote.vue',
     '**/src/modules/accounts/BlockchainAccountSelector.vue',
     '**/src/modules/balances/AssetBalances.vue',
-    '**/src/modules/history/events/components/HistoryEventsDetailItem.vue',
-    '**/src/modules/history/events/components/HistoryEventsVirtualTable.vue',
   ],
   rules: {
     'vue/max-props': ['warn', { maxProps: 8 }],
-  },
-}, {
-  // HistoryEventsVirtualTable's remaining depth comes from the row markup it hosts inline. Extracting
-  // that markup needs one more import and the file already sits at the @rotki/max-dependencies ceiling
-  // of 20, so the fix is the facade redesign that also owns its prop count, not a local change. Warn
-  // rather than block until that lands.
-  files: ['**/src/modules/history/events/components/HistoryEventsVirtualTable.vue'],
-  rules: {
-    'vue/max-template-depth': 'warn',
   },
 }, {
   // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that
