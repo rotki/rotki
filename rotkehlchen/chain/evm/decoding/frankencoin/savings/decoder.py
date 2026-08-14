@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import TokenEncounterInfo, token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.frankencoin.constants import (
     CPT_FRANKENCOIN,
@@ -44,7 +44,10 @@ class FrankencoinSavingsCommonDecoder(FrankencoinCommonDecoder):
         )
         self.savings_address = SUPPORTED_ZCHF_SAVINGS_CHAINS[evm_inquirer.chain_id]
         self.zchf_address = ZCHF_ADDRESS[evm_inquirer.chain_id]
-        self.zchf = self.base.get_or_create_evm_token(address=self.zchf_address)
+        self.zchf = self.base.get_or_create_evm_token(
+            address=self.zchf_address,
+            encounter=TokenEncounterInfo(should_notify=False),
+        )
 
     def _get_transfer_party(
             self,
