@@ -1,4 +1,3 @@
-import { isValidUrl } from '@rotki/common';
 import { z, type ZodType } from 'zod';
 import { usernameField } from '@/modules/auth/credentials-fields';
 import { requiredField } from '@/modules/core/form/fields';
@@ -25,6 +24,27 @@ export interface LoginFormMessages {
 }
 
 /**
+ * An address the app can actually reach a backend on: an http(s) url with a host.
+ *
+ * The shared `isValidUrl` is not that test. Its regex demands a dotted host, which is right for
+ * spotting links in a message but wrong here: it accepted `http://127.0.0.1:4242` and refused
+ * `http://localhost:4242`, which name the same machine. Parsing beats pattern-matching for a value
+ * whose only job is to be fetched from.
+ */
+function isBackendUrl(value: string): boolean {
+  if (value.length >= MAX_BACKEND_URL_LENGTH)
+    return false;
+
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.length > 0;
+  }
+  catch {
+    return false;
+  }
+}
+
+/**
  * The panel holding this field can be closed, in which case none of it is validated. That is a piece
  * of screen state rather than of the credentials, so it parameterises the builder.
  *
@@ -36,7 +56,7 @@ function backendUrlField(messages: LoginFormMessages, open: boolean): ZodType<st
     if (!open)
       return;
 
-    if (value.length >= MAX_BACKEND_URL_LENGTH || !isValidUrl(value))
+    if (!isBackendUrl(value))
       ctx.addIssue({ code: 'custom', message: messages.invalidUrl });
 
     if (value.trim() === '')
