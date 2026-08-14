@@ -20,7 +20,8 @@ const validator = useRefPropVModel(modelValue, 'data');
 
 const input = useTemplateRef<ComponentExposed<typeof Eth2Input>>('input');
 
-function validate(): Promise<boolean> {
+/** The input validates synchronously now; the account form still awaits every child alike. */
+async function validate(): Promise<boolean> {
   assert(isDefined(input));
   return get(input).validate();
 }

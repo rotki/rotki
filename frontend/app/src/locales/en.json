@@ -2944,6 +2944,9 @@
     },
     "ownership_percentage": "Ownership Percentage",
     "public_key": "Public Key",
+    "validation": {
+      "required": "The value is required"
+    },
     "validator_index": {
       "validation": "Validator index can be filled with numeric value only."
     }
