@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { IpcCommands } from '@electron/ipc-commands';
 import { assert } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { DebugStateGroup } from '@shared/ipc';
 import { app, type BaseWindow, BrowserWindow, Menu, type MenuItem, type MenuItemConstructorOptions, shell } from 'electron';
 
 interface MenuManagerListener {
@@ -203,24 +204,51 @@ export class MenuManager {
   private getDebugMenu(): MenuItemConstructorOptions {
     return {
       label: '&Debug',
-      submenu: [{
-        label: 'Persist store',
-        type: 'checkbox',
-        checked: this.settings.appSettings.persistStore ?? false,
-        click: (item: MenuItem, window?: BaseWindow) => {
-          if (!window || !(window instanceof BrowserWindow)) {
-            console.warn('window is not a BrowserWindow');
-            return;
-          }
+      submenu: [
+        {
+          label: 'Persist store',
+          type: 'checkbox',
+          checked: this.settings.appSettings.persistStore ?? false,
+          click: (item: MenuItem, window?: BaseWindow) => {
+            if (!window || !(window instanceof BrowserWindow)) {
+              console.warn('window is not a BrowserWindow');
+              return;
+            }
 
-          const enabled = item.checked;
-          this.settings.appSettings.persistStore = enabled;
-          this.settings.save();
-          window.webContents.send(IpcCommands.DEBUG_SETTINGS, { persistStore: enabled });
-          window.reload();
+            const enabled = item.checked;
+            this.settings.appSettings.persistStore = enabled;
+            this.settings.save();
+            window.webContents.send(IpcCommands.DEBUG_SETTINGS, { persistStore: enabled });
+            window.reload();
+          },
         },
-      }],
+        this.separator,
+        {
+          label: 'Reset local state',
+          submenu: [{
+            label: 'First-run state',
+            toolTip: 'Clears dismissals, version and asset-update throttles, then reloads. Backend url, login and preferences are kept.',
+            click: (_item: MenuItem, window?: BaseWindow) => {
+              this.resetDebugState(DebugStateGroup.FIRST_RUN, window);
+            },
+          }],
+        },
+      ],
     };
+  }
+
+  /**
+   * The renderer owns the key patterns and does the reload, so this only names
+   * the group. Sending it to a window that is not a BrowserWindow is a no-op.
+   */
+  private resetDebugState(group: DebugStateGroup, window?: BaseWindow): void {
+    if (!window || !(window instanceof BrowserWindow)) {
+      console.warn('window is not a BrowserWindow');
+      return;
+    }
+
+    this.logger.debug(`resetting debug state group: ${group}`);
+    window.webContents.send(IpcCommands.RESET_DEBUG_STATE, group);
   }
 
   private getPremiumMenu(): MenuItemConstructorOptions {
