@@ -671,27 +671,29 @@ mod tests {
         .unwrap();
     }
 
+    /// Adds a hyperliquid token under an identifier no asset list can ship, so that adding the
+    /// real token to the packaged database cannot collide with this fixture's primary key.
     async fn add_hyperliquid_token(state: &Arc<AppState>) {
         let conn = state.globaldb.conn.lock().await;
         conn.execute(
             "INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)",
             rusqlite::params![
-                "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
-                "$MAX",
+                "hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef",
+                "$FIXTURE",
                 AssetType::HyperliquidToken.serialize_for_db(),
             ],
         )
         .unwrap();
         conn.execute(
             "INSERT INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
-            rusqlite::params!["hyperc:0x6781b92b6ea5d8ed37d275eb201f64af", "MAX"],
+            rusqlite::params!["hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef", "FXTRSYM"],
         )
         .unwrap();
         conn.execute(
             "INSERT INTO hyperliquid_tokens(identifier, address, decimals) VALUES (?, ?, ?)",
             rusqlite::params![
-                "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
-                "0x6781b92b6ea5d8ed37d275eb201f64af",
+                "hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef",
+                "0xdeadbeefdeadbeefdeadbeefdeadbeef",
                 6,
             ],
         )
@@ -841,7 +843,7 @@ mod tests {
         let (status, body) = call_search(
             state.clone(),
             AssetsLevenshteinSearch {
-                value: Some("MAX".to_string()),
+                value: Some("FXTRSYM".to_string()),
                 evm_chain: None,
                 asset_type: Some("hyperliquid token".to_string()),
                 address: None,
@@ -855,7 +857,7 @@ mod tests {
         let result = body.get("result").and_then(|v| v.as_array()).unwrap();
         assert!(result.iter().any(|entry| {
             entry.get("identifier").and_then(|v| v.as_str())
-                == Some("hyperc:0x6781b92b6ea5d8ed37d275eb201f64af")
+                == Some("hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef")
                 && entry.get("asset_type").and_then(|v| v.as_str()) == Some("hyperliquid token")
         }));
 
@@ -865,7 +867,7 @@ mod tests {
                 value: None,
                 evm_chain: None,
                 asset_type: None,
-                address: Some("0x6781B92B6EA5D8ED37D275EB201F64AF".to_string()),
+                address: Some("0xDEADBEEFDEADBEEFDEADBEEFDEADBEEF".to_string()),
                 limit: 25,
                 search_nfts: false,
             },
@@ -876,7 +878,7 @@ mod tests {
         let result = body.get("result").and_then(|v| v.as_array()).unwrap();
         assert!(result.iter().any(|entry| {
             entry.get("identifier").and_then(|v| v.as_str())
-                == Some("hyperc:0x6781b92b6ea5d8ed37d275eb201f64af")
+                == Some("hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef")
         }));
     }
 
