@@ -3,6 +3,7 @@ import type { NftAsset } from '@/modules/assets/nfts';
 import { assert, type AssetInfoWithId, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { NftHandling } from '@/modules/assets/nft-handling';
+import { isNft } from '@/modules/assets/nft-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { uniqueObjects } from '@/modules/core/common/data/data';
 import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/core/common/display/assets';
@@ -156,6 +157,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
 
   async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
     set(loading, true);
+    const requested = currentScope();
     try {
       const { address, value } = parseAssetSearchKeyword(keyword);
       const usedChain = getSanitizedChain(toValue(chain), matchChain, getEvmChainName);
@@ -168,6 +170,14 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
         signal,
         value,
       });
+
+      // The scope can change while this is in flight, and aborting alone does not cover it: a
+      // response that has already resolved is only a microtask away from being written, past the
+      // point where the signal can stop it. Writing it would put the previous scope's results back
+      // over the ones the user is now looking at — tokens under a row switched to nft.
+      if (requested !== currentScope())
+        return;
+
       if (get(modelValue))
         await retainSelectedValueInOptions(fetchedAssets);
       else
@@ -220,10 +230,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
   });
 
   async function runSearch(keyword: string): Promise<void> {
-    if (pending) {
-      pending.abort();
-      pending = null;
-    }
+    abortPending();
     set(error, '');
     pending = new AbortController();
     await searchAssets(keyword, pending.signal);
@@ -236,13 +243,57 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     await runSearch(value);
   }, { debounce: 350 });
 
-  watch(() => toValue(chain), async () => {
-    if (!get(modelValue)) {
-      // Drop options cached for the previous chain so a stale, off-chain asset can't be picked;
-      // the next search repopulates for the new chain.
+  /** The inputs that decide what a search may return, as one comparable value. */
+  function currentScope(): string {
+    return `${toValue(chain) ?? ''}|${toValue(nftHandling) ?? NftHandling.EXCLUDE}`;
+  }
+
+  function abortPending(): void {
+    if (!pending)
+      return;
+
+    pending.abort();
+    pending = null;
+  }
+
+  /** Whether the current scope would offer this identifier at all. */
+  function admitsSelection(identifier: string): boolean {
+    const handling = toValue(nftHandling) ?? NftHandling.EXCLUDE;
+    if (handling === NftHandling.SHOW_ONLY)
+      return isNft(identifier);
+    if (handling === NftHandling.EXCLUDE)
+      return !isNft(identifier);
+    return true;
+  }
+
+  // Both inputs scope the remote search, so a change to either leaves the cached options describing
+  // a search nobody asked for. `nftHandling` changes under the user in the snapshot editor, where a
+  // radio flips the row between token and nft.
+  watch([
+    (): string | undefined => toValue(chain),
+    (): NftHandling | undefined => toValue(nftHandling),
+  ], async () => {
+    // A search for the old scope is no longer an answer to anything. Its response is guarded on
+    // write too, since a request that has already resolved is past what the signal can stop.
+    abortPending();
+    set(loading, false);
+
+    const selected = get(modelValue);
+    if (!selected) {
+      // Drop options cached for the previous scope so a stale, out-of-scope asset can't be picked;
+      // the next search repopulates for the new one.
       set(assets, []);
       return;
     }
+
+    // A selection the new scope cannot offer has to go with it: keeping it is how a token stayed
+    // picked on a row the user had just switched to nft.
+    if (!admitsSelection(selected)) {
+      set(assets, []);
+      onSelectionLost?.();
+      return;
+    }
+
     await retainSelectedValueInOptions([]);
   });
 
