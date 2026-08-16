@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 import {
+  carriedThrough,
   requiredAmount,
   requiredAsset,
   requiredEventType,
@@ -87,7 +88,7 @@ export function assetMovementSchema(): ZodType {
       location: requiredLocation(),
       locationLabel: serverValidatedOnly(),
       notes: serverValidatedOnly(),
-      priceIntent: z.unknown().optional(),
+      priceIntent: carriedThrough(),
       timestamp: z.number(),
       transactionId: serverValidatedOnly(),
       uniqueId: serverValidatedOnly(),

@@ -9,6 +9,7 @@ import {
   toNullableText,
 } from '@/modules/history/management/forms/common/group-identifier';
 import {
+  carriedThrough,
   requiredAmount,
   requiredValidatorIndex,
   requiredWithdrawalAddress,
@@ -45,7 +46,7 @@ export function ethWithdrawalSchema(editing: boolean): ZodType {
     groupIdentifier: groupIdentifierSchema(editing),
     hasActualGroupIdentifier: z.boolean(),
     isExit: z.boolean(),
-    priceIntent: z.unknown().optional(),
+    priceIntent: carriedThrough(),
     timestamp: z.number(),
     validatorIndex: requiredValidatorIndex(),
     withdrawalAddress: requiredWithdrawalAddress(),

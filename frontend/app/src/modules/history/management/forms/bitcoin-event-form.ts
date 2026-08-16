@@ -9,6 +9,7 @@ import {
   toNullableText,
 } from '@/modules/history/management/forms/common/group-identifier';
 import {
+  carriedThrough,
   requiredAmount,
   requiredBitcoinTxId,
   requiredEventSubtype,
@@ -83,7 +84,7 @@ export function bitcoinEventSchema(editing: boolean, counterparties: () => strin
     location: requiredLocation(),
     locationLabel: serverValidatedOnly(),
     notes: serverValidatedOnly(),
-    priceIntent: z.unknown().optional(),
+    priceIntent: carriedThrough(),
     sequenceIndex: requiredSequenceIndex(),
     timestamp: z.number(),
     txRef: requiredBitcoinTxId(),
