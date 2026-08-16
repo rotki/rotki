@@ -9,6 +9,7 @@ import {
   toNullableText,
 } from '@/modules/history/management/forms/common/group-identifier';
 import {
+  carriedThrough,
   requiredAmount,
   requiredDepositor,
   requiredEvmTxHash,
@@ -54,7 +55,7 @@ export function ethDepositSchema(editing: boolean): ZodType {
     extraData: z.unknown(),
     groupIdentifier: groupIdentifierSchema(editing),
     hasActualGroupIdentifier: z.boolean(),
-    priceIntent: z.unknown().optional(),
+    priceIntent: carriedThrough(),
     sequenceIndex: requiredSequenceIndex(),
     timestamp: z.number(),
     txRef: requiredEvmTxHash(),

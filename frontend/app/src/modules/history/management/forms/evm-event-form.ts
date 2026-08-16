@@ -9,6 +9,7 @@ import {
   toNullableText,
 } from '@/modules/history/management/forms/common/group-identifier';
 import {
+  carriedThrough,
   optionalEthAddress,
   requiredAmount,
   requiredAsset,
@@ -87,7 +88,7 @@ export function evmEventSchema(editing: boolean, counterparties: () => string[])
     location: requiredLocation(),
     locationLabel: serverValidatedOnly(),
     notes: serverValidatedOnly(),
-    priceIntent: z.unknown().optional(),
+    priceIntent: carriedThrough(),
     sequenceIndex: requiredSequenceIndex(),
     timestamp: z.number(),
     txRef: requiredEvmTxHash(),

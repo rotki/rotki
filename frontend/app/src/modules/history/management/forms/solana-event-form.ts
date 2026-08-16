@@ -9,6 +9,7 @@ import {
   toNullableText,
 } from '@/modules/history/management/forms/common/group-identifier';
 import {
+  carriedThrough,
   optionalSolanaAddress,
   requiredAmount,
   requiredAsset,
@@ -81,7 +82,7 @@ export function solanaEventSchema(editing: boolean, counterparties: () => string
     hasActualGroupIdentifier: z.boolean(),
     locationLabel: serverValidatedOnly(),
     notes: serverValidatedOnly(),
-    priceIntent: z.unknown().optional(),
+    priceIntent: carriedThrough(),
     sequenceIndex: requiredSequenceIndex(),
     timestamp: z.number(),
     txRef: requiredSolanaSignature(),
