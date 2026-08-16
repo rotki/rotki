@@ -110,8 +110,11 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
-        assert isinstance(self.cache_data[0], set), f'{self.counterparty} Decoder cache_data[0] is not a set'  # noqa: E501
-        return self.cache_data[0]
+        if (pools := self.cached_container(0)) is None:
+            return set()  # no pools known until the cache is loaded
+
+        assert isinstance(pools, set), f'{self.counterparty} Decoder cache_data[0] is not a set'
+        return pools
 
     def post_cache_update_callback(self) -> None:
         self.protocol_addresses.update(self.pools)

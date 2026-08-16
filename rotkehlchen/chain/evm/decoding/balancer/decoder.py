@@ -67,8 +67,11 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
-        assert isinstance(self.cache_data[0], set), f'{self.counterparty} Decoder cache_data[0] is not a set'  # noqa: E501
-        return self.cache_data[0]
+        if (pools := self.cached_container(0)) is None:
+            return set()  # no pools known until the cache is loaded
+
+        assert isinstance(pools, set), f'{self.counterparty} Decoder cache_data[0] is not a set'
+        return pools
 
     def _decode_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2):

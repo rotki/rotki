@@ -80,8 +80,11 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, str]:
-        assert isinstance(self.cache_data[0], dict), 'ConvexDecoder cache_data[0] is not a dict'
-        return self.cache_data[0]
+        if (pools := self.cached_container(0)) is None:
+            return {}  # no pools known until the cache is loaded
+
+        assert isinstance(pools, dict), 'ConvexDecoder cache_data[0] is not a dict'
+        return pools
 
     def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], EvmDecodingOutput]]:
         return (self._decode_pool_events,)
