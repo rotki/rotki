@@ -55,7 +55,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
     <RuiTabItems v-model="tab">
       <RuiTabItem class="pt-4 md:pl-4">
         <AssetBalances
-          hide-breakdown
+          :breakdown="{ hide: true }"
           :loading="loading"
           :balances="balances"
           sticky-header

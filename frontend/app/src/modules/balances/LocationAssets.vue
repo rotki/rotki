@@ -23,7 +23,7 @@ const { loadingBalances } = useBalancesLoading();
     <AssetBalances
       :loading="loadingBalances"
       :balances="locationBreakdown"
-      hide-breakdown
+      :breakdown="{ hide: true }"
       sticky-header
     />
   </RuiCard>

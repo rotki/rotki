@@ -164,17 +164,6 @@ export default rotki({
     'vue/max-props': ['warn', { maxProps: 12 }],
   },
 }, {
-  // Same group as BigDialog/AppImage above (internal, fixable here), at the stricter default cap:
-  //
-  // - AssetBalances (11): display flags that are genuinely independent, so no honest grouping
-  //   exists. This one needs real decomposition.
-  files: [
-    '**/src/modules/balances/AssetBalances.vue',
-  ],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 8 }],
-  },
-}, {
   // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that
   // takes `test` straight from playwright silently contributes nothing to the coverage report.
   // That failure is invisible - the spec passes, it is just never counted - so it is worth a rule
