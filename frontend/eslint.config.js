@@ -167,19 +167,13 @@ export default rotki({
 }, {
   // Same group as BigDialog/AppImage above (internal, fixable here), at the stricter default cap:
   //
-  // - ServiceKeyCard (12): primaryAction/actionDisabled/hideAction/addButtonText/editButtonText are
-  //   all one action; 5 props become 1, which lands exactly on 8.
   // - BlockchainAccountSelector (17): the worst offender in the codebase, and NOT premium-frozen
   //   despite the group above having claimed it was. It is a field wrapper, so most of these are
   //   RuiAutoComplete pass-throughs (label/hint/customHint/outlined/dense/errorMessages/required)
   //   that want to reach it as attrs rather than as declared props.
   // - AssetBalances (11): display flags that are genuinely independent, so no honest grouping
   //   exists. This one needs real decomposition.
-  //   AssetDetailsBase left this list at 12 -> 4 props: `asset` plus display/actions/resolution,
-  //   grouped because those three ARE the boundary AssetDetails forwards across, not to win a
-  //   number. AssetDetails is the same three groups plus a resolution `options`.
   files: [
-    '**/src/modules/settings/api-keys/ServiceKeyCard.vue',
     '**/src/modules/accounts/BlockchainAccountSelector.vue',
     '**/src/modules/balances/AssetBalances.vue',
   ],

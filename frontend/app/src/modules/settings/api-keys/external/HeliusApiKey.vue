@@ -42,7 +42,7 @@ function removeHeliusNotification() {
     :title="t('external_services.helius.title')"
     :subtitle="t('external_services.helius.description')"
     :image-src="getPublicServiceImagePath('helius.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

@@ -43,7 +43,7 @@ const link = externalLinks.applyTheGraphApiKey;
     :title="t('external_services.thegraph.title')"
     :subtitle="t('external_services.thegraph.description')"
     :image-src="getPublicServiceImagePath('thegraph.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

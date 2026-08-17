@@ -25,7 +25,7 @@ const status = actionStatus(name);
     :title="t('external_services.opensea.title')"
     :subtitle="t('external_services.opensea.description')"
     :image-src="getPublicServiceImagePath('opensea.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

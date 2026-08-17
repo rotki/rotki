@@ -22,7 +22,7 @@ const status = actionStatus(name);
     :title="t('external_services.cryptocompare.title')"
     :subtitle="t('external_services.cryptocompare.description')"
     :image-src="getPublicServiceImagePath('cryptocompare.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>
