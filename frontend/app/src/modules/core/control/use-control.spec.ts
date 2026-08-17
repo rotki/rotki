@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getMcpServerStatus: vi.fn(),
   isPackaged: false,
   restartBackend: vi.fn(),
+  setMcpAutoStart: vi.fn(),
   startMcpServer: vi.fn(),
   stopMcpServer: vi.fn(),
 }));
@@ -43,7 +44,7 @@ async function freshUseControl(): Promise<typeof UseControl> {
 function capabilities(): void {
   server.use(http.get(CONTROL_URL, () => HttpResponse.json({
     available: true,
-    methods: ['health', 'status', 'restart', 'startService', 'stopService'],
+    methods: ['health', 'status', 'restart', 'startService', 'stopService', 'setServiceAutostart'],
   })));
 }
 
@@ -93,19 +94,26 @@ describe('modules/core/control/use-control', () => {
     server.use(http.post(CONTROL_URL, post));
 
     const useControl = await freshUseControl();
-    const { restart, serviceState } = useControl();
+    const { restart, serviceInfo, setServiceAutostart } = useControl();
 
     await restart();
-    await expect(serviceState(StarlingService.MCP)).resolves.toBe(StarlingServiceStatus.UNAVAILABLE);
+    await expect(serviceInfo(StarlingService.MCP)).resolves.toEqual({
+      autostart: false,
+      state: StarlingServiceStatus.UNAVAILABLE,
+    });
+    await setServiceAutostart(StarlingService.MCP, true);
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('should read a service state out of the control status', async () => {
+  it('should read a service state and its auto-start preference out of the control status', async () => {
     capabilities();
     statusReplying(StarlingServiceStatus.READY);
     const useControl = await freshUseControl();
 
-    await expect(useControl().serviceState(StarlingService.MCP)).resolves.toBe(StarlingServiceStatus.READY);
+    await expect(useControl().serviceInfo(StarlingService.MCP)).resolves.toEqual({
+      autostart: false,
+      state: StarlingServiceStatus.READY,
+    });
   });
 
   it('should report a service the supervisor does not know as unavailable', async () => {
@@ -117,7 +125,45 @@ describe('modules/core/control/use-control', () => {
     })));
     const useControl = await freshUseControl();
 
-    await expect(useControl().serviceState(StarlingService.MCP)).resolves.toBe(StarlingServiceStatus.UNAVAILABLE);
+    await expect(useControl().serviceInfo(StarlingService.MCP)).resolves.toEqual({
+      autostart: false,
+      state: StarlingServiceStatus.UNAVAILABLE,
+    });
+  });
+
+  it('should send the auto-start preference as its own rpc, not as a restart option', async () => {
+    // Routing it through `restart` would bounce core to record a preference, and
+    // the supervisor refuses options on this transport anyway.
+    capabilities();
+    const sent: ControlFrame[] = [];
+    server.use(http.post(CONTROL_URL, async ({ request }) => {
+      const body = await request.json();
+      assert(isControlFrame(body), 'the client must send a JSON-RPC frame');
+      sent.push(body);
+      return HttpResponse.json({ id: 1, jsonrpc: '2.0', result: { ok: true } });
+    }));
+
+    const useControl = await freshUseControl();
+    await useControl().setServiceAutostart(StarlingService.MCP, true);
+    await useControl().setServiceAutostart(StarlingService.MCP, false);
+
+    expect(sent.map(body => body.method)).toEqual(['setServiceAutostart', 'setServiceAutostart']);
+    expect(sent[0].params).toEqual({ autostart: true, service: 'mcp' });
+    expect(sent[1].params).toEqual({ autostart: false, service: 'mcp' });
+  });
+
+  it('should surface a refused auto-start write rather than reporting it as saved', async () => {
+    capabilities();
+    server.use(http.post(CONTROL_URL, () => HttpResponse.json({
+      error: { code: -32000, message: 'failed to persist the autostart preference: read-only file system' },
+      id: 1,
+      jsonrpc: '2.0',
+    })));
+
+    const useControl = await freshUseControl();
+    await expect(useControl().setServiceAutostart(StarlingService.MCP, true))
+      .rejects
+      .toThrow('failed to persist');
   });
 
   it('should send startService and stopService for the requested service', async () => {
@@ -180,11 +226,12 @@ describe('modules/core/control/use-control', () => {
   it('should drive the desktop through electron rather than the http endpoint', async () => {
     mocks.isPackaged = true;
     mocks.startMcpServer.mockResolvedValue({ state: StarlingServiceStatus.READY });
+    mocks.getMcpServerStatus.mockResolvedValue({ autoStart: true, endpoint: '', state: StarlingServiceStatus.READY });
     const post = vi.fn(() => HttpResponse.json({ id: 1, jsonrpc: '2.0', result: { ok: true } }));
     server.use(http.post(CONTROL_URL, post));
 
     const useControl = await freshUseControl();
-    const { available, probe, restart, setServiceRunning, supportsOptions } = useControl();
+    const { available, probe, restart, serviceInfo, setServiceAutostart, setServiceRunning, supportsOptions } = useControl();
 
     await expect(probe()).resolves.toBe(true);
     expect(get(available)).toBe(true);
@@ -193,12 +240,23 @@ describe('modules/core/control/use-control', () => {
     await expect(setServiceRunning(StarlingService.MCP, true)).resolves.toBe(StarlingServiceStatus.READY);
     expect(mocks.startMcpServer).toHaveBeenCalledOnce();
 
+    // Electron owns the desktop preference, so it goes over IPC and never as the
+    // rpc — sending both would put the same value in two stores.
+    await setServiceAutostart(StarlingService.MCP, false);
+    expect(mocks.setMcpAutoStart).toHaveBeenCalledWith(false);
+    await expect(serviceInfo(StarlingService.MCP)).resolves.toEqual({
+      autostart: true,
+      state: StarlingServiceStatus.READY,
+    });
+
     await restart();
     expect(mocks.restartBackend).toHaveBeenCalledWith({}, true);
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('should not offer an auto-start toggle where the runtime cannot persist one', async () => {
+  it('should still report the desktop as the only runtime that takes restart options', async () => {
+    // Auto-start no longer rides on a restart, so this stays false in docker
+    // while the auto-start toggle is offered there.
     capabilities();
     const useControl = await freshUseControl();
     expect(useControl().supportsOptions).toBe(false);

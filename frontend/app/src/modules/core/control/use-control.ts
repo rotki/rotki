@@ -26,13 +26,16 @@ interface UseControlReturn {
   readonly available: Readonly<Ref<boolean>>;
   /**
    * Whether this runtime accepts a restart that carries backend options — a data
-   * directory, a log level, an MCP auto-start preference.
+   * directory, a log level, a log-rotation size.
    *
    * Desktop only, and not an arbitrary restriction: `sanitize_restart_options`
    * rejects options on every transport but stdio, because in a container those
-   * are fixed mounts and boot-time config. Auto-start is desktop-only for a
-   * second reason — it is an Electron app setting rather than a supervisor one,
-   * and docker starts MCP with the tree anyway.
+   * are fixed mounts and boot-time config.
+   *
+   * Auto-start is deliberately not in this set. It used to be, as an option
+   * riding along on a restart, which is why it was desktop-only; it now has its
+   * own `setServiceAutostart` method that every control surface accepts, so it is
+   * driven through {@link setServiceAutostart} rather than gated on this.
    *
    * Consumers use it to hide controls that could not work, rather than offering
    * them and reporting a refusal.
@@ -40,8 +43,18 @@ interface UseControlReturn {
   readonly supportsOptions: boolean;
   /** Resolve availability once per session. Safe to call repeatedly. */
   probe: () => Promise<boolean>;
-  serviceState: (service: StarlingService) => Promise<StarlingServiceStatus>;
+  /**
+   * One service's live state and its auto-start preference, read together: they
+   * come from the same `status` snapshot, so asking for them separately would be
+   * two round trips that can disagree.
+   */
+  serviceInfo: (service: StarlingService) => Promise<ControlServiceInfo>;
   setServiceRunning: (service: StarlingService, running: boolean) => Promise<StarlingServiceStatus>;
+  /**
+   * Record whether a service comes up with the backend tree from the next start
+   * on. Starts and stops nothing: the running state is {@link setServiceRunning}.
+   */
+  setServiceAutostart: (service: StarlingService, autostart: boolean) => Promise<void>;
   /**
    * Bounce the backend tree with the boot-time layout.
    *
@@ -50,6 +63,12 @@ interface UseControlReturn {
    * option is refused by the supervisor rather than dropped.
    */
   restart: (loglevel?: LogLevel) => Promise<void>;
+}
+
+/** What one service's row in a `status` reply says, reduced to what the app uses. */
+export interface ControlServiceInfo {
+  readonly autostart: boolean;
+  readonly state: StarlingServiceStatus;
 }
 
 const CONTROL_ENDPOINT = '/_control';
@@ -121,14 +140,23 @@ function transportErrorKey(status: number): MessageKey {
   return msg.$t('control.errors.failed');
 }
 
-function serviceStateOf(status: ControlStatus, service: StarlingService): StarlingServiceStatus {
+function serviceInfoOf(status: ControlStatus, service: StarlingService): ControlServiceInfo {
   const found = status.services.find((entry: ControlServiceStatus) => entry.name === service);
-  return found?.state ?? StarlingServiceStatus.UNAVAILABLE;
+  // A service the supervisor does not manage has no preference to report, and
+  // `false` is the honest answer: nothing is going to start it.
+  return { autostart: found?.autostart ?? false, state: found?.state ?? StarlingServiceStatus.UNAVAILABLE };
 }
 
 export function useControl(): UseControlReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { isPackaged, getMcpServerStatus, restartBackend, startMcpServer, stopMcpServer } = useInterop();
+  const {
+    isPackaged,
+    getMcpServerStatus,
+    restartBackend,
+    setMcpAutoStart,
+    startMcpServer,
+    stopMcpServer,
+  } = useInterop();
 
   const probe = async (): Promise<boolean> => {
     if (get(available))
@@ -154,15 +182,19 @@ export function useControl(): UseControlReturn {
     return get(available);
   };
 
-  const serviceState = async (service: StarlingService): Promise<StarlingServiceStatus> => {
+  const serviceInfo = async (service: StarlingService): Promise<ControlServiceInfo> => {
     if (!await probe())
-      return StarlingServiceStatus.UNAVAILABLE;
+      return { autostart: false, state: StarlingServiceStatus.UNAVAILABLE };
 
-    if (isPackaged)
-      return (await getMcpServerStatus()).state;
+    if (isPackaged) {
+      // The desktop's preference is an Electron app setting, not a supervisor
+      // one, so it comes back from the same IPC call that reports the state.
+      const status = await getMcpServerStatus();
+      return { autostart: status.autoStart, state: status.state };
+    }
 
     const status = ControlStatus.parse(await postRpc(t, StarlingMethod.STATUS));
-    return serviceStateOf(status, service);
+    return serviceInfoOf(status, service);
   };
 
   const setServiceRunning = async (
@@ -176,7 +208,22 @@ export function useControl(): UseControlReturn {
       return (await (running ? startMcpServer() : stopMcpServer())).state;
 
     await postRpc(t, running ? StarlingMethod.START_SERVICE : StarlingMethod.STOP_SERVICE, { service });
-    return serviceState(service);
+    return (await serviceInfo(service)).state;
+  };
+
+  const setServiceAutostart = async (service: StarlingService, autostart: boolean): Promise<void> => {
+    if (!await probe())
+      return;
+
+    // The desktop keeps the preference in Electron's own app settings, where it
+    // rides along in the next start's options. Sending the RPC there would put
+    // the same value in two places with nothing keeping them in step.
+    if (isPackaged) {
+      await setMcpAutoStart(autostart);
+      return;
+    }
+
+    await postRpc(t, StarlingMethod.SET_SERVICE_AUTOSTART, { autostart, service });
   };
 
   const restart = async (loglevel?: LogLevel): Promise<void> => {
@@ -198,7 +245,8 @@ export function useControl(): UseControlReturn {
     available: readonly(available),
     probe,
     restart,
-    serviceState,
+    serviceInfo,
+    setServiceAutostart,
     setServiceRunning,
     supportsOptions: isPackaged,
   };

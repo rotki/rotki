@@ -30,7 +30,8 @@ const mcpApi = vi.hoisted(() => ({ generateMcpToken: vi.fn() }));
 const control = vi.hoisted(() => ({
   available: vi.fn(),
   probe: vi.fn(),
-  serviceState: vi.fn(),
+  serviceInfo: vi.fn(),
+  setServiceAutostart: vi.fn(),
   setServiceRunning: vi.fn(),
   supportsOptions: true,
 }));
@@ -51,7 +52,8 @@ vi.mock('@/modules/core/control/use-control', () => ({
   useControl: (): Record<string, unknown> => ({
     available: control.available(),
     probe: control.probe,
-    serviceState: control.serviceState,
+    serviceInfo: control.serviceInfo,
+    setServiceAutostart: control.setServiceAutostart,
     setServiceRunning: control.setServiceRunning,
     supportsOptions: control.supportsOptions,
   }),
@@ -108,7 +110,9 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
         RuiSwitch: {
           emits: ['update:modelValue'],
           props: ['disabled', 'modelValue'],
-          template: '<button v-bind="$attrs" class="rui-switch" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
+          // `data-model-value` exposes what the switch is bound to, so a test can
+          // tell the stored value from the one that was clicked.
+          template: '<button v-bind="$attrs" class="rui-switch" :data-model-value="modelValue" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
         },
         GetPremiumPlaceholder: {
           props: ['description', 'minimumTier', 'title'],
@@ -142,6 +146,11 @@ function previewFields(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>
   return wrapper.findAll('tbody tr th').map(header => header.text());
 }
 
+/** What the auto-start switch is actually bound to, rather than what was clicked. */
+function autoStartValue(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>>): boolean {
+  return wrapper.find('[data-testid="mcp-auto-start"]').attributes('data-model-value') === 'true';
+}
+
 function grantMcpAccess(enabled: boolean, minimumTier = 'Basic'): void {
   const { capabilities, premium } = storeToRefs(usePremiumStore());
   set(premium, true);
@@ -158,6 +167,8 @@ function revokePremium(): void {
 }
 
 describe('mcpServerSetting', () => {
+  let storedAutoStart = false;
+
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -165,7 +176,17 @@ describe('mcpServerSetting', () => {
     grantMcpAccess(true);
     mocks.isPackaged = true;
     controlAvailable(true);
-    control.serviceState.mockResolvedValue(StarlingServiceStatus.IDLE);
+    // The supervisor is the source of truth for both facts, so the stub keeps a
+    // stored preference the way starling does: a write changes what a later read
+    // answers, and the component is expected to read it back.
+    storedAutoStart = false;
+    control.serviceInfo.mockImplementation(async () => ({
+      autostart: storedAutoStart,
+      state: StarlingServiceStatus.IDLE,
+    }));
+    control.setServiceAutostart.mockImplementation(async (_service: string, autostart: boolean) => {
+      storedAutoStart = autostart;
+    });
     control.setServiceRunning.mockImplementation(
       async (_service: string, running: boolean) =>
         (running ? StarlingServiceStatus.READY : StarlingServiceStatus.IDLE),
@@ -177,10 +198,6 @@ describe('mcpServerSetting', () => {
     });
     setMcpServerState(undefined);
     mocks.getMcpServerStatus.mockResolvedValue(stoppedStatus);
-    mocks.setMcpAutoStart.mockImplementation(async (enabled: boolean) => ({
-      ...stoppedStatus,
-      autoStart: enabled,
-    }));
   });
 
   it('should show the managed endpoint and stopped state by default', async () => {
@@ -277,11 +294,29 @@ describe('mcpServerSetting', () => {
     const wrapper = createWrapper();
     await flushPromises();
 
+    expect(autoStartValue(wrapper)).toBe(false);
+
     await wrapper.find('[data-testid="mcp-auto-start"]').trigger('click');
     await flushPromises();
 
-    expect(mocks.setMcpAutoStart).toHaveBeenCalledWith(true);
+    expect(control.setServiceAutostart).toHaveBeenCalledWith('mcp', true);
     expect(control.setServiceRunning).not.toHaveBeenCalled();
+    // Read back from the supervisor, not from the click.
+    expect(autoStartValue(wrapper)).toBe(true);
+  });
+
+  it('should leave the auto-start switch where it was when the write is refused', async () => {
+    // The failure mode this rules out: a switch that shows the new position while
+    // the next restart still uses the old one.
+    control.setServiceAutostart.mockRejectedValueOnce(new Error('read-only file system'));
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    await wrapper.find('[data-testid="mcp-auto-start"]').trigger('click');
+    await flushPromises();
+
+    expect(autoStartValue(wrapper)).toBe(false);
+    expect(wrapper.text()).toContain('read-only file system');
   });
 
   it('should start and stop the server on demand', async () => {
@@ -303,7 +338,7 @@ describe('mcpServerSetting', () => {
   });
 
   it('should disable lifecycle control when MCP is unavailable', async () => {
-    control.serviceState.mockResolvedValueOnce(StarlingServiceStatus.UNAVAILABLE);
+    control.serviceInfo.mockResolvedValueOnce({ autostart: false, state: StarlingServiceStatus.UNAVAILABLE });
     const wrapper = createWrapper();
     await flushPromises();
 
@@ -312,6 +347,34 @@ describe('mcpServerSetting', () => {
     await lifecycleButton.trigger('click');
 
     expect(control.setServiceRunning).not.toHaveBeenCalled();
+  });
+
+  it('should not offer the auto-start switch when the supervisor does not manage MCP', async () => {
+    // Offering it would post a write the supervisor refuses, and show the user
+    // its raw "invalid service" string.
+    control.serviceInfo.mockResolvedValue({ autostart: false, state: StarlingServiceStatus.UNAVAILABLE });
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    const toggle = wrapper.find('[data-testid="mcp-auto-start"]');
+    expect(toggle.attributes('disabled')).toBeDefined();
+    await toggle.trigger('click');
+    await flushPromises();
+
+    expect(control.setServiceAutostart).not.toHaveBeenCalled();
+  });
+
+  it('should keep the status chip current across an auto-start toggle', async () => {
+    // The read-back carries the state as well, so a server that stopped while the
+    // page was open is not reported as running afterwards.
+    const wrapper = createWrapper();
+    await flushPromises();
+    control.serviceInfo.mockResolvedValue({ autostart: true, state: StarlingServiceStatus.READY });
+
+    await wrapper.find('[data-testid="mcp-auto-start"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.status.running');
   });
 
   it('should show a failed state when the managed MCP service crashes', async () => {
@@ -332,12 +395,12 @@ describe('mcpServerSetting', () => {
     await wrapper.find('[data-testid="mcp-lifecycle"]').trigger('click');
     await flushPromises();
 
-    expect(control.serviceState).toHaveBeenCalledTimes(2);
+    expect(control.serviceInfo).toHaveBeenCalledTimes(2);
     expect(wrapper.text()).toContain('start failed');
   });
 
   it('should show a loading state before the initial status resolves', async () => {
-    control.serviceState.mockReturnValueOnce(new Promise(() => {}));
+    control.serviceInfo.mockReturnValueOnce(new Promise(() => {}));
 
     const wrapper = createWrapper();
     await nextTick();
@@ -353,7 +416,7 @@ describe('mcpServerSetting', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.desktop_only');
-    expect(control.serviceState).not.toHaveBeenCalled();
+    expect(control.serviceInfo).not.toHaveBeenCalled();
   });
 
   it('should explain the absent control endpoint in an unauthenticated Docker deployment', async () => {
@@ -368,7 +431,7 @@ describe('mcpServerSetting', () => {
 
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.control_unavailable');
     expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(false);
-    expect(control.serviceState).not.toHaveBeenCalled();
+    expect(control.serviceInfo).not.toHaveBeenCalled();
   });
 
   it('should drive the MCP lifecycle in Docker, not just describe it', async () => {
@@ -386,10 +449,28 @@ describe('mcpServerSetting', () => {
     await flushPromises();
 
     expect(control.setServiceRunning).toHaveBeenCalledWith('mcp', true);
-    // Auto-start is an Electron app setting and a restart option, so it has no
-    // meaning on a transport that refuses options.
-    expect(wrapper.find('[data-testid="mcp-auto-start"]').exists()).toBe(false);
     expect(mocks.getMcpServerStatus).not.toHaveBeenCalled();
+  });
+
+  it('should let a Docker deployment opt out of starting MCP with the tree', async () => {
+    // Docker used to hardcode auto-start on, with no opt-out at any tier: the
+    // preference existed only as an Electron app setting.
+    vi.stubEnv('VITE_DOCKER', 'true');
+    mocks.isPackaged = false;
+    controlAvailable(false);
+    storedAutoStart = true;
+
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    expect(autoStartValue(wrapper)).toBe(true);
+    await wrapper.find('[data-testid="mcp-auto-start"]').trigger('click');
+    await flushPromises();
+
+    expect(control.setServiceAutostart).toHaveBeenCalledWith('mcp', false);
+    expect(autoStartValue(wrapper)).toBe(false);
+    // The preference belongs to the supervisor here, not to Electron.
+    expect(mocks.setMcpAutoStart).not.toHaveBeenCalled();
   });
 
   it('should generate and display a bearer token in Docker', async () => {
