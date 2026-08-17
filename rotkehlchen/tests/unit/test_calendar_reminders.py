@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -20,6 +21,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.calendar import (
@@ -395,6 +397,22 @@ def test_airdrop_claim_calendar_reminders_wrong_chain(
 
     new_calendar_entries = DBCalendar(database).query_calendar_entry(CalendarFilterQuery.make())
     assert new_calendar_entries['entries_found'] == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_airdrop_claim_calendar_reminders_remote_error(database: DBHandler, caplog) -> None:
+    reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
+
+    with (
+        patch(
+            'rotkehlchen.tasks.calendar.check_airdrops',
+            side_effect=RemoteError('GitHub request timed out'),
+        ),
+        caplog.at_level(logging.ERROR),
+    ):
+        reminder_creator.maybe_create_airdrop_claim_reminder()
+
+    assert 'Failed to query airdrops for calendar reminders due to GitHub request timed out' in caplog.text  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

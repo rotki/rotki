@@ -583,7 +583,12 @@ class CalendarReminderCreator(CustomizableDateMixin):
         with self.database.conn.read_ctx() as read_cursor:
             addresses = self.database.get_evm_accounts(read_cursor)
 
-        data = check_airdrops(addresses=addresses, database=self.database)
+        try:
+            data = check_airdrops(addresses=addresses, database=self.database)
+        except RemoteError as e:
+            log.error('Failed to query airdrops for calendar reminders due to %s', e)
+            return
+
         calendar_entries: list[int] = []
         for address, airdrops in data.items():
             for airdrop_name, airdrop_info in airdrops.items():
