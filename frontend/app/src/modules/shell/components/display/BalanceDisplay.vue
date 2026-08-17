@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AssetDisplay } from '@/modules/assets/types';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -39,6 +40,9 @@ const balanceValue = useValueOrDefault(
 );
 
 const { getAssetPrice } = usePriceUtils();
+
+// Computed rather than a template literal: this renders in every balance table cell.
+const assetDisplay = computed<AssetDisplay>(() => ({ iconOnly: true, size: iconSize }));
 
 const valueInCurrency = computed<BigNumber>(() => {
   if (!calculateValue)
@@ -81,8 +85,7 @@ const valueInCurrency = computed<BigNumber>(() => {
     <AssetDetails
       v-if="!noIcon"
       :asset="asset"
-      icon-only
-      :size="iconSize"
+      :display="assetDisplay"
     />
   </div>
 </template>

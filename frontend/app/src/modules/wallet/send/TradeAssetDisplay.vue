@@ -28,13 +28,12 @@ const name = useAssetField(data.asset, 'name', { collectionParent: false });
 <template>
   <div class="flex gap-2 items-center">
     <AssetDetails
-      icon-only
-      size="32px"
       :asset="data.asset"
-      hide-actions
-      :force-chain="getEvmChainName(data.chain) || undefined"
-      :resolution-options="{
-        collectionParent: false,
+      :display="{ iconOnly: true, size: '32px' }"
+      :actions="{ hideActions: true }"
+      :resolution="{
+        forceChain: getEvmChainName(data.chain) || undefined,
+        options: { collectionParent: false },
       }"
     />
     <div

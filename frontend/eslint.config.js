@@ -128,19 +128,24 @@ export default rotki({
   // consumer that does not live in this repo: renaming or grouping them cannot be verified here and
   // would break premium at runtime with nothing in our lint, typecheck or test suite noticing.
   //
-  // These four exceed their cap and cannot be fixed unilaterally, so the rule is downgraded rather
-  // than silenced: the count stays reported, and reducing it needs a coordinated premium release.
-  // Caps are restated per group because a flat config replaces a rule's options rather than merging
-  // them, and dropping the cap here would stop the warning firing at all.
+  // The rule is downgraded rather than silenced: the count stays reported, and reducing it needs a
+  // coordinated premium release. Caps are restated per group because a flat config replaces a rule's
+  // options rather than merging them, and dropping the cap here would stop the warning firing at all.
   //
   // If another registered component crosses its cap, add it here rather than reshaping its props —
   // unless the matching premium change ships with it. That is how AssetSelect left this list: its
   // five search props became one `source` object, and the bundle has to move to it in the same
   // release, since the old props no longer reach the search.
+  //
+  // Check this list against `register-components.ts` before believing it. It used to also name
+  // BlockchainAccountSelector and AssetDetails as "cannot be fixed unilaterally", and NEITHER is
+  // registered — `git log -S` finds no commit that ever added them, so the claim was wrong when
+  // written rather than gone stale. Both are reachable from the bundle only because
+  // HistoryEventsView renders them, which is a rendering dependency, not an API one. AssetDetails
+  // has since been reshaped here with no premium release; BlockchainAccountSelector moved to the
+  // internal group below, since it is free to be reshaped but has not been yet.
   files: [
     '**/src/modules/history/events/HistoryEventsView.vue',
-    '**/src/modules/accounts/BlockchainAccountSelector.vue',
-    '**/src/modules/assets/AssetDetails.vue',
   ],
   rules: {
     'vue/max-props': ['warn', { maxProps: 8 }],
@@ -167,6 +172,10 @@ export default rotki({
   // - HistoryEventNote (9): every prop it takes is derived from `event` plus useHistoryEventItem, so
   //   it could take the event instead. Gated on whether all six callers actually hold a
   //   HistoryEventEntry: ProfitLossEvents and TradeHistoryItem look like they do not.
+  // - BlockchainAccountSelector (17): the worst offender in the codebase, and NOT premium-frozen
+  //   despite the group above having claimed it was. It is a field wrapper, so most of these are
+  //   RuiAutoComplete pass-throughs (label/hint/customHint/outlined/dense/errorMessages/required)
+  //   that want to reach it as attrs rather than as declared props.
   // - AssetBalances (11): display flags that are genuinely independent, so no honest grouping
   //   exists. This one needs real decomposition.
   //   AssetDetailsBase left this list at 12 -> 4 props: `asset` plus display/actions/resolution,
@@ -180,6 +189,7 @@ export default rotki({
   files: [
     '**/src/modules/settings/api-keys/ServiceKeyCard.vue',
     '**/src/modules/history/events/HistoryEventNote.vue',
+    '**/src/modules/accounts/BlockchainAccountSelector.vue',
     '**/src/modules/balances/AssetBalances.vue',
     '**/src/modules/history/events/components/HistoryEventsDetailItem.vue',
     '**/src/modules/history/events/components/HistoryEventsVirtualTable.vue',

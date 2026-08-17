@@ -102,14 +102,6 @@ describe('assetDetailsBase', () => {
       expect(icon(createWrapper({ display: { size: undefined } })).props('size')).toBe('30px');
     });
 
-    it('should show the chain by default', () => {
-      expect(icon(createWrapper()).props('showChain')).toBe(true);
-    });
-
-    it('should hide the chain when the display bag says so', () => {
-      expect(icon(createWrapper({ display: { showChain: false } })).props('showChain')).toBe(false);
-    });
-
     it('should draw a roomy list item by default', () => {
       expect(listItem(createWrapper()).props('size')).toBe('md');
     });
@@ -140,6 +132,16 @@ describe('assetDetailsBase', () => {
 
       expect(icon(wrapper).props('changeable')).toBeUndefined();
       expect(wrapper.find('[data-testid="asset-icon"]').attributes('changeable')).toBeUndefined();
+    });
+
+    // showChain is derived from isCollectionParent rather than being its own prop, so the two can
+    // no longer contradict each other. A collection parent stands for several chains.
+    it('should show the chain by default', () => {
+      expect(icon(createWrapper()).props('showChain')).toBe(true);
+    });
+
+    it('should hide the chain for a collection parent', () => {
+      expect(icon(createWrapper({ resolution: { isCollectionParent: true } })).props('showChain')).toBe(false);
     });
 
     it('should forward forceChain to the icon', () => {

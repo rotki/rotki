@@ -26,6 +26,6 @@ function onMissingAssetClick(item: AssetBalanceWithPrice): void {
   <AssetDetails
     v-else
     :asset="asset.asset"
-    :is-collection-parent="!!asset.breakdown"
+    :resolution="{ isCollectionParent: !!asset.breakdown }"
   />
 </template>

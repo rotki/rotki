@@ -240,7 +240,7 @@ onMounted(async () => {
       <template #item.asset="{ row }">
         <AssetDetails
           :asset="row.assetIdentifier"
-          icon-only
+          :display="{ iconOnly: true }"
         />
       </template>
       <template #item.free_amount="{ row }">

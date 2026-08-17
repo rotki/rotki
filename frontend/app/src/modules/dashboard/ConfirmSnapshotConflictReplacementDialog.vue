@@ -45,10 +45,10 @@ const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
       />
       <AssetDetails
         v-else
-        hide-menu
         class="max-w-[640px]"
         :asset="asset"
-        :enable-association="false"
+        :actions="{ hideMenu: true }"
+        :resolution="{ enableAssociation: false }"
       />
     </div>
   </ConfirmDialog>

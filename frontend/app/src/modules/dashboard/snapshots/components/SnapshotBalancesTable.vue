@@ -276,8 +276,8 @@ function onDelete(payload: { index: number; location: LocationAttribution }): vo
             v-if="!isNftRow(row)"
             class="min-w-0 [&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
             :asset="row.assetIdentifier"
-            :enable-association="false"
-            hide-menu
+            :actions="{ hideMenu: true }"
+            :resolution="{ enableAssociation: false }"
           />
           <NftDetails
             v-else
