@@ -6,7 +6,7 @@ import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/mod
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 
 /** Presentation state shared by every row, regardless of its kind. */
-export interface HistoryEventsRowDisplay {
+interface HistoryEventsRowDisplay {
   /** Wide table row or narrow card, decided once from the viewport breakpoint. */
   variant: ComputedRef<'row' | 'card'>;
   hideActions: ComputedRef<boolean>;
@@ -15,7 +15,7 @@ export interface HistoryEventsRowDisplay {
 }
 
 /** Reads into the loaded event data. All are map lookups, safe to call per row. */
-export interface HistoryEventsRowLookups {
+interface HistoryEventsRowLookups {
   groupEvents: (groupId: string) => HistoryEventEntry[];
   completeEventsForItem: (groupId: string, event: HistoryEventEntry) => HistoryEventEntry[];
   completeSubgroupEvents: (events: HistoryEventEntry[]) => HistoryEventEntry[];
@@ -27,7 +27,7 @@ export interface HistoryEventsRowLookups {
   ignoredAssets: (groupId: string) => 'hidden' | 'showing' | undefined;
 }
 
-export interface HistoryEventsRowHighlight {
+interface HistoryEventsRowHighlight {
   isGroupHighlighted: (groupId: string) => boolean;
   isHighlighted: (event: HistoryEventEntry) => boolean;
   isSwapHighlighted: (events: HistoryEventEntry[]) => boolean;
@@ -36,7 +36,7 @@ export interface HistoryEventsRowHighlight {
 }
 
 /** Everything a row can trigger. Each resolves its own group, so rows pass ids, not entries. */
-export interface HistoryEventsRowActions {
+interface HistoryEventsRowActions {
   addEvent: (group: StandaloneEditableEvents, row: HistoryEventEntry) => void;
   editEvent: (data: HistoryEventEditData, groupId: string) => void;
   addMissingRule: (data: HistoryEventEditData, groupId: string) => void;
