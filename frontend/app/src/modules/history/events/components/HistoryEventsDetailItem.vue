@@ -76,6 +76,25 @@ const isSelectedModel = computed<boolean>({
 
 const isCard = computed<boolean>(() => variant === 'card');
 
+/**
+ * Whether the row layout has built its action cluster yet.
+ *
+ * The cluster carries a RuiMenu, whose `useElementSize` reads `offsetWidth` on mount and so forces
+ * a synchronous layout right after the virtual list mutated the DOM. Over a scroll that was the
+ * table's largest source of forced reflow. It is invisible until the row is hovered, so it is built
+ * on first hover, or when focus enters the row, which is how a keyboard reaches it. Once built it
+ * stays: unmounting on leave would pay the cost again on the next hover.
+ *
+ * The card layout does not gate: it is the narrow-viewport variant, where there is no hover.
+ */
+const actionsRevealed = shallowRef<boolean>(false);
+
+const showActions = computed<boolean>(() => !hideActions && (get(hasMissingRule) || get(actionsRevealed)));
+
+function revealActions(): void {
+  set(actionsRevealed, true);
+}
+
 const noteContext = computed<HistoryEventNoteContext>(() => ({
   amount: event.amount,
   asset: event.asset,
@@ -161,6 +180,8 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       { 'opacity-50': hiddenEvent },
       getHighlightClass(highlightType),
     ]"
+    @pointerenter="revealActions()"
+    @focusin="revealActions()"
   >
     <RuiCheckbox
       v-if="showCheckbox"
@@ -196,7 +217,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
     <AccountingOverlayCell :event="event" />
 
     <HistoryEventsListItemAction
-      v-if="!hideActions"
+      v-if="showActions"
       :item="event"
       :index="index"
       :complete-group-events="completeGroupEvents"
@@ -205,6 +226,12 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       @edit-event="emit('edit-event', $event)"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+    />
+    <!-- Holds the cluster's width so revealing it does not reflow the row. -->
+    <div
+      v-else-if="!hideActions"
+      class="w-24 shrink-0"
+      aria-hidden="true"
     />
   </div>
 </template>
