@@ -507,13 +507,19 @@ class MoneriumOAuthClient:
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.RequestException as exc:
-            self._notify_reauthentication_required()
+            log.error('Failed to refresh Monerium access token due to %s', exc)
             raise RemoteError(f'Failed to refresh Monerium access token: {exc!s}') from exc
 
         if response.status_code != 200:
             if self._is_invalid_grant_refresh_response(response):
                 self.clear_credentials()
-            self._notify_reauthentication_required()
+                self._notify_reauthentication_required()
+            else:
+                log.error(
+                    'Failed to refresh Monerium access token due to HTTP status %s: %s',
+                    response.status_code,
+                    response.text,
+                )
             raise RemoteError(
                 f'Failed to refresh Monerium access token: {response.status_code} {response.text}',
             )
@@ -521,10 +527,10 @@ class MoneriumOAuthClient:
         try:
             token_response = self._oauth_client.parse_request_body_response(response.text)
         except ValueError as exc:
-            self._notify_reauthentication_required()
+            log.error('Failed to parse Monerium token refresh response due to %s', exc)
             raise RemoteError('Monerium token refresh response was invalid') from exc
         if (access_token := token_response.get('access_token')) is None:
-            self._notify_reauthentication_required()
+            log.error('Monerium token refresh response did not contain an access token')
             raise RemoteError('Monerium token refresh did not return an access token')
 
         refresh_token = token_response.get('refresh_token', self._credentials.refresh_token)
@@ -532,6 +538,10 @@ class MoneriumOAuthClient:
         try:
             expires_in = int(expires_in_raw)
         except (TypeError, ValueError) as e:
+            log.error(
+                'Monerium token refresh response contained invalid expires_in %s',
+                expires_in_raw,
+            )
             raise RemoteError(f'Monerium returned invalid expires_in {expires_in_raw}') from e
 
         self._credentials.access_token = access_token
