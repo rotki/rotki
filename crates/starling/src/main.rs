@@ -32,13 +32,14 @@ use clap::{Parser, Subcommand, ValueEnum};
 use starling_core::control::is_authorized;
 use starling_core::{
     build_services, Controller, Launcher, Method, OnCrash, OsSpawner, Outcome, RestartPolicy,
-    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor, Transport,
+    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor, Transport, MCP_SERVICE,
 };
 use starling_proxy::ProxyConfig;
 use std::sync::Arc;
 use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
+mod app_config;
 mod cleanup;
 mod config;
 mod control;
@@ -351,19 +352,11 @@ fn cookie_auth_enabled(docker: bool, session_key: &str) -> bool {
 /// a `Method` without deciding its `/_control` policy leaves it silently
 /// unadvertised, which the matrix test catches.
 fn http_control_methods() -> Vec<&'static str> {
-    [
-        Method::Health,
-        Method::Status,
-        Method::Start,
-        Method::Restart,
-        Method::Stop,
-        Method::StartService,
-        Method::StopService,
-    ]
-    .into_iter()
-    .filter(|method| is_authorized(Transport::HttpControl, *method))
-    .map(Method::wire)
-    .collect()
+    Method::ALL
+        .into_iter()
+        .filter(|method| is_authorized(Transport::HttpControl, *method))
+        .map(Method::wire)
+        .collect()
 }
 
 #[tokio::main]
@@ -686,14 +679,36 @@ async fn main() -> std::process::ExitCode {
     let cookie_auth = cookie_auth_enabled(docker, &session_key);
     if cookie_auth {
         info!("session cookie auth enabled");
+        // Cookie auth is what makes the MCP server reachable and authorizable, so
+        // it is on by default. The user's own preference, if they have expressed
+        // one, is read below and wins over this.
         layout.mcp_autostart = true;
+
+        // Docker's half of the desktop's auto-start switch. The preference lives
+        // in the data directory (see `app_config`) because it has to survive a
+        // container recreate and be readable before anybody logs in. No file
+        // means no preference, which leaves the default above untouched — so
+        // existing deployments are unchanged and this is purely an opt-out.
+        //
+        // Read here rather than beside the layout so it can only ever turn the
+        // server off. Without cookie auth the proxy does not route `/mcp` and
+        // nothing could authorize a caller, so a stored `true` from a deployment
+        // that has since dropped its session key would start a server no one can
+        // reach.
+        if let Some(stored) = app_config::mcp_autostart(&layout.data_dir) {
+            info!(
+                autostart = stored,
+                "applying the stored mcp autostart preference"
+            );
+            layout.mcp_autostart = stored;
+        }
     }
     let build = move |layout: &ServiceLayout| -> Vec<ServiceSpec> {
         let mut specs = build_services(layout);
         for spec in &mut specs {
             spec.env
                 .insert("ROTKI_SESSION_KEY".to_string(), session_key.clone());
-            if cookie_auth && spec.name == "mcp" {
+            if cookie_auth && spec.name == MCP_SERVICE {
                 spec.restart = RestartPolicy {
                     max_retries: 3,
                     backoff: Duration::from_secs(1),
@@ -730,6 +745,11 @@ async fn main() -> std::process::ExitCode {
     // bring-up, the supervise loop, and the control-plane operations
     // (restart/stop/status/health).
     let grace = Duration::from_secs(cli.shutdown_grace_secs);
+    // Where a `setServiceAutostart` is written. Attached exactly where the value
+    // is read back at boot: on the desktop the preference belongs to Electron's
+    // own settings file, which arrives in the `start` options, so storing a
+    // second copy would give the two a way to disagree.
+    let autostart_store = cookie_auth.then(|| app_config::FileStore::new(layout.data_dir.clone()));
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .ok()
@@ -739,6 +759,10 @@ async fn main() -> std::process::ExitCode {
     // Hand the data-directory lock to the controller so a restart that switches
     // the data dir releases the old directory and acquires the new one.
     controller.set_datadir_guard(Box::new(datadir_lock::LockGuard::new(datadir_lock)));
+
+    if let Some(store) = autostart_store {
+        controller.set_autostart_store(Box::new(store));
+    }
 
     // Set when the signal that stopped us carries an OS-enforced deadline, so the
     // teardown can fit inside it instead of planning for a budget it will never
@@ -1196,7 +1220,14 @@ mod tests {
     fn advertised_control_methods_match_the_authorization_matrix() {
         assert_eq!(
             http_control_methods(),
-            vec!["health", "status", "restart", "startService", "stopService"],
+            vec![
+                "health",
+                "status",
+                "restart",
+                "startService",
+                "stopService",
+                "setServiceAutostart",
+            ],
         );
     }
 
