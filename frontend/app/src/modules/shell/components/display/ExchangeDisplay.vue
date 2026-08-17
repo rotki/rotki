@@ -18,7 +18,7 @@ const location = useLocationData(() => exchange);
       class="icon-bg"
       :width="size"
       :height="size"
-      contain
+      fit="contain"
       :src="location?.image ?? undefined"
     />
     <div v-text="location?.name" />

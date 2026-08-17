@@ -299,7 +299,7 @@ const { copied, copy } = useCopy(() => identifier);
             v-else
             v-show="!pending && !error"
             :class="{ 'rounded-full overflow-hidden': flat }"
-            contain
+            fit="contain"
             :alt="displayAsset"
             :src="url"
             :loading="pending"

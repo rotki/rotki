@@ -90,7 +90,7 @@ const displayAddress = computed<string | undefined>(() => {
               <AppImage
                 v-if="counterpartyImageSrc"
                 :src="counterpartyImageSrc"
-                contain
+                fit="contain"
                 size="20px"
               />
             </template>

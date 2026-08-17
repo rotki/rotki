@@ -51,7 +51,7 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
       <AppImage
         v-else-if="counterpartyImageSrc"
         :src="counterpartyImageSrc"
-        contain
+        fit="contain"
         :size="size"
       />
     </div>

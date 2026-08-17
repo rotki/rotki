@@ -87,7 +87,7 @@ function close() {
           <AppImage
             class="icon-bg"
             size="1.5rem"
-            contain
+            fit="contain"
             :src="currentModule?.icon"
           />
           <RuiCardHeader class="p-0">

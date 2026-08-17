@@ -46,7 +46,7 @@ const { t } = useI18n({ useScope: 'global' });
           class="rounded-full overflow-hidden"
           :src="protocolData.image"
           size="24px"
-          contain
+          fit="contain"
         />
         <RuiIcon
           v-else

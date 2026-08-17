@@ -85,7 +85,7 @@ watch(menuOpened, (menuOpened) => {
   <DefineImage>
     <AppImage
       v-if="asset.imageUrl"
-      contain
+      fit="contain"
       :size="size"
       :src="asset.imageUrl"
     />

@@ -30,7 +30,7 @@ const OTHER_CHAINS = [
     :max-width="size"
     :height="size"
     :max-height="size"
-    contain
+    fit="contain"
     class="icon-bg"
     :class="{ blur: !shouldShowAmount }"
   />

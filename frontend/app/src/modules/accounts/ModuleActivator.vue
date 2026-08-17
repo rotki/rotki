@@ -83,7 +83,7 @@ const loading = isAccountOperationRunning();
             <AppImage
               height="24px"
               width="24px"
-              contain
+              fit="contain"
               :src="module.icon"
             />
           </template>

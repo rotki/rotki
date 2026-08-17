@@ -161,7 +161,7 @@ onBeforeMount(async () => {
                 v-else-if="item.image"
                 class="icon-bg"
                 :src="item.image"
-                contain
+                fit="contain"
                 size="26px"
               />
               <RuiIcon

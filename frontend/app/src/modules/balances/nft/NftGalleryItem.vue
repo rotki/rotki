@@ -97,7 +97,7 @@ const mediaStyle = computed<StyleValue>(() => {
             <AppImage
               v-else
               :src="renderedMedia"
-              contain
+              fit="contain"
               :style="mediaStyle"
               width="100%"
               class="object-contain aspect-square"

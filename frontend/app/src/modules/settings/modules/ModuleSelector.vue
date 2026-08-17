@@ -226,7 +226,7 @@ onMounted(async () => {
           <AppImage
             class="icon-bg"
             size="1.5rem"
-            contain
+            fit="contain"
             :src="row.icon"
           />
           <span>{{ row.name }}</span>

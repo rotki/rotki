@@ -4,17 +4,14 @@ import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
 
 const {
   alt,
-  contain = false,
-  cover = false,
+  fit,
   height,
   imageClass,
   loading = false,
   maxHeight,
   maxWidth,
   size,
-  sizes,
   src,
-  srcset,
   width,
 } = defineProps<{
   width?: string | number;
@@ -23,11 +20,8 @@ const {
   maxHeight?: string | number;
   size?: string | number;
   src?: string;
-  srcset?: string;
-  sizes?: string;
   alt?: string;
-  contain?: boolean;
-  cover?: boolean;
+  fit?: 'contain' | 'cover';
   loading?: boolean;
   imageClass?: string;
 }>();
@@ -40,6 +34,13 @@ const emit = defineEmits<{
 
 const error = ref<boolean>(false);
 const success = ref<boolean>(false);
+
+const fitClass = computed<string | undefined>(() => {
+  if (fit === undefined)
+    return undefined;
+
+  return fit === 'contain' ? 'object-contain' : 'object-cover';
+});
 
 const style = computed(() => ({
   height: getSizeOrValue(height),
@@ -78,20 +79,16 @@ function onLoadStart() {
     <img
       v-else-if="error"
       :src="getPublicPlaceholderImagePath('image.svg')"
-      :class="[{ 'object-contain': contain, 'object-cover': cover }, imageClass]"
+      :class="[fitClass, imageClass]"
       loading="lazy"
       :style="style"
-      :sizes="sizes"
-      :srcset="srcset"
     />
     <img
       v-else
       :alt="alt"
-      :class="[{ 'object-contain': contain, 'object-cover': cover }, imageClass]"
+      :class="[fitClass, imageClass]"
       :style="style"
       :src="src"
-      :sizes="sizes"
-      :srcset="srcset"
       loading="lazy"
       @error="onError()"
       @loadstart="onLoadStart()"

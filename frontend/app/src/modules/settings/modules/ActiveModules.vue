@@ -121,7 +121,7 @@ function showConfirmation() {
               <AppImage
                 width="24px"
                 height="24px"
-                contain
+                fit="contain"
                 :src="icon(module.identifier)"
               />
             </RuiButton>

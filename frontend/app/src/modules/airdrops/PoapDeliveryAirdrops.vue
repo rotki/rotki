@@ -73,7 +73,7 @@ function getImage(event: string): string {
               class="rounded-full"
               width="36px"
               height="36px"
-              contain
+              fit="contain"
               :src="getImage(row.event)"
             />
           </div>
