@@ -99,7 +99,7 @@ describe('history/events/tx/RepullingTransactionForm.vue', () => {
         plugins: [pinia],
         stubs: {
           AccountDisplay: stub('AccountDisplay', ['account']),
-          BlockchainAccountSelector: stub('BlockchainAccountSelector', ['modelValue', 'errorMessages', 'chains']),
+          BlockchainAccountSelector: stub('BlockchainAccountSelector', ['modelValue', 'field', 'source']),
           ChainSelect: stub('ChainSelect', ['modelValue', 'errorMessages', 'items']),
           DateTimeRangePicker: stub('DateTimeRangePicker', ['start', 'end', 'startErrorMessages', 'endErrorMessages']),
           RuiAlert: stub('RuiAlert', ['type']),

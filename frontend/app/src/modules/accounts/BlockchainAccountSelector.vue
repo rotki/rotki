@@ -15,6 +15,26 @@ type AccountWithAddressData = BlockchainAccount<AddressData>;
 
 type AccountWithExtra = AccountWithAddressData & { address: string; key: string };
 
+/** Which accounts the selector offers. These are consumed together by `selectableAccounts`. */
+interface AccountSelectorSource {
+  chains?: string[];
+  usableAddresses?: string[];
+  multichain?: boolean;
+  unique?: boolean;
+  hideOnEmptyUsable?: boolean;
+}
+
+/** How the wrapped field presents and validates. Passed through to RuiAutoComplete. */
+interface AccountSelectorField {
+  label?: string;
+  hint?: string;
+  errorMessages?: string[];
+  required?: boolean;
+  showDetails?: boolean;
+  noDataText?: string;
+  dense?: boolean;
+}
+
 defineOptions({
   inheritAttrs: false,
 });
@@ -22,45 +42,15 @@ defineOptions({
 const modelValue = defineModel<AccountWithAddressData[]>({ required: true });
 
 const {
-  chains = [],
-  customHint = '',
-  dense = false,
-  errorMessages = [],
+  field,
   hideChainIcon = false,
-  hideOnEmptyUsable = false,
-  hint = false,
-  label = '',
   loading = false,
-  multichain = false,
-  multiple = false,
-  noDataText,
-  outlined = false,
-  required = false,
-  showDetails = false,
-  unique = false,
-  usableAddresses = [],
+  source,
 } = defineProps<{
-  label?: string;
-  hint?: boolean;
+  source?: AccountSelectorSource;
+  field?: AccountSelectorField;
   loading?: boolean;
-  usableAddresses?: string[];
-  multiple?: boolean;
-  chains?: string[];
-  outlined?: boolean;
-  dense?: boolean;
-  hideOnEmptyUsable?: boolean;
-  multichain?: boolean;
-  unique?: boolean;
   hideChainIcon?: boolean;
-  errorMessages?: string[];
-  showDetails?: boolean;
-  customHint?: string;
-  noDataText?: string;
-  required?: boolean;
-}>();
-
-defineSlots<{
-  default: () => any;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -68,7 +58,26 @@ const { t } = useI18n({ useScope: 'global' });
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { getAddressName } = useAddressNameResolution();
 
-const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
+// Every field is read with `??` rather than by spreading the bag over a defaults object: a caller
+// forwarding its own optional value passes a present key holding `undefined`, which a spread takes
+// as the value and the default would be lost.
+const chains = computed<string[]>(() => source?.chains ?? []);
+
+const usableAddresses = computed<string[]>(() => source?.usableAddresses ?? []);
+
+const hideOnEmptyUsable = computed<boolean>(() => source?.hideOnEmptyUsable ?? false);
+
+const errorMessages = computed<string[]>(() => field?.errorMessages ?? []);
+
+const required = computed<boolean>(() => field?.required ?? false);
+
+const hideDetails = computed<boolean>(() => !(field?.showDetails ?? false));
+
+const dense = computed<boolean>(() => field?.dense ?? false);
+
+const label = computed<string>(() => field?.label || t('blockchain_account_selector.default_label'));
+
+const noDataText = computed<string>(() => field?.noDataText || t('blockchain_account_selector.no_data'));
 
 const accounts = computed<AccountWithAddressData[]>(() =>
   Object.values(get(accountsPerChain))
@@ -76,29 +85,27 @@ const accounts = computed<AccountWithAddressData[]>(() =>
     .filter(hasAccountAddress),
 );
 
-const internalValue = computed<AccountWithExtra | AccountWithExtra[] | undefined>(() => {
-  const accounts = get(modelValue).map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
-  if (multiple)
-    return accounts;
-
-  if (!accounts || accounts.length === 0)
+const internalValue = computed<AccountWithExtra | undefined>(() => {
+  const [first] = get(modelValue);
+  if (!first)
     return undefined;
 
-  return accounts[0];
+  return { ...first, address: getAccountAddress(first), key: getAccountId(first) };
 });
 
 const selectableAccounts = computed<AccountWithAddressData[]>(() => {
   const accountData = get(accounts);
+  const selectedChains = get(chains);
 
-  const filteredAccounts = chains.length === 0
+  const filteredAccounts = selectedChains.length === 0
     ? accountData
-    : accountData.filter(({ chain }) => chain === 'ALL' || chains.includes(chain));
+    : accountData.filter(({ chain }) => chain === 'ALL' || selectedChains.includes(chain));
 
-  const filteredByUnique: AccountWithAddressData[] = unique
+  const filteredByUnique: AccountWithAddressData[] = source?.unique
     ? uniqBy(filteredAccounts, account => getAccountAddress(account))
     : filteredAccounts;
 
-  if (multichain) {
+  if (source?.multichain) {
     const entries: Record<string, number> = {};
     filteredByUnique.forEach((account) => {
       const address = getAccountAddress(account);
@@ -131,25 +138,17 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
   return filteredByUnique;
 });
 
-const hintText = computed<string>(() => {
-  const all = t('blockchain_account_selector.all');
-  const selection = get(modelValue);
-  if (Array.isArray(selection))
-    return selection.length > 0 ? selection.length.toString() : all;
-
-  return selection ? '1' : all;
-});
-
 const displayedAccounts = computed<AccountWithExtra[]>(() => {
   const accounts = Array.from(get(selectableAccounts), item => ({
     ...item,
     address: getAccountAddress(item),
     key: getAccountId(item),
   }));
-  if (usableAddresses.length > 0)
-    return accounts.filter(account => usableAddresses.includes(account.address));
+  const usable = get(usableAddresses);
+  if (usable.length > 0)
+    return accounts.filter(account => usable.includes(account.address));
 
-  return hideOnEmptyUsable ? [] : accounts;
+  return get(hideOnEmptyUsable) ? [] : accounts;
 });
 
 function filter(item: BlockchainAccount, queryText: string) {
@@ -172,31 +171,10 @@ function filter(item: BlockchainAccount, queryText: string) {
     : false;
 }
 
-function filterOutElements<T extends AccountWithAddressData>(
-  lastElement: T,
-  nextValue: T[],
-): T[] {
-  if (lastElement.chain === 'ALL')
-    return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain === 'ALL');
-
-  return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain !== 'ALL');
-}
-
-function input(nextValue?: AccountWithExtra | AccountWithExtra[]) {
-  const previousValue = get(modelValue);
-  let result: AccountWithExtra[];
-  if (Array.isArray(nextValue)) {
-    const lastElement = nextValue.at(-1);
-    if (lastElement && nextValue.length > previousValue.length)
-      result = filterOutElements(lastElement, nextValue);
-    else
-      result = nextValue;
-  }
-  else {
-    result = nextValue ? [nextValue] : [];
-  }
-
-  set(modelValue, result.map(item => omit(item, ['address', 'key'])));
+// The model stays an array so callers keep their shape, but the selector is single-select:
+// RuiAutoComplete derives multi-select from an array model value and `internalValue` never is one.
+function input(nextValue?: AccountWithExtra): void {
+  set(modelValue, nextValue ? [omit(nextValue, ['address', 'key'])] : []);
 }
 
 function getAccount(account: AccountWithAddressData): Account {
@@ -208,7 +186,10 @@ function getAccount(account: AccountWithAddressData): Account {
 </script>
 
 <template>
-  <DefineAutocomplete>
+  <div
+    class="bg-white dark:bg-dark-elevated"
+    v-bind="getRootAttrs($attrs)"
+  >
     <RuiAutoComplete
       :model-value="internalValue"
       :options="displayedAccounts"
@@ -218,22 +199,21 @@ function getAccount(account: AccountWithAddressData): Account {
       auto-select-first
       :loading="loading"
       :disabled="loading"
-      :hide-details="!showDetails"
+      :hide-details="hideDetails"
       hide-selected
       :hide-no-data="!hideOnEmptyUsable"
-      :chips="multiple"
       :item-height="40"
       :required="required"
       :clearable="!required"
       :dense="dense"
-      :variant="outlined ? 'outlined' : 'default'"
-      :outlined="outlined"
-      :hint="customHint"
-      :label="label || t('blockchain_account_selector.default_label')"
+      variant="outlined"
+      outlined
+      :hint="field?.hint"
+      :label="label"
       class="blockchain-account-selector"
       :error-messages="errorMessages"
       v-bind="getNonRootAttrs($attrs)"
-      :no-data-text="noDataText || t('blockchain_account_selector.no_data')"
+      :no-data-text="noDataText"
       return-object
       @update:model-value="input($event)"
     >
@@ -257,27 +237,5 @@ function getAccount(account: AccountWithAddressData): Account {
         </div>
       </template>
     </RuiAutoComplete>
-  </DefineAutocomplete>
-
-  <div
-    v-if="!hint"
-    class="bg-white dark:bg-dark-elevated"
-    v-bind="getRootAttrs($attrs)"
-  >
-    <ReuseAutocomplete />
   </div>
-  <RuiCard
-    v-else
-    variant="outlined"
-    v-bind="getRootAttrs($attrs)"
-  >
-    <ReuseAutocomplete />
-    <div
-      v-if="hint"
-      class="text-body-2 text-rui-text-secondary p-2"
-    >
-      {{ t('blockchain_account_selector.hint', { hintText }) }}
-      <slot />
-    </div>
-  </RuiCard>
 </template>

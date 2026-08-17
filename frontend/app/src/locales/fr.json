@@ -1051,9 +1051,7 @@
     }
   },
   "blockchain_account_selector": {
-    "all": "tous",
     "default_label": "Filtrer le(s) compte(s)",
-    "hint": "Résultats affichés sur {hintText} comptes.",
     "no_data": "Aucune autre adresse utilisable"
   },
   "blockchain_balances": {

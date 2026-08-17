@@ -138,11 +138,12 @@ defineExpose({
 
     <BlockchainAccountSelector
       v-model="accounts"
-      outlined
-      :label="t('common.account')"
-      :error-messages="form.errors('address')"
-      show-details
-      :custom-hint="t('common.optional')"
+      :field="{
+        errorMessages: form.errors('address'),
+        hint: t('common.optional'),
+        label: t('common.account'),
+        showDetails: true,
+      }"
     />
 
     <CounterpartyInput

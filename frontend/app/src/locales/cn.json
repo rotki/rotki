@@ -940,9 +940,7 @@
     }
   },
   "blockchain_account_selector": {
-    "all": "全部",
     "default_label": "过滤账户",
-    "hint": "显示 {hintText} 账户的结果。",
     "no_data": "没有可用地址"
   },
   "blockchain_balances": {

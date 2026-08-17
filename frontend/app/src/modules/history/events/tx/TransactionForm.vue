@@ -131,16 +131,15 @@ defineExpose({
         v-model="accounts"
         class="flex-1"
         data-testid="tx-account"
-        :chains="usableChains"
         hide-chain-icon
-        outlined
-        show-details
-        multichain
-        required
-        unique
-        :label="t('common.address')"
-        :error-messages="form.errors('associatedAddress')"
-        :no-data-text="t('transactions.form.account.no_address_found')"
+        :source="{ chains: usableChains, multichain: true, unique: true }"
+        :field="{
+          errorMessages: form.errors('associatedAddress'),
+          label: t('common.address'),
+          noDataText: t('transactions.form.account.no_address_found'),
+          required: true,
+          showDetails: true,
+        }"
       />
     </div>
 

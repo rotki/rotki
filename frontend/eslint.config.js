@@ -141,9 +141,8 @@ export default rotki({
   // BlockchainAccountSelector and AssetDetails as "cannot be fixed unilaterally", and NEITHER is
   // registered — `git log -S` finds no commit that ever added them, so the claim was wrong when
   // written rather than gone stale. Both are reachable from the bundle only because
-  // HistoryEventsView renders them, which is a rendering dependency, not an API one. AssetDetails
-  // has since been reshaped here with no premium release; BlockchainAccountSelector moved to the
-  // internal group below, since it is free to be reshaped but has not been yet.
+  // HistoryEventsView renders them, which is a rendering dependency, not an API one. Both have
+  // since been reshaped here with no premium release.
   files: [
     '**/src/modules/history/events/HistoryEventsView.vue',
   ],
@@ -167,14 +166,9 @@ export default rotki({
 }, {
   // Same group as BigDialog/AppImage above (internal, fixable here), at the stricter default cap:
   //
-  // - BlockchainAccountSelector (17): the worst offender in the codebase, and NOT premium-frozen
-  //   despite the group above having claimed it was. It is a field wrapper, so most of these are
-  //   RuiAutoComplete pass-throughs (label/hint/customHint/outlined/dense/errorMessages/required)
-  //   that want to reach it as attrs rather than as declared props.
   // - AssetBalances (11): display flags that are genuinely independent, so no honest grouping
   //   exists. This one needs real decomposition.
   files: [
-    '**/src/modules/accounts/BlockchainAccountSelector.vue',
     '**/src/modules/balances/AssetBalances.vue',
   ],
   rules: {
