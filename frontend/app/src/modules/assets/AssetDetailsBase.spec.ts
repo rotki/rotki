@@ -28,9 +28,11 @@ const AppImage = {
   template: '<img data-testid="app-image" :src="src" />',
 };
 
+// `changeable` is declared here although the real AssetIcon has no such prop: that is what lets the
+// regression test below see a value if the binding is ever passed again.
 const AssetIcon = {
   name: 'AssetIcon',
-  props: ['identifier', 'size', 'showChain', 'forceChain', 'resolutionOptions', 'optimizeForVirtualScroll'],
+  props: ['identifier', 'size', 'showChain', 'forceChain', 'resolutionOptions', 'optimizeForVirtualScroll', 'changeable'],
   template: '<div data-testid="asset-icon" />',
 };
 
@@ -128,6 +130,16 @@ describe('assetDetailsBase', () => {
 
     it('should not associate the asset when the resolution bag says so', () => {
       expect(icon(createWrapper({ resolution: { enableAssociation: false } })).props('resolutionOptions')).toStrictEqual({ associate: false });
+    });
+
+    // `changeable` was removed from AssetIcon in #7937 (May 2024) when the cache-busting timestamp
+    // went away, but two callers kept passing it, so for two years it landed as a DOM attribute and
+    // did nothing. Nothing may pass it again: neither as a prop nor as a stray attribute.
+    it('should not pass changeable to the icon', () => {
+      const wrapper = createWrapper();
+
+      expect(icon(wrapper).props('changeable')).toBeUndefined();
+      expect(wrapper.find('[data-testid="asset-icon"]').attributes('changeable')).toBeUndefined();
     });
 
     it('should forward forceChain to the icon', () => {

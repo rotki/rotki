@@ -136,10 +136,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
     >
       <template #item.symbol="{ row }">
         <div class="flex items-center gap-2">
-          <AssetDetailsBase
-            :actions="{ changeable: !loading }"
-            :asset="getAsset(row)"
-          />
+          <AssetDetailsBase :asset="getAsset(row)" />
           <RuiChip
             v-if="row.isRebasing"
             color="primary"

@@ -27,7 +27,6 @@ export interface AssetDisplay {
 export interface AssetActions {
   hideMenu?: boolean;
   hideActions?: boolean;
-  changeable?: boolean;
 }
 
 /** Which asset an identifier means. */

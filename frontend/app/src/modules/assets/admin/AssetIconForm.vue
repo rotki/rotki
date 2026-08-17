@@ -131,7 +131,6 @@ defineExpose({
           :key="refreshKey"
           :identifier="preview"
           size="72px"
-          changeable
           no-tooltip
           :show-chain="false"
         />

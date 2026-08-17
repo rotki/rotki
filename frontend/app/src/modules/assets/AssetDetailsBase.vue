@@ -49,7 +49,6 @@ const optimizeForVirtualScroll = computed<boolean>(() => display?.optimizeForVir
 
 const hideMenu = computed<boolean>(() => actions?.hideMenu ?? false);
 const hideActions = computed<boolean>(() => actions?.hideActions ?? false);
-const changeable = computed<boolean>(() => actions?.changeable ?? false);
 
 const enableAssociation = computed<boolean>(() => resolution?.enableAssociation ?? true);
 const isCollectionParent = computed<boolean>(() => resolution?.isCollectionParent ?? false);
@@ -94,7 +93,6 @@ watch(menuOpened, (menuOpened) => {
     />
     <AssetIcon
       v-else
-      :changeable="changeable"
       :size="size"
       :identifier="asset.identifier"
       :resolution-options="{ associate: enableAssociation }"
