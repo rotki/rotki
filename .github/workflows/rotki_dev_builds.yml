@@ -417,6 +417,10 @@ jobs:
 
       - name: Prune old dated dev-build images
         if: ${{ github.repository == 'rotki/rotki' }}
+        # Backstop for anything the script does not anticipate. Every failure it
+        # does anticipate is already a warning with an explanation, so reaching
+        # this is itself a sign the script needs a case adding.
+        continue-on-error: true
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -443,12 +447,44 @@ jobs:
           # disk. The rolling `nightly`/`edge` tags and all release tags do not
           # match the dated patterns and are never selected.
 
+          # Reclaiming storage is housekeeping, not part of publishing the image:
+          # the push has already succeeded by the time we get here. So every
+          # failure below is reported as a warning and the step still exits 0 --
+          # a stuck prune must not turn the nightly red. The cost is that it can
+          # go unnoticed, so each warning says plainly that storage keeps growing
+          # until it is fixed.
+
+          # Every deliberate stop below is an `exit 0`, so a non-zero exit means
+          # the script hit something it does not handle. `continue-on-error`
+          # would leave that green and silent, which is how a prune stops working
+          # without anyone noticing.
+          report_crash() {
+            local rc=$?
+            [ "$rc" -eq 0 ] && return 0
+            echo "::warning title=Docker prune crashed::The prune script exited unexpectedly with status ${rc}, so it did not finish and nothing after that point ran. This is a bug in the step itself, not a Docker Hub problem."
+          }
+          trap report_crash EXIT
+
+          # Decode a JWT payload (base64url, padding stripped) to stdout.
+          jwt_payload() {
+            local p="${1#*.}"
+            p="${p%%.*}"
+            case $(( ${#p} % 4 )) in
+              2) p="${p}==" ;;
+              3) p="${p}=" ;;
+            esac
+            printf '%s' "$p" | tr '_-' '/+' | base64 -d 2>/dev/null
+          }
+
           # --- Hub JWT: lists the tags and their index digests ---
           hub_jwt="$(jq -nc '{username: env.DOCKERHUB_USER, password: env.DOCKERHUB_TOKEN}' \
             | curl -fsS -H 'Content-Type: application/json' -d @- \
                 https://hub.docker.com/v2/users/login \
-            | jq -r '.token')"
-          [ -n "$hub_jwt" ] && [ "$hub_jwt" != 'null' ] || { echo 'Hub login failed' >&2; exit 1; }
+            | jq -r '.token')" || true
+          if [ -z "$hub_jwt" ] || [ "$hub_jwt" = 'null' ]; then
+            echo '::warning title=Docker prune skipped::Docker Hub login failed, so nothing was pruned this run and untagged images keep accumulating. Check the DOCKERHUB_USER/DOCKERHUB_TOKEN secrets.'
+            exit 0
+          fi
           echo "::add-mask::${hub_jwt}"
 
           # EVERY tag in the repo, as "<last_updated> <name> <index-digest>" per
@@ -488,8 +524,17 @@ jobs:
             mapfile -t -O "${#kids[@]}" kids < <(grep '^C ' <<< "$rows" | cut -d' ' -f2-)
             url="$(jq -r '.next // empty' <<< "$body")"
           done
-          [ -z "$url" ] || { echo 'Tag listing did not terminate' >&2; exit 1; }
-          [ "${#lines[@]}" -gt 0 ] || { echo 'Tag listing came back empty' >&2; exit 1; }
+          # Both of these mean the collateral guard below is working from an
+          # incomplete picture, and a tag it cannot see is a tag it could delete
+          # by accident. Stop, but without failing the job.
+          if [ -n "$url" ]; then
+            echo '::warning title=Docker prune skipped::The tag listing did not terminate within 20 pages, so the guard that protects release tags is incomplete and nothing was pruned this run.'
+            exit 0
+          fi
+          if [ "${#lines[@]}" -eq 0 ]; then
+            echo '::warning title=Docker prune skipped::The tag listing came back empty, so nothing was pruned this run.'
+            exit 0
+          fi
           echo "listed ${#lines[@]} tags, ${#refs[@]} digest references"
 
           # digest -> " name name ", covering indexes and children alike.
@@ -554,8 +599,37 @@ jobs:
             --config <(printf 'user = "%s:%s"\n' "$DOCKERHUB_USER" "$DOCKERHUB_TOKEN") \
             "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${REPOSITORY}:pull,push,delete" \
             | jq -r '.token')"
-          [ -n "$reg_token" ] && [ "$reg_token" != 'null' ] || { echo 'Registry token failed' >&2; exit 1; }
+          if [ -z "$reg_token" ] || [ "$reg_token" = 'null' ]; then
+            echo '::warning title=Docker prune skipped::Could not mint a registry token, so nothing was pruned this run.'
+            exit 0
+          fi
           echo "::add-mask::${reg_token}"
+
+          # What the registry ACTUALLY granted, which is not what we asked for.
+          # auth.docker.io answers 200 with a valid token even when it cannot
+          # authenticate the caller at all: it silently narrows the scope rather
+          # than failing, so neither curl's -f nor the emptiness check above can
+          # see a credential or permission problem. Left unreported, the only
+          # symptom is a bare 401 on the first DELETE, which looks like a
+          # transient registry error and is not.
+          reg_access="$(jwt_payload "$reg_token" \
+            | jq -c '[.access[]? | select(.type == "repository" and .name == env.REPOSITORY)] | first // {}' \
+            2>/dev/null || true)"
+          [ -n "$reg_access" ] || reg_access='{}'
+          reg_actions="$(jq -r '[.actions[]?] | sort | join(",")' <<< "$reg_access" 2>/dev/null || true)"
+          echo "registry token grants [${reg_actions:-unreadable}] on ${REPOSITORY}"
+
+          # A token issued to nobody carries the anonymous pull-rate parameters.
+          # That is the fingerprint that separates "our credentials never
+          # arrived" from "our credentials arrived and delete was refused" --
+          # the two produce an identical 401 at the DELETE.
+          if [ -z "$reg_actions" ]; then
+            echo '::warning title=Docker prune: token scope unreadable::Could not read the grant out of the registry token, so this run cannot say in advance whether deletes will work. That is a defect in this check rather than evidence of a credential problem; the deletes below may well succeed.'
+          elif [ -n "$(jq -r '.parameters.pull_limit // empty' <<< "$reg_access" 2>/dev/null || true)" ]; then
+            echo "::warning title=Docker prune: credentials did not authenticate::The registry token came back anonymous (it carries the anonymous pull-rate parameters and grants [${reg_actions:-none}]). DOCKERHUB_USER/DOCKERHUB_TOKEN did not reach the auth service in usable form, so every delete below will fail with 401. Note the Hub login earlier in this step passes its credentials as a JSON body while this call passes them through a curl config, so a secret containing a quote or backslash breaks here and only here."
+          elif [[ ",${reg_actions}," != *,delete,* ]]; then
+            echo "::warning title=Docker prune: delete not granted::Authentication succeeded but the registry granted only [${reg_actions:-none}], not delete, so every delete below will fail with 401. The PAT's own scopes are not the whole story: on an organisation repository the account's role caps the grant, and deleting manifests needs admin on the repository -- a read/write member gets [pull,push] no matter what the PAT says."
+          fi
 
           # Three independent layers stand between a candidate and an
           # irreversible delete, so that no single one has to be perfect:
@@ -566,7 +640,8 @@ jobs:
           # Layer 3 is the only one that catches a release cut from the same
           # commit as a dev build, where v<x.y.z> and edge-<sha> land on one
           # index. That is a permanent skip, and correctly so.
-          declare -a done_digests=()
+          declare -a done_digests=() failed_names=()
+          first_reason=''
           for i in "${!stale_digests[@]}"; do
             name="${stale_names[$i]}"
             digest="${stale_digests[$i]}"
@@ -591,7 +666,12 @@ jobs:
             case "$code" in
               200) now="$(jq -r '.digest // "-"' "${RUNNER_TEMP}/now.json")" ;;
               404) now='-' ;;
-              *) echo "cannot re-resolve ${name}: HTTP ${code}" >&2; exit 1 ;;
+              *)
+                echo "cannot re-resolve ${name}: HTTP ${code}, left alone (without a confirmed digest the safety check cannot run)"
+                failed_names+=("$name")
+                [ -n "$first_reason" ] || first_reason="HTTP ${code} re-resolving the tag on Docker Hub, so its digest could not be confirmed."
+                continue
+                ;;
             esac
             if [ "$kind" = 'tag' ] && [ "$now" != "$digest" ]; then
               echo "skip ${name} (${digest}): tag now resolves to ${now}"
@@ -618,18 +698,72 @@ jobs:
 
             # Tolerate curl's own exit status so a transport failure reports as
             # code 000 through the message below, rather than killing the step
-            # with no indication of which digest it died on.
-            code="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+            # with no indication of which digest it died on. The body and the
+            # headers are kept: the registry names the reason in an OCI error
+            # object and in the WWW-Authenticate challenge, and without them a
+            # 401 is indistinguishable from any other kind of refusal.
+            # Truncated first: curl may write neither file when it never gets a
+            # response, and stale content from the previous candidate would then
+            # annotate this one with someone else's error.
+            : > "${RUNNER_TEMP}/delete-body.json"
+            : > "${RUNNER_TEMP}/delete-head.txt"
+            code="$(curl -sS -o "${RUNNER_TEMP}/delete-body.json" -D "${RUNNER_TEMP}/delete-head.txt" \
+              -w '%{http_code}' -X DELETE \
               --config <(printf 'header = "Authorization: Bearer %s"\n' "$reg_token") \
               "https://registry-1.docker.io/v2/${REPOSITORY}/manifests/${digest}" || true)"
             if [ "$code" = '202' ]; then
               done_digests+=("$digest")
               echo "deleted ${REPOSITORY}:${name} (${digest})"
-            else
-              echo "FAILED to delete ${REPOSITORY}:${name} (${digest}): HTTP ${code}" >&2
-              exit 1
+              continue
             fi
+            if [ "$code" = '404' ]; then
+              # Already reclaimed, by an earlier run or by a candidate in this one
+              # that shared the index. Nothing is left behind, so this is not a
+              # failure and must not be counted as one.
+              done_digests+=("$digest")
+              echo "skip ${name} (${digest}): already gone from the registry"
+              continue
+            fi
+
+            detail="$(jq -r '[.errors[]? | "\(.code // "?"): \(.message // "?")"] | join("; ")' \
+              "${RUNNER_TEMP}/delete-body.json" 2>/dev/null || true)"
+            challenge="$(sed -n 's/^[Ww][Ww][Ww]-[Aa]uthenticate: *//p' \
+              "${RUNNER_TEMP}/delete-head.txt" 2>/dev/null | tr -d '\r' || true)"
+            case "$code" in
+              401)
+                reason="the registry rejected the token. It was granted [${reg_actions:-unreadable}] on ${REPOSITORY}, and a delete needs 'delete' in that list. Either the credentials did not authenticate (see the token warning earlier in this step) or the account lacks delete rights on the repository -- on an org repo that means admin, which a read/write member does not have regardless of the PAT's own scopes."
+                ;;
+              403)
+                reason='authenticated, but this account is not allowed to delete in this repository. Check its role on the organisation and on the repository.'
+                ;;
+              405|501)
+                reason='the registry says manifest deletion is not allowed here, which would mean Docker Hub withdrew the registry DELETE this whole step depends on. That needs a different approach, not a retry.'
+                ;;
+              429)
+                reason='rate limited by Docker Hub. Harmless on its own; the next run retries.'
+                ;;
+              000)
+                reason='no HTTP response at all (DNS, TLS or connection failure). Transient, the next run retries.'
+                ;;
+              5*)
+                reason='Docker Hub server error. Transient, the next run retries.'
+                ;;
+              *)
+                reason='unexpected status.'
+                ;;
+            esac
+            # Plain log line, not an annotation: GitHub keeps only the first ten
+            # warnings per step, and when every candidate fails -- the case this
+            # reporting exists for -- the per-image ones would crowd out the
+            # summary below, which is the only place the cause is named.
+            failed_names+=("$name")
+            [ -n "$first_reason" ] || first_reason="HTTP ${code}: ${reason}"
+            echo "FAILED to delete ${REPOSITORY}:${name} (${digest}): HTTP ${code}: ${reason}${detail:+ Registry said: ${detail}.}${challenge:+ Challenge: ${challenge}.}"
           done
+
+          if [ "${#failed_names[@]}" -gt 0 ]; then
+            echo "::warning title=Docker prune incomplete::${#failed_names[@]} of ${#stale_digests[@]} stale dev-build image(s) could not be reclaimed (${failed_names[*]}). First cause: ${first_reason} The images themselves published fine, and the nightly is deliberately not failed for this, so nothing else will flag it: registry storage keeps growing every night until this is resolved."
+          fi
 
   notify:
     name: 'Success check'
