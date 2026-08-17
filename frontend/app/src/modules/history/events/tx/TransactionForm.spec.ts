@@ -25,11 +25,11 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 }));
 
 /** The two selects are heavy third-party wrappers, stubbed down to what the form reads. */
-function selectStub(name: string): Record<string, unknown> {
+function selectStub(name: string, props: string[]): Record<string, unknown> {
   return {
     emits: ['update:modelValue'],
     name,
-    props: ['modelValue', 'errorMessages', 'items', 'chains'],
+    props: ['modelValue', ...props],
     template: '<div />',
   };
 }
@@ -86,8 +86,8 @@ describe('history/events/tx/TransactionForm.vue', () => {
         plugins: [pinia],
         provide: libraryDefaults,
         stubs: {
-          BlockchainAccountSelector: selectStub('BlockchainAccountSelector'),
-          ChainSelect: selectStub('ChainSelect'),
+          BlockchainAccountSelector: selectStub('BlockchainAccountSelector', ['field', 'source']),
+          ChainSelect: selectStub('ChainSelect', ['errorMessages', 'items']),
         },
       },
       payload: modelValue,
@@ -99,7 +99,13 @@ describe('history/events/tx/TransactionForm.vue', () => {
   }
 
   function messages(testId: string): string[] {
-    const value: unknown = field(testId).props('errorMessages');
+    // The account selector carries its validation inside the `field` bag; ChainSelect still takes
+    // errorMessages at the top level.
+    const props = field(testId).props();
+    const bag: unknown = props.field;
+    const value: unknown = typeof bag === 'object' && bag !== null
+      ? Reflect.get(bag, 'errorMessages')
+      : props.errorMessages;
     assert(Array.isArray(value));
     return value.map(String);
   }

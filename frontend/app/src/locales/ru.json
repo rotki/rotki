@@ -1374,9 +1374,7 @@
     "refresh_tooltip": "Обновить рыночные пары Binance"
   },
   "blockchain_account_selector": {
-    "all": "все",
     "default_label": "Фильтр аккаунтов",
-    "hint": "Показаны результаты по {hintText} аккаунтам.",
     "no_data": "Нет больше используемых адресов"
   },
   "blockchain_balances": {

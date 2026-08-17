@@ -30,11 +30,8 @@ const chains = [Blockchain.ETH];
     <BlockchainAccountSelector
       v-model="selectedAccounts"
       class="md:col-span-3"
-      :label="t('nft_gallery.select_account')"
-      :chains="chains"
-      dense
-      outlined
-      :usable-addresses="availableAddresses"
+      :source="{ chains, usableAddresses: availableAddresses }"
+      :field="{ dense: true, label: t('nft_gallery.select_account') }"
     />
 
     <NftCollectionSelector

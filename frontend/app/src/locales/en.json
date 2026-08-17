@@ -1813,9 +1813,7 @@
     "refresh_tooltip": "Refresh Binance market pairs"
   },
   "blockchain_account_selector": {
-    "all": "all",
     "default_label": "Filter account(s)",
-    "hint": "Showing results across {hintText} accounts.",
     "no_data": "No more usable addresses"
   },
   "blockchain_balances": {

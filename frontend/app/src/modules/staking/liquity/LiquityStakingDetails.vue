@@ -261,11 +261,8 @@ function refresh() {
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <BlockchainAccountSelector
         v-model="selectedAccounts"
-        :label="t('liquity_staking_details.select_account')"
-        :chains="chains"
-        dense
-        outlined
-        :usable-addresses="availableAddresses"
+        :source="{ chains, usableAddresses: availableAddresses }"
+        :field="{ dense: true, label: t('liquity_staking_details.select_account') }"
       />
 
       <div

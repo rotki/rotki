@@ -84,9 +84,8 @@ onMounted(async () => {
             <BlockchainAccountSelector
               v-model="accounts"
               class="md:w-[24rem]"
-              multichain
-              dense
-              outlined
+              :source="{ multichain: true }"
+              :field="{ dense: true }"
             />
           </template>
           <div class="flex gap-4">

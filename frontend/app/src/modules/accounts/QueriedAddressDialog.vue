@@ -112,13 +112,9 @@ function close() {
       <div class="flex items-center gap-2">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
-          outlined
-          dense
-          hide-on-empty-usable
-          :usable-addresses="usableAddresses"
           class="queried-address-dialog__selector flex-1"
-          :chains="[ETH]"
-          :label="t('queried_address_dialog.add')"
+          :source="{ chains: [ETH], hideOnEmptyUsable: true, usableAddresses }"
+          :field="{ dense: true, label: t('queried_address_dialog.add') }"
         />
         <RuiButton
           :disabled="selectedAccounts.length === 0"
