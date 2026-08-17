@@ -25,7 +25,7 @@ const status = actionStatus(name);
     :title="t('external_services.blockscout.title')"
     :subtitle="t('external_services.blockscout.description')"
     :image-src="getPublicServiceImagePath('blockscout.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

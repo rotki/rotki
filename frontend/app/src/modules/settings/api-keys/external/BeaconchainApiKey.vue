@@ -41,7 +41,7 @@ function removeBeaconchainNotification() {
     :title="t('external_services.beaconchain.title')"
     :subtitle="t('external_services.beaconchain.description')"
     :image-src="getPublicServiceImagePath('beaconchain.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

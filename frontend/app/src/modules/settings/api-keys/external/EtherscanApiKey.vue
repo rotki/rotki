@@ -42,7 +42,7 @@ function removeEtherscanNotification() {
     :title="t('external_services.etherscan.title')"
     :subtitle="t('external_services.etherscan.description')"
     :image-src="getPublicServiceImagePath('etherscan.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

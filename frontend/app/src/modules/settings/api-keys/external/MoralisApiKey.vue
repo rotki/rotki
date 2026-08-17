@@ -24,7 +24,7 @@ const status = actionStatus(name);
     :title="t('external_services.moralis.title')"
     :subtitle="t('external_services.moralis.description')"
     :image-src="getPublicServiceImagePath('moralis.png')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

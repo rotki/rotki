@@ -6,7 +6,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import ServiceKeyCard, { type FeatureGate } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useMoneriumOAuth } from './use-monerium-auth';
@@ -37,6 +37,14 @@ const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBack
 const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 
 const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
+
+const cardAction = computed<ServiceKeyAction>(() => ({
+  addText: t('external_services.actions.authenticate'),
+  disabled: get(isAuthorizing),
+  editText: t('external_services.actions.reauthenticate'),
+  hidden: get(authenticated),
+  primary: t('external_services.monerium.connect'),
+}));
 
 function notifyOAuthError(error: unknown): void {
   logger.error('Monerium OAuth failed:', error);
@@ -184,11 +192,7 @@ onUnmounted(() => {
     :title="t('external_services.monerium.title')"
     :subtitle="t('external_services.monerium.description')"
     :image-src="getPublicServiceImagePath('monerium.png')"
-    :primary-action="t('external_services.monerium.connect')"
-    :action-disabled="isAuthorizing"
-    :hide-action="authenticated"
-    :add-button-text="t('external_services.actions.authenticate')"
-    :edit-button-text="t('external_services.actions.reauthenticate')"
+    :action="cardAction"
     @confirm="connect()"
   >
     <template
