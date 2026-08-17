@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
+import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { NftHandling } from '@/modules/assets/nft-handling';
@@ -86,6 +87,12 @@ const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAsset
 // static value and cannot call `t`, which is why it used to read a hardcoded English "Asset".
 const fieldLabel = computed<string>(() => label ?? t('asset_select.label'));
 
+// Both slots render the asset without its context menu; hoisted so the bag is one stable identity
+// rather than a fresh object per rendered row.
+const noMenu: AssetActions = { hideMenu: true };
+
+const itemDisplay = computed<AssetDisplay>(() => ({ dense }));
+
 const errors = computed<string[]>(() => {
   const messages = [...errorMessages];
   const errorMessage = get(error);
@@ -157,7 +164,7 @@ function onUpdateModelValue(value: string): void {
           v-else
           class="!py-0 pl-1"
           :asset="item"
-          hide-menu
+          :actions="noMenu"
         />
       </template>
     </template>
@@ -175,8 +182,8 @@ function onUpdateModelValue(value: string): void {
         :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"
         :class="dense ? '!py-0 -my-0.5' : '!py-0 -my-1'"
         :asset="item"
-        :dense="dense"
-        hide-menu
+        :display="itemDisplay"
+        :actions="noMenu"
       />
     </template>
     <template #no-data>

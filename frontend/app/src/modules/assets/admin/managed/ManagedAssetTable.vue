@@ -137,7 +137,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       <template #item.symbol="{ row }">
         <div class="flex items-center gap-2">
           <AssetDetailsBase
-            :changeable="!loading"
+            :actions="{ changeable: !loading }"
             :asset="getAsset(row)"
           />
           <RuiChip

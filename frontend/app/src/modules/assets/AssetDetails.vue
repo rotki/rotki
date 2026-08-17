@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
+import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
@@ -45,21 +46,35 @@ const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
   identifier: asset,
 }));
+
+// Computed rather than inline literals: an object built in the template is a new identity on every
+// parent render, which would re-render the child even inside a virtualized table.
+const baseDisplay = computed<AssetDisplay>(() => ({
+  dense,
+  iconOnly,
+  optimizeForVirtualScroll,
+  showChain: !isCollectionParent,
+  size,
+}));
+
+const baseActions = computed<AssetActions>(() => ({
+  hideActions,
+  hideMenu,
+}));
+
+const baseResolution = computed<AssetResolution>(() => ({
+  enableAssociation,
+  forceChain,
+  isCollectionParent,
+}));
 </script>
 
 <template>
   <AssetDetailsBase
-    :hide-menu="hideMenu"
-    :hide-actions="hideActions"
-    :icon-only="iconOnly"
     :asset="currentAsset"
-    :dense="dense"
-    :enable-association="enableAssociation"
-    :show-chain="!isCollectionParent"
-    :is-collection-parent="isCollectionParent"
-    :size="size"
-    :force-chain="forceChain"
-    :optimize-for-virtual-scroll="optimizeForVirtualScroll"
+    :display="baseDisplay"
+    :actions="baseActions"
+    :resolution="baseResolution"
     @refresh="emit('refresh')"
   />
 </template>
