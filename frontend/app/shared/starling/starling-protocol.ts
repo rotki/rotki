@@ -9,6 +9,7 @@
 
 export const StarlingMethod = {
   RESTART: 'restart',
+  SET_SERVICE_AUTOSTART: 'setServiceAutostart',
   START: 'start',
   START_SERVICE: 'startService',
   STATUS: 'status',
