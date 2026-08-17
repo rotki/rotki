@@ -73,9 +73,25 @@ pub enum Method {
     StartService,
     /// Stop one optional managed service without stopping the supervisor.
     StopService,
+    /// Record whether one optional managed service starts with the backend tree.
+    /// A preference only: it starts and stops nothing, it decides the next boot.
+    SetServiceAutostart,
 }
 
 impl Method {
+    /// Every method, so a caller that has to enumerate them (the capability
+    /// document, the matrix tests) cannot silently miss a new one.
+    pub const ALL: [Method; 8] = [
+        Method::Health,
+        Method::Status,
+        Method::Start,
+        Method::Restart,
+        Method::Stop,
+        Method::StartService,
+        Method::StopService,
+        Method::SetServiceAutostart,
+    ];
+
     /// The JSON-RPC `method` string for this method.
     pub fn wire(self) -> &'static str {
         match self {
@@ -86,6 +102,7 @@ impl Method {
             Method::Stop => "stop",
             Method::StartService => "startService",
             Method::StopService => "stopService",
+            Method::SetServiceAutostart => "setServiceAutostart",
         }
     }
 
@@ -100,12 +117,18 @@ impl Method {
             "stop" => Some(Method::Stop),
             "startService" => Some(Method::StartService),
             "stopService" => Some(Method::StopService),
+            "setServiceAutostart" => Some(Method::SetServiceAutostart),
             _ => None,
         }
     }
 
     /// Whether this method changes state. Mutating methods are the ones the
-    /// controller serializes, rate-limits, and audit-logs.
+    /// controller serializes and audit-logs.
+    ///
+    /// The §S10 rate limit is narrower than this set: it spaces out the methods
+    /// that spawn or tear down processes. `setServiceAutostart` writes a
+    /// preference and touches nothing running, so it is not spaced — see
+    /// `Controller::handle_set_service_autostart`.
     pub fn is_mutating(self) -> bool {
         matches!(
             self,
@@ -114,6 +137,7 @@ impl Method {
                 | Method::Stop
                 | Method::StartService
                 | Method::StopService
+                | Method::SetServiceAutostart
         )
     }
 }
@@ -127,16 +151,30 @@ impl Method {
 /// this in the transport layer; this gate is the orthogonal "is this method
 /// even reachable on this surface" check.
 pub fn is_authorized(transport: Transport, method: Method) -> bool {
-    use Method::{Health, Restart, Start, StartService, Status, Stop, StopService};
+    use Method::{
+        Health, Restart, SetServiceAutostart, Start, StartService, Status, Stop, StopService,
+    };
     use Transport::{HttpControl, PublicHealth, Stdio, Uds};
     match (transport, method) {
         // Trusted private pipe: the whole surface.
-        (Stdio, Health | Status | Start | Restart | Stop | StartService | StopService) => true,
+        (
+            Stdio,
+            Health | Status | Start | Restart | Stop | StartService | StopService
+            | SetServiceAutostart,
+        ) => true,
         // Docker admin socket (uid-0 gated): the whole surface.
-        (Uds, Health | Status | Start | Restart | Stop | StartService | StopService) => true,
+        (
+            Uds,
+            Health | Status | Start | Restart | Stop | StartService | StopService
+            | SetServiceAutostart,
+        ) => true,
         // The cookie-gated `/_control` surface: reads, a bare `restart`, and the
-        // optional-service toggles the settings page drives.
-        (HttpControl, Health | Status | Restart | StartService | StopService) => true,
+        // optional-service toggles the settings page drives — including the
+        // autostart preference, which is what the page's switch writes.
+        (
+            HttpControl,
+            Health | Status | Restart | StartService | StopService | SetServiceAutostart,
+        ) => true,
         // `stop` exits PID 1, so the container dies with code 0 and both
         // `restart: no` and `on-failure` leave it dead — recovery would then need
         // docker-level access the SPA does not have. `start` is the renderer's
@@ -144,7 +182,10 @@ pub fn is_authorized(transport: Transport, method: Method) -> bool {
         (HttpControl, Start | Stop) => false,
         // Public unauthenticated surface: boolean health ONLY (§S3).
         (PublicHealth, Health) => true,
-        (PublicHealth, Status | Start | Restart | Stop | StartService | StopService) => false,
+        (
+            PublicHealth,
+            Status | Start | Restart | Stop | StartService | StopService | SetServiceAutostart,
+        ) => false,
     }
 }
 
@@ -152,6 +193,14 @@ pub fn is_authorized(transport: Transport, method: Method) -> bool {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServiceParams {
     pub service: String,
+}
+
+/// Parameters for `setServiceAutostart`: which service, and whether it should
+/// come up with the backend tree from the next boot on.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ServiceAutostartParams {
+    pub service: String,
+    pub autostart: bool,
 }
 
 /// Options accepted by `restart`, matching the desktop `BackendOptions` wire
@@ -320,6 +369,12 @@ pub enum ControlError {
     /// The requested service does not exist or does not allow independent control.
     #[error("invalid service: {0}")]
     InvalidService(String),
+    /// The autostart preference was applied in memory but could not be written to
+    /// disk, so it would lapse on the next boot. Reported as a failure rather
+    /// than swallowed: a switch that answers OK and then forgets is worse than
+    /// one that says it could not save.
+    #[error("failed to persist the autostart preference: {0}")]
+    AutostartNotPersisted(String),
     /// The controller is no longer running (its task has exited), so the request
     /// could not be delivered or answered.
     #[error("control plane is not available")]
@@ -422,15 +477,7 @@ mod tests {
 
     #[test]
     fn method_wire_round_trips() {
-        for method in [
-            Method::Health,
-            Method::Status,
-            Method::Start,
-            Method::Restart,
-            Method::Stop,
-            Method::StartService,
-            Method::StopService,
-        ] {
+        for method in Method::ALL {
             assert_eq!(Method::from_wire(method.wire()), Some(method));
         }
         assert_eq!(Method::from_wire("unknown"), None);
@@ -443,6 +490,7 @@ mod tests {
         assert!(Method::Stop.is_mutating());
         assert!(Method::StartService.is_mutating());
         assert!(Method::StopService.is_mutating());
+        assert!(Method::SetServiceAutostart.is_mutating());
         assert!(!Method::Status.is_mutating());
         assert!(!Method::Health.is_mutating());
     }
@@ -451,14 +499,7 @@ mod tests {
     fn authorize_matrix_is_fail_closed_for_public_health() {
         // Public surface: boolean health only.
         assert!(is_authorized(Transport::PublicHealth, Method::Health));
-        for method in [
-            Method::Status,
-            Method::Start,
-            Method::Restart,
-            Method::Stop,
-            Method::StartService,
-            Method::StopService,
-        ] {
+        for method in Method::ALL.into_iter().filter(|m| *m != Method::Health) {
             assert!(
                 !is_authorized(Transport::PublicHealth, method),
                 "public surface must deny {}",
@@ -470,15 +511,7 @@ mod tests {
     #[test]
     fn authorize_matrix_allows_full_surface_on_trusted_transports() {
         for transport in [Transport::Stdio, Transport::Uds] {
-            for method in [
-                Method::Health,
-                Method::Status,
-                Method::Start,
-                Method::Restart,
-                Method::Stop,
-                Method::StartService,
-                Method::StopService,
-            ] {
+            for method in Method::ALL {
                 assert!(
                     is_authorized(transport, method),
                     "{:?} should allow {}",
@@ -497,6 +530,9 @@ mod tests {
             Method::Restart,
             Method::StartService,
             Method::StopService,
+            // The settings page writes the MCP autostart preference over this
+            // surface; it spawns nothing and names no path.
+            Method::SetServiceAutostart,
         ] {
             assert!(
                 is_authorized(Transport::HttpControl, method),
@@ -838,6 +874,19 @@ mod tests {
             serde_json::to_value(&stopped).unwrap(),
             serde_json::json!({})
         );
+    }
+
+    #[test]
+    fn service_autostart_params_round_trip() {
+        let params: ServiceAutostartParams =
+            serde_json::from_str(r#"{"service":"mcp","autostart":true}"#).unwrap();
+        assert_eq!(params.service, "mcp");
+        assert!(params.autostart);
+
+        // Both fields are required: a frame that omits `autostart` must not be
+        // read as "off", which would turn a malformed request into a silent
+        // opt-out.
+        assert!(serde_json::from_str::<ServiceAutostartParams>(r#"{"service":"mcp"}"#).is_err());
     }
 
     #[test]

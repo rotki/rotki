@@ -11,11 +11,11 @@ pub mod controller;
 pub mod protocol;
 
 pub use controller::{
-    ControlHandle, Controller, ControllerSnapshot, DataDirGuard, Outcome, SpecBuilder, Startup,
-    DEFAULT_MIN_MUTATION_INTERVAL,
+    AutostartStore, ControlHandle, Controller, ControllerSnapshot, DataDirGuard, Outcome,
+    SpecBuilder, Startup, DEFAULT_MIN_MUTATION_INTERVAL,
 };
 pub use protocol::{
     authorize, is_authorized, sanitize_restart_options, BackendOptions, ControlError, ControlEvent,
-    HealthResult, Method, OkResult, RestartReason, ServiceParams, StatusResult, Transport,
-    PROTOCOL_VERSION, VALID_LOG_LEVELS,
+    HealthResult, Method, OkResult, RestartReason, ServiceAutostartParams, ServiceParams,
+    StatusResult, Transport, PROTOCOL_VERSION, VALID_LOG_LEVELS,
 };

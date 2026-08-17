@@ -19,12 +19,12 @@ pub mod readiness;
 
 pub use config::{
     build_services, colibri_args, core_args, mcp_args, Launcher, OnCrash, Readiness, RestartPolicy,
-    RunAs, ServiceLayout, ServiceSpec, StdioMode,
+    RunAs, ServiceLayout, ServiceSpec, StdioMode, MCP_SERVICE,
 };
 pub use control::{
-    BackendOptions, ControlError, ControlEvent, ControlHandle, Controller, DataDirGuard,
-    HealthResult, Method, OkResult, Outcome, RestartReason, ServiceParams, SpecBuilder, Startup,
-    StatusResult, Transport, PROTOCOL_VERSION,
+    AutostartStore, BackendOptions, ControlError, ControlEvent, ControlHandle, Controller,
+    DataDirGuard, HealthResult, Method, OkResult, Outcome, RestartReason, ServiceAutostartParams,
+    ServiceParams, SpecBuilder, Startup, StatusResult, Transport, PROTOCOL_VERSION,
 };
 pub use datadir::{build_version, default_data_dir, is_production_build, resolve_data_dir};
 pub use error::{Result, SupervisorError};
