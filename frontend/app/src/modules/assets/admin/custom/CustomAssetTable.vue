@@ -113,10 +113,7 @@ function expand(item: CustomAsset) {
       class="custom-assets-table"
     >
       <template #item.name="{ row }">
-        <AssetDetailsBase
-          :actions="{ changeable: !loading }"
-          :asset="getAsset(row)"
-        />
+        <AssetDetailsBase :asset="getAsset(row)" />
       </template>
       <template #item.custom_asset_type="{ row }">
         <BadgeDisplay>
