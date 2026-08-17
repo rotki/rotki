@@ -29,7 +29,7 @@ use tokio::sync::{broadcast, mpsc, oneshot, watch};
 use tokio::time::{Duration, Instant};
 use tracing::{error, info};
 
-use crate::config::{OnCrash, ServiceLayout, ServiceSpec};
+use crate::config::{OnCrash, ServiceLayout, ServiceSpec, MCP_SERVICE};
 use crate::control::protocol::{
     authorize, sanitize_restart_options, BackendOptions, ControlError, ControlEvent, HealthResult,
     Method, OkResult, RestartReason, StatusResult, Transport, PROTOCOL_VERSION,
@@ -156,6 +156,12 @@ enum Command {
     StopService {
         transport: Transport,
         service: String,
+        reply: oneshot::Sender<Result<OkResult, ControlError>>,
+    },
+    SetServiceAutostart {
+        transport: Transport,
+        service: String,
+        autostart: bool,
         reply: oneshot::Sender<Result<OkResult, ControlError>>,
     },
 }
@@ -287,6 +293,30 @@ impl ControlHandle {
             .map_err(|_| ControlError::ControllerStopped)?;
         rx.await.map_err(|_| ControlError::ControllerStopped)?
     }
+
+    /// Record whether one optional service comes up with the backend tree.
+    ///
+    /// Starts and stops nothing: it writes the preference the *next* bring-up
+    /// reads, which is what the desktop's own auto-start switch has always meant.
+    pub async fn set_service_autostart(
+        &self,
+        transport: Transport,
+        service: String,
+        autostart: bool,
+    ) -> Result<OkResult, ControlError> {
+        authorize(transport, Method::SetServiceAutostart)?;
+        let (reply, rx) = oneshot::channel();
+        self.commands
+            .send(Command::SetServiceAutostart {
+                transport,
+                service,
+                autostart,
+                reply,
+            })
+            .await
+            .map_err(|_| ControlError::ControllerStopped)?;
+        rx.await.map_err(|_| ControlError::ControllerStopped)?
+    }
 }
 
 /// Owns the single-instance data-directory lock so the controller can move it
@@ -297,6 +327,21 @@ pub trait DataDirGuard: Send {
     /// error string (surfaced in the failed-restart reply) if `new_dir` is
     /// already in use by another instance.
     fn relock(&mut self, new_dir: &Path) -> Result<(), String>;
+}
+
+/// Persists an autostart preference so it survives the process that set it.
+///
+/// Implemented in the binary for the same reason [`DataDirGuard`] is: the file,
+/// its location, and the platform-safe way to write it belong where the I/O
+/// lives, not in the mode-agnostic core.
+///
+/// Attached only where starling itself owns the preference — docker, where the
+/// value is read back at boot. On the desktop the owner is Electron's own app
+/// settings file, which rides in on `BackendOptions` at the next `start`, so no
+/// store is attached and the preference is applied in memory only.
+pub trait AutostartStore: Send {
+    /// Write `autostart` for `service`, or return why it could not be written.
+    fn persist(&mut self, service: &str, autostart: bool) -> Result<(), String>;
 }
 
 /// Owns the supervisor and drives it from control requests + the supervise loop.
@@ -321,6 +366,9 @@ pub struct Controller<S: Spawner> {
     /// can release the old directory and acquire the new one. `None` when no lock
     /// is attached (e.g. tests).
     datadir_guard: Option<Box<dyn DataDirGuard>>,
+    /// Where an autostart preference is written so it survives a restart of the
+    /// supervisor. `None` when nobody owns it here (the desktop, and tests).
+    autostart_store: Option<Box<dyn AutostartStore>>,
     /// Origin the in-process proxy is bound to (`http://host:port`), surfaced in
     /// `status` so the embedder reads the single base URL from the supervisor
     /// rather than reconstructing it. `None` when no proxy runs.
@@ -361,6 +409,7 @@ impl<S: Spawner> Controller<S> {
             commands_rx,
             managed_pids: None,
             datadir_guard: None,
+            autostart_store: None,
             proxy_url: None,
         }
     }
@@ -377,6 +426,12 @@ impl<S: Spawner> Controller<S> {
     /// moves the lock with it (see [`DataDirGuard`]).
     pub fn set_datadir_guard(&mut self, guard: Box<dyn DataDirGuard>) {
         self.datadir_guard = Some(guard);
+    }
+
+    /// Attach the store a `setServiceAutostart` writes through, so the preference
+    /// outlives this process (see [`AutostartStore`]).
+    pub fn set_autostart_store(&mut self, store: Box<dyn AutostartStore>) {
+        self.autostart_store = Some(store);
     }
 
     /// Attach a shared pid set the controller keeps current as services start and
@@ -525,6 +580,11 @@ impl<S: Spawner> Controller<S> {
                         }
                         Some(Command::StopService { transport, service, reply }) => {
                             let result = self.handle_stop_service(transport, &service).await;
+                            let _ = reply.send(result);
+                        }
+                        Some(Command::SetServiceAutostart { transport, service, autostart, reply }) => {
+                            let result =
+                                self.handle_set_service_autostart(transport, &service, autostart);
                             let _ = reply.send(result);
                         }
                         None => commands_open = false,
@@ -828,6 +888,55 @@ impl<S: Spawner> Controller<S> {
             .map_err(Self::map_service_operation_error)?;
         self.publish();
         self.audit("stop-service", transport, "stopped");
+        Ok(OkResult::OK)
+    }
+
+    /// Execute a `setServiceAutostart`: record the preference on the layout (so a
+    /// later `restart` rebuilds specs with it) and on the live spec (so `status`
+    /// reads back what was just set), then persist it if a store is attached.
+    ///
+    /// Nothing is started or stopped. That is the desktop switch's meaning, kept
+    /// identical here: the running service is the user's other control, and
+    /// having a preference silently spawn or kill a server would make the two
+    /// controls fight.
+    ///
+    /// Unlike the other mutations this is **not** rate-limited (§S10). The limit
+    /// spaces out process spawns and teardowns; this writes a bool and a small
+    /// file. Sharing the limit would have an ordinary "start the server, then tick
+    /// auto-start" reject the second click.
+    ///
+    /// Restricted to the MCP service: it is the only one with a layout field, and
+    /// the only one the supervisor allows manual control over — clearing core's
+    /// autostart would produce a container that boots into nothing.
+    fn handle_set_service_autostart(
+        &mut self,
+        transport: Transport,
+        service: &str,
+        autostart: bool,
+    ) -> Result<OkResult, ControlError> {
+        self.audit("set-service-autostart", transport, "begin");
+        if service != MCP_SERVICE {
+            self.audit("set-service-autostart", transport, "invalid-service");
+            return Err(ControlError::InvalidService(format!(
+                "autostart is not settable for service '{service}'",
+            )));
+        }
+
+        self.supervisor
+            .set_autostart(service, autostart)
+            .map_err(Self::map_service_operation_error)?;
+        self.layout.mcp_autostart = autostart;
+        self.publish();
+
+        if let Some(store) = self.autostart_store.as_mut() {
+            if let Err(err) = store.persist(service, autostart) {
+                error!(service, %err, "failed to persist the autostart preference");
+                self.audit("set-service-autostart", transport, "not-persisted");
+                return Err(ControlError::AutostartNotPersisted(err));
+            }
+        }
+
+        self.audit("set-service-autostart", transport, "set");
         Ok(OkResult::OK)
     }
 
@@ -1234,6 +1343,198 @@ mod tests {
             .await;
         assert_eq!(spawner.spawns.load(Ordering::SeqCst), 3);
         assert!(controller.handle().health(Transport::Stdio).unwrap().ok);
+    }
+
+    /// An [`AutostartStore`] that records what it was asked to write, and can be
+    /// made to fail so the "applied but not saved" path is observable.
+    #[derive(Clone, Default)]
+    struct RecordingStore {
+        writes: Arc<Mutex<Vec<(String, bool)>>>,
+        fail: Arc<AtomicBool>,
+    }
+
+    impl AutostartStore for RecordingStore {
+        fn persist(&mut self, service: &str, autostart: bool) -> Result<(), String> {
+            if self.fail.load(Ordering::SeqCst) {
+                return Err("disk is read-only".to_string());
+            }
+            self.writes
+                .lock()
+                .unwrap()
+                .push((service.to_string(), autostart));
+            Ok(())
+        }
+    }
+
+    fn mcp_autostart_of(status: &StatusResult) -> bool {
+        status
+            .services
+            .iter()
+            .find(|service| service.name == "mcp")
+            .expect("mcp is in the graph")
+            .autostart
+    }
+
+    #[tokio::test]
+    async fn setting_autostart_records_the_preference_without_starting_anything() {
+        let spawner = TestSpawner::new();
+        let mut sup = Supervisor::new(spawner.clone(), specs_with_optional_mcp()).unwrap();
+        sup.start_all().await.unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(|_| specs_with_optional_mcp()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let store = RecordingStore::default();
+        controller.set_autostart_store(Box::new(store.clone()));
+        let handle = controller.handle();
+        assert!(!mcp_autostart_of(&handle.status(Transport::Stdio).unwrap()));
+        // core + colibri; mcp is optional and not autostarted.
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 2);
+
+        let calls = tokio::spawn({
+            let handle = handle.clone();
+            async move {
+                handle
+                    .set_service_autostart(Transport::HttpControl, "mcp".to_string(), true)
+                    .await
+                    .unwrap();
+                // Twice in a row: a preference write is not rate-limited, so a
+                // user flipping the switch back is not refused.
+                handle
+                    .set_service_autostart(Transport::HttpControl, "mcp".to_string(), false)
+                    .await
+                    .unwrap();
+                handle
+                    .set_service_autostart(Transport::HttpControl, "mcp".to_string(), true)
+                    .await
+                    .unwrap();
+            }
+        });
+
+        controller
+            .run(async move {
+                calls.await.unwrap();
+            })
+            .await;
+
+        // Read back through `status`, the same path the settings page uses.
+        assert!(mcp_autostart_of(
+            &controller.handle().status(Transport::Stdio).unwrap()
+        ));
+        // The layout carries it too, so the next `restart` rebuilds specs with it.
+        assert!(controller.layout.mcp_autostart);
+        // And nothing was spawned: this is a preference, not a start.
+        assert_eq!(spawner.spawns.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            *store.writes.lock().unwrap(),
+            vec![
+                ("mcp".to_string(), true),
+                ("mcp".to_string(), false),
+                ("mcp".to_string(), true),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn a_preference_that_cannot_be_saved_is_reported_as_a_failure() {
+        // Answering OK and then forgetting on the next boot is the one outcome
+        // the user cannot detect, so a failed write is surfaced.
+        let mut sup = Supervisor::new(TestSpawner::new(), specs_with_optional_mcp()).unwrap();
+        sup.start_all().await.unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(|_| specs_with_optional_mcp()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let store = RecordingStore::default();
+        store.fail.store(true, Ordering::SeqCst);
+        controller.set_autostart_store(Box::new(store.clone()));
+        let handle = controller.handle();
+
+        let calls = tokio::spawn({
+            let handle = handle.clone();
+            async move {
+                let error = handle
+                    .set_service_autostart(Transport::HttpControl, "mcp".to_string(), true)
+                    .await
+                    .unwrap_err();
+                assert!(matches!(error, ControlError::AutostartNotPersisted(_)));
+            }
+        });
+
+        controller
+            .run(async move {
+                calls.await.unwrap();
+            })
+            .await;
+        assert!(store.writes.lock().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn autostart_is_refused_for_the_services_that_are_the_tree() {
+        // Clearing core's autostart would produce a container that boots into
+        // nothing, with no UI left to undo it.
+        let mut sup = Supervisor::new(TestSpawner::new(), specs_with_optional_mcp()).unwrap();
+        sup.start_all().await.unwrap();
+        let mut controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(|_| specs_with_optional_mcp()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let handle = controller.handle();
+
+        let calls = tokio::spawn({
+            let handle = handle.clone();
+            async move {
+                for service in ["core", "colibri", "nonexistent"] {
+                    let error = handle
+                        .set_service_autostart(Transport::HttpControl, service.to_string(), false)
+                        .await
+                        .unwrap_err();
+                    assert!(
+                        matches!(error, ControlError::InvalidService(_)),
+                        "{service} should be refused, got {error:?}",
+                    );
+                }
+            }
+        });
+
+        controller
+            .run(async move {
+                calls.await.unwrap();
+            })
+            .await;
+        let status = controller.handle().status(Transport::Stdio).unwrap();
+        assert!(status
+            .services
+            .iter()
+            .filter(|service| service.name != "mcp")
+            .all(|service| service.autostart));
+    }
+
+    #[tokio::test]
+    async fn autostart_is_denied_on_the_public_surface() {
+        let sup = Supervisor::new(TestSpawner::new(), specs_with_optional_mcp()).unwrap();
+        let controller = Controller::new(
+            sup,
+            layout(),
+            Box::new(|_| specs_with_optional_mcp()),
+            Duration::from_millis(50),
+            Some(1_700_000_000),
+        );
+        let error = controller
+            .handle()
+            .set_service_autostart(Transport::PublicHealth, "mcp".to_string(), true)
+            .await
+            .unwrap_err();
+        assert!(matches!(error, ControlError::Unauthorized { .. }));
     }
 
     #[tokio::test]
