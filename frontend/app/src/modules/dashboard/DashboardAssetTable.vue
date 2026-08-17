@@ -195,7 +195,7 @@ watch(modelSearch, () => setPage(1));
       <template #expanded-item="{ row }">
         <AssetRowDetails
           :row="row"
-          :is-liability="tableType === DashboardTableType.LIABILITIES"
+          :breakdown="{ isLiability: tableType === DashboardTableType.LIABILITIES }"
           :loading="loading"
         />
       </template>

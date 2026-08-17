@@ -222,8 +222,7 @@ function goToEdit(): void {
 
       <AssetBalances
         :balances="collectionBalance"
-        all-breakdown
-        hide-breakdown
+        :breakdown="{ all: true, hide: true }"
       />
     </RuiCard>
   </TablePageLayout>

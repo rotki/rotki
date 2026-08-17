@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
 import { some } from 'es-toolkit/compat';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -26,12 +27,9 @@ const search = defineModel<string>('search', { default: '', required: false });
 const selected = defineModel<string[] | undefined>('selected', { required: false });
 
 const {
-  allBreakdown = false,
   balances,
-  details,
-  hideBreakdown = false,
+  breakdown,
   hideTotal = false,
-  isLiability = false,
   loading = false,
   selectionMode = false,
   showPerProtocol = false,
@@ -39,16 +37,10 @@ const {
   visibleColumns = [],
 } = defineProps<{
   balances: AssetBalanceWithPrice[];
-  details?: {
-    groupId?: string;
-    chains?: string[];
-  };
+  breakdown?: AssetBreakdownOptions;
   loading?: boolean;
   hideTotal?: boolean;
-  hideBreakdown?: boolean;
   stickyHeader?: boolean;
-  isLiability?: boolean;
-  allBreakdown?: boolean;
   visibleColumns?: TableColumn[];
   showPerProtocol?: boolean;
   selectionMode?: boolean;
@@ -73,7 +65,7 @@ const isExpanded = (asset: string) => some(get(expanded), { asset });
 
 function shouldShowRowExpander(row: AssetBalanceWithPrice): boolean {
   const hasBreakdown = Boolean(row.breakdown);
-  const shouldShowNativeBreakdown = (!hideBreakdown && isEvmNativeToken(row.asset)) ?? false;
+  const shouldShowNativeBreakdown = (!breakdown?.hide && isEvmNativeToken(row.asset)) ?? false;
   const hasPerProtocolDetails = (row.perProtocol && row.perProtocol.length > 1) ?? false;
   return hasBreakdown || shouldShowNativeBreakdown || hasPerProtocolDetails;
 }
@@ -259,11 +251,8 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
     <template #expanded-item="{ row }">
       <AssetRowDetails
         :row="row"
-        :details="details"
         :loading="loading"
-        :is-liability="isLiability"
-        :all-breakdown="allBreakdown"
-        :hide-breakdown="hideBreakdown"
+        :breakdown="breakdown"
       />
     </template>
     <template #item.expand="{ row }">

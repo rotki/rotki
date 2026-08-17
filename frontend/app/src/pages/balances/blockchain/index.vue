@@ -108,8 +108,8 @@ onMounted(() => {
           :loading="isInitialLoading"
           :balances="aggregatedBalances"
           :search="search"
-          :details="{
-            chains: chainsFilter,
+          :breakdown="{
+            scope: { chains: chainsFilter },
           }"
           :visible-columns="dashboardTablesVisibleColumns[tableType]"
           show-per-protocol

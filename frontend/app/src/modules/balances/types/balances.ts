@@ -37,3 +37,23 @@ export interface EthDetectedTokensInfo {
   total: number;
   timestamp: number | null;
 }
+
+/** Which accounts an asset's balance is broken down over. */
+interface AssetBreakdownScope {
+  groupId?: string;
+  chains?: string[];
+}
+
+/**
+ * How an asset row expands into its breakdown. These four travel together across the
+ * AssetBalances -> AssetRowDetails -> AssetBalances boundary, so they are one prop rather than four
+ * forwarded individually. Lives here rather than in either SFC because those two import each other.
+ */
+export interface AssetBreakdownOptions {
+  scope?: AssetBreakdownScope;
+  isLiability?: boolean;
+  /** Include non-blockchain locations in an EVM native token's breakdown. */
+  all?: boolean;
+  /** Suppress the native-token breakdown entirely. */
+  hide?: boolean;
+}

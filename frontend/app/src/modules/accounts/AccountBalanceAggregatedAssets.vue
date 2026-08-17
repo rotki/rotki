@@ -22,9 +22,8 @@ const balances = useBlockchainBalances(() => chains, () => groupId);
     :balances="balances"
     show-per-protocol
     :selection-mode="selectionMode"
-    :details="{
-      groupId,
-      chains,
+    :breakdown="{
+      scope: { chains, groupId },
     }"
   />
 </template>
