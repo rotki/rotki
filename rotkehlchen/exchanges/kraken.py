@@ -904,10 +904,15 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 extra_dict={},
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
-                f'{timestamp_to_date(end_ts)}. {e!s}',
-            )
+            if (
+                    "('Connection aborted.', "
+                    "ConnectionResetError(104, 'Connection reset by peer'))"
+                    not in str(e)
+            ):
+                self.msg_aggregator.add_error(
+                    f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
+                    f'{timestamp_to_date(end_ts)}. {e!s}',
+                )
             return [], start_ts
 
         new_events, _ = self.process_kraken_raw_events(

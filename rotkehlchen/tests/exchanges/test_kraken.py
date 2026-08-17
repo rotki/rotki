@@ -140,6 +140,25 @@ def test_partial_history_query_saves_events_without_advancing_range(kraken: Krak
         ).fetchone()[0] == 0
 
 
+def test_kraken_connection_reset_does_not_notify_user(kraken: Kraken) -> None:
+    with patch.object(
+        kraken,
+        'query_until_finished',
+        side_effect=RemoteError(
+            "Kraken API request failed due to ('Connection aborted.', "
+            "ConnectionResetError(104, 'Connection reset by peer'))",
+        ),
+    ):
+        events, queried_until = kraken.query_online_history_events(
+            start_ts=Timestamp(1),
+            end_ts=Timestamp(2),
+        )
+
+    assert events == []
+    assert queried_until == Timestamp(1)
+    assert kraken.msg_aggregator.consume_errors() == []
+
+
 @pytest.mark.asset_test
 def test_coverage_of_kraken_balances():
     response = requests.get('https://api.kraken.com/0/public/Assets')
