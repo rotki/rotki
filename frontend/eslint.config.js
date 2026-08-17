@@ -167,9 +167,11 @@ export default rotki({
   // - HistoryEventNote (9): every prop it takes is derived from `event` plus useHistoryEventItem, so
   //   it could take the event instead. Gated on whether all six callers actually hold a
   //   HistoryEventEntry: ProfitLossEvents and TradeHistoryItem look like they do not.
-  // - AssetDetailsBase (12), AssetBalances (11): display flags that are genuinely independent, so no
-  //   honest grouping exists. These need real decomposition. Note AssetDetailsBase is the inner
-  //   component, free to change; its AssetDetails wrapper is premium-registered and frozen.
+  // - AssetBalances (11): display flags that are genuinely independent, so no honest grouping
+  //   exists. This one needs real decomposition.
+  //   AssetDetailsBase left this list at 12 -> 4 props: `asset` plus display/actions/resolution,
+  //   grouped because those three ARE the boundary AssetDetails forwards across, not to win a
+  //   number. AssetDetails is the same three groups plus a resolution `options`.
   // - HistoryEventsDetailItem (9): already reduced from 10, and the rest are independent
   //   (groupLocationLabel and matchedMovement are unrelated in both this component and
   //   HistoryEventType; `index` carries swap sub-event ordering). Fold into the facade work below.
@@ -178,7 +180,6 @@ export default rotki({
   files: [
     '**/src/modules/settings/api-keys/ServiceKeyCard.vue',
     '**/src/modules/history/events/HistoryEventNote.vue',
-    '**/src/modules/assets/AssetDetailsBase.vue',
     '**/src/modules/balances/AssetBalances.vue',
     '**/src/modules/history/events/components/HistoryEventsDetailItem.vue',
     '**/src/modules/history/events/components/HistoryEventsVirtualTable.vue',
