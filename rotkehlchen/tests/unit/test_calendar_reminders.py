@@ -18,6 +18,7 @@ from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
+from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -414,6 +415,7 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
         (base_accounts, base_inquirer, '0xe451ca095dd9d48f6558a226fc6cc9b28d19f39080545db63b8ba9410fe3df3e', '2024-10-18 07:24:00 GMT'),  # noqa: E501
     ]
     expected_entries = 0
+    bridge_links = []
     for idx, (accounts, inquirer, tx_hash, time_to_freeze) in enumerate(parameters):
         with freeze_time(time_to_freeze):
             events, _ = get_decoded_events_of_transaction(
@@ -436,6 +438,19 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
 
             calendar_entry = new_calendar_entries['entries'][-1]
             bridge_event = events[-1]
+            with database.conn.read_ctx() as cursor:
+                event_rows = cursor.execute(
+                    'SELECT identifier, sequence_index FROM history_events '
+                    'WHERE group_identifier=? ORDER BY sequence_index',
+                    (bridge_event.group_identifier,),
+                ).fetchall()
+            bridge_event_id = next(
+                identifier for identifier, sequence_index in event_rows
+                if sequence_index == bridge_event.sequence_index
+            )
+            bridge_links.append((bridge_event_id, next(
+                identifier for identifier, _ in event_rows if identifier != bridge_event_id
+            )))
             asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
             assert calendar_entry == CalendarEntry(
                 identifier=idx + 1,
@@ -454,6 +469,26 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
             assert len(reminders) == 1
             assert reminders[0].event_id == calendar_entry.identifier
             assert reminders[0].secs_before == 0
+
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
+            'VALUES(?, ?, ?)',
+            [
+                (*event_ids, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db())
+                for event_ids in bridge_links
+            ],
+        )
+
+    CalendarReminderCreator(
+        database=database,
+        current_ts=ts_now(),
+    ).maybe_create_l2_bridging_reminder()
+    assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_total'] == 3
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM calendar_reminders WHERE acknowledged=1',
+        ).fetchone()[0] == 3
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

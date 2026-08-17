@@ -29,6 +29,7 @@ from rotkehlchen.db.calendar import (
     DBCalendar,
     ReminderEntry,
 )
+from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -59,6 +60,11 @@ AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
 YEARN_VESTING_CALENDAR_COLOR: Final = deserialize_hex_color_code('0657f9')
 VESTING_SCHEDULE_METHODS: Final = ('recipient', 'start_time', 'end_time', 'cliff_length', 'disabled_at')  # noqa: E501
+L2_BRIDGE_REMINDER_LOCATIONS: Final = {
+    Location.BASE: CPT_BASE,
+    Location.OPTIMISM: CPT_OPTIMISM,
+    Location.ARBITRUM_ONE: CPT_ARBITRUM_ONE,
+}
 
 if TYPE_CHECKING:
     from eth_typing import ChecksumAddress
@@ -123,6 +129,54 @@ def delete_past_calendar_entries(database: DBHandler) -> None:
         write_cursor.execute(  # remember last time this task ran
             'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
             (DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS.value, str(now)),
+        )
+
+
+def _l2_bridge_calendar_entry_name(bridge_event: EvmEvent, asset_symbol: str) -> str:
+    """Return the stable name used to identify an automatically generated bridge reminder."""
+    return f'Claim {bridge_event.amount} {asset_symbol} bridge deposit on Ethereum'
+
+
+def acknowledge_matched_l2_bridge_calendar_entry(
+        database: DBHandler,
+        bridge_event: EvmEvent,
+) -> None:
+    """Acknowledge the generated claim reminder once its source bridge deposit is matched."""
+    if (
+        bridge_event.event_type != HistoryEventType.DEPOSIT or
+        bridge_event.event_subtype != HistoryEventSubType.BRIDGE or
+        bridge_event.location not in L2_BRIDGE_REMINDER_LOCATIONS or
+        bridge_event.counterparty != L2_BRIDGE_REMINDER_LOCATIONS[bridge_event.location] or
+        bridge_event.location_label is None
+    ):
+        return
+
+    try:
+        asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
+        address = string_to_evm_address(bridge_event.location_label)
+    except UnknownAsset:
+        log.exception(
+            'Unable to acknowledge the calendar reminder for matched bridge event %s',
+            bridge_event.group_identifier,
+        )
+        return
+
+    blockchain = ChainID.deserialize(bridge_event.location.to_chain_id()).to_blockchain()
+    calendar_db = DBCalendar(database=database)
+    entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make(
+        and_op=True,
+        name=_l2_bridge_calendar_entry_name(bridge_event=bridge_event, asset_symbol=asset_symbol),
+        addresses=[OptionalBlockchainAddress(blockchain=blockchain, address=address)],
+        blockchain=blockchain,
+        counterparty=bridge_event.counterparty,
+    ))['entries']
+    if len(entries) == 0:
+        return
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE calendar_reminders SET acknowledged=1 WHERE event_id=?',
+            (entries[0].identifier,),
         )
 
 
@@ -590,14 +644,9 @@ class CalendarReminderCreator(CustomizableDateMixin):
         Tracks deposits on Base, Optimism, and Arbitrum networks.
         """
         bridge_events: list[EvmEvent] = []
-        locations_to_counterparties = (
-            (Location.BASE, CPT_BASE),
-            (Location.OPTIMISM, CPT_OPTIMISM),
-            (Location.ARBITRUM_ONE, CPT_ARBITRUM_ONE),
-        )
         db_history_events = DBHistoryEvents(database=self.database)
         with self.database.conn.read_ctx() as cursor:
-            for location, counterparty in locations_to_counterparties:
+            for location, counterparty in L2_BRIDGE_REMINDER_LOCATIONS.items():
                 bridge_events.extend(db_history_events.get_history_events_internal(
                     cursor=cursor,
                     filter_query=EvmEventFilterQuery.make(
@@ -608,17 +657,31 @@ class CalendarReminderCreator(CustomizableDateMixin):
                         event_subtypes=[HistoryEventSubType.BRIDGE],
                     ),
                 ))
+            matched_bridge_deposit_ids = {row[0] for row in cursor.execute(
+                'SELECT left_event_id FROM history_event_links WHERE link_type=?',
+                (HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),),
+            )}
 
         now = ts_now_in_ms()
         bridge_calendar_entries: list[int] = []
         for bridge_event in bridge_events:
+            if bridge_event.identifier in matched_bridge_deposit_ids:
+                acknowledge_matched_l2_bridge_calendar_entry(
+                    database=self.database,
+                    bridge_event=bridge_event,
+                )
+                continue
+
             if now - bridge_event.timestamp > WEEK_IN_SECONDS * 1000:
                 continue
 
             try:
                 asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
                 if (entry_id := self.create_or_update_calendar_entry_from_event(
-                        name=f'Claim {bridge_event.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
+                        name=_l2_bridge_calendar_entry_name(
+                            bridge_event=bridge_event,
+                            asset_symbol=asset_symbol,
+                        ),
                         event=bridge_event,
                         color=BRIDGE_CALENDAR_COLOR,
                         counterparty=bridge_event.counterparty,  # type: ignore[arg-type]  # counterparty is always present

@@ -68,11 +68,12 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     HistoryEvent,
 )
-from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY
+from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY, EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tasks.calendar import acknowledge_matched_l2_bridge_calendar_entry
 from rotkehlchen.tasks.events import (
     TIMESTAMP_TOLERANCE_MS,
     _match_amount,
@@ -532,6 +533,12 @@ def update_bridge_matched_event(
                 withdrawal.identifier,
                 HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
             ),
+        )
+
+    if isinstance(deposit, EvmEvent):
+        acknowledge_matched_l2_bridge_calendar_entry(
+            database=events_db.db,
+            bridge_event=deposit,
         )
 
 
