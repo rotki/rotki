@@ -83,8 +83,10 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, GearboxPoolData]:
-        assert isinstance(self.cache_data[0], dict), 'GearboxCommonDecoder cache_data[0] is not a dict'  # noqa: E501
-        pools = self.cache_data[0]
+        if (pools := self.cached_container(0)) is None:
+            return {}  # no pools known until the cache is loaded
+
+        assert isinstance(pools, dict), 'GearboxCommonDecoder cache_data[0] is not a dict'
         for pool_data in pools.values():
             if pool_data.farming_pool_token:
                 self.farming_pool_tokens.add(pool_data.farming_pool_token)

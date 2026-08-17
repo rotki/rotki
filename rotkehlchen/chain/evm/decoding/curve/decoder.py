@@ -299,8 +299,11 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, list[ChecksumEvmAddress]]:
-        assert isinstance(self.cache_data[0], dict), 'CurveDecoder cache_data[0] is not a dict'
-        return self.cache_data[0]
+        if (pools := self.cached_container(0)) is None:
+            return {}  # no pools known until the cache is loaded
+
+        assert isinstance(pools, dict), 'CurveDecoder cache_data[0] is not a dict'
+        return pools
 
     def _decode_curve_remove_events(
             self,

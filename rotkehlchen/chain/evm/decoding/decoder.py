@@ -1381,7 +1381,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 context=context,
             )
             if err:
-                return FAILED_ENRICHMENT_OUTPUT
+                continue  # a broken enricher must not hide the ones after it, same as try_all_rules  # noqa: E501
 
             if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
                 return transfer_enrich

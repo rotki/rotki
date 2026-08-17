@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -7,8 +7,17 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION
+from rotkehlchen.chain.evm.decoding.constants import (
+    CPT_ACCOUNT_DELEGATION,
+    ERC20_OR_ERC721_TRANSFER,
+)
+from rotkehlchen.chain.evm.decoding.interfaces import ReloadableCacheDecoderMixin
+from rotkehlchen.chain.evm.decoding.structures import (
+    FAILED_ENRICHMENT_OUTPUT,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_SAI
@@ -54,6 +63,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+    from rotkehlchen.chain.evm.decoding.structures import EnricherContext
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -753,3 +763,98 @@ def test_write_events_relocates_sequence_index_collision(
         (3, 'first at 3'),
         (4, 'second at 3'),  # relocated past the max used index instead of being dropped
     ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x4bBa290826C253BD854121346c370a9886d1bC26',
+    '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC',
+]])
+def test_decoding_before_protocol_caches_are_loaded(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """Decoding a plain token transfer must work before reload_data() has populated the
+    protocol caches.
+
+    The enricher rules run for every ERC20/721 transfer and are not gated on the
+    address mappings, so some of them read a protocol cache container (e.g. balancer v3's
+    gauges) while `cache_data` is still the empty tuple. That used to raise IndexError,
+    which decode_safely turned into a user facing error per transfer log.
+    """
+    from_address, to_address = ethereum_accounts
+    transaction = EvmTransaction(
+        tx_hash=(tx_hash := make_evm_tx_hash()),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=18000000,
+        from_address=from_address,
+        to_address=(usdt_address := string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7')),  # noqa: E501
+        value=0,
+        gas=45000,
+        gas_price=10000000000,
+        gas_used=45000,
+        input_data=b'',
+        nonce=0,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(write_cursor, [transaction], relevant_address=None)
+
+    receipt = EvmTxReceipt(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=0,
+        logs=[EvmTxReceiptLog(
+            log_index=0,
+            data=(1000000).to_bytes(32, 'big'),
+            address=usdt_address,
+            topics=[
+                ERC20_OR_ERC721_TRANSFER,
+                bytes(12) + bytes.fromhex(from_address[2:]),
+                bytes(12) + bytes.fromhex(to_address[2:]),
+            ],
+        )],
+    )
+    for decoder in ethereum_transaction_decoder.decoders.values():
+        assert not isinstance(decoder, ReloadableCacheDecoderMixin) or decoder.cache_data == (), \
+            'the caches must still be unloaded for this test to exercise the regression'
+
+    events, _, _ = ethereum_transaction_decoder._decode_transaction(
+        transaction=transaction,
+        tx_receipt=receipt,
+    )
+    assert [(x.event_type, x.event_subtype) for x in events] == [
+        (HistoryEventType.SPEND, HistoryEventSubType.FEE),
+        (HistoryEventType.TRANSFER, HistoryEventSubType.NONE),
+    ]
+    assert database.msg_aggregator.consume_errors() == []
+
+
+def test_one_failing_enricher_does_not_hide_the_rest(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """A raising enricher rule must not stop the enrichers after it from being tried,
+    the same way try_all_rules keeps going over the remaining event rules."""
+    reached = []
+
+    def raising_enricher(context: EnricherContext) -> TransferEnrichmentOutput:
+        raise IndexError('boom')
+
+    def recording_enricher(context: EnricherContext) -> TransferEnrichmentOutput:
+        reached.append(context)
+        return FAILED_ENRICHMENT_OUTPUT
+
+    # EvmDecodingRules is frozen, so swap the rules in place and put them back after
+    enricher_rules = ethereum_transaction_decoder.rules.token_enricher_rules
+    original_rules = enricher_rules.copy()
+    enricher_rules[:] = [raising_enricher, recording_enricher]
+    try:
+        assert ethereum_transaction_decoder._enrich_protocol_transfers(
+            context=Mock(transaction=Mock(tx_hash=make_evm_tx_hash())),
+        ) == FAILED_ENRICHMENT_OUTPUT
+    finally:
+        enricher_rules[:] = original_rules
+
+    assert len(reached) == 1

@@ -450,7 +450,15 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
         self.query_data_method = query_data_method
         self.read_data_from_cache_method = read_data_from_cache_method
         self.chain_id = chain_id
+        # Stays the empty tuple until the first reload_data(). Anything reading a container
+        # out of it must go through cached_container() instead of indexing it directly: the
+        # enricher rules run for every token transfer and are not gated on reload_data()
+        # having populated the mapping, so they can be reached while this is still empty.
         self.cache_data: tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...] = ()
+
+    def cached_container(self, index: int) -> dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress] | None:  # noqa: E501
+        """Return the cache container at `index`, or None if the cache is not loaded yet."""
+        return self.cache_data[index] if index < len(self.cache_data) else None
 
     @abstractmethod
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
@@ -514,8 +522,11 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, ABC):
     def gauges(self) -> set[ChecksumEvmAddress]:
         """method to get gauges from `cache_data`.
         The structure is common in the decoders using this logic"""
-        assert isinstance(self.cache_data[1], set), 'Decoder cache_data[1] is not a set'
-        return self.cache_data[1]
+        if (gauges := self.cached_container(1)) is None:
+            return set()  # no gauges known until the cache is loaded
+
+        assert isinstance(gauges, set), 'Decoder cache_data[1] is not a set'
+        return gauges
 
     @abstractmethod
     def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
