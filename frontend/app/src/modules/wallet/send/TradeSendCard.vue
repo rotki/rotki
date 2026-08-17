@@ -1,45 +1,37 @@
 <script setup lang="ts">
-import type { EnhancedProviderDetail } from '@/modules/wallet/providers/provider-detection';
-import type { GasFeeEstimation, GetAssetBalancePayload } from '@/modules/wallet/types';
-import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress, Zero } from '@rotki/common';
-import { logger } from '@/modules/core/common/logging/logging';
+import { Blockchain } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getWalletErrorMessage, isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
-import { useProviderSelection } from '@/modules/wallet/providers/use-provider-selection';
+import { WALLET_MODES } from '@/modules/wallet/constants';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
+import { isAmountExceeded, isTradeValid } from '@/modules/wallet/send/trade-send-utils';
 import TradeAmountInput from '@/modules/wallet/send/TradeAmountInput.vue';
 import TradeAssetSelector from '@/modules/wallet/send/TradeAssetSelector.vue';
 import TradeConnectedAddressBadge from '@/modules/wallet/send/TradeConnectedAddressBadge.vue';
 import TradeHistoryView from '@/modules/wallet/send/TradeHistoryView.vue';
 import TradeRecipientAddress from '@/modules/wallet/send/TradeRecipientAddress.vue';
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
+import { useTradeAssetBalance } from '@/modules/wallet/send/use-trade-asset-balance';
+import { useTradeGasEstimation } from '@/modules/wallet/send/use-trade-gas-estimation';
+import { useTradeRecipientWarning } from '@/modules/wallet/send/use-trade-recipient-warning';
+import { useTradeWalletActions } from '@/modules/wallet/send/use-trade-wallet-actions';
 import { TradableAssetKey, useTradableAsset } from '@/modules/wallet/use-tradable-asset';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import WalletConnectionButton from '@/modules/wallet/WalletConnectionButton.vue';
-import { useTradeApi } from './use-trade-api';
 
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 
 const amount = ref<string>('');
 const asset = ref<string>('');
 const assetChain = ref<string>(Blockchain.ETH);
 const toAddress = ref<string>('');
 
-const max = ref<string>('0');
-const estimatedGasFee = ref<string>('0');
-const assetBalance = ref<BigNumber>();
-
-const estimatingGas = ref<boolean>(false);
-const showNeverInteractedWarning = ref<boolean>(false);
-const errorMessage = ref<string>('');
-const currentGasEstimationController = ref<AbortController>();
-
 const tradeAmountInputRef = useTemplateRef<InstanceType<typeof TradeAmountInput>>('tradeAmountInputRef');
 
 const { getChainFromChainId, getChainIdFromChain } = useWalletHelper();
-const { getEvmChainName, getNativeAsset } = useSupportedChains();
+const { getNativeAsset } = useSupportedChains();
 
 const walletStore = useWalletStore();
 const {
@@ -53,312 +45,121 @@ const {
   waitingForWalletConfirmation,
   walletMode,
 } = storeToRefs(walletStore);
-const { connect: connectWallet, disconnect: disconnectWallet, getGasFeeForChain, sendTransaction, switchNetwork } = walletStore;
+const { switchNetwork } = walletStore;
 const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connected, connectedAddress);
 
 const tradableAsset = useTradableAsset(connectedAddress);
 provide(TradableAssetKey, tradableAsset);
 const { getAssetDetail } = tradableAsset;
-const { getAssetBalance, getIsInteractedBefore } = useTradeApi();
-const router = useRouter();
 
-// Provider selection for wallet connection
-const unifiedProviders = useUnifiedProviders();
-const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = unifiedProviders;
+const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = useUnifiedProviders();
 
 const isConnecting = logicOr(preparing, detectingProviders);
 
-const { handleProviderSelection: handleProviderSelectionBase } = useProviderSelection();
+const assetDetail = getAssetDetail(asset, assetChain);
+const isAssetResolved = computed<boolean>(() => !!get(assetDetail));
 
-async function handleProviderSelection(provider: EnhancedProviderDetail): Promise<void> {
-  await handleProviderSelectionBase(provider, (message) => {
-    set(errorMessage, message);
-  });
-}
-
-const isNativeAsset = computed(() => {
+const isNativeAsset = computed<boolean>(() => {
   const chain = get(assetChain);
   const assetVal = get(asset);
-  if (!chain || !assetVal) {
+  if (!chain || !assetVal)
     return false;
-  }
 
-  const native = getNativeAsset(chain);
-  return assetVal === native;
+  return assetVal === getNativeAsset(chain);
 });
 
-const assetDetail = getAssetDetail(asset, assetChain);
+const {
+  clearError,
+  connect,
+  disconnect,
+  errorMessage,
+  selectProvider,
+  send: sendTransaction,
+  toggleConnection,
+} = useTradeWalletActions();
 
-const isWalletConnected = computed(() => get(connected) && !!get(connectedAddress));
+const { showNeverInteractedWarning } = useTradeRecipientWarning({
+  fromAddress: connectedAddress,
+  toAddress,
+});
 
-const wrongNetwork = computed(() => {
+const { estimatedGasFee, estimatingGas, gasEstimable } = useTradeGasEstimation({
+  asset,
+  chain: assetChain,
+  isAssetResolved,
+  isNativeAsset,
+});
+
+const { assetBalance, max, refreshAssetBalance, resetMax } = useTradeAssetBalance({
+  address: connectedAddress,
+  amount,
+  asset,
+  chain: assetChain,
+  estimatedGasFee,
+  gasEstimable,
+});
+
+const isWalletConnected = computed<boolean>(() => get(connected) && !!get(connectedAddress));
+
+const wrongNetwork = computed<boolean>(() => {
   const chainId = get(connectedChainId);
-  if (!get(connected) || !chainId) {
+  if (!get(connected) || !chainId)
     return false;
-  }
-  const chainIdOfConnectedNetwork = getChainFromChainId(chainId);
-  return get(assetChain) !== chainIdOfConnectedNetwork;
+
+  return get(assetChain) !== getChainFromChainId(chainId);
 });
 
-const amountExceeded = computed(() => {
-  const amountToBigNumber = bigNumberify(get(amount), Zero);
-  const maxToBigNumber = bigNumberify(get(max), Zero);
+const amountExceeded = computed<boolean>(() => isAmountExceeded(get(amount), get(max)));
 
-  return amountToBigNumber.gt(maxToBigNumber);
-});
+const valid = computed<boolean>(() => isTradeValid(get(amount), get(toAddress), get(max)));
 
-const valid = computed<boolean>(() => {
-  const amountToBigNumber = bigNumberify(get(amount), Zero);
-  const to = get(toAddress);
-
-  const amountValid = amountToBigNumber.gt(0);
-  const toAddressValid = !!to && isValidEthAddress(to);
-
-  return amountValid && toAddressValid && !get(amountExceeded);
-});
-
-function resetMax() {
-  set(max, '0');
-}
-
-function resetInput() {
+function resetInput(): void {
   set(toAddress, '');
   set(amount, '');
   resetMax();
 }
 
-function switchToDesireNetwork() {
-  const chainId = getChainIdFromChain(get(assetChain));
-  switchNetwork(BigInt(chainId));
+function switchToDesireNetwork(): void {
+  switchNetwork(BigInt(getChainIdFromChain(get(assetChain))));
 }
 
-async function trackAddress() {
-  await router.push(
-    {
-      path: '/accounts/evm/accounts',
-      query: {
-        add: 'true',
-        addressToAdd: get(connectedAddress),
-      },
+async function trackAddress(): Promise<void> {
+  await router.push({
+    path: '/accounts/evm/accounts',
+    query: {
+      add: 'true',
+      addressToAdd: get(connectedAddress),
     },
-  );
+  });
 }
 
-function setMax() {
+function setMax(): void {
   get(tradeAmountInputRef)?.setMax();
 }
 
-function updateMaxAmountForAsset() {
-  const balance = get(assetBalance);
-  if (balance) {
-    set(max, balance.minus(get(estimatedGasFee)).toFixed());
-  }
-  else {
-    resetMax();
-  }
-}
-
-async function estimateGas(currentAsset: string): Promise<GasFeeEstimation | undefined> {
-  // Create a new controller for this request
-  set(currentGasEstimationController, new AbortController());
-  set(estimatingGas, true);
-
-  const abortEstimationPromise = new Promise<GasFeeEstimation>((_, reject) => {
-    get(currentGasEstimationController)?.signal.addEventListener('abort', () => {
-      reject(new Error('Gas estimation cancelled'));
-    });
-  });
-  const gasFeeEstimation = await Promise.race([
-    getGasFeeForChain(),
-    abortEstimationPromise,
-  ]);
-
-  if (currentAsset !== get(asset)) {
-    return undefined;
-  }
-  return gasFeeEstimation;
-}
-
-async function send() {
-  const isNative = get(isNativeAsset);
-  const assetVal = get(asset);
-
-  const params = {
+async function send(): Promise<void> {
+  const sent = await sendTransaction({
     amount: get(amount),
-    assetIdentifier: assetVal,
+    assetIdentifier: get(asset),
     chain: get(assetChain),
-    native: isNative,
+    native: get(isNativeAsset),
     to: get(toAddress),
-  };
+  });
 
-  try {
-    set(errorMessage, '');
-    await sendTransaction(params);
+  if (sent)
     resetInput();
-  }
-  catch (error: unknown) {
-    if (isUserRejectedError(error)) {
-      set(errorMessage, 'Request is rejected by user');
-    }
-    else {
-      set(errorMessage, getWalletErrorMessage(error));
-    }
-  }
-}
-
-async function refreshAssetBalance() {
-  set(amount, '');
-  set(assetBalance, undefined);
-
-  const chain = get(assetChain);
-  const assetVal = get(asset);
-  const address = get(connectedAddress);
-
-  if (!chain || !assetVal || !address) {
-    return;
-  }
-
-  const evmChain = getEvmChainName(chain);
-
-  if (!evmChain) {
-    return;
-  }
-
-  const payload: GetAssetBalancePayload = {
-    address,
-    asset: assetVal,
-    evmChain,
-  };
-
-  try {
-    const response = await getAssetBalance(payload);
-    if (get(asset) === payload.asset) {
-      set(assetBalance, response);
-    }
-  }
-  catch (error) {
-    logger.error(error);
-  }
-}
-
-async function onConnectClicked() {
-  if (get(connected)) {
-    await disconnect();
-  }
-  else {
-    await connect();
-  }
-}
-
-async function connect() {
-  try {
-    set(errorMessage, '');
-    await connectWallet();
-  }
-  catch (error: unknown) {
-    logger.error(error);
-    set(errorMessage, getWalletErrorMessage(error));
-  }
-}
-
-async function disconnect() {
-  try {
-    set(errorMessage, '');
-    await disconnectWallet();
-  }
-  catch (error: unknown) {
-    logger.error(error);
-    set(errorMessage, getWalletErrorMessage(error));
-  }
 }
 
 watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOptions]) => {
-  if (!chainOptions.includes(currentChain)) {
+  if (!chainOptions.includes(currentChain))
     set(assetChain, chainOptions[0]);
-  }
-});
-
-watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
-  if (!fromAddress || !toAddress || !isValidEthAddress(toAddress)) {
-    set(showNeverInteractedWarning, false);
-    return;
-  }
-
-  try {
-    const result = await getIsInteractedBefore(fromAddress, toAddress);
-    set(showNeverInteractedWarning, !result);
-  }
-  catch (error: unknown) {
-    set(showNeverInteractedWarning, false);
-    logger.error(error);
-  }
-});
-
-watch([assetChain, asset, connectedAddress], async () => {
-  await refreshAssetBalance();
-});
-
-// calculate the gas fee estimation
-/** Gas can only be estimated once a wallet is connected and a resolvable asset is selected. */
-function canEstimateGas(chain: string | undefined, currentAsset: string | undefined): boolean {
-  return get(connected) && !!chain && !!currentAsset && !!get(assetDetail);
-}
-
-watchImmediate([
-  asset,
-  assetChain,
-  connectedChainId,
-], async ([currentAsset, chain, connectedChainId]) => {
-  if (!canEstimateGas(chain, currentAsset)) {
-    resetMax();
-    return;
-  }
-
-  // Cancel previous request if it exists
-  const controller = get(currentGasEstimationController);
-  if (controller) {
-    controller.abort();
-  }
-
-  if (!get(isNativeAsset)) {
-    set(estimatedGasFee, '0');
-    return;
-  }
-
-  try {
-    if (getChainIdFromChain(chain) === connectedChainId) {
-      const gasFeeEstimation = await estimateGas(currentAsset);
-      if (gasFeeEstimation) {
-        const { gasFee } = gasFeeEstimation;
-        set(estimatedGasFee, gasFee);
-        return;
-      }
-    }
-
-    set(estimatedGasFee, '0');
-  }
-  catch (error: unknown) {
-    if (getWalletErrorMessage(error) !== 'Gas estimation cancelled') {
-      set(estimatedGasFee, '0');
-      logger.error(error);
-    }
-  }
-  finally {
-    set(currentGasEstimationController, undefined);
-    set(estimatingGas, false);
-  }
 });
 
 watchImmediate(connectedChainId, (curr, prev) => {
-  if (!isDefined(curr) || curr === prev) {
+  if (!isDefined(curr) || curr === prev)
     return;
-  }
 
   set(assetChain, getChainFromChainId(curr));
-});
-
-watch([estimatedGasFee, assetBalance], () => {
-  updateMaxAmountForAsset();
 });
 </script>
 
@@ -454,7 +255,7 @@ watch([estimatedGasFee, assetBalance], () => {
         full-width
         :connected="isWalletConnected"
         :loading="isConnecting || isDisconnecting"
-        @click="onConnectClicked()"
+        @click="toggleConnection()"
       />
       <RuiButton
         v-else-if="warnUntrackedAddress"
@@ -492,7 +293,7 @@ watch([estimatedGasFee, assetBalance], () => {
     type="error"
     class="whitespace-break-spaces mt-4 overflow-hidden [&>div:first-child]:overflow-hidden [&>div:first-child>div:last-child]:overflow-hidden"
     closeable
-    @close="errorMessage = ''"
+    @close="clearError()"
   >
     <div class="overflow-hidden">
       {{ errorMessage }}
@@ -515,6 +316,6 @@ watch([estimatedGasFee, assetBalance], () => {
     v-model="showProviderSelection"
     :providers="availableProviders"
     :loading="detectingProviders"
-    @select-provider="handleProviderSelection($event)"
+    @select-provider="selectProvider($event)"
   />
 </template>
