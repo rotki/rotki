@@ -39,7 +39,7 @@ const location = useLocationData(() => item);
         v-if="location.image"
         :src="location.image"
         :alt="location.name"
-        contain
+        fit="contain"
         :image-class="imageClass"
         :size="size"
         class="icon-bg"

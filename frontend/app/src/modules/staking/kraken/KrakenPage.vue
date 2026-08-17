@@ -110,7 +110,7 @@ onUnmounted(() => {
       <InternalLink :to="addKrakenApiKeysLink">
         <AppImage
           width="64px"
-          contain
+          fit="contain"
           :src="getPublicProtocolImagePath('kraken.svg')"
         />
       </InternalLink>

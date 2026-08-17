@@ -132,7 +132,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
           v-if="logo"
           :src="logo"
           size="1.5rem"
-          contain
+          fit="contain"
           class="icon-bg"
         />
         <RuiIcon

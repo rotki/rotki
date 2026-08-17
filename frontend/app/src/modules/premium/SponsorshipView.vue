@@ -27,7 +27,7 @@ const data: Sponsor = {
   <div class="flex flex-wrap gap-1 gap-x-4 w-[400px] max-w-full mx-auto">
     <div class="flex items-center justify-center w-full gap-2">
       <AppImage
-        cover
+        fit="cover"
         class="rounded-md overflow-hidden"
         :class="drawer ? 'size-20 min-w-20' : 'size-24 min-w-24'"
         :alt="data.name"

@@ -115,7 +115,7 @@ const fallbackData = computed(() => {
                 class="rounded overflow-hidden"
                 :src="renderedMedia"
                 :size="size"
-                contain
+                fit="contain"
               />
             </div>
           </template>

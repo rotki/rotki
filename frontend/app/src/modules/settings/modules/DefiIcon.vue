@@ -29,7 +29,7 @@ const { item, size = '1.5rem', vertical = false } = defineProps<{
       :src="item.icon"
       :size="size"
       :loading="!item.icon"
-      contain
+      fit="contain"
     />
     <div
       class="text-rui-text-secondary"

@@ -153,11 +153,8 @@ export default rotki({
   // - BigDialog (16): primaryAction/actionDisabled/actionTooltip/actionHidden are one action, and
   //   errorCount/autoScrollToError are one error concern. 4+2 props become 2, landing exactly on 12.
   //   Held up only by its 28 call sites.
-  // - AppImage (13): `contain` and `cover` are mutually exclusive object-fit modes and want to be one
-  //   `fit` prop. One prop to shed, but 31 files pass one of the two.
   files: [
     '**/src/modules/shell/components/dialogs/BigDialog.vue',
-    '**/src/modules/shell/components/AppImage.vue',
   ],
   rules: {
     'vue/max-props': ['warn', { maxProps: 12 }],

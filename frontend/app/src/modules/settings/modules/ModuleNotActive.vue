@@ -37,7 +37,7 @@ const { top } = useElementBounding(wrapper);
         >
           <AppImage
             width="82px"
-            contain
+            fit="contain"
             :src="icon(module)"
           />
         </div>

@@ -28,7 +28,7 @@ const imageFromIconName = computed<string | undefined>(() => {
       class="icon-bg"
       size="1.5rem"
       :src="iconUrl || imageFromIconName || image"
-      contain
+      fit="contain"
       :loading="loading"
     />
     <div>{{ name }}</div>

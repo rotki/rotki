@@ -19,7 +19,7 @@ const { protocolData } = useProtocolData(() => protocol);
     v-else-if="protocolData?.type === 'image'"
     :src="protocolData.image"
     size="16px"
-    contain
+    fit="contain"
     class="rounded-full overflow-hidden"
   />
   <RuiIcon

@@ -32,7 +32,7 @@ const { calculateFontSize } = useWrappedFormatters();
         :src="getPublicServiceImagePath('gnosispay.png')"
         width="24px"
         height="24px"
-        contain
+        fit="contain"
       />
     </template>
     <template #header>
