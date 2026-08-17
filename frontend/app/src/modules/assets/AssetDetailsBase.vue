@@ -44,7 +44,6 @@ const loading = isPending(() => asset.identifier);
 const dense = computed<boolean>(() => display?.dense ?? false);
 const iconOnly = computed<boolean>(() => display?.iconOnly ?? false);
 const size = computed<string>(() => display?.size ?? '30px');
-const showChain = computed<boolean>(() => display?.showChain ?? true);
 const optimizeForVirtualScroll = computed<boolean>(() => display?.optimizeForVirtualScroll ?? false);
 
 const hideMenu = computed<boolean>(() => actions?.hideMenu ?? false);
@@ -53,6 +52,12 @@ const hideActions = computed<boolean>(() => actions?.hideActions ?? false);
 const enableAssociation = computed<boolean>(() => resolution?.enableAssociation ?? true);
 const isCollectionParent = computed<boolean>(() => resolution?.isCollectionParent ?? false);
 const forceChain = computed<string | undefined>(() => resolution?.forceChain);
+
+// Derived rather than its own prop. It was one, and `AssetDetails` was the only caller ever to set
+// it, always to exactly this: a collection parent stands for several chains, so naming one is wrong.
+// The other four callers left it at its `true` default with `isCollectionParent` false, which is the
+// same value. As a prop the two could also contradict each other.
+const showChain = computed<boolean>(() => !get(isCollectionParent));
 
 const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => get(isCollectionParent));
 

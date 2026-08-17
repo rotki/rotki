@@ -162,8 +162,8 @@ watch(modelValue, (payload) => {
         <div class="flex items-center justify-between gap-3 rounded-md bg-rui-grey-50 dark:bg-rui-grey-900 px-3 py-2">
           <AssetDetails
             :asset="modelValue.asset"
-            size="28px"
-            hide-menu
+            :display="{ size: '28px' }"
+            :actions="{ hideMenu: true }"
           />
           <div class="flex flex-col items-end">
             <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">

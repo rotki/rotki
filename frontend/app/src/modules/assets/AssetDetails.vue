@@ -1,33 +1,19 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
-import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
+import type { AssetActions, AssetDisplay, AssetIdentifierResolution } from '@/modules/assets/types';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
 const {
+  actions,
   asset,
-  dense,
-  enableAssociation = true,
-  forceChain,
-  hideActions,
-  hideMenu,
-  iconOnly,
-  isCollectionParent = false,
-  optimizeForVirtualScroll,
-  resolutionOptions,
-  size,
+  display,
+  resolution,
 } = defineProps<{
   asset: string;
-  dense?: boolean;
-  enableAssociation?: boolean;
-  isCollectionParent?: boolean;
-  hideMenu?: boolean;
-  hideActions?: boolean;
-  iconOnly?: boolean;
-  size?: string;
-  forceChain?: string;
-  optimizeForVirtualScroll?: boolean;
-  resolutionOptions?: AssetResolutionOptions;
+  display?: AssetDisplay;
+  actions?: AssetActions;
+  resolution?: AssetIdentifierResolution;
 }>();
 
 const emit = defineEmits<{
@@ -37,44 +23,26 @@ const emit = defineEmits<{
 const { useAssetInfo } = useAssetInfoRetrieval();
 
 const assetDetails = useAssetInfo(() => asset, computed<AssetResolutionOptions>(() => ({
-  associate: enableAssociation,
-  collectionParent: isCollectionParent,
-  ...resolutionOptions,
+  associate: resolution?.enableAssociation ?? true,
+  collectionParent: resolution?.isCollectionParent ?? false,
+  ...resolution?.options,
 })));
 
 const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
   identifier: asset,
 }));
-
-// Computed rather than inline literals: an object built in the template is a new identity on every
-// parent render, which would re-render the child even inside a virtualized table.
-const baseDisplay = computed<AssetDisplay>(() => ({
-  dense,
-  iconOnly,
-  optimizeForVirtualScroll,
-  showChain: !isCollectionParent,
-  size,
-}));
-
-const baseActions = computed<AssetActions>(() => ({
-  hideActions,
-  hideMenu,
-}));
-
-const baseResolution = computed<AssetResolution>(() => ({
-  enableAssociation,
-  forceChain,
-  isCollectionParent,
-}));
 </script>
 
 <template>
+  <!-- All three bags are forwarded by reference. Rebuilding them here would give the defaults a
+       second home to drift in, and would hand the child a fresh object identity every render. Only
+       `resolution.options` stops here, consumed by `useAssetInfo` above. -->
   <AssetDetailsBase
     :asset="currentAsset"
-    :display="baseDisplay"
-    :actions="baseActions"
-    :resolution="baseResolution"
+    :display="display"
+    :actions="actions"
+    :resolution="resolution"
     @refresh="emit('refresh')"
   />
 </template>

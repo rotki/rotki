@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AssetDisplay } from '@/modules/assets/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type AssetInfoWithId, Zero } from '@rotki/common';
 import { useTemplateRef } from 'vue';
@@ -27,6 +28,14 @@ const { useAssetInfo } = useAssetInfoRetrieval();
 const assetDetails = useAssetInfo(() => event.asset, NO_COLLECTION_RESOLVE);
 
 const showBalance = computed<boolean>(() => event.eventType !== 'informational');
+
+// Computed, not a template literal: these rows are virtualized, so a fresh bag identity per render
+// would re-render every asset cell on every scroll tick.
+const assetDisplay = computed<AssetDisplay>(() => ({
+  iconOnly: true,
+  optimizeForVirtualScroll: true,
+  size: dense ? '24px' : '32px',
+}));
 const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
   identifier: event.asset,
@@ -71,12 +80,10 @@ watch(menuOpened, (menuOpened) => {
         @contextmenu="openMenuHandler($event)"
       >
         <AssetDetails
-          :size="dense ? '24px' : '32px'"
-          icon-only
-          hide-menu
-          optimize-for-virtual-scroll
           :asset="event.asset"
-          :resolution-options="NO_COLLECTION_RESOLVE"
+          :display="assetDisplay"
+          :actions="{ hideMenu: true }"
+          :resolution="{ options: NO_COLLECTION_RESOLVE }"
           @refresh="emit('refresh')"
         />
         <div

@@ -1,3 +1,4 @@
+import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { AssetCollection, AssetInfoWithId, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
 import { z } from 'zod';
@@ -19,7 +20,6 @@ export interface AssetDisplay {
   dense?: boolean;
   iconOnly?: boolean;
   size?: string;
-  showChain?: boolean;
   optimizeForVirtualScroll?: boolean;
 }
 
@@ -29,11 +29,19 @@ export interface AssetActions {
   hideActions?: boolean;
 }
 
-/** Which asset an identifier means. */
+/** Which asset this one is. */
 export interface AssetResolution {
   enableAssociation?: boolean;
   isCollectionParent?: boolean;
   forceChain?: string;
+}
+
+/**
+ * Resolving an identifier takes one thing more than resolving an already-resolved asset: the options
+ * handed to `useAssetInfo`.
+ */
+export interface AssetIdentifierResolution extends AssetResolution {
+  options?: AssetResolutionOptions;
 }
 
 export interface AssetDBVersion {

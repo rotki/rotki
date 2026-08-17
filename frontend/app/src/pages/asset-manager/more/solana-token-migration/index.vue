@@ -117,7 +117,7 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
         <template #item.identifier="{ row }">
           <AssetDetails
             :asset="row.identifier"
-            dense
+            :display="{ dense: true }"
           />
         </template>
         <template #item.actions="{ row }">

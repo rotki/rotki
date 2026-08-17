@@ -175,7 +175,7 @@ onMounted(async () => {
       >
         <template #item.tokenIdentifier="{ row }">
           <AssetDetails
-            hide-menu
+            :actions="{ hideMenu: true }"
             :asset="row.tokenIdentifier"
           />
         </template>
