@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
+import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
@@ -15,31 +16,15 @@ defineOptions({
 });
 
 const {
+  actions,
   asset,
-  changeable,
-  dense,
-  enableAssociation = true,
-  forceChain,
-  hideActions,
-  hideMenu = false,
-  iconOnly,
-  isCollectionParent = false,
-  optimizeForVirtualScroll,
-  showChain = true,
-  size = '30px',
+  display,
+  resolution,
 } = defineProps<{
   asset: NftAsset;
-  changeable?: boolean;
-  hideActions?: boolean;
-  dense?: boolean;
-  enableAssociation?: boolean;
-  showChain?: boolean;
-  isCollectionParent?: boolean;
-  hideMenu?: boolean;
-  iconOnly?: boolean;
-  size?: string;
-  forceChain?: string;
-  optimizeForVirtualScroll?: boolean;
+  display?: AssetDisplay;
+  actions?: AssetActions;
+  resolution?: AssetResolution;
 }>();
 
 const emit = defineEmits<{
@@ -51,8 +36,26 @@ const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuConten
 
 const { isPending } = useAssetInfoCache();
 const shouldShowAmount = useSetting('shouldShowAmount');
-const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => isCollectionParent);
 const loading = isPending(() => asset.identifier);
+
+// Every field is read with `??` rather than by spreading the bag over a defaults object: a caller
+// forwarding an optional value gives a present key holding `undefined`, which a spread would use to
+// clobber the default. `AssetDetails` forwards its own optional `size` exactly that way.
+const dense = computed<boolean>(() => display?.dense ?? false);
+const iconOnly = computed<boolean>(() => display?.iconOnly ?? false);
+const size = computed<string>(() => display?.size ?? '30px');
+const showChain = computed<boolean>(() => display?.showChain ?? true);
+const optimizeForVirtualScroll = computed<boolean>(() => display?.optimizeForVirtualScroll ?? false);
+
+const hideMenu = computed<boolean>(() => actions?.hideMenu ?? false);
+const hideActions = computed<boolean>(() => actions?.hideActions ?? false);
+const changeable = computed<boolean>(() => actions?.changeable ?? false);
+
+const enableAssociation = computed<boolean>(() => resolution?.enableAssociation ?? true);
+const isCollectionParent = computed<boolean>(() => resolution?.isCollectionParent ?? false);
+const forceChain = computed<string | undefined>(() => resolution?.forceChain);
+
+const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => get(isCollectionParent));
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 
@@ -66,7 +69,7 @@ function useContextMenu(attrs: Record<string, unknown>) {
   return {
     ...omit(attrs, ['onClick']),
     onClick: () => {
-      if (!hideMenu) {
+      if (!get(hideMenu)) {
         navigateToDetails();
       }
     },
