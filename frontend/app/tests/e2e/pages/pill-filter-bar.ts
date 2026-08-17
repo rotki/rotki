@@ -76,6 +76,12 @@ export class PillFilterBar {
    * narrowed — every selection goes through the search box first. Search matches the option's
    * *label*, so pass `search` explicitly whenever the label differs from the wire value
    * (`uniswap-v2` renders as `Uniswap V2`).
+   *
+   * Narrowing is only enough when the query names the value. On the asset field the search runs
+   * remotely and returns up to fifty ranked results, so a query matching many assets equally well
+   * (a symbol several chains share) leaves the intended one somewhere in the list but outside the
+   * rendered window, and this waits for a row that never appears. Search such a field by
+   * identifier or address, which the app parses into an exact address lookup.
    */
   async selectValue(value: string, search?: string): Promise<void> {
     await this.searchValues(search ?? value);
