@@ -1,6 +1,10 @@
 import { z, type ZodType } from 'zod';
 import { requiredEventSubtype, requiredEventType } from '@/modules/history/management/forms/event-field-schemas';
-import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
+import {
+  type AccountingRuleEntry,
+  type AccountingRuleWithLinkedProperty,
+  AccountingTreatment,
+} from '@/modules/settings/types/accounting';
 
 /**
  * The four identifying fields of a rule. The three linked toggles are deliberately absent: they can
@@ -49,5 +53,39 @@ export function applyAccountingRuleFormState(
     counterparty: state.counterparty,
     eventSubtype: state.eventSubtype,
     eventType: state.eventType,
+  };
+}
+
+/**
+ * A linked property as its control needs it: the link is a flag of its own, and the setting it
+ * names is always a string.
+ *
+ * The payload records "not linked" by leaving `linkedSetting` out, which the checkbox cannot bind
+ * to and the select below it cannot open on. Naming both here is what saves the component a
+ * writable computed per control.
+ */
+export interface LinkedPropertyState {
+  linked: boolean;
+  linkedSetting: string;
+  value: boolean;
+}
+
+export function toLinkedPropertyState(property: AccountingRuleWithLinkedProperty): LinkedPropertyState {
+  return {
+    linked: Boolean(property.linkedSetting),
+    linkedSetting: property.linkedSetting ?? '',
+    value: property.value,
+  };
+}
+
+/**
+ * ⭐ A link the user asked for but which names nothing yet reads back as no link at all, which is
+ * how an empty option list leaves the checkbox off. That is the behaviour the pair of writable
+ * computeds this replaced already had.
+ */
+export function toLinkedProperty(state: LinkedPropertyState): AccountingRuleWithLinkedProperty {
+  return {
+    value: state.value,
+    ...(state.linked && state.linkedSetting ? { linkedSetting: state.linkedSetting } : {}),
   };
 }
