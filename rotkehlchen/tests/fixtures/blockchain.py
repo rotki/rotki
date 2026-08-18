@@ -15,8 +15,10 @@ from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.manager import BaseManager
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.base.transactions import BaseTransactions
+from rotkehlchen.chain.binance_sc.decoding.decoder import BinanceSCTransactionDecoder
 from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
 from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+from rotkehlchen.chain.binance_sc.transactions import BinanceSCTransactions
 from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
 from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -828,6 +830,29 @@ def fixture_binance_sc_inquirer(
 @pytest.fixture(name='binance_sc_manager')
 def fixture_binance_sc_manager(binance_sc_inquirer):
     return BinanceSCManager(node_inquirer=binance_sc_inquirer)
+
+
+@pytest.fixture(name='binance_sc_transactions')
+def fixture_binance_sc_transactions(database, binance_sc_inquirer):
+    return BinanceSCTransactions(
+        evm_inquirer=binance_sc_inquirer,
+        database=database,
+    )
+
+
+@pytest.fixture(name='binance_sc_transaction_decoder')
+def fixture_binance_sc_transaction_decoder(
+        database,
+        binance_sc_inquirer,
+        binance_sc_transactions,
+        load_global_caches,
+):
+    with patch_decoder_reload_data(load_global_caches):
+        yield BinanceSCTransactionDecoder(
+            database=database,
+            binance_sc_inquirer=binance_sc_inquirer,
+            transactions=binance_sc_transactions,
+        )
 
 
 @pytest.fixture(name='ksm_rpc_endpoint')

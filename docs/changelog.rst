@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Flying Tulip activity is now decoded on Ethereum: ftUSD mints and redemptions, sftUSD staking with its FT reward claims, lending deposits, withdrawals, borrows and repayments, and ftPUT invests, divests and FT withdrawals. Open lending positions, outstanding debt and claimable staking rewards are also included in your on-chain balances. The lending market is also supported on Binance Smart Chain.
 * :feature:`-` Frankencoin Savings deposits, withdrawals, interest and balances are now supported on Ethereum, Arbitrum One, Base, Gnosis, Optimism and Polygon PoS.
 * :feature:`-` The Help menu can now open the data directory, next to the entry that opens the logs directory. It stays disabled until the backend is running, since that is when the directory in use is known.
 * :bug:`-` Single-asset deposits in StakeDAO are now decoded correctly.
