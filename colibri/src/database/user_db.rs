@@ -217,25 +217,21 @@ impl DBHandler {
     }
 }
 
-/// Macro that creates a test user database using the actual Python schema
+/// Macro that creates a test user database using the actual Python schema.
+///
+/// Resolves to `(DBHandler, TempDir)`. The `TempDir` guard deletes the database
+/// when it is dropped, so keep it alive for as long as the handler is used.
 #[cfg(test)]
 #[macro_export]
 macro_rules! create_test_userdb {
     () => {{
-        use rand::{rngs::StdRng, SeedableRng};
         use regex::Regex;
         use std::path::PathBuf;
         use std::sync::Arc;
-        use std::time::SystemTime;
         use $crate::database::user_db::DBHandler;
 
-        let timestamp = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_nanos();
-        let rnd = StdRng::from_rng(&mut rand::rng());
-
-        let db_path = std::env::temp_dir().join(format!("userdb_test_{}_{:?}.db", timestamp, rnd));
+        let tmp_dir = tempfile::tempdir().expect("Failed to create temp folder for the user db");
+        let db_path = tmp_dir.path().join("userdb_test.db");
         let conn = rusqlite::Connection::open(&db_path).expect("Failed to open test database");
 
         let root_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -274,7 +270,7 @@ macro_rules! create_test_userdb {
             .expect("Failed to open async client");
 
         db_handler.client = Some(Arc::new(client));
-        db_handler
+        (db_handler, tmp_dir)
     }};
 }
 
@@ -282,7 +278,7 @@ macro_rules! create_test_userdb {
 mod tests {
     #[tokio::test]
     async fn test_get_nft_mappings() {
-        let db_handler = create_test_userdb!();
+        let (db_handler, _tmp_dir) = create_test_userdb!();
 
         {
             let client = db_handler.client.as_ref().unwrap();

@@ -598,23 +598,29 @@ mod tests {
     use std::collections::HashSet;
     use tokio::sync::{Mutex, RwLock};
 
-    async fn create_test_state() -> Arc<AppState> {
-        let globaldb = Arc::new(create_globaldb!().await.unwrap());
+    /// Returns the state along with the temp dirs backing it. Dropping those
+    /// removes the files, so callers must keep them alive for the whole test.
+    async fn create_test_state() -> (Arc<AppState>, Vec<tempfile::TempDir>) {
+        let (globaldb, globaldb_dir) = create_globaldb!().await.unwrap();
+        let globaldb = Arc::new(globaldb);
+        let (test_userdb, userdb_dir) = create_test_userdb!();
         let mut userdb = DBHandler::new();
-        userdb.client = create_test_userdb!().client;
+        userdb.client = test_userdb.client;
+        let data_dir = tempfile::tempdir().expect("Failed to create temp data dir");
         let coingecko = Arc::new(Coingecko::new(
             globaldb.clone(),
             "http://fake.coingecko.test".to_string(),
         ));
         let evm_manager = Arc::new(EvmInquirerManager::new(globaldb.clone()));
-        Arc::new(AppState {
-            data_dir: std::env::temp_dir(),
+        let state = Arc::new(AppState {
+            data_dir: data_dir.path().to_path_buf(),
             globaldb,
             coingecko,
             userdb: Arc::new(RwLock::new(userdb)),
             active_tasks: Arc::new(Mutex::new(HashSet::new())),
             evm_manager,
-        })
+        });
+        (state, vec![globaldb_dir, userdb_dir, data_dir])
     }
 
     async fn call_search(
@@ -711,7 +717,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_bad_request_if_value_and_address_missing() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         let (status, body) = call_search(
             state,
             AssetsLevenshteinSearch {
@@ -734,7 +740,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_respects_treat_eth2_as_eth_true() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         normalize_eth_assets(&state).await;
         set_treat_eth2_as_eth(&state, true).await;
 
@@ -763,7 +769,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_respects_treat_eth2_as_eth_false() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         normalize_eth_assets(&state).await;
         set_treat_eth2_as_eth(&state, false).await;
 
@@ -791,7 +797,7 @@ mod tests {
     async fn test_search_assets_evmlike_chain_searches_ethereum() {
         // Evmlike chains (zksync lite) have no tokens of their own since they use
         // the L1 tokens, so filtering by them should search as if on ethereum
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         normalize_eth_assets(&state).await;
 
         let (status, body) = call_search(
@@ -822,7 +828,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_address_only_works() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         let (status, body) = call_search(
             state,
             AssetsLevenshteinSearch {
@@ -846,7 +852,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_hyperliquid_token_by_symbol_and_address() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         add_hyperliquid_token(&state).await;
 
         let (status, body) = call_search(
@@ -893,7 +899,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_includes_nfts_when_requested() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         {
             let conn = state.globaldb.conn.lock().await;
             conn.execute(
@@ -990,7 +996,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_does_not_fail_when_candidates_exceed_sql_limit() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         {
             let conn = state.globaldb.conn.lock().await;
             for index in 0..1200 {
@@ -1024,7 +1030,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_assets_prioritizes_fiat_then_native_tokens() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         {
             let conn = state.globaldb.conn.lock().await;
             conn.execute(
