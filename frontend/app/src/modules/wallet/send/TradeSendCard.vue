@@ -172,6 +172,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
       <RuiAlert
         v-if="warnUntrackedAddress && !isDisconnecting"
         type="warning"
+        data-testid="untracked-warning"
       >
         {{ t('trade.warning.not_tracked') }}
         <RuiButton
@@ -186,6 +187,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
       <RuiAlert
         v-if="useQueryingBalances"
         type="warning"
+        data-testid="querying-balances-warning"
       >
         {{ t('trade.warning.query_on_progress') }}
       </RuiAlert>
@@ -253,6 +255,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
         v-if="!isWalletConnected || isDisconnecting"
         size="lg"
         full-width
+        data-testid="connect-action"
         :connected="isWalletConnected"
         :loading="isConnecting || isDisconnecting"
         @click="toggleConnection()"
@@ -262,6 +265,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
         color="primary"
         size="lg"
         class="!w-full"
+        data-testid="track-action"
         @click="trackAddress()"
       >
         {{ t('trade.actions.track') }}
@@ -271,6 +275,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
         color="primary"
         size="lg"
         class="!w-full"
+        data-testid="switch-network-action"
         @click="switchToDesireNetwork()"
       >
         {{ t('trade.actions.change_network') }}
@@ -282,6 +287,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
         class="!w-full"
         :disabled="!valid || estimatingGas || !assetBalance"
         :loading="preparing"
+        data-testid="send-action"
         @click="send()"
       >
         {{ t('trade.actions.send') }}
@@ -293,6 +299,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
     type="error"
     class="whitespace-break-spaces mt-4 overflow-hidden [&>div:first-child]:overflow-hidden [&>div:first-child>div:last-child]:overflow-hidden"
     closeable
+    data-testid="trade-error"
     @close="clearError()"
   >
     <div class="overflow-hidden">
