@@ -44,6 +44,19 @@ const form = useTemplateRef<
 
 const chain = useRefPropVModel(modelValue, 'chain');
 
+/**
+ * A validator edit only ever reaches a state that holds a validator, which is what the guard says.
+ * Narrowing first is what lets the rest of the state be carried over as itself, rather than a field
+ * being written onto whichever variant happens to be there.
+ */
+function setValidator(data: StakingValidatorManage['data']): void {
+  const state = get(modelValue);
+  if (state.type !== 'validator')
+    return;
+
+  set(modelValue, { ...state, data });
+}
+
 const { getChainName, isEarlyIntegrationChain, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { getApiKey } = useExternalApiKeys();
@@ -380,9 +393,11 @@ defineExpose({
     <ValidatorAccountForm
       v-if="modelValue.type === 'validator'"
       ref="form"
-      v-model="modelValue"
       v-model:error-messages="errors"
+      :validator="modelValue.data"
+      :edit-mode="modelValue.mode === 'edit'"
       :loading="loading"
+      @update:validator="setValidator($event)"
     />
 
     <BtcAccountForm
