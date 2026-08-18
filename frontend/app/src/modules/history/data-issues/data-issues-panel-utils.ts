@@ -15,7 +15,7 @@ export const PANEL_PAGE_SIZE = 25;
  * a field carries). The period pill is left out because the preview is a glance at
  * what needs attention now, not a search.
  */
-export const PANEL_FILTER_KEYS: readonly string[] = [
+const PANEL_FILTER_KEYS: readonly string[] = [
   DataIssuesFilterKeys.STATE,
   DataIssuesFilterKeys.KIND,
   DataIssuesFilterKeys.ASSET,
