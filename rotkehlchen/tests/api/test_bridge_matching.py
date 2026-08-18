@@ -5,7 +5,10 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.chain.evm.decoding.cctp.constants import CPT_CCTP
+from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HistoryEventLinkType,
@@ -408,6 +411,77 @@ def test_get_unmatched_and_possible_bridge_matches(rotkehlchen_api_server: APISe
         rotkehlchen_api_server=rotkehlchen_api_server,
     )
     assert result == []
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize(('underlying_counterparty', 'transfer_id'), [
+    (CPT_ACROSS, '1295289'),
+    (CPT_CCTP, '108927'),
+    (CPT_HOP, '0x515a483a21beb5543dc74f6dbcb2bcfbb190cc01e10f2209fd195c47b24a0275'),
+])
+def test_socket_bridge_match_suggestion_keeps_normal_filters(
+        rotkehlchen_api_server: APIServer,
+        underlying_counterparty: str,
+        transfer_id: str,
+) -> None:
+    """A Socket transfer id does not bypass asset, amount or requested time filters."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    events_db = DBHistoryEvents(rotki.data.db)
+    user_address = make_evm_address()
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                identifier=1,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.BASE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDC,
+                amount=FVal('399.365908'),
+                location_label=user_address,
+                counterparty=CPT_SOCKET,
+                extra_data={'bridge': {
+                    'from_chain': 8453,
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': transfer_id,
+                }},
+            ), EvmEvent(
+                identifier=2,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1800000000000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_DAI,
+                amount=FVal('399.128031'),
+                location_label=user_address,
+                counterparty=underlying_counterparty,
+                extra_data={'bridge': {
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': transfer_id,
+                }},
+            )],
+        )
+
+    result = assert_proper_response_with_result(
+        response=requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'matchbridgetransactionsresource'),
+            json={
+                'bridge_event': 1,
+                'time_range': 1,
+                'tolerance': '0.000001',
+                'only_expected_assets': True,
+            },
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert result == {'close_matches': [], 'other_events': []}
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

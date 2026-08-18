@@ -232,17 +232,41 @@ def _bridge_counterparties_match(
         second_counterparty: str | None,
 ) -> bool:
     """Return whether counterparties can describe the two legs of one bridge transfer."""
+    counterparties = frozenset((first_counterparty, second_counterparty))
     return (
         first_counterparty == second_counterparty or
-        frozenset((first_counterparty, second_counterparty)) == frozenset((CPT_LIFI, CPT_RELAY))
+        counterparties == frozenset((CPT_LIFI, CPT_RELAY)) or
+        CPT_SOCKET in counterparties
+    )
+
+
+def _have_exact_transfer_id_match(
+        first_event: HistoryBaseEntry,
+        second_event: HistoryBaseEntry,
+) -> bool:
+    """Return whether both events carry the same non-empty protocol transfer id."""
+    return (
+        (first_id := get_event_bridge_data(first_event).get('transfer_id')) is not None and
+        first_id == get_event_bridge_data(second_event).get('transfer_id')
+    )
+
+
+def _is_socket_bridge_pair(
+        first_event: HistoryBaseEntry,
+        second_event: HistoryBaseEntry,
+) -> bool:
+    """Return whether Socket labels either side of a possible bridge pair."""
+    return CPT_SOCKET in (
+        getattr(first_event, 'counterparty', None),
+        getattr(second_event, 'counterparty', None),
     )
 
 
 def _get_bridge_target_asset(event: HistoryBaseEntry) -> Asset | None:
-    """Resolve the target asset recorded on a source-side bridge event."""
+    """Resolve the target asset recorded on a source-side LI.FI bridge event."""
     if (
         _is_bridge_withdrawal(event) or
-        getattr(event, 'counterparty', None) not in {CPT_LIFI, CPT_SOCKET}
+        getattr(event, 'counterparty', None) != CPT_LIFI
     ):
         return None
 
@@ -283,6 +307,10 @@ def _bridge_candidate_tier(
     deposit_side, withdrawal_side = (
         (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
     )
+    has_exact_transfer_id = (
+        not _is_socket_bridge_pair(bridge_event, candidate) and
+        _have_exact_transfer_id_match(bridge_event, candidate)
+    )
     is_cross_asset_route = (
         anchor_is_withdrawal is False and
         _get_bridge_target_asset(bridge_event) is not None and
@@ -293,6 +321,7 @@ def _bridge_candidate_tier(
         candidate.identifier in excluded_ids or
         candidate.location == bridge_event.location or  # bridging is always cross-chain
         (
+            has_exact_transfer_id is False and
             is_cross_asset_route is False and
             not _match_amount(
                 movement_amount=bridge_event.amount,
@@ -334,6 +363,46 @@ def _bridge_candidate_tier(
     return None
 
 
+def find_bridge_transaction_exact_matches(
+        events_db: DBHistoryEvents,
+        bridge_event: HistoryBaseEntry,
+        cursor: DBCursor,
+        excluded_ids: set[int],
+) -> list[HistoryBaseEntry]:
+    """Find non-Socket opposite bridge legs with the same exact protocol transfer id."""
+    if get_event_bridge_data(bridge_event).get('transfer_id') is None:
+        return []
+
+    anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
+    candidates = events_db.get_history_events_internal(
+        cursor=cursor,
+        filter_query=HistoryEventFilterQuery.make(type_and_subtype_combinations=[(
+            HistoryEventType.DEPOSIT if anchor_is_withdrawal else HistoryEventType.WITHDRAWAL,
+            HistoryEventSubType.BRIDGE,
+        )]),
+    )
+    matches: list[HistoryBaseEntry] = []
+    for candidate in candidates:
+        deposit_side, withdrawal_side = (
+            (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
+        )
+        if (
+            _is_socket_bridge_pair(bridge_event, candidate) or
+            candidate.identifier in excluded_ids or
+            candidate.location == bridge_event.location or
+            not _have_exact_transfer_id_match(bridge_event, candidate) or
+            not _bridge_counterparties_match(
+                first_counterparty=getattr(bridge_event, 'counterparty', None),
+                second_counterparty=getattr(candidate, 'counterparty', None),
+            ) or
+            _events_conflict_on_bridge_data(deposit=deposit_side, candidate=withdrawal_side)
+        ):
+            continue
+        matches.append(candidate)
+
+    return matches
+
+
 def _narrow_bridge_candidates(
         bridge_event: HistoryBaseEntry,
         candidates: list[HistoryBaseEntry],
@@ -348,6 +417,11 @@ def _narrow_bridge_candidates(
     if len(candidates) <= 1:
         return candidates
 
+    if len(transfer_id_matches := [
+        candidate for candidate in candidates
+        if _have_exact_transfer_id_match(bridge_event, candidate)
+    ]) > 0:
+        candidates = transfer_id_matches
     if _is_bridge_withdrawal(bridge_event):  # candidates are source legs carrying the address
         if bridge_event.location_label is not None and len(address_matches := [
             x for x in candidates
@@ -850,15 +924,19 @@ def match_bridge_transactions(
             pending_deposits = []
             for deposit in deposits:
                 if (transfer_id := get_event_bridge_data(deposit).get('transfer_id')) is not None and len(candidates := [  # noqa: E501
-                    x for x in withdrawals_by_transfer_id[transfer_id]
+                    withdrawal for withdrawal in withdrawals_by_transfer_id[transfer_id]
                     if (
-                        x.identifier not in excluded_ids and
-                        x.location != deposit.location and
+                        not _is_socket_bridge_pair(deposit, withdrawal) and
+                        withdrawal.identifier not in excluded_ids and
+                        withdrawal.location != deposit.location and
                         _bridge_counterparties_match(
                             first_counterparty=getattr(deposit, 'counterparty', None),
-                            second_counterparty=getattr(x, 'counterparty', None),
+                            second_counterparty=getattr(withdrawal, 'counterparty', None),
                         ) and
-                        not _events_conflict_on_bridge_data(deposit=deposit, candidate=x)
+                        not _events_conflict_on_bridge_data(
+                            deposit=deposit,
+                            candidate=withdrawal,
+                        )
                     )
                 ]) == 1:
                     matched_pairs.append((deposit, matched_event := candidates[0]))

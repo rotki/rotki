@@ -49,6 +49,35 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_socket_hop_receive_on_gnosis(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash(
+        '0xdb47eaba1637b15ec48906b8017b0b84f77cb447c615f3f23d39675758202c22',
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    user_address = gnosis_accounts[0]
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=11,
+        timestamp=TimestampMS(1703766805000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+        amount=FVal('399.128031'),
+        location_label=user_address,
+        notes='Bridge 399.128031 USDC via Hop protocol',
+        counterparty=CPT_HOP,
+        address=string_to_evm_address('0x76b22b8C1079A44F1211D867D68b1eda76a635A7'),
+        extra_data={'bridge': {
+            'to_chain': 100,
+            'to_address': user_address,
+            'transfer_id': '0x515a483a21beb5543dc74f6dbcb2bcfbb190cc01e10f2209fd195c47b24a0275',
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_hop_l2_deposit(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee')  # noqa: E501
