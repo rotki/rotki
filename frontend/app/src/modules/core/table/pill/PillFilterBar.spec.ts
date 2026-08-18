@@ -2,7 +2,7 @@ import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import EnumValueEditor from '@/modules/core/table/pill/EnumValueEditor.vue';
 import FilterPill from '@/modules/core/table/pill/FilterPill.vue';
@@ -86,6 +86,9 @@ const fields = [protocol, account];
 // What a range field carries in the real adapter: it reads a typed amount into whole filters.
 const typedAmount: FieldDef = {
   ...amount,
+  // Set alongside `parseTyped`, the way the adapter builds a real range field: it is what gates
+  // the footer's syntax examples, so a fixture with only the parser advertises nothing to type.
+  matchesTyped: (query: string): boolean => /^[\d<>]/.test(query),
   parseTyped: (query: string) => (/^>\d+$/.test(query)
     ? [{ op: 'gt' as const, range: { min: query.slice(1) }, values: [] }]
     : []),
@@ -99,6 +102,7 @@ const labels = {
   narrowEmpty: 'No matches',
   remove: 'Remove filter',
   search: 'Filter by…',
+  syntax: 'Type directly:',
 };
 
 function createWrapper(
@@ -402,6 +406,71 @@ describe('pillFilterBar', () => {
     await nextTick();
 
     expect(lastEmit(wrapper, 'update:matches')).toStrictEqual({ minAmount: '100' });
+  });
+
+  // The footer teaches by demonstration: its example goes into the input, and the row it produces
+  // shows up above it. Applying it outright would add a pill for an amount nobody asked for.
+  it('should put a clicked syntax example in the input without filtering', async () => {
+    const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
+
+    wrapper.findComponent(PillNarrowList).vm.$emit('example', '>100');
+    await nextTick();
+
+    expect(wrapper.get<HTMLInputElement>('[data-testid=pill-narrow-input]').element.value).toBe('>100');
+    expect(wrapper.emitted('update:matches')).toBeUndefined();
+  });
+
+  // The chip is a `button`, but nothing in the popover is ever focused and it is teleported out of
+  // the input's tab order, so Tab never arrives and the mouse was the only way in. The highlight
+  // therefore runs on past the last row into the footer, and Enter there does what a click does.
+  it('should reach a syntax example by arrowing past the last row', async () => {
+    const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
+    const input = wrapper.get('[data-testid=pill-narrow-input]');
+    await input.setValue('>100');
+
+    const list = wrapper.findComponent(PillNarrowList);
+    const rows = list.props('suggestions').length;
+    const examples = list.props('examples') ?? [];
+    assert(examples.length > 0, 'the footer must offer an example to arrow onto');
+
+    // Down off the end of the rows lands on the first chip and names it to the screen reader.
+    for (let step = 0; step < rows; step++)
+      await input.trigger('keydown', { key: 'ArrowDown' });
+
+    expect(list.props('highlighted')).toBe(rows);
+    expect(input.attributes('aria-activedescendant')).toBe('pill-narrow-example-0');
+
+    await input.trigger('keydown', { key: 'Enter' });
+
+    expect(wrapper.get<HTMLInputElement>('[data-testid=pill-narrow-input]').element.value).toBe(examples[0]);
+    expect(wrapper.emitted('update:matches')).toBeUndefined();
+  });
+
+  // Wrapping is what makes the footer escapable without a mouse: one Up from the top row is the
+  // last chip, and one Down from it is the first row again.
+  it('should wrap between the rows and the footer', async () => {
+    const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
+    const input = wrapper.get('[data-testid=pill-narrow-input]');
+    await input.setValue('>100');
+
+    const list = wrapper.findComponent(PillNarrowList);
+    const total = list.props('suggestions').length + (list.props('examples') ?? []).length;
+
+    await input.trigger('keydown', { key: 'ArrowUp' });
+    expect(list.props('highlighted')).toBe(total - 1);
+
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    expect(list.props('highlighted')).toBe(0);
+  });
+
+  // The example is only a starting point, so the rows it produces have to be there to pick from.
+  it('should offer the filter a clicked example reads as', async () => {
+    const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
+
+    wrapper.findComponent(PillNarrowList).vm.$emit('example', '>100');
+    await nextTick();
+
+    expect(wrapper.findComponent(PillNarrowList).props('suggestions')[0]).toMatchObject({ kind: 'filter' });
   });
   // Picking a field and then thinking better of it used to leave an empty pill: it filters
   // nothing, shows nothing, and the only way out was to find its remove button.

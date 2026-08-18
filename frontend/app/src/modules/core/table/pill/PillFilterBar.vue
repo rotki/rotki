@@ -76,7 +76,7 @@ const availableFields = computed<FieldDef[]>(() => {
   return fields.filter(field => !used.has(field.key) && !excluded.has(field.key));
 });
 
-const { loading: searching, suggestions } = useNarrowSuggestions(query, availableFields);
+const { examples: syntaxExamples, loading: searching, suggestions } = useNarrowSuggestions(query, availableFields);
 
 // external wire form <-> model (the model's self-echo guard breaks the round-trip loop)
 watchImmediate(matches, value => model.setFromMatches(value, get(params)));
@@ -229,21 +229,56 @@ function applySuggestion(suggestion: NarrowSuggestion): void {
   remember(suggestion.field, [suggestion.value]);
 }
 
+/**
+ * A footer example was clicked: it goes into the input, it is not applied.
+ *
+ * The footer exists to teach a syntax nothing else on screen mentions, and watching the text land
+ * in the bar and turn into a filter row is the lesson. Applying it outright would add a pill for a
+ * date the user has no interest in and teach them only that the footer is a set of odd shortcuts.
+ * The caret goes back to the input so the obvious next move, editing the date, just works.
+ */
+function applyExample(example: string): void {
+  set(query, example);
+  set(narrowOpen, true);
+  get(narrowInput)?.focus();
+}
+
 // The caret never leaves the input, so the highlighted row has to be named rather than focused.
 // `RuiMenu` gives its popover `role="menu"`, which is why the rows are menuitems and this input
 // says `aria-haspopup="menu"`: a combobox may only own a listbox, tree, grid or dialog, so calling
 // it one while pointing at a menu would be a promise the markup does not keep.
+// The rows and the footer chips form one navigable sequence, chips last. Nothing in the popover is
+// ever focused and Tab cannot reach it (it is teleported, and `disable-auto-focus` keeps the caret
+// here), so arrowing on past the last row is the only way a chip is reachable without a mouse.
+const navigableCount = computed<number>(() => get(suggestions).length + get(syntaxExamples).length);
+
 const activeSuggestionId = computed<string | undefined>(() => {
-  if (!get(narrowOpen) || get(suggestions).length === 0)
+  if (!get(narrowOpen) || get(navigableCount) === 0)
     return undefined;
 
-  return `pill-narrow-row-${get(highlighted)}`;
+  const index = get(highlighted);
+  const rows = get(suggestions).length;
+  return index < rows ? `pill-narrow-row-${index}` : `pill-narrow-example-${index - rows}`;
 });
 
 function moveHighlight(step: number): void {
-  const count = get(suggestions).length;
+  const count = get(navigableCount);
   if (count > 0)
     set(highlighted, (get(highlighted) + step + count) % count);
+}
+
+/** What Enter does to whatever the highlight is on, row or footer chip. */
+function applyHighlighted(items: NarrowSuggestion[]): void {
+  const index = get(highlighted);
+  // Past the last row is a footer chip: it writes its example into the input rather than applying
+  // anything, the same as clicking it does.
+  const example = get(syntaxExamples)[index - items.length];
+  if (example !== undefined) {
+    applyExample(example);
+    return;
+  }
+  // The list can shrink under the highlight (a search returning less than the last one).
+  applySuggestion(items[index] ?? items[0]);
 }
 
 function onNarrowKeydown(event: KeyboardEvent): void {
@@ -262,7 +297,7 @@ function onNarrowKeydown(event: KeyboardEvent): void {
   }
 
   const items = get(suggestions);
-  if (items.length === 0)
+  if (get(navigableCount) === 0)
     return;
 
   if (event.key === 'ArrowDown') {
@@ -275,8 +310,7 @@ function onNarrowKeydown(event: KeyboardEvent): void {
   }
   else if (event.key === 'Enter') {
     event.preventDefault();
-    // The list can shrink under the highlight (a search returning less than the last one).
-    applySuggestion(items[get(highlighted)] ?? items[0]);
+    applyHighlighted(items);
   }
 }
 
@@ -393,6 +427,9 @@ function focusInput(event: MouseEvent): void {
         :loading="searching"
         :highlighted="highlighted"
         :empty-text="labels.narrowEmpty"
+        :examples="syntaxExamples"
+        :examples-label="labels.syntax"
+        @example="applyExample($event)"
         @select="applySuggestion($event)"
         @update:highlighted="highlighted = $event"
       />

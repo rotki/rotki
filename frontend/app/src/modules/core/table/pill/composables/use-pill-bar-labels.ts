@@ -18,5 +18,6 @@ export function usePillBarLabels(): ComputedRef<PillBarLabels> {
     narrowEmpty: t('table_filter.pill.narrow_empty'),
     remove: t('table_filter.pill.remove'),
     search: t('table_filter.pill.search'),
+    syntax: t('table_filter.pill.syntax.label'),
   }));
 }
