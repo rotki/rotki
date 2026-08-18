@@ -69,12 +69,12 @@ export function snakeCaseTransformer<T>(data: T, skipKeys?: string[]): T {
   return convertKeys(data, { camelCase: false, skipKeys });
 }
 
-export function camelCaseTransformer<T>(data: T): T {
-  return convertKeys(data, { camelCase: true });
+export function camelCaseTransformer<T>(data: T, skipKeys?: string[]): T {
+  return convertKeys(data, { camelCase: true, skipKeys });
 }
 
-export function noRootCamelCaseTransformer<T>(data: T): T {
-  return convertKeys(data, { camelCase: true, skipRoot: true });
+export function noRootCamelCaseTransformer<T>(data: T, skipKeys?: string[]): T {
+  return convertKeys(data, { camelCase: true, skipKeys, skipRoot: true });
 }
 
 /**

@@ -25,6 +25,15 @@ export interface RotkiFetchOptions<R extends ResponseType = 'json', T = unknown>
   skipCamelCase?: boolean;
   /** Use noRootCamelCaseTransformer instead of camelCaseTransformer (skips root keys transformation) */
   skipRootCamelCase?: boolean;
+  /**
+   * Response fields whose nested object must reach the caller exactly as the backend sent it.
+   *
+   * For a field that is a map (keyed by chain id, asset identifier, location) the camelCase
+   * conversion has no field names to rename and rewrites the data instead: `polygon_pos` becomes
+   * `polygonPos` while single-word keys like `base` are untouched, so a lookup by chain id matches
+   * some entries and misses the rest. The field's own key is still converted.
+   */
+  skipCamelCaseKeys?: string[];
   /** Skip snake_case transformation on request body/query. Can be boolean or array of property names to skip. */
   skipSnakeCase?: boolean | string[];
   /** Valid HTTP status codes. Defaults to [200, 400, 409]. 401 is always handled separately. */

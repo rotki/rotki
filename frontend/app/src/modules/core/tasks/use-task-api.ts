@@ -2,7 +2,7 @@ import type { ActionResult } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
 import { ofetch } from 'ofetch';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/modules/auth/login';
-import { DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/core/api/constants';
+import { CHAIN_KEYED_SETTINGS, DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
@@ -74,7 +74,11 @@ export function useTaskApi(): UseTaskApiReturn {
       baseURL: api.baseURL,
       timeout: TASKS_TIMEOUT,
       ignoreResponseError: true,
-      parseResponse: (text: string) => camelCaseTransformer(JSON.parse(text)),
+      // Declared here rather than on a request: login and account creation return the user's
+      // settings as a task result, and this is the one fetch every task result comes through, so
+      // there is no settings request to hang the exemption on. The named fields always carry a
+      // chain-keyed map, whichever task they arrive in.
+      parseResponse: (text: string) => camelCaseTransformer(JSON.parse(text), CHAIN_KEYED_SETTINGS),
     });
 
     const status = response.status;

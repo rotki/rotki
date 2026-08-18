@@ -123,6 +123,24 @@ describe('composables/api/settings/settings-api', () => {
       expect(result.accounting.includeCrypto2crypto).toBe(true);
     });
 
+    it('should keep chain-keyed settings keyed by the chain id', async () => {
+      // The response transformer renames every key of every nested object, and these two settings
+      // are maps keyed by chain id rather than by field name. Multi-word ids are the ones it
+      // mangles (`polygon_pos` -> `polygonPos`), which left the skip rules for exactly those chains
+      // matching nothing while `base` kept working.
+      server.use(
+        http.get(`${backendUrl}/api/1/settings`, () => HttpResponse.json(createSettingsResponse({
+          disabled_chain_queries: { base: [], binance_sc: [], polygon_pos: [] },
+          evm_indexers_order: { polygon_pos: ['etherscan'] },
+        }))),
+      );
+
+      const { general } = await useSettingsApi().getSettings();
+
+      expect(Object.keys(general.disabledChainQueries).sort()).toStrictEqual(['base', 'binance_sc', 'polygon_pos']);
+      expect(general.evmIndexersOrder).toStrictEqual({ polygon_pos: ['etherscan'] });
+    });
+
     it('should throw error when result is null', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/settings`, () =>
@@ -185,6 +203,18 @@ describe('composables/api/settings/settings-api', () => {
 
       // Verify response was transformed and parsed correctly
       expect(result.general.uiFloatingPrecision).toBe(4);
+    });
+
+    it('should keep chain-keyed settings keyed by the chain id', async () => {
+      server.use(
+        http.put(`${backendUrl}/api/1/settings`, () => HttpResponse.json(createSettingsResponse({
+          disabled_chain_queries: { base: [], polygon_pos: [] },
+        }))),
+      );
+
+      const { general } = await useSettingsApi().setSettings({ disabledChainQueries: { polygon_pos: [] } });
+
+      expect(Object.keys(general.disabledChainQueries).sort()).toStrictEqual(['base', 'polygon_pos']);
     });
 
     it('should throw ApiValidationError on 400 response', async () => {
@@ -259,6 +289,19 @@ describe('composables/api/settings/settings-api', () => {
       expect(result).toHaveProperty('uiFloatingPrecision');
       expect(result).not.toHaveProperty('general');
       expect(result).not.toHaveProperty('accounting');
+    });
+
+    it('should keep chain-keyed settings keyed by the chain id', async () => {
+      // The path a resumed session reads its settings on.
+      server.use(
+        http.get(`${backendUrl}/api/1/settings`, () => HttpResponse.json(createSettingsResponse({
+          disabled_chain_queries: { base: [], polygon_pos: [] },
+        }))),
+      );
+
+      const result = await useSettingsApi().getRawSettings();
+
+      expect(Object.keys(result.disabledChainQueries!).sort()).toStrictEqual(['base', 'polygon_pos']);
     });
   });
 
