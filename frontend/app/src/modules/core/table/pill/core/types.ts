@@ -227,6 +227,13 @@ export interface FieldDef {
    */
   readonly parseTyped?: (query: string) => TypedFilterDraft[];
   /**
+   * Whether what has been typed is on its way to a filter on this field, even though it does not
+   * parse into one yet. The half-written counterpart of {@link parseTyped}: `after` and `15/01` are
+   * both headed for a date, and answering yes here has the bar offer this field with its
+   * {@link hint} rather than the empty popover a non-parsing query used to get.
+   */
+  readonly matchesTyped?: (query: string) => boolean;
+  /**
    * Message shown when `validate` rejects what was typed. Says what the field wants ("Enter a
    * valid transaction hash"), which a generic "Invalid value" cannot. Absent = the editor's
    * generic message.
