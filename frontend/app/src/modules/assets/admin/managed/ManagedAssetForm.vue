@@ -33,7 +33,7 @@ const { editMode = false, assetTypes } = defineProps<{
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
-const identifier = useRefPropVModel(modelValue, 'identifier');
+const identifier = computed<string>(() => get(modelValue).identifier);
 const address = refOptional(useRefPropVModel(modelValue, 'address'), '');
 const name = refOptional(useRefPropVModel(modelValue, 'name'), '');
 const symbol = refOptional(useRefPropVModel(modelValue, 'symbol'), '');
