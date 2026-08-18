@@ -1,5 +1,6 @@
+import { EvmTokenKind, type SupportedAsset } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { managedAssetSchema } from '@/modules/assets/admin/managed/managed-asset-form';
+import { managedAssetSchema, toManagedAssetFormState } from '@/modules/assets/admin/managed/managed-asset-form';
 import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 
 const messages = {
@@ -101,5 +102,57 @@ describe('managedAssetSchema', () => {
       .safeParse({ ...token, decimals: 6, underlyingTokens: [] });
 
     expect(result.success && result.data).toEqual({ ...token, decimals: 6, underlyingTokens: [] });
+  });
+});
+
+describe('toManagedAssetFormState', () => {
+  const asset: SupportedAsset = {
+    address: EVM_ADDRESS,
+    assetType: EVM_TOKEN,
+    identifier: 'test-asset',
+    isRebasing: false,
+  };
+
+  it('should open an unset optional field as an empty string', () => {
+    const state = toManagedAssetFormState(asset);
+
+    // The inputs need something to write into, and null is not it.
+    expect(state.name).toBe('');
+    expect(state.symbol).toBe('');
+    expect(state.coingecko).toBe('');
+    expect(state.collectibleId).toBe('');
+    expect(state.forked).toBe('');
+  });
+
+  it('should keep the value an optional field already has', () => {
+    const state = toManagedAssetFormState({ ...asset, name: 'USD Coin', protocol: 'aave' });
+
+    expect(state.name).toBe('USD Coin');
+    expect(state.protocol).toBe('aave');
+  });
+
+  it('should leave the fields with their own converters alone', () => {
+    // `decimals` and `started` keep the difference between unset and zero, which the payload
+    // records as null and their converters read on the way to the input.
+    const state = toManagedAssetFormState(asset);
+
+    expect(state.decimals).toBeUndefined();
+    expect(state.started).toBeUndefined();
+  });
+
+  it('should carry the rest of the payload through untouched', () => {
+    const state = toManagedAssetFormState({ ...asset, decimals: 6, ended: 42, tokenKind: EvmTokenKind.ERC20 });
+
+    expect(state.identifier).toBe('test-asset');
+    expect(state.decimals).toBe(6);
+    expect(state.ended).toBe(42);
+    expect(state.tokenKind).toBe(EvmTokenKind.ERC20);
+  });
+
+  // The mirroring in `useMappedModelForm` compares the mapped payload against the state to decide
+  // whether an outside edit is news. A mapper that answered differently for the same input would
+  // report every pass as a change and the two directions would never settle.
+  it('should answer the same for the same payload', () => {
+    expect(toManagedAssetFormState(asset)).toEqual(toManagedAssetFormState(asset));
   });
 });
