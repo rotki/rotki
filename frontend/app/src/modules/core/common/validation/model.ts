@@ -1,16 +1,13 @@
 import type { Ref, WritableComputedRef } from 'vue';
 
-export function refOptional<T>(comp: WritableComputedRef<T | undefined | null>, defaultValue: T): WritableComputedRef<T> {
-  return computed<T>({
-    get() {
-      return get(comp) ?? defaultValue;
-    },
-    set(value?: T) {
-      set(comp, value ?? undefined);
-    },
-  });
-}
-
+/**
+ * One field of an object the parent owns, as a writable computed.
+ *
+ * For a component that holds a payload it does not own and has no form of its own: an account's
+ * chain, an accounting rule's value, a set of table toggles. A component that does have a form
+ * binds `form.state` directly instead, and one whose inputs cannot hold the payload as it stands
+ * maps it once with `useMappedModelForm` rather than wrapping each field here.
+ */
 export function useRefPropVModel<
   P extends object,
   K extends keyof P,
