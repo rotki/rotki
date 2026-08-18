@@ -85,6 +85,53 @@ pnpm run test:unit
 pnpm run typecheck
 ```
 
+#### Attaching a devtools client to the Electron window (`DEBUGGER_PORT`)
+
+`pnpm dev` can start Electron with Chromium's remote debugging endpoint open, so an external CDP
+client (Chrome DevTools, `connectOverCDP` from Playwright or Puppeteer, an MCP devtools server) can
+inspect and drive the running app. It is off unless you ask for it.
+
+Set the port in `frontend/app/.env.development.local`, which is gitignored:
+
+```bash
+DEBUGGER_PORT=9222
+```
+
+`pnpm dev` then forwards `--remote-debugging-port=9222` to the Electron child and logs
+`starting rotki with args: --remote-debugging-port=9222` at startup. Attach on
+`http://127.0.0.1:9222`.
+
+- Do not put it in `frontend/app/.env`: that file is tracked, so the value would apply to everyone.
+- Electron only. `pnpm dev:web` drops the flag, because in web mode there is no Electron child to
+  pass it to.
+- It is not allocated per dev instance the way the dev/REST/proxy/colibri ports are, so two
+  instances started with the same `DEBUGGER_PORT` collide and the second Electron comes up without
+  a debugger. Give each instance its own value if you run more than one at a time. Anything outside
+  13000-22995 (the instance port block) and clear of 9229 (node `--inspect`) works; 9222 is
+  Chromium's own default.
+
+The wiring, if you need to change it: `getDebuggerPort()` in
+`frontend/scripts/dev/prerequisites.ts` reads the variable, `startDevServer()` in
+`frontend/scripts/dev/services.ts` appends the flag, and `frontend/app/scripts/serve.ts` passes it
+to the spawned Electron process.
+
+An MCP-based assistant can reach the same endpoint through a stdio devtools server:
+
+```json
+{
+  "mcpServers": {
+    "electron-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:9222"]
+    }
+  }
+}
+```
+
+Keep that configuration outside the repository (user-level assistant settings, or an untracked
+`.mcp.json` above the checkout) so it is not imposed on contributors who do not use the tool.
+
 #### Command durations: always set an explicit timeout
 
 The frontend gates are slow, and CI is slower than a development machine. Budget against a slow-CI
