@@ -1,7 +1,7 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { describe, expect, it } from 'vitest';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
-import { fieldSuggestions, searchFieldsAndValues as search } from '@/modules/core/table/pill/core/narrowing';
+import { fieldSuggestions, searchFieldsAndValues as search, syntaxExamples } from '@/modules/core/table/pill/core/narrowing';
 
 // Operator words come from the Vue layer; these stand in for them.
 const operatorLabels = {
@@ -19,8 +19,9 @@ function searchFieldsAndValues(
   fields: Parameters<typeof search>[1],
   limits?: Parameters<typeof search>[3],
   recentValues?: Parameters<typeof search>[4],
+  syntaxHints?: Parameters<typeof search>[5],
 ): ReturnType<typeof search> {
-  return search(query, fields, operatorLabels, limits, recentValues);
+  return search(query, fields, operatorLabels, limits, recentValues, syntaxHints);
 }
 
 function field(overrides: Partial<FieldDef> & Pick<FieldDef, 'key' | 'label'>): FieldDef {
@@ -79,6 +80,7 @@ const amount = field({
   formatBound: (value: string): string => `${value} ETH`,
   key: 'amount',
   label: 'Amount',
+  matchesTyped: (query: string): boolean => /^[\d<>]/.test(query),
   operators: ['between', 'gt', 'lt'],
   parseTyped: (query: string) => (/^\d+$/.test(query)
     ? [
@@ -88,6 +90,26 @@ const amount = field({
     : []),
   valueType: FilterValueTypes.RANGE,
 });
+
+const period = field({
+  key: 'period',
+  label: 'Period',
+  // Claims `peri` too, so a query matching the label *and* the guidance is reachable: the two must
+  // not put the same field on screen twice.
+  matchesTyped: (query: string): boolean =>
+    query.startsWith('after') || query.startsWith('15/') || query.startsWith('peri'),
+  operators: ['between', 'after', 'before'],
+  parseTyped: (query: string) => (query === '15/01/2024'
+    ? [{ date: { from: '1705276800' }, op: 'after' as const, values: [] }]
+    : []),
+  valueType: FilterValueTypes.DATE,
+});
+
+// Stand in for the Vue layer's copy, which is where the real ones are built.
+const hints = {
+  examples: { date: ['after 15/01/2024', '15/01/2024 - 20/01/2024'], range: ['>100'] },
+  keywords: { date: 'date time when', range: 'amount number value' },
+};
 
 describe('fieldSuggestions', () => {
   it('should offer every field as itself', () => {
@@ -99,6 +121,34 @@ describe('fieldSuggestions', () => {
 
   it('should offer nothing when every field is in use', () => {
     expect(fieldSuggestions([])).toEqual([]);
+  });
+});
+
+describe('syntaxExamples', () => {
+  it('should offer the examples of every typed-into type on offer', () => {
+    expect(syntaxExamples([period, amount, protocol], hints)).toStrictEqual([
+      'after 15/01/2024',
+      '15/01/2024 - 20/01/2024',
+      '>100',
+    ]);
+  });
+
+  // Advertising a syntax for a field that is not there sends the user typing something the bar
+  // will refuse; a field whose pill is already set is no longer among those passed in.
+  it('should offer nothing for the types not on offer', () => {
+    expect(syntaxExamples([protocol], hints)).toStrictEqual([]);
+    expect(syntaxExamples([period], hints)).toStrictEqual(['after 15/01/2024', '15/01/2024 - 20/01/2024']);
+  });
+
+  // A field that cannot read what is typed must not advertise a syntax it would then refuse.
+  it('should ignore a field of a typed-into type that reads nothing typed', () => {
+    const bare = field({ key: 'bare', label: 'Bare', valueType: FilterValueTypes.DATE });
+    expect(syntaxExamples([bare], hints)).toStrictEqual([]);
+  });
+
+  it('should offer one set of examples for two fields of the same type', () => {
+    const second = field({ ...period, key: 'settled', label: 'Settled' });
+    expect(syntaxExamples([period, second], hints)).toStrictEqual(['after 15/01/2024', '15/01/2024 - 20/01/2024']);
   });
 });
 
@@ -304,6 +354,78 @@ describe('searchFieldsAndValues account keywords', () => {
 
     it('should offer nothing for a query the field cannot read', () => {
       expect(searchFieldsAndValues('uniswap', [amount])).toStrictEqual([]);
+    });
+
+    // A query heading for a filter it does not yet spell used to return an empty popover, which
+    // reads as "this field cannot be typed into" at exactly the moment the user is trying.
+    it('should offer the field with its example for a half-written value', () => {
+      expect(searchFieldsAndValues('after', [period], undefined, undefined, hints)).toStrictEqual([
+        { field: period, kind: 'field', label: 'Period' },
+      ]);
+    });
+
+    // Once the query says a whole filter, the filter itself is the answer; repeating the field
+    // under it adds a row that says nothing the two above it do not.
+    it('should not offer guidance once the query reads as a filter', () => {
+      const matches = searchFieldsAndValues('15/01/2024', [period], undefined, undefined, hints);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toMatchObject({ kind: 'filter' });
+    });
+
+    // Guidance is the answer for a field with nothing to answer with, so anything that matched
+    // something concrete outranks it.
+    it('should rank guidance below every real match', () => {
+      const matches = searchFieldsAndValues('after', [period, field({
+        key: 'protocol',
+        label: 'Aftermath',
+        suggest: (): string[] => [],
+      })], undefined, undefined, hints);
+
+      expect(matches[0]).toMatchObject({ label: 'Aftermath' });
+      expect(matches[1]).toMatchObject({ label: 'Period' });
+    });
+
+    // The field is called `Period`, so the word people reach for found nothing at all.
+    it('should find a field by the words its value type is known by', () => {
+      expect(searchFieldsAndValues('time', [period], undefined, undefined, hints)).toStrictEqual([
+        { field: period, kind: 'field', label: 'Period' },
+      ]);
+    });
+
+    // The keyword blob is a bag of whole words, not a string to be searched inside: `in` sits in
+    // `since` and `an` in `range`, so a substring test hands back Period and Amount for a
+    // two-letter query and buries the real value matches under them. The fixture blobs above share
+    // no stem with the shipped ones, which is exactly why they never caught this — these are the
+    // strings the app actually passes in.
+    it('should not match a keyword on a fragment of one', () => {
+      const shipped = {
+        keywords: {
+          date: 'date time when period since after before until',
+          range: 'amount number value range more less over under above below at least at most',
+        },
+      };
+
+      expect(searchFieldsAndValues('in', [period], undefined, undefined, shipped)).toStrictEqual([]);
+      expect(searchFieldsAndValues('an', [amount], undefined, undefined, shipped)).toStrictEqual([]);
+      // The word itself still finds the field; only the fragment stops doing so.
+      expect(searchFieldsAndValues('since', [period], undefined, undefined, shipped)).toStrictEqual([
+        { field: period, kind: 'field', label: 'Period' },
+      ]);
+      // And a prefix of a keyword does too: the list narrows as the user types it out.
+      expect(searchFieldsAndValues('num', [amount], undefined, undefined, shipped)).toStrictEqual([
+        { field: amount, kind: 'field', label: 'Amount' },
+      ]);
+      // The two-word keywords are reachable as written, part-way through included.
+      expect(searchFieldsAndValues('at le', [amount], undefined, undefined, shipped)).toStrictEqual([
+        { field: amount, kind: 'field', label: 'Amount' },
+      ]);
+    });
+
+    it('should offer a field only once when its label and its guidance both match', () => {
+      const matches = searchFieldsAndValues('peri', [period], undefined, undefined, hints);
+      expect(matches).toStrictEqual([
+        { field: period, kind: 'field', label: 'Period' },
+      ]);
     });
 
     // It always matches, so like the typed free-text value it must never push a real match down.
