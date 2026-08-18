@@ -114,6 +114,13 @@ export default rotki({
   // count there stays a decomposition signal.
   // `settings/controls` qualifies on the same grounds: it imports nothing outside settings/shell/core,
   // so its components are generic setting widgets rather than feature-specific containers.
+  //
+  // No file is exempted from the cap any more. Before adding an exemption back, check whether the
+  // component is registered in `modules/premium/register-components.ts`: those are rendered by the
+  // separately released premium bundle, so their props are a public API for a consumer outside this
+  // repo, and reshaping them needs the matching bundle change in the same release. Everything else
+  // gets reshaped rather than exempted. Note that a cap has to be restated per group, because a flat
+  // config replaces a rule's options rather than merging them.
   files: [
     '**/src/modules/shell/components/**/*.vue',
     '**/src/modules/assets/amount-display/**/*.vue',
@@ -121,33 +128,6 @@ export default rotki({
   ],
   rules: {
     'vue/max-props': ['error', { maxProps: 12 }],
-  },
-}, {
-  // `modules/premium/register-components.ts` registers 27 of our components globally so the
-  // separately released premium bundle can render them. Their props are therefore a public API for a
-  // consumer that does not live in this repo: renaming or grouping them cannot be verified here and
-  // would break premium at runtime with nothing in our lint, typecheck or test suite noticing.
-  //
-  // The rule is downgraded rather than silenced: the count stays reported, and reducing it needs a
-  // coordinated premium release. Caps are restated per group because a flat config replaces a rule's
-  // options rather than merging them, and dropping the cap here would stop the warning firing at all.
-  //
-  // If another registered component crosses its cap, add it here rather than reshaping its props —
-  // unless the matching premium change ships with it. That is how AssetSelect left this list: its
-  // five search props became one `source` object, and the bundle has to move to it in the same
-  // release, since the old props no longer reach the search.
-  //
-  // Check this list against `register-components.ts` before believing it. It used to also name
-  // BlockchainAccountSelector and AssetDetails as "cannot be fixed unilaterally", and NEITHER is
-  // registered — `git log -S` finds no commit that ever added them, so the claim was wrong when
-  // written rather than gone stale. Both are reachable from the bundle only because
-  // HistoryEventsView renders them, which is a rendering dependency, not an API one. Both have
-  // since been reshaped here with no premium release.
-  files: [
-    '**/src/modules/history/events/HistoryEventsView.vue',
-  ],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 8 }],
   },
 }, {
   // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that
