@@ -26,6 +26,14 @@ export { type WalletMode } from './constants';
 
 const STORE_ID = 'wallet';
 
+interface DisconnectOptions {
+  /**
+   * Whether to forget the remembered provider. Defaults to `true` for a deliberate
+   * user disconnect; session teardown passes `false`.
+   */
+  forgetProvider?: boolean;
+}
+
 // Lazy backend types
 type WalletConnectInstance = ReturnType<typeof import('./use-wallet-connect').useWalletConnect>;
 
@@ -211,14 +219,14 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     resetTransactions();
   };
 
-  const disconnect = async (): Promise<void> => {
+  const disconnect = async ({ forgetProvider = true }: DisconnectOptions = {}): Promise<void> => {
     set(isDisconnecting, true);
     try {
       if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
         if (injectedWalletInstance) {
           await injectedWalletInstance.disconnect();
         }
-        unifiedProviders.clearProvider();
+        unifiedProviders.clearProvider({ forget: forgetProvider });
       }
       else {
         if (walletConnectInstance) {
@@ -374,11 +382,14 @@ export const useWalletStore = defineStore(STORE_ID, () => {
  * `useWalletStore()` would build the whole wallet graph (bridge proxy, providers, transaction
  * manager) just to tear it down. The auth flows use this so the login screen no longer
  * instantiates the store.
+ *
+ * The remembered provider is kept: logging out is not the user saying they no longer want
+ * that wallet.
  */
 export async function disconnectWalletIfActive(): Promise<void> {
   const pinia = getActivePinia();
   if (!pinia || !Object.hasOwn(pinia.state.value, STORE_ID))
     return;
 
-  await useWalletStore().disconnect();
+  await useWalletStore().disconnect({ forgetProvider: false });
 }
