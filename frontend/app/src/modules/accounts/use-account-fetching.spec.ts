@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   notifyError: vi.fn(),
   queryAccounts: vi.fn(),
   queryBtcAccounts: vi.fn(),
+  revisionOf: vi.fn((_chain: string): number => 0),
   updateAccounts: vi.fn(),
 }));
 
@@ -29,7 +30,10 @@ vi.mock('@/modules/accounts/use-eth-staking', () => ({
 }));
 
 vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
-  useBlockchainAccountsStore: vi.fn(() => ({ updateAccounts: mocks.updateAccounts })),
+  useBlockchainAccountsStore: vi.fn(() => ({
+    revisionOf: mocks.revisionOf,
+    updateAccounts: mocks.updateAccounts,
+  })),
 }));
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
@@ -67,6 +71,23 @@ describe('useAccountFetching', () => {
     await useAccountFetching().fetch('btc');
     expect(mocks.queryBtcAccounts).toHaveBeenCalledWith('btc');
     expect(mocks.updateAccounts).toHaveBeenCalledWith('btc', []);
+  });
+
+  // A delete bumps the chain's revision. A read that was already in flight is carrying a
+  // pre-delete snapshot, so writing it back would replace the chain wholesale and put the
+  // deleted account back.
+  it.each([
+    ['btc', async (): Promise<void> => { mocks.queryBtcAccounts.mockResolvedValue({ standalone: [], xpubs: [] }); }],
+    ['eth', async (): Promise<void> => { mocks.queryAccounts.mockResolvedValue([{ address: '0xabc', label: null, tags: null }]); }],
+  ])('should drop a %s read whose revision moved while it was in flight', async (chain, arrange) => {
+    await arrange();
+    // 0 when the read starts, 1 by the time it resolves
+    mocks.revisionOf.mockReturnValueOnce(0).mockReturnValue(1);
+
+    const { useAccountFetching } = await importModule();
+    await useAccountFetching().fetch(chain);
+
+    expect(mocks.updateAccounts).not.toHaveBeenCalled();
   });
 
   it('should fetch eth staking validators for eth2', async () => {
