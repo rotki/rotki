@@ -146,7 +146,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_assets_mappings() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
 
         // Test with known asset identifiers i.e. using assets that should exist in the test database
         let queried_assets = vec![
@@ -282,7 +282,7 @@ mod tests {
     // caught it, because a change to the shipped database does not run the colibri job.
     #[tokio::test]
     async fn test_get_hyperliquid_asset_mapping() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
         {
             let conn = globaldb.conn.lock().await;
             conn.execute(

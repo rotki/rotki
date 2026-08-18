@@ -72,7 +72,7 @@ mod test {
 
     #[tokio::test]
     async fn test_coingecko_query() {
-        let globaldb = create_globaldb!()
+        let (globaldb, _tmp_dir) = create_globaldb!()
             .await
             .expect("Failed to create globaldb for coingecko");
         let mut server = mockito::Server::new_async().await;

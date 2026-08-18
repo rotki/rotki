@@ -320,26 +320,20 @@ impl GlobalDB {
 }
 
 /// macro that creates a copy of the globaldb in the rotkehlchen data folder
-/// and stores it in a temp folder
+/// and stores it in a temp folder.
+///
+/// Resolves to `(GlobalDB, TempDir)`. The `TempDir` guard deletes the 18MB copy
+/// when it is dropped, so keep it alive for as long as the `GlobalDB` is used.
 #[cfg(test)]
 #[macro_export]
 macro_rules! create_globaldb {
     () => {{
-        use rand::{rngs::StdRng, SeedableRng};
-        use std::{env, path::PathBuf, time::SystemTime};
+        use std::path::PathBuf;
         use tokio::fs;
         use $crate::globaldb::GlobalDB;
 
-        let timestamp = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_nanos();
-        let rnd = StdRng::from_rng(&mut rand::rng());
-
-        let tmp_dir = env::temp_dir().join(format!("global_{}_{:?}", timestamp, rnd));
-        fs::create_dir_all(tmp_dir.clone())
-            .await
-            .expect("Failed to create temp folder for globaldb");
+        let tmp_dir = tempfile::tempdir().expect("Failed to create temp folder for globaldb");
+        let db_path = tmp_dir.path().join("global.db");
         let root_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         fs::copy(
             (root_path.parent())
@@ -347,12 +341,12 @@ macro_rules! create_globaldb {
                 .join("rotkehlchen")
                 .join("data")
                 .join("global.db"),
-            tmp_dir.join("global.db"),
+            &db_path,
         )
         .await
         .expect("Failed to copy globaldb in create_globaldb macro");
 
-        GlobalDB::new(tmp_dir.join("global.db"))
+        async move { GlobalDB::new(db_path).await.map(|db| (db, tmp_dir)) }
     }};
 }
 
@@ -361,7 +355,7 @@ mod test {
     /// Test that the collections and coingecko ids are queried correctly.
     #[tokio::test]
     async fn test_query_asset_data() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
         let wsteth = "eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"; // wsteth
         let random_token = "eip155:1/erc20:0x7694e242C36B3Dd9481C6FDCc8F7C91Fc5BEc2bA";
         assert_eq!(
@@ -385,7 +379,7 @@ mod test {
 
     #[tokio::test]
     async fn test_query_asset_collection() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
         assert_eq!(
             // 44 is GNO
             globaldb.get_assets_in_collection(44).await.unwrap(),
@@ -405,7 +399,7 @@ mod test {
 
     #[tokio::test]
     async fn test_query_oracle_prices_with_filters_and_pagination() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
         {
             let conn = globaldb.conn.lock().await;
             conn.execute(

@@ -250,15 +250,12 @@ mod tests {
     }
 
     /// Create a throwaway session.db mirroring core's schema with the given active sids.
-    fn temp_session_db(sids: &[&str]) -> PathBuf {
-        use rand::{rngs::StdRng, SeedableRng};
-        use std::time::SystemTime;
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let rnd = StdRng::from_rng(&mut rand::rng());
-        let path = std::env::temp_dir().join(format!("session_test_{timestamp}_{rnd:?}.db"));
+    ///
+    /// The returned `TempDir` deletes the database when dropped, so keep it alive
+    /// for as long as the path is used.
+    fn temp_session_db(sids: &[&str]) -> (PathBuf, tempfile::TempDir) {
+        let tmp_dir = tempfile::tempdir().expect("Failed to create temp folder for session db");
+        let path = tmp_dir.path().join("session.db");
         let conn = Connection::open(&path).unwrap();
         conn.execute_batch(
             "PRAGMA journal_mode=WAL; CREATE TABLE active_sessions (\
@@ -272,7 +269,7 @@ mod tests {
             )
             .unwrap();
         }
-        path
+        (path, tmp_dir)
     }
 
     fn gate(key: &str, db_path: PathBuf) -> Option<Arc<SessionGate>> {
@@ -308,13 +305,13 @@ mod tests {
 
     #[test]
     fn rejects_missing_cookie() {
-        let db = temp_session_db(&["active-sid"]);
+        let (db, _tmp_dir) = temp_session_db(&["active-sid"]);
         assert_eq!(status_for(gate("k", db), None), StatusCode::UNAUTHORIZED);
     }
 
     #[test]
     fn rejects_invalid_cookie() {
-        let db = temp_session_db(&["active-sid"]);
+        let (db, _tmp_dir) = temp_session_db(&["active-sid"]);
         assert_eq!(
             status_for(gate("k", db), Some("garbage")),
             StatusCode::UNAUTHORIZED
@@ -326,7 +323,7 @@ mod tests {
         // temp_session_db inserts the row under "user0", so the token's username must
         // match: the gate binds (user, sid), not sid alone.
         let key = "the-session-key";
-        let db = temp_session_db(&["active-sid"]);
+        let (db, _tmp_dir) = temp_session_db(&["active-sid"]);
         let token = mint(key.as_bytes(), "user0", "active-sid", unix_now() + 3600);
         assert_eq!(status_for(gate(key, db), Some(&token)), StatusCode::OK);
     }
@@ -336,7 +333,7 @@ mod tests {
         // Hard revocation: a correctly-signed, unexpired token whose sid is NOT in
         // session.db (kicked by a newer login) must still be rejected.
         let key = "the-session-key";
-        let db = temp_session_db(&["the-active-sid"]);
+        let (db, _tmp_dir) = temp_session_db(&["the-active-sid"]);
         let token = mint(key.as_bytes(), "user0", "a-stale-sid", unix_now() + 3600);
         assert_eq!(
             status_for(gate(key, db), Some(&token)),
@@ -349,7 +346,7 @@ mod tests {
         // The sid is active, but for a different user: binding (user, sid) rejects a
         // token that claims someone else's active sid.
         let key = "the-session-key";
-        let db = temp_session_db(&["active-sid"]); // belongs to "user0"
+        let (db, _tmp_dir) = temp_session_db(&["active-sid"]); // belongs to "user0"
         let token = mint(key.as_bytes(), "mallory", "active-sid", unix_now() + 3600);
         assert_eq!(
             status_for(gate(key, db), Some(&token)),
@@ -360,14 +357,17 @@ mod tests {
     #[test]
     fn missing_session_db_rejects() {
         // session.db not created yet (no login): every gated request is 401.
-        let path = std::env::temp_dir().join("session_test_does_not_exist_xyz.db");
+        // The path lives in a private temp dir, so nothing outside this test can
+        // create the file and silently invert the assertion.
+        let tmp_dir = tempfile::tempdir().expect("Failed to create temp folder for session db");
+        let path = tmp_dir.path().join("does_not_exist.db");
         let store = SessionStore::new(path);
         assert!(!store.is_active("user0", "anything"));
     }
 
     #[test]
     fn store_reflects_committed_changes_via_data_version() {
-        let db = temp_session_db(&["sid-1"]); // "user0" -> sid-1
+        let (db, _tmp_dir) = temp_session_db(&["sid-1"]); // "user0" -> sid-1
         let store = SessionStore::new(db.clone());
         assert!(store.is_active("user0", "sid-1")); // warms the cache
         assert!(!store.is_active("user0", "sid-2"));
