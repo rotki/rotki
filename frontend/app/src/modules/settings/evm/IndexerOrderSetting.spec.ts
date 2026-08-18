@@ -1,4 +1,5 @@
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
+import type PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
 import { Blockchain } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { libraryDefaults } from '@test/utils/provide-defaults';
@@ -44,6 +45,13 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
       useChainImageUrl: () => computed(() => ''),
     }),
   };
+});
+
+const push = vi.fn();
+
+vi.mock('vue-router', async () => {
+  const mod = await vi.importActual<typeof import('vue-router')>('vue-router');
+  return { ...mod, useRouter: vi.fn(() => ({ push })) };
 });
 
 vi.mock('@/modules/settings/use-settings-operations', async () => {
@@ -164,8 +172,7 @@ describe('indexerOrderSetting', () => {
 
   it('should warn about the chains with indexer caveats', async () => {
     await mountWith([EvmIndexer.ETHERSCAN], { gnosis: [EvmIndexer.ETHERSCAN] });
-    wrapper.findComponent<{ modelValue: string }>('[data-testid=indexer-tabs]').vm.$emit('update:model-value', 'gnosis');
-    await nextTick();
+    await selectTab('gnosis');
 
     const warnings = wrapper.findAll('[data-testid=chain-warning-alert]');
     expect(warnings).toHaveLength(1);
@@ -176,5 +183,85 @@ describe('indexerOrderSetting', () => {
     await mountWith([EvmIndexer.ETHERSCAN], { gnosis: [EvmIndexer.ETHERSCAN] });
 
     expect(wrapper.findAll('[data-testid=chain-warning-alert]')).toHaveLength(0);
+  });
+
+  async function selectTab(tab: string): Promise<void> {
+    await wrapper.find(`[data-testid=indexer-tab][data-key="${tab}"]`).trigger('click');
+    await nextTick();
+  }
+
+  function defaultList(): VueWrapper<InstanceType<typeof PrioritizedList>> {
+    return wrapper.findComponent<typeof PrioritizedList>('[data-testid=default-indexer-order]');
+  }
+
+  function chainList(): VueWrapper<InstanceType<typeof PrioritizedList>> {
+    return wrapper.findComponent<typeof PrioritizedList>('[data-testid=chain-indexer-order]');
+  }
+
+  it('should apply a reordered default order', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT]);
+    expect(defaultList().props('modelValue')).toEqual([EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT]);
+
+    defaultList().vm.$emit('update:model-value', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    await nextTick();
+
+    expect(defaultList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
+  it('should re-evaluate the api key prompt after a reorder', async () => {
+    await mountWith([EvmIndexer.ROUTESCAN, EvmIndexer.ETHERSCAN]);
+    expect(wrapper.find('[data-testid=missing-api-key-alert]').exists()).toBe(false);
+
+    defaultList().vm.$emit('update:model-value', [EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN]);
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=missing-api-key-alert]').exists()).toBe(true);
+  });
+
+  it('should apply a reordered chain order', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] });
+    await selectTab('gnosis');
+
+    chainList().vm.$emit('update:model-value', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    await nextTick();
+
+    expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+  });
+
+  it('should persist the remaining overrides when a chain is removed', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], {
+      gnosis: [EvmIndexer.ETHERSCAN],
+      optimism: [EvmIndexer.ETHERSCAN],
+    });
+
+    wrapper.findAllComponents({ name: 'IndexerTabLabel' })[0].vm.$emit('remove', 'gnosis');
+    await flushPromises();
+
+    const { update } = useSettingsOperations();
+    expect(update).toHaveBeenCalledWith({ evmIndexersOrder: { optimism: [EvmIndexer.ETHERSCAN] } });
+    expect(wrapper.findAll('[data-testid=indexer-tab]')).toHaveLength(2);
+  });
+
+  it('should return to the default tab when the open chain is removed', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN], { gnosis: [EvmIndexer.ETHERSCAN] });
+    await selectTab('gnosis');
+    expect(chainList().exists()).toBe(true);
+
+    wrapper.findAllComponents({ name: 'IndexerTabLabel' })[0].vm.$emit('remove', 'gnosis');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=default-indexer-order]').exists()).toBe(true);
+  });
+
+  it('should route to the api key page for the indexer it asks about', async () => {
+    await mountWith([EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN]);
+
+    await wrapper.find('[data-testid=missing-api-key-alert] button').trigger('click');
+    await flushPromises();
+
+    expect(push).toHaveBeenCalledWith({
+      name: '/api-keys/external/',
+      query: { service: EvmIndexer.ETHERSCAN },
+    });
   });
 });
