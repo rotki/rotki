@@ -549,6 +549,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     cursor=cursor,
                 )
 
+            for disabled_chain, disabled_addresses in CachedSettings().get_settings().disabled_chain_queries.items():  # noqa: E501
+                chain_balances = balances.get(disabled_chain)
+                if len(disabled_addresses) == 0:
+                    chain_balances.clear()
+                    continue
+
+                for address in disabled_addresses:
+                    chain_balances.pop(address, None)  # type: ignore[call-overload]
+
             self._populate_cached_balances_values(
                 balances=balances,
                 last_query_ts=last_query_ts,
