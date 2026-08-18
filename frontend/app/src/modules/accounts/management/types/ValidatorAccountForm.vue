@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import Eth2Input from '@/modules/accounts/blockchain/Eth2Input.vue';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
-const modelValue = defineModel<StakingValidatorManage>({ required: true });
+// The validator itself rather than the account state holding it: this form edits one field of that
+// state, and taking the whole thing only meant unwrapping it again here.
+const validator = defineModel<Eth2Validator>('validator', { required: true });
 
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 defineProps<{
+  editMode: boolean;
   loading: boolean;
 }>();
-
-const validator = useRefPropVModel(modelValue, 'data');
 
 const input = useTemplateRef<ComponentExposed<typeof Eth2Input>>('input');
 
@@ -39,7 +39,7 @@ defineExpose({
     ref="input"
     v-model:validator="validator"
     v-model:error-messages="errorMessages"
-    :edit-mode="modelValue.mode === 'edit'"
+    :edit-mode="editMode"
     :disabled="loading || taskRunning"
   />
 </template>
