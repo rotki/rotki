@@ -110,9 +110,8 @@ defineExpose({
         ? t('dashboard.snapshot.edit.dialog.location_data.edit_title')
         : t('dashboard.snapshot.edit.dialog.location_data.add_title')
     "
-    :primary-action="t('common.actions.save')"
+    :action="{ disabled: rateMissing, primary: t('common.actions.save') }"
     :loading="submitting"
-    :action-disabled="rateMissing"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="close()"

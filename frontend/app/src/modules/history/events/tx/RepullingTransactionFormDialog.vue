@@ -173,9 +173,11 @@ async function submit(): Promise<void> {
   <BigDialog
     :display="modelValue"
     :title="t('transactions.repulling.action')"
-    :primary-action="t('transactions.repulling.action')"
-    :action-disabled="loading || taskRunning"
-    :action-tooltip="loading ? t('transactions.repulling.loading_tooltip') : ''"
+    :action="{
+      disabled: loading || taskRunning,
+      primary: t('transactions.repulling.action'),
+      tooltip: loading ? t('transactions.repulling.loading_tooltip') : '',
+    }"
     :loading="submitting || taskRunning"
     :prompt-on-close="stateUpdated"
     @confirm="submit()"

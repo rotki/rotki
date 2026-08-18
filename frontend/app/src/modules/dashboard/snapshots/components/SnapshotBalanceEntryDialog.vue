@@ -289,9 +289,11 @@ defineExpose({
         ? t('dashboard.snapshot.edit.dialog.balances.edit_title')
         : t('dashboard.snapshot.edit.dialog.balances.add_title')
     "
-    :primary-action="t('common.actions.save')"
+    :action="{
+      disabled: rateMissing || (splitMode && !splitValid),
+      primary: t('common.actions.save'),
+    }"
     :loading="submitting"
-    :action-disabled="rateMissing || (splitMode && !splitValid)"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="close()"

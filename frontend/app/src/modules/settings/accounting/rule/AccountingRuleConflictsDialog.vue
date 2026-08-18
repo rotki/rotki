@@ -177,13 +177,12 @@ async function save() {
 
 <template>
   <BigDialog
-    :action-disabled="!valid"
+    :action="{ disabled: !valid, primary: t('common.actions.save') }"
     display
+    :layout="{ maxWidth: '75rem' }"
     :loading="loading"
     :persistent="resolutionLength > 0"
-    :primary-action="t('common.actions.save')"
     :title="t('accounting_settings.rule.conflicts.title')"
-    max-width="75rem"
     @cancel="close()"
     @confirm="save()"
   >

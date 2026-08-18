@@ -144,14 +144,14 @@ onMounted(() => {
 <template>
   <BigDialog
     :title="t('conflict_dialog.title')"
-    :action-disabled="!valid"
+    :action="{
+      disabled: !valid,
+      primary: !manualResolution ? t('conflict_dialog.keep_remote') : undefined,
+      secondary: !manualResolution ? t('conflict_dialog.keep_local') : undefined,
+    }"
+    :layout="{ autoHeight: !manualResolution, divide: true, maxWidth: '75rem' }"
     :persistent="resolutionLength > 0"
-    :auto-height="!manualResolution"
-    :primary-action="!manualResolution ? t('conflict_dialog.keep_remote') : undefined"
-    :secondary-action="!manualResolution ? t('conflict_dialog.keep_local') : undefined"
-    max-width="75rem"
     display
-    divide
     @confirm="resolve()"
     @cancel="cancel()"
   >

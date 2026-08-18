@@ -160,8 +160,7 @@ defineExpose({
   <BigDialog
     :display="openDialog"
     :title="t('evm_rpc_node_manager.add_dialog.title')"
-    :primary-action="t('common.actions.save')"
-    :secondary-action="t('common.actions.cancel')"
+    :action="{ primary: t('common.actions.save') }"
     :prompt-on-close="stateUpdated"
     :loading="submitting"
     @confirm="save()"

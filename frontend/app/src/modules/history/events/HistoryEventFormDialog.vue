@@ -68,12 +68,10 @@ watch(modelValue, (value) => {
   <BigDialog
     :display="modelValue !== undefined"
     :title="title"
-    :primary-action="t('common.actions.save')"
-    :action-disabled="loading"
+    :action="{ disabled: loading, primary: t('common.actions.save') }"
+    :errors="{ autoScroll: true, count: errorCount }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
-    :error-count="errorCount"
-    auto-scroll-to-error
     @confirm="save()"
     @cancel="modelValue = undefined"
   >

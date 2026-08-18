@@ -113,11 +113,9 @@ async function save() {
   <BigDialog
     :display="!!modelValue"
     :title="dialogTitle"
-    :primary-action="t('common.actions.save')"
-    :secondary-action="t('common.actions.cancel')"
+    :action="{ primary: t('common.actions.save') }"
     :prompt-on-close="stateUpdated"
     :loading="submitting"
-    :retain-focus="false"
     @confirm="save()"
     @cancel="resetForm()"
   >
