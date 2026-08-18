@@ -2,8 +2,8 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComponentPublicInstance, defineComponent, h, type VNode } from 'vue';
 import AccountingRuleForm from '@/modules/settings/accounting/rule/AccountingRuleForm.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
 
@@ -79,7 +79,12 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          AccountingRuleWithLinkedSetting: true,
+          AccountingRuleWithLinkedSetting: {
+            emits: ['update:modelValue'],
+            name: 'AccountingRuleWithLinkedSetting',
+            props: ['modelValue', 'identifier'],
+            template: '<div />',
+          },
           CounterpartyInput: CounterpartyInputStub,
           ExternalLink: true,
           HistoryEventTypeForm: HistoryEventTypeFormStub,
@@ -269,5 +274,58 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
     wrapper.unmount();
 
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([false]);
+  });
+
+  /*
+   * The three toggles are edited here like any other field, but they are answered by a linked
+   * accounting setting as often as by the user, so a change to one must reach the rule without
+   * counting as an unsaved edit. Both halves are asserted, because either alone would let the
+   * other regress: dropping them from the state stops the write, and dropping them from the
+   * transient keys makes the dialog prompt on close over something nobody touched.
+   */
+  describe('the linked toggles', () => {
+    function toggle(identifier: string): VueWrapper<ComponentPublicInstance<Record<string, unknown>>> {
+      const all = wrapper.findAllComponents<ComponentPublicInstance<Record<string, unknown>>>({
+        name: 'AccountingRuleWithLinkedSetting',
+      });
+      const found = all.find(item => item.props('identifier') === identifier);
+      assert(found);
+      return found;
+    }
+
+    it.each(['taxable', 'countEntireAmountSpend', 'countCostBasisPnl'])(
+      'should carry an edited %s into the rule',
+      async (identifier) => {
+        wrapper = createWrapper({ modelValue: createRule() });
+
+        toggle(identifier).vm.$emit('update:modelValue', { value: true });
+        await nextTick();
+
+        const last = wrapper.emitted<[AccountingRuleEntry]>('update:modelValue')?.at(-1);
+        assert(last);
+        expect(Reflect.get(last[0], identifier)).toStrictEqual({ value: true });
+      },
+    );
+
+    it('should not read an edited toggle as an unsaved change', async () => {
+      wrapper = createWrapper({ modelValue: createRule() });
+
+      toggle('taxable').vm.$emit('update:modelValue', { value: true });
+      await nextTick();
+
+      expect(wrapper.emitted('update:stateUpdated')).toBeUndefined();
+    });
+
+    it('should still read an edited field as an unsaved change', async () => {
+      // The contrast that makes the assertion above mean something.
+      wrapper = createWrapper({ modelValue: createRule() });
+
+      toggle('taxable').vm.$emit('update:modelValue', { value: true });
+      await nextTick();
+      counterpartyInput().vm.$emit('update:modelValue', 'aave');
+      await nextTick();
+
+      expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toStrictEqual([true]);
+    });
   });
 });
