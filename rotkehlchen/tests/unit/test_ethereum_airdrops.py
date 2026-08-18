@@ -203,7 +203,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
 
 
 def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
-    mock_response = Mock()
+    mock_response = Mock(status_code=HTTPStatus.OK)
     if url == AIRDROPS_INDEX:
         mock_response.headers = {'ETag': 'etag'}
         mock_response.text = json.dumps(NOT_CSV_WEBPAGE)
@@ -224,7 +224,7 @@ def prepare_airdrop_mock_response(
     and read timeout errors can happen even with 90secs threshold. Vcr-ing it is not possible
     because the vcr yaml file is above the github limit of 100MB. The schema of AIRDROPS_INDEX
     is checked in the rotki/data repo."""
-    mock_response = Mock()
+    mock_response = Mock(status_code=HTTPStatus.OK)
     if update_airdrop_index is True:
         mock_airdrop_index['airdrops']['diva']['file_hash'] = 'updated_hash'
         mock_airdrop_index['poap_airdrops']['aave_v2_pioneers'][3] = 'updated_hash'
@@ -610,6 +610,23 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
         )
         if remote_etag != database_etag:  # check if the value is updated
             assert metadata[0]['diva'].name == 'new_name'
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_fetch_airdrops_metadata_http_error(database: DBHandler) -> None:
+    response = Mock(
+        status_code=HTTPStatus.TOO_MANY_REQUESTS,
+        text='429: Too Many Requests',
+    )
+
+    with (
+        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', return_value=response),
+        pytest.raises(
+            RemoteError,
+            match='Airdrops Index request failed with HTTP status 429: 429: Too Many Requests',
+        ),
+    ):
+        fetch_airdrops_metadata(database)
 
 
 @pytest.mark.vcr
