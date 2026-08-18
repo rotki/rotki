@@ -1,5 +1,5 @@
 import { startPromise } from '@shared/utils';
-import { get, isDefined, set } from '@vueuse/core';
+import { createSharedComposable, get, isDefined, set } from '@vueuse/core';
 import { computed, getCurrentScope, onScopeDispose, ref } from 'vue';
 import { waitForCondition } from '@/modules/core/common/async/async-utilities';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -23,7 +23,7 @@ interface UseWalletProxyReturn {
   disconnectProxy: () => Promise<void>;
 }
 
-export function useWalletProxy(): UseWalletProxyReturn {
+function _useWalletProxy(): UseWalletProxyReturn {
   const { isProxyClientConnected, isProxyClientReady, isProxyHttpListening, isProxyWebSocketListening, openProxyPageInDefaultBrowser, proxyStopServers } = useWalletBridge();
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
 
@@ -288,9 +288,6 @@ export function useWalletProxy(): UseWalletProxyReturn {
   // Cleanup when the owning scope is disposed. This composable is created inside the wallet
   // store, so a component hook would bind to whichever component happened to instantiate the
   // store first and tear the bridge down when that unrelated component unmounted.
-  //
-  // useInjectedWallet() builds a second instance from an async action, where there is no scope
-  // to attach to; that one is torn down explicitly by its disconnect() instead.
   if (getCurrentScope()) {
     onScopeDispose(() => {
       logger.debug('Scope disposed, cleaning up bridge resources...');
@@ -307,3 +304,13 @@ export function useWalletProxy(): UseWalletProxyReturn {
     waitForProxyConnection,
   };
 }
+
+/**
+ * Shared across every consumer on purpose. The proxy owns process-wide resources - the health
+ * check interval, the setup abort controller and its timeout - and two instances split that
+ * state: the wallet store held one (which ran `setupProxy`) while `useInjectedWallet` held
+ * another (which ran the health check and `disconnectProxy`). Disconnecting therefore could
+ * not abort a setup that was still in flight, because the abort controller belonged to the
+ * other instance.
+ */
+export const useWalletProxy = createSharedComposable(_useWalletProxy);
