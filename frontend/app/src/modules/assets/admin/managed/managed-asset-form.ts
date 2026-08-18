@@ -1,7 +1,56 @@
-import { isValidEthAddress, isValidHyperliquidTokenAddress, isValidSolanaAddress } from '@rotki/common';
+import { isValidEthAddress, isValidHyperliquidTokenAddress, isValidSolanaAddress, type SupportedAsset } from '@rotki/common';
 import { z, type ZodType } from 'zod';
 import { EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { requiredField } from '@/modules/core/form/fields';
+
+/**
+ * The fields the payload admits as null and an input has to hold as a string.
+ *
+ * Not every nullable field is one of these: `decimals` and `started` are nullable too, and are
+ * bound through their own converters, which have a use for the difference between empty and zero.
+ */
+type OptionalTextField =
+  | 'address'
+  | 'coingecko'
+  | 'collectibleId'
+  | 'cryptocompare'
+  | 'forked'
+  | 'name'
+  | 'protocol'
+  | 'swappedFor'
+  | 'symbol';
+
+/**
+ * The asset as the form's inputs hold it: the optional text fields are always a string, empty where
+ * the payload has nothing.
+ *
+ * Derived from the payload rather than spelled out, so a field added to `SupportedAsset` reaches
+ * the form without anyone having to add it here too.
+ */
+export type ManagedAssetFormState =
+  Omit<SupportedAsset, OptionalTextField> & Record<OptionalTextField, string>;
+
+/**
+ * Widens the payload into what the inputs can bind to.
+ *
+ * The empty string survives as far as `buildManagedAssetPayload`, which is where it turns back into
+ * an absent field. That is deliberate: the api reads an absent field as "leave it alone" and an
+ * empty one as "clear it", and only the payload builder knows which of the two each field wants.
+ */
+export function toManagedAssetFormState(asset: SupportedAsset): ManagedAssetFormState {
+  return {
+    ...asset,
+    address: asset.address ?? '',
+    coingecko: asset.coingecko ?? '',
+    collectibleId: asset.collectibleId ?? '',
+    cryptocompare: asset.cryptocompare ?? '',
+    forked: asset.forked ?? '',
+    name: asset.name ?? '',
+    protocol: asset.protocol ?? '',
+    swappedFor: asset.swappedFor ?? '',
+    symbol: asset.symbol ?? '',
+  };
+}
 
 export interface ManagedAssetMessages {
   addressInvalid: string;

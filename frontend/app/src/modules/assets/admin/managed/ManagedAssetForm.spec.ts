@@ -224,6 +224,75 @@ describe('managedAssetForm', () => {
     expect(messages('symbol-input')).toEqual(['already taken']);
   });
 
+  // The form edits its own state and the dialog saves what it reads off the model, so an edit that
+  // never reaches the model is an edit that never gets persisted. Before the fields bound to
+  // `form.state` this direction was the one thing nothing here covered.
+  describe('writing back to the model', () => {
+    function lastModel(): SupportedAsset {
+      const emitted = wrapper.emitted<[SupportedAsset]>('update:modelValue');
+      const last = emitted?.at(-1);
+      assert(last);
+      return last[0];
+    }
+
+    it('should carry a typed name into the model', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      field('name-input').vm.$emit('update:modelValue', 'Circle USD');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().name).toBe('Circle USD');
+    });
+
+    it('should not report an edit the form never made', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The negative control for the test above: opening the form is not an edit, so a passing
+      // assertion there cannot be the model simply echoing what it was seeded with.
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+      expect(wrapper.emitted('update:stateUpdated')).toBeUndefined();
+    });
+
+    it('should keep a cleared optional field empty rather than absent', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The state holds '' rather than clearing the key, and `buildManagedAssetPayload` is what
+      // turns it back into an absent field. Clearing it here must not produce null.
+      field('symbol-input').vm.$emit('update:modelValue', '');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().symbol).toBe('');
+    });
+
+    it('should flag the dialog once a field is edited', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      field('symbol-input').vm.$emit('update:modelValue', 'USDC2');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.emitted<[boolean]>('update:stateUpdated')?.at(-1)).toEqual([true]);
+    });
+
+    it('should re-derive which fields apply from the edited type', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The chain select belongs to an evm token alone, and the rules that ask for an address read
+      // the same answer, so this is what proves the kind follows the state the fields write into.
+      expect(field('chain-select').exists()).toBe(true);
+
+      field('type-select').vm.$emit('update:modelValue', CUSTOM_ASSET);
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().assetType).toBe(CUSTOM_ASSET);
+      expect(wrapper.find('[data-testid=chain-select]').exists()).toBe(false);
+    });
+  });
+
   it('should clear the server errors when the asset type changes', async () => {
     const errorMessages: ValidationErrors = { symbol: ['already taken'] };
     wrapper = createWrapper(evmToken(), { errorMessages });
