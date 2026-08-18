@@ -107,6 +107,19 @@ describe('useDisabledChainQueriesState', () => {
       expect(payload).toEqual({ eth: [ADDR_A], optimism: [ADDR_A] });
     });
 
+    it('should not add a second rule for a chain that already has one', async () => {
+      // The chain picker offers every chain, including ones already ruled, and the payload collapses
+      // both onto one key - so a re-add showed the chain twice in the list while saving nothing, and
+      // the phantom row only disappeared on the next reload.
+      harness = createHarness({ source: { zksync_lite: [] } });
+      await flushPromises();
+
+      const payload = harness.state.addRule({ chainId: 'zksync_lite', kind: 'chain' });
+
+      expect(get(harness.state.rules)).toHaveLength(1);
+      expect(payload).toBeUndefined();
+    });
+
     it('should auto-merge address rules for the same address', async () => {
       harness = createHarness({ source: {} });
       await flushPromises();
