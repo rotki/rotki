@@ -1,9 +1,10 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { FormApi } from '@/modules/core/form/use-form';
 import { startPromise } from '@shared/utils';
 import { describe, expect, it } from 'vitest';
-import { customRef, nextTick, type Ref, ref } from 'vue';
+import { customRef, nextTick, type Ref, ref, type UnwrapNestedRefs } from 'vue';
 import { z } from 'zod';
-import { useModelForm } from '@/modules/core/form/use-model-form';
+import { useMappedModelForm, useModelForm } from '@/modules/core/form/use-model-form';
 
 interface PriceState {
   fromAsset: string;
@@ -225,6 +226,117 @@ describe('useModelForm', () => {
       await nextTick();
 
       expect(form.errors('price')).toEqual([]);
+    });
+  });
+
+  describe('mapped state', () => {
+    /** The payload admits null where the input needs a string, which is the usual reason to map. */
+    interface PriceModel {
+      fromAsset: string;
+      price: string | null;
+      sourceType: string;
+      tags: string[] | null;
+    }
+
+    interface MappedOverrides {
+      model?: Ref<PriceModel>;
+      stateUpdated?: Ref<boolean>;
+    }
+
+    function baseMapped(): PriceModel {
+      return { fromAsset: 'ETH', price: null, sourceType: 'manual', tags: null };
+    }
+
+    function createMapped(overrides: MappedOverrides = {}): FormApi<PriceState, UnwrapNestedRefs<PriceState>> {
+      return useMappedModelForm<PriceModel, PriceState>({
+        model: overrides.model ?? ref<PriceModel>(baseMapped()),
+        schema: PriceSchema,
+        stateUpdated: overrides.stateUpdated,
+        toModel: (state, model): PriceModel => ({ ...model, ...state }),
+        // A new array every call on purpose: the mirroring has to notice that it holds the same
+        // values rather than that it is the same reference.
+        toState: (model): PriceState => ({
+          fromAsset: model.fromAsset,
+          price: model.price ?? '',
+          sourceType: model.sourceType,
+          tags: [...(model.tags ?? [])],
+        }),
+      });
+    }
+
+    it('should open on the mapped state rather than the payload', () => {
+      const form = createMapped();
+
+      expect(form.state.price).toBe('');
+      expect(form.state.tags).toEqual([]);
+    });
+
+    it('should write an edit back through the payload mapper', async () => {
+      const model = ref<PriceModel>(baseMapped());
+      const form = createMapped({ model });
+
+      form.state.price = '3000';
+      await nextTick();
+
+      expect(get(model).price).toBe('3000');
+    });
+
+    it('should leave the payload fields the state does not carry alone', async () => {
+      const model = ref<PriceModel>({ ...baseMapped(), fromAsset: 'BTC' });
+      const form = createMapped({ model });
+
+      form.state.price = '3000';
+      await nextTick();
+
+      // `toModel` is handed the payload precisely so a form editing part of one can fold over it.
+      expect(get(model).fromAsset).toBe('BTC');
+    });
+
+    it('should map an edit made outside the form on the way in', async () => {
+      const model = ref<PriceModel>(baseMapped());
+      const form = createMapped({ model });
+
+      set(model, { ...baseMapped(), price: null, sourceType: 'oracle' });
+      await nextTick();
+
+      expect(form.state.sourceType).toBe('oracle');
+      expect(form.state.price).toBe('');
+    });
+
+    /*
+     * Unlike the unmapped case above, this one does pin the equality guard rather than merely
+     * documenting it. `toState` answers with a new array every call, so without the comparison the
+     * mirroring would assign a fresh reference each pass, the write-back would answer with a fresh
+     * payload, and the two would trade writes until the test timed out.
+     */
+    it('should settle even though the mapper answers with a new object each time', async () => {
+      const model = ref<PriceModel>({ ...baseMapped(), tags: ['manual'] });
+      const form = createMapped({ model });
+
+      let writes = 0;
+      watch(model, () => {
+        writes += 1;
+      }, { deep: true });
+
+      form.state.price = '3000';
+      await nextTick();
+      await nextTick();
+      await nextTick();
+
+      expect(writes).toBe(1);
+      expect(form.state.price).toBe('3000');
+      expect(get(model).price).toBe('3000');
+      expect(form.state.tags).toEqual(['manual']);
+    });
+
+    it('should not read the mapping itself as an edit', async () => {
+      const stateUpdated = ref<boolean>(false);
+      const form = createMapped({ stateUpdated });
+      await nextTick();
+
+      // Opening on '' where the payload holds null is the mapper doing its job, not the user typing.
+      expect(get(form.dirty)).toBe(false);
+      expect(get(stateUpdated)).toBe(false);
     });
   });
 
