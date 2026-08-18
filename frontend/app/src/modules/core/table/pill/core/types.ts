@@ -264,6 +264,8 @@ export interface PillBarLabels {
   readonly narrowEmpty: string;
   /** Accessible name for a pill's remove control, which is an icon with no text of its own. */
   readonly remove: string;
+  /** Lead-in for the narrowing popover's footer of typeable examples. */
+  readonly syntax: string;
 }
 
 /** One active filter, agnostic of presentation. */

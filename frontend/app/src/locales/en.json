@@ -5969,7 +5969,12 @@
       "narrow": "Filter…",
       "narrow_empty": "No matches",
       "remove": "Remove filter",
-      "search": "Filter by…"
+      "search": "Filter by…",
+      "syntax": {
+        "date_keywords": "date time when period since after before until",
+        "label": "Type directly:",
+        "range_keywords": "amount number value range more less over under above below at least at most"
+      }
     },
     "saved_views": {
       "actions": {

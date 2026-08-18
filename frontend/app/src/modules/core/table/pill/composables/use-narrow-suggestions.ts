@@ -4,8 +4,14 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { startPromise } from '@shared/utils';
 import { assetDisplayCaption, assetDisplayLabel } from '@/modules/core/common/display/assets';
 import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
+import { usePillSyntaxHints } from '@/modules/core/table/pill/composables/use-pill-syntax-hints';
 import { useRecentFilterValues } from '@/modules/core/table/pill/composables/use-recent-filter-values';
-import { fieldSuggestions, type NarrowSuggestion, searchFieldsAndValues } from '@/modules/core/table/pill/core/narrowing';
+import {
+  fieldSuggestions,
+  type NarrowSuggestion,
+  searchFieldsAndValues,
+  syntaxExamples,
+} from '@/modules/core/table/pill/core/narrowing';
 
 /** Asset matches offered at once, so a broad query cannot bury the rest of the list. */
 const ASSET_RESULT_CAP = 5;
@@ -17,6 +23,8 @@ interface NarrowSuggestionsReturn {
   suggestions: ComputedRef<NarrowSuggestion[]>;
   /** An asset search is in flight; the list is usable meanwhile. */
   loading: Readonly<Ref<boolean>>;
+  /** Verbatim examples of what can be typed, for the fields currently on offer. */
+  examples: ComputedRef<string[]>;
 }
 
 /**
@@ -37,6 +45,7 @@ export function useNarrowSuggestions(
 ): NarrowSuggestionsReturn {
   const { recentFor } = useRecentFilterValues();
   const operatorLabels = useOperatorLabels();
+  const syntaxHints = usePillSyntaxHints();
   const assetSuggestions = ref<NarrowSuggestion[]>([]);
   const loading = shallowRef<boolean>(false);
   // Only the newest search may publish: an earlier, slower response would otherwise overwrite it.
@@ -97,10 +106,12 @@ export function useNarrowSuggestions(
     // An asset field that already has a pill is no longer offered, and neither are its assets.
     const offersAssets = available.some(field => field.searchAsset);
     return [
-      ...searchFieldsAndValues(toValue(query), available, get(operatorLabels), undefined, recentFor),
+      ...searchFieldsAndValues(toValue(query), available, get(operatorLabels), undefined, recentFor, get(syntaxHints)),
       ...(offersAssets ? get(assetSuggestions) : []),
     ];
   });
 
-  return { loading: readonly(loading), suggestions };
+  const examples = computed<string[]>(() => syntaxExamples(toValue(fields), get(syntaxHints)));
+
+  return { examples, loading: readonly(loading), suggestions };
 }
