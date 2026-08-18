@@ -1,9 +1,9 @@
 import type { MaybeRefOrGetter, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { isEqual } from 'es-toolkit';
 import { toServerErrors } from '@/modules/core/form/server-errors';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
+import { type ModelMirrorOptions, useModelMirror } from '@/modules/core/form/use-model-mirror';
 
 interface SharedModelFormOptions<TState extends object> {
   /** The single validation source of truth. A getter for rules that depend on props. */
@@ -33,26 +33,10 @@ export interface ModelFormOptions<TState extends object> extends SharedModelForm
 export interface MappedModelFormOptions<
   TModel extends object,
   TState extends object,
-> extends SharedModelFormOptions<TState> {
-  /** The payload the parent dialog owns, saves, and reseeds. Edits are mirrored back into it. */
-  readonly model: Ref<TModel>;
-  /**
-   * The payload as the inputs need to hold it. Called for the opening state and again for every
-   * edit made outside the form.
-   *
-   * 🔴 It has to be stable: the same payload in must give a deep-equal state out. The mirroring
-   * below compares the two to decide whether an outside edit is news, and a mapper that invents a
-   * fresh value each call - a timestamp, a generated id - reports every pass as a change and the
-   * two directions then write to each other without settling.
-   */
-  readonly toState: (model: TModel) => TState;
-  /**
-   * The state as the payload wants it. Handed the payload the dialog is currently holding as well,
-   * so a form that edits part of a larger payload can fold its fields over it and leave the rest
-   * alone.
-   */
-  readonly toModel: (state: UnwrapNestedRefs<TState>, model: TModel) => TModel;
-}
+> extends
+  SharedModelFormOptions<TState>,
+  // The two mappers and the payload are the mirror's, described there.
+  Pick<ModelMirrorOptions<TModel, TState>, 'model' | 'toModel' | 'toState'> {}
 
 /**
  * A form whose state belongs to the dialog above it, and whose fields are shaped differently from
@@ -87,39 +71,21 @@ export function useMappedModelForm<TModel extends object, TState extends object>
     transientKeys,
   });
 
-  // Every edit is written back, because the dialog saves what it reads off the model, not what the
-  // form holds.
-  watch(() => form.state, (state) => {
-    set(model, toModel(state, get(model)));
-  }, { deep: true });
-
-  if (seed) {
-    // The dialog saves what it reads off the model, so the opening state has to land there too. It
-    // is not readable back on this tick, which is why the sync below skips its immediate run: the
-    // state is already the newer of the two, and reading the model now would undo the seeding.
-    set(model, toModel(form.state, get(model)));
-  }
+  // The two shapes are kept in step by the mirror, which is this without the validation: the form
+  // adds rules, errors and a dirty flag on top of state that is already being mapped both ways.
+  useModelMirror<TModel, TState>({
+    model,
+    seeded: Boolean(seed),
+    state: form.state,
+    toModel,
+    toState,
+  });
 
   if (serverErrors) {
     watchImmediate(serverErrors, (value) => {
       form.setServerErrors(toServerErrors(value));
     }, { deep: true });
   }
-
-  // And an edit made outside the form - a reset, a different row seeded while it stays mounted - is
-  // pulled back in.
-  //
-  // 🔴 The equality guard is what makes this terminate. `toState` answers with a new object every
-  // time, so assigning it back unconditionally would count as a change even when nothing moved, and
-  // the write-back above would then answer that with a new payload, forever. Comparing first means
-  // a pass that found nothing new stops here. `syncRef` handles the same problem by pausing the
-  // opposing watcher, but it needs two refs of one type and a sync flush, and these two are neither
-  // the same shape nor plain refs.
-  watch(model, (value) => {
-    const next = toState(value);
-    if (!isEqual(next, form.state))
-      Object.assign(form.state, next);
-  }, { deep: true, immediate: !seed });
 
   if (stateUpdated) {
     // Immediate, so reopening a dialog that kept its flag from the last edit starts disarmed.
