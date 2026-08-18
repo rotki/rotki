@@ -91,8 +91,7 @@ watch(modelValue, (modelValue) => {
   <BigDialog
     :display="!!modelValue"
     :title="title"
-    :primary-action="t('common.actions.save')"
-    :secondary-action="t('common.actions.cancel')"
+    :action="{ primary: t('common.actions.save') }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

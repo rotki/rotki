@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PremiumLock from '@/modules/premium/PremiumLock.vue';
 import AppImage from '@/modules/shell/components/AppImage.vue';
-import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 export interface FeatureGate {
   allowed: boolean;
@@ -92,6 +92,13 @@ const primaryActionText = computed<string>(() => action?.primary || (keySet
   ? t('external_services.actions.replace_key')
   : t('external_services.actions.save_key')));
 
+const dialogAction = computed<BigDialogAction>(() => ({
+  disabled: get(actionDisabled),
+  hidden: get(actionHidden),
+  primary: get(primaryActionText),
+  secondary: t('common.actions.close'),
+}));
+
 defineExpose({
   openDialog,
   setOpen,
@@ -162,10 +169,7 @@ defineExpose({
       :display="openDialog"
       :title="title"
       :subtitle="subtitle"
-      :action-hidden="actionHidden"
-      :primary-action="primaryActionText"
-      :action-disabled="actionDisabled"
-      :secondary-action="t('common.actions.close')"
+      :action="dialogAction"
       @cancel="setOpen(false)"
       @confirm="emit('confirm')"
     >

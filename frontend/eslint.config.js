@@ -150,20 +150,6 @@ export default rotki({
     'vue/max-props': ['warn', { maxProps: 8 }],
   },
 }, {
-  // A DIFFERENT GROUP from the premium-registered files above: these are internal, so their props
-  // can be reshaped in this repo. They are warnings only because the work is outstanding, not because
-  // it is blocked, and each one has a known route:
-  //
-  // - BigDialog (16): primaryAction/actionDisabled/actionTooltip/actionHidden are one action, and
-  //   errorCount/autoScrollToError are one error concern. 4+2 props become 2, landing exactly on 12.
-  //   Held up only by its 28 call sites.
-  files: [
-    '**/src/modules/shell/components/dialogs/BigDialog.vue',
-  ],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 12 }],
-  },
-}, {
   // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that
   // takes `test` straight from playwright silently contributes nothing to the coverage report.
   // That failure is invisible - the spec passes, it is just never counted - so it is worth a rule

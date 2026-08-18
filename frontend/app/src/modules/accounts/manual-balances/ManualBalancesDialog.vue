@@ -119,7 +119,7 @@ async function save(): Promise<boolean> {
     :title="dialogTitle"
     :subtitle="dialogSubtitle"
     :loading="loading"
-    :primary-action="t('common.actions.save')"
+    :action="{ primary: t('common.actions.save') }"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"

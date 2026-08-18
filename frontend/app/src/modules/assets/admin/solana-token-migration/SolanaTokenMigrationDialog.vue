@@ -140,7 +140,7 @@ function handleSaveException(error: unknown, assetToMigrate: string, formRef: Mi
   <BigDialog
     :display="!!modelValue"
     :title="t('asset_management.solana_token_migration.dialog_title')"
-    :primary-action="t('asset_management.solana_token_migration.migrate_button')"
+    :action="{ primary: t('asset_management.solana_token_migration.migrate_button') }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

@@ -52,11 +52,10 @@ async function save() {
     :display="!!modelValue"
     :title="editMode ? t('tag_manager.edit_tag.title') : t('tag_manager.create_tag.title')"
     :subtitle="editMode ? t('tag_manager.edit_tag.subtitle') : t('tag_manager.create_tag.subtitle')"
-    :primary-action="t('common.actions.save')"
-    :secondary-action="t('common.actions.cancel')"
+    :action="{ primary: t('common.actions.save') }"
+    :layout="{ divide: true }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
-    divide
     @confirm="save()"
     @cancel="closeDialog()"
   >

@@ -17,7 +17,7 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
           },
           RuiButton: {
             inheritAttrs: false,
-            template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>',
+            template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /><slot name="append" /></button>',
           },
           RuiCard: {
             template: '<div><slot name="custom-header" /><slot /><slot name="footer" /></div>',
@@ -34,8 +34,8 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
         },
       },
       props: {
+        action: { primary: 'Save' },
         display: true,
-        primaryAction: 'Save',
         title: 'Test dialog',
         ...props,
       },
@@ -74,5 +74,56 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
     const confirmButton = wrapper.find('[data-testid="confirm"]');
     expect(confirmButton.exists()).toBe(true);
     expect(confirmButton.attributes('disabled')).toBeDefined();
+  });
+
+  it('should label both buttons from the action group', () => {
+    wrapper = createWrapper({ action: { primary: 'Save', secondary: 'Discard' } });
+
+    expect(wrapper.find('[data-testid="confirm"]').text()).toBe('Save');
+    expect(wrapper.find('[data-testid="cancel"]').text()).toBe('Discard');
+  });
+
+  it('should fall back to the default labels when the action group omits them', () => {
+    // A caller forwarding its own optional labels passes present keys holding `undefined`, which
+    // must still land on the defaults rather than rendering nothing.
+    wrapper = createWrapper({ action: { primary: undefined, secondary: undefined } });
+
+    expect(wrapper.find('[data-testid="confirm"]').text()).toBe('common.actions.confirm');
+    expect(wrapper.find('[data-testid="cancel"]').text()).toBe('common.actions.cancel');
+  });
+
+  it('should disable the confirm button when the action group disables it', () => {
+    wrapper = createWrapper({ action: { disabled: true, primary: 'Save' } });
+
+    expect(wrapper.find('[data-testid="confirm"]').attributes('disabled')).toBeDefined();
+  });
+
+  it('should drop the confirm button when the action group hides it', () => {
+    wrapper = createWrapper({ action: { hidden: true, primary: 'Save' } });
+
+    expect(wrapper.find('[data-testid="confirm"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="cancel"]').exists()).toBe(true);
+  });
+
+  it('should badge the confirm button with the error count', () => {
+    wrapper = createWrapper({ errors: { count: 3 } });
+
+    const confirmButton = wrapper.find('[data-testid="confirm"]');
+    expect(confirmButton.text()).toContain('3');
+  });
+
+  it('should not badge the confirm button when there are no errors', () => {
+    wrapper = createWrapper({ errors: { count: 0 } });
+
+    expect(wrapper.find('[data-testid="confirm"]').text()).toBe('Save');
+  });
+
+  it('should keep the minimum content height unless the layout group opts out', () => {
+    wrapper = createWrapper();
+    expect(wrapper.find('.min-h-\\[50vh\\]').exists()).toBe(true);
+
+    wrapper.unmount();
+    wrapper = createWrapper({ layout: { autoHeight: true } });
+    expect(wrapper.find('.min-h-\\[50vh\\]').exists()).toBe(false);
   });
 });
