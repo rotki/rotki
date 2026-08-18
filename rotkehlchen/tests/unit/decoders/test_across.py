@@ -25,6 +25,40 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_socket_across_receive_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash(
+        '0x0fe6509df413361b7aa903ca810aa91151a1e44f51dd05c6fbc838d506e17704',
+    )
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address = arbitrum_one_accounts[0]
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(1739477346000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal('365.669864'),
+        location_label=user_address,
+        notes='Bridge 365.669864 USDC from Scroll to Arbitrum One via Across',
+        counterparty=CPT_ACROSS,
+        address=string_to_evm_address('0xCad97616f91872C02BA3553dB315Db4015cBE850'),
+        extra_data={'bridge': {
+            'from_chain': 534352,
+            'to_chain': 42161,
+            'from_address': user_address,
+            'to_address': user_address,
+            'transfer_id': '1295289',
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_manager_connect_at_start', [(
     WeightedNode(  # give some open RPC for Base to get the data from
         node_info=NodeName(
