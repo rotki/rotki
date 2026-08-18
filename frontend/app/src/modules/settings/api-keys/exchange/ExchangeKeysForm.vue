@@ -6,9 +6,7 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
-import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toServerErrors } from '@/modules/core/form/server-errors';
-import { useForm } from '@/modules/core/form/use-form';
+import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import BinancePairsSelector from '@/modules/settings/api-keys/BinancePairsSelector.vue';
 import BinanceHistoryStartDate from '@/modules/settings/api-keys/exchange/BinanceHistoryStartDate.vue';
 import {
@@ -69,18 +67,41 @@ const showBinanceHistoryImport = computed<boolean>(() => {
   return showsBinanceHistoryImport(location, mode);
 });
 
-const nameProp = useRefPropVModel(modelValue, 'name');
-const newNameProp = useRefPropVModel(modelValue, 'newName');
-const apiKey = useRefPropVModel(modelValue, 'apiKey');
-const apiSecret = useRefPropVModel(modelValue, 'apiSecret', {
-  transform(value) {
-    return normalizeApiSecret(get(location), value);
+/**
+ * The dialog owns the entry, so the form mirrors it: the inputs write `form.state`, and every edit
+ * is folded back over the entry the dialog is about to save.
+ */
+const form = useMappedModelForm<ExchangeFormData, ExchangeKeysFormState>({
+  model: modelValue,
+  schema: computed(() => exchangeKeysSchema({
+    capabilities: get(capabilities),
+    editingFutures: get(editFuturesKeys),
+    editingKeys: get(editKeys),
+    location: get(location),
+    mode: get(modelValue).mode,
+  })),
+  serverErrors: errorMessages,
+  stateUpdated,
+  toModel: (state, entry): ExchangeFormData => ({ ...entry, ...state }),
+  toState: toExchangeKeysFormState,
+});
+
+// Coinbase pastes its secret with literal `\n`. Normalised as it is written rather than on the way
+// to the entry, so the field shows what will actually be sent instead of correcting itself a tick
+// after the paste.
+const apiSecret = computed<string>({
+  get: () => form.state.apiSecret,
+  set: (value: string) => {
+    form.state.apiSecret = normalizeApiSecret(get(location), value);
   },
 });
 
 const asteriskPlaceholder = '*'.repeat(30);
 
-function createRefWithAsterisk(comp: WritableComputedRef<string>, editFlag: Ref<boolean>): WritableComputedRef<string> {
+function createRefWithAsterisk(
+  comp: Ref<string> | WritableComputedRef<string>,
+  editFlag: Ref<boolean>,
+): WritableComputedRef<string> {
   return computed({
     get() {
       if (get(editMode) && !get(editFlag)) {
@@ -103,36 +124,36 @@ function createSensitiveInputComponent(editFlag: Ref<boolean>) {
   });
 }
 
-const apiKeyModel = createRefWithAsterisk(apiKey, editKeys);
+const apiKeyModel = createRefWithAsterisk(toRef(form.state, 'apiKey'), editKeys);
 const apiSecretModel = createRefWithAsterisk(apiSecret, editKeys);
 const sensitiveInputComponent = createSensitiveInputComponent(editKeys);
 
-const passphrase = useRefPropVModel(modelValue, 'passphrase');
-const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
-const krakenFuturesApiKey = useRefPropVModel(modelValue, 'krakenFuturesApiKey');
-const krakenFuturesApiSecret = useRefPropVModel(modelValue, 'krakenFuturesApiSecret');
-const binanceHistoryStartTs = useRefPropVModel(modelValue, 'binanceHistoryStartTs');
-const gateLocation = useRefPropVModel(modelValue, 'gateLocation');
-const okxLocation = useRefPropVModel(modelValue, 'okxLocation');
-
+// An edit renames the connection through a second field, so that the name it is currently stored
+// under stays readable while the new one is being typed.
 const name = computed<string>({
   get() {
-    return get(editMode) ? (get(newNameProp) || '') : get(nameProp);
+    return get(editMode) ? (form.state.newName ?? '') : form.state.name;
   },
-  set(value?: string) {
+  set(value: string) {
     if (get(editMode)) {
-      set(newNameProp, value);
+      form.state.newName = value;
     }
     else {
-      set(nameProp, value);
+      form.state.name = value;
     }
   },
 });
 
-const binanceHistoryStartTsModel = refOptional(
-  binanceHistoryStartTs,
-  Math.floor(Date.now() / 1000),
-);
+// Captured once rather than read per call: the picker opens on "now" for an entry that has no start
+// date yet, and a default that moved on every read would make the form look edited by itself.
+const defaultHistoryStart = Math.floor(Date.now() / 1000);
+
+const binanceHistoryStartTsModel = computed<number>({
+  get: () => form.state.binanceHistoryStartTs ?? defaultHistoryStart,
+  set: (value: number) => {
+    form.state.binanceHistoryStartTs = value;
+  },
+});
 
 function suggestedName(exchange: string): string {
   const location = getLocationData(exchange);
@@ -143,12 +164,10 @@ function suggestedName(exchange: string): string {
 function toggleEdit() {
   set(editKeys, !get(editKeys));
 
+  // Backing out of a key replacement drops whatever was typed, so the stored pair stands.
   if (!get(editKeys)) {
-    set(modelValue, {
-      ...get(modelValue),
-      apiKey: '',
-      apiSecret: '',
-    });
+    form.state.apiKey = '';
+    form.state.apiSecret = '';
   }
 }
 
@@ -187,36 +206,6 @@ const okxLocations = OkxLocation.options.map(item => ({
   identifier: item,
   label: t(OKX_LOCATION_KEYS[item]),
 }));
-
-/**
- * The dialog owns the entry, so the form mirrors it rather than holding its own copy: the fields
- * keep writing where they always did, and the rules always read what is on screen.
- */
-const form = useForm<ExchangeKeysFormState, ExchangeKeysFormState>({
-  initial: (): ExchangeKeysFormState => toExchangeKeysFormState(get(modelValue)),
-  schema: computed(() => exchangeKeysSchema({
-    capabilities: get(capabilities),
-    editingFutures: get(editFuturesKeys),
-    editingKeys: get(editKeys),
-    location: get(location),
-    mode: get(modelValue).mode,
-  })),
-  // The dialog persists; there is nothing to submit from here.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
-  transform: (state): ExchangeKeysFormState => ({ ...state }),
-});
-
-watchDeep(modelValue, (value) => {
-  Object.assign(form.state, toExchangeKeysFormState(value));
-});
-
-watch(errorMessages, (value) => {
-  form.setServerErrors(toServerErrors(value));
-}, { deep: true, immediate: true });
-
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
 
 // The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
 onUnmounted(() => {
@@ -312,7 +301,7 @@ defineExpose({
 
     <RuiMenuSelect
       v-if="isKraken"
-      v-model="krakenAccountType"
+      v-model="form.state.krakenAccountType"
       data-testid="account-type"
       :options="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
@@ -323,7 +312,7 @@ defineExpose({
 
     <RuiMenuSelect
       v-if="isGate"
-      v-model="gateLocation"
+      v-model="form.state.gateLocation"
       data-testid="gate-location"
       :options="gateLocations"
       :label="t('exchange_keys_form.region')"
@@ -347,7 +336,7 @@ defineExpose({
 
     <RuiMenuSelect
       v-if="isOkx"
-      v-model="okxLocation"
+      v-model="form.state.okxLocation"
       data-testid="okx-location"
       :options="okxLocations"
       :label="t('exchange_keys_form.region')"
@@ -438,7 +427,7 @@ defineExpose({
         <Component
           :is="sensitiveInputComponent"
           v-if="requiresPassphrase"
-          v-model.trim="passphrase"
+          v-model.trim="form.state.passphrase"
           :disabled="editMode && !editKeys"
           variant="outlined"
           color="primary"
@@ -486,8 +475,8 @@ defineExpose({
     </RuiAlert>
     <KrakenFuturesKeys
       v-if="isKraken"
-      v-model:api-key="krakenFuturesApiKey"
-      v-model:api-secret="krakenFuturesApiSecret"
+      v-model:api-key="form.state.krakenFuturesApiKey"
+      v-model:api-secret="form.state.krakenFuturesApiSecret"
       v-model:editing="editFuturesKeys"
       :edit-mode="editMode"
       :key-errors="form.errors('krakenFuturesApiKey')"
@@ -499,7 +488,7 @@ defineExpose({
       :edit="editMode"
       :location="modelValue.location"
       :error-messages="form.errors('binanceMarkets')"
-      @update:selection="modelValue = { ...modelValue, binanceMarkets: $event }"
+      @update:selection="form.state.binanceMarkets = $event"
     />
   </div>
 
