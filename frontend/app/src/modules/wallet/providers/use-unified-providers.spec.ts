@@ -162,6 +162,31 @@ describe('useUnifiedProviders', () => {
     expect(listener).toHaveBeenCalledWith(undefined, expect.anything());
   });
 
+  it('should forget the remembered provider when clearing deliberately', async () => {
+    detectMock.mockResolvedValue([makeProvider('solo')]);
+    const { clearProvider, detectProviders } = useUnifiedProviders();
+    await detectProviders();
+    expect(JSON.parse(localStorage.getItem('rotki-provider-preferences') ?? '{}').lastSelectedUuid).toBe('solo');
+
+    clearProvider();
+    await nextTick(); // useLocalStorage flushes on 'pre'
+
+    expect(JSON.parse(localStorage.getItem('rotki-provider-preferences') ?? '{}').lastSelectedUuid).toBeUndefined();
+  });
+
+  it('should keep the remembered provider when clearing without forgetting', async () => {
+    detectMock.mockResolvedValue([makeProvider('solo')]);
+    const { clearProvider, detectProviders, hasSelectedProvider } = useUnifiedProviders();
+    await detectProviders();
+
+    clearProvider({ forget: false });
+    await nextTick(); // useLocalStorage flushes on 'pre'
+
+    // the active selection still goes away, only the persisted choice survives
+    expect(get(hasSelectedProvider)).toBe(false);
+    expect(JSON.parse(localStorage.getItem('rotki-provider-preferences') ?? '{}').lastSelectedUuid).toBe('solo');
+  });
+
   it('should clear the selection when selecting the empty uuid', async () => {
     detectMock.mockResolvedValue([makeProvider('solo')]);
     const { detectProviders, hasSelectedProvider, selectProvider } = useUnifiedProviders();

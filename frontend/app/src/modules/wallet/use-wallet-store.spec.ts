@@ -233,6 +233,15 @@ describe('modules/wallet/use-wallet-store', () => {
       expect(get(store.connected)).toBe(false);
       expect(get(store.isDisconnecting)).toBe(false);
     });
+
+    it('should forget the remembered provider on a deliberate disconnect', async () => {
+      const store = await getStore();
+      await store.connect();
+
+      await store.disconnect();
+
+      expect(providers().clearProvider).toHaveBeenCalledWith({ forget: true });
+    });
   });
 
   describe('disconnectWalletIfActive', () => {
@@ -253,6 +262,16 @@ describe('modules/wallet/use-wallet-store', () => {
       await disconnectWalletIfActive();
 
       expect(injected().disconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep the remembered provider so the next login can restore it', async () => {
+      const { disconnectWalletIfActive } = await import('./use-wallet-store');
+      const store = await getStore();
+      await store.connect();
+
+      await disconnectWalletIfActive();
+
+      expect(providers().clearProvider).toHaveBeenCalledWith({ forget: false });
     });
   });
 
