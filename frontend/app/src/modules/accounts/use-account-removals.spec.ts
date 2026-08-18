@@ -69,10 +69,12 @@ describe('useAccountRemovals', () => {
   // because no call site forwarded it — so the family caps were dead config and removals that used
   // to run one at a time all raced. Only reading what `submitTask` received can catch that.
   describe('lane', () => {
-    const cases: [string, (accounts: Removals) => Promise<void>, string][] = [
-      ['removeAccount', async (accounts): Promise<void> => accounts.removeAccount({ accounts: ['0xabc'], chain: 'eth' }), 'accounts-remove:eth'],
-      ['deleteXpub', async (accounts): Promise<void> => accounts.deleteXpub({ chain: 'btc', xpub: 'xpub123' }), 'accounts-remove:btc'],
-      ['removeAgnosticAccount', async (accounts): Promise<void> => accounts.removeAgnosticAccount('evm', '0xabc'), 'accounts-remove:evm'],
+    // The outcome is the caller's business (`use-account-delete` gates the local removal on it);
+    // here only the lane the submission carries is under test.
+    const cases: [string, (accounts: Removals) => Promise<unknown>, string][] = [
+      ['removeAccount', async (accounts): Promise<unknown> => accounts.removeAccount({ accounts: ['0xabc'], chain: 'eth' }), 'accounts-remove:eth'],
+      ['deleteXpub', async (accounts): Promise<unknown> => accounts.deleteXpub({ chain: 'btc', xpub: 'xpub123' }), 'accounts-remove:btc'],
+      ['removeAgnosticAccount', async (accounts): Promise<unknown> => accounts.removeAgnosticAccount('evm', '0xabc'), 'accounts-remove:evm'],
     ];
 
     it.each(cases)('should submit %s on its own removal lane', async (_name, act, lane) => {

@@ -5,6 +5,19 @@ import { removeTags, renameTags } from '@/modules/tags/tag-utils';
 export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () => {
   const accounts = ref<Accounts>({});
   const recentlyAddedAddresses = ref<Set<string>>(new Set());
+  const revisions = ref<Record<string, number>>({});
+
+  const revisionOf = (chain: string): number => get(revisions)[chain] ?? 0;
+
+  /**
+   * Bumped whenever a chain's accounts are edited locally rather than read back from the backend,
+   * which today means a delete. A read that started before the bump is carrying a pre-delete
+   * snapshot, so `updateAccounts` would replace the chain wholesale and resurrect the account.
+   * Readers capture the revision before querying and drop their write if it moved.
+   */
+  const invalidateChain = (chain: string): void => {
+    set(revisions, { ...get(revisions), [chain]: revisionOf(chain) + 1 });
+  };
 
   const updateAccounts = (chain: string, data: BlockchainAccount[]): void => {
     set(accounts, { ...get(accounts), [chain]: data });
@@ -81,9 +94,11 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
     accounts,
     getAccountByAddress,
     getAccounts,
+    invalidateChain,
     recentlyAddedAddresses,
     removeTag,
     renameTag,
+    revisionOf,
     trackAddedAddresses,
     updateAccountData,
     updateAccounts,

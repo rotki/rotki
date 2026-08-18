@@ -9,9 +9,9 @@ import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAccountRemovalsReturn {
-  removeAccount: (payload: DeleteBlockchainAccountParams) => Promise<void>;
-  removeAgnosticAccount: (chainType: string, address: string) => Promise<void>;
-  deleteXpub: (params: DeleteXpubParams) => Promise<void>;
+  removeAccount: (payload: DeleteBlockchainAccountParams) => Promise<Result<void, TaskError>>;
+  removeAgnosticAccount: (chainType: string, address: string) => Promise<Result<void, TaskError>>;
+  deleteXpub: (params: DeleteXpubParams) => Promise<Result<void, TaskError>>;
 }
 
 export function useAccountRemovals(): UseAccountRemovalsReturn {
@@ -38,7 +38,7 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     }));
   };
 
-  const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<void> => {
+  const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<Result<void, TaskError>> => {
     const { accounts, chain } = payload;
     const subject: AccountSubject = { chain, target: { addresses: accounts, kind: 'addresses' } };
     const outcome = await submitTask({
@@ -60,9 +60,11 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
       blockchain: chain,
       count: accounts.length,
     }));
+
+    return outcome;
   };
 
-  const removeAgnosticAccount = async (chainType: string, address: string): Promise<void> => {
+  const removeAgnosticAccount = async (chainType: string, address: string): Promise<Result<void, TaskError>> => {
     const subject = { address, category: chainType };
     const outcome = await submitTask({
       id: accountAgnosticRemoveActivity.id(subject),
@@ -80,9 +82,11 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
     });
 
     notifyRemovalFailure(outcome, t('actions.balances.blockchain_account_removal.agnostic.error.title', { address }));
+
+    return outcome;
   };
 
-  const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
+  const deleteXpub = async (params: DeleteXpubParams): Promise<Result<void, TaskError>> => {
     const subject: AccountSubject = {
       chain: params.chain,
       target: { derivationPath: params.derivationPath, kind: 'xpub', xpub: params.xpub },
@@ -110,6 +114,8 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
         xpub: params.xpub,
       }));
     }
+
+    return outcome;
   };
 
   return { deleteXpub, removeAccount, removeAgnosticAccount };

@@ -4,6 +4,7 @@ import type {
   XpubData,
 } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
+import { isErr } from 'plainfp/result';
 import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAccountRemovals } from '@/modules/accounts/use-account-removals';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -127,6 +128,7 @@ interface UseAccountDeleteReturn {
 export function useAccountDelete(): UseAccountDeleteReturn {
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { balances } = storeToRefs(useBalancesStore());
+  const { invalidateChain } = useBlockchainAccountsStore();
   const { deleteEth2Validators } = useEthStaking();
   const { deleteXpub, removeAccount, removeAgnosticAccount } = useAccountRemovals();
   const { t } = useI18n({ useScope: 'global' });
@@ -168,6 +170,10 @@ export function useAccountDelete(): UseAccountDeleteReturn {
 
     set(accounts, knownAccounts);
     set(balances, knownBalances);
+
+    // A chain read already in flight is carrying a pre-delete snapshot; marking the chain makes
+    // it drop its write instead of replacing the chain wholesale and resurrecting the account.
+    chains.forEach(chain => invalidateChain(chain));
   };
 
   async function removeValidator(publicKeys: string[]): Promise<void> {
@@ -180,27 +186,41 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     { address, chains, includeAllChains }: EvmPayloadData,
   ): Promise<void> {
     if (includeAllChains) {
-      await removeAgnosticAccount(category, address);
+      const outcome = await removeAgnosticAccount(category, address);
+      if (isErr(outcome))
+        return;
+
       removeAccounts({ addresses: [address], chains });
     }
     else {
       // Submitted together, serialized by the removal lane rather than by a limiter here: one
       // per chain and one active chain at a time is the shape this call always had, now declared
       // once where the activity is, as the warning on `DECODE_LANE` requires.
-      await Promise.all(chains.map(async chain => removeAccount({ accounts: [address], chain })));
+      const outcomes = await Promise.all(chains.map(
+        async chain => [chain, await removeAccount({ accounts: [address], chain })] as const,
+      ));
+
+      // A partial failure keeps the chains it could not delete, rather than dropping the whole row.
+      const removed = outcomes.filter(([, outcome]) => !isErr(outcome)).map(([chain]) => chain);
+      if (removed.length === 0)
+        return;
 
       removeAccounts({
         addresses: [address],
-        chains,
+        chains: removed,
       });
     }
   }
 
   async function removeSingleAccount({ address, chain }: { address: string; chain: string }): Promise<void> {
-    await removeAccount({
+    const outcome = await removeAccount({
       accounts: [address],
       chain,
     });
+
+    // A failed or cancelled removal leaves the account on the backend, so the row has to stay.
+    if (isErr(outcome))
+      return;
 
     removeAccounts({
       addresses: [address],
@@ -209,7 +229,10 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   }
 
   async function removeXpub(payload: XpubData & { chain: string }): Promise<void> {
-    await deleteXpub(payload);
+    const outcome = await deleteXpub(payload);
+    if (isErr(outcome))
+      return;
+
     removeAccounts({
       addresses: [getAccountAddress({ data: payload })],
       chains: [payload.chain],

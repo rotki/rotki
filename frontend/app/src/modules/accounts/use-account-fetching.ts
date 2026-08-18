@@ -18,7 +18,7 @@ interface UseAccountFetchingReturn {
 export function useAccountFetching(): UseAccountFetchingReturn {
   const { queryAccounts, queryBtcAccounts } = useBlockchainAccountsApi();
   const { fetchEthStakingValidators } = useEthStaking();
-  const { updateAccounts } = useBlockchainAccountsStore();
+  const { revisionOf, updateAccounts } = useBlockchainAccountsStore();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { getNativeAsset } = useSupportedChains();
@@ -45,8 +45,12 @@ export function useAccountFetching(): UseAccountFetchingReturn {
   };
 
   const fetchBlockchainAccounts = async (chain: string): Promise<void> => {
+    const revision = revisionOf(chain);
     try {
       const accounts = await queryAccounts(chain);
+      if (revisionOf(chain) !== revision)
+        return;
+
       const chainInfo = {
         chain,
         nativeAsset: getNativeAsset(chain),
@@ -60,8 +64,12 @@ export function useAccountFetching(): UseAccountFetchingReturn {
   };
 
   const fetchBtcAccounts = async (chain: BtcChains): Promise<void> => {
+    const revision = revisionOf(chain);
     try {
       const accounts = await queryBtcAccounts(chain);
+      if (revisionOf(chain) !== revision)
+        return;
+
       updateAccounts(chain, convertBtcAccounts(getNativeAsset, chain, accounts));
     }
     catch (error: unknown) {
