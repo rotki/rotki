@@ -2,9 +2,7 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { toSentenceCase } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
-import { toServerErrors } from '@/modules/core/form/server-errors';
-import { useForm } from '@/modules/core/form/use-form';
+import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import {
@@ -12,6 +10,7 @@ import {
   type AccountingRuleFormState,
   accountingRuleFormState,
   applyAccountingRuleFormState,
+  TRANSIENT_RULE_KEYS,
 } from '@/modules/settings/accounting/rule/accounting-rule-form';
 import AccountingRuleWithLinkedSetting from '@/modules/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
@@ -29,18 +28,15 @@ const { t } = useI18n({ useScope: 'global' });
 
 const isEventSpecificRule = computed<boolean>(() => !!eventIds && eventIds.length > 0);
 
-// The three linked toggles carry no validation and do not mark the form dirty, so they stay bound
-// straight to the model rather than joining the form state.
-const taxable = useRefPropVModel(modelValue, 'taxable');
-const countEntireAmountSpend = useRefPropVModel(modelValue, 'countEntireAmountSpend');
-const countCostBasisPnl = useRefPropVModel(modelValue, 'countCostBasisPnl');
-
-const form = useForm<AccountingRuleFormState, AccountingRuleFormState>({
-  initial: (): AccountingRuleFormState => accountingRuleFormState(get(modelValue)),
+const form = useMappedModelForm<AccountingRuleEntry, AccountingRuleFormState>({
+  model: modelValue,
   schema: accountingRuleFormSchema(),
-  // The dialog owns the persist and reads the model, so there is nothing to submit from here.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
-  transform: (state): AccountingRuleFormState => ({ ...state }),
+  serverErrors: errors,
+  stateUpdated,
+  toModel: (state, rule): AccountingRuleEntry => applyAccountingRuleFormState(rule, state),
+  toState: accountingRuleFormState,
+  // The three linked toggles are edited here but must not read as unsaved changes.
+  transientKeys: TRANSIENT_RULE_KEYS,
 });
 
 const accountingTreatments = Object.values(AccountingTreatment).map(identifier => ({
@@ -52,20 +48,6 @@ function touchEventType(): void {
   form.touch('eventType');
   form.touch('eventSubtype');
 }
-
-// Non-immediate on purpose: seeding must not write the mapped blank counterparty over a rule that
-// legitimately has none.
-watch(() => ({ ...form.state }), (state) => {
-  set(modelValue, applyAccountingRuleFormState(get(modelValue), state));
-});
-
-watch(errors, (value) => {
-  form.setServerErrors(toServerErrors(value));
-}, { deep: true, immediate: true });
-
-watch(form.dirty, (dirty) => {
-  set(stateUpdated, dirty);
-});
 
 // The dialog keeps its prompt-on-close flag across opens, so hand it back disarmed.
 onUnmounted(() => {
@@ -101,7 +83,7 @@ defineExpose({
   />
 
   <AccountingRuleWithLinkedSetting
-    v-model="taxable"
+    v-model="form.state.taxable"
     class="border-t border-default"
     identifier="taxable"
     :label="t('accounting_settings.rule.labels.taxable')"
@@ -109,7 +91,7 @@ defineExpose({
   />
 
   <AccountingRuleWithLinkedSetting
-    v-model="countEntireAmountSpend"
+    v-model="form.state.countEntireAmountSpend"
     class="border-t border-default"
     identifier="countEntireAmountSpend"
     :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
@@ -117,7 +99,7 @@ defineExpose({
   />
 
   <AccountingRuleWithLinkedSetting
-    v-model="countCostBasisPnl"
+    v-model="form.state.countCostBasisPnl"
     class="border-t border-default"
     identifier="countCostBasisPnl"
     :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
