@@ -8,7 +8,6 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
 import { arrayify } from '@/modules/core/common/data/array';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -43,7 +42,9 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 // Not a pill: it constrains how the other filters apply instead of filtering anything itself.
-const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
+function toggleMatchExact(): void {
+  set(toggles, { ...get(toggles), matchExactEvents: !get(toggles).matchExactEvents });
+}
 
 const pillLabels = usePillBarLabels();
 
@@ -176,11 +177,11 @@ function handleToggleSelectAllMatching(): void {
                 icon
                 class="shrink-0"
                 :disabled="barDisabled"
-                :color="matchExactEvents ? 'primary' : 'secondary'"
-                :class="{ 'bg-rui-primary/10': matchExactEvents }"
-                :aria-pressed="matchExactEvents"
+                :color="toggles.matchExactEvents ? 'primary' : 'secondary'"
+                :class="{ 'bg-rui-primary/10': toggles.matchExactEvents }"
+                :aria-pressed="toggles.matchExactEvents"
                 data-testid="filter-match-exact"
-                @click="matchExactEvents = !matchExactEvents"
+                @click="toggleMatchExact()"
               >
                 <RuiIcon
                   name="lu-focus"
@@ -195,7 +196,7 @@ function handleToggleSelectAllMatching(): void {
               <!-- An icon toggle has no label to read its state from, so the tooltip says which
                    state it is in rather than only what the setting means. -->
               <div class="text-caption">
-                {{ matchExactEvents
+                {{ toggles.matchExactEvents
                   ? t('transactions.filter.match_exact_filter_enabled')
                   : t('transactions.filter.match_exact_filter_disabled') }}
               </div>
