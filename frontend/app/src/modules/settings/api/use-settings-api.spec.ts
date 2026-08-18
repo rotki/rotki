@@ -2,10 +2,13 @@ import type { ActionResult } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, ref } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { useDisabledChainQueriesState } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
 import { useSettingsApi } from './use-settings-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
+const ETH_ADDRESS = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 
 interface CapturedRequest {
   body: unknown;
@@ -302,6 +305,41 @@ describe('composables/api/settings/settings-api', () => {
       const result = await useSettingsApi().getRawSettings();
 
       expect(Object.keys(result.disabledChainQueries!).sort()).toStrictEqual(['base', 'polygon_pos']);
+    });
+  });
+
+  describe('chain-keyed settings round trip', () => {
+    it('should send the chain ids the settings UI built, in snake_case', async () => {
+      // Drives the real rule state the settings page uses, so this covers the whole round trip:
+      // what the UI produces, what the request transformer puts on the wire, and what comes back.
+      // The empty array is load-bearing - it is what disables a chain entirely.
+      let capturedBody: unknown = null;
+
+      server.use(
+        http.put(`${backendUrl}/api/1/settings`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json(createSettingsResponse({
+            disabled_chain_queries: { binance_sc: [], polygon_pos: [ETH_ADDRESS] },
+          }));
+        }),
+      );
+
+      const scope = effectScope();
+      const state = scope.run(() => useDisabledChainQueriesState({
+        matchChain: (raw: string): string => raw,
+        ready: ref(true),
+        source: ref({}),
+      }))!;
+      state.addRule({ chainId: 'binance_sc', kind: 'chain' });
+      state.addRule({ address: ETH_ADDRESS, chainIds: ['polygon_pos'], kind: 'address' });
+
+      const { general } = await useSettingsApi().setSettings({ disabledChainQueries: state.buildPayload() });
+      scope.stop();
+
+      expect(capturedBody).toStrictEqual({
+        settings: { disabled_chain_queries: { binance_sc: [], polygon_pos: [ETH_ADDRESS] } },
+      });
+      expect(general.disabledChainQueries).toStrictEqual({ binance_sc: [], polygon_pos: [ETH_ADDRESS] });
     });
   });
 
