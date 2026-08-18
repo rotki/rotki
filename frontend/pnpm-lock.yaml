@@ -37,8 +37,8 @@ catalogs:
       specifier: 1.5.1
       version: 1.5.1
     '@rotki/ui-library':
-      specifier: 2.23.4
-      version: 2.23.4
+      specifier: 2.23.5
+      version: 2.23.5
     '@tsconfig/node24':
       specifier: 24.0.4
       version: 24.0.4
@@ -345,7 +345,7 @@ importers:
         version: link:../common
       '@rotki/ui-library':
         specifier: 'catalog:'
-        version: 2.23.4(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
+        version: 2.23.5(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
       '@types/ws':
         specifier: 'catalog:'
         version: 8.18.1
@@ -2183,8 +2183,8 @@ packages:
     peerDependencies:
       eslint: ^9.20.0 || ^10.0.0
 
-  '@rotki/ui-library@2.23.4':
-    resolution: {integrity: sha512-TE2AT//RknlAO7Sw1EqzRiPZMElCIJXRCtR8jis8IAo45ol7JFI9gRIYe+TWZyQZ+SlGPPZaVO0vHh22z81Zlw==}
+  '@rotki/ui-library@2.23.5':
+    resolution: {integrity: sha512-a4Rji4O9lSE1GZbWOCNI5Icf2mvawfqvCy9Yz11C2Xu9er1lnS1A58uoL8BYrOhCqs0y8G9p5CyJs1jTSf5F+w==}
     engines: {node: '>=24 <25', pnpm: '>=11 <12'}
     peerDependencies:
       dayjs: '>=1.11.13 <12'
@@ -7905,7 +7905,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@2.23.4(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))':
+  '@rotki/ui-library@2.23.5(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@vueuse/core': 14.3.0(vue@3.5.40(typescript@6.0.3))
