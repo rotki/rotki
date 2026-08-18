@@ -346,6 +346,20 @@ fn cookie_auth_enabled(docker: bool, session_key: &str) -> bool {
     docker && !session_key.is_empty()
 }
 
+/// Whether MCP comes up with the backend tree.
+///
+/// Off unless a stored preference says otherwise, matching the default the
+/// desktop app ships: a service that exposes user data to an AI assistant should
+/// not be running because nobody said otherwise. `None` is an absent preference
+/// file, not a `false` somebody chose, but both leave it down.
+///
+/// Gated on cookie auth because that is what makes the server reachable at all.
+/// A stored `true` from a deployment that has since dropped its session key
+/// would otherwise start a server nothing can route to or authorize against.
+fn resolve_mcp_autostart(cookie_auth: bool, stored: Option<bool>) -> bool {
+    cookie_auth && stored.unwrap_or(false)
+}
+
 /// The control methods `/_control` advertises, derived from the §S9 matrix rather
 /// than restated, so the capability document can never promise a method the
 /// dispatcher would then refuse. Listing every variant here is deliberate: adding
@@ -679,29 +693,27 @@ async fn main() -> std::process::ExitCode {
     let cookie_auth = cookie_auth_enabled(docker, &session_key);
     if cookie_auth {
         info!("session cookie auth enabled");
-        // Cookie auth is what makes the MCP server reachable and authorizable, so
-        // it is on by default. The user's own preference, if they have expressed
-        // one, is read below and wins over this.
-        layout.mcp_autostart = true;
 
         // Docker's half of the desktop's auto-start switch. The preference lives
         // in the data directory (see `app_config`) because it has to survive a
         // container recreate and be readable before anybody logs in. No file
-        // means no preference, which leaves the default above untouched — so
-        // existing deployments are unchanged and this is purely an opt-out.
+        // means no preference, which leaves MCP down: the same default the
+        // desktop ships, so a service that exposes user data to an AI assistant
+        // is never running because nobody said otherwise.
         //
-        // Read here rather than beside the layout so it can only ever turn the
-        // server off. Without cookie auth the proxy does not route `/mcp` and
-        // nothing could authorize a caller, so a stored `true` from a deployment
-        // that has since dropped its session key would start a server no one can
-        // reach.
-        if let Some(stored) = app_config::mcp_autostart(&layout.data_dir) {
+        // Read under cookie auth rather than beside the layout so it can only
+        // ever turn the server on where it is actually usable. Without cookie
+        // auth the proxy does not route `/mcp` and nothing could authorize a
+        // caller, so a stored `true` from a deployment that has since dropped
+        // its session key would start a server no one can reach.
+        let stored = app_config::mcp_autostart(&layout.data_dir);
+        if let Some(value) = stored {
             info!(
-                autostart = stored,
+                autostart = value,
                 "applying the stored mcp autostart preference"
             );
-            layout.mcp_autostart = stored;
         }
+        layout.mcp_autostart = resolve_mcp_autostart(cookie_auth, stored);
     }
     let build = move |layout: &ServiceLayout| -> Vec<ServiceSpec> {
         let mut specs = build_services(layout);
@@ -1214,6 +1226,26 @@ mod tests {
         // The desktop never issues a cookie, so a key alone must not open it.
         assert!(!cookie_auth_enabled(false, "a-key"));
         assert!(!cookie_auth_enabled(false, ""));
+    }
+
+    #[test]
+    fn mcp_stays_down_unless_a_stored_preference_turns_it_on() {
+        // The default, and the whole point of the test: an untouched deployment
+        // does not start MCP. Flipping this is a user-visible behaviour change,
+        // not a refactor.
+        assert!(!resolve_mcp_autostart(true, None));
+        assert!(!resolve_mcp_autostart(true, Some(false)));
+        assert!(resolve_mcp_autostart(true, Some(true)));
+    }
+
+    #[test]
+    fn mcp_never_autostarts_without_cookie_auth() {
+        // Nothing routes `/mcp` or authorizes a caller here, so even an explicit
+        // `true` left over from a deployment that dropped its session key must
+        // not bring up a server no one can reach.
+        assert!(!resolve_mcp_autostart(false, Some(true)));
+        assert!(!resolve_mcp_autostart(false, Some(false)));
+        assert!(!resolve_mcp_autostart(false, None));
     }
 
     #[test]
