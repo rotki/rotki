@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AccountingRuleWithLinkedProperty } from '@/modules/settings/types/accounting';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
+import { useModelMirror } from '@/modules/core/form/use-model-mirror';
+import { type LinkedPropertyState, toLinkedProperty, toLinkedPropertyState } from '@/modules/settings/accounting/rule/accounting-rule-form';
 import { useAccountingRuleMappings } from '@/modules/settings/accounting/use-accounting-rule-mappings';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -16,53 +17,44 @@ const { identifier, label, hint, learnMoreUrl } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const value = useRefPropVModel(modelValue, 'value');
+// Three controls over a payload of two fields, where the absence of one of them is what the
+// checkbox means. Mapped once here, so each control binds to plain state.
+const state = reactive<LinkedPropertyState>(toLinkedPropertyState(get(modelValue)));
 
-function updateModelValue(newValue: AccountingRuleWithLinkedProperty): void {
-  set(modelValue, newValue);
-}
+useModelMirror<AccountingRuleWithLinkedProperty, LinkedPropertyState>({
+  model: modelValue,
+  state,
+  toModel: toLinkedProperty,
+  toState: toLinkedPropertyState,
+});
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 
 const linkableSettingOptions = accountingRuleLinkedMappingData(() => identifier);
 
-const linkedModel = computed<boolean>({
-  get() {
-    return !!get(modelValue).linkedSetting;
-  },
-  set(newValue: boolean) {
-    if (newValue) {
-      updateModelValue({
-        linkedSetting: get(linkableSettingOptions)[0]?.identifier || '',
-        value: get(modelValue).value,
-      });
-    }
-    else {
-      updateModelValue({
-        value: get(modelValue).value,
-      });
-    }
-  },
-});
+// Not a wrapper over the payload: ticking the box has to choose a setting for the select below it
+// to open on, and unticking has to let it go.
+//
+// The options arrive over the api, so a rule opened before they land has nothing to link to. The
+// tick is refused outright rather than taken and then undone, which would flash the select open
+// for a tick on its way back out.
+const linked = computed<boolean>({
+  get: () => state.linked,
+  set: (value: boolean) => {
+    const first = get(linkableSettingOptions)[0]?.identifier;
+    if (value && !first)
+      return;
 
-const linkedSettingModel = computed<string | undefined>({
-  get() {
-    return get(modelValue).linkedSetting;
-  },
-  set(newLinkedSetting: string | undefined) {
-    updateModelValue({
-      value: get(modelValue).value,
-      ...(newLinkedSetting ? { linkedSetting: newLinkedSetting } : {}),
-    });
+    state.linked = value;
+    state.linkedSetting = value && first ? first : '';
   },
 });
 
 const linkedPropertyValue = computed<boolean | null>(() => {
-  const property = get(modelValue).linkedSetting;
-  if (!property)
+  if (!state.linked || !state.linkedSetting)
     return null;
 
-  const item = get(linkableSettingOptions).find(item => item.identifier === property);
+  const item = get(linkableSettingOptions).find(item => item.identifier === state.linkedSetting);
 
   if (!item)
     return null;
@@ -77,9 +69,9 @@ const elemID = computed(() => `${identifier}-switch`);
   <div class="flex gap-4 py-4">
     <RuiSwitch
       :id="elemID"
-      v-model="value"
+      v-model="state.value"
       color="primary"
-      :disabled="linkedModel"
+      :disabled="state.linked"
     />
     <div class="w-full">
       <label
@@ -107,7 +99,7 @@ const elemID = computed(() => `${identifier}-switch`);
         </div>
       </label>
       <RuiCheckbox
-        v-model="linkedModel"
+        v-model="linked"
         size="sm"
         color="primary"
         hide-details
@@ -117,11 +109,11 @@ const elemID = computed(() => `${identifier}-switch`);
         </span>
       </RuiCheckbox>
       <div
-        v-if="linkedModel"
+        v-if="state.linked"
         class="ml-7 mt-1 md:w-1/2"
       >
         <RuiMenuSelect
-          v-model="linkedSettingModel"
+          v-model="state.linkedSetting"
           variant="outlined"
           hide-details
           dense
