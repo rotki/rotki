@@ -81,6 +81,20 @@ describe('transformers', () => {
     });
   });
 
+  it('should skip nested transformation for specified keys on the way in', () => {
+    const json = {
+      disabled_chain_queries: { base: [], binance_sc: [], polygon_pos: [] },
+      other_setting: { nested_key: 'test' },
+    };
+
+    const result = camelCaseTransformer(json, ['disabled_chain_queries']);
+
+    expect(result).toEqual({
+      disabledChainQueries: { base: [], binance_sc: [], polygon_pos: [] },
+      otherSetting: { nestedKey: 'test' },
+    });
+  });
+
   it('should handle transformer with no root', () => {
     const json = '{"_amount_": { "a_cbc": "1", "a_abc": "2"}}';
     const parsed = JSON.parse(json);

@@ -92,6 +92,29 @@ describe('composables/api/task', () => {
       expect(result.message).toBe('');
     });
 
+    it('should keep chain-keyed settings keyed by the chain id', async () => {
+      // Login and account creation return the user's settings as a task result, so this fetch is
+      // the only place the exemption can be declared for them.
+      server.use(
+        http.get(`${backendUrl}/api/1/tasks/123`, () =>
+          HttpResponse.json({
+            result: {
+              outcome: {
+                result: { settings: { disabled_chain_queries: { base: [], polygon_pos: [] } } },
+                message: '',
+              },
+              status: 'completed',
+            },
+            message: '',
+          })),
+      );
+
+      const { queryTaskResult } = useTaskApi();
+      const result = await queryTaskResult<{ settings: { disabledChainQueries: Record<string, string[]> } }>(123);
+
+      expect(Object.keys(result.result.settings.disabledChainQueries).sort()).toStrictEqual(['base', 'polygon_pos']);
+    });
+
     it('should throw TaskNotFoundError on 404', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/999`, () =>
