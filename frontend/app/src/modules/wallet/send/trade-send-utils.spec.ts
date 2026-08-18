@@ -15,12 +15,12 @@ describe('trade-send-utils', () => {
       expect(isAmountExceeded('2.0000001', '2')).toBe(true);
     });
 
-    it('should treat an unparseable amount as zero', () => {
+    it('should treat an unparsable amount as zero', () => {
       expect(isAmountExceeded('', '2')).toBe(false);
       expect(isAmountExceeded('not a number', '2')).toBe(false);
     });
 
-    it('should treat an unparseable max as zero', () => {
+    it('should treat an unparsable max as zero', () => {
       expect(isAmountExceeded('1', '')).toBe(true);
     });
   });
