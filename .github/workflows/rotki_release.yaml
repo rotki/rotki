@@ -18,6 +18,7 @@ jobs:
   create_draft:
     name: Create Draft
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # observed max 24s
     permissions:
       contents: write
     outputs:
@@ -112,6 +113,7 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-22.04
+    timeout-minutes: 30  # observed max 14m
     needs: create_draft
     permissions:
       id-token: write
@@ -207,6 +209,11 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     environment: macos_sign
     runs-on: ${{ matrix.os.runner }}
+    # observed max: arm64 34m, x86_64 58m, over a 26-58m spread. Release builds
+    # deliberately run without the dependency cache, and the whole gap against
+    # the nightly build lands inside the Package step. Signing waits on Apple
+    # services on top of that, so keep the headroom generous.
+    timeout-minutes: 120
     needs: create_draft
     permissions:
       id-token: write
@@ -298,6 +305,7 @@ jobs:
     name: Merge latest-mac.yml
     needs: macos
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # observed max 42s
     permissions:
       contents: write
     steps:
@@ -339,6 +347,7 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: windows-latest
+    timeout-minutes: 60  # observed max 33m; signing waits on a timestamp server
     environment: windows_sign
     needs: create_draft
     permissions:
@@ -414,6 +423,7 @@ jobs:
   docker:
     name: 'Build docker images'
     runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 30  # observed max 8m warm; extra air for a cold build cache
     environment: docker
     strategy:
       fail-fast: false
@@ -492,6 +502,7 @@ jobs:
 
   docker-merge:
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # observed max 30s
     needs:
       - docker
     environment: docker
