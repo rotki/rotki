@@ -3,6 +3,7 @@ import type { BlockchainAssetBalances, EthBalance } from '@/modules/balances/typ
 import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/wallet/types';
 import { Zero } from '@rotki/common';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -17,6 +18,7 @@ type UseInjectedTradableAssetReturn = UseTradableAssetReturn;
 
 export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseTradableAssetReturn {
   const { balances } = storeToRefs(useBalancesStore());
+  const { ignoredAssets } = storeToRefs(useAssetsStore());
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { getAssetPrice } = usePriceUtils();
   const { getNativeAsset, isEvm } = useSupportedChains();
@@ -26,13 +28,14 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
     chainBalances: BlockchainAssetBalances,
     addressVal: string,
     result: TradableAssetWithoutValue[],
+    ignored: Set<string>,
   ): void {
     const addressBalance: EthBalance | undefined = chainBalances[addressVal];
     if (!addressBalance?.assets)
       return;
 
     for (const [asset, balance] of Object.entries(addressBalance.assets)) {
-      if (balance.address?.amount) {
+      if (balance.address?.amount && !ignored.has(asset)) {
         result.push({ amount: balance.address.amount, asset, chain });
       }
     }
@@ -43,18 +46,37 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
     chainBalances: BlockchainAssetBalances,
     result: TradableAssetWithoutValue[],
     seen: Set<string>,
+    ignored: Set<string>,
   ): void {
     for (const addressBalance of Object.values(chainBalances)) {
       if (!addressBalance?.assets)
         continue;
 
       for (const [asset, balance] of Object.entries(addressBalance.assets)) {
-        if (balance.address?.amount && !seen.has(asset)) {
+        if (balance.address?.amount && !seen.has(asset) && !ignored.has(asset)) {
           seen.add(asset);
           result.push({ amount: Zero, asset, chain });
         }
       }
     }
+  }
+
+  /**
+   * Orders the list the send form picks its default from: the chain's native asset first,
+   * then by fiat value, then by identifier so an unpriced list still has a stable head.
+   */
+  function compareByPriority(a: TradableAsset, b: TradableAsset): number {
+    const aNative = getNativeAsset(a.chain) === a.asset;
+    const bNative = getNativeAsset(b.chain) === b.asset;
+
+    if (aNative !== bNative)
+      return aNative ? -1 : 1;
+
+    const byValue = sortDesc(a.fiatValue ?? Zero, b.fiatValue ?? Zero);
+    if (byValue !== 0)
+      return byValue;
+
+    return a.asset.localeCompare(b.asset);
   }
 
   function enhanceWithPrices(assets: TradableAssetWithoutValue[]): TradableAsset[] {
@@ -68,23 +90,14 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
         fiatValue: price.multipliedBy(item.amount),
         price,
       };
-    }).sort((a, b) => {
-      const aNative = getNativeAsset(a.chain) === a.asset;
-      const bNative = getNativeAsset(b.chain) === b.asset;
-
-      if (aNative && !bNative)
-        return -1;
-      if (!aNative && bNative)
-        return 1;
-
-      return sortDesc(a.fiatValue ?? Zero, b.fiatValue ?? Zero);
-    });
+    }).sort(compareByPriority);
   }
 
   const allOwnedAssets = computed<TradableAsset[]>(() => {
     const addressVal = toValue(address);
     const supportedChains = get(supportedChainsForConnectedAccount);
     const balancesData = get(balances);
+    const ignored = new Set(get(ignoredAssets));
 
     const result: TradableAssetWithoutValue[] = [];
     const seen = new Set<string>();
@@ -94,13 +107,13 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
         continue;
 
       if (addressVal)
-        collectAddressBalances(chain, chainBalances, addressVal, result);
+        collectAddressBalances(chain, chainBalances, addressVal, result, ignored);
       else
-        collectDeduplicatedBalances(chain, chainBalances, result, seen);
+        collectDeduplicatedBalances(chain, chainBalances, result, seen, ignored);
     }
 
     if (!addressVal)
-      return result;
+      return result.sort(compareByPriority);
 
     return enhanceWithPrices(result);
   });
