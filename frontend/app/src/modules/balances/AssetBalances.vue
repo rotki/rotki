@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
 import { some } from 'es-toolkit/compat';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
+import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search';
 import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
-import { assetFilterByKeyword } from '@/modules/core/common/display/assets';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -56,7 +56,8 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const debouncedSearch = refDebounced(search, 200);
 
-const { getAssetInfo, prefetchAssetInfo } = useAssetSelectInfo();
+const { getAssetInfo } = useAssetSelectInfo();
+const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances, debouncedSearch);
 const currencySymbol = useSetting('currencySymbol');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
@@ -74,13 +75,7 @@ function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
-function assetFilter(item: Nullable<AssetBalance>): boolean {
-  return assetFilterByKeyword(item, get(debouncedSearch), getAssetInfo);
-}
-
-const filteredBalances = computed(() => balances.filter(assetFilter));
-
-const total = computed<BigNumber>(() => bigNumberSum(get(filteredBalances).map(({ value }) => value)));
+const total = computed<BigNumber>(() => bigNumberSum(get(matches).map(({ value }) => value)));
 
 function percentageOfTotalNetValue(val: BigNumber): string {
   return calculatePercentage(val, get(totalNetWorth));
@@ -171,14 +166,8 @@ const rowAppendLabelColspan = computed(() => {
 
 useRememberTableSorting<AssetBalanceWithPrice>(TableId.ASSET_BALANCES, sort, tableHeaders);
 
-const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), getAssetInfo));
-
-// Search and sort-by-name read the metadata of every balance, while rendering only resolves the
-// rows of the current page. Without this the first search matches nothing until the request it
-// triggers comes back.
-watchImmediate(() => balances, (items) => {
-  prefetchAssetInfo(items.map(item => item.asset));
-});
+const sorted = computed<AssetBalanceWithPrice[]>(() =>
+  prioritizeExactMatches(sortAssetBalances([...get(matches)], get(sort), getAssetInfo)));
 </script>
 
 <template>

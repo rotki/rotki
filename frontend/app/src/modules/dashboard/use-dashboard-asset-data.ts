@@ -1,10 +1,10 @@
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search';
 import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
-import { assetFilterByKeyword } from '@/modules/core/common/display/assets';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { useDashboardStores } from '@/modules/dashboard/use-dashboard-stores';
 
@@ -25,20 +25,9 @@ export function useDashboardAssetData(
   const debouncedSearch = refDebounced(modelSearch, 200);
 
   const { totalNetWorth } = useDashboardStores();
-  const { getAssetInfo, prefetchAssetInfo } = useAssetSelectInfo();
+  const { getAssetInfo } = useAssetSelectInfo();
   const { missingCustomAssets } = useManualBalanceData();
-
-  // The table only resolves the assets it renders, which is one page worth, but the search matches
-  // on name and symbol across every balance. Without this the first search runs against a cache
-  // that holds nothing it needs, matches nothing, and only fills in once the request it triggered
-  // comes back.
-  watchImmediate(() => toValue(balances), (items) => {
-    prefetchAssetInfo(items.map(item => item.asset));
-  });
-
-  function assetFilter(item: Nullable<AssetBalance>): boolean {
-    return assetFilterByKeyword(item, get(debouncedSearch), getAssetInfo);
-  }
+  const { matches, prioritizeExactMatches } = useAssetBalanceSearch(balances, debouncedSearch);
 
   function isAssetMissing(item: AssetBalanceWithPrice): boolean {
     return get(missingCustomAssets).includes(item.asset);
@@ -56,10 +45,8 @@ export function useDashboardAssetData(
     return calculatePercentage(value, get(total));
   }
 
-  const sorted = computed<AssetBalanceWithPrice[]>(() => {
-    const filteredBalances = toValue(balances).filter(assetFilter);
-    return sortAssetBalances(filteredBalances, toValue(sort), getAssetInfo);
-  });
+  const sorted = computed<AssetBalanceWithPrice[]>(() =>
+    prioritizeExactMatches(sortAssetBalances([...get(matches)], toValue(sort), getAssetInfo)));
 
   return {
     isAssetMissing,
