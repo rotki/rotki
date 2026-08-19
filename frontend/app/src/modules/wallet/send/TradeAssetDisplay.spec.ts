@@ -76,6 +76,42 @@ describe('tradeAssetDisplay', () => {
     expect(wrapper.text()).toContain('RESOLVED_NAME');
   });
 
+  it('should show the balance on a list row when there is an amount', () => {
+    const wrapper = createWrapper({
+      data: { ...ASSET, amount: bigNumberify(42), fiatValue: bigNumberify(100) },
+    });
+
+    expect(wrapper.find('[data-testid="trade-asset-balance"]').exists()).toBe(true);
+  });
+
+  it('should hide the balance when the amount is zero', () => {
+    // Every row is zero until a wallet is connected, and a column of zeroes is worse than none.
+    const wrapper = createWrapper({ data: { ...ASSET, amount: bigNumberify(0) } });
+
+    expect(wrapper.find('[data-testid="trade-asset-balance"]').exists()).toBe(false);
+  });
+
+  it('should not show a balance outside a list row', () => {
+    const wrapper = createWrapper({
+      data: { ...ASSET, amount: bigNumberify(42) },
+      list: false,
+    });
+
+    expect(wrapper.find('[data-testid="trade-asset-balance"]').exists()).toBe(false);
+  });
+
+  it('should show the address only when one is provided', () => {
+    expect(createWrapper().find('[data-testid="trade-asset-address"]').exists()).toBe(false);
+
+    const wrapper = createWrapper({ address: '0x1f98…F984' });
+    expect(wrapper.find('[data-testid="trade-asset-address"]').text()).toBe('0x1f98…F984');
+  });
+
+  it('should mark the selected row', () => {
+    expect(createWrapper().find('[data-testid="trade-asset-selected"]').exists()).toBe(false);
+    expect(createWrapper({ selected: true }).find('[data-testid="trade-asset-selected"]').exists()).toBe(true);
+  });
+
   it('should treat an empty provided symbol as a value rather than falling back', () => {
     const wrapper = createWrapper({ symbol: '' });
 

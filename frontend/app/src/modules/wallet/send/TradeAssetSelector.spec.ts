@@ -4,7 +4,7 @@ import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import TradeAssetSelector from '@/modules/wallet/send/TradeAssetSelector.vue';
 
 const NAMES: Record<string, { symbol: string; name: string }> = {
@@ -45,14 +45,11 @@ vi.mock('@/modules/wallet/use-tradable-asset', () => ({
   })),
 }));
 
+const getAssetField = vi.fn<(identifier: string, field: string) => string>();
+
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   useAssetInfoRetrieval: vi.fn(() => ({
-    getAssetField: (identifier: string, field: string): string => {
-      const entry = NAMES[identifier];
-      if (!entry)
-        return '';
-      return field === 'symbol' ? entry.symbol : entry.name;
-    },
+    getAssetField,
     useAssetField: (): ComputedRef<string> => computed(() => ''),
   })),
 }));
@@ -98,10 +95,20 @@ vi.mock('@vueuse/core', async () => {
 });
 
 describe('tradeAssetSelector', () => {
+  // Wrappers are unmounted between tests. `allOwnedAssets` is a module-level ref shared by every
+  // instance, so a leaked component keeps reacting to it and its effects run during later tests,
+  // which is invisible except as call counts on a mock that this test never touched.
+  const mounted: VueWrapper[] = [];
+
+  afterEach(() => {
+    while (mounted.length > 0)
+      mounted.pop()?.unmount();
+  });
+
   function createWrapper(props: Record<string, unknown> = {}): VueWrapper {
     const pinia = createPinia();
     setActivePinia(pinia);
-    return mount(TradeAssetSelector, {
+    const wrapper = mount(TradeAssetSelector, {
       global: {
         plugins: [pinia],
         provide: libraryDefaults,
@@ -129,6 +136,8 @@ describe('tradeAssetSelector', () => {
         ...props,
       },
     });
+    mounted.push(wrapper);
+    return wrapper;
   }
 
   async function openDialog(wrapper: VueWrapper): Promise<void> {
@@ -142,6 +151,12 @@ describe('tradeAssetSelector', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    getAssetField.mockImplementation((identifier: string, field: string) => {
+      const entry = NAMES[identifier];
+      if (!entry)
+        return '';
+      return field === 'symbol' ? entry.symbol : entry.name;
+    });
     set(supportedChainsForConnectedAccount, ['eth', 'optimism']);
     set(allOwnedAssets, [
       tradable('ETH', 'eth'),
@@ -233,6 +248,149 @@ describe('tradeAssetSelector', () => {
     await flushPromises();
 
     expect(wrapper.findAll('[data-testid="trade-asset-option"]')).toHaveLength(0);
+  });
+
+  it('should pick the highlighted row with the keyboard', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    const field = wrapper.find('[data-testid="trade-asset-search"]');
+    await field.trigger('keydown', { key: 'ArrowDown' });
+    await field.trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+
+    // Second row of ETH, AGE, TUSD, ZEU.
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['eip155:1/erc20:0xbbb']);
+  });
+
+  it('should let a search be committed with enter alone', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    const field = wrapper.find('[data-testid="trade-asset-search"]');
+    await field.setValue('true');
+    await flushPromises();
+    await field.trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['eip155:1/erc20:0xccc']);
+  });
+
+  it('should close on escape from the search field', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    await wrapper.find('[data-testid="trade-asset-search"]').trigger('keydown', { key: 'Escape' });
+    await flushPromises();
+
+    expect(wrapper.findAll('[data-testid="trade-asset-option"]')).toHaveLength(0);
+  });
+
+  it('should open highlighted on the current selection', async () => {
+    const wrapper = createWrapper({ modelValue: 'eip155:1/erc20:0xaaa' });
+    await openDialog(wrapper);
+
+    // Fourth of ETH, AGE, TUSD, ZEU: opening at the top would strand the active asset off screen
+    // and make enter commit a different one.
+    expect(virtualScrollTo).toHaveBeenCalledWith(3);
+  });
+
+  it('should mark the selected row', async () => {
+    const wrapper = createWrapper({ modelValue: 'eip155:1/erc20:0xaaa' });
+    await openDialog(wrapper);
+
+    const selected = wrapper.findAll('[data-testid="trade-asset-option"]')
+      .filter(node => node.attributes('aria-selected') === 'true');
+    expect(selected).toHaveLength(1);
+    expect(selected[0].attributes('data-key')).toBe('eip155:1/erc20:0xaaa');
+  });
+
+  it('should tick only the selected chain when an identifier spans chains', async () => {
+    // ETH is the native asset of ethereum, optimism and base alike, so comparing the identifier
+    // alone ticks every one of them and the user cannot tell which network is selected.
+    set(allOwnedAssets, [tradable('ETH', 'eth'), tradable('ETH', 'optimism')]);
+    set(supportedChainsForConnectedAccount, ['eth', 'optimism']);
+    const wrapper = createWrapper({ chain: 'optimism', modelValue: 'ETH' });
+    await openDialog(wrapper);
+    await wrapper.find('[data-testid="chain-select"]').trigger('click');
+    await flushPromises();
+
+    const ticked = wrapper.findAll('[data-testid="trade-asset-option"]')
+      .filter(node => node.attributes('aria-selected') === 'true');
+    expect(ticked).toHaveLength(1);
+    expect(ticked[0].attributes('data-chain')).toBe('optimism');
+  });
+
+  it('should not resolve any asset name before the dialog is opened', () => {
+    createWrapper();
+
+    // Resolution queues a backend mapping fetch per unknown asset, so touching it on mount costs a
+    // request for the entire holding even when the dialog is never opened.
+    expect(getAssetField).not.toHaveBeenCalled();
+  });
+
+  it('should resolve names once the dialog opens', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    expect(getAssetField).toHaveBeenCalled();
+  });
+
+  it('should point the search field at the highlighted row for assistive tech', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    const field = wrapper.find('[data-testid="trade-asset-search"]');
+    await field.trigger('keydown', { key: 'ArrowDown' });
+    await flushPromises();
+
+    const active = field.attributes('aria-activedescendant');
+    expect(active).toBe('trade-asset-option-1');
+    expect(wrapper.find(`#${active}`).exists()).toBe(true);
+  });
+
+  it('should report how many assets the chain holds', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    expect(wrapper.find('[data-testid="trade-asset-count"]').text()).toContain('4');
+  });
+
+  it('should report the narrowed count against the total while searching', async () => {
+    const wrapper = createWrapper();
+    await openDialog(wrapper);
+
+    await wrapper.find('[data-testid="trade-asset-search"]').setValue('agent');
+    await flushPromises();
+
+    const text = wrapper.find('[data-testid="trade-asset-count"]').text();
+    expect(text).toContain('1');
+    expect(text).toContain('4');
+  });
+
+  it('should default to the head of the display order rather than the raw owned list', async () => {
+    // Raw order puts TUSD first; display order puts native ETH first. The form must open on what
+    // the dialog shows at the top, or the selection sits nowhere near it.
+    set(allOwnedAssets, [
+      tradable('eip155:1/erc20:0xccc', 'eth'),
+      tradable('ETH', 'eth'),
+      tradable('eip155:1/erc20:0xaaa', 'eth'),
+    ]);
+    const wrapper = createWrapper({ modelValue: '' });
+    await flushPromises();
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['ETH']);
+  });
+
+  it('should never default to a collectible', async () => {
+    set(allOwnedAssets, [
+      tradable('eip155:1/erc721:0xC0a302e6Ad8EcCC4d7A6c1514F8671D6B79269c7/104', 'eth'),
+      tradable('eip155:1/erc20:0xccc', 'eth'),
+    ]);
+    const wrapper = createWrapper({ modelValue: '' });
+    await flushPromises();
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['eip155:1/erc20:0xccc']);
   });
 
   it('should window the list rather than rendering every row', async () => {

@@ -6254,10 +6254,12 @@
       "tracked_addresses": "Tracked Addresses"
     },
     "select_asset": {
+      "asset_count": "{count} asset | {count} assets",
       "balance": "Balance",
       "max": "Max",
       "no_assets_found": "No assets found",
       "no_search_results": "No assets match \"{query}\"",
+      "result_count": "{count} of {total}",
       "search": "Search by symbol or name",
       "select_token": "Select a token",
       "title": "Select Asset"
