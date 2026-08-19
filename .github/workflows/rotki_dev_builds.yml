@@ -24,6 +24,7 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-22.04
+    timeout-minutes: 30  # observed max 13m
     permissions:
       contents: read
     steps:
@@ -101,6 +102,9 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     environment: macos_sign
     runs-on: ${{ matrix.os.runner }}
+    # observed max: arm64 18m, x86_64 29m. x86_64 intermittently hangs forever in
+    # PyInstaller's codesign --timestamp (network call, no subprocess timeout).
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
@@ -181,6 +185,7 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: windows-latest
+    timeout-minutes: 45  # observed max 24m
     environment: windows_sign
     permissions:
       contents: read
@@ -242,6 +247,7 @@ jobs:
     name: Build docker images
     if: ${{ github.repository == 'rotki/rotki' || github.event_name != 'schedule' }}
     runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 30  # observed max 9m warm; extra air for a cold build cache
     environment: docker
     permissions:
       contents: read
@@ -325,6 +331,7 @@ jobs:
 
   docker-merge:
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # observed max 36s; the prune step lives here
     needs:
       - build-docker
     environment: docker
@@ -770,6 +777,7 @@ jobs:
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'build-linux', 'build-windows', 'build-macos', 'docker-merge' ]
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # observed max 42s
     environment: nightly_notify
     steps:
       - name: Checkout
