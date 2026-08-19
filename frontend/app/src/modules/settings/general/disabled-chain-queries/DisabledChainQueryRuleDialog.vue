@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Rule, RuleDraft } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
+import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -20,6 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { accounts } = storeToRefs(useBlockchainAccountsStore());
 const { supportedChains } = useSupportedChains();
+const { getAddressName } = useAddressNameResolution();
 
 const {
   modelAddress,
@@ -27,6 +29,7 @@ const {
   availableChainsForAddress,
   buildDraft,
   canSave,
+  filterAddressOption,
   modelChainId,
   modelKind,
   reset,
@@ -36,6 +39,7 @@ const {
   accounts,
   chains: supportedChains,
   editing: () => editing,
+  resolveName: getAddressName,
 });
 
 const chainOptionsForAddress = computed(() => get(supportedChains).filter(c => get(availableChainsForAddress).includes(c.id)));
@@ -119,6 +123,7 @@ watch(open, (value) => {
             variant="outlined"
             key-attr="address"
             text-attr="address"
+            :filter="filterAddressOption"
             hide-details
             auto-select-first
             data-testid="rule-address-picker"
