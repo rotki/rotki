@@ -24,6 +24,8 @@ const DateTimePickerStub = defineComponent({
     menuOpen: { default: false, type: Boolean },
     minDate: { default: undefined, type: Number },
     modelValue: { default: undefined, type: Number },
+    // which end of the day the picker completes an entry that omits the time with
+    partialTime: { default: undefined, type: String },
   },
   emits: ['update:modelValue', 'update:menuOpen'],
   mounted(): void {
@@ -67,7 +69,7 @@ function createWrapper(
 function boundProp(
   wrapper: VueWrapper<InstanceType<typeof DateValueEditor>>,
   testId: string,
-  prop: 'maxDate' | 'minDate',
+  prop: 'maxDate' | 'minDate' | 'partialTime',
 ): unknown {
   const found = wrapper.findAllComponents(DateTimePickerStub)
     .find(component => component.attributes('data-testid') === testId);
@@ -110,6 +112,16 @@ describe('dateValueEditor', () => {
     const before = createWrapper({ fieldKey: 'period', op: 'before', values: [] });
     expect(before.find('[data-testid=date-from]').exists()).toBe(false);
     expect(before.find('[data-testid=date-to]').exists()).toBe(true);
+  });
+
+  // A range is usually thought of in whole days, so a bound may be given as a bare date. The two
+  // ends take opposite sides of the day the entry omits the time of, or a To of today would cut
+  // the day off at midnight and hide everything that happened during it.
+  it('should complete a date-only bound from its own end of the day', () => {
+    const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] });
+
+    expect(boundProp(wrapper, 'date-from', 'partialTime')).toBe('start');
+    expect(boundProp(wrapper, 'date-to', 'partialTime')).toBe('end');
   });
 
   // Inclusive second bounds, so the same second on both ends is a filter for that second.

@@ -7,6 +7,9 @@ import {
   ADDRESS_BETA,
   DATE_CUTOFF_DIGITS,
   DATE_CUTOFF_TYPED,
+  DATE_DAY_DIGITS,
+  DAY_END_TS,
+  DAY_START_TS,
   EVENTS_AFTER_CUTOFF,
   multiChainChainIds,
   multiChainEvents,
@@ -431,6 +434,24 @@ test.describe.serial('history events pill filter', () => {
     await expect.poll(() => url(), { timeout: 10000 }).toContain('fromTimestamp=');
     // "after" carries no upper bound, so none may reach the wire.
     expect(url()).not.toContain('toTimestamp=');
+
+    await bar.clearAll();
+    await expectRows(TOTAL_SEEDED_EVENTS);
+  });
+
+  // A range is usually thought of in whole days, and a bound typed as a bare date used to be
+  // dropped without a word: no value reached the filter and the pill stayed empty. The two ends
+  // complete it from opposite sides of the day, so a From/To on the same date covers all of it
+  // rather than collapsing onto its first instant.
+  test('a bound given as a bare date covers the whole day', async () => {
+    await bar.addField('period');
+    await bar.setDateBound('from', DATE_DAY_DIGITS);
+    await bar.setDateBound('to', DATE_DAY_DIGITS);
+    await bar.closeEditor();
+
+    await expectRows(TOTAL_SEEDED_EVENTS);
+    await expect.poll(() => url(), { timeout: 10000 }).toContain(`fromTimestamp=${DAY_START_TS}`);
+    expect(url()).toContain(`toTimestamp=${DAY_END_TS}`);
 
     await bar.clearAll();
     await expectRows(TOTAL_SEEDED_EVENTS);
