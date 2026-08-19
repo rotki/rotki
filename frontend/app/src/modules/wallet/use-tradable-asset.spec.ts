@@ -2,6 +2,7 @@ import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify, Zero } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useTradableAsset } from './use-tradable-asset';
 
@@ -25,6 +26,11 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 function seedBalances(data: Balances): void {
   const { balances } = storeToRefs(useBalancesStore());
   set(balances, data);
+}
+
+function seedIgnoredAssets(assets: string[]): void {
+  const { ignoredAssets } = storeToRefs(useAssetsStore());
+  set(ignoredAssets, assets);
 }
 
 describe('useTradableAsset', () => {
@@ -136,6 +142,89 @@ describe('useTradableAsset', () => {
     expect(result[0].asset).toBe('ETH');
     expect(result[0].amount.isZero()).toBe(true);
     expect(getAssetPrice).not.toHaveBeenCalled();
+  });
+
+  it('should drop ignored assets so a spam token cannot be the default selection', () => {
+    seedBalances({
+      eth: {
+        '0xabc': {
+          assets: {
+            HEX: { address: { amount: bigNumberify(1000000), value: Zero } },
+            USDC: { address: { amount: bigNumberify(50), value: Zero } },
+          },
+          liabilities: { HEX: { address: { amount: bigNumberify(1), value: Zero } } },
+        },
+      },
+    });
+    seedIgnoredAssets(['HEX']);
+
+    getAssetPrice.mockImplementation((asset: string) => {
+      if (asset === 'HEX')
+        return bigNumberify(10);
+      if (asset === 'USDC')
+        return bigNumberify(1);
+      return undefined;
+    });
+
+    const { allOwnedAssets } = useTradableAsset(ref('0xabc'));
+    const result = get(allOwnedAssets);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].asset).toBe('USDC');
+  });
+
+  it('should drop ignored assets from the deduplicated list as well', () => {
+    seedBalances({
+      eth: {
+        '0xa': { assets: { HEX: { address: { amount: bigNumberify(1), value: Zero } } }, liabilities: {} },
+        '0xb': { assets: { DAI: { address: { amount: bigNumberify(2), value: Zero } } }, liabilities: {} },
+      },
+    });
+    seedIgnoredAssets(['HEX']);
+
+    const { allOwnedAssets } = useTradableAsset(ref(undefined));
+    const result = get(allOwnedAssets);
+
+    expect(result.map(item => item.asset)).toEqual(['DAI']);
+  });
+
+  it('should order the unpriced list deterministically instead of by balance key order', () => {
+    seedBalances({
+      eth: {
+        '0xa': {
+          assets: {
+            ZRX: { address: { amount: bigNumberify(1), value: Zero } },
+            HEX: { address: { amount: bigNumberify(1), value: Zero } },
+            ETH: { address: { amount: bigNumberify(1), value: Zero } },
+            AAVE: { address: { amount: bigNumberify(1), value: Zero } },
+          },
+          liabilities: {},
+        },
+      },
+    });
+
+    const { allOwnedAssets } = useTradableAsset(ref(undefined));
+
+    expect(get(allOwnedAssets).map(item => item.asset)).toEqual(['ETH', 'AAVE', 'HEX', 'ZRX']);
+  });
+
+  it('should break a fiat value tie by identifier', () => {
+    seedBalances({
+      eth: {
+        '0xabc': {
+          assets: {
+            HEX: { address: { amount: bigNumberify(1), value: Zero } },
+            DAI: { address: { amount: bigNumberify(1), value: Zero } },
+          },
+          liabilities: {},
+        },
+      },
+    });
+    getAssetPrice.mockReturnValue(bigNumberify(1));
+
+    const { allOwnedAssets } = useTradableAsset(ref('0xabc'));
+
+    expect(get(allOwnedAssets).map(item => item.asset)).toEqual(['DAI', 'HEX']);
   });
 
   it('should skip address entries without an assets bag', () => {
