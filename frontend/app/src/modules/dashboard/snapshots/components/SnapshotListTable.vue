@@ -92,7 +92,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
       <SnapshotDeltaDisplay
         :value="row.usdValue"
         :timestamp="row.timestamp"
-        :previous-value="row.previousUsdValue"
+        :previous-usd-value="row.previousUsdValue"
         :previous-timestamp="row.previousTimestamp"
       />
     </template>
