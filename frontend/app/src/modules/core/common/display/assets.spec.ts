@@ -1,4 +1,4 @@
-import { type AssetInfoWithId, bigNumberify } from '@rotki/common';
+import { type AssetInfoWithId, bigNumberify, getTextToken } from '@rotki/common';
 import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,11 +9,14 @@ import {
   SOLANA_CHAIN,
   SOLANA_TOKEN,
 } from '@/modules/assets/types';
+import { getAssetNameFallback } from '@/modules/assets/use-resolve-asset-identifier';
 import {
   assetDisplayCaption,
   assetDisplayLabel,
-  assetFilterByKeyword,
+  assetSearchTokens,
   assetSuggestions,
+  assetTokensExactlyMatch,
+  assetTokensMatch,
   compareTextByKeyword,
   getAssetSearchTypeParams,
   getSanitizedChain,
@@ -168,37 +171,143 @@ describe('getSortItems', () => {
   });
 });
 
-describe('assetFilterByKeyword', () => {
-  const getInfo = (id: string | undefined): { name?: string | null; symbol?: string | null } | null =>
-    (id === 'dai' ? { name: 'Dai Stablecoin', symbol: 'DAI' } : null);
-
-  it('should keep everything when the search is empty', () => {
-    expect(assetFilterByKeyword({ amount: bigNumberify(1), asset: 'dai', value: bigNumberify(1) }, '', getInfo)).toBe(true);
+describe('assetSearchTokens', () => {
+  it('should tokenize name, symbol, identifier and the evm address', () => {
+    const id = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
+    expect(assetSearchTokens(id, { name: 'Dai Stablecoin', symbol: 'DAI' })).toEqual({
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+      identifier: 'eip1551erc200x6b175474e89094c44da98b954eedeac495271d0f',
+      name: 'daistablecoin',
+      symbol: 'dai',
+    });
   });
 
-  it('should keep everything when the item is null', () => {
-    expect(assetFilterByKeyword(null, 'dai', getInfo)).toBe(true);
+  it('should leave the address empty for an asset that has none', () => {
+    expect(assetSearchTokens('BTC', { name: 'Bitcoin', symbol: 'BTC' })).toEqual({
+      address: '',
+      identifier: 'btc',
+      name: 'bitcoin',
+      symbol: 'btc',
+    });
   });
+
+  it('should keep a symbol that is also the identifier', () => {
+    // BTC, ETH and every non-EVM asset are their own identifier, and that is what people type.
+    expect(assetTokensMatch(assetSearchTokens('BTC', { name: 'Bitcoin', symbol: 'BTC' }), 'btc')).toBe(true);
+    expect(assetTokensMatch(assetSearchTokens('ETH', { name: 'Ether', symbol: 'ETH' }), 'eth')).toBe(true);
+  });
+
+  it('should extract the address of a solana token', () => {
+    const address = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    expect(assetSearchTokens(`solana/token:${address}`).address).toBe(address.toLowerCase());
+  });
+
+  it('should extract the address of a hyperliquid token', () => {
+    expect(assetSearchTokens(`hyperc:${HYPERLIQUID_TOKEN_ADDRESS}`).address).toBe(HYPERLIQUID_TOKEN_ADDRESS);
+  });
+
+  it('should treat missing metadata as empty rather than throwing', () => {
+    expect(assetSearchTokens('BTC')).toMatchObject({ name: '', symbol: '' });
+    expect(assetSearchTokens('BTC', { name: null, symbol: null })).toMatchObject({ name: '', symbol: '' });
+  });
+});
+
+describe('assetTokensMatch', () => {
+  const DAI_ID = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
+  const resolved = assetSearchTokens(DAI_ID, { name: 'Dai Stablecoin', symbol: 'DAI' });
+  const unresolved = assetSearchTokens(DAI_ID, null);
 
   it('should match on symbol or name', () => {
-    expect(assetFilterByKeyword({ amount: bigNumberify(1), asset: 'dai', value: bigNumberify(1) }, 'dai', getInfo)).toBe(true);
-    expect(assetFilterByKeyword({ amount: bigNumberify(1), asset: 'dai', value: bigNumberify(1) }, 'stablecoin', getInfo)).toBe(true);
+    expect(assetTokensMatch(resolved, 'dai')).toBe(true);
+    expect(assetTokensMatch(resolved, 'stablecoin')).toBe(true);
   });
 
   it('should reject a non-matching keyword', () => {
-    expect(assetFilterByKeyword({ amount: bigNumberify(1), asset: 'dai', value: bigNumberify(1) }, 'bitcoin', getInfo)).toBe(false);
+    expect(assetTokensMatch(resolved, 'bitcoin')).toBe(false);
+  });
+
+  it('should match a resolved asset on its contract address', () => {
+    expect(assetTokensMatch(resolved, '0x6b175474')).toBe(true);
+    expect(assetTokensMatch(resolved, '495271d0f')).toBe(true);
+  });
+
+  it('should not try short keywords against the address', () => {
+    // "6b1" is in the address, but a keyword this short hits a great many addresses by chance.
+    expect(assetTokensMatch(resolved, '6b1')).toBe(false);
   });
 
   it('should match an unresolved asset on its identifier', () => {
-    const asset = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
-    const item = { amount: bigNumberify(1), asset, value: bigNumberify(1) };
-    expect(assetFilterByKeyword(item, '0x6b175474', getInfo)).toBe(true);
+    expect(assetTokensMatch(unresolved, '0x6b175474')).toBe(true);
+    expect(assetTokensMatch(unresolved, 'erc20')).toBe(true);
   });
 
   it('should reject an unresolved asset whose identifier does not match', () => {
-    const asset = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
-    const item = { amount: bigNumberify(1), asset, value: bigNumberify(1) };
-    expect(assetFilterByKeyword(item, 'bitcoin', getInfo)).toBe(false);
+    expect(assetTokensMatch(unresolved, 'bitcoin')).toBe(false);
+  });
+
+  it('should not fall back to the identifier once the asset is resolved', () => {
+    // Every EVM identifier contains "erc20"; matching it for resolved assets returns the whole list.
+    expect(assetTokensMatch(resolved, 'erc20')).toBe(false);
+  });
+
+  it('should keep a row whose tokens are unknown', () => {
+    expect(assetTokensMatch(undefined, 'dai')).toBe(true);
+  });
+
+  it('should keep matching a pasted identifier once the asset resolves', () => {
+    // The keyword is longer than the address it contains, so only the identifier can carry this
+    // match. Without it the row is found while the metadata is in flight and vanishes when it
+    // lands, which is the same flicker seen from the other side.
+    const keyword = getTextToken(DAI_ID);
+    expect(assetTokensMatch(unresolved, keyword)).toBe(true);
+    expect(assetTokensMatch(resolved, keyword)).toBe(true);
+  });
+
+  it('should not match an unresolved asset on a short identifier fragment', () => {
+    expect(assetTokensMatch(unresolved, '6b1')).toBe(false);
+  });
+
+  describe('an evm asset the backend has no name for', () => {
+    const standIn = getAssetNameFallback(DAI_ID);
+    const tokens = assetSearchTokens(DAI_ID, { name: standIn, symbol: standIn });
+
+    it('should not be matched by the words of its stand-in name', () => {
+      // Every unnamed EVM asset is given the same "EVM Token: 0x…" stand-in, so matching its words
+      // returns all of them at once.
+      expect(assetTokensMatch(tokens, 'token')).toBe(false);
+      expect(assetTokensMatch(tokens, 'evm')).toBe(false);
+    });
+
+    it('should still be found by its address', () => {
+      expect(assetTokensMatch(tokens, '0x6b175474')).toBe(true);
+    });
+
+    it('should not be found by a short address fragment', () => {
+      // The stand-in name embeds the address, so matching it as a name would sneak past the
+      // minimum length that protects address matching.
+      expect(assetTokensMatch(tokens, '6b1')).toBe(false);
+    });
+  });
+});
+
+describe('assetTokensExactlyMatch', () => {
+  const tokens = assetSearchTokens('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA', {
+    name: 'ChainLink Token',
+    symbol: 'LINK',
+  });
+
+  it('should match the whole symbol or the whole name', () => {
+    expect(assetTokensExactlyMatch(tokens, 'link')).toBe(true);
+    expect(assetTokensExactlyMatch(tokens, 'chainlinktoken')).toBe(true);
+  });
+
+  it('should not match a fragment', () => {
+    expect(assetTokensExactlyMatch(tokens, 'lin')).toBe(false);
+    expect(assetTokensExactlyMatch(tokens, 'chainlink')).toBe(false);
+  });
+
+  it('should not match unknown tokens', () => {
+    expect(assetTokensExactlyMatch(undefined, 'link')).toBe(false);
   });
 });
 

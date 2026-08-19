@@ -249,27 +249,118 @@ export function getSortItems<T extends AssetBalance>(getInfo: (identifier: strin
   };
 }
 
-export function assetFilterByKeyword(
-  item: Nullable<AssetBalance>,
-  search: string,
-  getAssetInfo: (identifier: string | undefined) => { name?: string | null; symbol?: string | null } | null,
-): boolean {
-  const keyword = getTextToken(search);
-  if (!keyword || !item)
+/**
+ * Everything about one asset that a search can match, pre-tokenized.
+ *
+ * Tokenizing on every keystroke is what makes filtering a long balance list expensive, and the
+ * inputs only change when the balances or the resolved metadata do. Building this once per asset
+ * lets the filter itself be nothing but string compares.
+ */
+export interface AssetSearchTokens {
+  address: string;
+  identifier: string;
+  name: string;
+  symbol: string;
+}
+
+/**
+ * Below this length a keyword is not tried against contract addresses.
+ *
+ * An address is hex, so a short keyword hits a great many of them by coincidence and buries the
+ * name and symbol matches the user meant.
+ */
+const ADDRESS_KEYWORD_MIN_LENGTH = 4;
+
+function assetContractAddress(identifier: string): string {
+  if (isEvmIdentifier(identifier))
+    return getAddressFromEvmIdentifier(identifier);
+  if (isSolanaTokenIdentifier(identifier))
+    return getAddressFromSolanaIdentifier(identifier);
+  if (isHyperliquidTokenIdentifier(identifier))
+    return getAddressFromHyperliquidTokenIdentifier(identifier);
+  return '';
+}
+
+export function assetSearchTokens(
+  identifier: string,
+  info?: { name?: string | null; symbol?: string | null } | null,
+): AssetSearchTokens {
+  // An asset the backend has no name for is given the `EVM Token: 0x…` stand-in, which is neither
+  // a name nor absent. Taken at face value it makes every such asset answer to "evm" and to "token",
+  // and it smuggles the raw address in as a name, past the minimum length that guards address
+  // matching. Treating it as no name at all leaves the address as the one way to find these.
+  //
+  // Only the stand-in is dropped, not everything `hasAssetMetadata` rejects: that also rejects a
+  // symbol equal to the identifier, which is what BTC, ETH and every non-EVM asset have, and those
+  // are exactly the symbols people type.
+  const standIn = getAssetNameFallback(identifier);
+  const searchable = (value?: string | null): string => {
+    const trimmed = value?.trim() ?? '';
+    return trimmed && trimmed !== standIn ? getTextToken(trimmed) : '';
+  };
+
+  const name = searchable(info?.name);
+  const symbol = searchable(info?.symbol);
+
+  return {
+    address: getTextToken(assetContractAddress(identifier)),
+    identifier: getTextToken(identifier),
+    name,
+    symbol,
+  };
+}
+
+/**
+ * Both directions are a match: a fragment of the address is someone typing part of it, and an
+ * address inside the keyword is someone pasting a whole identifier that carries it.
+ */
+function addressMatchesKeyword(address: string, keyword: string): boolean {
+  if (!address)
+    return false;
+  return address.includes(keyword) || keyword.includes(address);
+}
+
+/**
+ * Whether an asset matches a keyword, which must already be tokenized with `getTextToken`.
+ *
+ * Matching an asset by its contract address is deliberate: pasting an address is how you look up a
+ * token you have no name for, and it is the only handle an asset without metadata has.
+ */
+export function assetTokensMatch(tokens: AssetSearchTokens | undefined, keyword: string): boolean {
+  // Nothing is known about this asset, so there is no ground to hide its row on. Failing open keeps
+  // a row the user can see rather than reporting no results for something the list does contain.
+  if (!tokens)
     return true;
 
-  const info = getAssetInfo(item.asset);
+  // Pasting a whole identifier is unambiguous, and it has to keep matching after the metadata
+  // lands: the identifier is longer than the address inside it, so no other arm can carry it, and
+  // the row would appear and then vanish as the asset resolves.
+  if (keyword === tokens.identifier)
+    return true;
 
-  // An asset whose metadata has not been resolved yet has no name and no symbol to match on.
-  // Matching the identifier instead keeps the row reachable, by its address or its raw id, rather
-  // than dropping it and reporting "no results" for something the list does contain. Resolution is
-  // asynchronous, so this is also what the very first keystroke sees while the batch is in flight.
-  if (!info)
-    return getTextToken(item.asset).includes(keyword);
+  if (tokens.symbol.includes(keyword) || tokens.name.includes(keyword))
+    return true;
 
-  const name = getTextToken(info.name ?? '');
-  const symbol = getTextToken(info.symbol ?? '');
-  return symbol.includes(keyword) || name.includes(keyword);
+  if (keyword.length < ADDRESS_KEYWORD_MIN_LENGTH)
+    return false;
+
+  if (addressMatchesKeyword(tokens.address, keyword))
+    return true;
+
+  // Metadata resolves asynchronously, so an asset can have neither a name nor a symbol yet. The
+  // identifier is then all there is; without it the row is dropped and the table reports "no
+  // results" for something the list does contain.
+  if (!tokens.symbol && !tokens.name)
+    return tokens.identifier.includes(keyword);
+
+  return false;
+}
+
+/** Whether the keyword is the asset's whole symbol or name, rather than a fragment of it. */
+export function assetTokensExactlyMatch(tokens: AssetSearchTokens | undefined, keyword: string): boolean {
+  if (!tokens)
+    return false;
+  return tokens.symbol === keyword || tokens.name === keyword;
 }
 
 export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, location?: string): (keyword: string) => Promise<AssetsWithId> {
