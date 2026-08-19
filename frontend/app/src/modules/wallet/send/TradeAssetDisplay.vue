@@ -6,7 +6,7 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
-const { data, symbol: providedSymbol, name: providedName } = defineProps<{
+const { data, symbol: providedSymbol, name: providedName, address = '' } = defineProps<{
   data: TradableAsset;
   list?: boolean;
   amount?: BigNumber;
@@ -14,6 +14,10 @@ const { data, symbol: providedSymbol, name: providedName } = defineProps<{
   symbol?: string;
   /** Pre-resolved name, as above. */
   name?: string;
+  /** Shortened contract address, shown only when another row carries the same symbol. */
+  address?: string;
+  /** Marks the row the form currently has selected. */
+  selected?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -52,8 +56,17 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
       }"
     >
       <div class="font-medium text-sm -mb-0.5 overflow-hidden truncate">
-        <div class="truncate">
-          {{ symbol }}
+        <div class="truncate flex items-center gap-1.5">
+          <span class="truncate">{{ symbol }}</span>
+          <!-- Only rendered for a symbol that appears twice in the list; otherwise the address is
+               noise on every row. -->
+          <span
+            v-if="address"
+            class="shrink-0 font-mono text-xs font-normal text-rui-text-secondary"
+            data-testid="trade-asset-address"
+          >
+            {{ address }}
+          </span>
         </div>
         <div
           v-if="list || !(data.price && data.fiatValue)"
@@ -61,6 +74,41 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
         >
           {{ name }}
         </div>
+      </div>
+      <!-- The right-hand side of a list row: what you hold, and the tick for the active asset.
+           Hidden when the amount is zero, which is every row until a wallet is connected. -->
+      <div
+        v-if="list"
+        class="flex items-center gap-2 shrink-0 pl-2"
+      >
+        <div
+          v-if="data.amount && data.amount.gt(0)"
+          class="text-right"
+          data-testid="trade-asset-balance"
+        >
+          <div class="text-sm text-rui-text-primary">
+            <ValueDisplay
+              :value="data.amount"
+              no-scramble
+            />
+          </div>
+          <div
+            v-if="data.fiatValue"
+            class="text-xs font-normal text-rui-text-secondary"
+          >
+            <FiatDisplay
+              no-scramble
+              :value="data.fiatValue"
+            />
+          </div>
+        </div>
+        <RuiIcon
+          v-if="selected"
+          class="text-rui-primary"
+          name="lu-check"
+          size="16"
+          data-testid="trade-asset-selected"
+        />
       </div>
       <div
         v-if="!list && data.price"

@@ -8,7 +8,8 @@ import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import TradeAssetDisplay from '@/modules/wallet/send/TradeAssetDisplay.vue';
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
-import { ALL_CHAINS, useTradeAssetOptions } from '@/modules/wallet/send/use-trade-asset-options';
+import { useTradeAssetNavigation } from '@/modules/wallet/send/use-trade-asset-navigation';
+import { ALL_CHAINS, type TradeAssetOption, useTradeAssetOptions } from '@/modules/wallet/send/use-trade-asset-options';
 import { useInjectedTradableAsset } from '@/modules/wallet/use-tradable-asset';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
@@ -51,11 +52,16 @@ const chainOptions = computed<string[]>(() => [
   ...get(supportedChainsForConnectedAccount),
 ]);
 
-const { options: assetOptions } = useTradeAssetOptions(
+// Latched rather than tracking `openDialog`: once the names are resolved they are cached, and
+// dropping back to identifier ordering on close would reshuffle the list between openings.
+const namesNeeded = ref<boolean>(false);
+
+const { options: assetOptions, orderedAssets } = useTradeAssetOptions(
   allOwnedAssets,
   internalChain,
   search,
   supportedChainsForConnectedAccount,
+  namesNeeded,
 );
 
 const { containerProps, list, scrollTo, wrapperProps } = useVirtualList(assetOptions, {
@@ -69,8 +75,30 @@ function selectAsset(item: TradableAsset): void {
   set(openDialog, false);
 }
 
+// How many the chain holds before the search box narrows it, so the count can read "12 of 836".
+const totalForChain = computed<number>(() => {
+  const selected = get(internalChain);
+  if (selected === ALL_CHAINS) {
+    const allowed = new Set(get(supportedChainsForConnectedAccount));
+    return get(orderedAssets).filter(option => allowed.has(option.asset.chain)).length;
+  }
+  return get(orderedAssets).filter(option => option.asset.chain === selected).length;
+});
+
+const { highlight, highlighted, onKeydown, onPointerMove } = useTradeAssetNavigation(assetOptions, {
+  onClose: () => set(openDialog, false),
+  onSelect: (option: TradeAssetOption) => selectAsset(option.asset),
+  scrollTo,
+});
+
 function setMax() {
   emit('set-max');
+}
+
+// Both halves, not just the identifier: a native token id is shared across chains, so comparing on
+// the identifier alone ticks the ETH row of every chain at once.
+function isSelected(option: TradeAssetOption): boolean {
+  return option.asset.asset === get(asset) && option.asset.chain === get(chain);
 }
 
 /**
@@ -81,25 +109,28 @@ function setMax() {
  * the selection if it is still owned there and otherwise take the head of that chain's list; with
  * no chain, take the head of the whole list, which is already ordered native-first.
  */
-watchImmediate([() => address, chain, allOwnedAssets], ([, currentChain]) => {
-  const owned = get(allOwnedAssets);
+watchImmediate([() => address, chain, orderedAssets], ([, currentChain]) => {
+  // Drawn from the display order, not from the raw owned list: picking the default off a different
+  // ordering than the dialog shows meant the form opened on an asset nowhere near the top of the
+  // list the user then saw.
+  const owned = get(orderedAssets);
 
   if (!currentChain) {
     const first = owned[0];
     if (first) {
-      set(asset, first.asset);
-      set(chain, first.chain);
+      set(asset, first.asset.asset);
+      set(chain, first.asset.chain);
     }
     return;
   }
 
-  const ownedOnChain = owned.filter(item => item.chain === currentChain);
+  const ownedOnChain = owned.filter(option => option.asset.chain === currentChain);
   if (ownedOnChain.length === 0)
     return;
 
   const currentAsset = get(asset);
-  if (!currentAsset || !ownedOnChain.some(item => item.asset === currentAsset)) {
-    set(asset, ownedOnChain[0].asset);
+  if (!currentAsset || !ownedOnChain.some(option => option.asset.asset === currentAsset)) {
+    set(asset, ownedOnChain[0].asset.asset);
   }
 });
 
@@ -113,18 +144,12 @@ watch(openDialog, async (open) => {
     set(search, '');
     return;
   }
+  set(namesNeeded, true);
   await nextTick();
   get(searchField)?.focus();
-});
-
-// Narrowing the list should show its results from the top, since the virtual list keeps whatever
-// offset it was scrolled to.
-//
-// Watched on the inputs rather than on `assetOptions`: that computed rebuilds into a new array on
-// every balances tick, so watching it would yank the list back to the top while the user was
-// scrolling it.
-watch([search, internalChain], () => {
-  scrollTo(0);
+  // Opens on what is currently selected rather than at the top, so the active asset is both visible
+  // and the row Enter would commit.
+  highlight(get(asset), get(chain));
 });
 
 const { detectTokens: orchestratorDetect } = useTokenDetectionOrchestrator();
@@ -251,7 +276,12 @@ function redetectTokens(): void {
             :aria-label="t('trade.select_asset.search')"
             autocomplete="off"
             spellcheck="false"
+            role="combobox"
+            aria-controls="trade-asset-listbox"
+            :aria-expanded="assetOptions.length > 0"
+            :aria-activedescendant="assetOptions.length > 0 ? `trade-asset-option-${highlighted}` : undefined"
             data-testid="trade-asset-search"
+            @keydown="onKeydown($event)"
           />
           <RuiButton
             v-if="search"
@@ -269,6 +299,16 @@ function redetectTokens(): void {
             />
           </RuiButton>
         </div>
+        <!-- The list is a fixed height, so how much sits below the fold is not otherwise visible. -->
+        <div
+          class="mt-2 text-xs text-rui-text-secondary"
+          aria-live="polite"
+          data-testid="trade-asset-count"
+        >
+          {{ search
+            ? t('trade.select_asset.result_count', { count: assetOptions.length, total: totalForChain })
+            : t('trade.select_asset.asset_count', { count: assetOptions.length }, assetOptions.length) }}
+        </div>
       </div>
       <!-- Virtualized: a single chain can carry well over a hundred owned assets, and every row
            mounts an icon plus its asset resolution. -->
@@ -278,17 +318,27 @@ function redetectTokens(): void {
       <div
         v-if="assetOptions.length > 0"
         v-bind="containerProps"
+        id="trade-asset-listbox"
+        role="listbox"
         class="h-[min(24rem,50vh)] pb-2"
       >
         <div v-bind="wrapperProps">
           <button
-            v-for="{ data: option } in list"
+            v-for="{ data: option, index } in list"
+            :id="`trade-asset-option-${index}`"
             :key="option.asset.asset + option.asset.chain"
             type="button"
-            class="w-full text-left hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 cursor-pointer py-2 px-4 focus-visible:outline-none focus-visible:bg-rui-grey-100 dark:focus-visible:bg-rui-grey-800"
+            role="option"
+            class="w-full text-left cursor-pointer py-2 px-4 focus-visible:outline-none"
+            :class="index === highlighted
+              ? 'bg-rui-primary/10'
+              : 'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
             :style="{ height: `${ITEM_HEIGHT}px` }"
+            :aria-selected="isSelected(option)"
             data-testid="trade-asset-option"
             :data-key="option.asset.asset"
+            :data-chain="option.asset.chain"
+            @mousemove="onPointerMove($event, index)"
             @click="selectAsset(option.asset)"
           >
             <TradeAssetDisplay
@@ -296,14 +346,19 @@ function redetectTokens(): void {
               :data="option.asset"
               :symbol="option.symbol"
               :name="option.name"
+              :address="option.ambiguous ? option.address : ''"
+              :selected="isSelected(option)"
             />
           </button>
         </div>
       </div>
       <!-- Same height as the populated list, so searching down to nothing does not collapse the
            dialog around the search box the user is still typing in. -->
+      <!-- Keeps the id the search field's aria-controls names, so it does not dangle when the list
+           is empty. -->
       <div
         v-else
+        id="trade-asset-listbox"
         class="h-[min(24rem,50vh)] px-4 flex items-center justify-center text-center text-rui-text-secondary"
         role="status"
         aria-live="polite"
