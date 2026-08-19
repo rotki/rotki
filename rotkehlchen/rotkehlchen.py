@@ -50,6 +50,8 @@ from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
 from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+from rotkehlchen.chain.sonic.manager import SonicManager
+from rotkehlchen.chain.sonic.node_inquirer import SonicInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -540,6 +542,16 @@ class Rotkehlchen:
             ),
             monad_manager=MonadManager(
                 node_inquirer=MonadInquirer(
+                    task_supervisor=self.task_supervisor,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                    blockscout=blockscout,
+                    routescan=routescan,
+                ),
+                premium=self.premium,
+            ),
+            sonic_manager=SonicManager(
+                node_inquirer=SonicInquirer(
                     task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,

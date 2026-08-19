@@ -4060,6 +4060,9 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
         ).fetchone()[0] == 0
+        assert write_cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
+        ).fetchone()[0] == 0
 
         write_cursor.executemany(
             'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
@@ -4160,6 +4163,9 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         ).fetchone()[0] == 1
         assert cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
         ).fetchone()[0] == 1
 
     db.logout()

@@ -43,7 +43,7 @@ def query_balancer_data(
         version: Literal[1, 2, 3],
         inquirer: EvmNodeInquirer,
         msg_aggregator: MessagesAggregator,
-        protocol: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
+        protocol: str,
         cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS, CacheType.BALANCER_V3_POOLS],  # noqa: E501
         reload_all: bool,
 ) -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:

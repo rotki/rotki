@@ -17,7 +17,7 @@ import { useSupportedChainsStore } from '@/modules/core/common/use-supported-cha
  * Chains whose protocol decoding coverage is still limited. The backend does
  * not expose a maturity flag, so the set is maintained here until it does.
  */
-const EARLY_INTEGRATION_CHAINS: ReadonlySet<string> = new Set(['avax', 'hyperliquid', 'monad']);
+const EARLY_INTEGRATION_CHAINS: ReadonlySet<string> = new Set(['avax', 'hyperliquid', 'monad', 'sonic']);
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === ChainType.EVM;

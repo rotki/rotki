@@ -14,6 +14,7 @@ describe('useSupportedChains', () => {
       expect(isEarlyIntegrationChain('avax')).toBe(true);
       expect(isEarlyIntegrationChain('hyperliquid')).toBe(true);
       expect(isEarlyIntegrationChain('monad')).toBe(true);
+      expect(isEarlyIntegrationChain('sonic')).toBe(true);
     });
 
     it('should return false for fully supported or unknown chains', () => {

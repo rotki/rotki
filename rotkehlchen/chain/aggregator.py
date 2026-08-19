@@ -162,6 +162,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
     from rotkehlchen.chain.solana.manager import SolanaManager
+    from rotkehlchen.chain.sonic.manager import SonicManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -262,6 +263,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances,),
     ChainID.MONAD: (),
+      ChainID.SONIC: (),
 }
 
 
@@ -283,6 +285,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             scroll_manager: ScrollManager,
             binance_sc_manager: BinanceSCManager,
             monad_manager: MonadManager,
+            sonic_manager: SonicManager,
             kusama_manager: SubstrateManager,
             polkadot_manager: SubstrateManager,
             avalanche_manager: AvalancheManager,
@@ -311,6 +314,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.scroll = scroll_manager
         self.binance_sc = binance_sc_manager
         self.monad = monad_manager
+        self.sonic = sonic_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -343,6 +347,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.scroll_lock = Semaphore()
         self.binance_sc_lock = Semaphore()
         self.monad_lock = Semaphore()
+        self.sonic_lock = Semaphore()
         self.zksync_lite_lock = Semaphore()
 
         # Guards every iteration/mutation of self.balances and self.totals: per-chain
