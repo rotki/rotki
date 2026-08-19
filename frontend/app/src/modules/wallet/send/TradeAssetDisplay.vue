@@ -6,10 +6,14 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
-const { data } = defineProps<{
+const { data, symbol: providedSymbol, name: providedName } = defineProps<{
   data: TradableAsset;
   list?: boolean;
   amount?: BigNumber;
+  /** Pre-resolved symbol. The option list resolves once per asset, so rows need not resolve again. */
+  symbol?: string;
+  /** Pre-resolved name, as above. */
+  name?: string;
 }>();
 
 const emit = defineEmits<{
@@ -21,8 +25,13 @@ const { t } = useI18n({ useScope: 'global' });
 const { useAssetField } = useAssetInfoRetrieval();
 const { getEvmChainName } = useSupportedChains();
 
-const symbol = useAssetField(data.asset, 'symbol', { collectionParent: false });
-const name = useAssetField(data.asset, 'name', { collectionParent: false });
+const resolvedSymbol = useAssetField(() => data.asset, 'symbol', { collectionParent: false });
+const resolvedName = useAssetField(() => data.asset, 'name', { collectionParent: false });
+
+// Short-circuits, so a provided value leaves the resolution computed unevaluated rather than
+// merely unused: `computed` is lazy, and nothing else reads these.
+const symbol = computed<string>(() => providedSymbol ?? get(resolvedSymbol));
+const name = computed<string>(() => providedName ?? get(resolvedName));
 </script>
 
 <template>

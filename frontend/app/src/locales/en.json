@@ -6257,6 +6257,8 @@
       "balance": "Balance",
       "max": "Max",
       "no_assets_found": "No assets found",
+      "no_search_results": "No assets match \"{query}\"",
+      "search": "Search by symbol or name",
       "select_token": "Select a token",
       "title": "Select Asset"
     },
