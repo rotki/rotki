@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { Blockchain } from '@rotki/common';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountOptions } from '@/modules/accounts/use-blockchain-account-options';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
@@ -21,18 +21,41 @@ export const EthStakingSelectionKeys = {
 
 /**
  * The withdrawal-address pill's values: the addresses tracked on ethereum, which is what the
- * account selector this replaces offered (`:chains="[Blockchain.ETH]"`). Only the offered list is
- * narrowed; how an account reads is the shared resolution every account pill uses.
+ * account selector this replaces offered (`:chains="[Blockchain.ETH]"`), plus the addresses the
+ * validators themselves withdraw to. Only the offered list is narrowed; how an account reads is the
+ * shared resolution every account pill uses.
+ *
+ * The second half is the point: a validator's withdrawal address is named by the validator, not by
+ * the account list, and tracking it as an ethereum account too is a separate decision. Offering
+ * only tracked accounts meant that typing the address a validator actually withdraws to found
+ * nothing, on the one filter whose whole subject is that address.
  */
 function useWithdrawalAddressOptions(): AccountFieldOptions {
   const accounts = useBlockchainAccountOptions('evm');
   const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
+  const declared = computed<string[]>(() => {
+    const addresses = new Set<string>();
+    for (const account of get(accountsPerChain)[Blockchain.ETH2] ?? []) {
+      if (isValidatorAccount(account) && account.data.withdrawalAddress)
+        addresses.add(account.data.withdrawalAddress);
+    }
+    return [...addresses];
+  });
+
   return {
     ...accounts,
+    // An address only the validators know has no account behind it, so the shared resolution finds
+    // no keywords for it. Without the fallback it would be offered in the list and still not match
+    // when typed, which is the same dead end from one step further along.
+    resolveKeywords: (address: string): string | undefined =>
+      accounts.resolveKeywords(address) ?? address.toLowerCase(),
     suggest: (): string[] => {
       const tracked = new Set((get(accountsPerChain)[Blockchain.ETH] ?? []).map(account => getAccountAddress(account)));
-      return accounts.suggest().filter(address => tracked.has(address));
+      return [...new Set([
+        ...accounts.suggest().filter(address => tracked.has(address)),
+        ...get(declared),
+      ])];
     },
   };
 }
