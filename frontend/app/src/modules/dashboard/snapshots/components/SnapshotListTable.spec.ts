@@ -55,6 +55,15 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
     expect(wrapper.emitted('delete')).toEqual([[1_600_000_000]]);
   });
 
+  it('should render the delta when the row has a predecessor', () => {
+    // Negative control for the dash test below: the delta column is wired through
+    // `previous-usd-value`, and a misspelled binding leaves every row dashed.
+    wrapper = createWrapper([createRow()]);
+
+    expect(wrapper.text()).not.toContain('—');
+    expect(wrapper.text()).toContain('10');
+  });
+
   it('should render a dash in the delta column for the oldest snapshot', () => {
     // No predecessor => no delta to show (currency defaults to USD in the test
     // harness, so no historic lookup is involved).
