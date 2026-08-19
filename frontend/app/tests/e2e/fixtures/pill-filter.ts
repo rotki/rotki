@@ -148,6 +148,17 @@ export const EVENTS_AFTER_CUTOFF = 3;
 export const DATE_CUTOFF_TYPED = '15/01/2024 12:02:30';
 
 /**
+ * `DD MM YYYY` alone: the day every seeded event sits on, typed without a time. A bound may be
+ * given as a bare date, and the picker completes it from the end of the day that bound stands
+ * for — the first second for a From and the last for a To.
+ */
+export const DATE_DAY_DIGITS = '15012024';
+
+/** 15/01/2024 00:00:00 and 23:59:59 UTC, the two ends the day above is completed to. */
+export const DAY_START_TS = 1705276800;
+export const DAY_END_TS = 1705363199;
+
+/**
  * A bulk set for the pagination tests, seeded into its own user so it cannot disturb the row
  * counts above. Plain history events need no transaction, so they are cheap to generate.
  *
