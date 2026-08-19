@@ -39,7 +39,6 @@ function mountList(items: TestItem[], highlightedId?: string): VueWrapper {
         :row-key="rowKey"
         :highlighted="highlighted"
         empty-description="Nothing here"
-        max-height="20rem"
       >
         <template #header="{ item }">
           <span>{{ item.label }}</span>

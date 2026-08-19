@@ -16,7 +16,6 @@ const { rows, highlightedGroupIdentifier } = defineProps<{
   rows: UnmatchedMovementRow[];
   specFor: (row: UnmatchedMovementRow) => UnmatchedRowActionSpec;
   emptyDescription: string;
-  maxHeight: string;
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   loading?: boolean;
@@ -41,7 +40,6 @@ const { t } = useI18n({ useScope: 'global' });
     :highlighted="(row: UnmatchedMovementRow) => row.groupIdentifier === highlightedGroupIdentifier"
     :empty-description="emptyDescription"
     :loading="loading"
-    :max-height="maxHeight"
   >
     <template
       v-if="$slots.alert"

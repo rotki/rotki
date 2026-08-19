@@ -4,7 +4,11 @@ import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogConten
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-const { items, rowKey, emptyDescription, highlighted, accented, loading, maxHeight } = defineProps<{
+// The list fills the height its host gives it rather than capping itself against the
+// viewport: the select-all bar and the pager sit outside the scroll area, so a cap that
+// guesses the surrounding chrome loses the pager off the bottom of a short window. The
+// host must be a bounded flex column (the pinned rail is).
+const { items, rowKey, emptyDescription, highlighted, accented, loading } = defineProps<{
   items: T[];
   /** Stable identity of a card, and what the selection model stores. */
   rowKey: (item: T) => string;
@@ -14,7 +18,6 @@ const { items, rowKey, emptyDescription, highlighted, accented, loading, maxHeig
   /** Card whose row cannot be matched, marked with a warning edge. */
   accented?: (item: T) => boolean;
   loading?: boolean;
-  maxHeight: string;
 }>();
 
 defineSlots<{
@@ -97,12 +100,17 @@ watch(() => items.length, (length) => {
 </script>
 
 <template>
-  <div data-testid="unmatched-card-list">
-    <slot name="alert" />
+  <div
+    class="flex-1 min-h-0 flex flex-col"
+    data-testid="unmatched-card-list"
+  >
+    <div class="shrink-0">
+      <slot name="alert" />
+    </div>
 
     <div
       v-if="items.length > 0"
-      class="flex items-center gap-2 px-2 py-1 border border-default rounded-t"
+      class="shrink-0 flex items-center gap-2 px-2 py-1 border border-default rounded-t"
     >
       <RuiCheckbox
         :model-value="allSelected"
@@ -123,7 +131,7 @@ watch(() => items.length, (length) => {
       </span>
     </div>
 
-    <ScrollableDialogContent :max-height="maxHeight">
+    <ScrollableDialogContent fill>
       <div
         v-if="items.length === 0"
         class="flex flex-col items-center gap-2 py-8 border border-default rounded text-body-2 text-rui-text-secondary"
@@ -205,7 +213,7 @@ watch(() => items.length, (length) => {
       v-if="items.length > itemsPerPage"
       v-model="pagination"
       dense
-      class="mt-2"
+      class="shrink-0 mt-2"
       data-testid="unmatched-card-pagination"
     />
   </div>
