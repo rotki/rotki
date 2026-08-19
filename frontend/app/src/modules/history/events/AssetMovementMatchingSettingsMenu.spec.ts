@@ -108,6 +108,21 @@ describe('assetMovementMatchingSettingsMenu', () => {
     expect(get(tolerance)).toBe('0.000001');
   });
 
+  // The schemas pass a field that holds nothing yet, since the menu writes on every keystroke, so
+  // clearing the tolerance used to convert `''` and throw, and clearing the time range wrote NaN
+  // seconds. Neither field is written until it holds a number again.
+  it.each(['', '-', '1.2.3'])('should not write a tolerance of %s', async (typed) => {
+    await edit(0, typed);
+
+    expect(get(tolerance)).toBe('0.05');
+  });
+
+  it.each(['', '-', '1.2.3'])('should not write a time range of %s', async (typed) => {
+    await edit(1, typed);
+
+    expect(get(timeRange)).toBe(7200);
+  });
+
   // Deliberately flipped in the zod swap. `callIfValid` asked the whole validator whether anything
   // was wrong rather than the field being written, so an out-of-range tolerance silently stopped
   // the time range from saving, and the two settings have nothing to do with each other.

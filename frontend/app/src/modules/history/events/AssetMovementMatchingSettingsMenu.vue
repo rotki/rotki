@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import { bigNumberify } from '@rotki/common';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import {
   checkSetting,
   type MatchingSettingsMessages,
@@ -69,8 +70,15 @@ const timeRangeRuleErrors = computed<string[]>(
  * Each field answers for itself. The rule it replaces asked the whole validator whether anything
  * was wrong, so an out-of-range tolerance stopped the time range from saving too, and the two have
  * nothing to do with each other.
+ *
+ * The schemas deliberately pass a field that holds nothing yet, since the menu writes on every
+ * keystroke, so a value that is not a number is stopped here instead: converting one writes NaN
+ * seconds, or throws on the way to a decimal.
  */
 function writeIfValid(value: string, schema: ZodType<string>, write: (value: string) => void): void {
+  if (!parseNumericInput(value))
+    return;
+
   if (checkSetting(schema, value).length === 0)
     write(value);
 }

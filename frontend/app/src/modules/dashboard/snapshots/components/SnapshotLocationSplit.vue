@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { type BigNumber, bigNumberify, Zero } from '@rotki/common';
+import { type BigNumber, Zero } from '@rotki/common';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/utils/snapshot-fx';
@@ -40,9 +41,13 @@ const { isUsd, rate } = useHistoricFiatConversion(() => timestamp);
 
 const rows = ref<SplitRow[]>([{ amount: '', location: '' }, { amount: '', location: '' }]);
 
-/** Converts a display-currency input back into the stored USD value. */
+/**
+ * Converts a display-currency input back into the stored USD value. A row the user has not typed a
+ * number into yet counts as nothing allocated: this runs inside the totals, where a parse that
+ * throws takes the whole dialog down with it.
+ */
 function toUsd(amount: string): BigNumber {
-  const value = bigNumberify(amount || '0');
+  const value = parseNumericInput(amount, Zero);
   return get(isUsd) ? value : convertFiatToUsd(value, get(rate));
 }
 

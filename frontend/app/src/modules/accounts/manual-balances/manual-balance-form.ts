@@ -2,6 +2,7 @@ import type { BalanceType } from '@/modules/balances/types/balances';
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { z, type ZodType } from 'zod';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { requiredField } from '@/modules/core/form/fields';
 
 /**
@@ -34,12 +35,15 @@ export function toFormState(balance: RawManualBalance | ManualBalance): ManualBa
  * different value: a cleared amount becomes NaN rather than zero precisely so that reading it
  * returns the empty field the user left, instead of refilling it with a nought they never typed.
  * An amount in that state never reaches the api, because the dialog saves only what validates.
+ *
+ * A field holding something that is not a number yet lands in the same state, rather than in the
+ * throw a bare parse would raise on it.
  */
 export function toPayload<T extends RawManualBalance>(balance: T, state: ManualBalanceFormState): T {
   return {
     ...balance,
     ...state,
-    amount: state.amount ? bigNumberify(state.amount) : bigNumberify(Number.NaN),
+    amount: parseNumericInput(state.amount, bigNumberify(Number.NaN)),
     tags: state.tags.length > 0 ? state.tags : null,
   };
 }
