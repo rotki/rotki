@@ -32,6 +32,8 @@ interface UseNftDataReturn {
   data: ComputedRef<NonFungibleBalance[]>;
   dataLoading: Ref<boolean>;
   fetchData: () => Promise<void>;
+  /** Entries matching the current filter, across all pages. Zero means there is nothing to show. */
+  found: ComputedRef<number>;
   modelIgnoredAssetsHandling: Ref<IgnoredAssetsHandlingType>;
   pagination: ComputedRef<TablePaginationData>;
   percentageOfCurrentGroup: (value: BigNumber) => string;
@@ -78,7 +80,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     urlState: routeWhen(() => !dashboard),
   });
 
-  const { data, totalValue } = getCollectionData(balances);
+  const { data, found, totalValue } = getCollectionData(balances);
 
   // Watch ignoredAssetsHandling changes and reset to page 1 (only for non-dashboard)
   if (!dashboard) {
@@ -197,6 +199,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     data,
     dataLoading,
     fetchData,
+    found,
     modelIgnoredAssetsHandling,
     pagination,
     percentageOfCurrentGroup,
