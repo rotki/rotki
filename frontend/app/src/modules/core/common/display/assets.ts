@@ -259,8 +259,16 @@ export function assetFilterByKeyword(
     return true;
 
   const info = getAssetInfo(item.asset);
-  const name = getTextToken(info?.name ?? '');
-  const symbol = getTextToken(info?.symbol ?? '');
+
+  // An asset whose metadata has not been resolved yet has no name and no symbol to match on.
+  // Matching the identifier instead keeps the row reachable, by its address or its raw id, rather
+  // than dropping it and reporting "no results" for something the list does contain. Resolution is
+  // asynchronous, so this is also what the very first keystroke sees while the batch is in flight.
+  if (!info)
+    return getTextToken(item.asset).includes(keyword);
+
+  const name = getTextToken(info.name ?? '');
+  const symbol = getTextToken(info.symbol ?? '');
   return symbol.includes(keyword) || name.includes(keyword);
 }
 

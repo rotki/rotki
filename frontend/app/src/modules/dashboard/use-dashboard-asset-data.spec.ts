@@ -6,13 +6,17 @@ import { useDashboardAssetData } from '@/modules/dashboard/use-dashboard-asset-d
 const mockTotalNetWorth = ref(bigNumberify(1000));
 const mockMissingCustomAssets = ref<string[]>([]);
 const mockAssetInfo = vi.fn((identifier: string | undefined) => ({ name: identifier, symbol: identifier }));
+const mockPrefetchAssetInfo = vi.fn<(identifiers: string[]) => void>();
 
 vi.mock('@/modules/dashboard/use-dashboard-stores', () => ({
   useDashboardStores: (): { totalNetWorth: typeof mockTotalNetWorth } => ({ totalNetWorth: mockTotalNetWorth }),
 }));
 
 vi.mock('@/modules/assets/use-asset-select-info', () => ({
-  useAssetSelectInfo: (): { getAssetInfo: typeof mockAssetInfo } => ({ getAssetInfo: mockAssetInfo }),
+  useAssetSelectInfo: (): { getAssetInfo: typeof mockAssetInfo; prefetchAssetInfo: typeof mockPrefetchAssetInfo } => ({
+    getAssetInfo: mockAssetInfo,
+    prefetchAssetInfo: mockPrefetchAssetInfo,
+  }),
 }));
 
 vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
@@ -36,6 +40,7 @@ describe('useDashboardAssetData', () => {
     set(mockTotalNetWorth, bigNumberify(1000));
     set(mockMissingCustomAssets, []);
     mockAssetInfo.mockImplementation((identifier: string | undefined) => ({ name: identifier, symbol: identifier }));
+    mockPrefetchAssetInfo.mockClear();
   });
 
   it('should sum the value of all balances', () => {
@@ -87,6 +92,21 @@ describe('useDashboardAssetData', () => {
     const result = get(sorted);
     expect(result).toHaveLength(1);
     expect(result[0].asset).toBe('BTC');
+  });
+
+  it('should prefetch the asset info of every balance, not only the rendered page', () => {
+    useDashboardAssetData([balance('BTC', 100), balance('ETH', 200)], noSort);
+    expect(mockPrefetchAssetInfo).toHaveBeenCalledWith(['BTC', 'ETH']);
+  });
+
+  it('should prefetch again when the balances change', async () => {
+    const balances = ref<AssetBalanceWithPrice[]>([balance('BTC', 100)]);
+    useDashboardAssetData(balances, noSort);
+    expect(mockPrefetchAssetInfo).toHaveBeenLastCalledWith(['BTC']);
+
+    set(balances, [balance('BTC', 100), balance('ETH', 400)]);
+    await nextTick();
+    expect(mockPrefetchAssetInfo).toHaveBeenLastCalledWith(['BTC', 'ETH']);
   });
 
   it('should react to changes in the balances input', () => {

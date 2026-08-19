@@ -188,6 +188,18 @@ describe('assetFilterByKeyword', () => {
   it('should reject a non-matching keyword', () => {
     expect(assetFilterByKeyword({ amount: bigNumberify(1), asset: 'dai', value: bigNumberify(1) }, 'bitcoin', getInfo)).toBe(false);
   });
+
+  it('should match an unresolved asset on its identifier', () => {
+    const asset = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
+    const item = { amount: bigNumberify(1), asset, value: bigNumberify(1) };
+    expect(assetFilterByKeyword(item, '0x6b175474', getInfo)).toBe(true);
+  });
+
+  it('should reject an unresolved asset whose identifier does not match', () => {
+    const asset = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
+    const item = { amount: bigNumberify(1), asset, value: bigNumberify(1) };
+    expect(assetFilterByKeyword(item, 'bitcoin', getInfo)).toBe(false);
+  });
 });
 
 describe('assetSuggestions', () => {
