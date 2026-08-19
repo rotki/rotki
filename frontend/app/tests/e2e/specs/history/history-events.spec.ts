@@ -55,20 +55,22 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getEventRows();
+      const count = await page.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
 
-    await page.verifyEventTypeLabel('[data-testid=history-event-row]', 0, 'Airdrop');
-    await page.verifyEventAmount('[data-testid=history-event-row]', 0, onlineEventFixture.amount);
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, onlineEventFixture.notes);
+    const added = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.expectTypeLabel(added, 'Airdrop');
+    await page.rows.expectAmount(added, onlineEventFixture.amount);
+    await page.rows.expectNotes(added, onlineEventFixture.notes);
   });
 
   test('edit online history event', async () => {
     const updatedAmount = '2.5';
     const updatedNotes = 'Updated online event notes';
 
-    await page.editEvent('[data-testid=history-event-row]', 0);
+    const row = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);
@@ -77,8 +79,8 @@ test.describe.serial('history events', () => {
 
     await page.saveForm();
 
-    await page.verifyEventAmount('[data-testid=history-event-row]', 0, updatedAmount);
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, updatedNotes);
+    await page.rows.expectAmount(row, updatedAmount);
+    await page.rows.expectNotes(row, updatedNotes);
   });
 
   test('add swap event', async () => {
@@ -88,7 +90,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
 
@@ -101,7 +103,7 @@ test.describe.serial('history events', () => {
   test('edit swap event', async () => {
     const updatedReceiveAmount = '3500';
 
-    await page.editEvent('[data-testid=history-event-swap]', 0);
+    await page.rows.edit(await page.rows.first('[data-testid=history-event-swap]'));
 
     await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
     await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(updatedReceiveAmount);
@@ -110,7 +112,7 @@ test.describe.serial('history events', () => {
 
     // Verify the swap still exists after edit
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
@@ -138,7 +140,7 @@ test.describe.serial('history events', () => {
 
     // The swap group should still exist (spend + receive remain)
     await expect(async () => {
-      const swaps = await page.getSwapRows();
+      const swaps = await page.rows.countSwaps();
       const expandedRows = await page.getExpandedEventRows();
       expect(swaps + expandedRows).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
@@ -176,19 +178,19 @@ test.describe.serial('history events', () => {
   });
 
   test('delete history event', async () => {
-    const eventsBefore = await page.getEventRows();
-    const swapsBefore = await page.getSwapRows();
-    const movementsBefore = await page.getMovementRows();
+    const eventsBefore = await page.rows.countEvents();
+    const swapsBefore = await page.rows.countSwaps();
+    const movementsBefore = await page.rows.countMovements();
     const totalBefore = eventsBefore + swapsBefore + movementsBefore;
 
     // Delete the first regular event row (the online event)
     if (eventsBefore > 0) {
-      await page.deleteEvent('[data-testid=history-event-row]', 0);
+      await page.rows.delete(await page.rows.first('[data-testid=history-event-row]'));
 
       await expect(async () => {
-        const eventsAfter = await page.getEventRows();
-        const swapsAfter = await page.getSwapRows();
-        const movementsAfter = await page.getMovementRows();
+        const eventsAfter = await page.rows.countEvents();
+        const swapsAfter = await page.rows.countSwaps();
+        const movementsAfter = await page.rows.countMovements();
         const totalAfter = eventsAfter + swapsAfter + movementsAfter;
         expect(totalAfter).toBeLessThan(totalBefore);
       }).toPass({ timeout: 10000 });
@@ -202,20 +204,22 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getEventRows();
+      const count = await page.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
 
-    await page.verifyEventTypeLabel('[data-testid=history-event-row]', 0, 'Airdrop');
-    await page.verifyEventAmount('[data-testid=history-event-row]', 0, solanaEventFixture.amount);
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, solanaEventFixture.notes);
+    const added = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.expectTypeLabel(added, 'Airdrop');
+    await page.rows.expectAmount(added, solanaEventFixture.amount);
+    await page.rows.expectNotes(added, solanaEventFixture.notes);
   });
 
   test('edit solana event', async () => {
     const updatedAmount = '5.0';
     const updatedNotes = 'Updated solana event notes';
 
-    await page.editEvent('[data-testid=history-event-row]', 0);
+    const row = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);
@@ -224,8 +228,8 @@ test.describe.serial('history events', () => {
 
     await page.saveForm();
 
-    await page.verifyEventAmount('[data-testid=history-event-row]', 0, updatedAmount);
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, updatedNotes);
+    await page.rows.expectAmount(row, updatedAmount);
+    await page.rows.expectNotes(row, updatedNotes);
   });
 
   test('add solana swap event', async () => {
@@ -236,7 +240,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
 
@@ -248,7 +252,7 @@ test.describe.serial('history events', () => {
   test('edit solana swap event', async () => {
     const updatedReceiveAmount = '75';
 
-    await page.editEvent('[data-testid=history-event-swap]', 0);
+    await page.rows.edit(await page.rows.first('[data-testid=history-event-swap]'));
 
     await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
     await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(updatedReceiveAmount);
@@ -256,7 +260,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
@@ -268,7 +272,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getEventRows();
+      const count = await page.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
@@ -276,7 +280,8 @@ test.describe.serial('history events', () => {
   test('edit eth block event', async () => {
     const updatedAmount = '0.1';
 
-    await page.editEvent('[data-testid=history-event-row]', 0);
+    const row = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);
@@ -284,7 +289,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     // Eth block events render the amount in the notes, not via event-amount
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, updatedAmount);
+    await page.rows.expectNotes(row, updatedAmount);
   });
 
   test('add eth withdrawal event', async () => {
@@ -294,7 +299,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getEventRows();
+      const count = await page.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
@@ -302,7 +307,8 @@ test.describe.serial('history events', () => {
   test('edit eth withdrawal event', async () => {
     const updatedAmount = '16';
 
-    await page.editEvent('[data-testid=history-event-row]', 0);
+    const row = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);
@@ -310,7 +316,7 @@ test.describe.serial('history events', () => {
     await page.saveForm();
 
     // Eth withdrawal events render the amount in the notes, not via event-amount
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, updatedAmount);
+    await page.rows.expectNotes(row, updatedAmount);
   });
 
   test('delete solana event', async () => {
@@ -318,7 +324,7 @@ test.describe.serial('history events', () => {
     const firstRow = ctx.sharedPage.locator('[data-testid=history-event-row]').first();
     const notesBefore = await firstRow.locator('[data-testid=event-notes]').textContent();
 
-    await page.deleteEvent('[data-testid=history-event-row]', 0);
+    await page.rows.delete(await page.rows.first('[data-testid=history-event-row]'));
 
     // Wait until the deleted event's notes are no longer the first row's notes
     await expect(async () => {
@@ -341,9 +347,9 @@ test.describe.serial('history events', () => {
     // deleted a *different* swap: the list is timestamp DESC and re-renders under the test, so the
     // index no longer names the row that was read. The id is on both the collapsed row and the
     // collapse header, so a swap that merely expands still matches and only a deletion clears it.
-    const target = page.rowById(await page.eventIdOf('[data-testid=history-event-swap]'));
+    const target = await page.rows.first('[data-testid=history-event-swap]');
 
-    await page.deleteEventRow(target);
+    await page.rows.delete(target);
 
     await expect(target).toHaveCount(0, { timeout: 10000 });
   });
@@ -384,20 +390,22 @@ test.describe.serial('evm history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getEventRows();
+      const count = await page.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
 
-    await page.verifyEventTypeLabel('[data-testid=history-event-row]', 0, 'Airdrop');
-    await page.verifyEventAmount('[data-testid=history-event-row]', 0, evmEventFixture.amount);
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, evmEventFixture.notes);
+    const added = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.expectTypeLabel(added, 'Airdrop');
+    await page.rows.expectAmount(added, evmEventFixture.amount);
+    await page.rows.expectNotes(added, evmEventFixture.notes);
   });
 
   test('edit evm event', async () => {
     const updatedAmount = '2.5';
     const updatedNotes = 'Updated evm event notes';
 
-    await page.editEvent('[data-testid=history-event-row]', 0);
+    const row = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);
@@ -406,8 +414,8 @@ test.describe.serial('evm history events', () => {
 
     await page.saveForm();
 
-    await page.verifyEventAmount('[data-testid=history-event-row]', 0, updatedAmount);
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, updatedNotes);
+    await page.rows.expectAmount(row, updatedAmount);
+    await page.rows.expectNotes(row, updatedNotes);
   });
 
   test('add evm swap event', async () => {
@@ -417,7 +425,7 @@ test.describe.serial('evm history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
 
@@ -429,7 +437,7 @@ test.describe.serial('evm history events', () => {
   test('edit evm swap event', async () => {
     const updatedReceiveAmount = '3500';
 
-    await page.editEvent('[data-testid=history-event-swap]', 0);
+    await page.rows.edit(await page.rows.first('[data-testid=history-event-swap]'));
 
     await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').clear();
     await ctx.sharedPage.locator('[data-testid=sub-event-amount][data-key=receive] input').fill(updatedReceiveAmount);
@@ -437,14 +445,14 @@ test.describe.serial('evm history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
 
   test('add evm multi-asset swap with fees', async () => {
     await waitForNoRunningTasks(ctx.sharedPage);
-    const swapsBefore = await page.getSwapRows();
+    const swapsBefore = await page.rows.countSwaps();
 
     await page.openAddDialog();
     await page.selectEntryType('evm swap event');
@@ -452,7 +460,7 @@ test.describe.serial('evm history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getSwapRows();
+      const count = await page.rows.countSwaps();
       expect(count).toBeGreaterThan(swapsBefore);
     }).toPass({ timeout: 10000 });
   });
@@ -483,7 +491,7 @@ test.describe.serial('evm history events', () => {
 
     // The swap group should still exist
     await expect(async () => {
-      const swaps = await page.getSwapRows();
+      const swaps = await page.rows.countSwaps();
       // Swap rows are hidden when expanded, so check sub-events remain
       const expandedRows = await page.getExpandedEventRows();
       expect(swaps + expandedRows).toBeGreaterThanOrEqual(1);
@@ -497,7 +505,7 @@ test.describe.serial('evm history events', () => {
     await page.saveForm();
 
     await expect(async () => {
-      const count = await page.getEventRows();
+      const count = await page.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
@@ -505,7 +513,8 @@ test.describe.serial('evm history events', () => {
   test('edit eth deposit event', async () => {
     const updatedAmount = '16';
 
-    await page.editEvent('[data-testid=history-event-row]', 0);
+    const row = await page.rows.first('[data-testid=history-event-row]');
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);
@@ -513,27 +522,27 @@ test.describe.serial('evm history events', () => {
     await page.saveForm();
 
     // Eth deposit events render the amount in the notes, not via event-amount
-    await page.verifyEventNotes('[data-testid=history-event-row]', 0, updatedAmount);
+    await page.rows.expectNotes(row, updatedAmount);
   });
 
   test('delete evm event', async () => {
-    const eventsBefore = await page.getEventRows();
+    const eventsBefore = await page.rows.countEvents();
 
-    await page.deleteEvent('[data-testid=history-event-row]', 0);
+    await page.rows.delete(await page.rows.first('[data-testid=history-event-row]'));
 
     await expect(async () => {
-      const eventsAfter = await page.getEventRows();
+      const eventsAfter = await page.rows.countEvents();
       expect(eventsAfter).toBeLessThan(eventsBefore);
     }).toPass({ timeout: 10000 });
   });
 
   test('delete evm swap event', async () => {
-    const swapsBefore = await page.getSwapRows();
+    const swapsBefore = await page.rows.countSwaps();
 
-    await page.deleteEvent('[data-testid=history-event-swap]', 0);
+    await page.rows.delete(await page.rows.first('[data-testid=history-event-swap]'));
 
     await expect(async () => {
-      const swapsAfter = await page.getSwapRows();
+      const swapsAfter = await page.rows.countSwaps();
       expect(swapsAfter).toBeLessThan(swapsBefore);
     }).toPass({ timeout: 10000 });
   });
