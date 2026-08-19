@@ -9,6 +9,8 @@ const slots = defineSlots<{
 }>();
 
 const hasTabs = computed<boolean>(() => Boolean(slots.tabs));
+
+const lastTitleIndex = computed<number>(() => (title?.length ?? 0) - 1);
 </script>
 
 <template>
@@ -23,10 +25,12 @@ const hasTabs = computed<boolean>(() => Boolean(slots.tabs));
           class="text-sm text-rui-text flex items-center font-medium"
         >
           <slot name="title">
-            <template v-for="(item, index) in title">
+            <template
+              v-for="(item, index) in title"
+              :key="index"
+            >
               <span
-                v-if="title && index < title.length - 1"
-                :key="index"
+                v-if="index < lastTitleIndex"
                 class="text-rui-text-secondary flex items-center"
               >
                 {{ item }}
@@ -36,14 +40,12 @@ const hasTabs = computed<boolean>(() => Boolean(slots.tabs));
                   class="mx-2"
                 />
               </span>
-              <template v-else>
-                <span
-                  :key="index"
-                  class="bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-text-secondary rounded-md px-2 py-1"
-                >
-                  {{ item }}
-                </span>
-              </template>
+              <span
+                v-else
+                class="bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-text-secondary rounded-md px-2 py-1"
+              >
+                {{ item }}
+              </span>
             </template>
           </slot>
         </div>
