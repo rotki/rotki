@@ -518,7 +518,8 @@ free of side effects.
 #### Testing
 
 Vitest with Vue Test Utils for units and components, Playwright for e2e. This section is the single
-home for how to write a frontend test; `## Testing Strategy` below covers only running e2e.
+home for how to write a frontend test. See "Fast checks via pnpm scripts" immediately below for how
+to run one, and `## Testing Strategy` for running e2e.
 
 ##### Where specs live
 
@@ -874,6 +875,47 @@ It needs to contain a class that inherits from the `DecoderInterface` and is nam
 
 Note: If your new decoder decodes an airdrop's claiming event and this airdrop is present in the [data repo airdrop index](https://github.com/rotki/data/blob/develop/airdrops/index_v2.json) with `has_decoder` as `false`, please update that also.
 
+When you need to check a contract ABI, use Sourcify's repository URL format:
+`https://repo.sourcify.dev/<chainID>/<contract_address>`.
+For example, for address `0x3337286E850cf01B8A8B6094574f0dd6a2108B16` on chain ID `1`, check `https://repo.sourcify.dev/1/0x3337286E850cf01B8A8B6094574f0dd6a2108B16`.
+For raw ABI data, read the verified metadata JSON at `https://repo.sourcify.dev/contracts/full_match/<chainID>/<contract_address>/metadata.json` and use `output.abi`.
+
+### Decoder scope policy (performance-critical)
+
+- Prefer `addresses_to_decoders()` over generic `decoding_rules()` whenever a protocol emits identifiable logs from known contract addresses.
+- Use `decoding_rules()` only as a last resort when no reliable address/topic/input selector scoping exists.
+
+Why:
+- `decoding_rules()` are evaluated for every log in every transaction on that chain, which increases per-log decoding overhead.
+- `addresses_to_decoders()` restricts execution to logs from relevant protocol contracts, reducing unnecessary rule invocations and improving decode throughput.
+- Narrow-scoped decoders also reduce false positives and make behavior easier to reason about.
+
+### ActionItem matching rule (avoid redundant log scans)
+
+- When creating an `ActionItem` from a log handler, prefer using data already available in the current `context.tx_log` for matching fields (`amount`, `asset`, `location_label`, `to_address`) whenever possible.
+- Do not iterate `context.all_logs` just to rediscover transfer data if the current log already provides the same amount/address relation.
+- Only scan `context.all_logs` when correlating multiple distinct logs is strictly required.
+
+Why:
+- Reduces per-transaction work and decoder complexity.
+- Avoids introducing fragile cross-log assumptions.
+- Keeps action-item transformations deterministic and easier to review.
+
+### Fallback when chain indexers are unavailable
+
+If a chain cannot be queried via explorer/indexer APIs (`etherscanscan` / `routescan` / `blockscout` etc ), do not stop. Use this fallback flow:
+
+1. Add a public RPC node for the chain in the test via `*_manager_connect_at_start` + `WeightedNode(NodeName(...))`.
+2. Query tx/receipt/logs from RPC directly (not from explorer APIs).
+3. If internal txs are not needed for the specific decoder path, patch:
+   `rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash`
+   to return `[]`.
+4. Keep the test focused on decoded events from logs/transfers.
+5. Prefer deterministic assertions and exact tx-hash regression tests.
+6. Do not block on explorer availability; only ask the user if RPC data is insufficient.
+
+Example intent: Base currently may fail on explorer/indexer paths; use `https://mainnet.base.org` until indexers recover.
+
 #### Counterparties
 
 It needs to implement a method called `counterparties()` which returns a list of counterparties that can be associated with the transactions of this module. Most of the time these are protocol names like `uniswap-v1`, `makerdao_dsr`, etc.
@@ -912,9 +954,16 @@ Each combination of event type and subtype and counterparty creates a new unique
 
 The mapping of these HistoryEvents types, subtypes, and categories is done in [rotkehlchen/accounting/constants.py](https://github.com/rotki/rotki/blob/17b4368bc15043307fa6acf536b5237b3840c40e/rotkehlchen/accounting/constants.py).
 
-#### Things to keep in mind
+### Hex / bytes constants policy (strict)
 
-- All byte signatures should be a constant byte literal. Like ```DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
+- Source of truth: copy exact on-chain/API `0x...` hex.
+- Validation step (during implementation): convert with `bytes.fromhex(hex_str.removeprefix('0x'))` and verify round-trip:
+  - `hex_str = value.removeprefix('0x')`
+  - `const = bytes.fromhex(hex_str)`
+  - `assert const.hex() == hex_str.lower()`
+- Final committed form: all event topics, method selectors, hashes, and byte signatures must be byte literals (for example `TOPIC: Final = b'\xdc\xbc\x1c\x05...\xd7'`).
+- Do not keep `bytes.fromhex(...)` in final constant definitions.
+- If useful for readability, keep the canonical `0x...` value as a comment next to the byte literal.
 - Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
 ### Database schema changes (user DB and global DB)
@@ -938,6 +987,38 @@ Per-DB locations:
 Always keep the fresh-create schema (`schema.py`) in sync with the upgrade so newly created DBs match the upgraded state.
 
 **Global DB only — extra hazard:** the global DB also ships as a packaged file (`rotkehlchen/data/global.db`) in the `rotki/data` submodule, which is only regenerated/bumped per release. Bumping `GLOBAL_DB_VERSION` ahead of that packaged DB makes its version (e.g. 17) mismatch the code (e.g. 18), which breaks `soft_reset_assets_list`/`hard_reset_assets_list` (version-equality guard) and the packaged-DB consistency tests — exactly the kind of "tests fail on develop" caused by an unmerged data-repo change. This is the strongest reason to fold into the unreleased upgrade rather than create a premature new version.
+
+## Rotki Backend Style Preferences (strict)
+
+When editing backend Python and tests, follow these preferences unless explicitly told otherwise:
+
+1. Prefer narrow exceptions.
+ - Do not use `except Exception`.
+ - Catch the concrete error type used by the surrounding code path (e.g. `RemoteError` for rpc/multicall).
+
+ 2. Prefer inline one-time assignment via walrus operator.
+ - If a variable is used only once in a small local scope, inline it with `:=` instead of introducing a standalone line.
+ - Apply this especially in tests for constants like `timestamp`, `amount_str`, `gas_str`, `user_address`.
+ - Example: `location_label=(user_address := ethereum_accounts[0])`.
+
+ 3. Avoid unnecessary temporary locals.
+ - If a value is only used once and readability is preserved, inline it.
+ - Keep code compact and avoid “setup variable blocks” in tests.
+
+ 4. Keep existing codebase idioms first.
+ - Match nearby file style even if generic Python style differs.
+ - For rotki tests, prefer concise expected-event construction with inline assignments where practical.
+
+### Historical balance / accounting refactor context
+
+When a user mentions the "accounting refactor", "accounting buckets", "balance buckets", or issue/PR `#12204`, assume they are referring to the historical balance engine in `rotkehlchen/tasks/historical_balances.py` and its `event_metrics` bucket tracking, not the legacy accounting pot/cost-basis code unless they explicitly say cost basis or PnL accounting.
+
+Key files:
+- `rotkehlchen/tasks/historical_balances.py` — bucket derivation and event metric generation.
+- `rotkehlchen/balances/historical.py` — historical balance query/read API.
+- `rotkehlchen/db/schema.py` — `event_metrics` schema.
+- `rotkehlchen/db/history_events.py` — stale marker invalidation when events change.
+- `rotkehlchen/tests/unit/test_historical_balances.py` and `rotkehlchen/tests/api/test_historical_balances.py` — primary tests.
 
 ## Testing Strategy
 
@@ -1007,7 +1088,7 @@ python package.py
 - `.github/workflows/` - CI/CD pipelines
 
 ## Development Tips
-1. Run backend tests with plain `uv run pytest`
+1. Run backend tests directly with `uv run pytest`
 2. Frontend uses strict TypeScript - ensure types are properly defined
 3. Follow existing code patterns - the codebase has established conventions
 4. Use the existing test infrastructure - comprehensive fixtures are available
@@ -1027,6 +1108,7 @@ python package.py
 
 ## Common Issues & Solutions
 - Frontend build fails: Run `pnpm run clean:modules` then `pnpm install --frozen-lockfile`
+- Backend test failures: Re-run the relevant test directly with `uv run pytest`
 - WebSocket connection issues: Check ports 4242 (API) and 4333 (WS) are free
 
 ## Code Review Guidelines

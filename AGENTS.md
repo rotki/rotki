@@ -518,7 +518,8 @@ free of side effects.
 #### Testing
 
 Vitest with Vue Test Utils for units and components, Playwright for e2e. This section is the single
-home for how to write a frontend test; `## Testing Strategy` below covers only running e2e.
+home for how to write a frontend test. See "Fast checks via pnpm scripts" immediately below for how
+to run one, and `## Testing Strategy` for running e2e.
 
 ##### Where specs live
 
@@ -830,6 +831,42 @@ alphabetically sorted). A key referenced only from the registry/catalog must be 
 | Category visual grouping | `frontend/app/src/modules/settings/SettingCategory.vue` |
 | Settings pages | `frontend/app/src/pages/settings/*/index.vue` |
 
+### Navigation, search & tab metadata (`meta.nav`)
+
+Routing uses the typed, file-based router (`unplugin-vue-router`). Route **names are generated from the file path** (e.g. `pages/balances/blockchain/index.vue` -> `'/balances/blockchain/'`); do not add custom `name:` overrides. Navigate by typed name: `router.push({ name: '/balances/blockchain/' })` or `<RouterLink :to="{ name: '/balances/blockchain/' }">`. The drawer, the global search palette and sub-page tab bars are all **derived from route meta** - there is no route registry to maintain.
+
+Add navigation for a page by declaring `nav` in its `definePage`:
+
+```ts
+definePage({
+  meta: {
+    nav: {
+      labelKey: 'navigation_menu.balances_sub.blockchain_balances', // i18n key (required)
+      icon: 'lu-blockchain',                                        // RuiIcons (required)
+      parent: '/balances/',      // logical parent: drawer nesting + search breadcrumb
+      order: 10,                 // order among siblings
+      section: 1,                // drawer top-level section (dividers between sections); omit for sub-items
+      drawer: 'balances-blockchain', // present => shown in the drawer; value is the entry's data-key test selector
+      searchable: false,         // optional: exclude from the (default-on) search palette
+      keywords: ['some.i18n.alias'], // optional: extra i18n keys the search palette matches
+    },
+  },
+});
+```
+
+Rules of thumb:
+- **Drawer entry**: set `drawer` (the test id). Top-level items also set `section` + `order`; sub-items set `parent` + `order` (the parent route must also have a `nav`). `useNavigationMenu` builds the tree.
+- **Search palette**: every route with `nav` is searchable automatically (the superset of the drawer) unless `searchable: false`. The breadcrumb is the `nav.labelKey` of the route named by `parent`. `useRouteSearch` builds it; `GlobalSearch.vue` renders it.
+- **Sub-page tab bars**: use `useChildNavTabs('/parent/')` when the bar is every child of a parent (e.g. price-manager), or `useNavTabs(['/a/', '/b/'])` for a specific subset/order (e.g. asset-manager/more). Both live in `use-nav-tabs.ts`.
+- **Settings tabs**: each tab's route/label/icon comes from its page `nav`; the per-setting search rows are derived from the settings registry + `settings-search-catalog.ts` (no hand-maintained per-tab list).
+
+| Purpose | File |
+|---------|------|
+| `nav` meta type | `frontend/app/src/types/router.d.ts` |
+| Drawer derivation | `frontend/app/src/modules/shell/layout/use-navigation-menu.ts` |
+| Search derivation | `frontend/app/src/modules/shell/layout/use-route-search.ts` |
+| Tab bars from meta | `frontend/app/src/modules/shell/layout/use-nav-tabs.ts` |
+
 ### Adding EVM protocol decoders
 
 As an example decoder, we can look at [MakerDAO](https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/decoder.py).
@@ -972,8 +1009,6 @@ When editing backend Python and tests, follow these preferences unless explicitl
  - Match nearby file style even if generic Python style differs.
  - For rotki tests, prefer concise expected-event construction with inline assignments where practical.
 
-## Testing Strategy
-
 ### Historical balance / accounting refactor context
 
 When a user mentions the "accounting refactor", "accounting buckets", "balance buckets", or issue/PR `#12204`, assume they are referring to the historical balance engine in `rotkehlchen/tasks/historical_balances.py` and its `event_metrics` bucket tracking, not the legacy accounting pot/cost-basis code unless they explicitly say cost basis or PnL accounting.
@@ -985,8 +1020,10 @@ Key files:
 - `rotkehlchen/db/history_events.py` — stale marker invalidation when events change.
 - `rotkehlchen/tests/unit/test_historical_balances.py` and `rotkehlchen/tests/api/test_historical_balances.py` — primary tests.
 
+## Testing Strategy
+
 ### Backend Testing
-- Uses pytest with gevent for async testing
+- Uses pytest, with concurrency via rotkehlchen.concurrency tasks (threads)
 - Extensive fixtures in `rotkehlchen/tests/fixtures/`
 - Mock external APIs for deterministic tests
 - Database fixtures for integration testing
