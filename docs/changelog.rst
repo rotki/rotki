@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Searching your assets on the dashboard or in blockchain balances now shows the matches as soon as you type. The first search after opening a page used to say there were no results for a second or two, making an asset you hold look like one you do not.
 * :feature:`-` Frankencoin Savings deposits, withdrawals, interest and balances are now supported on Ethereum, Arbitrum One, Base, Gnosis, Optimism and Polygon PoS.
 * :feature:`-` The Help menu can now open the data directory, next to the entry that opens the logs directory. It stays disabled until the backend is running, since that is when the directory in use is known.
 * :bug:`-` Single-asset deposits in StakeDAO are now decoded correctly.

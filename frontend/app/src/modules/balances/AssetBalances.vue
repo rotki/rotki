@@ -56,7 +56,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const debouncedSearch = refDebounced(search, 200);
 
-const { getAssetInfo } = useAssetSelectInfo();
+const { getAssetInfo, prefetchAssetInfo } = useAssetSelectInfo();
 const currencySymbol = useSetting('currencySymbol');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
@@ -172,6 +172,13 @@ const rowAppendLabelColspan = computed(() => {
 useRememberTableSorting<AssetBalanceWithPrice>(TableId.ASSET_BALANCES, sort, tableHeaders);
 
 const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), getAssetInfo));
+
+// Search and sort-by-name read the metadata of every balance, while rendering only resolves the
+// rows of the current page. Without this the first search matches nothing until the request it
+// triggers comes back.
+watchImmediate(() => balances, (items) => {
+  prefetchAssetInfo(items.map(item => item.asset));
+});
 </script>
 
 <template>

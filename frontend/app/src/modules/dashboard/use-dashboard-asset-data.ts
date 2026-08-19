@@ -25,8 +25,16 @@ export function useDashboardAssetData(
   const debouncedSearch = refDebounced(modelSearch, 200);
 
   const { totalNetWorth } = useDashboardStores();
-  const { getAssetInfo } = useAssetSelectInfo();
+  const { getAssetInfo, prefetchAssetInfo } = useAssetSelectInfo();
   const { missingCustomAssets } = useManualBalanceData();
+
+  // The table only resolves the assets it renders, which is one page worth, but the search matches
+  // on name and symbol across every balance. Without this the first search runs against a cache
+  // that holds nothing it needs, matches nothing, and only fills in once the request it triggered
+  // comes back.
+  watchImmediate(() => toValue(balances), (items) => {
+    prefetchAssetInfo(items.map(item => item.asset));
+  });
 
   function assetFilter(item: Nullable<AssetBalance>): boolean {
     return assetFilterByKeyword(item, get(debouncedSearch), getAssetInfo);
