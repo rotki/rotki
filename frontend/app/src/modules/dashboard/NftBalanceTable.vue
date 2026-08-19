@@ -10,6 +10,10 @@ import PercentageDisplay from '@/modules/shell/components/display/PercentageDisp
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
+// The section renders nothing when there are no nfts, so attributes cannot be inherited automatically. They are
+// forwarded explicitly below instead, which also keeps vue from warning about the comment root.
+defineOptions({ inheritAttrs: false });
+
 const nonFungibleRoute: RouteLocationRaw = { name: '/balances/non-fungible/' };
 const group = DashboardTableType.NFT;
 
@@ -21,6 +25,7 @@ const {
   data,
   dataLoading,
   fetchData,
+  found,
   percentageOfCurrentGroup,
   percentageOfTotalNetValue,
   refreshNonFungibleBalances,
@@ -35,6 +40,12 @@ onMounted(async () => {
   await refreshNonFungibleBalances();
 });
 
+/**
+ * The section is only worth showing once we know there is at least one nft. `found` starts at zero and the fetch
+ * happens on mount, so this also keeps an empty table from flashing before the first response arrives.
+ */
+const hasBalances = computed<boolean>(() => get(found) > 0);
+
 watch(sectionLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchData();
@@ -42,7 +53,10 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <DashboardExpandableTable>
+  <DashboardExpandableTable
+    v-if="hasBalances"
+    v-bind="$attrs"
+  >
     <template #title>
       <RefreshButton
         :loading="sectionLoading"
