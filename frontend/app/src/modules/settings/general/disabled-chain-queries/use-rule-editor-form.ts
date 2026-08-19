@@ -11,6 +11,7 @@ type AddressScope = 'all' | 'specific';
 interface AddressOption {
   readonly address: string;
   readonly chainIds: readonly string[];
+  /** Lowercased haystack: the address plus every name the option is displayed under. */
   readonly searchText: string;
 }
 
@@ -21,6 +22,11 @@ export interface UseRuleEditorFormOptions {
   chains: MaybeRefOrGetter<ChainInfo[]>;
   /** Rule being edited, or `undefined` for the create flow. */
   editing: MaybeRefOrGetter<Rule | undefined>;
+  /**
+   * Resolves the alias name (address book entry or ENS) an address is displayed
+   * under, so that the picker can be searched by it and not only by the address.
+   */
+  resolveName?: (address: string, chainId?: string) => string | undefined;
 }
 
 export interface UseRuleEditorFormReturn {
@@ -32,40 +38,65 @@ export interface UseRuleEditorFormReturn {
   addressOptions: ComputedRef<AddressOption[]>;
   availableChainsForAddress: ComputedRef<string[]>;
   canSave: ComputedRef<boolean>;
+  /** Search predicate for the address picker, matching address, label and alias name. */
+  filterAddressOption: (item: AddressOption, query: string) => boolean;
   /** Reset the form back to the current `editing` value (or empty/create state). */
   reset: () => void;
   /** Build the draft to emit on save, or `undefined` if the form is not yet valid. */
   buildDraft: () => RuleDraft | undefined;
 }
 
-function buildAddressOptions(accounts: Record<string, BlockchainAccount[]>): AddressOption[] {
-  const byAddress = new Map<string, Set<string>>();
+interface AddressEntry {
+  readonly chains: Set<string>;
+  readonly labels: Set<string>;
+}
+
+function buildAddressOptions(
+  accounts: Record<string, BlockchainAccount[]>,
+  resolveName?: (address: string, chainId?: string) => string | undefined,
+): AddressOption[] {
+  const byAddress = new Map<string, AddressEntry>();
   for (const [chain, list] of Object.entries(accounts)) {
     for (const account of list) {
       if (isValidatorAccount(account) || account.data.type !== 'address')
         continue;
       const addr = account.data.address;
-      const set = byAddress.get(addr);
-      if (set === undefined)
-        byAddress.set(addr, new Set([chain]));
-      else
-        set.add(chain);
+      let entry = byAddress.get(addr);
+      if (entry === undefined) {
+        entry = { chains: new Set(), labels: new Set() };
+        byAddress.set(addr, entry);
+      }
+      entry.chains.add(chain);
+      if (account.label)
+        entry.labels.add(account.label);
     }
   }
   const built: AddressOption[] = [];
-  for (const [address, chainSet] of byAddress) {
+  for (const [address, { chains, labels }] of byAddress) {
+    const chainIds = [...chains];
+    const aliasName = resolveName?.(address, chainIds[0]);
+    const keywords = [address, ...labels];
+    if (aliasName)
+      keywords.push(aliasName);
     built.push({
       address,
-      chainIds: [...chainSet],
-      searchText: address.toLowerCase(),
+      chainIds,
+      searchText: keywords.join(' ').toLowerCase(),
     });
   }
   built.sort((a, b) => a.address.localeCompare(b.address));
   return built;
 }
 
+function filterAddressOption(item: AddressOption, query: string): boolean {
+  const search = query.trim().toLowerCase();
+  if (!search)
+    return true;
+  return item.searchText.includes(search);
+}
+
 export function useRuleEditorForm(options: UseRuleEditorFormOptions): UseRuleEditorFormReturn {
-  const { accounts, chains, editing } = options;
+  const { accounts, chains, editing, resolveName } = options;
 
   // These refs are the form model, bound via v-model from the dialog template.
   // The `model` prefix marks them as writable by the consumer.
@@ -75,7 +106,7 @@ export function useRuleEditorForm(options: UseRuleEditorFormOptions): UseRuleEdi
   const modelScope = shallowRef<AddressScope>('all');
   const modelSelectedChainIds = ref<string[]>([]);
 
-  const addressOptions = computed<AddressOption[]>(() => buildAddressOptions(toValue(accounts)));
+  const addressOptions = computed<AddressOption[]>(() => buildAddressOptions(toValue(accounts), resolveName));
 
   const availableChainsForAddress = computed<string[]>(() => {
     const target = get(modelAddress);
@@ -153,6 +184,7 @@ export function useRuleEditorForm(options: UseRuleEditorFormOptions): UseRuleEdi
     availableChainsForAddress,
     buildDraft,
     canSave,
+    filterAddressOption,
     modelAddress,
     modelChainId,
     modelKind,

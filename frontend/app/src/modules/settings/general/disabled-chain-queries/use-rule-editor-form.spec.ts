@@ -1,17 +1,20 @@
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { Rule } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, assert, describe, expect, it } from 'vitest';
 import { effectScope, ref } from 'vue';
 import { useRuleEditorForm, type UseRuleEditorFormReturn } from '@/modules/settings/general/disabled-chain-queries/use-rule-editor-form';
+
+type AddressOption = UseRuleEditorFormReturn['addressOptions']['value'][number];
 
 const ADDR_A = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 const ADDR_B = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65';
 
-function addressAccount(chain: string, address: string): BlockchainAccount {
+function addressAccount(chain: string, address: string, label?: string): BlockchainAccount {
   return {
     chain,
     data: { address, type: 'address' },
+    label,
     nativeAsset: 'ETH',
   };
 }
@@ -45,6 +48,7 @@ function createHarness(initial: {
   editing?: Rule;
   accounts?: Record<string, BlockchainAccount[]>;
   chains?: ChainInfo[];
+  resolveName?: (address: string, chainId?: string) => string | undefined;
 } = {}): Harness {
   const editing = ref<Rule | undefined>(initial.editing);
   const scope = effectScope();
@@ -52,6 +56,7 @@ function createHarness(initial: {
     accounts: initial.accounts ?? defaultAccounts,
     chains: initial.chains ?? defaultChains,
     editing,
+    resolveName: initial.resolveName,
   }))!;
   return {
     dispose: (): void => scope.stop(),
@@ -113,6 +118,47 @@ describe('useRuleEditorForm', () => {
       harness = createHarness();
       const options = harness.form.addressOptions.value;
       expect(options.find(o => o.address === '0xpubkey')).toBeUndefined();
+    });
+  });
+
+  describe('filterAddressOption', () => {
+    function optionFor(address: string): AddressOption {
+      const option = harness.form.addressOptions.value.find(o => o.address === address);
+      assert(option);
+      return option;
+    }
+
+    it('should match a fragment of the address, case-insensitively', () => {
+      harness = createHarness();
+      const { filterAddressOption } = harness.form;
+      expect(filterAddressOption(optionFor(ADDR_A), ADDR_A.slice(10, 20).toUpperCase())).toBe(true);
+      expect(filterAddressOption(optionFor(ADDR_B), ADDR_A.slice(10, 20))).toBe(false);
+    });
+
+    it('should match the account label', () => {
+      harness = createHarness({
+        accounts: {
+          eth: [addressAccount('eth', ADDR_A, 'My Ledger'), addressAccount('eth', ADDR_B)],
+        },
+      });
+      const { filterAddressOption } = harness.form;
+      expect(filterAddressOption(optionFor(ADDR_A), 'ledger')).toBe(true);
+      expect(filterAddressOption(optionFor(ADDR_B), 'ledger')).toBe(false);
+    });
+
+    it('should match the resolved alias name', () => {
+      harness = createHarness({
+        resolveName: (address: string): string | undefined => address === ADDR_A ? 'rotki.eth' : undefined,
+      });
+      const { filterAddressOption } = harness.form;
+      expect(filterAddressOption(optionFor(ADDR_A), 'rotki')).toBe(true);
+      expect(filterAddressOption(optionFor(ADDR_B), 'rotki')).toBe(false);
+    });
+
+    it('should keep every option for an empty query', () => {
+      harness = createHarness();
+      const { filterAddressOption } = harness.form;
+      expect(filterAddressOption(optionFor(ADDR_A), '  ')).toBe(true);
     });
   });
 
