@@ -76,6 +76,12 @@ describe('modules/accounts/manual-balances/manual-balance-form', () => {
       expect(toFormState(balance({ amount: bigNumberify(Number.NaN) })).amount).toBe('');
     });
 
+    // The payload is rebuilt on every change, so an amount that is not a number yet lands in the
+    // same not-a-number state a cleared one does, rather than throwing out of the parse.
+    it.each(['-', '1.2.3', '0,5', '1 000'])('should carry an amount of %s as not a number', (typed) => {
+      expect(toPayload(balance(), state({ amount: typed })).amount.isNaN()).toBe(true);
+    });
+
     it('should offer no tags as an empty list', () => {
       expect(toFormState(balance({ tags: null })).tags).toEqual([]);
     });

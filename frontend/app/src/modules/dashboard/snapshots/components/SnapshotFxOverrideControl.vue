@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { useSnapshotFxOverride } from '@/modules/dashboard/snapshots/composables/use-snapshot-fx-override';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
@@ -34,8 +34,10 @@ function startEdit(): void {
 }
 
 async function apply(): Promise<void> {
-  const value = bigNumberify(get(input));
-  if (!value.isPositive())
+  // A rate the field does not hold a number for, and a rate of zero, are both unusable: the one
+  // would throw on parse and the other would price every balance at nothing.
+  const value = parseNumericInput(get(input));
+  if (!value?.isGreaterThan(0))
     return;
   const success = await setOverride(value);
   if (success)

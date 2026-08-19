@@ -34,9 +34,20 @@ vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-fx-override', ()
 describe('modules/dashboard/snapshots/components/SnapshotFxOverrideControl', () => {
   let wrapper: VueWrapper<InstanceType<typeof SnapshotFxOverrideControl>>;
 
+  /**
+   * What the component threw out of a handler. Vue swallows those into its error handler, so a
+   * throw would otherwise leave the assertions below intact and the test green.
+   */
+  const handlerErrors: unknown[] = [];
+
   function createWrapper(): VueWrapper<InstanceType<typeof SnapshotFxOverrideControl>> {
     return mount(SnapshotFxOverrideControl, {
       global: {
+        config: {
+          errorHandler: (error: unknown): void => {
+            handlerErrors.push(error);
+          },
+        },
         plugins: [createPinia()],
         provide: libraryDefaults,
         stubs: {
@@ -55,6 +66,7 @@ describe('modules/dashboard/snapshots/components/SnapshotFxOverrideControl', () 
     set(currentOverride, undefined);
     setOverride.mockClear();
     clearOverride.mockClear();
+    handlerErrors.length = 0;
   });
 
   afterEach(() => {
@@ -109,6 +121,20 @@ describe('modules/dashboard/snapshots/components/SnapshotFxOverrideControl', () 
 
     expect(setOverride).toHaveBeenCalledTimes(1);
     expect(setOverride.mock.calls[0][0].toNumber()).toBe(0.88);
+  });
+
+  // bignumber.js throws on a value it cannot parse, so applying a half-typed rate used to raise out
+  // of the click handler. A rate of nothing is refused for the same reason it always was.
+  it.each(['', '-', '1.2.3', '0'])('should refuse to apply %s as a rate', async (input) => {
+    wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=snapshot-fx-override-edit]').trigger('click');
+    await wrapper.find('[data-testid=snapshot-fx-override-input]').setValue(input);
+    await nextTick();
+    await wrapper.find('[data-testid=snapshot-fx-override-apply]').trigger('click');
+
+    expect(handlerErrors).toEqual([]);
+    expect(setOverride).not.toHaveBeenCalled();
   });
 
   it('should call clearOverride from the clear action', async () => {
