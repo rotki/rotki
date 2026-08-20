@@ -194,4 +194,21 @@ describe('valueSelectList', () => {
 
     expect(wrapper.emitted('close')).toHaveLength(1);
   });
+
+  // An IME confirms its candidate with Enter and walks the candidate list with the arrows, so
+  // acting on either would commit a row and close the list mid-word.
+  it('should ignore keys while an IME is composing', async () => {
+    const wrapper = createWrapper([]);
+    const input = wrapper.find('input');
+
+    await input.trigger('keydown', { isComposing: true, key: 'ArrowDown' });
+    await input.trigger('keydown', { isComposing: true, key: 'Enter' });
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+    // And the highlight never moved: committing after composition picks the first row, not the
+    // second. Asserting only that nothing was emitted would also pass if the arrow had moved it.
+    await input.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['aave']]);
+  });
 });

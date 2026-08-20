@@ -137,6 +137,12 @@ function onKeydown(event: KeyboardEvent): void {
     return;
   }
 
+  // While an IME is composing, Enter confirms the candidate and the arrows walk the candidate
+  // list. Acting on them would commit a row and close the list mid-word. Same guard as the send
+  // form's token picker, the app's other virtualized picker.
+  if (event.isComposing)
+    return;
+
   const items = get(filtered);
   if (items.length === 0)
     return;
