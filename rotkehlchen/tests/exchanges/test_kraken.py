@@ -744,6 +744,145 @@ def test_kraken_trade_with_same_spend_receive_amount(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_tokenized_asset_trade(kraken):
+    """Test that tokenized asset trades with internal settlement legs are processed.
+
+    Kraken reports trades of tokenized assets (aclass: tokenized_asset) as 4 ledger
+    entries sharing the same refid: the tokenized asset spend, the fiat receive and
+    two internal USD settlement legs of equal amounts that cancel each other out.
+    Regression test for https://github.com/rotki/rotki/issues/12564. XXBT stands in
+    for the tokenized asset symbol since xStocks are not in the assets db.
+    """
+    test_trades = """{
+        "ledger": {
+            "L1": {
+                "refid": "TOKTRADE1",
+                "time": 1736246000.1234,
+                "type": "spend",
+                "subtype": "",
+                "aclass": "tokenized_asset",
+                "asset": "XXBT",
+                "amount": "-3.71",
+                "fee": "0.000000",
+                "balance": "0.000000"
+            },
+            "L2": {
+                "refid": "TOKTRADE1",
+                "time": 1736246000.1234,
+                "type": "receive",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "ZEUR",
+                "amount": "285.5964",
+                "fee": "0.0000",
+                "balance": "285.5964"
+            },
+            "L3": {
+                "refid": "TOKTRADE1",
+                "time": 1736246000.1234,
+                "type": "spend",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "ZUSD",
+                "amount": "-332.9550",
+                "fee": "0.0000",
+                "balance": "0.0000"
+            },
+            "L4": {
+                "refid": "TOKTRADE1",
+                "time": 1736246000.1234,
+                "type": "receive",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "ZUSD",
+                "amount": "332.9550",
+                "fee": "0.0000",
+                "balance": "332.9550"
+            }
+        },
+        "count": 4
+    }"""
+
+    with _patch_ledger(kraken, test_trades):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        assert DBHistoryEvents(kraken.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+        ) == [SwapEvent(
+            identifier=1,
+            timestamp=(timestamp := TimestampMS(1736246000123)),
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_BTC,
+            amount=FVal('3.71'),
+            group_identifier=(group_identifier := create_group_identifier_from_unique_id(
+                location=Location.KRAKEN,
+                unique_id='TOKTRADE11736246000123',
+            )),
+            location_label=kraken.name,
+        ), SwapEvent(
+            identifier=2,
+            timestamp=timestamp,
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_EUR,
+            amount=FVal('285.5964'),
+            group_identifier=group_identifier,
+            location_label=kraken.name,
+        )]
+
+    assert len(kraken.msg_aggregator.consume_errors()) == 0
+    assert len(kraken.msg_aggregator.consume_warnings()) == 0
+
+    # A group with more than 2 spend/receive legs containing a canceling pair but
+    # no tokenized_asset leg is left untouched by the settlement leg removal
+    events, skipped, found_unknown = kraken.history_event_from_kraken(
+        events=[{
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'spend',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': '-1',
+            'fee': '0',
+        }, {
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'receive',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZEUR',
+            'amount': '100',
+            'fee': '0',
+        }, {
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'spend',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZUSD',
+            'amount': '-50',
+            'fee': '0',
+        }, {
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'receive',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZUSD',
+            'amount': '50',
+            'fee': '0',
+        }],
+        save_skipped_events=False,
+    )
+    assert skipped is False and found_unknown is False
+    assert len(events) == 4  # all legs kept
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_with_adjustment(kraken):
     """Test that trades based on adjustment events are processed"""
 

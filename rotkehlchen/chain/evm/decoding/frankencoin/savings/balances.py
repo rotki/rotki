@@ -20,6 +20,7 @@ from .constants import SAVINGS_CONTRACT_ABI, SUPPORTED_ZCHF_SAVINGS_CHAINS
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -47,10 +48,12 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
             deployed_block=0,  # not used for calls
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Return deposited ZCHF plus accrued interest for addresses with prior deposits."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses := list(dict.fromkeys(self.addresses_with_deposits()))) == 0:
+        if len(active_addresses := list(dict.fromkeys(self.addresses_with_deposits(
+            location_labels=addresses,
+        )))) == 0:
             return balances
 
         # Calls are interleaved so every two responses belong to the same address.
@@ -59,7 +62,7 @@ class FrankencoinSavingsBalances(ProtocolWithBalance):
                 self.savings_contract.address,
                 self.savings_contract.encode(method_name=method_name, arguments=[address]),
             )
-            for address in addresses
+            for address in active_addresses
             for method_name in ('savings', 'accruedInterest')
         ]
 

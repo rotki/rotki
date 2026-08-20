@@ -1158,7 +1158,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         eth_manager = self.get_chain_manager(blockchain=SupportedBlockchain.ETHEREUM)
         balances = eth_manager.query_evm_chain_balances(accounts=accounts)
         self._add_eth_protocol_balances(eth_balances=balances)
-        return eth_manager.query_protocols_with_balance(balances=balances)
+        return eth_manager.query_protocols_with_balance(balances=balances, addresses=accounts)
 
     def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""

@@ -35,14 +35,14 @@ class AssetResolver:
     _constant_assets: set[Asset]
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset
-    assets_cache: LRUCacheLowerKey[AssetWithNameAndType] = LRUCacheLowerKey(maxsize=512)
-    types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=512)
+    assets_cache: LRUCacheLowerKey[AssetWithNameAndType] = LRUCacheLowerKey(maxsize=4096)
+    types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=4096)
     # Maps asset identifier -> collection main_asset identifier (or None if not in a collection).
     # None is a valid cached value so presence must be tested with `identifier.lower() in cache`.
-    collection_main_asset_cache: LRUCacheLowerKey[str | None] = LRUCacheLowerKey(maxsize=512)
+    collection_main_asset_cache: LRUCacheLowerKey[str | None] = LRUCacheLowerKey(maxsize=4096)
     # Maps asset identifier -> its normalized identifier for existence checks. Lets
     # check_existence avoid a globaldb query for every event row during deserialization.
-    existence_cache: LRUCacheLowerKey[str] = LRUCacheLowerKey(maxsize=512)
+    existence_cache: LRUCacheLowerKey[str] = LRUCacheLowerKey(maxsize=4096)
     # Bumped on every clean_memory_cache. The resolution methods snapshot it before
     # querying the DB and skip the cache write-back if it changed in the meantime, so
     # a clean issued for an edited/deleted asset while a resolution is in flight

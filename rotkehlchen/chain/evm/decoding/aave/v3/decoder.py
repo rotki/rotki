@@ -478,6 +478,16 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 continue
 
             matched_asset = {secondary_event.asset}
+            # Interest denominated in the wrapped token is minted to the user before the
+            # wrapped token is returned/received, so it has to precede the pair for the
+            # event ledger to stay consistent when replaying balances in order.
+            Aavev3LikeCommonDecoder._append_interest_events(
+                matched_asset={primary_event.asset for primary_event in matched_primary_events},
+                location_label=cast('ChecksumEvmAddress | None', secondary_event.location_label),
+                ordered_events=ordered_events,
+                interest_event_lookup=interest_event_lookup,
+                used_interest_event_ids=used_interest_event_ids,
+            )
             for primary_event in matched_primary_events:
                 ordered_events.append(primary_event)
                 used_primary_events.add(primary_event.sequence_index)

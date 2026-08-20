@@ -63,12 +63,15 @@ class YearnVestingBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        addresses_to_events = self.addresses_with_activity(event_types={
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
-        })
+        addresses_to_events = self.addresses_with_activity(
+            event_types={
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
+            },
+            location_labels=addresses,
+        )
         escrow_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
         for events in addresses_to_events.values():
             for event in events:
@@ -78,10 +81,7 @@ class YearnVestingBalances(ProtocolWithBalance):
         if len(escrow_to_token) == 0:
             return balances
 
-        with self.event_db.db.conn.read_ctx() as cursor:
-            tracked_accounts = self.event_db.db.get_blockchain_accounts(cursor).get(
-                blockchain=self.evm_inquirer.blockchain,
-            )
+        queried_addresses = set(addresses)
 
         escrow_contract = EvmContract(  # only used to encode/decode, the calls carry the address
             address=(escrows := list(escrow_to_token))[0],
@@ -104,8 +104,8 @@ class YearnVestingBalances(ProtocolWithBalance):
                 result=results[idx * len(VESTING_BALANCE_METHODS) + method_idx],
                 method_name=method,
             )[0] for method_idx, method in enumerate(VESTING_BALANCE_METHODS)]
-            if (recipient := deserialize_evm_address(decoded[0])) not in tracked_accounts:
-                continue  # the tracked address only funded the escrow of an untracked recipient
+            if (recipient := deserialize_evm_address(decoded[0])) not in queried_addresses:
+                continue  # the queried address only funded the escrow of another recipient
 
             _, start_time, end_time, cliff_length, disabled_at, total_locked, total_claimed = decoded  # noqa: E501
             raw_remaining = vested_amount_at(

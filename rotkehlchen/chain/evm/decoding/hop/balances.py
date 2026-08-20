@@ -39,7 +39,7 @@ class HopBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Queries and returns the balance sheet for staking events.
 
         This method:
@@ -49,7 +49,9 @@ class HopBalances(ProtocolWithBalance):
         4. Converts balances and rewards to USD and updates the balance sheet.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:
+        if len(addresses_with_deposits := self.addresses_with_deposits(
+            location_labels=addresses,
+        )) == 0:
             return balances
 
         # Group addresses by staking contract
@@ -60,7 +62,7 @@ class HopBalances(ProtocolWithBalance):
                     staked_contracts[event.address].add(user_address)
 
         hop_abi = self.evm_inquirer.contracts.abi('HOP_STAKING')
-        for contract_address, addresses in staked_contracts.items():
+        for contract_address, staker_addresses in staked_contracts.items():
             staking_contract = EvmContract(
                 address=contract_address,
                 abi=hop_abi,
@@ -75,7 +77,7 @@ class HopBalances(ProtocolWithBalance):
                         method_name='balanceOf',
                         arguments=[user],
                     ),
-                ) for user in addresses],
+                ) for user in staker_addresses],
                 call_order=call_order,
                 calls_chunk_size=chunk_size,
             )) == 0:
@@ -121,14 +123,19 @@ class HopBalances(ProtocolWithBalance):
                 calls=[(
                     staking_contract.address,
                     staking_contract.encode(method_name='earned', arguments=[user]),
-                ) for user in addresses],
+                ) for user in staker_addresses],
                 call_order=call_order,
                 calls_chunk_size=chunk_size,
             )
             prices = Inquirer.find_main_currency_prices([staking_token, rewards_token])
             token_price = prices[staking_token]
             rewards_price = prices[rewards_token]
-            for user, lp, reward in zip(addresses, staked_lps, staked_rewards, strict=True):
+            for user, lp, reward in zip(
+                    staker_addresses,
+                    staked_lps,
+                    staked_rewards,
+                    strict=True,
+            ):
                 try:
                     if (balance := staking_contract.decode(
                         result=lp,
