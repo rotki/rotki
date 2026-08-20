@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AccountFormApiKeyAlert from '@/modules/accounts/management/AccountFormApiKeyAlert.vue';
+import AccountFormApiKeyMenu from '@/modules/accounts/management/AccountFormApiKeyMenu.vue';
 import { EthStaking } from '@/modules/premium/premium';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
@@ -37,6 +38,18 @@ const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined
 
   return undefined;
 });
+
+/**
+ * Beaconcha.in only sharpens a page that already works, so it is an offer the user can put away.
+ * A missing consensus RPC means there is no staking data at all, which is a fault and stays inline.
+ */
+const optionalApiKeyService = computed<'beaconchain' | undefined>(() =>
+  get(missingApiKeyService) === 'beaconchain' ? 'beaconchain' : undefined,
+);
+
+const blockingApiKeyService = computed<'consensusRpc' | undefined>(() =>
+  get(missingApiKeyService) === 'consensusRpc' ? 'consensusRpc' : undefined,
+);
 
 // Validator management
 const {
@@ -85,6 +98,11 @@ onBeforeMount(async () => {
       child
     >
       <template #buttons>
+        <AccountFormApiKeyMenu
+          v-if="optionalApiKeyService"
+          :service="optionalApiKeyService"
+        />
+
         <EthStakingHeaderActions
           :refreshing="refreshing"
           @refresh="refresh(true)"
@@ -92,8 +110,8 @@ onBeforeMount(async () => {
       </template>
 
       <AccountFormApiKeyAlert
-        v-if="missingApiKeyService"
-        :service="missingApiKeyService"
+        v-if="blockingApiKeyService"
+        :service="blockingApiKeyService"
       />
 
       <EthStaking
