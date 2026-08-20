@@ -53,6 +53,7 @@ describe('useSettingsRepo frontend channel', () => {
       schemaVersion: 2,
       clientId: '',
       defiSetupDone: true,
+      dismissedApiKeyNotices: [],
       language: SupportedLanguage.EN,
       lastAppliedSettingsVersion: '0.0.0',
       answeredSuggestions: [],

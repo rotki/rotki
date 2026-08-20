@@ -62,6 +62,7 @@ describe('user-types', () => {
         graph: '#555555',
       },
       defaultThemeVersion: 1,
+      dismissedApiKeyNotices: [],
       graphZeroBased: true,
       ignoreSnapshotError: false,
       showGraphRangeSelector: true,

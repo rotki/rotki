@@ -3213,6 +3213,11 @@
       "title": "Alchemy"
     },
     "api_key": "API key",
+    "api_key_menu": {
+      "consensus_rpc_title": "Staking data source",
+      "dismiss": "Don't show again",
+      "optional": "Optional API key"
+    },
     "beaconchain": {
       "api_key_message": "If you have a Beaconcha.in API key, you can add it here to retrieve block production history and improved staking analytics. It is not required to add a validator.",
       "description": "rotki uses Beaconcha.in to retrieve block production history and improved staking analytics. An API key is needed if you want this data.",

@@ -56,6 +56,7 @@ export const frontendRegistry = {
   dateInputFormat: frontend('dateInputFormat'),
   decimalSeparator: frontend('decimalSeparator', { anchor: SettingsHighlightIds.AMOUNT_FORMAT, effects: [applyBigNumberFormat] }),
   defaultThemeVersion: frontend('defaultThemeVersion'),
+  dismissedApiKeyNotices: frontend('dismissedApiKeyNotices', { userFacing: false }),
   enableAliasNames: frontend('enableAliasNames'),
   enablePasswordConfirmation: frontend('enablePasswordConfirmation', {
     anchor: SettingsHighlightIds.PASSWORD_CONFIRMATION,
