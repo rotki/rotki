@@ -10,8 +10,15 @@ import TradeSendCard from '@/modules/wallet/send/TradeSendCard.vue';
 const RECIPIENT = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65';
 const CONNECTED = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 const ETHEREUM_CHAIN_ID = 1;
+const OPTIMISM_CHAIN_ID = 10;
+// A chain id the wallet can report that rotki does not support, e.g. fantom.
+const UNSUPPORTED_CHAIN_ID = 250;
 // A chain the backend reports but that resolves to no numeric id.
 const UNRESOLVABLE_CHAIN = 'newchain';
+const CHAIN_NAMES: Record<number, string | undefined> = {
+  [ETHEREUM_CHAIN_ID]: 'ethereum',
+  [OPTIMISM_CHAIN_ID]: 'optimism',
+};
 
 const connected = ref<boolean>(true);
 const connectedAddress = ref<string | undefined>(CONNECTED);
@@ -22,7 +29,7 @@ const preparing = ref<boolean>(false);
 const supportedChainsForConnectedAccount = ref<string[]>(['ethereum']);
 const waitingForWalletConfirmation = ref<boolean>(false);
 const walletMode = ref<string>('local-bridge');
-const switchNetwork = vi.fn();
+const switchNetwork = vi.fn<(chainId: bigint) => Promise<void>>(async () => {});
 
 const useQueryingBalances = ref<boolean>(false);
 const warnUntrackedAddress = ref<boolean>(false);
@@ -53,7 +60,7 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
 
 vi.mock('@/modules/wallet/use-wallet-helper', () => ({
   useWalletHelper: vi.fn(() => ({
-    getChainFromChainId: (chainId: number): string => (chainId === ETHEREUM_CHAIN_ID ? 'ethereum' : 'optimism'),
+    getChainFromChainId: (chainId: number): string | undefined => CHAIN_NAMES[chainId],
     getChainIdFromChain: (chain: string): number | undefined =>
       (chain === UNRESOLVABLE_CHAIN ? undefined : ETHEREUM_CHAIN_ID),
   })),
@@ -373,6 +380,31 @@ describe('tradeSendCard', () => {
 
       // BigInt(undefined) throws, which would break the click handler entirely.
       expect(switchNetwork).not.toHaveBeenCalled();
+    });
+
+    it('should warn when the wallet is on a chain rotki does not support', async () => {
+      // Resolving an unknown chain to ethereum made this read as the right
+      // network, so the user could send believing they were on mainnet.
+      set(connectedChainId, UNSUPPORTED_CHAIN_ID);
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=switch-network-action]').exists()).toBe(true);
+    });
+
+    it('should keep the selected chain when the wallet moves to an unsupported one', async () => {
+      // Must start away from ethereum: the fallback resolved to ethereum too, so
+      // starting there would pass whether or not the selection was overwritten.
+      set(supportedChainsForConnectedAccount, ['ethereum', 'optimism']);
+      set(connectedChainId, OPTIMISM_CHAIN_ID);
+      await nextTick();
+      expect(wrapper.findComponent({ name: 'TradeAssetSelector' }).props('chain')).toBe('optimism');
+
+      set(connectedChainId, UNSUPPORTED_CHAIN_ID);
+      await nextTick();
+
+      // Following the wallet would need a chain name there is none of; the
+      // selection stays put and the wrong-network warning carries the mismatch.
+      expect(wrapper.findComponent({ name: 'TradeAssetSelector' }).props('chain')).toBe('optimism');
     });
 
     it('should refresh the balance when the asset selector asks', async () => {

@@ -75,9 +75,12 @@ describe('useWalletHelper', () => {
       expect(getEvmChainNameFromChainId(42161n)).toBe('arbitrum_one');
     });
 
-    it('should fall back to ethereum for unknown chainId', () => {
+    it('should return undefined for a chain rotki does not support', () => {
       const { getEvmChainNameFromChainId } = useWalletHelper();
-      expect(getEvmChainNameFromChainId(99999)).toBe('ethereum');
+      // A connected wallet reports whatever chain it sits on, which is not
+      // constrained to rotki's list. Answering `ethereum` for it made the send
+      // form believe it was on mainnet.
+      expect(getEvmChainNameFromChainId(99999)).toBeUndefined();
     });
   });
 
@@ -87,6 +90,14 @@ describe('useWalletHelper', () => {
       const result = getChainFromChainId(10);
       expect(getChain).toHaveBeenCalledWith('optimism');
       expect(result).toBe(Blockchain.OPTIMISM);
+    });
+
+    it('should not resolve a chain rotki does not support', () => {
+      const { getChainFromChainId } = useWalletHelper();
+
+      // `getChain` itself defaults to ethereum, so it must not even be reached.
+      expect(getChainFromChainId(250)).toBeUndefined();
+      expect(getChain).not.toHaveBeenCalled();
     });
   });
 
