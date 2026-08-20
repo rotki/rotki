@@ -104,6 +104,27 @@ describe('useTradeNetworkMatch', () => {
       expect(get(selectedChain)).toBe('optimism');
     });
 
+    it('should leave the selection alone when the wallet reports no chain', async () => {
+      create();
+      set(selectedChain, 'optimism');
+      // What a disconnect looks like: there is no chain to follow.
+      set(connectedChainId, undefined);
+      await nextTick();
+
+      expect(get(selectedChain)).toBe('optimism');
+    });
+
+    it('should not pull the selection back while the wallet stays put', async () => {
+      create();
+      // The user picks a different chain to send on. Writing connectedChainId
+      // with the value it already holds must not drag the selection back.
+      set(selectedChain, 'optimism');
+      set(connectedChainId, ETHEREUM_CHAIN_ID);
+      await nextTick();
+
+      expect(get(selectedChain)).toBe('optimism');
+    });
+
     it('should keep the selection when the wallet moves to an unsupported chain', async () => {
       // Starting away from ethereum: the old fallback resolved there too, so a
       // test starting on ethereum would pass either way.

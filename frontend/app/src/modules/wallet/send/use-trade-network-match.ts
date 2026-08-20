@@ -52,8 +52,10 @@ export function useTradeNetworkMatch(selectedChain: Ref<string>): UseTradeNetwor
     startPromise(switchNetwork(BigInt(chainId)));
   }
 
-  watchImmediate(connectedChainId, (curr, prev) => {
-    if (!isDefined(curr) || curr === prev)
+  // No `curr === prev` guard: `connectedChainId` is a plain ref, so Vue does not
+  // fire this when it is written with the value it already holds.
+  watchImmediate(connectedChainId, (curr) => {
+    if (!isDefined(curr))
       return;
 
     // Keep the selection where it is when the wallet moves somewhere rotki does
