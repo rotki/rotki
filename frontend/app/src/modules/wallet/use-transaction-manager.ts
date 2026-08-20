@@ -12,7 +12,7 @@ import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 export function useTransactionManager(): {
   addRecentTransaction: (hash: string, chain: string, params: TransactionParams, initiatorAddress: string | undefined) => Promise<void>;
   getRecentTransactionByTxHash: (hash: string) => RecentTransaction | undefined;
-  handleTransactionSuccess: (client: ViemWalletClient, hash: Hash, chainId: number, params: TransactionParams, initiatorAddress: string | undefined, getChainFromChainId: (chainId: number) => string) => Promise<void>;
+  handleTransactionSuccess: (client: ViemWalletClient, hash: Hash, params: TransactionParams, initiatorAddress: string | undefined) => Promise<void>;
   recentTransactions: Readonly<Ref<RecentTransaction[]>>;
   reset: () => void;
   updateTransactionStatus: (hash: string, status: 'completed' | 'failed') => void;
@@ -83,12 +83,13 @@ export function useTransactionManager(): {
   const handleTransactionSuccess = async (
     client: ViemWalletClient,
     hash: Hash,
-    chainId: number,
     params: TransactionParams,
     initiatorAddress: string | undefined,
-    getChainFromChainId: (chainId: number) => string,
   ): Promise<void> => {
-    startPromise(addRecentTransaction(hash, getChainFromChainId(chainId), params, initiatorAddress));
+    // The chain the transfer was prepared for, not the one the wallet reports.
+    // Nothing checks that those agree, and only this one is known to be a chain
+    // rotki supports, which the balance refresh and hash import both require.
+    startPromise(addRecentTransaction(hash, params.chain, params, initiatorAddress));
     await client.waitForTransactionReceipt({ hash });
     updateTransactionStatus(hash, 'completed');
     startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(hash)));

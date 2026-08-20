@@ -13,10 +13,10 @@ import TradeRecipientAddress from '@/modules/wallet/send/TradeRecipientAddress.v
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
 import { useTradeAssetBalance } from '@/modules/wallet/send/use-trade-asset-balance';
 import { useTradeGasEstimation } from '@/modules/wallet/send/use-trade-gas-estimation';
+import { useTradeNetworkMatch } from '@/modules/wallet/send/use-trade-network-match';
 import { useTradeRecipientWarning } from '@/modules/wallet/send/use-trade-recipient-warning';
 import { useTradeWalletActions } from '@/modules/wallet/send/use-trade-wallet-actions';
 import { TradableAssetKey, useTradableAsset } from '@/modules/wallet/use-tradable-asset';
-import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import WalletConnectionButton from '@/modules/wallet/WalletConnectionButton.vue';
 
@@ -30,14 +30,12 @@ const toAddress = ref<string>('');
 
 const tradeAmountInputRef = useTemplateRef<InstanceType<typeof TradeAmountInput>>('tradeAmountInputRef');
 
-const { getChainFromChainId, getChainIdFromChain } = useWalletHelper();
 const { getNativeAsset } = useSupportedChains();
 
 const walletStore = useWalletStore();
 const {
   connected,
   connectedAddress,
-  connectedChainId,
   isDisconnecting,
   isWalletConnect,
   preparing,
@@ -45,8 +43,9 @@ const {
   waitingForWalletConfirmation,
   walletMode,
 } = storeToRefs(walletStore);
-const { switchNetwork } = walletStore;
 const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connected, connectedAddress);
+
+const { switchToSelectedChain, wrongNetwork } = useTradeNetworkMatch(assetChain);
 
 const tradableAsset = useTradableAsset(connectedAddress);
 provide(TradableAssetKey, tradableAsset);
@@ -101,14 +100,6 @@ const { assetBalance, max, refreshAssetBalance, resetMax } = useTradeAssetBalanc
 
 const isWalletConnected = computed<boolean>(() => get(connected) && !!get(connectedAddress));
 
-const wrongNetwork = computed<boolean>(() => {
-  const chainId = get(connectedChainId);
-  if (!get(connected) || !chainId)
-    return false;
-
-  return get(assetChain) !== getChainFromChainId(chainId);
-});
-
 const amountExceeded = computed<boolean>(() => isAmountExceeded(get(amount), get(max)));
 
 const valid = computed<boolean>(() => isTradeValid(get(amount), get(toAddress), get(max)));
@@ -117,12 +108,6 @@ function resetInput(): void {
   set(toAddress, '');
   set(amount, '');
   resetMax();
-}
-
-function switchToDesireNetwork(): void {
-  const chainId = getChainIdFromChain(get(assetChain));
-  if (chainId !== undefined)
-    switchNetwork(BigInt(chainId));
 }
 
 async function trackAddress(): Promise<void> {
@@ -155,13 +140,6 @@ async function send(): Promise<void> {
 watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOptions]) => {
   if (!chainOptions.includes(currentChain))
     set(assetChain, chainOptions[0]);
-});
-
-watchImmediate(connectedChainId, (curr, prev) => {
-  if (!isDefined(curr) || curr === prev)
-    return;
-
-  set(assetChain, getChainFromChainId(curr));
 });
 </script>
 
@@ -278,7 +256,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
         size="lg"
         class="!w-full"
         data-testid="switch-network-action"
-        @click="switchToDesireNetwork()"
+        @click="switchToSelectedChain()"
       >
         {{ t('trade.actions.change_network') }}
       </RuiButton>

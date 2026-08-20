@@ -65,7 +65,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const transactionManager = useTransactionManager();
   const { recentTransactions, reset: resetTransactions, updateTransactionStatus } = transactionManager;
 
-  const { getChainFromChainId, getChainIdFromNamespace } = useWalletHelper();
+  const { getChainIdFromNamespace } = useWalletHelper();
   const { getSessionChains, walletChainIds } = useWalletChains();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
   const { getEvmChainName } = useSupportedChains();
@@ -302,7 +302,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     }
 
     try {
-      const { chainId, evmChain, fromAddress } = validateTransactionRequirements({
+      const { evmChain, fromAddress } = validateTransactionRequirements({
         connectedAddress: get(connectedAddress),
         connectedChainId: get(connectedChainId),
         getEvmChainName,
@@ -326,10 +326,8 @@ export const useWalletStore = defineStore(STORE_ID, () => {
       await transactionManager.handleTransactionSuccess(
         client,
         hash,
-        chainId,
         params,
         get(connectedAddress),
-        getChainFromChainId,
       );
 
       return hash;
