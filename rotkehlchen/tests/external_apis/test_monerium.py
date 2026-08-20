@@ -22,7 +22,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.monerium import Monerium, MoneriumOAuthClient
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY, EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def mock_monerium_and_run_periodic_task(database: DBHandler, contents: str) -> None:
+def mock_monerium_and_run_periodic_task(database: DBHandler, contents: str) -> bool:
     def mock_orders(*_args: Any, **_kwargs: Any) -> MockResponse:
         return MockResponse(
             status_code=HTTPStatus.OK,
@@ -56,7 +56,7 @@ def mock_monerium_and_run_periodic_task(database: DBHandler, contents: str) -> N
     ):
         monerium = Monerium(database)
         assert monerium.oauth_client.is_authenticated()
-        monerium.get_and_process_orders()
+        return monerium.get_and_process_orders()
 
 
 def test_send_bank_transfer(database: DBHandler, monerium_credentials: Any) -> None:  # pylint: disable=unused-argument
@@ -83,10 +83,10 @@ def test_send_bank_transfer(database: DBHandler, monerium_credentials: Any) -> N
     with database.user_write() as write_cursor:
         dbevents.add_history_event(write_cursor=write_cursor, event=event)
 
-    mock_monerium_and_run_periodic_task(
+    assert mock_monerium_and_run_periodic_task(  # a bank transfer creates no bridge leg
         database=database,
         contents='[{"id": "xx-yy", "profile": "zz-yy", "accountId": "aa-yy", "address": "0x99a0618B846D43E29C15ac468Eae06d03C9243C7", "kind": "redeem", "amount": "1500", "currency": "eur", "totalFee": "0", "fees": [], "counterpart": {"details": {"name": "Finanzamt Charlottenburg", "country": "DE", "companyName": "Finanzamt Charlottenburg"}, "identifier": {"iban": "DE94 1005 0000 6600 0464 63", "standard": "iban"}}, "memo": "LohnsteuerQ1", "supportingDocumentId": "", "chain": "ethereum", "network": "mainnet", "meta": {"state": "processed", "txHashes": ["0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"], "placedBy": "qq-yy", "placedAt": "2023-10-18T12:09:42.621469Z", "processedAt": "2023-10-18T12:09:43.621469Z", "approvedAt": "2023-10-18T12:09:44.621469Z", "confirmedAt": "2023-10-18T12:09:44.921469Z", "receivedAmount": "1500", "sentAmount": "1500"}}]',  # noqa: E501
-    )
+    ) is False
 
     # Set the expected changes in the event
     event.notes = 'Send 1500 EURe via bank transfer to Finanzamt Charlottenburg (DE94 1005 0000 6600 0464 63) with memo "LohnsteuerQ1"'  # noqa: E501
@@ -134,10 +134,10 @@ def test_receive_bank_transfer(database: DBHandler, monerium_credentials: Any) -
     with database.user_write() as write_cursor:
         dbevents.add_history_event(write_cursor=write_cursor, event=event)
 
-    mock_monerium_and_run_periodic_task(
+    assert mock_monerium_and_run_periodic_task(  # a bank transfer creates no bridge leg
         database=database,
         contents='[{"id": "xx-yy", "profile": "zz-yy", "accountId": "aa-yy", "address": "0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da", "kind": "issue", "amount": "1500", "currency": "eur", "totalFee": "0", "fees": [], "counterpart": {"details": {"name": "Payward Ltd", "country": "GB"}, "identifier": {"iban": "GB60 CLJU 0099 7129 9001 60", "standard": "iban"}}, "memo": "Kraken Tx AAA-BBB", "supportingDocumentId": "", "chain": "ethereum", "network": "mainnet", "meta": {"state": "processed", "txHashes": ["0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74"], "placedBy": "qq-yy", "placedAt": "2023-10-18T12:09:42.621469Z", "processedAt": "2023-10-18T12:09:43.621469Z", "approvedAt": "2023-10-18T12:09:44.621469Z", "confirmedAt": "2023-10-18T12:09:44.921469Z", "receivedAmount": "1500", "sentAmount": "1500"}}]',  # noqa: E501
-    )
+    ) is False
 
     # Set the expected changes in the event
     event.notes = 'Receive 1500 EURe via bank transfer from Payward Ltd (GB60 CLJU 0099 7129 9001 60) with memo "Kraken Tx AAA-BBB"'  # noqa: E501
@@ -191,20 +191,31 @@ def test_bridge_via_monerium(database: DBHandler, monerium_credentials: Any) -> 
     with database.user_write() as write_cursor:
         dbevents.add_history_events(write_cursor=write_cursor, history=[eth_event, gnosis_event])
 
-    mock_monerium_and_run_periodic_task(
+    assert mock_monerium_and_run_periodic_task(  # the caller matches the legs this creates
         database=database,
         contents='[{"id": "xx-yy", "profile": "zz-yy", "accountId": "aa-yy", "address": "0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da", "kind": "issue", "amount": "1500", "currency": "eur", "totalFee": "0", "fees": [], "counterpart": {"details": {}, "identifier": {"chain": "ethereum", "address": "0x99a0618B846D43E29C15ac468Eae06d03C9243C7", "network": "mainnet", "standard": "chain"}}, "memo": "Move to Gnosis Chain", "supportingDocumentId": "", "chain": "gnosis", "network": "mainnet", "meta": {"state": "processed", "txHashes": ["0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74", "0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"], "placedBy": "qq-yy", "placedAt": "2023-10-18T12:09:42.621469Z", "processedAt": "2023-10-18T12:09:43.621469Z", "approvedAt": "2023-10-18T12:09:44.621469Z", "confirmedAt": "2023-10-18T12:09:44.921469Z", "receivedAmount": "1500", "sentAmount": "1500"}},{"id": "pp-yy", "profile": "ll-yy", "accountId": "kk-yy", "address": "0x99a0618B846D43E29C15ac468Eae06d03C9243C7", "kind": "redeem", "amount": "1500", "currency": "eur", "totalFee": "0", "fees": [], "counterpart": {"details": {}, "identifier": {"chain": "gnosis", "address": "0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da", "network": "mainnet", "standard": "chain"}}, "memo": "Move to Gnosis Chain", "supportingDocumentId": "", "chain": "ethereum", "network": "mainnet", "meta": {"state": "processed", "placedBy": "qq-yy", "txHashes": ["0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74", "0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"], "placedAt": "2023-10-18T12:09:42.621469Z", "processedAt": "2023-10-18T12:09:43.621469Z", "approvedAt": "2023-10-18T12:09:44.621469Z", "confirmedAt": "2023-10-18T12:09:44.921469Z", "receivedAmount": "1500", "sentAmount": "1500"}}]',  # noqa: E501
-    )
+    ) is True
 
-    # Set the expected changes in the events
+    # Set the expected changes in the events. Both legs get the same structured bridge
+    # data, keyed by the pair of tx hashes the two orders of the move share, so the
+    # bridge matcher can pair them exactly instead of guessing from amount and time.
+    bridge_data = {BRIDGE_EXTRA_DATA_KEY: {
+        'from_chain': ChainID.ETHEREUM.serialize(),
+        'to_chain': ChainID.GNOSIS.serialize(),
+        'from_address': eth_user_address,
+        'to_address': gnosis_user_address,
+        'transfer_id': f'{gnosishash!s}-{ethhash!s}',
+    }}
     eth_event.identifier = 1
     eth_event.notes = 'Bridge 1500 EURe to gnosis with memo "Move to Gnosis Chain"'
     eth_event.event_type = HistoryEventType.DEPOSIT
     eth_event.event_subtype = HistoryEventSubType.BRIDGE
+    eth_event.extra_data = bridge_data
     gnosis_event.identifier = 2
     gnosis_event.notes = 'Bridge 1500 EURe from ethereum with memo "Move to Gnosis Chain"'
     gnosis_event.event_type = HistoryEventType.WITHDRAWAL
     gnosis_event.event_subtype = HistoryEventSubType.BRIDGE
+    gnosis_event.extra_data = bridge_data
     with database.conn.read_ctx() as cursor:
         new_events = dbevents.get_history_events_internal(
             cursor=cursor,

@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.inquirer import Inquirer
 
@@ -113,7 +114,7 @@ def make_bridge_extra_data(
 
 
 def set_bridge_extra_data(
-        event: EvmEvent,
+        event: HistoryBaseEntry,
         from_chain: ChainID | int | None,
         to_chain: ChainID | int | None,
         from_address: ChecksumEvmAddress | None = None,
@@ -126,6 +127,8 @@ def set_bridge_extra_data(
     Merges into any bridge data already present on the event, so decoders that learn
     different parts of the bridge context from different logs (e.g. the recipient from
     the transfer log and the source chain from a messaging log) can each contribute.
+    Takes any history event since bridge legs are not all evm events, e.g. the monerium
+    ones the orders API labels and the synthetic counterparts rotki manufactures.
     """
     existing_data = {} if event.extra_data is None else event.extra_data
     bridge_data = make_bridge_extra_data(

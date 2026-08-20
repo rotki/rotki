@@ -338,7 +338,8 @@ def test_complete_monerium_oauth_triggers_background_refresh(
     )
     spawn_mock.assert_called_once()
     spawned_fn = spawn_mock.call_args.kwargs['method']
-    assert spawned_fn.__name__ == 'get_and_process_orders'
+    # queries the orders and matches any bridge legs that run creates
+    assert spawned_fn.__name__ == '_query_monerium_orders'
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

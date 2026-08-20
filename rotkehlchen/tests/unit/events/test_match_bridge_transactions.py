@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.chain.evm.decoding.cctp.constants import CPT_CCTP
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.lifi.constants import CPT_LIFI
+from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
@@ -886,5 +887,110 @@ def test_sunset_claim_resynthesis_reuses_orphaned_counterpart(database: DBHandle
             (synthetic_group,),
         ).fetchone()[0] == 1
 
+    deposits, withdrawals = get_unmatched_bridge_events(database=database)
+    assert len(deposits) == len(withdrawals) == 0
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_monerium_bridge_legs_by_transfer_id(database: DBHandler) -> None:
+    """Monerium chain to chain moves match on the tx hash pair its API reports for both
+    legs of a move, not on the amount and time heuristic.
+
+    Both moves below are real gnosis <-> arbitrum EURe transfers. Their destination legs
+    land seconds after the source ones onchain but are placed a day later here, well past
+    the heuristic window, so a match can only come from the shared transfer id.
+    """
+    events_db = DBHistoryEvents(database)
+    gnosis_eure = Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430')
+    arbitrum_eure = Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8')
+    # gnosis -> arbitrum: burn 0xff00dec3..., mint 0x88d55171...
+    out_user = '0x8EaeD0c875d0aF5134EEac3dA91BeCf8dE505e2b'
+    out_transfer_id = '0x88d55171adb39b33c8b3b1802cf7873d6c04120d38de414800b8905a720a5e21-0xff00dec38e08377a18075e35c6b755da9f24882ec9aa5aa0de4ea6ebdedcb381'  # noqa: E501
+    # arbitrum -> gnosis: burn 0x0262c273..., mint 0xcb922e79...
+    in_user = '0xE53464166D9DaB175E9c290209d5eab9cF98eec5'
+    in_transfer_id = '0x0262c273b8bd935e467e67f32b779aea6b0c3e294de335486180a62cbafed797-0xcb922e794da9d77dc2c3a395f5ba09f9e6e63040c1af90565a027839cdaff36e'  # noqa: E501
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(out_deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787090645000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=gnosis_eure,
+                amount=FVal('2000'),
+                location_label=out_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 100,
+                    'to_chain': 42161,
+                    'from_address': out_user,
+                    'to_address': out_user,
+                    'transfer_id': out_transfer_id,
+                }},
+            )), (out_withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787090648000 + DAY_IN_SECONDS * 1000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=arbitrum_eure,
+                amount=FVal('2000'),
+                location_label=out_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 100,
+                    'to_chain': 42161,
+                    'from_address': out_user,
+                    'to_address': out_user,
+                    'transfer_id': out_transfer_id,
+                }},
+            )), (in_deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787216450000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=arbitrum_eure,
+                amount=FVal('196.34'),
+                location_label=in_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 100,
+                    'from_address': in_user,
+                    'to_address': in_user,
+                    'transfer_id': in_transfer_id,
+                }},
+            )), (in_withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787216455000 + DAY_IN_SECONDS * 1000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=gnosis_eure,
+                amount=FVal('196.34'),
+                location_label=in_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 100,
+                    'from_address': in_user,
+                    'to_address': in_user,
+                    'transfer_id': in_transfer_id,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {  # source leg is always the left side of the link
+        (_event_id(database, out_deposit), _event_id(database, out_withdrawal)),
+        (_event_id(database, in_deposit), _event_id(database, in_withdrawal)),
+    }
     deposits, withdrawals = get_unmatched_bridge_events(database=database)
     assert len(deposits) == len(withdrawals) == 0
