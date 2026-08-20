@@ -9,7 +9,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div>
+  <div data-testid="ignored-in-accounting">
     <BadgeDisplay
       v-if="mobile"
       color="grey"

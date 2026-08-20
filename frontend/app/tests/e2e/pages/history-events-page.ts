@@ -301,12 +301,6 @@ export class HistoryEventsPage {
     }
   }
 
-  async expandSwap(index: number): Promise<void> {
-    const swapRow = this.page.locator('[data-testid=history-event-swap]').nth(index);
-    await swapRow.hover();
-    await swapRow.locator('[data-testid=swap-expand]').click();
-  }
-
   async getExpandedEventRows(): Promise<number> {
     return this.page.locator('[data-testid=history-event-row]').count();
   }
