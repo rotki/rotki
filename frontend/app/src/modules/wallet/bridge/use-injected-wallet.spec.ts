@@ -214,6 +214,30 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
       expect(request).toHaveBeenCalledWith(expect.objectContaining({ method: 'wallet_addEthereumChain' }));
     });
 
+    it('should send an empty explorer list when the chain has no explorer', async () => {
+      const request = vi.fn()
+        .mockImplementationOnce(async () => ['0xabc']) // eth_requestAccounts
+        .mockImplementationOnce(async () => '0x1') // eth_chainId
+        .mockImplementationOnce(async () => { throw Object.assign(new Error('unknown chain'), { code: 4902 }); })
+        .mockImplementation(async () => undefined);
+      const provider = makeProvider({ request });
+      selectProvider(provider);
+      getWalletNetwork.mockReturnValue({
+        name: 'Monad',
+        nativeCurrency: { decimals: 18, name: 'Monad', symbol: 'MON' },
+        rpcUrls: { default: { http: ['https://rpc.monad'] } },
+      });
+      const wallet = useInjectedWallet();
+      await wallet.connectToSelectedProvider();
+
+      await wallet.switchNetwork(143n);
+
+      expect(request).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'wallet_addEthereumChain',
+        params: [expect.objectContaining({ blockExplorerUrls: [] })],
+      }));
+    });
+
     it('should surface the 4902 when it has no definition for the chain', async () => {
       const request = vi.fn()
         .mockImplementationOnce(async () => ['0xabc']) // eth_requestAccounts
