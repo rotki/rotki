@@ -1,5 +1,5 @@
 import type { Eth2Validator } from '@/modules/balances/types/balances';
-import { assert, type Eth2ValidatorEntry, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
+import { assert, type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import {
   type AccountPayload,
@@ -48,6 +48,7 @@ interface UseBlockchainAccountsApiReturn {
   queryBtcAccounts: (blockchain: BtcChains) => Promise<BitcoinAccounts>;
   deleteXpub: ({ chain, derivationPath, xpub }: DeleteXpubParams) => Promise<PendingTask>;
   getEth2Validators: (payload?: EthValidatorFilter) => Promise<PendingTask>;
+  queryEth2Validators: (payload?: EthValidatorFilter) => Promise<Eth2Validators>;
   addEth2Validator: (payload: Eth2Validator) => Promise<PendingTask>;
   editEth2Validator: ({ ownershipPercentage, validatorIndex }: Eth2Validator) => Promise<boolean>;
   deleteEth2Validators: (validators: Eth2ValidatorEntry[]) => Promise<boolean>;
@@ -192,6 +193,24 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
+  /**
+   * The same query as {@link getEth2Validators}, answered in the response rather than through a
+   * task.
+   *
+   * This is a filtered read of `eth2_validators`, which measures in single-digit milliseconds for
+   * every filter shape the staking page can build. Routed through the async task machinery the
+   * answer instead arrives on the polling cadence, seconds after the request, which is far too slow
+   * for something recomputed on every keystroke-sized filter change.
+   */
+  const queryEth2Validators = async (payload: EthValidatorFilter = {}): Promise<Eth2Validators> => {
+    const response = await api.get<Eth2Validators>('/blockchains/eth2/validators', {
+      filterEmptyProperties: true,
+      query: { ...payload },
+      validStatuses: VALID_WITH_SESSION_STATUS,
+    });
+    return Eth2Validators.parse(response);
+  };
+
   const addEth2Validator = async (payload: Eth2Validator): Promise<PendingTask> => {
     const response = await api.put<PendingTask>(
       '/blockchains/eth2/validators',
@@ -257,6 +276,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     getEth2Validators,
     queryAccounts,
     queryBtcAccounts,
+    queryEth2Validators,
     removeAgnosticBlockchainAccount,
     removeBlockchainAccount,
   };
