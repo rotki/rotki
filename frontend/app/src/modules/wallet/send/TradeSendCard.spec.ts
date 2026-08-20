@@ -10,6 +10,8 @@ import TradeSendCard from '@/modules/wallet/send/TradeSendCard.vue';
 const RECIPIENT = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65';
 const CONNECTED = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 const ETHEREUM_CHAIN_ID = 1;
+// A chain the backend reports but that resolves to no numeric id.
+const UNRESOLVABLE_CHAIN = 'newchain';
 
 const connected = ref<boolean>(true);
 const connectedAddress = ref<string | undefined>(CONNECTED);
@@ -52,7 +54,8 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
 vi.mock('@/modules/wallet/use-wallet-helper', () => ({
   useWalletHelper: vi.fn(() => ({
     getChainFromChainId: (chainId: number): string => (chainId === ETHEREUM_CHAIN_ID ? 'ethereum' : 'optimism'),
-    getChainIdFromChain: (): number => ETHEREUM_CHAIN_ID,
+    getChainIdFromChain: (chain: string): number | undefined =>
+      (chain === UNRESOLVABLE_CHAIN ? undefined : ETHEREUM_CHAIN_ID),
   })),
 }));
 
@@ -359,6 +362,17 @@ describe('tradeSendCard', () => {
       await wrapper.find('[data-testid=switch-network-action]').trigger('click');
 
       expect(switchNetwork).toHaveBeenCalledWith(BigInt(ETHEREUM_CHAIN_ID));
+    });
+
+    it('should not ask the wallet to switch to a chain with no numeric id', async () => {
+      set(supportedChainsForConnectedAccount, [UNRESOLVABLE_CHAIN]);
+      set(connectedChainId, 10);
+      await nextTick();
+
+      await wrapper.find('[data-testid=switch-network-action]').trigger('click');
+
+      // BigInt(undefined) throws, which would break the click handler entirely.
+      expect(switchNetwork).not.toHaveBeenCalled();
     });
 
     it('should refresh the balance when the asset selector asks', async () => {

@@ -120,7 +120,9 @@ function resetInput(): void {
 }
 
 function switchToDesireNetwork(): void {
-  switchNetwork(BigInt(getChainIdFromChain(get(assetChain))));
+  const chainId = getChainIdFromChain(get(assetChain));
+  if (chainId !== undefined)
+    switchNetwork(BigInt(chainId));
 }
 
 async function trackAddress(): Promise<void> {

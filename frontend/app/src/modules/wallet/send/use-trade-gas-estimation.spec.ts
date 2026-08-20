@@ -6,6 +6,10 @@ import { useTradeGasEstimation } from '@/modules/wallet/send/use-trade-gas-estim
 
 const ETHEREUM_CHAIN_ID = 1;
 const OPTIMISM_CHAIN_ID = 10;
+const CHAIN_IDS: Record<string, number | undefined> = {
+  eth: ETHEREUM_CHAIN_ID,
+  optimism: OPTIMISM_CHAIN_ID,
+};
 
 const connected = ref<boolean>(true);
 const connectedChainId = ref<number>();
@@ -15,9 +19,11 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
   useWalletStore: vi.fn(() => ({ connected, connectedChainId, getGasFeeForChain })),
 }));
 
+// The chain refs carry rotki blockchain ids (`eth`), which is what the send form
+// binds; an unknown chain resolves to no numeric id, as the real helper does.
 vi.mock('@/modules/wallet/use-wallet-helper', () => ({
   useWalletHelper: vi.fn(() => ({
-    getChainIdFromChain: (chain: string): number => (chain === 'ethereum' ? ETHEREUM_CHAIN_ID : OPTIMISM_CHAIN_ID),
+    getChainIdFromChain: (chain: string): number | undefined => CHAIN_IDS[chain],
   })),
 }));
 
@@ -53,7 +59,7 @@ describe('useTradeGasEstimation', () => {
     set(connected, true);
     set(connectedChainId, ETHEREUM_CHAIN_ID);
     asset = ref<string>('ETH');
-    chain = ref<string>('ethereum');
+    chain = ref<string>('eth');
     isNativeAsset = ref<boolean>(true);
     isAssetResolved = ref<boolean>(true);
     getGasFeeForChain.mockResolvedValue({ gasFee: '0.01', maxAmount: '0' });
@@ -101,6 +107,18 @@ describe('useTradeGasEstimation', () => {
 
   it('should charge no gas while the wallet is on another chain', async () => {
     set(connectedChainId, OPTIMISM_CHAIN_ID);
+    const { estimatedGasFee } = create();
+    await flushPromises();
+
+    expect(getGasFeeForChain).not.toHaveBeenCalled();
+    expect(get(estimatedGasFee)).toBe('0');
+  });
+
+  it('should charge no gas when the selected chain has no numeric id', async () => {
+    // Both sides of the chain comparison are undefined here: the chain cannot be
+    // resolved and the wallet has reported no chain. That is not a match.
+    set(chain, 'newchain');
+    set(connectedChainId, undefined);
     const { estimatedGasFee } = create();
     await flushPromises();
 

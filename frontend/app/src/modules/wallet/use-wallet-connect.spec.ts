@@ -12,6 +12,10 @@ vi.mock('./viem-client', () => ({
 const network1 = { id: 1, rpcUrls: { default: { http: ['https://rpc.one'] } } };
 const network8453 = { id: 8453, rpcUrls: { default: { http: ['https://rpc.base'] } } };
 
+// The caller supplies the chains; `chains-viem` only enriches them with an rpc
+// url. 143 is deliberately absent from the viem table.
+const CHAIN_IDS = [1, 8453];
+
 vi.mock('./chains-viem', () => ({
   SUPPORTED_WALLET_NETWORKS: [network1, network8453],
   getWalletNetwork: vi.fn((chainId: bigint) => (chainId === 1n ? network1 : undefined)),
@@ -72,7 +76,7 @@ describe('modules/wallet/use-wallet-connect', () => {
   describe('connect', () => {
     it('should initialize the provider and request the eip155 namespace', async () => {
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       expect(mockProviderInstance.connect).toHaveBeenCalledTimes(1);
       const arg = mockProviderInstance.connect.mock.calls[0][0];
@@ -83,10 +87,36 @@ describe('modules/wallet/use-wallet-connect', () => {
       });
     });
 
+    it('should request a chain that has no viem definition, without an rpc url', async () => {
+      const wc = await loadComposable();
+      await wc.connect([1, 143]);
+
+      const arg = mockProviderInstance.connect.mock.calls[0][0];
+      expect(arg.optionalNamespaces.eip155.chains).toEqual(['eip155:1', 'eip155:143']);
+      expect(arg.optionalNamespaces.eip155.rpcMap).toEqual({ 'eip155:1': 'https://rpc.one' });
+    });
+
+    it('should refuse to pair when no chains are available', async () => {
+      const wc = await loadComposable();
+
+      // An empty list means the supported-chains fetch has not landed or failed.
+      // Pairing anyway opens a session that negotiates nothing.
+      await expect(wc.connect([])).rejects.toThrow('No supported chains');
+      expect(mockProviderInstance.connect).not.toHaveBeenCalled();
+    });
+
+    it('should not request a chain the caller left out', async () => {
+      const wc = await loadComposable();
+      await wc.connect([1]);
+
+      const arg = mockProviderInstance.connect.mock.calls[0][0];
+      expect(arg.optionalNamespaces.eip155.chains).toEqual(['eip155:1']);
+    });
+
     it('should sync an already-restored session and skip a new pairing', async () => {
       mockProviderInstance.session = makeSession(['eip155:1:0xabc']);
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       expect(mockProviderInstance.connect).not.toHaveBeenCalled();
       expect(get(wc.connected)).toBe(true);
@@ -99,7 +129,7 @@ describe('modules/wallet/use-wallet-connect', () => {
         mockProviderInstance.session = makeSession(['eip155:8453:0xdef'], ['eip155:8453', 'eip155:1']);
       });
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       expect(get(wc.connected)).toBe(true);
       expect(get(wc.connectedAddress)).toBe('0xdef');
@@ -113,7 +143,7 @@ describe('modules/wallet/use-wallet-connect', () => {
         mockProviderInstance.emit('display_uri', 'wc:pair-uri');
       });
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       expect(get(wc.connectUri)).toBeUndefined(); // closed in finally
       expect(get(wc.showConnectModal)).toBe(false);
@@ -125,7 +155,7 @@ describe('modules/wallet/use-wallet-connect', () => {
       });
       const wc = await loadComposable();
 
-      await expect(wc.connect()).rejects.toThrow('pairing blew up');
+      await expect(wc.connect(CHAIN_IDS)).rejects.toThrow('pairing blew up');
       expect(get(wc.preparing)).toBe(false);
     });
 
@@ -137,7 +167,7 @@ describe('modules/wallet/use-wallet-connect', () => {
         throw new Error('pairing aborted');
       });
 
-      await expect(wc.connect()).resolves.toBeUndefined();
+      await expect(wc.connect(CHAIN_IDS)).resolves.toBeUndefined();
     });
   });
 
@@ -150,7 +180,7 @@ describe('modules/wallet/use-wallet-connect', () => {
         throw new Error('aborted');
       });
 
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       expect(mockProviderInstance.abortPairingAttempt).toHaveBeenCalledTimes(1);
       expect(get(wc.showConnectModal)).toBe(false);
@@ -162,7 +192,7 @@ describe('modules/wallet/use-wallet-connect', () => {
     it('should call provider.disconnect and reset state when a session exists', async () => {
       mockProviderInstance.session = makeSession(['eip155:1:0xabc']);
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
       expect(get(wc.connected)).toBe(true);
 
       await wc.disconnect();
@@ -189,7 +219,7 @@ describe('modules/wallet/use-wallet-connect', () => {
 
     it('should build a viem client once the provider exists', async () => {
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
       expect(wc.getWalletClient()).toEqual({ __client: true });
     });
   });
@@ -197,7 +227,7 @@ describe('modules/wallet/use-wallet-connect', () => {
   describe('switchNetwork', () => {
     it('should request the chain switch and update the default chain', async () => {
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
       await wc.switchNetwork(1n);
 
       expect(mockProviderInstance.request).toHaveBeenCalledWith({
@@ -217,7 +247,7 @@ describe('modules/wallet/use-wallet-connect', () => {
   describe('checkWalletConnection', () => {
     it('should return early when there is no active WalletConnect session', async () => {
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
       await wc.checkWalletConnection();
       expect(mockProviderInstance.client.ping).not.toHaveBeenCalled();
     });
@@ -225,7 +255,7 @@ describe('modules/wallet/use-wallet-connect', () => {
     it('should ping the session and resolve when the wallet responds', async () => {
       mockProviderInstance.session = makeSession(['eip155:1:0xabc']);
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       await wc.checkWalletConnection();
 
@@ -239,7 +269,7 @@ describe('modules/wallet/use-wallet-connect', () => {
         throw new Error('ping failed');
       });
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       await expect(wc.checkWalletConnection()).rejects.toThrow(/wallet is inactive/);
       expect(get(wc.preparing)).toBe(false);
@@ -250,7 +280,7 @@ describe('modules/wallet/use-wallet-connect', () => {
     it('should update the address on accountsChanged and reset on empty', async () => {
       mockProviderInstance.session = makeSession(['eip155:1:0xabc']);
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       mockProviderInstance.emit('accountsChanged', ['eip155:1:0xdeadbeef']);
       expect(get(wc.connectedAddress)).toBe('0xdeadbeef');
@@ -263,7 +293,7 @@ describe('modules/wallet/use-wallet-connect', () => {
 
     it('should parse a hex chainChanged value', async () => {
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
 
       mockProviderInstance.emit('chainChanged', '0xa');
       expect(get(wc.connectedChainId)).toBe(10);
@@ -272,7 +302,7 @@ describe('modules/wallet/use-wallet-connect', () => {
     it('should reset state on disconnect and session_delete events', async () => {
       mockProviderInstance.session = makeSession(['eip155:1:0xabc']);
       const wc = await loadComposable();
-      await wc.connect();
+      await wc.connect(CHAIN_IDS);
       expect(get(wc.connected)).toBe(true);
 
       mockProviderInstance.emit('disconnect');

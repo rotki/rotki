@@ -30,8 +30,20 @@ const getChain = vi.fn((name: string): Blockchain => {
   return Blockchain.ETH;
 });
 
+// `eth` is the only blockchain id that differs from its evm chain name, which is
+// what `getChainIdFromChain` has to bridge.
+const getEvmChainName = vi.fn((chain: string): string | undefined => {
+  if (chain === Blockchain.ETH)
+    return 'ethereum';
+  if (chain === Blockchain.OPTIMISM)
+    return 'optimism';
+  if (chain === Blockchain.ARBITRUM_ONE)
+    return 'arbitrum_one';
+  return undefined;
+});
+
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
-  useSupportedChains: vi.fn().mockImplementation(() => ({ allEvmChains, getChain })),
+  useSupportedChains: vi.fn().mockImplementation(() => ({ allEvmChains, getChain, getEvmChainName })),
 }));
 
 const refreshBlockchainBalances = vi.fn();
@@ -81,12 +93,18 @@ describe('useWalletHelper', () => {
   describe('getChainIdFromChain', () => {
     it('should return numeric id for known chain', () => {
       const { getChainIdFromChain } = useWalletHelper();
-      expect(getChainIdFromChain('arbitrum_one')).toBe(42161);
+      expect(getChainIdFromChain(Blockchain.ARBITRUM_ONE)).toBe(42161);
     });
 
-    it('should default to 1 for unknown chain', () => {
+    it('should resolve a blockchain id that differs from its evm chain name', () => {
       const { getChainIdFromChain } = useWalletHelper();
-      expect(getChainIdFromChain('nope')).toBe(1);
+      // `eth` appears in allEvmChains as `ethereum`, so a direct id match misses.
+      expect(getChainIdFromChain(Blockchain.ETH)).toBe(1);
+    });
+
+    it('should return undefined for an unknown chain rather than ethereum', () => {
+      const { getChainIdFromChain } = useWalletHelper();
+      expect(getChainIdFromChain('nope')).toBeUndefined();
     });
   });
 
