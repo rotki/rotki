@@ -10,6 +10,7 @@ import requests
 from oauthlib.oauth2 import WebApplicationClient
 
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
@@ -21,13 +22,20 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EVMTxHash, Location, deserialize_evm_tx_hash
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    EVMTxHash,
+    Location,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
@@ -99,7 +107,58 @@ class Monerium:
                 f'Monerium API returned invalid JSON response: {response.text}',
             ) from e
 
-    def get_and_process_orders(self, tx_hash: EVMTxHash | None = None) -> None:
+    @staticmethod
+    def _set_bridge_extra_data(
+            event: HistoryBaseEntry,
+            order: dict[str, Any],
+            tx_hashes: list[str],
+            location: Location,
+            is_source: bool,
+    ) -> None:
+        """Record the structured cross-chain data of one leg of a monerium chain to chain move.
+
+        Monerium creates two orders per move, a redeem on the source chain and an issue
+        on the destination one, and both carry the same pair of tx hashes. Joining that
+        pair yields an id that is shared by the two legs and unique to the transfer, so
+        the bridge matcher can pair them exactly instead of guessing from amount and time.
+
+        The chain and address of the other leg come from the order's counterpart
+        identifier. Anything monerium does not give us in a usable form is simply left
+        out: each entry is only a matching hint and the transfer id carries the match.
+        """
+        counterpart = order['counterpart']['identifier']
+        counterpart_location = SUPPORTED_MONERIUM_CHAINS.get(counterpart.get('chain'))
+        addresses: dict[str, ChecksumEvmAddress | None] = {}
+        for key, raw_address in (
+                ('from_address' if is_source else 'to_address', order.get('address')),
+                ('to_address' if is_source else 'from_address', counterpart.get('address')),
+        ):
+            addresses[key] = None
+            if isinstance(raw_address, str):
+                try:
+                    addresses[key] = deserialize_evm_address(raw_address)
+                except DeserializationError:
+                    log.error(
+                        'Monerium order %s has an invalid %s %s',
+                        order.get('id'),
+                        key,
+                        raw_address,
+                    )
+
+        source_location, destination_location = (
+            (location, counterpart_location) if is_source
+            else (counterpart_location, location)
+        )
+        set_bridge_extra_data(
+            event=event,
+            from_chain=source_location.to_chain_id() if source_location is not None else None,
+            to_chain=destination_location.to_chain_id() if destination_location is not None else None,  # noqa: E501
+            from_address=addresses['from_address'],
+            to_address=addresses['to_address'],
+            transfer_id='-'.join(sorted(x.lower() for x in tx_hashes)),
+        )
+
+    def get_and_process_orders(self, tx_hash: EVMTxHash | None = None) -> bool:
         """Gets all monerium orders and processes them
 
         Find all on-chain transactions that match those orders and enrich them appropriately.
@@ -116,6 +175,10 @@ class Monerium:
         a stack trace in the logs.
 
         At the moment monerium has no fees, so this is not processing any fees.
+
+        Returns whether any event was turned into a bridge leg, so the caller can have
+        those legs matched. Chain to chain orders are the only bridge legs created
+        outside of decoding, so nothing else would run the matcher over them.
         """
         with self.database.conn.write_ctx() as write_cursor:
             write_cursor.execute(  # remember last time task ran
@@ -132,7 +195,7 @@ class Monerium:
             log.error(f'Failed to authenticate monerium request due to {e}')
             raise RemoteError('Monerium authentication failed. Check logs for more details') from e
 
-        dbevents = DBHistoryEvents(self.database)
+        dbevents, created_bridge_leg = DBHistoryEvents(self.database), False
         for order in response['orders']:
             log.debug(f'Processing monerium order {order}')
             if (kind := order['kind']) not in ('redeem', 'issue'):
@@ -231,11 +294,23 @@ class Monerium:
                     event.event_type = new_type
                     event.event_subtype = new_subtype  # type: ignore  # both type/subtype are set
 
+                if new_subtype == HistoryEventSubType.BRIDGE:
+                    created_bridge_leg = True
+                    self._set_bridge_extra_data(
+                        event=event,
+                        order=order,
+                        tx_hashes=tx_hashes,
+                        location=location,
+                        is_source=kind == 'redeem',
+                    )
+
                 dbevents.edit_history_event(
                     write_cursor=write_cursor,
                     event=event,
                     mapping_state=None,
                 )
+
+        return created_bridge_leg
 
     def update_events(self, events: list[EvmEvent]) -> None:
         """Query and update the event txs individually.
