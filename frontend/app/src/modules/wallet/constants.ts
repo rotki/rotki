@@ -13,8 +13,6 @@ export type WalletMode = typeof WALLET_MODES[keyof typeof WALLET_MODES];
 
 export const EIP155 = 'eip155';
 
-export const SUPPORTED_WALLET_CHAIN_IDS = [1, 8453, 42161, 10, 56, 100, 137, 534352] as const;
-
 /**
  * EIP-155 methods requested in the WalletConnect session namespace.
  */
@@ -47,6 +45,7 @@ export const WALLET_ERRORS = {
   CONNECTION_FAILED: 'Failed to initiate wallet connection',
   GAS_ESTIMATION_FAILED: 'Error getting gas fee',
   NO_PROVIDERS: 'No wallet providers detected',
+  NO_SUPPORTED_CHAINS: 'No supported chains are available yet',
 } as const;
 
 /**

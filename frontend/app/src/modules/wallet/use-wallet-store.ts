@@ -12,7 +12,7 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { getAddress, type Hash, isHex, type ViemWalletClient } from '@/modules/wallet/viem-client';
 import { useWalletProxy } from './bridge/use-wallet-proxy';
-import { calculateGasFee, SUPPORTED_WALLET_CHAIN_IDS, WALLET_ERRORS, WALLET_MODES, type WalletMode } from './constants';
+import { calculateGasFee, WALLET_ERRORS, WALLET_MODES, type WalletMode } from './constants';
 import { useUnifiedProviders } from './providers/use-unified-providers';
 import { useTradeApi } from './send/use-trade-api';
 import {
@@ -21,6 +21,7 @@ import {
   validateTransactionRequirements,
 } from './transaction-helpers';
 import { useTransactionManager } from './use-transaction-manager';
+import { useWalletChains } from './use-wallet-chains';
 
 export { type WalletMode } from './constants';
 
@@ -65,6 +66,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const { recentTransactions, reset: resetTransactions, updateTransactionStatus } = transactionManager;
 
   const { getChainFromChainId, getChainIdFromNamespace } = useWalletHelper();
+  const { getSessionChains, walletChainIds } = useWalletChains();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
   const { getEvmChainName } = useSupportedChains();
 
@@ -140,15 +142,12 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     return injectedWalletInstance;
   }
 
-  const supportedChainsIdForConnectedAccount = computed<number[]>(() => {
-    const chainIds = get(supportedChainIds);
-    if (chainIds.length === 0 || get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
-      return [...SUPPORTED_WALLET_CHAIN_IDS];
-    }
-    return chainIds.map(item => getChainIdFromNamespace(item));
-  });
-
-  const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
+  // An injected wallet reports no namespaces, so it gets every chain rotki supports.
+  const supportedChainsForConnectedAccount = computed<string[]>(() => getSessionChains(
+    get(walletMode) === WALLET_MODES.LOCAL_BRIDGE
+      ? undefined
+      : get(supportedChainIds).map(item => getChainIdFromNamespace(item)),
+  ));
 
   const getWalletClient = (): ViemWalletClient => {
     if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
@@ -197,7 +196,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     }
     else {
       const wc = await getWalletConnect();
-      await wc.connect();
+      await wc.connect(get(walletChainIds));
     }
   };
 
