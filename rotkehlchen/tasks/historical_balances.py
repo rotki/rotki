@@ -414,7 +414,7 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
 
             counterparty = getattr(event, 'counterparty', None)
             window = get_bridge_match_window(
-                counterparty=counterparty,
+                event=event,
                 default_window=default_window,
             ) if direction == 'deposit' else default_window  # grace so we don't race the matcher
             if now_ms < event.timestamp + window * 1000:

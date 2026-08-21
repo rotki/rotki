@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC, A_XDAI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import (
@@ -1113,4 +1114,88 @@ def test_match_zksync_lite_withdrawal_past_default_window(database: DBHandler) -
     match_bridge_transactions(database=database)
     assert _get_bridge_links(database) == {
         (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_zksync_lite_forced_exit(database: DBHandler) -> None:
+    """A zksync lite forced exit is promoted to a bridge leg by the payout that settles it.
+
+    A forced exit sweeps the account's whole balance of one token, so the zksync API never
+    states the amount and the exit is decoded as an informational zero-amount event. Its
+    amount can only come from the ethereum leg, so it is matched on asset and recipient and
+    takes the amount from its counterpart. Both legs are the ones of zksync lite transaction
+    0x630d0e5d672833fcd034b5989e02dba38c6982a2bac9649311a7086758e7df47 and ethereum
+    transaction 0x234407968b9a688be3fb37cf7ff8ef3b4168d6cd85ec45b8344bb2a88832f982, which
+    paid out five exits of this address at once. The decoy is the same payout's DAI leg: a
+    different asset must not take the PAN exit's amount.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(forced_exit := EvmEvent(
+                group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(exit_tx_hash := make_evm_tx_hash())),  # noqa: E501
+                tx_ref=exit_tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(1604314348000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=(pan := Asset('eip155:1/erc20:0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44')),
+                amount=ZERO,  # the exit never states it
+                location_label=(user_address := make_evm_address()),
+                address=user_address,
+                notes='Forced exit to Ethereum',
+            )), (payout := EvmEvent(
+                tx_ref=(payout_tx_hash := make_evm_tx_hash()),
+                sequence_index=176,
+                timestamp=TimestampMS(1604359203000),  # 12.5 hours later
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=pan,
+                amount=FVal(amount := '1586.6'),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+                extra_data={'bridge': {
+                    'from_chain': 'zksync_lite',
+                    'to_chain': 1,
+                    'to_address': user_address,
+                }},
+            )), EvmEvent(  # decoy: same payout, same address, different asset
+                tx_ref=payout_tx_hash,
+                sequence_index=175,
+                timestamp=TimestampMS(1604359203000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_DAI,
+                amount=FVal('1691.92749999'),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+            )],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (exit_id := _event_id(database, forced_exit), _event_id(database, payout)),
+    }
+    with database.conn.read_ctx() as cursor:
+        promoted = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[exit_id]),
+        )[0]
+
+    assert isinstance(promoted, EvmEvent)
+    assert promoted.amount == FVal(amount)  # taken from the payout
+    assert promoted.event_type == HistoryEventType.DEPOSIT
+    assert promoted.event_subtype == HistoryEventSubType.BRIDGE
+    assert promoted.counterparty == CPT_ZKSYNC
+    assert promoted.notes == f'Bridge {amount} PAN from ZKSync Lite to Ethereum'
+    assert promoted.extra_data is not None
+    assert promoted.extra_data['bridge'] == {
+        'from_chain': 'zksync_lite',
+        'to_chain': 1,
+        'to_address': user_address,
     }
