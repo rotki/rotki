@@ -2,10 +2,6 @@
 Changelog
 =========
 
-* :bug:`-` Money bridged out of ZKsync Lite is now matched with the leg that arrives on Ethereum. Such an exit is only paid out once the ZKsync block has been verified on Ethereum, hours later, and rotki gave up looking after four. Those bridging events now also name ZKsync as the protocol they went through, as their Ethereum halves always did.
-
-* :bug:`-` Moving DAI from Ethereum to Gnosis chain is now matched with the xDAI that arrives on the other side. Since the bridge started stamping such transfers with a nonce, the two halves referred to the transfer by different names and were left unmatched.
-
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
 * :feature:`12317` rotki is ready to resolve ENS v2 names.

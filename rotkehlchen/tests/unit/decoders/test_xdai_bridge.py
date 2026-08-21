@@ -320,6 +320,7 @@ def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_et
     )]
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_bridge_dai_from_ethereum_with_nonce(
         ethereum_inquirer: EthereumInquirer,
@@ -367,6 +368,7 @@ def test_bridge_dai_from_ethereum_with_nonce(
     )]
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_receive_dai_on_gnosis_with_nonce(
         gnosis_inquirer: GnosisInquirer,
