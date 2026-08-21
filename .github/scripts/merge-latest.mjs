@@ -13,29 +13,54 @@ const file3 = args[2];
 if (!file1 || !file2 || !file3)
     throw new Error('Please provide 3 file paths as arguments: path to file1, to file2 and destination path');
 
-function exitIfNotExists(file) {
-    if (!fs.existsSync(file)) {
-        consola.error(`${file} doesn't exist`);
-        process.exit(1);
-    }
+function fail(message) {
+    consola.error(message);
+    process.exit(1);
 }
 
-// make sure that both input files exist
-exitIfNotExists(file1);
-exitIfNotExists(file2);
+/**
+ * Reads an electron-updater manifest and checks it carries the fields the merge relies on.
+ * A malformed input would otherwise surface as a bare TypeError, or worse, produce a manifest
+ * that silently points auto-update at nothing.
+ */
+function readManifest(file) {
+    if (!fs.existsSync(file))
+        fail(`${file} doesn't exist`);
+
+    consola.info(`reading file: ${file}`);
+
+    let manifest;
+    try {
+        manifest = yaml.load(fs.readFileSync(file, 'utf8'));
+    }
+    catch (error) {
+        fail(`${file} is not valid yaml: ${error.message}`);
+    }
+
+    if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest))
+        fail(`${file} does not contain a yaml mapping`);
+
+    if (typeof manifest.version !== 'string')
+        fail(`${file} has no version`);
+
+    if (!Array.isArray(manifest.files) || manifest.files.length === 0)
+        fail(`${file} has no files entries`);
+
+    consola.debug('file content: \n', manifest);
+    return manifest;
+}
 
 consola.info(`merging ${file1} and ${file2} to ${file3}`);
 
-consola.info(`reading file: ${file1}`);
-const yaml1 = yaml.load(fs.readFileSync(file1, 'utf8'));
-consola.debug('file content: \n', yaml1);
+const yaml1 = readManifest(file1);
+const yaml2 = readManifest(file2);
 
-consola.info(`reading file: ${file2}`);
-const yaml2 = yaml.load(fs.readFileSync(file2, 'utf8'));
-consola.debug('file content: \n', yaml2);
+// merging two manifests of different versions would hand auto-update a mix of builds
+if (yaml1.version !== yaml2.version)
+    fail(`version mismatch: ${file1} is ${yaml1.version} but ${file2} is ${yaml2.version}`);
 
-const merged = { ...yaml1, ...yaml2 };
-merged.files.push(...yaml1.files);
+// yaml2 wins on the top level fields; its files come first, as before
+const merged = { ...yaml1, ...yaml2, files: [...yaml2.files, ...yaml1.files] };
 
 consola.debug('merged content: \n', merged);
 
