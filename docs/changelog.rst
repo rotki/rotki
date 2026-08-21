@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Moving DAI from Ethereum to Gnosis chain is now matched with the xDAI that arrives on the other side. Since the bridge started stamping such transfers with a nonce, the two halves referred to the transfer by different names and were left unmatched.
+
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`-` You can now find an asset on the dashboard or in blockchain balances by pasting its contract address, which is the quickest way to pin down a token whose name you do not know or that shares a symbol with others. An asset whose symbol or name is exactly what you typed is also shown first, so searching for ``eth`` no longer buries ETH under every token that merely contains those letters.
 * :bug:`-` Searching your assets on the dashboard or in blockchain balances now shows the matches as soon as you type. The first search after opening a page used to say there were no results for a second or two, making an asset you hold look like one you do not.

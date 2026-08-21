@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.modules.zksync.constants import (
     CPT_ZKSYNC,
     ZKSYNC_LITE_SUNSET_CLAIM,
@@ -18,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC, A_XDAI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -994,3 +995,63 @@ def test_match_monerium_bridge_legs_by_transfer_id(database: DBHandler) -> None:
     }
     deposits, withdrawals = get_unmatched_bridge_events(database=database)
     assert len(deposits) == len(withdrawals) == 0
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_xdai_bridge_by_nonce(database: DBHandler) -> None:
+    """The two legs of a DAI to xDAI bridging match by the nonce the bridge logs.
+
+    They are the legs decoded from ethereum transaction 0xeb720d57bd48a89a69ba743c98441
+    4f711e06a6edacd2ab5ef6d4bfddc019d6b and gnosis transaction 0xa0a2a6996eadbd50db09787
+    3c37674cd6c0f130bc283b617c8a88c6db606c0f3. The ethereum leg used to be identified by
+    its own transaction hash while the gnosis one repeats the nonce, and ids that
+    contradict each other veto the heuristic tiers as well, so the pair never matched.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=834,
+                timestamp=TimestampMS(1749508919000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_DAI,
+                amount=FVal(amount := '33.85386'),
+                location_label=(user_address := make_evm_address()),
+                counterparty=CPT_GNOSIS_CHAIN,
+                extra_data={'bridge': {
+                    'from_chain': 1,
+                    'to_chain': 100,
+                    'from_address': user_address,
+                    'transfer_id': (transfer_id := (
+                        '0x000000000000000000000000'
+                        '0000000000000000000000000000000000000369'
+                    )),
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=10,
+                timestamp=TimestampMS(1749509175000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_XDAI,
+                amount=FVal(amount),
+                location_label=user_address,
+                counterparty=CPT_GNOSIS_CHAIN,
+                extra_data={'bridge': {
+                    'from_chain': 1,
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': transfer_id,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
