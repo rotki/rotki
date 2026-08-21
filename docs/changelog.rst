@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :release:`1.44.0 <2026-08-21>`
+* :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
+* :feature:`12317` rotki is ready to resolve ENS v2 names.
 * :feature:`-` You can now find an asset on the dashboard or in blockchain balances by pasting its contract address, which is the quickest way to pin down a token whose name you do not know or that shares a symbol with others. An asset whose symbol or name is exactly what you typed is also shown first, so searching for ``eth`` no longer buries ETH under every token that merely contains those letters.
 * :bug:`-` Searching your assets on the dashboard or in blockchain balances now shows the matches as soon as you type. The first search after opening a page used to say there were no results for a second or two, making an asset you hold look like one you do not.
 * :feature:`-` Frankencoin Savings deposits, withdrawals, interest and balances are now supported on Ethereum, Arbitrum One, Base, Gnosis, Optimism and Polygon PoS.

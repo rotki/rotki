@@ -8,7 +8,7 @@ use std::sync::{
 };
 
 use file_rotate::{compression::Compression, suffix::AppendCount, ContentLimit, FileRotate};
-use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::filter::{LevelFilter, Targets};
 use tracing_subscriber::{prelude::*, reload, Registry};
 
 #[repr(usize)]
@@ -98,7 +98,19 @@ impl RotkiLogLevel {
 }
 
 static CURRENT_LOG_LEVEL: AtomicUsize = AtomicUsize::new(RotkiLogLevel::Info as usize);
-static LOG_FILTER_RELOAD_HANDLE: OnceLock<reload::Handle<LevelFilter, Registry>> = OnceLock::new();
+static LOG_FILTER_RELOAD_HANDLE: OnceLock<reload::Handle<Targets, Registry>> = OnceLock::new();
+
+fn log_filter(level: RotkiLogLevel) -> Targets {
+    let dependency_level = match level {
+        RotkiLogLevel::Off => LevelFilter::OFF,
+        RotkiLogLevel::Critical | RotkiLogLevel::Error => LevelFilter::ERROR,
+        RotkiLogLevel::Warning => LevelFilter::WARN,
+        RotkiLogLevel::Info | RotkiLogLevel::Debug | RotkiLogLevel::Trace => LevelFilter::INFO,
+    };
+    Targets::new()
+        .with_target("colibri", LevelFilter::from(level))
+        .with_default(dependency_level)
+}
 
 pub fn current_log_level() -> RotkiLogLevel {
     RotkiLogLevel::from_usize(CURRENT_LOG_LEVEL.load(Ordering::Relaxed))
@@ -107,7 +119,7 @@ pub fn current_log_level() -> RotkiLogLevel {
 pub fn set_log_level(level: RotkiLogLevel) -> Result<(), String> {
     if let Some(handle) = LOG_FILTER_RELOAD_HANDLE.get() {
         handle
-            .modify(|filter| *filter = level.into())
+            .modify(|filter| *filter = log_filter(level))
             .map_err(|error| format!("Failed to update log level: {}", error))?;
     }
     CURRENT_LOG_LEVEL.store(level as usize, Ordering::Relaxed);
@@ -118,7 +130,7 @@ pub fn set_log_level(level: RotkiLogLevel) -> Result<(), String> {
 // or to the stdout. If logs are stored in files they are rotated
 // based on size and there is a max of `max_logfiles_num` files saved.
 pub fn config_logging(args: Args) {
-    let (filter, reload_handle) = reload::Layer::new(args.log_level.into());
+    let (filter, reload_handle) = reload::Layer::new(log_filter(args.log_level));
     CURRENT_LOG_LEVEL.store(args.log_level as usize, Ordering::Relaxed);
     let _ = LOG_FILTER_RELOAD_HANDLE.set(reload_handle);
 
@@ -142,5 +154,30 @@ pub fn config_logging(args: Args) {
             .with_target(false)
             .compact();
         Registry::default().with(filter).with(fmt_layer).init();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{log_filter, RotkiLogLevel};
+    use tracing::Level;
+
+    #[test]
+    fn debug_logging_keeps_dependencies_at_info() {
+        let filter = log_filter(RotkiLogLevel::Debug);
+
+        assert!(filter.would_enable("colibri::icons", &Level::DEBUG));
+        assert!(filter.would_enable("h2::proto::connection", &Level::INFO));
+        assert!(!filter.would_enable("h2::proto::connection", &Level::DEBUG));
+    }
+
+    #[test]
+    fn restrictive_logging_applies_to_dependencies() {
+        let filter = log_filter(RotkiLogLevel::Error);
+
+        assert!(filter.would_enable("colibri::icons", &Level::ERROR));
+        assert!(!filter.would_enable("colibri::icons", &Level::WARN));
+        assert!(filter.would_enable("reqwest", &Level::ERROR));
+        assert!(!filter.would_enable("reqwest", &Level::WARN));
     }
 }
