@@ -4,6 +4,7 @@ import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/a
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { useValuePending } from '@/modules/balances/value-pending';
 import DashboardAssetWarnings from '@/modules/dashboard/DashboardAssetWarnings.vue';
 import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTable.vue';
 import { useDashboardAssetData } from '@/modules/dashboard/use-dashboard-asset-data';
@@ -27,6 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
 // Stores
 const { totalNetWorth } = useDashboardStores();
 const { prices } = storeToRefs(useBalancePricesStore());
+const { isTotalPending, isValuePending } = useValuePending();
 
 // Use composables - sort needs to be defined first for the computed dependency
 const { modelSort, pagination, setPage, setTablePagination, tableHeaders } = useDashboardTableConfig(
@@ -53,6 +55,8 @@ const emptyDescription = computed<string>(() => tableType === DashboardTableType
 function isPriceMissing(asset: string): boolean {
   return get(prices)[asset]?.priceMissing === true;
 }
+
+const totalPending = computed<boolean>(() => isTotalPending(get(sorted)));
 
 // Watch search to reset pagination
 watch(modelSearch, () => setPage(1));
@@ -85,6 +89,7 @@ watch(modelSearch, () => setPage(1));
     <template #shortDetails>
       <FiatDisplay
         :value="total"
+        :loading="totalPending"
         class="text-h6 font-bold"
       />
     </template>
@@ -157,6 +162,7 @@ watch(modelSearch, () => setPage(1));
           :amount="row.amount"
           :price="row.price"
           :value="row.value"
+          :loading="isValuePending(row)"
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
@@ -189,7 +195,10 @@ watch(modelSearch, () => setPage(1));
           :right-patch-colspan="tableHeaders.length - 4"
           class-name="text-sm [&_td]:p-4"
         >
-          <FiatDisplay :value="total" />
+          <FiatDisplay
+            :value="total"
+            :loading="totalPending"
+          />
         </RowAppend>
       </template>
       <template #expanded-item="{ row }">
