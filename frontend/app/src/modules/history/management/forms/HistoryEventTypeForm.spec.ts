@@ -1,9 +1,11 @@
+import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 
 const push = vi.fn(async (): Promise<void> => {});
 const show = vi.fn<(options: unknown, onConfirm: () => void) => void>();
+const findEventTypeData = vi.fn<() => HistoryEventCategoryDetailWithId>();
 
 vi.mock('vue-router', () => ({
   useRouter: (): { push: typeof push } => ({ push }),
@@ -14,19 +16,28 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
 }));
 
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
-  useHistoryEventMappings: (): unknown => ({
-    findEventTypeData: (): { value: { identifier: string } } => ({ value: { identifier: 'receive' } }),
-  }),
+  useHistoryEventMappings: (): unknown => ({ findEventTypeData }),
 }));
 
+function categoryDetail(identifier: string): HistoryEventCategoryDetailWithId {
+  return { direction: 'in', icon: 'lu-download', identifier, label: 'Claim reward' };
+}
+
 describe('forms/HistoryEventTypeForm.vue', () => {
+  const wrappers: VueWrapper[] = [];
+
   beforeEach(() => {
     push.mockClear();
     show.mockClear();
+    findEventTypeData.mockReturnValue(categoryDetail('claim reward'));
+  });
+
+  afterEach(() => {
+    while (wrappers.length > 0) wrappers.pop()?.unmount();
   });
 
   function mountForm(props: Record<string, unknown>): VueWrapper {
-    return mount(HistoryEventTypeForm, {
+    const wrapper = mount(HistoryEventTypeForm, {
       global: {
         stubs: { HistoryEventActionPicker: true },
       },
@@ -37,7 +48,43 @@ describe('forms/HistoryEventTypeForm.vue', () => {
         ...props,
       },
     });
+    wrappers.push(wrapper);
+    return wrapper;
   }
+
+  it('should not warn when the combination resolves for an empty counterparty', () => {
+    const wrapper = mountForm({ counterparty: '' });
+
+    expect(findEventTypeData).toHaveBeenCalledWith(
+      { counterparty: '', eventSubtype: 'reward', eventType: 'staking', location: null },
+      false,
+    );
+    expect(wrapper.find('[data-testid="alert"]').exists()).toBe(false);
+  });
+
+  it('should warn when the combination resolves to no identifier', () => {
+    findEventTypeData.mockReturnValue(categoryDetail(''));
+
+    const wrapper = mountForm({});
+
+    expect(wrapper.find('[data-testid="alert"]').attributes('data-type')).toBe('warning');
+  });
+
+  it('should not warn until both the type and the subtype are set', () => {
+    findEventTypeData.mockReturnValue(categoryDetail(''));
+
+    const wrapper = mountForm({ eventSubtype: '' });
+
+    expect(wrapper.find('[data-testid="alert"]').exists()).toBe(false);
+  });
+
+  it('should not warn when the parent disables the warning', () => {
+    findEventTypeData.mockReturnValue(categoryDetail(''));
+
+    const wrapper = mountForm({ disableWarning: true });
+
+    expect(wrapper.find('[data-testid="alert"]').exists()).toBe(false);
+  });
 
   it('should not render the accounting rule link by default', () => {
     const wrapper = mountForm({});
