@@ -55,6 +55,8 @@ async fn smoldapp_image_query(
                 if let Ok(bytes) = response.bytes().await {
                     return Some((bytes, extension));
                 }
+            } else if status == StatusCode::NOT_FOUND {
+                debug!("No SmolDapp icon found at {}", url);
             } else if let Ok(text) = response.text().await {
                 error!(
                     "Got non success response status when querying SmolDapp for {}. {} - {}",
@@ -464,16 +466,15 @@ async fn write_icon_to_file(path: &Path, extension: &str, icon_bytes: &[u8]) {
 // Writes a zero bytes file to mark that we already tried to query this icon
 // and that it was not possible to find it in our sources for icons.
 async fn write_zero_bytes_file(path: &Path) {
-    let _ = tokio::fs::write(path.with_extension("svg"), [])
-        .await
-        .map_err(|e| {
-            error!(
-                "Unable to write zero bytes file {} due to {}",
-                path.display(),
-                e
-            );
-        });
-    debug!("Wrote zero bytes file {}", path.display());
+    let marker_path = path.with_extension("svg");
+    let _ = tokio::fs::write(&marker_path, []).await.map_err(|e| {
+        error!(
+            "Unable to write zero bytes file {} due to {}",
+            marker_path.display(),
+            e
+        );
+    });
+    debug!("Wrote zero bytes file {}", marker_path.display());
 }
 
 /// Query icon remotely from various sources in order of preference.
