@@ -7,6 +7,7 @@ import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
+import { useNetWorthLoading } from '@/modules/dashboard/use-net-worth-loading';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { isPeriodAllowed } from '@/modules/settings/settings-utils';
@@ -32,6 +33,13 @@ const { updateFrontendSetting } = useSettingsOperations();
 // Was `initial-loading OR section-loading`; on the ledger the first implies the second, so any
 // balance work in flight is the whole condition.
 const { loadingBlockchainBalances: isLoading } = useBalancesLoading();
+// The header waits for the whole first load, once: see the composable for why this cannot be a
+// live loading read.
+const loadingNetWorth = useNetWorthLoading();
+// The delta and the chart wait for every load, not just the first, because a delta computed from
+// a half-loaded total is a number that is wrong while it moves. The latch is what carries them
+// through the first frames, where no balance activity has been submitted yet.
+const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading));
 
 const zoomRange = ref<NetValueZoomRange>();
 
@@ -116,7 +124,13 @@ onMounted(() => {
         class="font-medium"
         data-testid="overall-balances__net-worth"
       >
+        <RuiSkeletonLoader
+          v-if="loadingNetWorth"
+          class="my-[0.5rem] w-56 h-[2rem] sm:my-[0.75rem] sm:w-72 sm:h-[2.5rem]"
+          data-testid="overall-balances__net-worth-loading"
+        />
         <FiatDisplay
+          v-else
           class="text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]"
           no-truncate
           :value="totalNetWorth"
@@ -124,8 +138,9 @@ onMounted(() => {
       </div>
 
       <RuiSkeletonLoader
-        v-if="isLoading"
+        v-if="isBusy"
         class="w-48 h-8"
+        data-testid="overall-balances__delta-loading"
       />
       <div
         v-else
@@ -137,15 +152,11 @@ onMounted(() => {
           size="16"
         />
         <PercentageDisplay
-          v-if="!isLoading"
           class="pr-4"
           :value="percentage"
         />
         <span class="whitespace-nowrap before:content-['('] after:content-[')']">
-          <FiatDisplay
-            v-if="!isLoading"
-            :value="balanceDelta"
-          />
+          <FiatDisplay :value="balanceDelta" />
         </span>
       </div>
     </div>
@@ -166,7 +177,7 @@ onMounted(() => {
           :chart-data="timeframeData"
         />
         <div
-          v-if="isLoading"
+          v-if="isBusy"
           class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-dark-elevated/[0.9] z-[6]"
         >
           <RuiProgress
