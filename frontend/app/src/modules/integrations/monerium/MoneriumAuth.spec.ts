@@ -10,19 +10,27 @@ import MoneriumAuth from './MoneriumAuth.vue';
 /**
  * The seam: every notification this card raises belongs to one connection flow, so it must be
  * dispatched under the shared Monerium group. Grouping is what makes the dispatcher replace the
- * previous step instead of leaving "Authorizing...", "Successfully authenticated" and a stale
- * "session key expired" warning stacked in the notification panel.
+ * previous step instead of leaving "Authorizing..." and a stale "session key expired" warning
+ * stacked in the notification panel.
+ *
+ * Success is the exception, and deliberately raises nothing: the card itself flips to the
+ * connected state, so the outcome is already on screen and the flow only clears what its earlier
+ * steps left behind.
  */
 
-const { mockCompleteOAuth, mockNotify, mockOpenUrl } = vi.hoisted(() => ({
+const { mockCompleteOAuth, mockNotify, mockOpenUrl, mockRemoveMatching } = vi.hoisted(() => ({
   mockCompleteOAuth: vi.fn(),
   mockNotify: vi.fn(),
   mockOpenUrl: vi.fn(),
+  mockRemoveMatching: vi.fn<(predicate: (notification: { group?: NotificationGroup }) => boolean) => void>(),
 }));
 let oAuthHandler: ((result: OAuthResult) => Promise<void> | void) | undefined;
 
-vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
-  useNotificationDispatcher: vi.fn(() => ({ notify: mockNotify })),
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: vi.fn(() => ({
+    notify: mockNotify,
+    removeMatching: mockRemoveMatching,
+  })),
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
@@ -96,7 +104,7 @@ describe('moneriumAuth', () => {
     }));
   });
 
-  it('should group the notification for a completed authorization', async () => {
+  it('should raise no notification when the authorization completes', async () => {
     expect(oAuthHandler).toBeDefined();
     await oAuthHandler?.({
       accessToken: 'access',
@@ -105,11 +113,26 @@ describe('moneriumAuth', () => {
       success: true,
     });
 
-    expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({
-      group: NotificationGroup.MONERIUM_AUTH,
-      message: 'connected',
-      severity: Severity.INFO,
-    }));
+    // the card reports this inline by flipping to its connected state
+    expect(mockCompleteOAuth).toHaveBeenCalledOnce();
+    expect(mockNotify).not.toHaveBeenCalled();
+  });
+
+  it('should clear the flow notifications when the authorization completes', async () => {
+    await oAuthHandler?.({
+      accessToken: 'access',
+      refreshToken: 'refresh',
+      service: 'monerium',
+      success: true,
+    });
+
+    expect(mockRemoveMatching).toHaveBeenCalledOnce();
+    const [predicate] = mockRemoveMatching.mock.calls[0];
+    // the earlier steps of this flow go, including the session-expired warning that shares the
+    // group and is what the re-authentication just resolved; nothing else does
+    expect(predicate({ group: NotificationGroup.MONERIUM_AUTH })).toBe(true);
+    expect(predicate({ group: NotificationGroup.MISSING_API_KEY })).toBe(false);
+    expect(predicate({})).toBe(false);
   });
 
   it('should group the notification for a failed authorization', async () => {
