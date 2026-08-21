@@ -3293,6 +3293,7 @@
         "connected_address": "Connected Address",
         "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
         "disconnect": "Disconnect Wallet",
+        "domain_notice": "Your wallet may warn that the site does not match the domain in the message. This is expected: the page asking for the signature is not served from rotki.com, but Gnosis Pay only accepts rotki.com in the message. Before approving, check that the message names Gnosis Pay and the address is yours.",
         "explanation": "To authenticate with Gnosis Pay, you need to sign a message with an Ethereum wallet that is a controller of the Gnosis Pay Safe.",
         "failed": "Failed to authenticate Gnosis Pay",
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
