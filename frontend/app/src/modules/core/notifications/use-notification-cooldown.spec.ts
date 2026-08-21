@@ -71,6 +71,16 @@ describe('useNotificationCooldown', () => {
     expect(cooldown.shouldSuppress(scheduled)).toBe(true);
   });
 
+  it('should not suppress a step of a flow the user just started', () => {
+    // Monerium's steps replace each other, so the second one is the outcome of the first, not a
+    // repeat of it: suppressing it would leave the user with "opening browser" and no result.
+    cooldown.recordDisplay(NotificationGroup.MONERIUM_AUTH);
+
+    vi.setSystemTime(START + 5000);
+
+    expect(cooldown.shouldSuppress(NotificationGroup.MONERIUM_AUTH)).toBe(false);
+  });
+
   it('should suppress a scheduled group for 24 hours after the first display', () => {
     cooldown.recordDisplay(scheduled);
 

@@ -28,6 +28,16 @@ const SCHEDULED_GROUPS: Set<NotificationGroup> = new Set([
   NotificationGroup.NO_AVAILABLE_INDEXERS,
 ]);
 
+/**
+ * Groups whose entries are the successive steps of one flow the user just started, rather than
+ * repeats of the same condition. Each step replaces the one before it, so the burst cooldown would
+ * silence the outcome of an action taken seconds ago: the user would be told the browser is opening
+ * and never told whether the authorization worked.
+ */
+const UNTHROTTLED_GROUPS: Set<NotificationGroup> = new Set([
+  NotificationGroup.MONERIUM_AUTH,
+]);
+
 /** Coalescing window for schedule writes, which each persist the whole frontend settings blob. */
 const FLUSH_DEBOUNCE_MS = 2000;
 
@@ -40,6 +50,11 @@ export interface UseNotificationCooldownReturn {
 function isScheduled(group: NotificationGroupKey): boolean {
   const name = notificationGroupOf(group);
   return name !== undefined && SCHEDULED_GROUPS.has(name);
+}
+
+function isUnthrottled(group: NotificationGroupKey): boolean {
+  const name = notificationGroupOf(group);
+  return name !== undefined && UNTHROTTLED_GROUPS.has(name);
 }
 
 /** Memoises `factory`, so its dependencies are only resolved once something actually needs them. */
@@ -107,6 +122,9 @@ export const useNotificationCooldown = createSharedComposable((): UseNotificatio
   }, { debounce: FLUSH_DEBOUNCE_MS });
 
   function shouldSuppress(group: NotificationGroupKey): boolean {
+    if (isUnthrottled(group))
+      return false;
+
     const lastTime = get(lastDisplay)[group] ?? 0;
     if (Date.now() - lastTime < NOTIFICATION_COOLDOWN_MS)
       return true;
