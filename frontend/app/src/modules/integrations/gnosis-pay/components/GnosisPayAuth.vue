@@ -119,7 +119,7 @@ const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
 
 // Wallet providers
 const walletStore = useWalletStore();
-const { connectedChainId, isDisconnecting, preparing } = storeToRefs(walletStore);
+const { connectedChainId, isDisconnecting, isWalletConnect, preparing } = storeToRefs(walletStore);
 const { switchNetwork } = walletStore;
 
 const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === GNOSIS_CHAIN_ID);
@@ -422,6 +422,7 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
             :is-on-gnosis-chain="isOnGnosisChain"
             :is-wallet-connected="isWalletConnected"
             :switching-network="switchingNetwork"
+            :is-injected-wallet="!isWalletConnect"
             @sign-in="signInWithEthereum()"
             @cancel="cancelSigning()"
             @switch-to-gnosis="switchToGnosis()"

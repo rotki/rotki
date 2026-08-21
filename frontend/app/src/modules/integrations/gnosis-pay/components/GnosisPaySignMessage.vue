@@ -5,6 +5,13 @@ interface Props {
   isOnGnosisChain: boolean;
   isWalletConnected: boolean;
   switchingNetwork: boolean;
+  /**
+   * True whenever the signature is requested through an injected wallet, so the wallet has a real
+   * page origin to compare the message domain against and it can never be `rotki.com`: the packaged
+   * app serves the bridge page from localhost, a self-hosted deployment from its own host. Only
+   * WalletConnect has no origin, and there the notice would be noise.
+   */
+  isInjectedWallet: boolean;
 }
 
 defineProps<Props>();
@@ -23,6 +30,15 @@ const { t } = useI18n({ useScope: 'global' });
     <div class="text-rui-text-secondary text-sm">
       {{ t('external_services.gnosispay.siwe.sign_explanation') }}
     </div>
+
+    <!-- Wallets compare the message domain against the requesting origin, which no injected path can satisfy -->
+    <RuiAlert
+      v-if="isInjectedWallet"
+      type="info"
+      data-testid="siwe-domain-notice"
+    >
+      {{ t('external_services.gnosispay.siwe.domain_notice') }}
+    </RuiAlert>
 
     <!-- Warning when not on Gnosis chain -->
     <RuiAlert
