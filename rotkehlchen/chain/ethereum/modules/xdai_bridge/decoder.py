@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
@@ -7,7 +8,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import set_bridge_extra_data
-from rotkehlchen.chain.evm.decoding.xdai_bridge.decoder import XdaiBridgeCommonDecoder
+from rotkehlchen.chain.evm.decoding.xdai_bridge.decoder import (
+    XdaiBridgeCommonDecoder,
+    get_logged_transfer_id,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -58,6 +62,31 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
             ),
         )
 
+    def _find_deposit_transfer_id(self, context: EnricherContext) -> str:
+        """Find the id the gnosis side will use to reference this deposit.
+
+        A deposit the bridge logs with a nonce is affirmed on gnosis by that nonce, while
+        one it does not log at all is affirmed by the source transaction hash. The bridge
+        logs the deposit right after taking the tokens, so the log is looked up by amount
+        among those following the transfer being enriched. That way a transaction bridging
+        more than once does not take the id of another of its transfers.
+        """
+        for tx_log in context.all_logs:
+            if (
+                tx_log.log_index > context.tx_log.log_index and
+                tx_log.address == BRIDGE_ADDRESS and
+                len(tx_log.topics) != 0 and
+                tx_log.topics[0] == USER_REQUESTED_FOR_AFFIRMATION_WITH_NONCE and
+                asset_normalized_value(
+                    amount=int.from_bytes(tx_log.data[32:64]),
+                    asset=context.token,
+                ) == context.event.amount and
+                (transfer_id := get_logged_transfer_id(tx_log)) is not None
+            ):
+                return transfer_id
+
+        return context.transaction.tx_hash.hex()
+
     def _maybe_enrich_dai_transfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
         """Unfortunately not all xDAI bridging emits the event we match.
 
@@ -80,8 +109,7 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
                 from_chain=ChainID.ETHEREUM,
                 to_chain=ChainID.GNOSIS,
                 from_address=context.transaction.from_address,
-                # the gnosis side AffirmationCompleted event references this tx hash
-                transfer_id=context.transaction.tx_hash.hex(),
+                transfer_id=self._find_deposit_transfer_id(context),
             )
             return TransferEnrichmentOutput(matched_counterparty=CPT_GNOSIS_CHAIN)
         return FAILED_ENRICHMENT_OUTPUT
