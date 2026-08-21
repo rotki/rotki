@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
-import { Severity } from '@rotki/common';
+import { NotificationGroup, type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -46,10 +46,24 @@ const cardAction = computed<ServiceKeyAction>(() => ({
   primary: t('external_services.monerium.connect'),
 }));
 
+/**
+ * Every notification raised here is a step of the same connection flow - opening the browser,
+ * the outcome of the callback, a disconnect - so they all share one group. The dispatcher then
+ * replaces the entry of the previous step instead of leaving a trail of stale ones behind, and
+ * the same group carries the session-expired warning, which a successful re-authentication is
+ * meant to clear.
+ */
+function notifyAuthStep(payload: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
+  notify({
+    ...payload,
+    display: true,
+    group: NotificationGroup.MONERIUM_AUTH,
+  });
+}
+
 function notifyOAuthError(error: unknown): void {
   logger.error('Monerium OAuth failed:', error);
-  notify({
-    display: true,
+  notifyAuthStep({
     message: getErrorMessage(error) || t('external_services.monerium.auth_failed'),
     severity: Severity.ERROR,
     title: t('external_services.monerium.error'),
@@ -79,8 +93,7 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
       expiresIn ?? 3600,
     );
 
-    notify({
-      display: true,
+    notifyAuthStep({
       message: result.message,
       severity: Severity.INFO,
       title: t('external_services.monerium.success'),
@@ -116,8 +129,7 @@ async function connect(): Promise<void> {
       set(showTokenInput, true);
     }
 
-    notify({
-      display: true,
+    notifyAuthStep({
       message: t('external_services.monerium.opening_browser'),
       severity: Severity.INFO,
       title: t('external_services.monerium.authorizing'),
@@ -135,8 +147,7 @@ async function disconnect(): Promise<void> {
   set(isAuthorizing, true);
   try {
     await disconnectOAuth();
-    notify({
-      display: true,
+    notifyAuthStep({
       message: t('external_services.monerium.disconnected'),
       severity: Severity.INFO,
       title: t('external_services.monerium.success'),
@@ -152,8 +163,7 @@ async function disconnect(): Promise<void> {
 
 async function submitManualToken(): Promise<void> {
   if (!get(manualAccessToken) || !get(manualRefreshToken)) {
-    notify({
-      display: true,
+    notifyAuthStep({
       message: t('external_services.monerium.token_required'),
       severity: Severity.ERROR,
       title: t('external_services.monerium.error'),
