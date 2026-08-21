@@ -10,6 +10,7 @@ import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search
 import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
+import { useValuePending } from '@/modules/balances/value-pending';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
@@ -61,6 +62,7 @@ const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances
 const currencySymbol = useSetting('currencySymbol');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
+const { isTotalPending, isValuePending } = useValuePending();
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
@@ -76,6 +78,8 @@ function expand(item: AssetBalanceWithPrice) {
 }
 
 const total = computed<BigNumber>(() => bigNumberSum(get(matches).map(({ value }) => value)));
+
+const totalPending = computed<boolean>(() => isTotalPending(get(matches)));
 
 function percentageOfTotalNetValue(val: BigNumber): string {
   return calculatePercentage(val, get(totalNetWorth));
@@ -216,6 +220,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :amount="row.amount"
         :price="row.price"
         :value="row.value"
+        :loading="isValuePending(row)"
       />
     </template>
     <template #item.percentageOfTotalNetValue="{ row }">
@@ -241,7 +246,10 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :right-patch-colspan="2"
         class-name="[&>td]:p-4 text-sm"
       >
-        <FiatDisplay :value="total" />
+        <FiatDisplay
+          :value="total"
+          :loading="totalPending"
+        />
       </RowAppend>
     </template>
     <template #expanded-item="{ row }">
