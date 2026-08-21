@@ -84,6 +84,7 @@ from rotkehlchen.types import (
     EVM_LOCATIONS,
     ChainID,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
 )
@@ -120,6 +121,11 @@ SLOW_BRIDGE_MATCH_WINDOWS: Final[dict[str, int]] = {
     CPT_ZKSYNC: 7 * DAY_IN_SECONDS,
     CPT_GNOSIS_CHAIN: 7 * DAY_IN_SECONDS,  # gnosis -> ethereum claims are manual
 }
+# Legs rotki decodes without a counterparty. Their location is then the only thing saying
+# which bridge, and so which settlement window, they belong to.
+BRIDGE_COUNTERPARTY_BY_LOCATION: Final[dict[Location, str]] = {
+    Location.ZKSYNC_LITE: CPT_ZKSYNC,
+}
 
 
 def get_event_bridge_data(event: HistoryBaseEntry) -> dict[str, Any]:
@@ -143,8 +149,14 @@ def _location_chain_label(location: Location) -> str:
     return str(location)
 
 
-def get_bridge_match_window(counterparty: str | None, default_window: int) -> int:
-    """Candidate search window in seconds for a bridge deposit of this counterparty."""
+def get_bridge_match_window(event: HistoryBaseEntry, default_window: int) -> int:
+    """Candidate search window in seconds for this bridge deposit.
+
+    Which bridge a leg belongs to is normally read off its counterparty. The legs rotki
+    decodes without one, such as a zksync lite exit, are recognized by their location.
+    """
+    if (counterparty := getattr(event, 'counterparty', None)) is None:
+        counterparty = BRIDGE_COUNTERPARTY_BY_LOCATION.get(event.location)
     if counterparty is not None and (slow_window := SLOW_BRIDGE_MATCH_WINDOWS.get(counterparty)) is not None:  # noqa: E501
         return max(slow_window, default_window)
     return default_window
@@ -172,6 +184,15 @@ def get_unmatched_bridge_events(
                 ],
             ),
         )
+        deposits.extend(events_db.get_history_events_internal(
+            cursor=cursor,  # exits bridge out too, they just cannot state their amount yet
+            filter_query=HistoryEventFilterQuery.make(
+                location=Location.ZKSYNC_LITE,
+                type_and_subtype_combinations=[
+                    (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+                ],
+            ),
+        ))
         excluded_ids = get_already_matched_event_ids(
             cursor=cursor,
             link_type=HistoryEventLinkType.BRIDGE_MATCH,
@@ -216,6 +237,23 @@ def _events_conflict_on_bridge_data(
         (to_address := deposit_data.get('to_address')) is not None and
         candidate.location_label is not None and
         candidate.location_label != to_address
+    )
+
+
+def is_zksync_lite_exit(event: HistoryBaseEntry) -> bool:
+    """Check whether the event is a zksync lite forced or full exit.
+
+    Such an exit sweeps the account's whole balance of one token, so the amount is only
+    settled when the rollup executes it and the zksync API never states it. rotki decodes
+    it as an informational event with a zero amount, which is the only informational event
+    it creates for that chain. It is a real bridging out though, so it is matched on asset
+    and recipient alone and promoted to a proper bridge leg, taking its amount from the
+    ethereum leg that paid it out, once that counterpart is found.
+    """
+    return (
+        event.location == Location.ZKSYNC_LITE and
+        event.event_type == HistoryEventType.INFORMATIONAL and
+        event.event_subtype == HistoryEventSubType.NONE
     )
 
 
@@ -303,6 +341,18 @@ def _bridge_candidate_tier(
     receives/spends that could be an undecoded counterpart leg, or None if the
     candidate cannot be the counterpart.
     """
+    if is_zksync_lite_exit(bridge_event):
+        # The exit states no amount, so only its asset and recipient can identify the
+        # payout. Nothing weaker than an identified bridge leg is accepted, since the
+        # match is what the exit's amount gets taken from.
+        return 'close' if (
+            candidate.identifier not in excluded_ids and
+            candidate.location != bridge_event.location and
+            _is_bridge_withdrawal(candidate) and
+            candidate.asset == bridge_event.asset and
+            candidate.location_label == bridge_event.location_label
+        ) else None
+
     anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
     deposit_side, withdrawal_side = (
         (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
@@ -533,6 +583,23 @@ def update_bridge_matched_event(
     DB. A fee is inferred only when both legs use economically equivalent assets.
     Both edits keep backups so unlinking can restore them.
     """
+    if is_zksync_lite_exit(bridge_event):  # promote it now that its payout is known
+        bridge_event.amount = matched_event.amount
+        bridge_event.event_type = HistoryEventType.DEPOSIT
+        bridge_event.event_subtype = HistoryEventSubType.BRIDGE
+        if isinstance(bridge_event, OnchainEvent):
+            bridge_event.counterparty = CPT_ZKSYNC
+        bridge_event.notes = (
+            f'Bridge {bridge_event.amount} '
+            f'{bridge_event.asset.resolve_to_asset_with_symbol().symbol} '
+            f'from ZKSync Lite to Ethereum'
+        )
+        bridge_event.extra_data = (bridge_event.extra_data or {}) | {BRIDGE_EXTRA_DATA_KEY: {
+            'from_chain': SupportedBlockchain.ZKSYNC_LITE.serialize(),
+            'to_chain': ChainID.ETHEREUM.serialize(),
+            'to_address': bridge_event.location_label,
+        }}
+
     anchor_counterparty = getattr(bridge_event, 'counterparty', None)
     anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
     expected_type = (
@@ -967,7 +1034,7 @@ def match_bridge_transactions(
                         excluded_ids=excluded_ids,
                         tolerance=settings.bridge_match_amount_tolerance,
                         match_window=get_bridge_match_window(
-                            counterparty=getattr(deposit, 'counterparty', None),
+                            event=deposit,
                             default_window=settings.bridge_match_time_range,
                         ),
                     )
