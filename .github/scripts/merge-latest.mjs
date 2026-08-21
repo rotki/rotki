@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import process from 'node:process';
-import yaml from 'js-yaml';
+import { dump, load } from 'js-yaml';
 import consola from 'consola';
 
 // get two file paths from arguments:
@@ -31,7 +31,7 @@ function readManifest(file) {
 
     let manifest;
     try {
-        manifest = yaml.load(fs.readFileSync(file, 'utf8'));
+        manifest = load(fs.readFileSync(file, 'utf8'));
     }
     catch (error) {
         fail(`${file} is not valid yaml: ${error.message}`);
@@ -65,6 +65,6 @@ const merged = { ...yaml1, ...yaml2, files: [...yaml2.files, ...yaml1.files] };
 consola.debug('merged content: \n', merged);
 
 consola.info(`writing file: ${file3}`);
-const mergedYml = yaml.dump(merged);
+const mergedYml = dump(merged);
 fs.writeFileSync(file3, mergedYml, 'utf8');
 consola.info(`complete`);
