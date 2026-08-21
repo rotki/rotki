@@ -1,0 +1,8 @@
+# Standalone pnpm root for the CI/release scripts.
+# Mirrors the supply-chain hardening used by frontend/pnpm-workspace.yaml so
+# these dependencies get the same treatment as the application ones.
+blockExoticSubdeps: true
+minimumReleaseAge: 10080
+saveExact: true
+strictDepBuilds: true
+trustPolicy: no-downgrade

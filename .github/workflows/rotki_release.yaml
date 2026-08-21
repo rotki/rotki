@@ -315,6 +315,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
+        with:
+          package_json_file: .github/scripts/package.json
+
       - name: Setup node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
@@ -330,7 +335,7 @@ jobs:
 
       - name: Merge latest-mac.yml
         run: |
-          npm i js-yaml consola --prefix ./.github/scripts         
+          pnpm install --dir ./.github/scripts --frozen-lockfile
           node ./.github/scripts/merge-latest.mjs latest-mac/latest-mac-x86_64.yml latest-mac/latest-mac-arm64.yml latest-mac.yml
 
       - name: Upload to release
