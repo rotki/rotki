@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import UnmatchedBridgesList from '@/modules/history/events/UnmatchedBridgesList.vue';
+import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useBridgeTransactionActions } from '@/modules/history/events/use-bridge-transaction-actions';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 
@@ -39,12 +40,15 @@ const {
   confirmCreateCounterpart,
   confirmIgnoreSelected,
   confirmRestoreSelected,
+  dismissResolution,
   ignoreLoading,
   ignoreTransaction,
   markExternal,
   restoreTransaction,
+  resolutionNotice,
   modelSelectedIgnored,
   modelSelectedUnmatched,
+  undoResolution,
 } = useBridgeTransactionActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
@@ -106,6 +110,20 @@ onBeforeMount(async () => {
       </RuiChip>
     </RuiTab>
   </RuiTabs>
+
+  <!-- A resolution reports itself here rather than as a notification: the outcome and its undo
+       belong next to the list they changed, and the panel the action was taken from is still
+       open. It sits above both branches so it shows on either tab, since an undo puts the leg
+       back in the unmatched one. -->
+  <UnmatchedResolutionStrip
+    v-if="resolutionNotice"
+    :message="resolutionNotice.message"
+    :loading="ignoreLoading"
+    class="shrink-0"
+    :class="isPinned ? 'mx-3 mt-3' : 'mt-4'"
+    @undo="startPromise(undoResolution())"
+    @dismiss="dismissResolution()"
+  />
 
   <!-- Pinned bypasses RuiTabItems: it sizes itself from its content and hides the overflow, so
        in a bounded column the bottom of the panel - the pager - is silently cut off. Rendering

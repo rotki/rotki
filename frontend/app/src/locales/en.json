@@ -526,17 +526,9 @@
         "description": "Failed to match bridge transaction: {error}",
         "title": "Bridge Transaction Matching"
       },
-      "external_success": {
-        "description": "Bridge deposit marked as a payment to an external address.",
-        "title": "Bridge Transaction Resolved"
-      },
       "fetch_error": {
         "description": "Failed to fetch unmatched bridge transactions: {error}",
         "title": "Fetching Unmatched Bridge Transactions"
-      },
-      "ignored": {
-        "description": "It moved to the ignored list.",
-        "title": "Transaction ignored"
       },
       "success": {
         "description": "Bridge transaction successfully matched to its counterpart event.",
@@ -1878,6 +1870,7 @@
     "dialog": {
       "confirm_ignore": "Ignore this transaction?",
       "confirm_mark_external": "Resolve as an external payment?",
+      "confirm_mark_external_in": "Resolve as external income?",
       "create_counterpart": "Create Counterpart",
       "create_counterpart_in_tooltip": "Create a synthetic mirror event on the source chain and link it to this bridge withdrawal. Use this when the source chain can no longer be queried, so the transfer stays a movement of your own funds.",
       "create_counterpart_tooltip": "Create a synthetic mirror event on the destination chain and link it to this bridge deposit. Use this when the destination chain can no longer be queried, so the transfer stays a movement of your own funds.",
@@ -1907,6 +1900,11 @@
     "premium": {
       "free_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. {link} to unlock this feature.",
       "premium_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+    },
+    "resolved": {
+      "external_deposit": "Bridge deposit resolved as a payment to an external address.",
+      "external_withdrawal": "Bridge withdrawal resolved as income from an external address.",
+      "ignored": "Bridge transaction marked as having no counterpart. It moved to the ignored list."
     }
   },
   "calendar": {
