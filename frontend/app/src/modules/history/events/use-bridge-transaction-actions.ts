@@ -1,5 +1,4 @@
-import type { Ref } from 'vue';
-import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import type { ComputedRef, Ref } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -12,16 +11,29 @@ interface UseBridgeTransactionActionsOptions {
   onActionComplete?: () => Promise<void>;
 }
 
+/**
+ * What the panel says about the resolution the user just made, and the leg an undo would
+ * restore. The wording is decided here rather than by the presentation, since it depends on
+ * the leg's direction: a resolved deposit is a payment out, a resolved withdrawal is income.
+ */
+interface BridgeResolutionNotice {
+  message: string;
+  transaction: UnmatchedBridgeTransaction;
+}
+
 interface UseBridgeTransactionActionsReturn {
   ignoreLoading: Readonly<Ref<boolean>>;
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
+  resolutionNotice: ComputedRef<BridgeResolutionNotice | undefined>;
   confirmCreateCounterpart: (transaction: UnmatchedBridgeTransaction) => void;
   confirmIgnoreSelected: () => void;
   confirmRestoreSelected: () => void;
+  dismissResolution: () => void;
   markExternal: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
   ignoreTransaction: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
   restoreTransaction: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
+  undoResolution: () => Promise<void>;
 }
 
 export function useBridgeTransactionActions(
@@ -41,12 +53,16 @@ export function useBridgeTransactionActions(
 
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
   const { show } = useConfirmStore();
-  const { notify, showErrorMessage } = useNotifications();
+  const { showErrorMessage } = useNotifications();
   const { getChainName } = useSupportedChains();
 
   const ignoreLoading = shallowRef<boolean>(false);
   const modelSelectedUnmatched = ref<string[]>([]);
   const modelSelectedIgnored = ref<string[]>([]);
+  const notice = shallowRef<BridgeResolutionNotice>();
+  // Exposed through a computed rather than readonly(): the notice carries the leg itself, and
+  // deep-readonly does not survive the BigNumber fields its events hold.
+  const resolutionNotice = computed<BridgeResolutionNotice | undefined>(() => get(notice));
 
   /**
    * A row that just left the list must not stay selected, otherwise the "ignore selected"
@@ -71,20 +87,27 @@ export function useBridgeTransactionActions(
    * Reversible work reports itself with an undo affordance instead of asking first with a
    * modal: both ignoring and resolving as external are undone by the same unlink call,
    * which the backend uses to clear the marker and restore the event from its backup.
+   *
+   * It reports in the panel the action was taken from rather than as a notification, so the
+   * outcome and its undo sit next to the list they changed. Only the latest resolution is
+   * held, which costs nothing durable: resolving as external also writes the leg to
+   * `history_event_link_ignores`, so it lands in the ignored tab and keeps a Restore there
+   * long after the notice is gone.
    */
-  function notifyUndoable(title: string, message: string, transaction: UnmatchedBridgeTransaction): void {
-    notify({
-      action: {
-        action: async () => restoreTransaction(transaction),
-        label: t('common.actions.undo'),
-      },
-      category: NotificationCategory.DEFAULT,
-      display: true,
-      message,
-      priority: Priority.ACTION,
-      severity: Severity.INFO,
-      title,
-    });
+  function reportResolution(message: string, transaction: UnmatchedBridgeTransaction): void {
+    set(notice, { message, transaction });
+  }
+
+  function dismissResolution(): void {
+    set(notice, undefined);
+  }
+
+  async function undoResolution(): Promise<void> {
+    const current = get(notice);
+    if (!current)
+      return;
+
+    await restoreTransaction(current.transaction);
   }
 
   function formatChain(chain: string | number | undefined): string | undefined {
@@ -100,11 +123,7 @@ export function useBridgeTransactionActions(
       deselect(transaction);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
-      notifyUndoable(
-        t('actions.bridge_matching.ignored.title'),
-        t('actions.bridge_matching.ignored.description'),
-        transaction,
-      );
+      reportResolution(t('bridge_matching.resolved.ignored'), transaction);
     }
     catch (error: unknown) {
       notifyActionFailure('Failed to ignore bridge transaction:', error);
@@ -119,6 +138,11 @@ export function useBridgeTransactionActions(
     try {
       await unlinkBridgeTransaction(transaction.identifier);
       deselect(transaction);
+      // Whether the restore came from the notice's undo or from the row's own action, the
+      // notice now describes something that is no longer true.
+      if (get(notice)?.transaction.identifier === transaction.identifier)
+        dismissResolution();
+
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
     }
@@ -138,9 +162,10 @@ export function useBridgeTransactionActions(
         deselect(transaction);
         await refreshUnmatchedBridgeTransactions();
         await onActionComplete?.();
-        notifyUndoable(
-          t('actions.bridge_matching.external_success.title'),
-          t('actions.bridge_matching.external_success.description'),
+        reportResolution(
+          transaction.direction === 'deposit'
+            ? t('bridge_matching.resolved.external_deposit')
+            : t('bridge_matching.resolved.external_withdrawal'),
           transaction,
         );
       }
@@ -245,11 +270,14 @@ export function useBridgeTransactionActions(
     confirmCreateCounterpart,
     confirmIgnoreSelected,
     confirmRestoreSelected,
+    dismissResolution,
     markExternal,
     ignoreLoading: readonly(ignoreLoading),
     ignoreTransaction,
     restoreTransaction,
+    resolutionNotice,
     modelSelectedIgnored,
     modelSelectedUnmatched,
+    undoResolution,
   };
 }

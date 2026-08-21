@@ -133,7 +133,11 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
     if (!row.untrackedCounterpart) {
       confirms[UNMATCHED_ACTIONS.MARK_EXTERNAL] = {
         confirmLabel: t('bridge_matching.dialog.mark_external'),
-        message: t('bridge_matching.dialog.confirm_mark_external'),
+        // A deposit is resolved as a payment out, a withdrawal as income in. Asking about a
+        // payment either way misdescribes half of what the user is about to confirm.
+        message: row.direction === 'deposit'
+          ? t('bridge_matching.dialog.confirm_mark_external')
+          : t('bridge_matching.dialog.confirm_mark_external_in'),
       };
     }
 

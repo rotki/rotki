@@ -15,7 +15,6 @@ const { spies } = vi.hoisted(() => ({
     showErrorMessage: vi.fn(),
     getChainName: vi.fn((chain: string) => chain.toUpperCase()),
     isCounterpartUntracked: vi.fn<() => boolean>(() => false),
-    notify: vi.fn(),
   },
 }));
 
@@ -60,7 +59,6 @@ vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
   useNotifications: (): object => ({
-    notify: spies.notify,
     showErrorMessage: spies.showErrorMessage,
   }),
 }));
@@ -135,6 +133,20 @@ describe('use-bridge-transaction-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
+    it('should report the ignore in place, with an undo that restores it', async () => {
+      const composable = useBridgeTransactionActions();
+
+      await composable.ignoreTransaction(createMockTransaction({ identifier: 42 }));
+
+      expect(get(composable.resolutionNotice)).toMatchObject({
+        message: 'bridge_matching.resolved.ignored',
+      });
+
+      await composable.undoResolution();
+
+      expect(spies.unlinkBridgeTransaction).toHaveBeenCalledWith(42);
+    });
+
     it('should drop the ignored leg from the current selection', async () => {
       const composable = useBridgeTransactionActions();
       set(composable.modelSelectedUnmatched, ['42', '55']);
@@ -177,31 +189,71 @@ describe('use-bridge-transaction-actions', () => {
       expect(spies.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
     });
 
-    it('should report the result with an undo that unlinks it again', async () => {
-      const { markExternal } = useBridgeTransactionActions();
+    it('should report the result in place, with an undo that unlinks it again', async () => {
+      const composable = useBridgeTransactionActions();
 
-      await markExternal(createMockTransaction({ identifier: 21 }));
+      await composable.markExternal(createMockTransaction({ identifier: 21 }));
 
-      expect(spies.notify).toHaveBeenCalledOnce();
-      const [notification] = spies.notify.mock.calls[0];
-      expect(notification).toMatchObject({
-        action: { label: 'common.actions.undo' },
-        title: 'actions.bridge_matching.external_success.title',
+      expect(get(composable.resolutionNotice)).toMatchObject({
+        message: 'bridge_matching.resolved.external_deposit',
       });
 
-      await notification.action.action();
+      await composable.undoResolution();
 
       expect(spies.unlinkBridgeTransaction).toHaveBeenCalledWith(21);
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    // The regression this pair pins: a withdrawal is resolved as income from an untracked
+    // source, not as a payment out, and the backend event ends up a receive. Reporting the
+    // deposit wording for both directions describes half of them as the opposite transfer.
+    it('should describe a resolved withdrawal as income rather than a payment', async () => {
+      const composable = useBridgeTransactionActions();
+
+      await composable.markExternal(createMockTransaction({ direction: 'withdrawal' }));
+
+      expect(get(composable.resolutionNotice)).toMatchObject({
+        message: 'bridge_matching.resolved.external_withdrawal',
+      });
     });
 
     it('should not refresh or report when resolving as external fails', async () => {
       spies.resolveExternal.mockResolvedValueOnce({ message: 'nope', success: false });
-      const { markExternal } = useBridgeTransactionActions();
+      const composable = useBridgeTransactionActions();
 
-      await markExternal(createMockTransaction());
+      await composable.markExternal(createMockTransaction());
 
       expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();
-      expect(spies.notify).not.toHaveBeenCalled();
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    it('should drop the notice once the leg it describes is restored from its row', async () => {
+      const composable = useBridgeTransactionActions();
+      const transaction = createMockTransaction({ identifier: 21 });
+
+      await composable.markExternal(transaction);
+      await composable.restoreTransaction(transaction);
+
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    it('should keep the notice when an unrelated leg is restored', async () => {
+      const composable = useBridgeTransactionActions();
+
+      await composable.markExternal(createMockTransaction({ identifier: 21 }));
+      await composable.restoreTransaction(createMockTransaction({ identifier: 99 }));
+
+      expect(get(composable.resolutionNotice)).toBeDefined();
+    });
+
+    it('should drop the notice when it is dismissed', async () => {
+      const composable = useBridgeTransactionActions();
+
+      await composable.markExternal(createMockTransaction());
+      composable.dismissResolution();
+
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+      expect(spies.unlinkBridgeTransaction).not.toHaveBeenCalled();
     });
   });
 
