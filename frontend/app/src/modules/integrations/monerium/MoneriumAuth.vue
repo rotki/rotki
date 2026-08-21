@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
-import { NotificationGroup, type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
+import { type Notification, NotificationGroup, Severity } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
@@ -32,7 +32,7 @@ const manualAccessToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
 
 const { isPackaged, openUrl } = useInterop();
-const { notify } = useNotificationDispatcher();
+const { notify, removeMatching } = useNotifications();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessages();
 const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 
@@ -53,12 +53,24 @@ const cardAction = computed<ServiceKeyAction>(() => ({
  * the same group carries the session-expired warning, which a successful re-authentication is
  * meant to clear.
  */
-function notifyAuthStep(payload: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
+function notifyAuthStep(payload: Notification): void {
   notify({
     ...payload,
     display: true,
     group: NotificationGroup.MONERIUM_AUTH,
   });
+}
+
+/**
+ * A successful authorization already reports itself where the user is looking: the card flips to
+ * the connected state naming the account. Saying it again in the notification area would leave an
+ * entry to dismiss for something already on screen, so success instead clears the flow's own
+ * trail - the "opening browser" step, and the session-expired warning that shares this group and
+ * is exactly what the re-authentication just resolved. One call is enough because a group holds a
+ * single entry: the dispatcher replaces it rather than appending.
+ */
+function clearAuthNotifications(): void {
+  removeMatching(({ group }) => group === NotificationGroup.MONERIUM_AUTH);
 }
 
 function notifyOAuthError(error: unknown): void {
@@ -87,17 +99,13 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
     }
 
     set(isAuthorizing, true);
-    const result = await completeOAuth(
+    await completeOAuth(
       accessToken,
       refreshToken,
       expiresIn ?? 3600,
     );
 
-    notifyAuthStep({
-      message: result.message,
-      severity: Severity.INFO,
-      title: t('external_services.monerium.success'),
-    });
+    clearAuthNotifications();
     set(showTokenInput, false);
     set(manualAccessToken, '');
     set(manualRefreshToken, '');
