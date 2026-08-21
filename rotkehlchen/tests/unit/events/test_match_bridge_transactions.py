@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
+from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC, A_XDAI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import (
@@ -1047,6 +1048,64 @@ def test_match_xdai_bridge_by_nonce(database: DBHandler) -> None:
                     'to_chain': 100,
                     'to_address': user_address,
                     'transfer_id': transfer_id,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_zksync_lite_withdrawal_past_default_window(database: DBHandler) -> None:
+    """A zksync lite exit matches the ethereum leg that settles hours later.
+
+    They are the legs of zksync lite transaction 0x4108ec114f61a486a67e072ae5508ee8a5ed
+    42126f5bf892a5489364ef75e8f3 and ethereum transaction 0xcfb173fc85c133114c065f77101e
+    4f522b45e8948ea34c858864a7d9e769d128, 6.6 hours apart because the funds are only
+    released once the zksync block is verified on ethereum. That is past the default
+    match window, so the pair is only found through the bridge's own slow window, which
+    is reachable only because the zksync lite leg names its counterparty.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(zksync_tx_hash := make_evm_tx_hash())),  # noqa: E501
+                tx_ref=zksync_tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(1774130088000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDT,
+                amount=FVal(amount := '4.0783'),
+                location_label=(user_address := make_evm_address()),
+                counterparty=CPT_ZKSYNC,
+                extra_data={'bridge': {
+                    'from_chain': 'zksync_lite',
+                    'to_chain': 1,
+                    'from_address': user_address,
+                    'to_address': user_address,
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=821,
+                timestamp=TimestampMS(1774153859000),  # 6.6 hours after the exit
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDT,
+                amount=FVal(amount),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+                extra_data={'bridge': {
+                    'from_chain': 'zksync_lite',
+                    'to_chain': 1,
+                    'to_address': user_address,
                 }},
             ))],
         )

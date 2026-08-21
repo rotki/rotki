@@ -567,6 +567,26 @@ ON bitcointx_address_mappings(address, tx_id);
             "name LIKE 'last\\_bch\\_tx\\_block\\_%' ESCAPE '\\'",
         )
 
+    @progress_step(description='Labeling zksync lite bridge events with the bridge.')
+    def _label_zksync_lite_bridge_events(write_cursor: DBCursor) -> None:
+        """Name zksync as the counterparty of the zksync lite legs of a bridging.
+
+        Their ethereum legs always named it, but these never did, so the pair could not be
+        recognized as belonging to a bridge that settles days rather than hours after the
+        exit, and the matching gave up looking long before the leg on ethereum appeared.
+        The decoded-events reset above deliberately leaves zksync lite alone, so the label
+        is written here instead of coming from a redecode.
+
+        A bridging transaction on zksync lite decodes to the leg plus the fee charged for
+        it, and both are labeled, so what this writes is what a redecode would produce.
+        """
+        write_cursor.execute(  # hardcoded strings, immune to later renames of any of them
+            "UPDATE chain_events_info SET counterparty='zksync' WHERE counterparty IS NULL AND "
+            "identifier IN (SELECT E.identifier FROM history_events E INNER JOIN history_events B "
+            "ON E.group_identifier=B.group_identifier AND B.subtype='bridge' "
+            "WHERE E.location='o')",  # location 'o' is zksync lite
+        )
+
     @progress_step(description='Remove obsolete airdrop parquet files.')
     def _remove_airdrop_parquet_files(write_cursor: DBCursor) -> None:
         """Remove parquet airdrop files left behind now that airdrops use compressed CSV files."""

@@ -4539,6 +4539,42 @@ def test_upgrade_db_52_to_53(
             [(both_lowercased_id,), (both_checksummed_id,)],
         )
 
+    with db_v52.conn.write_ctx() as write_cursor:
+        # zksync lite bridge legs got no counterparty, unlike their ethereum legs. The
+        # decoded-events reset leaves zksync lite alone, so the upgrade labels them in place,
+        # along with the fee charged for the bridging. A fee of anything else, and any other
+        # chain's leg, keep the counterparty they had.
+        for group_identifier, sequence_index, location, subtype, counterparty in (
+            ('zkl' + 'd' * 64, 0, Location.ZKSYNC_LITE, HistoryEventSubType.BRIDGE, None),
+            ('zkl' + 'd' * 64, 1, Location.ZKSYNC_LITE, HistoryEventSubType.FEE, None),
+            ('zkl' + 'e' * 64, 0, Location.ZKSYNC_LITE, HistoryEventSubType.NONE, None),
+            ('zkl' + 'e' * 64, 1, Location.ZKSYNC_LITE, HistoryEventSubType.FEE, None),
+            ('1' + 'f' * 64, 0, Location.ETHEREUM, HistoryEventSubType.BRIDGE, 'hop'),
+        ):
+            write_cursor.execute(
+                'INSERT INTO history_events('
+                'entry_type, group_identifier, sequence_index, timestamp, location, '
+                'location_label, asset, amount, notes, type, subtype'
+                ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (
+                    HistoryBaseEntryType.EVM_EVENT.serialize_for_db(),
+                    group_identifier,
+                    sequence_index,
+                    1730000000000,
+                    location.serialize_for_db(),
+                    '0x0000000000000000000000000000000000000003',
+                    'ETH',
+                    '1',
+                    'Bridge 1 ETH',
+                    HistoryEventType.DEPOSIT.serialize(),
+                    subtype.serialize(),
+                ),
+            )
+            write_cursor.execute(
+                'INSERT INTO chain_events_info(identifier, tx_ref, counterparty) VALUES(?, ?, ?)',
+                (write_cursor.lastrowid, b'\xdd' * 32, counterparty),
+            )
+
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     airdrops_dir.mkdir(parents=True)
     (airdrop_parquet_path := airdrops_dir / 'obsolete.parquet').touch()
@@ -4559,6 +4595,18 @@ def test_upgrade_db_52_to_53(
         resume_from_backup=False,
     )
     with db.conn.write_ctx() as cursor:
+        assert cursor.execute(  # only the zksync lite bridging got labeled, leg and fee alike
+            'SELECT H.subtype, C.counterparty FROM history_events H INNER JOIN '
+            'chain_events_info C ON H.identifier=C.identifier WHERE H.group_identifier IN '
+            '(?, ?, ?) ORDER BY H.group_identifier, H.sequence_index',
+            ('zkl' + 'd' * 64, 'zkl' + 'e' * 64, '1' + 'f' * 64),
+        ).fetchall() == [
+            (HistoryEventSubType.BRIDGE.serialize(), 'hop'),  # the ethereum leg, untouched
+            (HistoryEventSubType.BRIDGE.serialize(), 'zksync'),
+            (HistoryEventSubType.FEE.serialize(), 'zksync'),  # the fee charged for it
+            (HistoryEventSubType.NONE.serialize(), None),  # a transfer and its fee, untouched
+            (HistoryEventSubType.FEE.serialize(), None),
+        ]
         assert json.loads(cursor.execute(  # blockscout prepended for gnosis, other chains as is
             "SELECT value FROM settings WHERE name='evm_indexers_order'",
         ).fetchone()[0]) == {
