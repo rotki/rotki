@@ -1,5 +1,5 @@
-import type { MaybePromise } from '@rotki/common';
 import type { Ref } from 'vue';
+import { type MaybePromise, NotificationGroup } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -60,7 +60,7 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
+  const { removeMatching, showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
 
@@ -92,6 +92,16 @@ Issued At: ${issuedAt}`;
       return injectedWallet.getWalletClient();
 
     return walletConnect.getWalletClient();
+  }
+
+  /**
+   * Drops the session-expired warning once the backend has accepted the signature. Nothing else in
+   * this flow writes to that group - progress goes to the task centre and failures to the message
+   * dialog - so the warning is never superseded the way a grouped notification would be, and would
+   * otherwise sit in the list still offering to re-authenticate a session that is now valid.
+   */
+  function clearSessionExpiredWarning(): void {
+    removeMatching(({ group }) => group === NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED);
   }
 
   /**
@@ -173,6 +183,7 @@ Issued At: ${issuedAt}`;
 
       if (verified) {
         set(signInSuccess, true);
+        clearSessionExpiredWarning();
         if (onSignInComplete)
           await onSignInComplete();
       }
