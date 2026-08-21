@@ -167,6 +167,21 @@ describe('useGnosisPaySigning', () => {
     expect(get(harness.signingInProgress)).toBe(false);
   });
 
+  it('should put a bare authority on line 1 and the full url in URI', async () => {
+    const harness = makeHarness();
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce-123'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
+
+    const { signInWithEthereum } = useGnosisPaySigning(harness);
+    await signInWithEthereum();
+
+    // EIP-4361 line 1 is an authority, not a URL. Wallets compare it verbatim against the
+    // requesting origin's host, so a scheme here can never match any origin.
+    const lines = String(signMessage.mock.calls[0][0].message).split('\n');
+    expect(lines[0]).toBe('rotki.com wants you to sign in with your Ethereum account:');
+    expect(lines).toContain('URI: https://rotki.com');
+  });
+
   it('should bail out when fetching the nonce fails actionably', async () => {
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeFailure('nonce error'));

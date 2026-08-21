@@ -15,6 +15,15 @@ import { getAddress, type ViemWalletClient } from '@/modules/wallet/viem-client'
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 
+/**
+ * EIP-4361 line 1 takes an authority (host, optionally with a port), not a URL. Only `URI:` takes a
+ * scheme. Wallets compare this string against the requesting origin's host verbatim, so a `https://`
+ * prefix here can never match any origin.
+ */
+const SIWE_DOMAIN = 'rotki.com';
+
+const SIWE_URI = 'https://rotki.com';
+
 interface UseGnosisPaySigningOptions {
   /** Clears the shared error state before signing, skipped when the pending error is `INVALID_ADDRESS` so that warning stays visible. */
   clearError: () => void;
@@ -60,15 +69,14 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   const walletConnect = useWalletConnect();
 
   function createSiweMessage(address: string, nonce: string): string {
-    const domain = 'https://rotki.com';
     const issuedAt = new Date().toISOString();
 
-    return `${domain} wants you to sign in with your Ethereum account:
+    return `${SIWE_DOMAIN} wants you to sign in with your Ethereum account:
 ${address}
 
 Sign in with Ethereum to authenticate with Gnosis Pay.
 
-URI: ${domain}
+URI: ${SIWE_URI}
 Version: 1
 Chain ID: 100
 Nonce: ${nonce}
