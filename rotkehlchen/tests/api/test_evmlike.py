@@ -8,6 +8,7 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.chain.ethereum.modules.zksync.constants import CPT_ZKSYNC
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
@@ -346,6 +347,7 @@ def test_decode_pending_evmlike(
         location_label=user_address,
         address=user_address,
         notes='Bridge 6.626770825 ETH from ZKSync Lite to Ethereum',
+        counterparty=CPT_ZKSYNC,
         extra_data={'bridge': {
             'from_chain': 'zksync_lite',
             'to_chain': 1,
@@ -366,6 +368,7 @@ def test_decode_pending_evmlike(
         location_label=user_address,
         address=user_address,
         notes='Bridging fee of 0.00367 ETH',
+        counterparty=CPT_ZKSYNC,
     ).serialize())
     compare_events_without_id(result['entries'][2]['entry'], EvmEvent(
         group_identifier='zkl0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb',
