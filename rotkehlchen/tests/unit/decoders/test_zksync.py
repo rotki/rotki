@@ -247,6 +247,7 @@ def test_zksync_lite_batched_withdrawal_token(ethereum_inquirer, ethereum_accoun
     assert expected_events == events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFB3A939Cb06eeF36E1ceD48bdba1fcEe177Ac7f4']])
 def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
     """Test decoding ZKsync Lite sunset claims."""
@@ -300,3 +301,44 @@ def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
         extra_data=claim_extra_data,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_zksync_lite_legacy_batched_withdrawal(ethereum_inquirer, ethereum_accounts):
+    """Test that payouts logged by the bridge's original Withdrawal event are decoded.
+
+    That event names only the token and the amount, not who was paid, so each payout is
+    found by amount among the receives from the bridge. The eth one arrives in an internal
+    transaction rather than a transfer log, and is decoded the same way.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xe765a634eaa1645324b585e96d7893bf30f1aa8eaf630840124ddbd7a2bff4c7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp = ethereum_accounts[0], TimestampMS(1617977903000)
+    extra_data = {'bridge': {
+        'from_chain': 'zksync_lite',
+        'to_chain': 1,
+        'to_address': user_address,
+    }}
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=sequence_index,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=asset,
+        amount=FVal(amount),
+        location_label=user_address,
+        notes=f'Withdraw {amount} {symbol} from zksync',
+        counterparty=CPT_ZKSYNC,
+        address=ZKSYNC_BRIDGE,
+        extra_data=extra_data,
+    ) for sequence_index, asset, amount, symbol in (
+        (0, A_ETH, '2.048641517695', 'ETH'),
+        (74, A_DAI, '2932.171400001', 'DAI'),
+        (77, Asset('eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), '0.0247', 'MKR'),
+        (79, Asset('eip155:1/erc20:0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44'), '3913.9305', 'PAN'),  # noqa: E501
+        (81, A_USDC, '279.854', 'USDC'),
+        (83, A_USDT, '199.182', 'USDT'),
+    )]
