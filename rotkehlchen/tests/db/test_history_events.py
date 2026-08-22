@@ -11,6 +11,7 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.types import BitcoinTx
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -2223,3 +2224,69 @@ def test_delete_events_by_tx_ref_is_scoped_to_the_location(database: DBHandler) 
         assert write_cursor.execute('SELECT location FROM history_events').fetchall() == [
             (Location.BITCOIN_CASH.serialize_for_db(),),
         ]
+
+
+def test_get_counterparties_at_location_scopes_by_location_and_entry_type(
+        database: DBHandler,
+) -> None:
+    """Test that the counterparty gate only reports counterparties it can actually stand in for.
+
+    It is used to skip the per-protocol activity queries, which each filter on
+    counterparty + location + entry_type, so reporting a counterparty that is only present on
+    another chain (or on an entry type those queries never match) would keep a useless query,
+    while omitting one that is present would skip a protocol the user really holds.
+    """
+    db_events = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        db_events.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                make_ethereum_event(index=1, counterparty=CPT_ONEINCH_V6),
+                make_ethereum_event(index=2, counterparty=CPT_GAS),
+                make_ethereum_event(index=3, counterparty=None),
+                EvmEvent(  # same counterparty, different chain
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(1),
+                    location=Location.OPTIMISM,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    asset=A_ETH,
+                    amount=ONE,
+                    counterparty=CPT_ONEINCH_V6,
+                ),
+                EvmSwapEvent(  # right chain, entry type the activity queries never match
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(1),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    asset=A_ETH,
+                    amount=ONE,
+                    counterparty=CPT_AAVE_V3,
+                ),
+            ],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert DBHistoryEvents.get_counterparties_at_location(
+            cursor=cursor,
+            location=Location.ETHEREUM,
+            entry_types=(HistoryBaseEntryType.EVM_EVENT,),
+        ) == {CPT_ONEINCH_V6, CPT_GAS}
+        assert DBHistoryEvents.get_counterparties_at_location(
+            cursor=cursor,
+            location=Location.OPTIMISM,
+            entry_types=(HistoryBaseEntryType.EVM_EVENT,),
+        ) == {CPT_ONEINCH_V6}
+        assert DBHistoryEvents.get_counterparties_at_location(
+            cursor=cursor,
+            location=Location.ETHEREUM,
+            entry_types=(HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.EVM_SWAP_EVENT),
+        ) == {CPT_ONEINCH_V6, CPT_GAS, CPT_AAVE_V3}
+        assert DBHistoryEvents.get_counterparties_at_location(
+            cursor=cursor,
+            location=Location.BASE,
+            entry_types=(HistoryBaseEntryType.EVM_EVENT,),
+        ) == set()
