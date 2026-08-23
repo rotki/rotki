@@ -85,7 +85,8 @@ class RotkiDataUpdater:
     def __init__(self, msg_aggregator: MessagesAggregator, user_db: DBHandler) -> None:
         self.msg_aggregator = msg_aggregator
         self.user_db = user_db
-        self.branch = os.getenv('GITHUB_BASE_REF', 'develop')
+        # an empty base ref is what the CI gives when the run is not triggered by a PR
+        self.branch = os.getenv('GITHUB_BASE_REF') or 'develop'
         if is_production() or self.branch == 'master':
             self.branch = 'main'
         self.update_type_mappings = {  # better than dynamic getattr. More explicit, negligible memory overhead if any  # noqa: E501
