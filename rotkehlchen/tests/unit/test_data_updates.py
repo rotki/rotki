@@ -809,3 +809,26 @@ def test_version_used_in_updates(database: DBHandler, monkeypatch: pytest.Monkey
         monkeypatch.setenv('GITHUB_BASE_REF', 'bugfixes')
         data_updater = RotkiDataUpdater(msg_aggregator=database.msg_aggregator, user_db=database)
         assert data_updater.version == Version('1.38.5')
+
+
+def test_branch_used_in_updates(database: DBHandler, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test the branch that updates are pulled from.
+
+    The CI leaves the base ref empty when a run is not triggered by a PR, and an empty branch
+    turns every update url into a 404 that check_for_updates only logs, so nothing is applied.
+    """
+    def branch_for(base_ref: str | None) -> str:
+        if base_ref is None:
+            monkeypatch.delenv('GITHUB_BASE_REF', raising=False)
+        else:
+            monkeypatch.setenv('GITHUB_BASE_REF', base_ref)
+
+        return RotkiDataUpdater(
+            msg_aggregator=database.msg_aggregator,
+            user_db=database,
+        ).branch
+
+    assert branch_for('bugfixes') == 'bugfixes'
+    assert branch_for('master') == 'main'
+    assert branch_for('') == 'develop'
+    assert branch_for(None) == 'develop'
