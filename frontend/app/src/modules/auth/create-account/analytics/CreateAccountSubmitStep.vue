@@ -48,7 +48,7 @@ const submitLabel = computed<string>(() =>
         {{ t('common.actions.back') }}
       </RuiButton>
       <RuiButton
-        data-testid="create-account__submit-analytics__button__continue"
+        data-testid="create-account-analytics-continue"
         size="lg"
         class="w-full"
         :disabled="loading"

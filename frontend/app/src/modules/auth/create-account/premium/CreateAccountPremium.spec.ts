@@ -29,7 +29,7 @@ const ButtonStub = {
   template: '<button :disabled="disabled"><slot /></button>',
 };
 
-const CONTINUE = 'create-account__premium__button__continue';
+const CONTINUE = 'create-account-premium-continue';
 
 describe('createAccountPremium', () => {
   let wrapper: VueWrapper;

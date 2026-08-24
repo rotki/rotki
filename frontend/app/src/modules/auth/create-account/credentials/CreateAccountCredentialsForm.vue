@@ -66,7 +66,7 @@ syncRefs(parses, valid);
         color="primary"
         variant="outlined"
         autofocus
-        data-testid="create-account__fields__username"
+        data-testid="create-account-username"
         :label="t('create_account.credentials.label_username')"
         :error-messages="errors('username')"
         :disabled="loading"
@@ -77,7 +77,7 @@ syncRefs(parses, valid);
         dense
         color="primary"
         variant="outlined"
-        data-testid="create-account__fields__password"
+        data-testid="create-account-password"
         :label="t('create_account.credentials.label_password')"
         :error-messages="errors('password')"
         :disabled="loading"
@@ -88,7 +88,7 @@ syncRefs(parses, valid);
         dense
         color="primary"
         variant="outlined"
-        data-testid="create-account__fields__password-repeat"
+        data-testid="create-account-password-repeat"
         :label="t('create_account.credentials.label_password_repeat')"
         :error-messages="errors('passwordConfirm')"
         :disabled="loading"
@@ -97,7 +97,7 @@ syncRefs(parses, valid);
     </div>
     <RuiCheckbox
       v-model="state.userPrompted"
-      data-testid="create-account__boxes__user-prompted"
+      data-testid="create-account-user-prompted"
       :disabled="loading"
       color="primary"
       :error-messages="errors('userPrompted')"

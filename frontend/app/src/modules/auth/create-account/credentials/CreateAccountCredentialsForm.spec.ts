@@ -26,10 +26,10 @@ function inputStub(name: string): Record<string, unknown> {
   };
 }
 
-const USERNAME = 'create-account__fields__username';
-const PASSWORD = 'create-account__fields__password';
-const PASSWORD_REPEAT = 'create-account__fields__password-repeat';
-const USER_PROMPTED = 'create-account__boxes__user-prompted';
+const USERNAME = 'create-account-username';
+const PASSWORD = 'create-account-password';
+const PASSWORD_REPEAT = 'create-account-password-repeat';
+const USER_PROMPTED = 'create-account-user-prompted';
 
 interface State {
   credentials: LoginCredentials;

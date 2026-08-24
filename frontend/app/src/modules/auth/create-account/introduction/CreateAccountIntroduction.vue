@@ -20,14 +20,14 @@ const cards = computed<ModeCard[]>(() => [
     description: t('create_account.introduction.create.description'),
     icon: 'lu-user-plus',
     mode: 'create',
-    testId: 'create-account__introduction__create',
+    testId: 'create-account-introduction-create',
     title: t('create_account.introduction.create.title'),
   },
   {
     description: t('create_account.introduction.restore.description'),
     icon: 'lu-cloud-download',
     mode: 'restore',
-    testId: 'create-account__introduction__restore',
+    testId: 'create-account-introduction-restore',
     title: t('create_account.introduction.restore.title'),
   },
 ]);
