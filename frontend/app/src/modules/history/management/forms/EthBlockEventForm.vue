@@ -134,7 +134,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-testid="eth-block-event-form__advance"
+        data-testid="eth-block-event-form-advance"
         header-class="py-4"
         eager
       >

@@ -174,7 +174,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-testid="solana-event-form__advance"
+        data-testid="solana-event-form-advance"
         header-class="py-4"
         eager
       >

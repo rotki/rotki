@@ -137,12 +137,12 @@ describe('forms/BitcoinEventForm.vue', () => {
       [
         "data-testid=amount",
         "data-testid=asset",
-        "data-testid=bitcoin-event-form__advance",
+        "data-testid=bitcoin-event-form-advance",
         "data-testid=counterparty",
         "data-testid=datetime",
         "data-testid=event-action-picker",
         "data-testid=group-identifier",
-        "data-testid=grouped-amount-input__swap-button",
+        "data-testid=grouped-amount-input-swap",
         "data-testid=location",
         "data-testid=notes",
         "data-testid=primary",
@@ -431,7 +431,7 @@ describe('forms/BitcoinEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=bitcoin-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=bitcoin-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
@@ -445,7 +445,7 @@ describe('forms/BitcoinEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=bitcoin-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=bitcoin-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');

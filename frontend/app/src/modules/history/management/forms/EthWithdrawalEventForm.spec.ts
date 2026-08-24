@@ -114,9 +114,9 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
         "data-testid=amount",
         "data-testid=asset",
         "data-testid=datetime",
-        "data-testid=eth-block-event-form__advance",
+        "data-testid=eth-withdrawal-event-form-advance",
         "data-testid=group-identifier",
-        "data-testid=grouped-amount-input__swap-button",
+        "data-testid=grouped-amount-input-swap",
         "data-testid=is-exit",
         "data-testid=primary",
         "data-testid=secondary",
@@ -326,7 +326,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=eth-withdrawal-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
@@ -340,7 +340,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=eth-withdrawal-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');

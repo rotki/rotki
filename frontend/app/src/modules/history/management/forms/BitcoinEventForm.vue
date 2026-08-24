@@ -173,7 +173,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-testid="bitcoin-event-form__advance"
+        data-testid="bitcoin-event-form-advance"
         header-class="py-4"
         eager
       >
