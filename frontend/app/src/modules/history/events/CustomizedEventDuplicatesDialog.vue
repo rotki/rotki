@@ -1,29 +1,18 @@
 <script setup lang="ts">
-import type { ComputedRef, Ref } from 'vue';
-import { Severity } from '@rotki/common';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import CustomizedEventDuplicatesList from '@/modules/history/events/CustomizedEventDuplicatesList.vue';
 import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vue';
-import { type DuplicateRow, useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { DuplicatesTab, useCustomizedEventDuplicatesDialog } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
 const modelValue = defineModel<boolean>({ default: false });
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-const { notify } = useNotificationDispatcher();
 
 const {
   autoFixCount,
   autoFixGroupIds,
-  confirmAndFixDuplicate,
-  confirmAndMarkNonDuplicated,
-  confirmAndRestore,
-  fetchCustomizedEventDuplicates,
-  fetchDuplicateEvents,
   fixLoading,
   ignoreLoading,
   ignoredCount,
@@ -32,137 +21,33 @@ const {
   manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
 
-const activeTab = ref<number>(0);
-
-const selectedAutoFix = ref<string[]>([]);
-const selectedManualReview = ref<string[]>([]);
-const selectedIgnored = ref<string[]>([]);
-
-const autoFixRows = ref<DuplicateRow[]>([]);
-const manualReviewRows = ref<DuplicateRow[]>([]);
-const ignoredRows = ref<DuplicateRow[]>([]);
-
-const autoFixDataLoading = ref<boolean>(false);
-const manualReviewDataLoading = ref<boolean>(false);
-const ignoredDataLoading = ref<boolean>(false);
-
-async function loadRows(
-  groupIds: ComputedRef<string[]>,
-  rows: Ref<DuplicateRow[]>,
-  loadingRef: Ref<boolean>,
-): Promise<void> {
-  set(loadingRef, true);
-  try {
-    const ids = get(groupIds);
-    const result = await fetchDuplicateEvents({
-      groupIds: ids,
-      limit: ids.length || 1,
-      offset: 0,
-    });
-    set(rows, result.data);
-  }
-  catch (error: unknown) {
-    logger.error('Failed to load duplicate event rows:', error);
-    notify({
-      display: true,
-      message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }),
-      severity: Severity.ERROR,
-      title: t('actions.customized_event_duplicates.fetch_events_error.title'),
-    });
-  }
-  finally {
-    set(loadingRef, false);
-  }
-}
-
-async function loadAllRows(): Promise<void> {
-  await Promise.all([
-    loadRows(autoFixGroupIds, autoFixRows, autoFixDataLoading),
-    loadRows(manualReviewGroupIds, manualReviewRows, manualReviewDataLoading),
-    loadRows(ignoredGroupIds, ignoredRows, ignoredDataLoading),
-  ]);
-}
-
 function closeDialog(): void {
   set(modelValue, false);
 }
 
-async function showInHistoryEvents(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
-  if (groupIds.length === 0)
-    return;
-
-  closeDialog();
-  await router.push({
-    name: '/history/events/',
-    query: {
-      duplicateHandlingStatus: status,
-      groupIdentifiers: groupIds.join(','),
-    },
-  });
-}
-
-function confirmFixSingle(groupId: string): void {
-  confirmAndFixDuplicate([groupId], async () => {
-    set(selectedAutoFix, get(selectedAutoFix).filter(id => id !== groupId));
-    await loadRows(autoFixGroupIds, autoFixRows, autoFixDataLoading);
-  });
-}
-
-function confirmFixSelected(): void {
-  const selected = get(selectedAutoFix);
-  if (selected.length === 0)
-    return;
-
-  confirmAndFixDuplicate(selected, async () => {
-    set(selectedAutoFix, []);
-    await loadRows(autoFixGroupIds, autoFixRows, autoFixDataLoading);
-  });
-}
-
-function confirmIgnoreSingle(groupId: string): void {
-  confirmAndMarkNonDuplicated([groupId], async () => {
-    set(selectedAutoFix, get(selectedAutoFix).filter(id => id !== groupId));
-    set(selectedManualReview, get(selectedManualReview).filter(id => id !== groupId));
-    await loadAllRows();
-  });
-}
-
-function confirmIgnoreSelected(): void {
-  const tab = get(activeTab);
-  const selected = tab === 0 ? get(selectedAutoFix) : get(selectedManualReview);
-  if (selected.length === 0)
-    return;
-
-  confirmAndMarkNonDuplicated(selected, async () => {
-    if (tab === 0)
-      set(selectedAutoFix, []);
-    else
-      set(selectedManualReview, []);
-    await loadAllRows();
-  });
-}
-
-function confirmRestoreSingle(groupId: string): void {
-  confirmAndRestore([groupId], async () => {
-    set(selectedIgnored, get(selectedIgnored).filter(id => id !== groupId));
-    await loadAllRows();
-  });
-}
-
-function confirmRestoreSelected(): void {
-  const selected = get(selectedIgnored);
-  if (selected.length === 0)
-    return;
-
-  confirmAndRestore(selected, async () => {
-    set(selectedIgnored, []);
-    await loadAllRows();
-  });
-}
+const {
+  autoFixLoading,
+  autoFixRows,
+  fixSelected,
+  fixSingle,
+  ignoreSelected,
+  ignoreSingle,
+  ignoredLoading,
+  ignoredRows,
+  initialize,
+  manualReviewLoading,
+  manualReviewRows,
+  modelActiveTab,
+  modelSelectedAutoFix,
+  modelSelectedIgnored,
+  modelSelectedManualReview,
+  restoreSelected,
+  restoreSingle,
+  showInHistoryEvents,
+} = useCustomizedEventDuplicatesDialog({ close: closeDialog });
 
 onBeforeMount(async () => {
-  await fetchCustomizedEventDuplicates();
-  await loadAllRows();
+  await initialize();
 });
 </script>
 
@@ -191,7 +76,7 @@ onBeforeMount(async () => {
       </template>
 
       <RuiTabs
-        v-model="activeTab"
+        v-model="modelActiveTab"
         class="border-b border-default"
         color="primary"
       >
@@ -231,15 +116,15 @@ onBeforeMount(async () => {
       </RuiTabs>
 
       <RuiTabItems
-        v-model="activeTab"
+        v-model="modelActiveTab"
         class="my-4"
       >
         <RuiTabItem>
           <CustomizedEventDuplicatesList
-            v-model:selected="selectedAutoFix"
+            v-model:selected="modelSelectedAutoFix"
             :description="t('customized_event_duplicates.dialog.auto_fix_description')"
             :rows="autoFixRows"
-            :loading="autoFixDataLoading"
+            :loading="autoFixLoading"
             @show-in-history="showInHistoryEvents(autoFixGroupIds, DuplicateHandlingStatus.AUTO_FIX)"
           >
             <template #actions="{ row }">
@@ -247,8 +132,8 @@ onBeforeMount(async () => {
                 mode="auto-fix"
                 :fix-loading="fixLoading"
                 :ignore-loading="ignoreLoading"
-                @fix="confirmFixSingle(row.groupIdentifier)"
-                @ignore="confirmIgnoreSingle(row.groupIdentifier)"
+                @fix="fixSingle(row.groupIdentifier)"
+                @ignore="ignoreSingle(row.groupIdentifier)"
               />
             </template>
           </CustomizedEventDuplicatesList>
@@ -256,17 +141,17 @@ onBeforeMount(async () => {
 
         <RuiTabItem>
           <CustomizedEventDuplicatesList
-            v-model:selected="selectedManualReview"
+            v-model:selected="modelSelectedManualReview"
             :description="t('customized_event_duplicates.dialog.manual_review_description')"
             :rows="manualReviewRows"
-            :loading="manualReviewDataLoading"
+            :loading="manualReviewLoading"
             @show-in-history="showInHistoryEvents(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
           >
             <template #actions="{ row }">
               <DuplicateRowActions
                 mode="manual-review"
                 :ignore-loading="ignoreLoading"
-                @ignore="confirmIgnoreSingle(row.groupIdentifier)"
+                @ignore="ignoreSingle(row.groupIdentifier)"
               />
             </template>
           </CustomizedEventDuplicatesList>
@@ -274,17 +159,17 @@ onBeforeMount(async () => {
 
         <RuiTabItem>
           <CustomizedEventDuplicatesList
-            v-model:selected="selectedIgnored"
+            v-model:selected="modelSelectedIgnored"
             :description="t('customized_event_duplicates.dialog.non_duplicated_description')"
             :rows="ignoredRows"
-            :loading="ignoredDataLoading"
+            :loading="ignoredLoading"
             @show-in-history="showInHistoryEvents(ignoredGroupIds, DuplicateHandlingStatus.IGNORED)"
           >
             <template #actions="{ row }">
               <DuplicateRowActions
                 mode="ignored"
                 :ignore-loading="ignoreLoading"
-                @restore="confirmRestoreSingle(row.groupIdentifier)"
+                @restore="restoreSingle(row.groupIdentifier)"
               />
             </template>
           </CustomizedEventDuplicatesList>
@@ -293,15 +178,16 @@ onBeforeMount(async () => {
 
       <div class="w-full flex justify-between gap-2 pb-4">
         <div
-          v-if="activeTab === 0"
+          v-if="modelActiveTab === DuplicatesTab.AUTO_FIX"
           class="flex gap-2"
         >
           <RuiButton
             variant="outlined"
             color="primary"
-            :disabled="selectedAutoFix.length === 0 || fixLoading"
+            data-testid="fix-selected"
+            :disabled="modelSelectedAutoFix.length === 0 || fixLoading"
             :loading="fixLoading"
-            @click="confirmFixSelected()"
+            @click="fixSelected()"
           >
             <template #prepend>
               <RuiIcon
@@ -311,19 +197,20 @@ onBeforeMount(async () => {
             </template>
             {{ t('customized_event_duplicates.actions.fix_selected') }}
             <RuiChip
-              v-if="selectedAutoFix.length > 0"
+              v-if="modelSelectedAutoFix.length > 0"
               size="sm"
               color="primary"
               class="ml-2 !py-0"
             >
-              {{ selectedAutoFix.length }}
+              {{ modelSelectedAutoFix.length }}
             </RuiChip>
           </RuiButton>
           <RuiButton
             variant="outlined"
-            :disabled="selectedAutoFix.length === 0 || ignoreLoading"
+            data-testid="ignore-selected"
+            :disabled="modelSelectedAutoFix.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
-            @click="confirmIgnoreSelected()"
+            @click="ignoreSelected()"
           >
             <template #prepend>
               <RuiIcon
@@ -335,14 +222,15 @@ onBeforeMount(async () => {
           </RuiButton>
         </div>
         <div
-          v-else-if="activeTab === 1"
+          v-else-if="modelActiveTab === DuplicatesTab.MANUAL_REVIEW"
           class="flex gap-2"
         >
           <RuiButton
             variant="outlined"
-            :disabled="selectedManualReview.length === 0 || ignoreLoading"
+            data-testid="ignore-selected"
+            :disabled="modelSelectedManualReview.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
-            @click="confirmIgnoreSelected()"
+            @click="ignoreSelected()"
           >
             <template #prepend>
               <RuiIcon
@@ -352,12 +240,12 @@ onBeforeMount(async () => {
             </template>
             {{ t('customized_event_duplicates.actions.mark_non_duplicated_selected') }}
             <RuiChip
-              v-if="selectedManualReview.length > 0"
+              v-if="modelSelectedManualReview.length > 0"
               size="sm"
               color="primary"
               class="ml-2 !py-0"
             >
-              {{ selectedManualReview.length }}
+              {{ modelSelectedManualReview.length }}
             </RuiChip>
           </RuiButton>
         </div>
@@ -368,9 +256,10 @@ onBeforeMount(async () => {
           <RuiButton
             variant="outlined"
             color="primary"
-            :disabled="selectedIgnored.length === 0 || ignoreLoading"
+            data-testid="restore-selected"
+            :disabled="modelSelectedIgnored.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
-            @click="confirmRestoreSelected()"
+            @click="restoreSelected()"
           >
             <template #prepend>
               <RuiIcon
@@ -380,17 +269,18 @@ onBeforeMount(async () => {
             </template>
             {{ t('customized_event_duplicates.actions.restore_selected') }}
             <RuiChip
-              v-if="selectedIgnored.length > 0"
+              v-if="modelSelectedIgnored.length > 0"
               size="sm"
               color="primary"
               class="ml-2 !py-0"
             >
-              {{ selectedIgnored.length }}
+              {{ modelSelectedIgnored.length }}
             </RuiChip>
           </RuiButton>
         </div>
         <RuiButton
           variant="text"
+          data-testid="close-dialog"
           @click="closeDialog()"
         >
           {{ t('common.actions.close') }}
