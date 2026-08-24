@@ -9,12 +9,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )
-from rotkehlchen.chain.evm.decoding.balancer.constants import (
-    BALANCER_CACHE_TYPE_MAPPING,
-    BALANCER_LABEL,
-    BALANCER_VERSION_MAPPING,
-    CPT_BALANCER_V2,
-)
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -25,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -34,7 +30,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -51,23 +46,22 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             evm_inquirer: EvmNodeInquirer,
             base_tools: BaseEvmDecoderTools,
             msg_aggregator: MessagesAggregator,
-            counterparty: str = CPT_BALANCER_V2,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            counterparty=counterparty,
+            counterparty=CPT_BALANCER_V2,
             read_fn=lambda chain_id: read_balancer_pools_and_gauges_from_cache(
-                version=BALANCER_VERSION_MAPPING[counterparty],
+                version=2,
                 chain_id=chain_id,
-                cache_type=BALANCER_CACHE_TYPE_MAPPING[counterparty],
+                cache_type=CacheType.BALANCER_V2_POOLS,
             ),
         )
 
     def decode_vault_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == V2_SWAP:
-            return EvmDecodingOutput(matched_counterparty=self.counterparty)
+            return EvmDecodingOutput(matched_counterparty=CPT_BALANCER_V2)
         if context.tx_log.topics[0] == POOL_BALANCE_CHANGED_TOPIC:
             return self._decode_join_or_exit(context)
 
@@ -85,7 +79,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             ):  # exit pool: return wrapped token
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.notes = f'Return {event.amount} {token.symbol} to a Balancer v2 pool'
-                event.counterparty = self.counterparty
+                event.counterparty = CPT_BALANCER_V2
                 send_events.append(event)
 
             if (
@@ -95,7 +89,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             ):  # exit pool: withdraw token
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                event.counterparty = self.counterparty
+                event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Receive {event.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
                 receive_events.append(event)
 
@@ -105,7 +99,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.address == ZERO_ADDRESS
             ):  # join pool: receive wrapped token
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.counterparty = self.counterparty
+                event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Receive {event.amount} {token.symbol} from a Balancer v2 pool'
                 receive_events.append(event)
 
@@ -116,7 +110,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             ):  # join pool: deposit token
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                event.counterparty = self.counterparty
+                event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Deposit {event.amount} {token.symbol} to a Balancer v2 pool'
                 send_events.append(event)
 
@@ -181,7 +175,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} via Balancer v2'  # noqa: E501
-                event.counterparty = self.counterparty
+                event.counterparty = CPT_BALANCER_V2
                 spend_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -190,7 +184,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap via Balancer v2'  # noqa: E501
-                event.counterparty = self.counterparty
+                event.counterparty = CPT_BALANCER_V2
                 receive_event = event
 
         if spend_event is None or receive_event is None:
@@ -212,12 +206,12 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
         }
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {self.counterparty: [(0, self._handle_post_decoding)]}
+        return {CPT_BALANCER_V2: [(0, self._handle_post_decoding)]}
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_BALANCER_V2,
-            label=BALANCER_LABEL,
+            label=CPT_BALANCER_V2.capitalize().replace('-v', ' V'),
             image='balancer.svg',
         ),)

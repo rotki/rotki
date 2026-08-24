@@ -8,6 +8,8 @@ from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import query_balance
 from rotkehlchen.chain.evm.decoding.balancer.constants import (
     BALANCER_CACHE_TYPE_MAPPING,
     BALANCER_VERSION_MAPPING,
+    CPT_BALANCER_V1,
+    CPT_BALANCER_V2,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import (
     EvmDecoderInterface,
@@ -38,7 +40,7 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
             evm_inquirer: EvmNodeInquirer,
             base_tools: BaseEvmDecoderTools,
             msg_aggregator: MessagesAggregator,
-            counterparty: str,
+            counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
             read_fn: Callable[[ChainID], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
     ) -> None:
         super().__init__(
@@ -61,9 +63,7 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
             read_data_from_cache_method=read_fn,
             chain_id=evm_inquirer.chain_id,
         )
-        self.counterparty: str = counterparty
-        self.version: Literal[1, 2, 3] = BALANCER_VERSION_MAPPING[counterparty]
-        self.protocol_label: str = 'Balancer v' + counterparty[-1:]
+        self.counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'] = counterparty
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
@@ -158,12 +158,12 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED
             ):  # For V1, we map the deposit events to the pool token event
-                if len(related_events) != 0 and self.version == 1:
+                if len(related_events) != 0 and self.counterparty == CPT_BALANCER_V1:
                     related_events_map[event] = related_events
                     related_events = []
                     last_event = None
                 # For V2, we start tracking events after receiving the pool token
-                elif self.version == 2:
+                elif self.counterparty == CPT_BALANCER_V2:
                     related_events = []
                     last_event = event
 
@@ -190,7 +190,7 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
                 related_events.append(event)
 
                 if (  # For V2 joins, map deposit events to the preceding pool token event
-                    self.version == 2 and
+                    self.counterparty == CPT_BALANCER_V2 and
                     last_event is not None and
                     last_event.event_type == HistoryEventType.RECEIVE
                 ):
@@ -239,7 +239,7 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
         spend_event.notes = (
             f'Swap {spend_event.amount} '
             f'{spend_event.asset.resolve_to_asset_with_symbol().symbol} '
-            f'in {(balancer_label := self.protocol_label)}'
+            f'in {(balancer_label := "Balancer " + self.counterparty[-2:])}'
         )
         receive_event.notes = (
             f'Receive {receive_event.amount} '

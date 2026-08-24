@@ -10,11 +10,6 @@ CPT_BALANCER_V1: Final = 'balancer-v1'
 CPT_BALANCER_V2: Final = 'balancer-v2'
 CPT_BALANCER_V3: Final = 'balancer-v3'
 
-CPT_BEETS_V2: Final = 'beets-v2'
-CPT_BEETS_V3: Final = 'beets-v3'
-CPT_BEETS_SWAP_V3: Final = 'beets-swap-v3'
-BEETS_LABEL: Final = 'Beets'
-
 BALANCER_API_CHUNK_SIZE: Final = 100
 BALANCER_API_URL: Final = 'https://api-v3.balancer.fi'
 CHAIN_ID_TO_BALANCER_API_MAPPINGS: Final = {
@@ -26,21 +21,16 @@ CHAIN_ID_TO_BALANCER_API_MAPPINGS: Final = {
     ChainID.OPTIMISM: 'OPTIMISM',
     ChainID.POLYGON_POS: 'POLYGON',
     ChainID.ARBITRUM_ONE: 'ARBITRUM',
-    ChainID.SONIC: 'SONIC',
 }
-BALANCER_CACHE_TYPE_MAPPING: Final[dict[str, Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS, CacheType.BALANCER_V3_POOLS]]] = {  # noqa: E501
+BALANCER_CACHE_TYPE_MAPPING: Final = {
     CPT_BALANCER_V1: CacheType.BALANCER_V1_POOLS,
     CPT_BALANCER_V2: CacheType.BALANCER_V2_POOLS,
     CPT_BALANCER_V3: CacheType.BALANCER_V3_POOLS,
-    CPT_BEETS_V2: CacheType.BALANCER_V2_POOLS,
-    CPT_BEETS_V3: CacheType.BALANCER_V3_POOLS,
 }
 BALANCER_VERSION_MAPPING: Final[dict[str, Literal[1, 2, 3]]] = {
     CPT_BALANCER_V1: 1,
     CPT_BALANCER_V2: 2,
     CPT_BALANCER_V3: 3,
-    CPT_BEETS_V2: 2,
-    CPT_BEETS_V3: 3,
 }
 
 GET_POOLS_QUERY: Final = """
