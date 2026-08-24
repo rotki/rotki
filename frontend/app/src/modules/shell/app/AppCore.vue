@@ -69,7 +69,7 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <div class="app__content">
+  <div>
     <NotificationPopup />
     <SettingsSuggestionsDialog
       v-model="suggestionsStore.showSuggestionsDialog"
@@ -80,7 +80,7 @@ onBeforeMount(() => {
     <AppDrawer />
 
     <header
-      class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-dark-elevated md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-rui-grey-800"
+      class="fixed top-0 left-0 w-full bg-white dark:bg-dark-elevated md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-rui-grey-800"
     >
       <nav class="flex items-center md:h-16 h-[3.5rem] pl-2 px-4">
         <RuiButton

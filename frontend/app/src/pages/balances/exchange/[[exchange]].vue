@@ -130,7 +130,6 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
             color="primary"
             variant="outlined"
             size="lg"
-            class="exchange-balances__refresh"
             :disabled="exchangeDetailTabs !== 0"
             :loading="isExchangeLoading"
             @click="refreshExchangeBalances()"
@@ -251,7 +250,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
               name: '/api-keys/exchanges/',
               query: { add: 'true' },
             }"
-            class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+            class="font-weight-regular text-body-1 text-decoration-none"
           >
             {{ t('exchange_balances.click_here') }}
           </InternalLink>

@@ -33,15 +33,12 @@ const options = computed<string[]>(() => {
     auto-select-first
   >
     <template #selection="{ item }">
-      <ExchangeDisplay
-        :exchange="item"
-        :class="`exchange__${item}`"
-      />
+      <ExchangeDisplay :exchange="item" />
     </template>
     <template #item="{ item }">
       <ExchangeDisplay
         :exchange="item"
-        :class="[`exchange__${item}`, dense && 'py-2']"
+        :class="dense && 'py-2'"
       />
     </template>
   </RuiAutoComplete>

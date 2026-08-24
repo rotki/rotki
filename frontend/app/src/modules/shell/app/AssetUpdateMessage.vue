@@ -97,7 +97,6 @@ const { t } = useI18n({ useScope: 'global' });
         <div v-if="multiple">
           <RuiCheckbox
             v-model="partial"
-            class="asset-update__partial"
             hide-details
             color="primary"
           >

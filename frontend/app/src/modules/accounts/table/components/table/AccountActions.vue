@@ -51,7 +51,6 @@ function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
     />
     <RowActions
       v-if="!isVirtual"
-      class="account-balance-table__actions"
       :edit-tooltip="t('account_balances.edit_tooltip')"
       :disabled="accountOperation"
       :no-edit="group !== 'evm'"

@@ -38,7 +38,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
       <RuiButton
         color="primary"
         variant="outlined"
-        class="exchange-balances__refresh shrink-0"
+        class="shrink-0"
         :disabled="tab !== 0"
         :loading="loading"
         @click="emit('refresh', exchange)"

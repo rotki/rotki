@@ -112,7 +112,7 @@ onMounted(() => {
       </RuiTooltip>
       <template v-else>
         <ReuseImage />
-        <div class="flex grow py-0 navigation-menu-item__text">
+        <div class="flex grow py-0">
           {{ text }}
         </div>
       </template>

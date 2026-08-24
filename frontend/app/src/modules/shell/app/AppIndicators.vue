@@ -51,15 +51,11 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
     />
     <NotificationIndicator
       :visible="showNotificationBar"
-      class="app__app-bar__button"
       @click="showNotificationBar = !showNotificationBar"
     />
-    <CurrencyDropdown class="app__app-bar__button" />
-    <PrivacyModeDropdown
-      v-if="isSmAndUp"
-      class="app__app-bar__button"
-    />
-    <UserDropdown class="app__app-bar__button" />
+    <CurrencyDropdown />
+    <PrivacyModeDropdown v-if="isSmAndUp" />
+    <UserDropdown />
     <HelpIndicator
       v-if="isSmAndUp"
       v-model:visible="showHelpBar"

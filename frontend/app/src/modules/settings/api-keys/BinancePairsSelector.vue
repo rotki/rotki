@@ -177,8 +177,8 @@ onMounted(() => {
         @paste="onPaste($event)"
       >
         <template #item="data">
-          <div class="binance-market-selector__list__item flex justify-between grow">
-            <div class="binance-market-selector__list__item__address-label">
+          <div class="flex justify-between grow">
+            <div>
               <RuiChip size="sm">
                 {{ data.item }}
               </RuiChip>
