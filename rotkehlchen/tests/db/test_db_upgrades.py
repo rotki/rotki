@@ -3370,15 +3370,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {
-        'bitcoin_transactions',
-        'bitcoin_tx_io',
-        'bitcoin_tx_mappings',
-        'bitcointx_address_mappings',
-        'data_issues',
-        'event_metrics',
-        'evm_account_proxies',
-    }
+    assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -4060,9 +4052,6 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
         ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
-        ).fetchone()[0] == 0
 
         write_cursor.executemany(
             'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
@@ -4163,9 +4152,6 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         ).fetchone()[0] == 1
         assert cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
         ).fetchone()[0] == 1
 
     db.logout()
@@ -4887,4 +4873,44 @@ def test_upgrade_db_52_to_53(
 
     assert airdrop_parquet_path.exists() is False
     assert airdrop_csv_path.exists() is True
+    db.logout()
+
+
+def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 53 to version 54."""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v53 = _init_db_with_target_version(
+        target_version=53,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v53.conn.write_ctx() as write_cursor:
+        # make sure the Sonic location is not in the old DB
+        assert write_cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
+        ).fetchone()[0] == 0
+        # the obsolete unsupported-assets update setting is still present
+        assert write_cursor.execute(
+            "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
+        ).fetchone()[0] == 1
+
+    db_v53.logout()
+    db = _init_db_with_target_version(
+        target_version=54,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.write_ctx() as cursor:
+        # make sure the Sonic location exists
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
+        ).fetchone()[0] == 1
+        # and the obsolete setting was removed
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
+        ).fetchone()[0] == 0
+        assert db.get_setting(cursor, 'version') == 54
+
     db.logout()

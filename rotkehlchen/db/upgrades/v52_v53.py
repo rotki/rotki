@@ -174,12 +174,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
             "INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);",
         )
 
-    @progress_step(description='Add Sonic location.')
-    def _add_sonic_location(write_cursor: DBCursor) -> None:
-        write_cursor.execute(
-            "INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);",
-        )
-
     @progress_step(description='Normalize exchange history event location labels.')
     def _normalize_exchange_event_location_labels(write_cursor: DBCursor) -> None:
         """Normalize exchange labels used as accounting bucket keys.
@@ -759,12 +753,5 @@ FROM evm_accounts_details
 WHERE key = 'proxies' AND instr(value, ':') > 1;
 """)
         write_cursor.execute("DELETE FROM evm_accounts_details WHERE key = 'proxies';")
-
-    @progress_step(description='Remove obsolete unsupported-assets update setting.')
-    def _remove_obsolete_setting(write_cursor: DBCursor) -> None:
-        """Remove the cursor for the retired exchange unsupported-asset blocklist."""
-        write_cursor.execute(
-            "DELETE FROM settings WHERE name='location_unsupported_assets_version'",
-        )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)
