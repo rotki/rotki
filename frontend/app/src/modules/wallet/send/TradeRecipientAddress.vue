@@ -90,26 +90,9 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
         </div>
         <template v-else>
           <label class="flex flex-col flex-1 p-3">
-            <Transition
-              mode="out-in"
-              enter-active-class="transition-all duration-50"
-              leave-active-class="transition-all duration-50"
-              enter-from-class="opacity-0 -translate-x-1"
-              leave-to-class="opacity-0 translate-x-1"
-            >
-              <span
-                v-if="!model || valid"
-                class="text-sm text-rui-grey-500 font-medium block"
-              >
-                {{ t('trade.to_address.label') }}
-              </span>
-              <span
-                v-else
-                class="text-sm text-rui-error font-medium block"
-              >
-                {{ t('trade.to_address.error') }}
-              </span>
-            </Transition>
+            <span class="text-sm text-rui-grey-500 font-medium block">
+              {{ t('trade.to_address.label') }}
+            </span>
             <input
               ref="searchInputRef"
               v-model="modelSearchValue"

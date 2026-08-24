@@ -6269,7 +6269,6 @@
       "title": "Select Asset"
     },
     "to_address": {
-      "error": "Please input valid ETH address",
       "label": "To address"
     },
     "waiting_for_confirmation": {

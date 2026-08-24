@@ -4493,7 +4493,6 @@
       "title": "Выберите актив"
     },
     "to_address": {
-      "error": "Пожалуйста, введите корректный адрес ETH",
       "label": "На адрес"
     },
     "waiting_for_confirmation": {
