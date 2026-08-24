@@ -14,7 +14,7 @@ export class DashboardPage {
 
   async getOverallBalance(): Promise<BigNumber> {
     const amountText = await this.page
-      .locator('[data-testid=overall-balances__net-worth] [data-testid=display-amount]')
+      .locator('[data-testid=overall-balances-net-worth] [data-testid=display-amount]')
       .textContent();
     return parseBigNumber(amountText ?? '0');
   }
@@ -23,7 +23,7 @@ export class DashboardPage {
     await this.page.locator('[data-testid=blockchain-balances]').waitFor({ state: 'visible' });
 
     const balances = new Map<string, BigNumber>();
-    const elements = this.page.locator('[data-testid=blockchain-balance__summary]');
+    const elements = this.page.locator('[data-testid=blockchain-balance-summary]');
     const count = await elements.count();
 
     for (let i = 0; i < count; i++) {
@@ -62,7 +62,7 @@ export class DashboardPage {
     await this.page.locator('[data-testid=manual-balances]').first().waitFor({ state: 'visible' });
 
     const balances = new Map<string, BigNumber>();
-    const elements = this.page.locator('[data-testid=manual-balance__summary]');
+    const elements = this.page.locator('[data-testid=manual-balance-summary]');
     const count = await elements.count();
 
     for (let i = 0; i < count; i++) {

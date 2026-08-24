@@ -47,9 +47,9 @@ vi.mock('@/modules/statistics/use-statistics-store', async () => {
 describe('overallBalances', () => {
   let wrapper: VueWrapper<InstanceType<typeof OverallBalances>>;
 
-  const netWorthSelector = '[data-testid=overall-balances__net-worth] [data-testid=fiat-display]';
-  const skeletonSelector = '[data-testid=overall-balances__net-worth-loading]';
-  const deltaSkeletonSelector = '[data-testid=overall-balances__delta-loading]';
+  const netWorthSelector = '[data-testid=overall-balances-net-worth] [data-testid=fiat-display]';
+  const skeletonSelector = '[data-testid=overall-balances-net-worth-loading]';
+  const deltaSkeletonSelector = '[data-testid=overall-balances-delta-loading]';
 
   function createWrapper(): VueWrapper<InstanceType<typeof OverallBalances>> {
     return mount(OverallBalances, {

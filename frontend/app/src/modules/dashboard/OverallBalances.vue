@@ -122,12 +122,12 @@ onMounted(() => {
       </div>
       <div
         class="font-medium"
-        data-testid="overall-balances__net-worth"
+        data-testid="overall-balances-net-worth"
       >
         <RuiSkeletonLoader
           v-if="loadingNetWorth"
           class="my-[0.5rem] w-56 h-[2rem] sm:my-[0.75rem] sm:w-72 sm:h-[2.5rem]"
-          data-testid="overall-balances__net-worth-loading"
+          data-testid="overall-balances-net-worth-loading"
         />
         <FiatDisplay
           v-else
@@ -140,7 +140,7 @@ onMounted(() => {
       <RuiSkeletonLoader
         v-if="isBusy"
         class="w-48 h-8"
-        data-testid="overall-balances__delta-loading"
+        data-testid="overall-balances-delta-loading"
       />
       <div
         v-else

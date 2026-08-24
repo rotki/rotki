@@ -44,7 +44,7 @@ export class RotkiApp {
     await this.page.goto('/#/user/login?skip_update=1', { timeout: TIMEOUT_MEDIUM });
     await disableAnimations(this.page);
 
-    await this.page.locator('[data-testid=connection-loading__content]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-testid=connection-loading-content]').waitFor({ state: 'detached' });
     await this.page.locator('[data-testid=account-management-forms]').waitFor({ state: 'visible' });
 
     // Check if we're on the login page (accounts exist) or create page (fresh start)
@@ -205,14 +205,14 @@ export class RotkiApp {
     if (show) {
       await menuButton.click();
       // Wait for the slider to be visible (the slider is inside the menu content)
-      await this.page.locator('[data-testid=privacy-mode-dropdown__input]').waitFor({ state: 'visible' });
+      await this.page.locator('[data-testid=privacy-mode-dropdown-input]').waitFor({ state: 'visible' });
     }
     else {
       const isVisible = await menuContent.isVisible();
       if (isVisible) {
         await menuButton.click();
         // Wait for menu content to be hidden
-        await this.page.locator('[data-testid=privacy-mode-dropdown__input]').waitFor({ state: 'hidden' });
+        await this.page.locator('[data-testid=privacy-mode-dropdown-input]').waitFor({ state: 'hidden' });
       }
     }
   }
@@ -221,14 +221,14 @@ export class RotkiApp {
     await this.togglePrivacyMenu(true);
     // Mode 0 = Normal, 1 = Semi Private, 2 = Private
     // Sibling div after slider contains mode labels
-    const label = this.page.locator(`[data-testid=privacy-mode-dropdown__input] + div > div:nth-child(${mode + 1})`);
+    const label = this.page.locator(`[data-testid=privacy-mode-dropdown-input] + div > div:nth-child(${mode + 1})`);
     await label.waitFor({ state: 'visible' });
     await label.click();
     await this.togglePrivacyMenu();
   }
 
   async toggleScrambler(enable: boolean): Promise<void> {
-    const input = this.page.locator('[data-testid=privacy-mode-scramble__toggle] input[type=checkbox]');
+    const input = this.page.locator('[data-testid=privacy-mode-scramble-toggle] input[type=checkbox]');
     const isChecked = await input.isChecked();
 
     if (enable !== isChecked) {
@@ -238,13 +238,13 @@ export class RotkiApp {
 
   async changeScrambleValue(multiplier: string): Promise<void> {
     await this.toggleScrambler(true);
-    const input = this.page.locator('[data-testid=privacy-mode-scramble__multiplier] input');
+    const input = this.page.locator('[data-testid=privacy-mode-scramble-multiplier] input');
     await input.fill(multiplier);
   }
 
   async changeRandomScrambleValue(): Promise<void> {
     await this.toggleScrambler(true);
-    const button = this.page.locator('[data-testid=privacy-mode-scramble__random-multiplier]');
+    const button = this.page.locator('[data-testid=privacy-mode-scramble-random-multiplier]');
     await button.click();
   }
 

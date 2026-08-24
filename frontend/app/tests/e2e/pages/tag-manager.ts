@@ -13,20 +13,20 @@ async function fillTagDialog(
   await page.locator('[data-testid=tag-creator-description] input').fill(description);
 
   if (background && foreground) {
-    const bgInput = page.locator('[data-testid=tag-creator__color-picker__background] input');
+    const bgInput = page.locator('[data-testid=tag-creator-color-picker-background] input');
     await bgInput.clear();
     await bgInput.fill(background);
     await bgInput.press('Tab');
 
-    const bgDisplay = page.locator('[data-testid=tag-creator__color-picker__background] [data-id=color-display]');
+    const bgDisplay = page.locator('[data-testid=tag-creator-color-picker-background] [data-id=color-display]');
     await expect(bgDisplay).toHaveCSS('background-color', `rgb(${hexToRgbPoints(background).join(', ')})`);
 
-    const fgInput = page.locator('[data-testid=tag-creator__color-picker__foreground] input');
+    const fgInput = page.locator('[data-testid=tag-creator-color-picker-foreground] input');
     await fgInput.clear();
     await fgInput.fill(foreground);
     await fgInput.press('Tab');
 
-    const fgDisplay = page.locator('[data-testid=tag-creator__color-picker__foreground] [data-id=color-display]');
+    const fgDisplay = page.locator('[data-testid=tag-creator-color-picker-foreground] [data-id=color-display]');
     await expect(fgDisplay).toHaveCSS('background-color', `rgb(${hexToRgbPoints(foreground).join(', ')})`);
   }
 }
