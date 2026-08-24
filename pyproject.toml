@@ -20,7 +20,6 @@ dynamic = ["version"]
 
 dependencies = [
     "web3==7.16.0",
-    "eth-account==0.13.7",
     "eth-typing==5.2.1",
     "content-hash==2.0.0",
     "sqlcipher3==0.6.2",
@@ -75,6 +74,7 @@ dependencies = [
     "bitarray==3.8.2",  # pinned to check free-threaded Python support
     "pandas==3.0.3",
     "mcp==1.28.1",
+    "eth-account",
 ]
 
 [project.urls]
@@ -144,12 +144,6 @@ packaging = [
     "setuptools==83.0.0",
     "setuptools-scm==7.1.0",
     "wheel==0.46.2",
-]
-
-crossbuild = [
-    # dependencies that need to be installed manually when creating arm and x86 packages for macos using
-    # the x86 as base architecture for both
-    "ckzg==2.1.7",
 ]
 
 profiling = [
@@ -553,4 +547,7 @@ ignored-classes = "rsqlite"
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { xxhash = "2026-07-07T00:00:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+exclude-newer-package = { eth-keyfile = "2026-08-22T00:00:00Z", eth-keys = "2026-08-22T00:00:00Z", eth-rlp = "2026-08-23T00:00:00Z", hexbytes = "2026-08-22T00:00:00Z", xxhash = "2026-07-07T00:00:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+
+[tool.uv.sources]
+eth-account = { git = "https://github.com/rotki/eth-account.git", rev = "ca1dd054e50667e8955ea89c841bb4bf2af567db" }

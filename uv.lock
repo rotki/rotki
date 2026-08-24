@@ -13,7 +13,11 @@ exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
 rotki-sqlite = "2026-07-13T15:54:00Z"
+hexbytes = "2026-08-22T00:00:00Z"
 xxhash = "2026-07-07T00:00:00Z"
+eth-keys = "2026-08-22T00:00:00Z"
+eth-keyfile = "2026-08-22T00:00:00Z"
+eth-rlp = "2026-08-23T00:00:00Z"
 
 [[package]]
 name = "a2wsgi"
@@ -383,30 +387,6 @@ wheels = [
 ]
 
 [[package]]
-name = "ckzg"
-version = "2.1.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/12/44/fdb579a0d035a1e510511e3c3b9ca98ba2ea240a24f112b1882478bfc2ff/ckzg-2.1.7.tar.gz", hash = "sha256:a0c61c5fd573af0267bcb435ef0f499911289ceb05e863480779ea284a3bb928", size = 1127878, upload-time = "2026-03-11T14:11:13.745Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/ab/11eb63c520cae074195b05cd644bf45be061b910b5c97abdaae02876a50e/ckzg-2.1.7-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:c19b98f29f4459587e1ec4cce3e2e10963a6974293cf3143d13ce43c30542806", size = 96400, upload-time = "2026-03-11T14:10:39.59Z" },
-    { url = "https://files.pythonhosted.org/packages/31/7d/3678cbb22f31a50dd354b9d3efcb9366dd5b97cdddbf270213a66b03ad41/ckzg-2.1.7-cp314-cp314-manylinux2010_i686.manylinux_2_12_i686.manylinux_2_28_i686.whl", hash = "sha256:d31583a24cf8166d81c36f1e424de1f343c1d604dbc8c68d938a908236ae11a3", size = 180492, upload-time = "2026-03-11T14:10:40.766Z" },
-    { url = "https://files.pythonhosted.org/packages/48/a5/355f898c75e19ac6426798c28a9767bdc734bebb40c4cd15572f644745ba/ckzg-2.1.7-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:baf6ac696e6a40b33ddb57aa0729d5e39230bd13fa4f1e40fe9236e8920d83fe", size = 166322, upload-time = "2026-03-11T14:10:41.752Z" },
-    { url = "https://files.pythonhosted.org/packages/ff/f5/7ffc482dc628c43d9c7a1b19392e1a920ccfd1da8d2e07d7dcc79c3e3bd2/ckzg-2.1.7-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8bbdf89f9327e442415a810beca692729c35664e154a6830296124a5c6f05470", size = 176061, upload-time = "2026-03-11T14:10:42.649Z" },
-    { url = "https://files.pythonhosted.org/packages/26/56/f79ee2a177b4522fe47709e9f7e48407cd54a63c3d7bc1ca3002c705b3a7/ckzg-2.1.7-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:716c2dde0a91c0095797b843f78a6425e20a3d8945ecb4f90550b5c681b6be05", size = 173746, upload-time = "2026-03-11T14:10:43.657Z" },
-    { url = "https://files.pythonhosted.org/packages/b9/a7/95b160707b22161817245de8b9e44ea143b9a2083b0c625e5e5cd4a2e20a/ckzg-2.1.7-cp314-cp314-musllinux_1_2_i686.whl", hash = "sha256:2a9f1a05ed44512b80581e47918b1f4546974e8e924ee0e8de84ab32de197326", size = 188923, upload-time = "2026-03-11T14:10:44.635Z" },
-    { url = "https://files.pythonhosted.org/packages/33/d4/ecfbecf763d42606dba8ab9d7de557d01816afad1e2f3cb1cc7efd6fc254/ckzg-2.1.7-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:42005c188e37c2f65d44f3a2585e89de18e0e229bc667a600d8716808ea2c33b", size = 183607, upload-time = "2026-03-11T14:10:45.846Z" },
-    { url = "https://files.pythonhosted.org/packages/4a/72/becb801d8f1224de265f299790f5b2c95e71546ab7ab24a1fd3ebb99519e/ckzg-2.1.7-cp314-cp314-win_amd64.whl", hash = "sha256:14fbc642b1e81893df76a1636fddc169173da5dcdb55fc08a030658cd186150e", size = 102517, upload-time = "2026-03-11T14:10:47.079Z" },
-    { url = "https://files.pythonhosted.org/packages/a8/6c/b310f05a6a27baaa53915b43483cc061080e3245c7facaa3c5b3a3cd7c5e/ckzg-2.1.7-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:da1a07e25ecaeb341ad4caf583fdec12c6af1ef3642289bb7dfcad2ca1b73dd3", size = 96609, upload-time = "2026-03-11T14:10:48.019Z" },
-    { url = "https://files.pythonhosted.org/packages/0d/96/e1ccbf3f90595d50aa98a8a9c3c1327e6be0575ddbf8292b26b0cfa69b06/ckzg-2.1.7-cp314-cp314t-manylinux2010_i686.manylinux_2_12_i686.manylinux_2_28_i686.whl", hash = "sha256:c657892f93eb70e3295b4f385e25380644c40f8bfebfcd55659f5017257c5b8c", size = 183315, upload-time = "2026-03-11T14:10:49.224Z" },
-    { url = "https://files.pythonhosted.org/packages/bc/94/2c7ff1983f82756b29011ad612bc0e1d8f4a1989073c94fd66868bc296d3/ckzg-2.1.7-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:03af4cf053be82c22a893c8ef971d17687182dd2e75bcc2fab320bc27a62b7cb", size = 169457, upload-time = "2026-03-11T14:10:50.601Z" },
-    { url = "https://files.pythonhosted.org/packages/98/cd/8c7247181843185ff5e34ebd400594e0fbe2d81e03324f124834f377ea74/ckzg-2.1.7-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6ecd9c44427a0035a8a9cb3dc18b4b3c72347f7be7c9f6866b8eddd6598bf0a9", size = 178841, upload-time = "2026-03-11T14:10:51.598Z" },
-    { url = "https://files.pythonhosted.org/packages/da/cb/cf2ed4cf461bd2891792317615075745053e2585d8a2cf26a8414ad01983/ckzg-2.1.7-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:16e313e6029e88a564724217dd8eddd6226fbf0a0c07bf65a210bf3512c7b8ad", size = 176489, upload-time = "2026-03-11T14:10:52.905Z" },
-    { url = "https://files.pythonhosted.org/packages/50/65/8b7d9cf8883f0df1a15cb20ecec99dfc02fc7bf05bf53509bb270e3a1db0/ckzg-2.1.7-cp314-cp314t-musllinux_1_2_i686.whl", hash = "sha256:8461ec7d69ccb450d4a4d031494a86dc6c15ad54b671967d4a8bdcd8158155b2", size = 191690, upload-time = "2026-03-11T14:10:53.855Z" },
-    { url = "https://files.pythonhosted.org/packages/83/56/a1fba1b4a2f90d5fc48d3e62f59f0791c90e85b6ebb600ffeee81ea9cfa6/ckzg-2.1.7-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:53f420a3fa55a92265e23394caa2aac5b0e1e63ee6489d414cafeb0accde9a9e", size = 186204, upload-time = "2026-03-11T14:10:54.821Z" },
-    { url = "https://files.pythonhosted.org/packages/c7/a9/a3284a64216f31a886ff216621c6b3806ca7ad7388908f68fcab9007c881/ckzg-2.1.7-cp314-cp314t-win_amd64.whl", hash = "sha256:2cdcc023d842900564d6070e397cab0d04fd393e6af07d60bdd1c97dc3ff09fd", size = 102660, upload-time = "2026-03-11T14:10:55.974Z" },
-]
-
-[[package]]
 name = "click"
 version = "8.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -611,11 +591,10 @@ wheels = [
 
 [[package]]
 name = "eth-account"
-version = "0.13.7"
-source = { registry = "https://pypi.org/simple" }
+version = "0.14.0b2.dev770+gca1dd054e"
+source = { git = "https://github.com/rotki/eth-account.git?rev=ca1dd054e50667e8955ea89c841bb4bf2af567db#ca1dd054e50667e8955ea89c841bb4bf2af567db" }
 dependencies = [
     { name = "bitarray" },
-    { name = "ckzg" },
     { name = "eth-abi" },
     { name = "eth-keyfile" },
     { name = "eth-keys" },
@@ -624,10 +603,6 @@ dependencies = [
     { name = "hexbytes" },
     { name = "pydantic" },
     { name = "rlp" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/74/cf/20f76a29be97339c969fd765f1237154286a565a1d61be98e76bb7af946a/eth_account-0.13.7.tar.gz", hash = "sha256:5853ecbcbb22e65411176f121f5f24b8afeeaf13492359d254b16d8b18c77a46", size = 935998, upload-time = "2025-04-21T21:11:21.204Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/18/088fb250018cbe665bc2111974301b2d59f294a565aff7564c4df6878da2/eth_account-0.13.7-py3-none-any.whl", hash = "sha256:39727de8c94d004ff61d10da7587509c04d2dc7eac71e04830135300bdfc6d24", size = 587452, upload-time = "2025-04-21T21:11:18.346Z" },
 ]
 
 [[package]]
@@ -646,43 +621,44 @@ pycryptodome = [
 
 [[package]]
 name = "eth-keyfile"
-version = "0.8.1"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eth-keys" },
     { name = "eth-utils" },
+    { name = "py-ecc" },
     { name = "pycryptodome" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/35/66/dd823b1537befefbbff602e2ada88f1477c5b40ec3731e3d9bc676c5f716/eth_keyfile-0.8.1.tar.gz", hash = "sha256:9708bc31f386b52cca0969238ff35b1ac72bd7a7186f2a84b86110d3c973bec1", size = 12267, upload-time = "2024-04-23T20:28:53.862Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/e1/eb8cc218abd7e7ee8eeafbb9c1deef17e9fdda9c3f39af23479899745136/eth_keyfile-0.10.0.tar.gz", hash = "sha256:3003b20000d68203e8fbf45456851a524f859a7432d2fae73be4a9aebeb4b8e1", size = 19864, upload-time = "2026-08-21T17:21:46.996Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/fc/48a586175f847dd9e05e5b8994d2fe8336098781ec2e9836a2ad94280281/eth_keyfile-0.8.1-py3-none-any.whl", hash = "sha256:65387378b82fe7e86d7cb9f8d98e6d639142661b2f6f490629da09fddbef6d64", size = 7510, upload-time = "2024-04-23T20:28:51.063Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/8d/3a4b86db08c99d0b43b2e4e37ddd658252fb8794e447eb64c9c84d2960dc/eth_keyfile-0.10.0-py3-none-any.whl", hash = "sha256:6b8b1e2528ecd3c53f9f733c061a8ddc7aa40b689f15c2f38b73ee6fc5d274fd", size = 9484, upload-time = "2026-08-21T17:21:45.855Z" },
 ]
 
 [[package]]
 name = "eth-keys"
-version = "0.7.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eth-typing" },
     { name = "eth-utils" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/11/1ed831c50bd74f57829aa06e58bd82a809c37e070ee501c953b9ac1f1552/eth_keys-0.7.0.tar.gz", hash = "sha256:79d24fd876201df67741de3e3fefb3f4dbcbb6ace66e47e6fe662851a4547814", size = 30166, upload-time = "2025-04-07T17:40:21.697Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/39/58/f54660cffe3f39aad2d80d13b072973ee9134b6cdfd8b4d086419eda997b/eth_keys-0.8.0.tar.gz", hash = "sha256:11549b251876fccd7caedd6905e494ea2309aec352ec2579b00ef9978017a964", size = 31311, upload-time = "2026-08-21T17:01:21.923Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/25/0ae00f2b0095e559d61ad3dc32171bd5a29dfd95ab04b4edd641f7c75f72/eth_keys-0.7.0-py3-none-any.whl", hash = "sha256:b0cdda8ffe8e5ba69c7c5ca33f153828edcace844f67aabd4542d7de38b159cf", size = 20656, upload-time = "2025-04-07T17:40:20.441Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/f5/24806598664a2fbc65d5ed4f0e9e986e7f9061e3b43738412c8df7ba1cbd/eth_keys-0.8.0-py3-none-any.whl", hash = "sha256:a7b94222638cccbdf2b5dae5c365d883a96826d82bb0faeb56baa65375f514ae", size = 20461, upload-time = "2026-08-21T17:01:20.767Z" },
 ]
 
 [[package]]
 name = "eth-rlp"
-version = "2.2.0"
+version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eth-utils" },
     { name = "hexbytes" },
     { name = "rlp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/ea/ad39d001fa9fed07fad66edb00af701e29b48be0ed44a3bcf58cb3adf130/eth_rlp-2.2.0.tar.gz", hash = "sha256:5e4b2eb1b8213e303d6a232dfe35ab8c29e2d3051b86e8d359def80cd21db83d", size = 7720, upload-time = "2025-02-04T21:51:08.134Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/e1/9719acaa45e6f158ebfc260a97edc71591264c1d09701cf8a30a687a36b0/eth_rlp-3.0.0.tar.gz", hash = "sha256:9663e54a4a1c1c847d2d328c1d07e4174ec1c082953fbb42b60e61c501c4931c", size = 17981, upload-time = "2026-08-22T22:01:51.528Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/3b/57efe2bc2df0980680d57c01a36516cd3171d2319ceb30e675de19fc2cc5/eth_rlp-2.2.0-py3-none-any.whl", hash = "sha256:5692d595a741fbaef1203db6a2fedffbd2506d31455a6ad378c8449ee5985c47", size = 4446, upload-time = "2025-02-04T21:51:05.823Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/35/a3071f2a7ee701f99c8562865edbc426991d0964543d2947901b4135f259/eth_rlp-3.0.0-py3-none-any.whl", hash = "sha256:32f355261c36ad2c369db098170f873123795667e50d496b034f369e2c9d2346", size = 15221, upload-time = "2026-08-22T22:01:50.235Z" },
 ]
 
 [[package]]
@@ -906,11 +882,11 @@ wheels = [
 
 [[package]]
 name = "hexbytes"
-version = "1.3.1"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7f/87/adf4635b4b8c050283d74e6db9a81496063229c9263e6acc1903ab79fbec/hexbytes-1.3.1.tar.gz", hash = "sha256:a657eebebdfe27254336f98d8af6e2236f3f83aed164b87466b6cf6c5f5a4765", size = 8633, upload-time = "2025-05-14T16:45:17.5Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/4f/eabe45c58f2d27cd0b338ecc41b0b475a3751ed70eb1a21db08497e3ceec/hexbytes-2.0.0.tar.gz", hash = "sha256:01312fcd5c57e8a8d2d7dd3274dcf84ea50422aff2abcc2d9fd89ad6a32498e5", size = 21344, upload-time = "2026-08-21T20:22:09.711Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/e0/3b31492b1c89da3c5a846680517871455b30c54738486fc57ac79a5761bd/hexbytes-1.3.1-py3-none-any.whl", hash = "sha256:da01ff24a1a9a2b1881c4b85f0e9f9b0f51b526b379ffa23832ae7899d29c2c7", size = 5074, upload-time = "2025-05-14T16:45:16.179Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/72/c7049aabd9e05efebc29b10208b11e5ae5cf819f48685ffced6abf871d10/hexbytes-2.0.0-py3-none-any.whl", hash = "sha256:5425bd7ac83cdd9791c13a5bf97cfe9b9609a304b1ef3ab146adfd50de06cf0e", size = 18866, upload-time = "2026-08-21T20:22:08.654Z" },
 ]
 
 [[package]]
@@ -1519,6 +1495,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/a8/d832f7293ebb21690860d2e01d8115e5ff6f2ae8bbdc953f0eb0fa4bd2c7/py-cpuinfo-9.0.0.tar.gz", hash = "sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690", size = 104716, upload-time = "2022-10-25T20:38:06.303Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/a9/023730ba63db1e494a271cb018dcd361bd2c917ba7004c3e49d5daf795a2/py_cpuinfo-9.0.0-py3-none-any.whl", hash = "sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5", size = 22335, upload-time = "2022-10-25T20:38:27.636Z" },
+]
+
+[[package]]
+name = "py-ecc"
+version = "8.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "eth-typing" },
+    { name = "eth-utils" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1c/96/e73075d5c885274efada2fbc5db6377022036c2f5b4b470dbcf4106e07d5/py_ecc-8.0.0.tar.gz", hash = "sha256:56aca19e5dc37294f60c1cc76666c03c2276e7666412b9a559fa0145d099933d", size = 51193, upload-time = "2025-04-14T16:14:03.29Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/58/383335eac96d2f1aba78741c6ce128c54e7eba2ea1dc47408257d751d35c/py_ecc-8.0.0-py3-none-any.whl", hash = "sha256:c0b2dfc4bde67a55122a392591a10e851a986d5128f680628c80b405f7663e13", size = 47814, upload-time = "2025-04-14T16:14:01.827Z" },
 ]
 
 [[package]]
@@ -2153,9 +2142,6 @@ dependencies = [
 ci = [
     { name = "pytest-github-actions-annotate-failures" },
 ]
-crossbuild = [
-    { name = "ckzg" },
-]
 dev = [
     { name = "bump2version" },
     { name = "coverage" },
@@ -2225,7 +2211,7 @@ requires-dist = [
     { name = "cryptography", specifier = "==48.0.1" },
     { name = "defusedxml", specifier = "==0.7.1" },
     { name = "eth-abi", specifier = "==5.2.0" },
-    { name = "eth-account", specifier = "==0.13.7" },
+    { name = "eth-account", git = "https://github.com/rotki/eth-account.git?rev=ca1dd054e50667e8955ea89c841bb4bf2af567db" },
     { name = "eth-typing", specifier = "==5.2.1" },
     { name = "eth-utils", specifier = "==5.3.1" },
     { name = "flask", specifier = "==3.1.3" },
@@ -2265,7 +2251,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 ci = [{ name = "pytest-github-actions-annotate-failures", specifier = "==0.3.0" }]
-crossbuild = [{ name = "ckzg", specifier = "==2.1.7" }]
 dev = [
     { name = "bump2version", specifier = "==1.0.1" },
     { name = "coverage", specifier = "==7.13.0" },
