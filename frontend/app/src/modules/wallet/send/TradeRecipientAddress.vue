@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { isValidEthAddress } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
-import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
-import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { uniqueObjects } from '@/modules/core/common/data/data';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import TradeAddressDisplay from '@/modules/wallet/send/TradeAddressDisplay.vue';
+import { useTradeRecipientAddress } from '@/modules/wallet/send/use-trade-recipient-address';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
 const model = defineModel<string>({ required: true });
@@ -19,138 +14,34 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const openOptionsDialog = ref<boolean>(false);
-
-const resolvingEns = ref<boolean>(false);
-const addressBookOptions = ref<string[]>([]);
-const addressBookSearch = ref<string>('');
-const addressBookSearchDebounced = refDebounced(addressBookSearch, 200);
-
-const openSuggestionsMenu = ref<boolean>(false);
-const searchValue = ref<string>('');
-const directOptions = ref<{ address: string; name: string }[]>([]);
-const debouncedSearchValue = refDebounced(searchValue, 200);
-
 const searchInputRef = useTemplateRef<InstanceType<typeof HTMLInputElement>>('searchInputRef');
 const menuContainerRef = useTemplateRef<InstanceType<typeof HTMLDivElement>>('menuContainerRef');
 const { focused: searchInputFocused } = useFocus(searchInputRef);
 const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
 
-const { connected, connectedAddress } = storeToRefs(useWalletStore());
-const { addresses } = useAccountAddresses();
-const { getAddressBook } = useAddressBookOperations();
-const { fetchEnsNames, resolveEnsToAddress } = useEnsOperations();
+const { connected } = storeToRefs(useWalletStore());
 
-function isNotConnectedAddress(address: string) {
-  const connected = get(connectedAddress);
-  return !connected || address !== connected;
-}
-
-const trackedAddresses = computed<string[]>(() => {
-  const accountsAddresses = [...new Set(Object.values(get(addresses)).flat())];
-  return accountsAddresses.filter(address => isValidEthAddress(address) && isNotConnectedAddress(address));
-});
-
-const filteredAddressBookOptions = computed<string[]>(() => get(addressBookOptions).filter(isNotConnectedAddress));
-
-const valid = computed<boolean>(() => {
-  const value = get(model);
-  return !value || isValidEthAddress(value);
-});
+const {
+  applySearchInput,
+  directOptions,
+  filteredAddressBookOptions,
+  handleFocusChange,
+  modelAddressBookSearch,
+  modelOpenOptionsDialog,
+  modelOpenSuggestionsMenu,
+  modelSearchValue,
+  reset,
+  resolvingEns,
+  select,
+  trackedAddresses,
+  valid,
+} = useTradeRecipientAddress(model);
 
 const anyFocused = logicOr(searchInputFocused, menuFocusedWithin);
 const usedAnyFocused = useRefWithDebounce(anyFocused, 200);
 
-function select(address: string) {
-  if (isNotConnectedAddress(address)) {
-    set(model, address);
-  }
-  set(openOptionsDialog, false);
-  set(openSuggestionsMenu, false);
-  set(searchValue, '');
-}
-
-async function getAddressBookData(name: string): Promise<{ address: string; name: string }[]> {
-  const data = await getAddressBook('private', {
-    limit: 10,
-    nameSubstring: name,
-    offset: 0,
-  });
-
-  return data.data
-    .filter(item => isValidEthAddress(item.address))
-    .map(item => ({ address: item.address, name: item.name }));
-}
-
-async function fetchAddressBookAddresses(name: string) {
-  const data = await getAddressBookData(name);
-  const addresses = data.map(item => item.address);
-  set(addressBookOptions, addresses);
-}
-
-function resetModelValue() {
-  set(model, '');
-}
-
-watch([addressBookSearchDebounced, openOptionsDialog], ([search, openOptionsDialog]) => {
-  if (openOptionsDialog) {
-    fetchAddressBookAddresses(search);
-  }
-  else {
-    set(addressBookSearch, '');
-  }
-});
-
-watch(usedAnyFocused, (focus) => {
-  set(openSuggestionsMenu, focus);
-  if (!focus) {
-    const search = get(searchValue);
-    if (search && isValidEthAddress(search)) {
-      set(model, search);
-    }
-    else {
-      set(searchValue, '');
-    }
-  }
-});
-
-watch(debouncedSearchValue, async (value) => {
-  const values = [];
-  const privateBooks = await getAddressBookData(value);
-  if (privateBooks.length > 0) {
-    values.push(...privateBooks);
-  }
-
-  const tracked = get(trackedAddresses).filter(item => item.includes(value));
-  if (tracked.length > 0) {
-    values.push(...tracked.map(item => ({ address: item })));
-  }
-
-  if (value.endsWith('.eth')) {
-    set(resolvingEns, true);
-    const address = await resolveEnsToAddress(value);
-    set(resolvingEns, false);
-    if (address) {
-      values.push({
-        address,
-        name: value,
-      });
-    }
-  }
-  else if (isValidEthAddress(value)) {
-    startPromise(fetchEnsNames([{ address: value, blockchain: null }]));
-    values.push({
-      address: value,
-    });
-  }
-
-  set(directOptions, uniqueObjects(values.filter(item => isNotConnectedAddress(item.address)), item => item.address));
-});
-
-watch(connectedAddress, (connectedAddress) => {
-  if (connectedAddress && connectedAddress === get(model)) {
-    set(model, '');
-  }
+watch(usedAnyFocused, (focused) => {
+  handleFocusChange(focused);
 });
 
 const { containerProps: trackedContainerProps, list: trackedList, wrapperProps: trackedWrapperProps } = useVirtualList(trackedAddresses, {
@@ -160,29 +51,17 @@ const { containerProps: trackedContainerProps, list: trackedList, wrapperProps: 
 const { containerProps: addressBookContainerProps, list: addressBookList, wrapperProps: addressBookWrapperProps } = useVirtualList(filteredAddressBookOptions, {
   itemHeight: 56,
 });
-
-function applySearchInput() {
-  const value = get(searchValue);
-  if (isValidEthAddress(value)) {
-    select(value);
-  }
-}
-
-watch(openSuggestionsMenu, (curr, prev) => {
-  if (!curr && prev) {
-    applySearchInput();
-  }
-});
 </script>
 
 <template>
   <RuiMenu
-    v-model="openSuggestionsMenu"
+    v-model="modelOpenSuggestionsMenu"
     wrapper-class="w-full"
   >
     <template #activator>
       <div
         class="flex items-center bg-rui-grey-50 dark:bg-rui-grey-900 rounded-lg border border-default mt-1 duration-50 w-full"
+        data-testid="recipient-field"
         :class="{
           '!border-rui-error': !valid,
         }"
@@ -200,7 +79,8 @@ watch(openSuggestionsMenu, (curr, prev) => {
           <RuiButton
             icon
             variant="text"
-            @click="resetModelValue()"
+            data-testid="recipient-clear"
+            @click="reset()"
           >
             <RuiIcon
               name="lu-x"
@@ -232,11 +112,12 @@ watch(openSuggestionsMenu, (curr, prev) => {
             </Transition>
             <input
               ref="searchInputRef"
-              v-model="searchValue"
+              v-model="modelSearchValue"
+              data-testid="recipient-search"
               type="text"
               class="outline-none w-full bg-transparent text-sm placeholder:text-rui-grey-400 dark:placeholder:text-rui-grey-700"
               placeholder="E.g. 0x9531c059098e3d194ff87febb587ab07b30b1306"
-              @click="openSuggestionsMenu = true"
+              @click="modelOpenSuggestionsMenu = true"
               @blur="applySearchInput()"
             />
           </label>
@@ -245,7 +126,8 @@ watch(openSuggestionsMenu, (curr, prev) => {
               variant="outlined"
               color="primary"
               class="!p-3"
-              @click="openOptionsDialog = true"
+              data-testid="recipient-open-address-book"
+              @click="modelOpenOptionsDialog = true"
             >
               <RuiIcon
                 name="lu-book-user"
@@ -291,7 +173,7 @@ watch(openSuggestionsMenu, (curr, prev) => {
     {{ t('trade.never_interacted') }}
   </RuiAlert>
   <RuiDialog
-    v-model="openOptionsDialog"
+    v-model="modelOpenOptionsDialog"
     max-width="500"
   >
     <RuiCard
@@ -306,7 +188,7 @@ watch(openSuggestionsMenu, (curr, prev) => {
         variant="text"
         class="absolute top-2 right-2"
         icon
-        @click="openOptionsDialog = false"
+        @click="modelOpenOptionsDialog = false"
       >
         <RuiIcon
           class="text-white"
@@ -346,7 +228,7 @@ watch(openSuggestionsMenu, (curr, prev) => {
           </div>
           <div class="p-4">
             <RuiTextField
-              v-model="addressBookSearch"
+              v-model="modelAddressBookSearch"
               prepend-icon="lu-search"
               variant="outlined"
               dense
