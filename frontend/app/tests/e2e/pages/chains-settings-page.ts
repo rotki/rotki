@@ -10,7 +10,7 @@ export class ChainsSettingsPage {
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-testid="settings__chains"]').click();
+    await this.page.locator('[data-testid="settings-chains"]').click();
     await this.page.locator('[data-testid=chains-to-skip-detection]').waitFor({ state: 'visible' });
   }
 

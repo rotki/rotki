@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import { getClass, type TabContent } from '@/modules/core/common/tabs';
+import { type TabContent, tabTestId } from '@/modules/core/common/tabs';
 
 const { tabs, hideRouterView = false, child = false, plain = false } = defineProps<{
   tabs: TabContent[];
@@ -13,8 +13,8 @@ const model = ref<string>('');
 
 const router = useRouter();
 
-function getTabClass(route: RouteLocationRaw): string {
-  return getClass(router.resolve(route).path);
+function getTabTestId(route: RouteLocationRaw): string {
+  return tabTestId(router.resolve(route).path);
 }
 </script>
 
@@ -36,7 +36,7 @@ function getTabClass(route: RouteLocationRaw): string {
         link
         :to="tab.route"
         :exact-path="false"
-        :data-testid="getTabClass(tab.route)"
+        :data-testid="getTabTestId(tab.route)"
       >
         <template #prepend>
           <RuiIcon
