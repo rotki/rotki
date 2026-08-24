@@ -4190,10 +4190,10 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "Exclude",
-    "ignore_tooltip": "Excluded the selected actions from the profit/loss report",
-    "unignore": "Include",
-    "unignore_tooltip": "Included the selected actions in the profit/loss report"
+    "ignore": "Ignore",
+    "ignore_tooltip": "Ignore the selected assets",
+    "unignore": "Unignore",
+    "unignore_tooltip": "Stop ignoring the selected assets"
   },
   "import_data": {
     "binance": {
