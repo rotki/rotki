@@ -32,6 +32,10 @@ DEPOSIT: Final = b'\x8f_QD\x83\x94i\x9a\xd6\xa3\xb8\x0c\xda\xdfN\xc6\x8c]rL\x8c?
 NEW_PRIORITY_REQUEST: Final = b'\xd0\x943r\xc0\x8bC\x8a\x88\xd4\xb3\x9dw!i\x01\x07\x9e\xda\x9c\xa5\x9dE4\x98A\xc0\x99\x08;h0'  # noqa: E501
 PENDING_WITHDRAWALS_COMPLETE: Final = b'\x9bTx\xc9\x9b\\\xa4\x1b\xee\xc4\xf6\xf6\x08A&\xd6\xf9\xe2c\x82\xd0\x17\xb4\xbbg\xc3|\x9e\x84S\xa3\x13'  # noqa: E501
 WITHDRAWAL: Final = b'\xef\xefa\x9a\xe4\xa5B\xa2\xb8\x81\x0bN\xfe\xcc\xd8G\x8b\xd6\x83\xe9\x855N\xe3\x1d\xd2\xd6D\xaf\xf6\xd0\xca'  # noqa: E501
+# Withdrawal(uint16 indexed tokenId, uint128 amount), the bridge's original payout event.
+# 0xf4bf32c167ee6e782944cd1db8174729b46adcd3bc732e282cc4a80793933154. Unlike the one above
+# it does not log who was paid, so its transfer is found by amount alone.
+LEGACY_WITHDRAWAL: Final = b'\xf4\xbf2\xc1g\xeenx)D\xcd\x1d\xb8\x17G)\xb4j\xdc\xd3\xbcs.(,\xc4\xa8\x07\x93\x931T'  # noqa: E501
 
 
 class ZksyncDecoder(EvmDecoderInterface):
@@ -84,6 +88,8 @@ class ZksyncDecoder(EvmDecoderInterface):
             return self._decode_withdrawal(context)
         elif context.tx_log.topics[0] == WITHDRAWAL:
             return self._decode_single_withdrawal(context)
+        elif context.tx_log.topics[0] == LEGACY_WITHDRAWAL:
+            return self._decode_legacy_withdrawal(context)
         elif context.tx_log.topics[0] == CLAIM_REWARD_TOPIC:
             return self._decode_sunset_claim(context)
 
@@ -212,6 +218,36 @@ class ZksyncDecoder(EvmDecoderInterface):
             address=ZKSYNC_LITE_SUNSET_CLAIM,
             extra_data=self._withdrawal_bridge_extra_data(user_address),
         )])
+
+    def _decode_legacy_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a payout logged by the bridge's original Withdrawal event.
+
+        That event names the token but not who was paid, so the transfer it belongs to is
+        found by its amount among the receives from the bridge decoded so far. The token id
+        cannot narrow it down further since rotki does not map zksync token ids to assets.
+        Both the erc20 transfer log and the internal transaction an eth payout arrives in
+        are decoded before this log, so the receive is always already there.
+        """
+        amount_raw = int.from_bytes(context.tx_log.data)
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == ZKSYNC_BRIDGE and
+                    event.location_label is not None and
+                    asset_raw_value(
+                        amount=event.amount,
+                        asset=event.asset.resolve_to_crypto_asset(),
+                    ) == amount_raw
+            ):
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.BRIDGE
+                event.counterparty = CPT_ZKSYNC
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
+                event.extra_data = self._withdrawal_bridge_extra_data(event.location_label)
+                break
+
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_single_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a single zksync lite withdrawal event from batched withdrawals."""

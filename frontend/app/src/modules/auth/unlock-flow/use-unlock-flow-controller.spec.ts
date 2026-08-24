@@ -83,7 +83,7 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 }));
 
 vi.mock('@/modules/wallet/use-wallet-store', () => ({
-  useWalletStore: (): unknown => ({ disconnect: h.disconnectWallet }),
+  disconnectWalletIfActive: (): unknown => h.disconnectWallet(),
 }));
 
 vi.mock('@/modules/auth/use-remember-settings', () => ({

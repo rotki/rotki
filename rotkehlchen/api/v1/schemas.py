@@ -25,6 +25,7 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
 )
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
+from rotkehlchen.assets.nft_handling import NftHandling
 from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
@@ -2917,7 +2918,7 @@ class AssetsSearchLevenshteinSchema(Schema):
     evm_chain = EvmChainNameField(load_default=None)
     address = EmptyAsNoneStringField(load_default=None)
     limit = fields.Integer(required=True)
-    search_nfts = fields.Boolean(load_default=False)
+    nft_handling = SerializableEnumField(enum_class=NftHandling, load_default=NftHandling.EXCLUDE)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
 
     def __init__(self, db: DBHandler) -> None:
@@ -2974,7 +2975,7 @@ class AssetsSearchLevenshteinSchema(Schema):
         return {
             'filter_query': filter_query,
             'limit': data['limit'],
-            'search_nfts': data['search_nfts'],
+            'nft_handling': data['nft_handling'],
         }
 
 

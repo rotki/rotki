@@ -264,6 +264,12 @@ def fetch_airdrops_metadata(database: DBHandler) -> tuple[dict[str, Airdrop], di
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops Index request failed due to {e!s}') from e
 
+        if remote_metadata_res.status_code not in (HTTPStatus.OK, HTTPStatus.NOT_MODIFIED):
+            raise RemoteError(
+                f'Airdrops Index request failed with HTTP status '
+                f'{remote_metadata_res.status_code}: {remote_metadata_res.text}',
+            )
+
         if remote_metadata_res.status_code == HTTPStatus.NOT_MODIFIED:  # index is not modified, use cached index  # noqa: E501
             airdrops_metadata_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
@@ -274,11 +280,12 @@ def fetch_airdrops_metadata(database: DBHandler) -> tuple[dict[str, Airdrop], di
 
     if airdrops_data is None:  # index has been modified, save new index
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            globaldb_set_unique_cache_value(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.AIRDROPS_HASH, ETAG_CACHE_KEY),
-                value=remote_metadata_res.headers[ETAG_CACHE_KEY],
-            )
+            if (remote_etag := remote_metadata_res.headers.get(ETAG_CACHE_KEY)) is not None:
+                globaldb_set_unique_cache_value(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.AIRDROPS_HASH, ETAG_CACHE_KEY),
+                    value=remote_etag,
+                )
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
                 key_parts=(CacheType.AIRDROPS_METADATA,),

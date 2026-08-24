@@ -30,8 +30,20 @@ const getChain = vi.fn((name: string): Blockchain => {
   return Blockchain.ETH;
 });
 
+// `eth` is the only blockchain id that differs from its evm chain name, which is
+// what `getChainIdFromChain` has to bridge.
+const getEvmChainName = vi.fn((chain: string): string | undefined => {
+  if (chain === Blockchain.ETH)
+    return 'ethereum';
+  if (chain === Blockchain.OPTIMISM)
+    return 'optimism';
+  if (chain === Blockchain.ARBITRUM_ONE)
+    return 'arbitrum_one';
+  return undefined;
+});
+
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
-  useSupportedChains: vi.fn().mockImplementation(() => ({ allEvmChains, getChain })),
+  useSupportedChains: vi.fn().mockImplementation(() => ({ allEvmChains, getChain, getEvmChainName })),
 }));
 
 const refreshBlockchainBalances = vi.fn();
@@ -63,9 +75,12 @@ describe('useWalletHelper', () => {
       expect(getEvmChainNameFromChainId(42161n)).toBe('arbitrum_one');
     });
 
-    it('should fall back to ethereum for unknown chainId', () => {
+    it('should return undefined for a chain rotki does not support', () => {
       const { getEvmChainNameFromChainId } = useWalletHelper();
-      expect(getEvmChainNameFromChainId(99999)).toBe('ethereum');
+      // A connected wallet reports whatever chain it sits on, which is not
+      // constrained to rotki's list. Answering `ethereum` for it made the send
+      // form believe it was on mainnet.
+      expect(getEvmChainNameFromChainId(99999)).toBeUndefined();
     });
   });
 
@@ -76,17 +91,31 @@ describe('useWalletHelper', () => {
       expect(getChain).toHaveBeenCalledWith('optimism');
       expect(result).toBe(Blockchain.OPTIMISM);
     });
+
+    it('should not resolve a chain rotki does not support', () => {
+      const { getChainFromChainId } = useWalletHelper();
+
+      // `getChain` itself defaults to ethereum, so it must not even be reached.
+      expect(getChainFromChainId(250)).toBeUndefined();
+      expect(getChain).not.toHaveBeenCalled();
+    });
   });
 
   describe('getChainIdFromChain', () => {
     it('should return numeric id for known chain', () => {
       const { getChainIdFromChain } = useWalletHelper();
-      expect(getChainIdFromChain('arbitrum_one')).toBe(42161);
+      expect(getChainIdFromChain(Blockchain.ARBITRUM_ONE)).toBe(42161);
     });
 
-    it('should default to 1 for unknown chain', () => {
+    it('should resolve a blockchain id that differs from its evm chain name', () => {
       const { getChainIdFromChain } = useWalletHelper();
-      expect(getChainIdFromChain('nope')).toBe(1);
+      // `eth` appears in allEvmChains as `ethereum`, so a direct id match misses.
+      expect(getChainIdFromChain(Blockchain.ETH)).toBe(1);
+    });
+
+    it('should return undefined for an unknown chain rather than ethereum', () => {
+      const { getChainIdFromChain } = useWalletHelper();
+      expect(getChainIdFromChain('nope')).toBeUndefined();
     });
   });
 

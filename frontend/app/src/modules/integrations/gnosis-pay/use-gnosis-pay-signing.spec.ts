@@ -1,4 +1,6 @@
 import type { Ref } from 'vue';
+import { type NotificationData, NotificationGroup } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -12,6 +14,7 @@ const fetchNonce = vi.fn();
 const verifySiweSignature = vi.fn();
 const runTaskResult = vi.fn();
 const showErrorMessage = vi.fn();
+const removeMatching = vi.fn<(predicate: (n: NotificationData) => boolean) => void>();
 
 const submitTask = vi.fn(runSpecWith(runTaskResult));
 const signMessage = vi.fn();
@@ -36,7 +39,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockImplementation(() => ({ showErrorMessage })),
+  useNotifications: vi.fn().mockImplementation(() => ({ removeMatching, showErrorMessage })),
 }));
 
 vi.mock('@/modules/wallet/bridge/use-injected-wallet', () => ({
@@ -103,6 +106,7 @@ describe('useGnosisPaySigning', () => {
     runTaskResult.mockReset();
     submitTask.mockClear();
     showErrorMessage.mockReset();
+    removeMatching.mockReset();
     signMessage.mockReset().mockResolvedValue('0xSignature');
     const fakeClient = { signMessage };
     injectedGetWalletClient.mockReset().mockReturnValue(fakeClient);
@@ -165,6 +169,49 @@ describe('useGnosisPaySigning', () => {
     expect(get(harness.signInSuccess)).toBe(true);
     expect(onSignInComplete).toHaveBeenCalled();
     expect(get(harness.signingInProgress)).toBe(false);
+  });
+
+  it('should drop the session-expired warning once the signature is verified', async () => {
+    const harness = makeHarness();
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
+
+    const { signInWithEthereum } = useGnosisPaySigning(harness);
+    await signInWithEthereum();
+
+    expect(removeMatching).toHaveBeenCalledTimes(1);
+
+    // Nothing else in this flow writes to that group, so the predicate has to single it out: the
+    // warning goes and an unrelated notification stays.
+    const predicate = removeMatching.mock.calls[0][0];
+    expect(predicate(createMock<NotificationData>({ group: NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED }))).toBe(true);
+    expect(predicate(createMock<NotificationData>({ group: NotificationGroup.MISSING_API_KEY }))).toBe(false);
+  });
+
+  it('should keep the session-expired warning when verification returns false', async () => {
+    const harness = makeHarness();
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(false));
+
+    const { signInWithEthereum } = useGnosisPaySigning(harness);
+    await signInWithEthereum();
+
+    expect(removeMatching).not.toHaveBeenCalled();
+  });
+
+  it('should put a bare authority on line 1 and the full url in URI', async () => {
+    const harness = makeHarness();
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce-123'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
+
+    const { signInWithEthereum } = useGnosisPaySigning(harness);
+    await signInWithEthereum();
+
+    // EIP-4361 line 1 is an authority, not a URL. Wallets compare it verbatim against the
+    // requesting origin's host, so a scheme here can never match any origin.
+    const lines = String(signMessage.mock.calls[0][0].message).split('\n');
+    expect(lines[0]).toBe('rotki.com wants you to sign in with your Ethereum account:');
+    expect(lines).toContain('URI: https://rotki.com');
   });
 
   it('should bail out when fetching the nonce fails actionably', async () => {

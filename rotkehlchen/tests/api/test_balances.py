@@ -860,6 +860,62 @@ def test_blockchain_balances_only_cache_does_not_query_chain(
     }
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_blockchain_balances_cache_skips_disabled_entries(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Cached balance responses omit fully disabled chains and disabled addresses."""
+    active_address, disabled_address = ethereum_accounts
+    optimism_address = string_to_evm_address('0x586AD5760a2fe5847c58deEc2933e11B5f595dBF')
+    active_balance = BalanceSheet()
+    active_balance.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+    disabled_balance = BalanceSheet()
+    disabled_balance.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(2))
+    optimism_balance = BalanceSheet()
+    optimism_balance.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(3))
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        db.set_blockchain_balances_cache(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            balances={
+                active_address: active_balance,
+                disabled_address: disabled_balance,
+            },
+        )
+        db.set_blockchain_balances_cache(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.OPTIMISM,
+            balances={optimism_address: optimism_balance},
+        )
+
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {
+            SupportedBlockchain.ETHEREUM: frozenset({disabled_address}),
+            SupportedBlockchain.OPTIMISM: frozenset(),
+        },
+    )
+    try:
+        result = assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+            params={'only_cache': True},
+        ))
+
+        assert set(result['per_account']) == {SupportedBlockchain.ETHEREUM.serialize()}
+        assert set(result['per_account']['eth']) == {active_address}
+        assert result['per_account']['eth'][active_address]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'  # noqa: E501
+        assert result['totals']['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'
+
+        with db.conn.read_ctx() as cursor:
+            cached_balances = db.get_blockchain_balances_cache(cursor=cursor)
+        assert set(cached_balances.eth) == {active_address, disabled_address}
+        assert set(cached_balances.optimism) == {optimism_address}
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_balances_caching_mixup(
         rotkehlchen_api_server: APIServer,

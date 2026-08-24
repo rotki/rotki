@@ -3,25 +3,42 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useFormErrorScroll } from '@/modules/core/common/use-form-error-scroll';
 import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
 
+/** The footer's two buttons. `primary` defaults to Confirm and `secondary` to Cancel. */
+export interface BigDialogAction {
+  primary?: string;
+  secondary?: string;
+  disabled?: boolean;
+  tooltip?: string;
+  hidden?: boolean;
+}
+
+/** Validation state the confirm button reports on. */
+interface BigDialogErrors {
+  count?: number;
+  /** Scroll the first error into view when the count goes from zero to non-zero. */
+  autoScroll?: boolean;
+}
+
+/** Visual knobs a couple of callers tweak; dismissal behaviour is `persistent`/`promptOnClose`. */
+interface BigDialogLayout {
+  maxWidth?: string;
+  divide?: boolean;
+  /** Drop the 50vh minimum on the content area. */
+  autoHeight?: boolean;
+}
+
 defineOptions({
   inheritAttrs: false,
 });
 
 const {
-  actionDisabled = false,
-  actionHidden = false,
-  actionTooltip = '',
-  autoHeight = false,
-  autoScrollToError = false,
+  action,
   display,
-  divide = false,
-  errorCount = 0,
+  errors,
+  layout,
   loading = false,
-  maxWidth = '900px',
   persistent = false,
-  primaryAction,
   promptOnClose = false,
-  secondaryAction,
   subtitle = '',
   title,
 } = defineProps<{
@@ -29,18 +46,11 @@ const {
   subtitle?: string;
   display: boolean;
   loading?: boolean;
-  actionHidden?: boolean;
-  actionDisabled?: boolean;
-  actionTooltip?: string;
-  primaryAction?: string;
-  secondaryAction?: string;
-  maxWidth?: string;
+  action?: BigDialogAction;
+  layout?: BigDialogLayout;
+  errors?: BigDialogErrors;
   persistent?: boolean;
-  divide?: boolean;
-  autoHeight?: boolean;
   promptOnClose?: boolean;
-  errorCount?: number;
-  autoScrollToError?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -62,17 +72,34 @@ const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
 const { scrollToFirstError } = useFormErrorScroll();
 
-const hasErrors = computed<boolean>(() => errorCount > 0);
+// Each field is read on its own rather than by spreading a bag over defaults: a caller forwarding
+// its own optional value passes a present key holding `undefined`, which a spread takes as the value.
+const errorCount = computed<number>(() => errors?.count ?? 0);
 
-watch(() => errorCount, async (newCount, oldCount) => {
-  if (autoScrollToError && newCount > 0 && oldCount === 0) {
+const actionDisabled = computed<boolean>(() => action?.disabled ?? false);
+
+const actionHidden = computed<boolean>(() => action?.hidden ?? false);
+
+const actionTooltip = computed<string>(() => action?.tooltip ?? '');
+
+const maxWidth = computed<string>(() => layout?.maxWidth ?? '900px');
+
+const divide = computed<boolean>(() => layout?.divide ?? false);
+
+const autoHeight = computed<boolean>(() => layout?.autoHeight ?? false);
+
+const hasErrors = computed<boolean>(() => get(errorCount) > 0);
+
+watch(errorCount, async (newCount, oldCount) => {
+  if (errors?.autoScroll && newCount > 0 && oldCount === 0) {
     await nextTick();
     await scrollToFirstError(get(wrapper) ?? undefined);
   }
 });
 
-const primary = computed(() => primaryAction || t('common.actions.confirm'));
-const secondary = computed(() => secondaryAction || t('common.actions.cancel'));
+// `||` rather than `??` on purpose: an empty label falls back to the default, as it always has.
+const primary = computed(() => action?.primary || t('common.actions.confirm'));
+const secondary = computed(() => action?.secondary || t('common.actions.cancel'));
 const displayModel = computed({
   get() {
     return display;

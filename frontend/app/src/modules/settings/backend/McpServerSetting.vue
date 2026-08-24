@@ -18,8 +18,8 @@ import { useMcpServerState } from './use-mcp-server-state';
 const { t } = useI18n({ useScope: 'global' });
 const isDocker = import.meta.env.VITE_DOCKER === 'true';
 
-const { getMcpServerStatus, isPackaged, setMcpAutoStart } = useInterop();
-const { available, probe, serviceState, setServiceRunning, supportsOptions } = useControl();
+const { getMcpServerStatus, isPackaged } = useInterop();
+const { available, probe, serviceInfo, setServiceAutostart, setServiceRunning } = useControl();
 const { generateMcpToken } = useMcpApi();
 const { allowed: mcpAllowed, minimumTier: mcpMinimumTier, premium } = useFeatureAccess(PremiumFeature.MCP);
 
@@ -130,6 +130,13 @@ const isLifecycleDisabled = computed<boolean>(() => {
     || current === StarlingServiceStatus.UNAVAILABLE
     || transitioningStates.has(current);
 });
+// A preference is settable while the server is mid-transition, unlike start/stop,
+// but not when the supervisor does not manage MCP at all: the write would be
+// refused and the user would be shown the supervisor's raw "invalid service".
+const isAutoStartDisabled = computed<boolean>(() => {
+  const current = get(state);
+  return get(loading) || current === undefined || current === StarlingServiceStatus.UNAVAILABLE;
+});
 // Nothing to drive the server with. In the plain web build that is simply the
 // truth (no supervisor is reachable); in docker it means the deployment has no
 // session cookie configured, so starling never mounted `/_control`.
@@ -159,14 +166,13 @@ async function loadStatus(): Promise<void> {
     if (!await probe())
       return;
 
-    set(state, await serviceState(StarlingService.MCP));
-    // Auto-start and the loopback endpoint are Electron app settings, readable
-    // only where a restart may carry options at all.
-    if (supportsOptions) {
-      const status = await getMcpServerStatus();
-      set(autoStart, status.autoStart);
-      set(endpoint, status.endpoint);
-    }
+    const info = await serviceInfo(StarlingService.MCP);
+    set(state, info.state);
+    set(autoStart, info.autostart);
+    // The loopback endpoint is the one thing only Electron knows: docker's is
+    // this page's own origin, fixed at the top of the file.
+    if (isPackaged)
+      set(endpoint, (await getMcpServerStatus()).endpoint);
   }
   catch (error_: unknown) {
     set(serverError, getErrorMessage(error_));
@@ -179,17 +185,30 @@ async function loadStatus(): Promise<void> {
 async function updateAutoStart(enabled: boolean): Promise<void> {
   set(loading, true);
   set(serverError, undefined);
+  let failure: string | undefined;
   try {
-    const status = await setMcpAutoStart(enabled);
-    set(autoStart, status.autoStart);
-    set(state, status.state);
+    await setServiceAutostart(StarlingService.MCP, enabled);
   }
   catch (error_: unknown) {
-    set(serverError, getErrorMessage(error_));
+    failure = getErrorMessage(error_);
   }
-  finally {
-    set(loading, false);
+
+  try {
+    // Read back rather than trust the click: a refused write leaves the switch
+    // showing what is stored, and one the supervisor applied but could not save
+    // shows the new value beside the error saying it will not survive a restart.
+    // The state comes from the same snapshot, so the status chip cannot go stale
+    // across a toggle.
+    const info = await serviceInfo(StarlingService.MCP);
+    set(autoStart, info.autostart);
+    set(state, info.state);
   }
+  catch (error_: unknown) {
+    failure ??= getErrorMessage(error_);
+  }
+
+  set(serverError, failure);
+  set(loading, false);
 }
 
 async function toggleServer(): Promise<void> {
@@ -407,10 +426,9 @@ onBeforeMount(() => {
 
       <div class="flex max-w-4xl flex-wrap items-center gap-4 border-t border-default pt-4">
         <RuiSwitch
-          v-if="supportsOptions"
           data-testid="mcp-auto-start"
           :model-value="autoStart"
-          :disabled="loading"
+          :disabled="isAutoStartDisabled"
           hide-details
           color="primary"
           :label="t('backend_settings.settings.mcp_server.auto_start')"

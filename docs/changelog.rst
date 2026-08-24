@@ -3,6 +3,11 @@ Changelog
 =========
 
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
+* :release:`1.44.0 <2026-08-21>`
+* :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
+* :feature:`12317` rotki is ready to resolve ENS v2 names.
+* :feature:`-` You can now find an asset on the dashboard or in blockchain balances by pasting its contract address, which is the quickest way to pin down a token whose name you do not know or that shares a symbol with others. An asset whose symbol or name is exactly what you typed is also shown first, so searching for ``eth`` no longer buries ETH under every token that merely contains those letters.
+* :bug:`-` Searching your assets on the dashboard or in blockchain balances now shows the matches as soon as you type. The first search after opening a page used to say there were no results for a second or two, making an asset you hold look like one you do not.
 * :feature:`-` Frankencoin Savings deposits, withdrawals, interest and balances are now supported on Ethereum, Arbitrum One, Base, Gnosis, Optimism and Polygon PoS.
 * :feature:`-` The Help menu can now open the data directory, next to the entry that opens the logs directory. It stays disabled until the backend is running, since that is when the directory in use is known.
 * :bug:`-` Single-asset deposits in StakeDAO are now decoded correctly.
@@ -93,6 +98,8 @@ Changelog
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
 * :bug:`12503` Transactions shared by multiple tracked EVM addresses are now decoded again when a newly added address is discovered in them, preventing events involving that address from being omitted.
+* :bug:`12564` Kraken tokenized asset (xStocks) trades are now imported with the correct fiat receive side, instead of a zero-amount receive, by ignoring Kraken's internal USD settlement legs that cancel each other out.
+* :bug:`-` fix order of aave v3 token interest earnings for a specific subset of events.
 * :feature:`12499` Additional crypto.com CSV import transaction kinds such as van purchases, fiat wallet limit orders, and extra earn interest payments will now be properly imported.
 * :bug:`12507` The documented ``LOGFROMOTHERMODULES`` Docker environment variable is now honored again (it was misspelled internally) and accepts truthy string values such as ``true``, ``1``, ``yes`` and ``on``.
 * :bug:`-` The rate-limit hint in the PnL report's missing prices dialog is now a warning icon next to the refresh button, so its tooltip no longer covers the price input or the buttons of nearby rows.

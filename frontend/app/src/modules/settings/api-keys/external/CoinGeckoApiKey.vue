@@ -26,7 +26,7 @@ const link = externalLinks.coingeckoApiKey;
     :title="t('external_services.coingecko.title')"
     :subtitle="t('external_services.coingecko.description')"
     :image-src="getPublicServiceImagePath('coingecko.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

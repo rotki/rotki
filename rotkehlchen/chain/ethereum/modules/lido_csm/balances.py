@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.fval import FVal
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -85,14 +86,16 @@ class LidoCsmBalances(ProtocolWithBalance):
         )
         return token_normalized_value_decimals(pooled_eth, 18)
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Return the Lido CSM balances tracked in the DB for stETH.
 
         May raise:
             RemoteError: bubbled up from `_metrics_fetcher` when fetching rewards.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(node_operators := self._node_operator_db.get_node_operators()) == 0:
+        if len(node_operators := self._node_operator_db.get_node_operators(
+            addresses=addresses,
+        )) == 0:
             return balances
 
         if (steth_price := Inquirer.find_price(

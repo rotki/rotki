@@ -60,7 +60,8 @@ subtle = "=2.6.1"
 [dev-dependencies]
 mockito = "=1.7.2"
 tokio = { workspace = true, features = ["test-util"] }
-rand = "=0.10.1"
 regex = "=1.12.3"
 # `oneshot` for exercising the session middleware in tests
 tower.workspace = true
+# RAII temp dirs for test fixtures: removed on drop instead of piling up in /tmp
+tempfile = "=3.27.0"

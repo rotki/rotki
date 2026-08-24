@@ -2,6 +2,7 @@ import type {
   GasFeeEstimation,
   PrepareERC20TransferResponse,
   PrepareNativeTransferResponse,
+  RecentTransaction,
   TransactionParams,
 } from '@/modules/wallet/types';
 import { assert } from '@rotki/common';
@@ -11,7 +12,7 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { getAddress, type Hash, isHex, type ViemWalletClient } from '@/modules/wallet/viem-client';
 import { useWalletProxy } from './bridge/use-wallet-proxy';
-import { calculateGasFee, SUPPORTED_WALLET_CHAIN_IDS, WALLET_ERRORS, WALLET_MODES, type WalletMode } from './constants';
+import { calculateGasFee, WALLET_ERRORS, WALLET_MODES, type WalletMode } from './constants';
 import { useUnifiedProviders } from './providers/use-unified-providers';
 import { useTradeApi } from './send/use-trade-api';
 import {
@@ -20,15 +21,26 @@ import {
   validateTransactionRequirements,
 } from './transaction-helpers';
 import { useTransactionManager } from './use-transaction-manager';
+import { useWalletChains } from './use-wallet-chains';
 
 export { type WalletMode } from './constants';
+
+const STORE_ID = 'wallet';
+
+interface DisconnectOptions {
+  /**
+   * Whether to forget the remembered provider. Defaults to `true` for a deliberate
+   * user disconnect; session teardown passes `false`.
+   */
+  forgetProvider?: boolean;
+}
 
 // Lazy backend types
 type WalletConnectInstance = ReturnType<typeof import('./use-wallet-connect').useWalletConnect>;
 
 type InjectedWalletInstance = ReturnType<typeof import('./bridge/use-injected-wallet').useInjectedWallet>;
 
-export const useWalletStore = defineStore('wallet', () => {
+export const useWalletStore = defineStore(STORE_ID, () => {
   // Core wallet state - centralized instead of delegated
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
@@ -51,9 +63,10 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // Transaction management
   const transactionManager = useTransactionManager();
-  const { recentTransactions, updateTransactionStatus } = transactionManager;
+  const { recentTransactions, reset: resetTransactions, updateTransactionStatus } = transactionManager;
 
-  const { getChainFromChainId, getChainIdFromNamespace } = useWalletHelper();
+  const { getChainIdFromNamespace } = useWalletHelper();
+  const { getSessionChains, walletChainIds } = useWalletChains();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
   const { getEvmChainName } = useSupportedChains();
 
@@ -129,15 +142,12 @@ export const useWalletStore = defineStore('wallet', () => {
     return injectedWalletInstance;
   }
 
-  const supportedChainsIdForConnectedAccount = computed<number[]>(() => {
-    const chainIds = get(supportedChainIds);
-    if (chainIds.length === 0 || get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
-      return [...SUPPORTED_WALLET_CHAIN_IDS];
-    }
-    return chainIds.map(item => getChainIdFromNamespace(item));
-  });
-
-  const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
+  // An injected wallet reports no namespaces, so it gets every chain rotki supports.
+  const supportedChainsForConnectedAccount = computed<string[]>(() => getSessionChains(
+    get(walletMode) === WALLET_MODES.LOCAL_BRIDGE
+      ? undefined
+      : get(supportedChainIds).map(item => getChainIdFromNamespace(item)),
+  ));
 
   const getWalletClient = (): ViemWalletClient => {
     if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
@@ -186,7 +196,7 @@ export const useWalletStore = defineStore('wallet', () => {
     }
     else {
       const wc = await getWalletConnect();
-      await wc.connect();
+      await wc.connect(get(walletChainIds));
     }
   };
 
@@ -201,14 +211,21 @@ export const useWalletStore = defineStore('wallet', () => {
     set(supportedChainIds, []);
   };
 
-  const disconnect = async (): Promise<void> => {
+  // Called by the store reset plugin on logout. `$patch` cannot clear the recent
+  // transactions since they are exposed as a getter, so they are reset here.
+  const reset = (): void => {
+    resetState();
+    resetTransactions();
+  };
+
+  const disconnect = async ({ forgetProvider = true }: DisconnectOptions = {}): Promise<void> => {
     set(isDisconnecting, true);
     try {
       if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
         if (injectedWalletInstance) {
           await injectedWalletInstance.disconnect();
         }
-        unifiedProviders.clearProvider();
+        unifiedProviders.clearProvider({ forget: forgetProvider });
       }
       else {
         if (walletConnectInstance) {
@@ -285,7 +302,7 @@ export const useWalletStore = defineStore('wallet', () => {
     }
 
     try {
-      const { chainId, evmChain, fromAddress } = validateTransactionRequirements({
+      const { evmChain, fromAddress } = validateTransactionRequirements({
         connectedAddress: get(connectedAddress),
         connectedChainId: get(connectedChainId),
         getEvmChainName,
@@ -309,10 +326,8 @@ export const useWalletStore = defineStore('wallet', () => {
       await transactionManager.handleTransactionSuccess(
         client,
         hash,
-        chainId,
         params,
         get(connectedAddress),
-        getChainFromChainId,
       );
 
       return hash;
@@ -327,9 +342,10 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   };
 
-  // Watch for changes in wallet mode
+  // Watch for changes in wallet mode. The immediate run has no previous mode and nothing is
+  // connected yet, so disconnecting there would only clear the remembered provider.
   watch(walletMode, async (walletMode, previousWalletMode) => {
-    if (walletMode !== previousWalletMode) {
+    if (previousWalletMode !== undefined && walletMode !== previousWalletMode) {
       await disconnect();
       resetState();
     }
@@ -346,7 +362,8 @@ export const useWalletStore = defineStore('wallet', () => {
     isDisconnecting,
     isWalletConnect,
     preparing: logicOr(preparing, isConnecting),
-    recentTransactions,
+    recentTransactions: computed<RecentTransaction[]>(() => get(recentTransactions)),
+    reset,
     sendTransaction,
     supportedChainsForConnectedAccount,
     switchNetwork,
@@ -354,3 +371,22 @@ export const useWalletStore = defineStore('wallet', () => {
     walletMode,
   };
 });
+
+/**
+ * Disconnects the wallet only when the store already exists.
+ *
+ * A session that never opened the wallet has nothing to disconnect, and calling
+ * `useWalletStore()` would build the whole wallet graph (bridge proxy, providers, transaction
+ * manager) just to tear it down. The auth flows use this so the login screen no longer
+ * instantiates the store.
+ *
+ * The remembered provider is kept: logging out is not the user saying they no longer want
+ * that wallet.
+ */
+export async function disconnectWalletIfActive(): Promise<void> {
+  const pinia = getActivePinia();
+  if (!pinia || !Object.hasOwn(pinia.state.value, STORE_ID))
+    return;
+
+  await useWalletStore().disconnect({ forgetProvider: false });
+}

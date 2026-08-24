@@ -37,8 +37,8 @@ catalogs:
       specifier: 1.5.1
       version: 1.5.1
     '@rotki/ui-library':
-      specifier: 2.23.4
-      version: 2.23.4
+      specifier: 2.24.0
+      version: 2.24.0
     '@tsconfig/node24':
       specifier: 24.0.4
       version: 24.0.4
@@ -72,12 +72,6 @@ catalogs:
     '@vue/tsconfig':
       specifier: 0.9.1
       version: 0.9.1
-    '@vuelidate/core':
-      specifier: 2.0.3
-      version: 2.0.3
-    '@vuelidate/validators':
-      specifier: 2.0.4
-      version: 2.0.4
     '@vueuse/core':
       specifier: 14.4.0
       version: 14.4.0
@@ -351,16 +345,10 @@ importers:
         version: link:../common
       '@rotki/ui-library':
         specifier: 'catalog:'
-        version: 2.23.4(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
+        version: 2.24.0(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))
       '@types/ws':
         specifier: 'catalog:'
         version: 8.18.1
-      '@vuelidate/core':
-        specifier: 'catalog:'
-        version: 2.0.3(vue@3.5.40(typescript@6.0.3))
-      '@vuelidate/validators':
-        specifier: 'catalog:'
-        version: 2.0.4(vue@3.5.40(typescript@6.0.3))
       '@vueuse/core':
         specifier: 'catalog:'
         version: 14.4.0(vue@3.5.40(typescript@6.0.3))
@@ -2195,8 +2183,8 @@ packages:
     peerDependencies:
       eslint: ^9.20.0 || ^10.0.0
 
-  '@rotki/ui-library@2.23.4':
-    resolution: {integrity: sha512-TE2AT//RknlAO7Sw1EqzRiPZMElCIJXRCtR8jis8IAo45ol7JFI9gRIYe+TWZyQZ+SlGPPZaVO0vHh22z81Zlw==}
+  '@rotki/ui-library@2.24.0':
+    resolution: {integrity: sha512-NWFjV3PzG543EKvcTKAFEFENaQ+P+7nh4T9N0zYV8CLniUxefqRN1148i87cnV6HH++Mld52eg4x6E6slfo0bg==}
     engines: {node: '>=24 <25', pnpm: '>=11 <12'}
     peerDependencies:
       dayjs: '>=1.11.13 <12'
@@ -2607,24 +2595,6 @@ packages:
       typescript:
         optional: true
       vue:
-        optional: true
-
-  '@vuelidate/core@2.0.3':
-    resolution: {integrity: sha512-AN6l7KF7+mEfyWG0doT96z+47ljwPpZfi9/JrNMkOGLFv27XVZvKzRLXlmDPQjPl/wOB1GNnHuc54jlCLRNqGA==}
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^2.0.0 || >=3.0.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
-
-  '@vuelidate/validators@2.0.4':
-    resolution: {integrity: sha512-odTxtUZ2JpwwiQ10t0QWYJkkYrfd0SyFYhdHH44QQ1jDatlZgTh/KRzrWVmn/ib9Gq7H4hFD4e8ahoo5YlUlDw==}
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^2.0.0 || >=3.0.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
         optional: true
 
   '@vueuse/core@14.3.0':
@@ -6322,17 +6292,6 @@ packages:
   vue-component-type-helpers@3.3.9:
     resolution: {integrity: sha512-3c/UfMe0SqyEfcGTyH7mfshHagJ9QTCbppCb0/uGpHZpFug7+If3GeGZN7I0YheKEExemx3xldQPoO7PQSOLQg==}
 
-  vue-demi@0.13.11:
-    resolution: {integrity: sha512-IR8HoEEGM65YY3ZJYAjMlKygDQn25D5ajNFNoKh9RSDMQtlzCxtfQjdQgv9jjK+m3377SsJXY8ysq8kLCZL25A==}
-    engines: {node: '>=12'}
-    hasBin: true
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^3.0.0-0 || ^2.6.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
-
   vue-echarts@8.0.1:
     resolution: {integrity: sha512-23rJTFLu1OUEGRWjJGmdGt8fP+8+ja1gVgzMYPIPaHWpXegcO1viIAaeu2H4QHESlVeHzUAHIxKXGrwjsyXAaA==}
     peerDependencies:
@@ -7946,7 +7905,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@2.23.4(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))':
+  '@rotki/ui-library@2.24.0(dayjs@1.11.21)(tailwindcss@3.4.19(tsx@4.23.5)(yaml@2.9.0))(vue-router@5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(pinia@4.0.2(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.2.2)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.5)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3)))(vue@3.5.40(typescript@6.0.3))':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@vueuse/core': 14.3.0(vue@3.5.40(typescript@6.0.3))
@@ -8488,16 +8447,6 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
       vue: 3.5.40(typescript@6.0.3)
-
-  '@vuelidate/core@2.0.3(vue@3.5.40(typescript@6.0.3))':
-    dependencies:
-      vue: 3.5.40(typescript@6.0.3)
-      vue-demi: 0.13.11(vue@3.5.40(typescript@6.0.3))
-
-  '@vuelidate/validators@2.0.4(vue@3.5.40(typescript@6.0.3))':
-    dependencies:
-      vue: 3.5.40(typescript@6.0.3)
-      vue-demi: 0.13.11(vue@3.5.40(typescript@6.0.3))
 
   '@vueuse/core@14.3.0(vue@3.5.40(typescript@6.0.3))':
     dependencies:
@@ -12773,10 +12722,6 @@ snapshots:
   vscode-uri@3.1.0: {}
 
   vue-component-type-helpers@3.3.9: {}
-
-  vue-demi@0.13.11(vue@3.5.40(typescript@6.0.3)):
-    dependencies:
-      vue: 3.5.40(typescript@6.0.3)
 
   vue-echarts@8.0.1(echarts@6.1.0)(vue@3.5.40(typescript@6.0.3)):
     dependencies:

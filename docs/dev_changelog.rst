@@ -7,6 +7,14 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Asset Search NFT Handling
+-------------------------
+
+* **Changed Endpoint**: ``POST /api/(version)/assets/search/levenshtein``
+
+  - The boolean ``search_nfts`` is replaced by ``nft_handling``, which takes ``'exclude'`` (the default, matching ``search_nfts: false``), ``'include'`` (matching ``search_nfts: true``) and the new ``'show_only'``. Callers sending ``search_nfts`` must migrate; the field is no longer accepted.
+  - ``'show_only'`` searches nfts alone. It cannot be reproduced by filtering an ``'include'`` response: assets and nfts are searched by separate queries whose results are merged and truncated to ``limit`` together, so the nfts can be cut off entirely when enough assets sort ahead of them.
+
 Session Cookie Authentication (Docker)
 --------------------------------------
 
@@ -40,7 +48,7 @@ When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Do
 Docker Control Endpoint
 -----------------------
 
-The Docker deployment gains ``/_control``, served by the starling proxy on the published port. It lets the frontend restart the backend and start or stop the MCP server, which previously had no path at all outside the desktop app (closes ``#2807``).
+The Docker deployment gains ``/_control``, served by the starling proxy on the published port. It lets the frontend restart the backend, start or stop the MCP server, and choose whether MCP comes up with the backend tree, none of which had any path outside the desktop app (closes ``#2807``).
 
 * **New Endpoint**: ``GET /_control``
 
@@ -49,10 +57,11 @@ The Docker deployment gains ``/_control``, served by the starling proxy on the p
 
 * **New Endpoint**: ``POST /_control``
 
-  - JSON-RPC 2.0, carrying ``status``, ``restart``, ``startService`` and ``stopService``. ``start`` and ``stop`` are refused: ``stop`` would exit PID 1 and take the container with it.
+  - JSON-RPC 2.0, carrying ``status``, ``restart``, ``startService``, ``stopService`` and ``setServiceAutostart``. ``start`` and ``stop`` are refused: ``stop`` would exit PID 1 and take the container with it.
   - Authorized per request by forwarding the caller's session cookie to ``GET /api/1/session/validate``. ``401`` when core refuses, ``503`` when core cannot be reached.
   - ``restart`` accepts ``loglevel`` and nothing else. A caller-chosen ``data_directory``/``log_directory`` is refused rather than ignored, since in a container those are fixed mounts.
   - ``startService``/``stopService`` only address services that allow manual control, which today means ``mcp`` alone; core and colibri are not independently stoppable.
+  - ``setServiceAutostart`` takes ``{"service": "mcp", "autostart": <bool>}`` and records whether MCP comes up with the backend tree from the next start on. It starts and stops nothing, and is refused for any other service. The preference is stored in ``<data_dir>/app.config.json`` as ``{"mcpAutoStart": <bool>}``, the same file name and key the desktop app uses, so it survives a container recreate; with no file MCP stays down, the same default the desktop app ships. Each service's current preference is reported as ``autostart`` in the ``status`` reply.
 
   A validation core granted within the last two minutes is honoured if core later becomes unreachable, so a ``restart`` whose bring-up fails can still be retried from the UI. It is dropped immediately on a ``401``, and never overrides a core that is answering.
 

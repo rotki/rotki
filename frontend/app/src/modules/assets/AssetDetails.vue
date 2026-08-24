@@ -1,32 +1,19 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
+import type { AssetActions, AssetDisplay, AssetIdentifierResolution } from '@/modules/assets/types';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
 const {
+  actions,
   asset,
-  dense,
-  enableAssociation = true,
-  forceChain,
-  hideActions,
-  hideMenu,
-  iconOnly,
-  isCollectionParent = false,
-  optimizeForVirtualScroll,
-  resolutionOptions,
-  size,
+  display,
+  resolution,
 } = defineProps<{
   asset: string;
-  dense?: boolean;
-  enableAssociation?: boolean;
-  isCollectionParent?: boolean;
-  hideMenu?: boolean;
-  hideActions?: boolean;
-  iconOnly?: boolean;
-  size?: string;
-  forceChain?: string;
-  optimizeForVirtualScroll?: boolean;
-  resolutionOptions?: AssetResolutionOptions;
+  display?: AssetDisplay;
+  actions?: AssetActions;
+  resolution?: AssetIdentifierResolution;
 }>();
 
 const emit = defineEmits<{
@@ -36,9 +23,9 @@ const emit = defineEmits<{
 const { useAssetInfo } = useAssetInfoRetrieval();
 
 const assetDetails = useAssetInfo(() => asset, computed<AssetResolutionOptions>(() => ({
-  associate: enableAssociation,
-  collectionParent: isCollectionParent,
-  ...resolutionOptions,
+  associate: resolution?.enableAssociation ?? true,
+  collectionParent: resolution?.isCollectionParent ?? false,
+  ...resolution?.options,
 })));
 
 const currentAsset = computed<AssetInfoWithId>(() => ({
@@ -48,18 +35,14 @@ const currentAsset = computed<AssetInfoWithId>(() => ({
 </script>
 
 <template>
+  <!-- All three bags are forwarded by reference. Rebuilding them here would give the defaults a
+       second home to drift in, and would hand the child a fresh object identity every render. Only
+       `resolution.options` stops here, consumed by `useAssetInfo` above. -->
   <AssetDetailsBase
-    :hide-menu="hideMenu"
-    :hide-actions="hideActions"
-    :icon-only="iconOnly"
     :asset="currentAsset"
-    :dense="dense"
-    :enable-association="enableAssociation"
-    :show-chain="!isCollectionParent"
-    :is-collection-parent="isCollectionParent"
-    :size="size"
-    :force-chain="forceChain"
-    :optimize-for-virtual-scroll="optimizeForVirtualScroll"
+    :display="display"
+    :actions="actions"
+    :resolution="resolution"
     @refresh="emit('refresh')"
   />
 </template>

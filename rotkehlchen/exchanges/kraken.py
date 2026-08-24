@@ -142,6 +142,34 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
     return event_type, event_subtype
 
 
+def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> None:
+    """Remove spend/receive leg pairs of the same asset and amount that cancel out.
+
+    Kraken reports trades of tokenized assets (aclass: tokenized_asset) as 4 ledger
+    entries sharing the same refid: the tokenized asset spend, the fiat receive and two
+    internal USD settlement legs (a spend and a receive of the same asset and amount)
+    that cancel each other out. Removing the settlement legs leaves the actual trade
+    pair. Only called for groups containing a tokenized_asset leg so that normal
+    kraken history is not affected. https://github.com/rotki/rotki/issues/12564
+    """
+    for spend_entry in [x for x in event_set if x[1].event_type == HistoryEventType.SPEND]:
+        for receive_entry in event_set:
+            if (
+                    receive_entry[1].event_type == HistoryEventType.RECEIVE and
+                    receive_entry[1].asset == spend_entry[1].asset and
+                    receive_entry[1].amount == spend_entry[1].amount
+            ):
+                log.debug(
+                    'Removing kraken internal settlement legs that cancel each other '
+                    'out: %s and %s',
+                    spend_entry[1],
+                    receive_entry[1],
+                )
+                event_set.remove(spend_entry)
+                event_set.remove(receive_entry)
+                break
+
+
 def _check_and_get_response(
         response: Response,
         method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],
@@ -904,10 +932,15 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 extra_dict={},
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
-                f'{timestamp_to_date(end_ts)}. {e!s}',
-            )
+            if (
+                    "('Connection aborted.', "
+                    "ConnectionResetError(104, 'Connection reset by peer'))"
+                    not in str(e)
+            ):
+                self.msg_aggregator.add_error(
+                    f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
+                    f'{timestamp_to_date(end_ts)}. {e!s}',
+                )
             return [], start_ts
 
         new_events, _ = self.process_kraken_raw_events(
@@ -1143,6 +1176,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
         for event_set in receive_spend_events.values():
+            if (  # tokenized asset trades come with extra settlement legs
+                    len(event_set) > 2 and
+                    any(x.get('aclass') == 'tokenized_asset' for x in events)
+            ):
+                _remove_canceling_ledger_legs(event_set)
             if len(event_set) == 2:
                 for _, history_event in event_set:
                     history_event.event_subtype = HistoryEventSubType.RECEIVE if history_event.event_type == HistoryEventType.RECEIVE else HistoryEventSubType.SPEND  # noqa: E501

@@ -12,6 +12,15 @@ interface ProviderPreferences {
   autoSelectSingle: boolean;
 }
 
+interface ClearProviderOptions {
+  /**
+   * Whether to also forget the persisted `lastSelectedUuid`. Defaults to `true`, which is
+   * what a deliberate disconnect wants; session teardown passes `false` so the remembered
+   * provider survives to the next login.
+   */
+  forget?: boolean;
+}
+
 // Extended options for detection
 interface UnifiedDetectionOptions extends ProviderDetectionOptions {
   maxRetries?: number;
@@ -48,7 +57,7 @@ interface UnifiedProvidersComposable {
   // Actions
   detectProviders: (options?: UnifiedDetectionOptions) => Promise<EnhancedProviderDetail[]>;
   selectProvider: (uuid: string) => Promise<boolean>;
-  clearProvider: () => void;
+  clearProvider: (options?: ClearProviderOptions) => void;
   checkIfSelectedProvider: () => Promise<boolean>;
 
   // Event system
@@ -310,16 +319,20 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   }
 
   // Clear provider selection
-  function clearProvider(): void {
+  function clearProvider({ forget = true }: ClearProviderOptions = {}): void {
     const previousProvider = get(selectedProvider);
 
     set(selectedProvider, undefined);
 
-    // Update preferences
-    set(preferences, {
-      ...get<ProviderPreferences>(preferences),
-      lastSelectedUuid: undefined,
-    });
+    // Only a deliberate disconnect forgets the choice. Tearing the session down (logout,
+    // switching user) clears the active selection but must keep the remembered provider,
+    // otherwise the next login has to pick one again.
+    if (forget) {
+      set(preferences, {
+        ...get<ProviderPreferences>(preferences),
+        lastSelectedUuid: undefined,
+      });
+    }
 
     // Notify change listeners
     notifyProviderChanged(undefined, previousProvider?.provider);

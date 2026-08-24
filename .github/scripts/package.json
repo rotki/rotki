@@ -1,0 +1,13 @@
+{
+  "name": "@rotki/ci-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node scripts used by the CI/release workflows",
+  "type": "module",
+  "license": "AGPL-3.0",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
+  "dependencies": {
+    "consola": "3.4.2",
+    "js-yaml": "5.3.0"
+  }
+}

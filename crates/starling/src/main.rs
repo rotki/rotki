@@ -32,13 +32,14 @@ use clap::{Parser, Subcommand, ValueEnum};
 use starling_core::control::is_authorized;
 use starling_core::{
     build_services, Controller, Launcher, Method, OnCrash, OsSpawner, Outcome, RestartPolicy,
-    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor, Transport,
+    ServiceLayout, ServiceSpec, Startup, StdioMode, Supervisor, Transport, MCP_SERVICE,
 };
 use starling_proxy::ProxyConfig;
 use std::sync::Arc;
 use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
+mod app_config;
 mod cleanup;
 mod config;
 mod control;
@@ -345,25 +346,31 @@ fn cookie_auth_enabled(docker: bool, session_key: &str) -> bool {
     docker && !session_key.is_empty()
 }
 
+/// Whether MCP comes up with the backend tree.
+///
+/// Off unless a stored preference says otherwise, matching the default the
+/// desktop app ships: a service that exposes user data to an AI assistant should
+/// not be running because nobody said otherwise. `None` is an absent preference
+/// file, not a `false` somebody chose, but both leave it down.
+///
+/// Gated on cookie auth because that is what makes the server reachable at all.
+/// A stored `true` from a deployment that has since dropped its session key
+/// would otherwise start a server nothing can route to or authorize against.
+fn resolve_mcp_autostart(cookie_auth: bool, stored: Option<bool>) -> bool {
+    cookie_auth && stored.unwrap_or(false)
+}
+
 /// The control methods `/_control` advertises, derived from the §S9 matrix rather
 /// than restated, so the capability document can never promise a method the
 /// dispatcher would then refuse. Listing every variant here is deliberate: adding
 /// a `Method` without deciding its `/_control` policy leaves it silently
 /// unadvertised, which the matrix test catches.
 fn http_control_methods() -> Vec<&'static str> {
-    [
-        Method::Health,
-        Method::Status,
-        Method::Start,
-        Method::Restart,
-        Method::Stop,
-        Method::StartService,
-        Method::StopService,
-    ]
-    .into_iter()
-    .filter(|method| is_authorized(Transport::HttpControl, *method))
-    .map(Method::wire)
-    .collect()
+    Method::ALL
+        .into_iter()
+        .filter(|method| is_authorized(Transport::HttpControl, *method))
+        .map(Method::wire)
+        .collect()
 }
 
 #[tokio::main]
@@ -686,14 +693,34 @@ async fn main() -> std::process::ExitCode {
     let cookie_auth = cookie_auth_enabled(docker, &session_key);
     if cookie_auth {
         info!("session cookie auth enabled");
-        layout.mcp_autostart = true;
+
+        // Docker's half of the desktop's auto-start switch. The preference lives
+        // in the data directory (see `app_config`) because it has to survive a
+        // container recreate and be readable before anybody logs in. No file
+        // means no preference, which leaves MCP down: the same default the
+        // desktop ships, so a service that exposes user data to an AI assistant
+        // is never running because nobody said otherwise.
+        //
+        // Read under cookie auth rather than beside the layout so it can only
+        // ever turn the server on where it is actually usable. Without cookie
+        // auth the proxy does not route `/mcp` and nothing could authorize a
+        // caller, so a stored `true` from a deployment that has since dropped
+        // its session key would start a server no one can reach.
+        let stored = app_config::mcp_autostart(&layout.data_dir);
+        if let Some(value) = stored {
+            info!(
+                autostart = value,
+                "applying the stored mcp autostart preference"
+            );
+        }
+        layout.mcp_autostart = resolve_mcp_autostart(cookie_auth, stored);
     }
     let build = move |layout: &ServiceLayout| -> Vec<ServiceSpec> {
         let mut specs = build_services(layout);
         for spec in &mut specs {
             spec.env
                 .insert("ROTKI_SESSION_KEY".to_string(), session_key.clone());
-            if cookie_auth && spec.name == "mcp" {
+            if cookie_auth && spec.name == MCP_SERVICE {
                 spec.restart = RestartPolicy {
                     max_retries: 3,
                     backoff: Duration::from_secs(1),
@@ -730,6 +757,11 @@ async fn main() -> std::process::ExitCode {
     // bring-up, the supervise loop, and the control-plane operations
     // (restart/stop/status/health).
     let grace = Duration::from_secs(cli.shutdown_grace_secs);
+    // Where a `setServiceAutostart` is written. Attached exactly where the value
+    // is read back at boot: on the desktop the preference belongs to Electron's
+    // own settings file, which arrives in the `start` options, so storing a
+    // second copy would give the two a way to disagree.
+    let autostart_store = cookie_auth.then(|| app_config::FileStore::new(layout.data_dir.clone()));
     let started_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .ok()
@@ -739,6 +771,10 @@ async fn main() -> std::process::ExitCode {
     // Hand the data-directory lock to the controller so a restart that switches
     // the data dir releases the old directory and acquires the new one.
     controller.set_datadir_guard(Box::new(datadir_lock::LockGuard::new(datadir_lock)));
+
+    if let Some(store) = autostart_store {
+        controller.set_autostart_store(Box::new(store));
+    }
 
     // Set when the signal that stopped us carries an OS-enforced deadline, so the
     // teardown can fit inside it instead of planning for a budget it will never
@@ -1193,10 +1229,37 @@ mod tests {
     }
 
     #[test]
+    fn mcp_stays_down_unless_a_stored_preference_turns_it_on() {
+        // The default, and the whole point of the test: an untouched deployment
+        // does not start MCP. Flipping this is a user-visible behaviour change,
+        // not a refactor.
+        assert!(!resolve_mcp_autostart(true, None));
+        assert!(!resolve_mcp_autostart(true, Some(false)));
+        assert!(resolve_mcp_autostart(true, Some(true)));
+    }
+
+    #[test]
+    fn mcp_never_autostarts_without_cookie_auth() {
+        // Nothing routes `/mcp` or authorizes a caller here, so even an explicit
+        // `true` left over from a deployment that dropped its session key must
+        // not bring up a server no one can reach.
+        assert!(!resolve_mcp_autostart(false, Some(true)));
+        assert!(!resolve_mcp_autostart(false, Some(false)));
+        assert!(!resolve_mcp_autostart(false, None));
+    }
+
+    #[test]
     fn advertised_control_methods_match_the_authorization_matrix() {
         assert_eq!(
             http_control_methods(),
-            vec!["health", "status", "restart", "startService", "stopService"],
+            vec![
+                "health",
+                "status",
+                "restart",
+                "startService",
+                "stopService",
+                "setServiceAutostart",
+            ],
         );
     }
 

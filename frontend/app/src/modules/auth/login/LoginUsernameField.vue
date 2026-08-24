@@ -4,7 +4,10 @@ import LoginNoProfilesMessage from '@/modules/auth/login/LoginNoProfilesMessage.
 import { sortUsernamesByKeyword } from '@/modules/auth/login/sort-usernames';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 
-const username = defineModel<string>({ required: true });
+// RuiAutoComplete clears its selection to `undefined` whenever the options change and the
+// current value is not one of them - which happens on mount, while the profiles are still
+// loading. The model therefore accepts `undefined` and normalizes it back to an empty string.
+const model = defineModel<string>({ default: '' });
 const search = defineModel<string>('search', { required: true });
 
 const {
@@ -34,6 +37,11 @@ const { loadProfiles, savedUsernames } = useSavedProfiles();
 // A plain text field is used on docker (where profiles are not enumerable) and under test,
 // where the autocomplete's overlay makes the input awkward to drive.
 const usePlainField = computed<boolean>(() => !!isDocker || !!isTest);
+
+const username = computed<string>({
+  get: () => get(model),
+  set: (value: string | undefined) => set(model, value ?? ''),
+});
 
 const orderedUsernames = computed<string[]>(() => sortUsernamesByKeyword(get(savedUsernames), get(search)));
 

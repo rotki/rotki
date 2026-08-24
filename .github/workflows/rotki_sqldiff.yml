@@ -18,6 +18,7 @@ jobs:
   sql-diff:
     name: SQLDiff
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     permissions:
       contents: read
@@ -31,6 +32,7 @@ jobs:
           persist-credentials: false
 
       - name: Install required
+        timeout-minutes: 10
         run: sudo apt-get update && sudo apt-get install -y sqlcipher sqlite3-tools
 
       - name: SQLDiff action

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
-import { Severity } from '@rotki/common';
+import { type Notification, NotificationGroup, Severity } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import ServiceKeyCard, { type FeatureGate } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useMoneriumOAuth } from './use-monerium-auth';
@@ -32,16 +32,50 @@ const manualAccessToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
 
 const { isPackaged, openUrl } = useInterop();
-const { notify } = useNotificationDispatcher();
+const { notify, removeMatching } = useNotifications();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessages();
 const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 
 const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
 
+const cardAction = computed<ServiceKeyAction>(() => ({
+  addText: t('external_services.actions.authenticate'),
+  disabled: get(isAuthorizing),
+  editText: t('external_services.actions.reauthenticate'),
+  hidden: get(authenticated),
+  primary: t('external_services.monerium.connect'),
+}));
+
+/**
+ * Every notification raised here is a step of the same connection flow - opening the browser,
+ * the outcome of the callback, a disconnect - so they all share one group. The dispatcher then
+ * replaces the entry of the previous step instead of leaving a trail of stale ones behind, and
+ * the same group carries the session-expired warning, which a successful re-authentication is
+ * meant to clear.
+ */
+function notifyAuthStep(payload: Notification): void {
+  notify({
+    ...payload,
+    display: true,
+    group: NotificationGroup.MONERIUM_AUTH,
+  });
+}
+
+/**
+ * A successful authorization already reports itself where the user is looking: the card flips to
+ * the connected state naming the account. Saying it again in the notification area would leave an
+ * entry to dismiss for something already on screen, so success instead clears the flow's own
+ * trail - the "opening browser" step, and the session-expired warning that shares this group and
+ * is exactly what the re-authentication just resolved. One call is enough because a group holds a
+ * single entry: the dispatcher replaces it rather than appending.
+ */
+function clearAuthNotifications(): void {
+  removeMatching(({ group }) => group === NotificationGroup.MONERIUM_AUTH);
+}
+
 function notifyOAuthError(error: unknown): void {
   logger.error('Monerium OAuth failed:', error);
-  notify({
-    display: true,
+  notifyAuthStep({
     message: getErrorMessage(error) || t('external_services.monerium.auth_failed'),
     severity: Severity.ERROR,
     title: t('external_services.monerium.error'),
@@ -65,18 +99,13 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
     }
 
     set(isAuthorizing, true);
-    const result = await completeOAuth(
+    await completeOAuth(
       accessToken,
       refreshToken,
       expiresIn ?? 3600,
     );
 
-    notify({
-      display: true,
-      message: result.message,
-      severity: Severity.INFO,
-      title: t('external_services.monerium.success'),
-    });
+    clearAuthNotifications();
     set(showTokenInput, false);
     set(manualAccessToken, '');
     set(manualRefreshToken, '');
@@ -108,8 +137,7 @@ async function connect(): Promise<void> {
       set(showTokenInput, true);
     }
 
-    notify({
-      display: true,
+    notifyAuthStep({
       message: t('external_services.monerium.opening_browser'),
       severity: Severity.INFO,
       title: t('external_services.monerium.authorizing'),
@@ -127,8 +155,7 @@ async function disconnect(): Promise<void> {
   set(isAuthorizing, true);
   try {
     await disconnectOAuth();
-    notify({
-      display: true,
+    notifyAuthStep({
       message: t('external_services.monerium.disconnected'),
       severity: Severity.INFO,
       title: t('external_services.monerium.success'),
@@ -144,8 +171,7 @@ async function disconnect(): Promise<void> {
 
 async function submitManualToken(): Promise<void> {
   if (!get(manualAccessToken) || !get(manualRefreshToken)) {
-    notify({
-      display: true,
+    notifyAuthStep({
       message: t('external_services.monerium.token_required'),
       severity: Severity.ERROR,
       title: t('external_services.monerium.error'),
@@ -184,11 +210,7 @@ onUnmounted(() => {
     :title="t('external_services.monerium.title')"
     :subtitle="t('external_services.monerium.description')"
     :image-src="getPublicServiceImagePath('monerium.png')"
-    :primary-action="t('external_services.monerium.connect')"
-    :action-disabled="isAuthorizing"
-    :hide-action="authenticated"
-    :add-button-text="t('external_services.actions.authenticate')"
-    :edit-button-text="t('external_services.actions.reauthenticate')"
+    :action="cardAction"
     @confirm="connect()"
   >
     <template

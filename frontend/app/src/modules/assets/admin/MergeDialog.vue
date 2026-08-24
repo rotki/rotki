@@ -149,11 +149,11 @@ watch(display, (isDisplayed) => {
         <AssetSelect
           v-model="form.state.targetIdentifier"
           v-model:asset="target"
-          outlined
+          variant="outlined"
           :error-messages="form.errors('targetIdentifier')"
           :label="t('merge_dialog.target.label')"
           :disabled="submitting"
-          :excludes="excluded"
+          :source="{ excludes: excluded }"
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
           data-testid="merge-target"
           @focus="clearErrors()"

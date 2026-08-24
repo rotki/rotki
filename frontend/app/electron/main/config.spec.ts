@@ -1,5 +1,5 @@
 import { LogLevel } from '@shared/log-level';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from './config';
 
 const { existsSync, readFileSync } = vi.hoisted(() => ({
@@ -67,5 +67,55 @@ describe('loadConfig', () => {
     existsSync.mockReturnValue(true);
     readFileSync.mockReturnValue(JSON.stringify({ 'data-dir': '/only-data' }));
     expect(loadConfig()).toStrictEqual({ dataDirectory: '/only-data' });
+  });
+
+  describe('instance data directory', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('should take the data directory from the instance env when there is no config file', () => {
+      existsSync.mockReturnValue(false);
+      vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '/instances/scratch');
+
+      expect(loadConfig()).toStrictEqual({ dataDirectory: '/instances/scratch' });
+    });
+
+    it('should let the instance data directory win over the config file', () => {
+      // An instance exists so as not to touch the shared data directory, so the file must not be
+      // able to pull it back onto one. This is the case that failed: ports were isolated, the data
+      // directory was not, and the run died on the shared lock.
+      existsSync.mockReturnValue(true);
+      readFileSync.mockReturnValue(JSON.stringify({ 'data-dir': '/shared/develop_data' }));
+      vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '/instances/scratch');
+
+      expect(loadConfig()).toStrictEqual({ dataDirectory: '/instances/scratch' });
+    });
+
+    it('should apply the instance data directory even when the config file is malformed', () => {
+      existsSync.mockReturnValue(true);
+      readFileSync.mockReturnValue('{ not valid json');
+      vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '/instances/scratch');
+
+      expect(loadConfig()).toStrictEqual({ dataDirectory: '/instances/scratch' });
+    });
+
+    it('should keep the other config keys when the instance overrides the data directory', () => {
+      existsSync.mockReturnValue(true);
+      readFileSync.mockReturnValue(JSON.stringify({ 'data-dir': '/shared', 'log-dir': '/var/log' }));
+      vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '/instances/scratch');
+
+      expect(loadConfig()).toStrictEqual({ dataDirectory: '/instances/scratch', logDirectory: '/var/log' });
+    });
+
+    it('should leave the config file in charge when the env var is empty', () => {
+      // An empty string is how an unset instance reaches a child process, and it must not blank out
+      // a configured data directory.
+      existsSync.mockReturnValue(true);
+      readFileSync.mockReturnValue(JSON.stringify({ 'data-dir': '/configured' }));
+      vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '');
+
+      expect(loadConfig()).toStrictEqual({ dataDirectory: '/configured' });
+    });
   });
 });

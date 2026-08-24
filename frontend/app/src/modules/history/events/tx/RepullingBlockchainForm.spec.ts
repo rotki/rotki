@@ -77,7 +77,7 @@ describe('history/events/tx/RepullingBlockchainForm.vue', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          BlockchainAccountSelector: stub('BlockchainAccountSelector', ['modelValue', 'errorMessages', 'chains']),
+          BlockchainAccountSelector: stub('BlockchainAccountSelector', ['modelValue', 'field', 'source']),
           ChainSelect: stub('ChainSelect', ['modelValue', 'errorMessages', 'items']),
           DateTimeRangePicker: stub('DateTimeRangePicker', ['start', 'end', 'startErrorMessages', 'endErrorMessages']),
           RuiAlert: stub('RuiAlert', ['type']),
@@ -93,6 +93,15 @@ describe('history/events/tx/RepullingBlockchainForm.vue', () => {
 
   function messages(name: string, prop = 'errorMessages'): string[] {
     const value: unknown = field(name).props(prop);
+    assert(Array.isArray(value));
+    return value.map(String);
+  }
+
+  /** The account selector carries its validation inside the `field` bag. */
+  function accountMessages(): string[] {
+    const bag: unknown = field('BlockchainAccountSelector').props('field');
+    assert(typeof bag === 'object' && bag !== null);
+    const value: unknown = Reflect.get(bag, 'errorMessages');
     assert(Array.isArray(value));
     return value.map(String);
   }
@@ -141,7 +150,7 @@ describe('history/events/tx/RepullingBlockchainForm.vue', () => {
     await harness.validate();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(messages('BlockchainAccountSelector')).toContain('unknown address');
+    expect(accountMessages()).toContain('unknown address');
   });
 
   it('should show the message for a cleared start date', async () => {

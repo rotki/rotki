@@ -2,8 +2,8 @@
 import type { StarlingInvocation } from './starling-args';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { definedOptions, requestStarlingStart, spawnStarling } from './starling-launch';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { definedOptions, requestStarlingStart, spawnStarling, type StarlingProcess, stopStarling, type StopStarlingLogger, type StopStarlingResult } from './starling-launch';
 import { StarlingMethod } from './starling-protocol';
 import { StarlingRpc } from './starling-rpc';
 
@@ -19,6 +19,10 @@ class FakeChild extends EventEmitter {
   readonly stdin = new PassThrough();
   readonly stdout = new PassThrough();
   readonly stderr = new PassThrough();
+  /** Node reports both as null while the process is alive, which is what the stop guard reads. */
+  exitCode: number | null = null;
+  signalCode: NodeJS.Signals | null = null;
+  readonly kill = vi.fn<(signal?: NodeJS.Signals) => boolean>();
 }
 
 const invocation: StarlingInvocation = {
@@ -170,5 +174,117 @@ describe('requestStarlingStart', () => {
     await requestStarlingStart(rpc, { logDirectory: '/logs', dataDirectory: undefined }, 'debug');
 
     expect(request).toHaveBeenCalledWith('start', { logDirectory: '/logs', loglevel: 'debug' });
+  });
+});
+
+describe('stopStarling', () => {
+  const STOP_GRACE = 10_000;
+  const EXIT_MARGIN = 5_000;
+
+  let child: FakeChild;
+  let rpc: StarlingRpc;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    child = new FakeChild();
+    spawnMock.mockReturnValue(child);
+    rpc = makeRpc();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Spawn through the real path, so the stop is driven against the object callers actually hold. */
+  function launch(): StarlingProcess {
+    return spawnStarling({ invocation, rpc, onStderr: vi.fn() });
+  }
+
+  function exit(code: number = 0): void {
+    child.exitCode = code;
+    child.emit('exit', code, null);
+  }
+
+  async function stop(process: StarlingProcess, logger?: StopStarlingLogger): Promise<StopStarlingResult> {
+    return stopStarling({
+      child: process.child,
+      exited: process.exited,
+      exitMarginMs: EXIT_MARGIN,
+      logger,
+      rpc,
+      stopTimeoutMs: STOP_GRACE,
+    });
+  }
+
+  it('should request the ordered teardown and leave a supervisor that exits in time alone', async () => {
+    const request = vi.spyOn(rpc, 'request').mockResolvedValue(undefined);
+    const starling = launch();
+
+    const stopping = stop(starling);
+    await vi.advanceTimersByTimeAsync(0);
+    exit(0);
+
+    expect(await stopping).toEqual({ acknowledged: true, alreadyExited: false, killed: false });
+    expect(request).toHaveBeenCalledWith(StarlingMethod.STOP);
+    expect(child.kill).not.toHaveBeenCalled();
+  });
+
+  it('should give the supervisor its exit margin once the stop grace elapses', async () => {
+    // The regression this helper exists for: the dev launcher raced `stop` against the grace and
+    // then killed as soon as that race resolved, so a starling still reaping core and colibri got
+    // SIGKILLed mid-teardown and orphaned both.
+    vi.spyOn(rpc, 'request').mockReturnValue(new Promise<never>(() => {}));
+    const starling = launch();
+
+    const stopping = stop(starling);
+
+    await vi.advanceTimersByTimeAsync(STOP_GRACE);
+    expect(child.kill).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(EXIT_MARGIN - 1);
+    exit(0);
+
+    expect(await stopping).toEqual({ acknowledged: false, alreadyExited: false, killed: false });
+    expect(child.kill).not.toHaveBeenCalled();
+  });
+
+  it('should kill the supervisor that outlasts both waits', async () => {
+    vi.spyOn(rpc, 'request').mockReturnValue(new Promise<never>(() => {}));
+    const logger = { debug: vi.fn(), warn: vi.fn() };
+    const starling = launch();
+
+    const stopping = stop(starling, logger);
+    await vi.advanceTimersByTimeAsync(STOP_GRACE + EXIT_MARGIN);
+
+    expect(await stopping).toEqual({ acknowledged: false, alreadyExited: false, killed: true });
+    expect(child.kill).toHaveBeenCalledWith('SIGKILL');
+    expect(logger.warn).toHaveBeenCalledWith('starling did not exit in time, killing it');
+  });
+
+  it('should not wait on a supervisor that is already gone', async () => {
+    const request = vi.spyOn(rpc, 'request');
+    const starling = launch();
+    exit(1);
+
+    expect(await stop(starling)).toEqual({ acknowledged: false, alreadyExited: true, killed: false });
+    expect(request).not.toHaveBeenCalled();
+    expect(child.kill).not.toHaveBeenCalled();
+  });
+
+  it('should keep waiting for the exit when the stop request rejects', async () => {
+    // A child that dies mid-request rejects every pending one, so a rejected `stop` usually means
+    // the teardown is already happening — escalating on it would kill what is on its way out.
+    vi.spyOn(rpc, 'request').mockRejectedValue(new Error('starling exited'));
+    const starling = launch();
+
+    const stopping = stop(starling);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(child.kill).not.toHaveBeenCalled();
+
+    exit(0);
+
+    expect(await stopping).toEqual({ acknowledged: false, alreadyExited: false, killed: false });
+    expect(child.kill).not.toHaveBeenCalled();
   });
 });

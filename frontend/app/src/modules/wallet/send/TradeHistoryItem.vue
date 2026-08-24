@@ -58,7 +58,7 @@ const dot = '•';
           class="text-sm inline-flex flex-wrap whitespace-break-spaces items-center [&_.shrink]:!text-xs"
           :notes="item.context"
           :chain="item.chain"
-          v-bind="item.metadata"
+          :context="item.metadata"
         />
       </div>
     </div>

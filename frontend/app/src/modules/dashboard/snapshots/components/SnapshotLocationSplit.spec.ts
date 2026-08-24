@@ -102,6 +102,22 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationSplit', () => {
     expect(isValid(wrapper)).toBe(false);
   });
 
+  // The totals run through every row on each keystroke, so a row holding something bignumber.js
+  // cannot parse used to take the whole dialog down mid-render. It counts as nothing allocated.
+  it.each(['-', '1.2.3', '0,5'])('should read a row of %s as nothing allocated', async (typed) => {
+    const wrapper = mountSplit(100);
+    const locations = wrapper.findAll('.loc');
+    const amounts = wrapper.findAll('input:not(.loc)');
+
+    await locations[0].setValue('kraken');
+    await locations[1].setValue('ledger');
+    await amounts[0].setValue('100');
+    await amounts[1].setValue(typed);
+
+    expect(isValid(wrapper)).toBe(true);
+    expect(lastSplits(wrapper).map(split => split.usdValue.toNumber())).toEqual([100, 0]);
+  });
+
   it('should be valid when every row stays within its location cap', async () => {
     const wrapper = mountSplit(100, { kraken: bigNumberify(80), ledger: bigNumberify(80) });
     const locations = wrapper.findAll('.loc');

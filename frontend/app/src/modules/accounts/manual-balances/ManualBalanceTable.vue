@@ -197,9 +197,9 @@ watchDebounced(
       <template #item.asset="{ row }">
         <AssetDetails
           v-if="!row.assetIsMissing"
-          hide-actionsusd-pr
           class="[&>div]:max-w-[12rem] xl:[&>div]:max-w-[16rem] 2xl:[&>div]:max-w-[20rem]"
           :asset="row.asset"
+          :actions="{ hideActions: true }"
         />
         <ManualBalanceMissingAssetWarning v-else />
       </template>

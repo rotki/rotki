@@ -175,6 +175,7 @@ from rotkehlchen.serialization.serialize import process_result, process_result_l
 from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
     create_bridge_counterpart_event,
+    find_bridge_transaction_exact_matches,
     find_bridge_transaction_matches,
     get_bridge_match_assets_in_collection,
     get_unmatched_bridge_events,
@@ -244,6 +245,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
     from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.assets.nft_handling import NftHandling
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
     from rotkehlchen.chain.balances import BlockchainBalancesUpdate
@@ -1586,12 +1588,12 @@ class RestAPI:
             self,
             filter_query: LevenshteinFilterQuery,
             limit: int | None,
-            search_nfts: bool,
+            nft_handling: NftHandling,
     ) -> Response:
         response_data = self.assets_service.search_assets_levenshtein(
             filter_query=filter_query,
             limit=limit,
-            search_nfts=search_nfts,
+            nft_handling=nft_handling,
         )
         return make_response_from_dict(response_data)
 
@@ -4821,21 +4823,35 @@ class RestAPI:
 
         bridge_event = events[0]
 
-        assets_in_collection = get_bridge_match_assets_in_collection(deposit=bridge_event)
         bridge_event_timestamp = ts_ms_to_sec(bridge_event.timestamp)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             already_matched_event_ids = get_already_matched_event_ids(
                 cursor=cursor,
                 link_type=HistoryEventLinkType.BRIDGE_MATCH,
             )
-            close_match_identifiers = [x.identifier for x in find_bridge_transaction_matches(
+            exact_matches = find_bridge_transaction_exact_matches(
                 events_db=events_db,
                 bridge_event=bridge_event,
                 cursor=cursor,
-                assets_in_collection=assets_in_collection,
                 excluded_ids=already_matched_event_ids,
-                tolerance=tolerance,
-                match_window=time_range,
+            )
+            assets_in_collection = (
+                GlobalDBHandler.get_assets_in_same_collection(
+                    identifier=bridge_event.asset.identifier,
+                )
+                if len(exact_matches) > 0
+                else get_bridge_match_assets_in_collection(deposit=bridge_event)
+            )
+            close_match_identifiers = [x.identifier for x in (
+                exact_matches if len(exact_matches) > 0 else find_bridge_transaction_matches(
+                    events_db=events_db,
+                    bridge_event=bridge_event,
+                    cursor=cursor,
+                    assets_in_collection=assets_in_collection,
+                    excluded_ids=already_matched_event_ids,
+                    tolerance=tolerance,
+                    match_window=time_range,
+                )
             )]
             other_events = events_db.get_history_events_internal(
                 cursor=cursor,

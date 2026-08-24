@@ -1,5 +1,6 @@
 import { z, type ZodType } from 'zod';
 import { type MessageKey, msg } from '@/message-key';
+import { GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 
 /**
  * Which fields the exchange key form demands, and which parts of it render, is decided entirely by
@@ -85,44 +86,44 @@ export function acceptsSensitiveEdit(mode: string, editing: boolean): boolean {
   return !isEditing(mode) || editing;
 }
 
-/** The fields the form validates. The rest of the entry is carried but never rejected. */
+/**
+ * The fields the form's inputs bind to. The rest of the entry — the location, the mode — is carried
+ * by the entry itself and never edited here.
+ *
+ * The three enum-typed fields keep the entry's own types rather than widening to `string`, so the
+ * state can be folded back over the entry without anything having to re-narrow it.
+ */
 export interface ExchangeKeysFormState {
   apiKey: string;
   apiSecret: string;
   binanceHistoryStartTs?: number;
   binanceMarkets?: string[];
-  gateLocation?: string;
+  gateLocation?: GateLocation;
+  krakenAccountType?: KrakenAccountType;
   krakenFuturesApiKey?: string;
   krakenFuturesApiSecret?: string;
   name: string;
   newName?: string;
-  okxLocation?: string;
+  okxLocation?: OkxLocation;
   passphrase?: string;
 }
 
 /**
- * The validated fields, taken out of the entry the dialog owns. The entry carries more than this —
- * the location, the mode, the kraken account type — none of which can be wrong on its own.
+ * The editable fields, taken out of the entry the dialog owns. The entry carries more than this —
+ * the location and the mode — which the form reads but never writes.
+ *
+ * 🔴 It has to answer the same for the same entry: `useMappedModelForm` compares what this returns
+ * against the state it already holds to decide whether an outside edit is news, so a value invented
+ * here would report every pass as a change and the two directions would never settle.
  */
-export function toExchangeKeysFormState(entry: {
-  apiKey: string;
-  apiSecret: string;
-  binanceHistoryStartTs?: number;
-  binanceMarkets?: string[];
-  gateLocation?: string;
-  krakenFuturesApiKey?: string;
-  krakenFuturesApiSecret?: string;
-  name: string;
-  newName?: string;
-  okxLocation?: string;
-  passphrase?: string;
-}): ExchangeKeysFormState {
+export function toExchangeKeysFormState(entry: ExchangeKeysFormState): ExchangeKeysFormState {
   return {
     apiKey: entry.apiKey,
     apiSecret: entry.apiSecret,
     binanceHistoryStartTs: entry.binanceHistoryStartTs,
     binanceMarkets: entry.binanceMarkets,
     gateLocation: entry.gateLocation,
+    krakenAccountType: entry.krakenAccountType,
     krakenFuturesApiKey: entry.krakenFuturesApiKey,
     krakenFuturesApiSecret: entry.krakenFuturesApiSecret,
     name: entry.name,
@@ -175,12 +176,15 @@ export function exchangeKeysSchema(context: ExchangeKeysContext): ZodType<Exchan
     apiSecret: z.string(),
     binanceHistoryStartTs: z.number().optional(),
     binanceMarkets: z.array(z.string()).optional(),
-    gateLocation: z.string().optional(),
+    // The three region/tier fields take their own enums rather than a bare string: none of them
+    // carries a rule, but naming the type here is what lets the state fold back over the entry.
+    gateLocation: GateLocation.optional(),
+    krakenAccountType: KrakenAccountType.optional(),
     krakenFuturesApiKey: z.string().optional(),
     krakenFuturesApiSecret: z.string().optional(),
     name: z.string(),
     newName: z.string().optional(),
-    okxLocation: z.string().optional(),
+    okxLocation: OkxLocation.optional(),
     passphrase: z.string().optional(),
   }).superRefine((state, ctx) => {
     const demand = (required: boolean, path: keyof ExchangeKeysFormState, message: MessageKey): void => {

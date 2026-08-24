@@ -52,8 +52,8 @@ def test_refresh_gnosis_pay_and_monerium(
         with (
             patch(
                 'rotkehlchen.api.services.history.has_premium_capability',
-                side_effect=lambda premium, capability, expected=capability_name: (
-                    capability == expected and start_with_valid_premium
+                side_effect=lambda premium, capability_name, expected=capability_name: (
+                    capability_name == expected and start_with_valid_premium
                 ),
             ),
             patch(patch_path) as mock_query_service,

@@ -2,6 +2,7 @@
 import type { MatchingFlow, MatchSuggestions, PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { bigNumberify } from '@rotki/common';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
@@ -62,8 +63,11 @@ const searchTimeRange = ref<string>(getDefaultHourRange().toString());
 const onlyExpectedAssets = ref<boolean>(true);
 const tolerancePercentage = ref<string>(getDefaultTolerancePercentage());
 
+// The tolerance is a free-text field, so a search started before it holds a number searches on the
+// default rather than on a parse that throws.
 function percentageToDecimal(percentage: string): string {
-  return bigNumberify(percentage).dividedBy(100).toString();
+  const value = parseNumericInput(percentage, bigNumberify(getDefaultTolerancePercentage()));
+  return value.dividedBy(100).toString();
 }
 const buttonSize = computed<'sm' | undefined>(() => isPinned ? 'sm' : undefined);
 

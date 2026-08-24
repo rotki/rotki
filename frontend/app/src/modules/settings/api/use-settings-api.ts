@@ -1,4 +1,4 @@
-import { RequestTarget } from '@/modules/core/api/constants';
+import { CHAIN_KEYED_SETTINGS, RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/modules/settings/types/user-settings';
@@ -19,12 +19,14 @@ export function useSettingsApi(): UseSettingsApiReturn {
     const response = await api.put<UserSettingsModel>(
       '/settings',
       { settings },
+      { skipCamelCaseKeys: CHAIN_KEYED_SETTINGS },
     );
     return UserSettingsModel.parse(response);
   };
 
   const getSettings = async (): Promise<UserSettingsModel> => {
     const response = await api.get<UserSettingsModel>('/settings', {
+      skipCamelCaseKeys: CHAIN_KEYED_SETTINGS,
       validStatuses: VALID_WITH_SESSION_STATUS,
     });
 
@@ -32,6 +34,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
   };
 
   const getRawSettings = async (): Promise<SettingsUpdate> => api.get<SettingsUpdate>('/settings', {
+    skipCamelCaseKeys: CHAIN_KEYED_SETTINGS,
     validStatuses: VALID_WITH_SESSION_STATUS,
   });
 

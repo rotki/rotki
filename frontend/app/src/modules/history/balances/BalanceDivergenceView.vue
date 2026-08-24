@@ -69,11 +69,10 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
 
         <AssetSelect
           v-model="modelSelectedAsset"
-          outlined
-          show-ignored
+          variant="outlined"
           clearable
           :label="t('balance_divergence.asset')"
-          :chain="modelSelectedChain"
+          :source="{ chain: modelSelectedChain, showIgnored: true }"
           data-testid="balance-divergence-asset"
         />
       </div>
@@ -154,7 +153,7 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         <HistoryEventNote
           :notes="error"
           :chain="modelSelectedChain"
-          :asset="modelSelectedAsset"
+          :context="{ asset: modelSelectedAsset }"
         />
       </RuiAlert>
     </div>

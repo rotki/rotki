@@ -39,26 +39,37 @@ interface Harness {
   api: ReturnType<typeof useAssetSearch>;
   chain: Ref<string | undefined>;
   modelValue: Ref<string | undefined>;
+  nftHandling: Ref<'exclude' | 'include' | 'show_only'>;
+  selectionLost: ReturnType<typeof vi.fn>;
 }
 
-function setup(opts: { modelValue?: string; chain?: string; showIgnored?: boolean; excludes?: string[] } = {}): Harness {
+function setup(opts: {
+  modelValue?: string;
+  chain?: string;
+  showIgnored?: boolean;
+  excludes?: string[];
+  nftHandling?: 'exclude' | 'include' | 'show_only';
+} = {}): Harness {
   const modelValue = ref<string | undefined>(opts.modelValue);
   const chain = ref<string | undefined>(opts.chain);
+  const nftHandling = ref<'exclude' | 'include' | 'show_only'>(opts.nftHandling ?? 'exclude');
+  const selectionLost = vi.fn();
   let api!: ReturnType<typeof useAssetSearch>;
   mount(defineComponent({
     setup() {
       api = useAssetSearch({
         chain,
         excludes: () => opts.excludes ?? [],
-        includeNfts: () => false,
+        nftHandling: () => get(nftHandling),
         items: () => [],
         modelValue,
+        onSelectionLost: selectionLost,
         showIgnored: () => opts.showIgnored ?? false,
       });
       return (): null => null;
     },
   }));
-  return { api, chain, modelValue };
+  return { api, chain, modelValue, nftHandling, selectionLost };
 }
 
 async function runSearch(api: ReturnType<typeof useAssetSearch>, term: string): Promise<void> {
@@ -124,5 +135,66 @@ describe('useAssetSearch', () => {
     await flushPromises();
 
     expect(mockAssetMapping).toHaveBeenCalledWith(['eip155:1/erc20:0xA']);
+  });
+
+  // The snapshot editor flips this under the user with a radio. The options were fetched for the
+  // other kind, so leaving them up let a token be picked on a row that had become an nft.
+  it('should drop the options when the nft handling changes', async () => {
+    mockAssetSearch.mockResolvedValue([makeAsset('eip155:1/erc20:0xA')]);
+    const { api, nftHandling } = setup();
+    await runSearch(api, 'usdc');
+    expect(get(api.visibleAssets)).toHaveLength(1);
+
+    set(nftHandling, 'show_only');
+    await flushPromises();
+
+    expect(get(api.visibleAssets)).toHaveLength(0);
+  });
+
+  // Worse than stale options: the selection itself survived the flip, so an nft row kept the token
+  // the user had picked before switching.
+  it('should give up a selection the new nft handling cannot offer', async () => {
+    const { modelValue, nftHandling, selectionLost } = setup({ modelValue: 'eip155:1/erc20:0xA' });
+
+    set(nftHandling, 'show_only');
+    await flushPromises();
+
+    expect(selectionLost).toHaveBeenCalled();
+    expect(modelValue).toBeDefined();
+  });
+
+  // Narrow but silent: the flip has to land between the request leaving and its response arriving.
+  // Aborting alone does not cover it, since a response that has already resolved is a microtask
+  // away from being written, and this form saves without validating what is in the field.
+  it('should discard a response that arrives after the nft handling changed', async () => {
+    let resolveSearch!: (assets: AssetInfoWithId[]) => void;
+    mockAssetSearch.mockReturnValue(new Promise((resolve) => {
+      resolveSearch = resolve;
+    }));
+    const { api, nftHandling } = setup();
+
+    set(api.modelSearch, 'usdc');
+    await vi.advanceTimersByTimeAsync(800);
+
+    set(nftHandling, 'show_only');
+    await flushPromises();
+
+    // The token search now answers, for a scope nobody is looking at any more.
+    resolveSearch([makeAsset('eip155:1/erc20:0xA')]);
+    await flushPromises();
+
+    expect(get(api.visibleAssets)).toHaveLength(0);
+  });
+
+  it('should keep a selection the new nft handling still admits', async () => {
+    const { nftHandling, selectionLost } = setup({
+      modelValue: '_nft_0xc3f733ca98E0daD0386979Eb96fb1722A1A05E69_129',
+      nftHandling: 'show_only',
+    });
+
+    set(nftHandling, 'include');
+    await flushPromises();
+
+    expect(selectionLost).not.toHaveBeenCalled();
   });
 });

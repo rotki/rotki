@@ -5,6 +5,11 @@ import { HTTPStatus } from '@/modules/core/api/types/http';
 export interface ResponseParserOptions {
   skipCamelCase?: boolean;
   skipRootCamelCase?: boolean;
+  /**
+   * Fields whose nested object is left exactly as the backend sent it, for a value that is a map
+   * rather than a record of fields. The field's own key is still camelCased.
+   */
+  camelCaseSkipKeys?: string[];
 }
 
 /**
@@ -22,12 +27,12 @@ export function createResponseParser(
   if (options.skipRootCamelCase) {
     return (text: string): unknown => {
       const json = tryParseJson(text);
-      return json === null ? null : noRootCamelCaseTransformer(json);
+      return json === null ? null : noRootCamelCaseTransformer(json, options.camelCaseSkipKeys);
     };
   }
   return (text: string): unknown => {
     const json = tryParseJson(text);
-    return json === null ? null : camelCaseTransformer(json);
+    return json === null ? null : camelCaseTransformer(json, options.camelCaseSkipKeys);
   };
 }
 

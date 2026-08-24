@@ -84,7 +84,7 @@ onMounted(() => {
         >
           <AppImage
             v-if="image"
-            contain
+            fit="contain"
             width="24px"
             :src="image"
             :class="active ? 'opacity-100 brightness-0 invert' : 'opacity-70 brightness-0 dark:opacity-100 dark:invert'"

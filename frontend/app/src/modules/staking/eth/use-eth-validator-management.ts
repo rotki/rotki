@@ -1,14 +1,11 @@
 import type { DeepReadonly, Ref } from 'vue';
-import type { TaskError } from '@/modules/core/tasks/task-result';
-import { type BigNumber, type Eth2ValidatorEntry, Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
+import { type BigNumber, type Eth2ValidatorEntry, type Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { map as mapResult, type Result } from 'plainfp/result';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { nonEmptyProperties } from '@/modules/core/common/data/data';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEthValidatorManagementReturn {
   fetchValidatorsWithFilter: () => Promise<void>;
@@ -25,12 +22,24 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
   });
   const total = ref<BigNumber>(Zero);
 
-  const { getEth2Validators } = useBlockchainAccountsApi();
-  const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
-  const { submitTask } = useNativeTask();
-  const { t } = useI18n({ useScope: 'global' });
+  /**
+   * The filter whose answer `total` should reflect, as the same string the activity id embeds.
+   * Empty means "every validator", which is what a direct {@link setTotal} computes.
+   *
+   * Filter changes are not serialised, so without this the response that happens to land last wins
+   * rather than the one belonging to the newest filter, leaving a total for a filter the user has
+   * moved off.
+   *
+   * Keyed by the filter rather than by the call: the premium component re-emits `update:filter`
+   * after every change, so the same filter is requested twice as a matter of course and both
+   * answers are equally valid.
+   */
+  let wantedFilter = '';
 
-  function setTotal(validators?: Eth2Validators['entries']): void {
+  const { queryEth2Validators } = useBlockchainAccountsApi();
+  const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
+
+  function applyTotal(validators?: Eth2Validators['entries']): void {
     const publicKeys = validators?.map((validator: Eth2ValidatorEntry) => validator.publicKey);
     const stakingValidators = get(ethStakingValidators);
     const selectedValidators = publicKeys
@@ -38,6 +47,13 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
       : stakingValidators;
     const totalStakedAmount = selectedValidators.reduce((sum, item) => sum.plus(item.amount), Zero);
     set(total, totalStakedAmount);
+  }
+
+  function setTotal(validators?: Eth2Validators['entries']): void {
+    // Claims the slot, so a request still in flight cannot land on top of a caller that has just
+    // set the total directly (the page refresh does exactly that).
+    wantedFilter = '';
+    applyTotal(validators);
   }
 
   async function fetchValidatorsWithFilter(): Promise<void> {
@@ -56,27 +72,25 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
       return;
     }
 
-    // Per-request identity: each distinct filter is its own activity, so concurrent filter changes
-    // never dedup onto one promise and clobber each other's `total`. Failures are ignored here as
-    // they were before migration — this is a passive totals widget with no error surface.
-    await submitTask({
-      // A passive totals widget: it re-fires on every filter change and its id embeds the raw
-      // filter, so surfacing it would spam the panel with rows indistinguishable from the real
-      // validator fetch. Tracked like any activity, never rendered.
-      ephemeral: true,
-      id: makeActivityId(ActivityKind.STAKING, ActivityPart.VALIDATORS, JSON.stringify(combinedFilter)),
-      kind: ActivityKind.STAKING,
-      rerunnable: false,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<Eth2Validators>(
-          async () => getEth2Validators(combinedFilter),
-        ),
-        (result) => {
-          setTotal(Eth2Validators.parse(result).entries);
-        },
-      ),
-      title: t('task_center.group.staking'),
-    });
+    const filterKey = JSON.stringify(combinedFilter);
+    wantedFilter = filterKey;
+
+    // Deliberately not an async task. This recomputes on every filter change and the query behind
+    // it is a millisecond-scale database read, so going through the task orchestrator only buys the
+    // polling delay: the number lagged the validator count beside it by roughly two seconds.
+    try {
+      const validators = await queryEth2Validators(combinedFilter);
+      // Not `setTotal`: this must not claim the slot, it has to check whether the answer it carries
+      // is still the one being asked for.
+      if (filterKey === wantedFilter)
+        applyTotal(validators.entries);
+    }
+    catch (error: unknown) {
+      // Only logged. A failed recompute leaves the previous filter's number on screen with nothing
+      // on the page saying so, since the card's progress bar tracks performance and balances rather
+      // than this request.
+      logger.error(`failed to compute the staked total for ${filterKey}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   // Watch for filter changes

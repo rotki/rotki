@@ -146,7 +146,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_assets_mappings() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
 
         // Test with known asset identifiers i.e. using assets that should exist in the test database
         let queried_assets = vec![
@@ -276,30 +276,34 @@ mod tests {
         );
     }
 
+    // The fixture identifier is deliberately one no asset list can ship. `create_globaldb!` copies
+    // the packaged database, so a fixture built on a real identifier starts failing the day that
+    // asset is added: the insert hits the primary key. That is how this test broke, and nothing
+    // caught it, because a change to the shipped database does not run the colibri job.
     #[tokio::test]
     async fn test_get_hyperliquid_asset_mapping() {
-        let globaldb = create_globaldb!().await.unwrap();
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
         {
             let conn = globaldb.conn.lock().await;
             conn.execute(
                 "INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)",
                 rusqlite::params![
-                    "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
-                    "$MAX",
+                    "hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef",
+                    "$FIXTURE",
                     AssetType::HyperliquidToken.serialize_for_db(),
                 ],
             )
             .unwrap();
             conn.execute(
                 "INSERT INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
-                rusqlite::params!["hyperc:0x6781b92b6ea5d8ed37d275eb201f64af", "MAX",],
+                rusqlite::params!["hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef", "FIXTURE",],
             )
             .unwrap();
             conn.execute(
                 "INSERT INTO hyperliquid_tokens(identifier, address, decimals) VALUES (?, ?, ?)",
                 rusqlite::params![
-                    "hyperc:0x6781b92b6ea5d8ed37d275eb201f64af",
-                    "0x6781b92b6ea5d8ed37d275eb201f64af",
+                    "hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef",
+                    "0xdeadbeefdeadbeefdeadbeefdeadbeef",
                     6,
                 ],
             )
@@ -307,14 +311,14 @@ mod tests {
         }
 
         let (assets, _) = globaldb
-            .get_assets_mappings(&["hyperc:0x6781b92b6ea5d8ed37d275eb201f64af".to_string()])
+            .get_assets_mappings(&["hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef".to_string()])
             .await
             .unwrap();
         let asset = assets
-            .get("hyperc:0x6781b92b6ea5d8ed37d275eb201f64af")
+            .get("hyperc:0xdeadbeefdeadbeefdeadbeefdeadbeef")
             .unwrap();
-        assert_eq!(asset.name, "$MAX");
-        assert_eq!(asset.symbol, "MAX");
+        assert_eq!(asset.name, "$FIXTURE");
+        assert_eq!(asset.symbol, "FIXTURE");
         assert_eq!(asset.asset_type, "hyperliquid token");
         assert!(asset.evm_chain.is_none());
     }

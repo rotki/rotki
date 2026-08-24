@@ -16,6 +16,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class HedgeyBalances(ProtocolWithBalance):
@@ -32,7 +33,7 @@ class HedgeyBalances(ProtocolWithBalance):
         )
         self.evm_inquirer: EthereumInquirer
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """
         Query underlying balances for deposits in eigenlayer. Also for eigenpod
         owners and funds deposited in eigenpods. Also for any pending withdrawals
@@ -47,6 +48,7 @@ class HedgeyBalances(ProtocolWithBalance):
                 (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
                 (HistoryEventType.INFORMATIONAL, HistoryEventSubType.GOVERNANCE),
             },
+            location_labels=addresses,
         )
         # gather the related tokens per address
         addresses_to_tokens = defaultdict(set)

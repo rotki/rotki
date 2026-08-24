@@ -47,7 +47,7 @@ const { t } = useI18n({ useScope: 'global' });
       >
         <AssetDetails
           :asset="item.asset"
-          dense
+          :display="{ dense: true }"
         />
         <div class="flex items-center gap-3">
           <ValueAccuracyHint v-if="selection === 'historical'" />

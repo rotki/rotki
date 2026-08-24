@@ -29,7 +29,7 @@ const { tab, groupLabel } = defineProps<{
         v-else
         :src="tab.image"
         size="20px"
-        contain
+        fit="contain"
         class="icon-bg"
       />
       <span

@@ -2,7 +2,7 @@ import type UniversalProvider from '@walletconnect/universal-provider';
 import type { Ref } from 'vue';
 import { withTimeout } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';
-import { EIP155, EIP155_EVENTS, EIP155_METHODS } from './constants';
+import { EIP155, EIP155_EVENTS, EIP155_METHODS, WALLET_ERRORS } from './constants';
 import { type Chain, createViemWalletClient, getAddress, type ViemWalletClient } from './viem-client';
 
 type WcSession = NonNullable<UniversalProvider['session']>;
@@ -23,6 +23,22 @@ async function loadWalletNetworks(): Promise<readonly Chain[]> {
   walletNetworksPromise ??= import('./chains-viem').then(mod => mod.SUPPORTED_WALLET_NETWORKS);
 
   return walletNetworksPromise;
+}
+
+/**
+ * The `rpcMap` a session is opened with. It is a hint the wallet may ignore, and
+ * `chains-viem` only knows the chains viem ships a definition for, so a chain
+ * with no entry is simply requested without a URL rather than withheld.
+ */
+async function getRpcMap(chainIds: number[]): Promise<Record<string, string>> {
+  const networks = await loadWalletNetworks();
+  const rpcMap: Record<string, string> = {};
+  for (const chainId of chainIds) {
+    const url = networks.find(network => network.id === chainId)?.rpcUrls.default.http[0];
+    if (url)
+      rpcMap[`${EIP155}:${chainId}`] = url;
+  }
+  return rpcMap;
 }
 
 const PING_TIMEOUT = 5000;
@@ -55,7 +71,7 @@ interface UseWalletConnectReturn {
   preparing: Ref<boolean>;
   connectUri: Ref<string | undefined>;
   showConnectModal: Ref<boolean>;
-  connect: () => Promise<void>;
+  connect: (chainIds: number[]) => Promise<void>;
   cancelConnect: () => void;
   disconnect: () => Promise<void>;
   getWalletClient: () => ViemWalletClient;
@@ -168,7 +184,18 @@ function closeModal(): void {
 }
 
 export function useWalletConnect(): UseWalletConnectReturn {
-  const connect = async (): Promise<void> => {
+  /**
+   * @param chainIds the EIP-155 chain ids to request in the session namespace.
+   * They come from the caller rather than from `chains-viem` so the session
+   * covers every chain rotki supports, not only the ones viem is imported for.
+   */
+  const connect = async (chainIds: number[]): Promise<void> => {
+    // A session that negotiates no chains is useless and the failure is silent
+    // later, so refuse it here. Empty means the supported-chains fetch has not
+    // landed or failed; the previous hardcoded list could never be empty.
+    if (chainIds.length === 0)
+      throw new Error(WALLET_ERRORS.NO_SUPPORTED_CHAINS);
+
     const provider = await getProvider();
 
     if (provider.session) {
@@ -181,19 +208,12 @@ export function useWalletConnect(): UseWalletConnectReturn {
     provider.on('display_uri', onDisplayUri);
 
     try {
-      const networks = await loadWalletNetworks();
-      const chains = networks.map(network => `${EIP155}:${network.id}`);
-      const rpcMap: Record<string, string> = {};
-      for (const network of networks) {
-        const url = network.rpcUrls.default.http[0];
-        if (url)
-          rpcMap[`${EIP155}:${network.id}`] = url;
-      }
+      const rpcMap = await getRpcMap(chainIds);
 
       await provider.connect({
         optionalNamespaces: {
           [EIP155]: {
-            chains,
+            chains: chainIds.map(chainId => `${EIP155}:${chainId}`),
             events: [...EIP155_EVENTS],
             methods: [...EIP155_METHODS],
             rpcMap,

@@ -158,9 +158,7 @@ export class RotkiApi {
     if (skipQueue)
       return this.fetchDirect<T>(url, restOptions);
 
-    const queue = restOptions.target === RequestTarget.COLIBRI
-      ? this._colibriRequestQueue
-      : this._requestQueue;
+    const queue = restOptions.target === RequestTarget.COLIBRI ? this._colibriRequestQueue : this._requestQueue;
 
     return queue.enqueue<T>(url, {
       ...restOptions,
@@ -236,6 +234,7 @@ export class RotkiApi {
       target,
       validStatuses,
       skipCamelCase,
+      skipCamelCaseKeys,
       skipRootCamelCase,
       skipSnakeCase,
       skipResultUnwrap,
@@ -261,7 +260,7 @@ export class RotkiApi {
         ignoreResponseError: true,
         body,
         query,
-        parseResponse: createResponseParser({ skipCamelCase, skipRootCamelCase }),
+        parseResponse: createResponseParser({ camelCaseSkipKeys: skipCamelCaseKeys, skipCamelCase, skipRootCamelCase }),
       }).finally(dispose);
 
       this.checkResponseStatus<T>(response, { validStatuses, skipAuthHandler });

@@ -21,7 +21,7 @@ def test_frankencoin_savings_balances(ethereum_inquirer, ethereum_accounts, inqu
     balances = FrankencoinSavingsBalances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
-    ).query_balances()
+    ).query_balances(addresses=ethereum_accounts)
 
     assert balances[ethereum_accounts[0]].assets[A_ZCHF][CPT_FRANKENCOIN] == Balance(
         amount=FVal('1598.310020494985735077'),

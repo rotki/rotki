@@ -308,6 +308,11 @@ impl ServiceSpec {
     }
 }
 
+/// The managed MCP server's service name. The only optional service today, and
+/// the only one whose autostart is a user preference rather than a fixed part of
+/// the tree, so control paths that special-case it name it through this.
+pub const MCP_SERVICE: &str = "mcp";
+
 /// Resolved paths/ports/options used to build the default rotki service graph.
 ///
 /// This mirrors the argument construction in `packaging/docker/entrypoint.py`
@@ -500,7 +505,7 @@ pub fn build_services(layout: &ServiceLayout) -> Vec<ServiceSpec> {
             timeout: DEFAULT_PING_TIMEOUT,
         });
 
-    let mcp = ServiceSpec::new("mcp", layout.core_launcher.clone())
+    let mcp = ServiceSpec::new(MCP_SERVICE, layout.core_launcher.clone())
         .args(mcp_args(layout))
         .cwd(layout.core_cwd.clone())
         .depends_on("core")

@@ -16,6 +16,7 @@ vi.mock('@/modules/settings/general/disabled-chain-queries/use-rule-editor-form'
     availableChainsForAddress: computed(() => []),
     buildDraft: (): RuleDraft | undefined => buildDraftMock(),
     canSave: computed<boolean>(() => get(canSave)),
+    filterAddressOption: (): boolean => true,
     modelAddress: ref<string | undefined>(undefined),
     modelChainId: ref<string | undefined>(undefined),
     modelKind: kind,

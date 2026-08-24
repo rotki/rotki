@@ -83,27 +83,38 @@ class DBLidoCsm:
             metrics=metrics,
         )
 
-    def get_node_operators(self) -> tuple[LidoCsmNodeOperator, ...]:
+    def get_node_operators(
+            self,
+            addresses: list[ChecksumEvmAddress] | None = None,
+    ) -> tuple[LidoCsmNodeOperator, ...]:
         """Return all tracked node operators with their cached metrics, if any."""
+        if addresses == []:
+            return ()
+
+        query = """
+            SELECT
+                o.address,
+                o.node_operator_id,
+                m.operator_type_id,
+                m.bond_current,
+                m.bond_required,
+                m.bond_claimable,
+                m.total_deposited_validators,
+                m.rewards_pending
+            FROM lido_csm_node_operators AS o
+            LEFT JOIN lido_csm_node_operator_metrics AS m
+                ON o.node_operator_id = m.node_operator_id
+        """
+        bindings: tuple[ChecksumEvmAddress, ...] = ()
+        if addresses is not None:
+            query += f" WHERE o.address IN ({','.join('?' for _ in addresses)})"
+            bindings = tuple(addresses)
+        query += ' ORDER BY o.node_operator_id'
         with self.db.conn.read_ctx() as cursor:
-            rows = cursor.execute(
-                """
-                SELECT
-                    o.address,
-                    o.node_operator_id,
-                    m.operator_type_id,
-                    m.bond_current,
-                    m.bond_required,
-                    m.bond_claimable,
-                    m.total_deposited_validators,
-                    m.rewards_pending
-                FROM lido_csm_node_operators AS o
-                LEFT JOIN lido_csm_node_operator_metrics AS m
-                    ON o.node_operator_id = m.node_operator_id
-                ORDER BY o.node_operator_id
-                """,
-            ).fetchall()
-        return tuple(self._deserialize_entry(row) for row in rows)
+            return tuple(
+                self._deserialize_entry(row)
+                for row in cursor.execute(query, bindings)
+            )
 
     def add_node_operator(
             self,

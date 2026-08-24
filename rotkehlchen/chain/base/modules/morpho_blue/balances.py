@@ -38,14 +38,17 @@ class MorphoBlueBalances(ProtocolWithBalance):
             },
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        address_to_events = self.addresses_with_activity(event_types={
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
-            (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
-        })
+        address_to_events = self.addresses_with_activity(
+            event_types={
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
+                (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
+                (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
+            },
+            location_labels=addresses,
+        )
         if len(address_to_events) == 0:
             return balances
 

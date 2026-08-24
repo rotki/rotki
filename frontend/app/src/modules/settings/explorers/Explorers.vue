@@ -101,11 +101,10 @@ onMounted(() => {
       />
       <AssetDetails
         v-else
-        dense
-        size="26px"
         class="[&>div]:!py-0 -my-[0.375rem]"
         :asset="item"
-        hide-menu
+        :display="{ dense: true, size: '26px' }"
+        :actions="{ hideMenu: true }"
       />
     </CreateSelection>
 

@@ -16,7 +16,10 @@ from rotkehlchen.assets.utils import (
     asset_normalized_value,
     get_or_create_evm_token,
 )
-from rotkehlchen.chain.ethereum.modules.zksync.constants import ZKSYNC_LITE_SUNSET_CLAIM
+from rotkehlchen.chain.ethereum.modules.zksync.constants import (
+    CPT_ZKSYNC,
+    ZKSYNC_LITE_SUNSET_CLAIM,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.manager import ChainManagerWithTransactions, ChainWithEoA
@@ -1018,7 +1021,10 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             ))
 
         if bridge_extra_data is not None and len(events) != 0:
-            events[0].extra_data = bridge_extra_data  # the bridge event is always first
+            # the bridge event is always first. Labeling it with the bridge it went through
+            # is what pairs it with its ethereum leg, which carries the same counterparty.
+            events[0].extra_data = bridge_extra_data
+            events[0].counterparty = CPT_ZKSYNC
 
         if transaction.fee is not None and len(events) != 0 and events[0].event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
             if events[0].event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
@@ -1043,6 +1049,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 location_label=events[0].location_label,
                 address=target,
                 notes=f'{fee_type} fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}',  # noqa: E501,
+                counterparty=events[0].counterparty,  # the bridge for a bridging fee, nothing otherwise  # noqa: E501
             ))
 
         # save it in the DB and mark the zksync lite transaction as decoded

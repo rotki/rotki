@@ -3,7 +3,13 @@ import type { FieldText } from '@/modules/core/table/pill/core/text';
 import type { FieldDef, FilterOp, FilterValueType, TypedFilterDraft } from '@/modules/core/table/pill/core/types';
 import { FilterOps, FilterValueTypes } from '@/modules/core/table/filtering';
 import { DEFAULT_OPERATORS } from '@/modules/core/table/pill/core/operators';
-import { parseDateQuery, parseRangeQuery, type ParseTimestamp } from '@/modules/core/table/pill/core/typed-filters';
+import {
+  looksLikeDateQuery,
+  looksLikeRangeQuery,
+  parseDateQuery,
+  parseRangeQuery,
+  type ParseTimestamp,
+} from '@/modules/core/table/pill/core/typed-filters';
 
 /**
  * The pill editor a field renders in. `asset` is the dedicated asset picker (icon + symbol +
@@ -118,6 +124,7 @@ export function toRangeFieldDef(spec: BoundsFieldSpec): FieldDef {
     hint: spec.hint,
     key: spec.key,
     label: spec.label,
+    matchesTyped: looksLikeRangeQuery,
     multiple: false,
     operators: operatorsOf(FilterValueTypes.RANGE, spec.operators),
     // Every numeric field can read a typed amount; there is nothing table-specific about `>100`.
@@ -141,7 +148,14 @@ export function toDateFieldDef(spec: DateFieldSpec): FieldDef {
     label: spec.label,
     multiple: false,
     operators: operatorsOf(FilterValueTypes.DATE, spec.operators),
-    ...(parseBound ? { parseTyped: (query: string): TypedFilterDraft[] => parseDateQuery(query, parseBound) } : {}),
+    // Both gated on the parser: a field that cannot read a written date must not offer the syntax
+    // for one either, or its hint would point at something it then refuses.
+    ...(parseBound
+      ? {
+          matchesTyped: looksLikeDateQuery,
+          parseTyped: (query: string): TypedFilterDraft[] => parseDateQuery(query, parseBound),
+        }
+      : {}),
     serializer: spec.serializer,
     valueType: FilterValueTypes.DATE,
   };

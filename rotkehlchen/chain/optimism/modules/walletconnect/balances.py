@@ -17,6 +17,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,12 +39,14 @@ class WalletconnectBalances(ProtocolWithBalance):
             },
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Query balances of staked WalletConnect"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         wct_token = Asset(WCT_TOKEN_ID)
         wct_price = Inquirer.find_main_currency_price(Asset(WCT_TOKEN_ID))
-        for address, events in self.addresses_with_deposits().items():
+        for address, events in self.addresses_with_deposits(
+            location_labels=addresses,
+        ).items():
             amount = ZERO
             for event in events:
                 if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.asset == wct_token:  # noqa: E501

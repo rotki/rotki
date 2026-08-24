@@ -5,17 +5,23 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.modules.zksync.constants import (
     CPT_ZKSYNC,
     ZKSYNC_LITE_SUNSET_CLAIM,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
+from rotkehlchen.chain.evm.decoding.cctp.constants import CPT_CCTP
+from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.lifi.constants import CPT_LIFI
+from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.relay.constants import CPT_RELAY
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
+from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC, A_XDAI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -200,10 +206,253 @@ def test_match_lifi_relay_bridge_by_order_id(database: DBHandler) -> None:
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-@pytest.mark.parametrize('bridge_counterparty', [CPT_LIFI, CPT_SOCKET])
+@pytest.mark.parametrize(('underlying_counterparty', 'transfer_id'), [
+    (CPT_ACROSS, '1295289'),
+    (CPT_CCTP, '108927'),
+    (CPT_HOP, '0x515a483a21beb5543dc74f6dbcb2bcfbb190cc01e10f2209fd195c47b24a0275'),
+])
+def test_match_socket_underlying_bridge_by_transfer_id(
+        database: DBHandler,
+        underlying_counterparty: str,
+        transfer_id: str,
+) -> None:
+    """Socket uses normal filters with a liberal counterparty and transfer-id tie-breaker."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+    source_asset = Asset(
+        'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    )
+    destination_asset = Asset(
+        'eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
+    )
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.BASE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=source_asset,
+                amount=FVal('399.365908'),
+                location_label=user_address,
+                counterparty=CPT_SOCKET,
+                extra_data={'bridge': {
+                    'from_chain': 8453,
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': transfer_id,
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000100000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=destination_asset,
+                amount=FVal('399.128031'),
+                location_label=user_address,
+                counterparty=underlying_counterparty,
+                extra_data={'bridge': {
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': transfer_id,
+                }},
+            )), EvmEvent(  # closer exact-amount candidate, but without the transfer id
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000090000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=destination_asset,
+                amount=FVal('399.365908'),
+                location_label=user_address,
+                counterparty=underlying_counterparty,
+                extra_data={'bridge': {
+                    'to_chain': 100,
+                    'to_address': user_address,
+                }},
+            )],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_do_not_auto_match_socket_transfer_id_across_asset_collections(
+        database: DBHandler,
+) -> None:
+    """A shared transfer id is not sufficient for an automatic cross-asset match."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+    source_asset = Asset(
+        'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    )
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.BASE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=source_asset,
+                amount=FVal('399.365908'),
+                location_label=user_address,
+                counterparty=CPT_SOCKET,
+                extra_data={'bridge': {
+                    'from_chain': 8453,
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': '1295289',
+                }},
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000100000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_DAI,
+                amount=FVal('399.365908'),
+                location_label=user_address,
+                counterparty=CPT_ACROSS,
+                extra_data={'bridge': {
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': '1295289',
+                }},
+            )],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == set()
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize(('timestamp', 'amount'), [
+    (TimestampMS(1800000000000), FVal('399.365908')),
+    (TimestampMS(1700000100000), FVal('300')),
+])
+def test_socket_transfer_id_keeps_time_and_amount_filters(
+        database: DBHandler,
+        timestamp: TimestampMS,
+        amount: FVal,
+) -> None:
+    """A Socket transfer id does not bypass the normal time or amount filters."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+    source_asset = Asset(
+        'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    )
+    destination_asset = Asset(
+        'eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
+    )
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.BASE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=source_asset,
+                amount=FVal('399.365908'),
+                location_label=user_address,
+                counterparty=CPT_SOCKET,
+                extra_data={'bridge': {
+                    'from_chain': 8453,
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': '1295289',
+                }},
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=timestamp,
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=destination_asset,
+                amount=amount,
+                location_label=user_address,
+                counterparty=CPT_ACROSS,
+                extra_data={'bridge': {
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': '1295289',
+                }},
+            )],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == set()
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_socket_underlying_bridge_without_transfer_id(database: DBHandler) -> None:
+    """Socket routes accept a differently-labelled bridge leg when the ordinary
+    chain, address, asset, amount and time heuristics identify it."""
+    events_db = DBHistoryEvents(database)
+    user_address = make_evm_address()
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.OPTIMISM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDC,
+                amount=FVal('22.189898'),
+                location_label=user_address,
+                counterparty=CPT_SOCKET,
+                extra_data={'bridge': {
+                    'from_chain': 10,
+                    'to_chain': 137,
+                    'to_address': user_address,
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000100000),
+                location=Location.POLYGON_POS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDC,
+                amount=FVal('22.1'),
+                location_label=user_address,
+                counterparty=CPT_CCTP,
+                extra_data={'bridge': {
+                    'from_chain': 10,
+                    'to_chain': 137,
+                    'to_address': user_address,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_match_cross_asset_bridge_by_target_asset(
         database: DBHandler,
-        bridge_counterparty: str,
 ) -> None:
     """An explicit target asset narrows candidates and permits a cross-asset route."""
     events_db = DBHistoryEvents(database)
@@ -220,7 +469,7 @@ def test_match_cross_asset_bridge_by_target_asset(
                 asset=A_USDC,
                 amount=FVal('52.085941'),
                 location_label=(user_address := make_evm_address()),
-                counterparty=bridge_counterparty,
+                counterparty=CPT_LIFI,
                 extra_data={'bridge': {
                     'from_chain': 42161,
                     'to_chain': 1,
@@ -643,3 +892,310 @@ def test_sunset_claim_resynthesis_reuses_orphaned_counterpart(database: DBHandle
 
     deposits, withdrawals = get_unmatched_bridge_events(database=database)
     assert len(deposits) == len(withdrawals) == 0
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_monerium_bridge_legs_by_transfer_id(database: DBHandler) -> None:
+    """Monerium chain to chain moves match on the tx hash pair its API reports for both
+    legs of a move, not on the amount and time heuristic.
+
+    Both moves below are real gnosis <-> arbitrum EURe transfers. Their destination legs
+    land seconds after the source ones onchain but are placed a day later here, well past
+    the heuristic window, so a match can only come from the shared transfer id.
+    """
+    events_db = DBHistoryEvents(database)
+    gnosis_eure = Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430')
+    arbitrum_eure = Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8')
+    # gnosis -> arbitrum: burn 0xff00dec3..., mint 0x88d55171...
+    out_user = '0x8EaeD0c875d0aF5134EEac3dA91BeCf8dE505e2b'
+    out_transfer_id = '0x88d55171adb39b33c8b3b1802cf7873d6c04120d38de414800b8905a720a5e21-0xff00dec38e08377a18075e35c6b755da9f24882ec9aa5aa0de4ea6ebdedcb381'  # noqa: E501
+    # arbitrum -> gnosis: burn 0x0262c273..., mint 0xcb922e79...
+    in_user = '0xE53464166D9DaB175E9c290209d5eab9cF98eec5'
+    in_transfer_id = '0x0262c273b8bd935e467e67f32b779aea6b0c3e294de335486180a62cbafed797-0xcb922e794da9d77dc2c3a395f5ba09f9e6e63040c1af90565a027839cdaff36e'  # noqa: E501
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(out_deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787090645000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=gnosis_eure,
+                amount=FVal('2000'),
+                location_label=out_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 100,
+                    'to_chain': 42161,
+                    'from_address': out_user,
+                    'to_address': out_user,
+                    'transfer_id': out_transfer_id,
+                }},
+            )), (out_withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787090648000 + DAY_IN_SECONDS * 1000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=arbitrum_eure,
+                amount=FVal('2000'),
+                location_label=out_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 100,
+                    'to_chain': 42161,
+                    'from_address': out_user,
+                    'to_address': out_user,
+                    'transfer_id': out_transfer_id,
+                }},
+            )), (in_deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787216450000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=arbitrum_eure,
+                amount=FVal('196.34'),
+                location_label=in_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 100,
+                    'from_address': in_user,
+                    'to_address': in_user,
+                    'transfer_id': in_transfer_id,
+                }},
+            )), (in_withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1787216455000 + DAY_IN_SECONDS * 1000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=gnosis_eure,
+                amount=FVal('196.34'),
+                location_label=in_user,
+                counterparty=CPT_MONERIUM,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 100,
+                    'from_address': in_user,
+                    'to_address': in_user,
+                    'transfer_id': in_transfer_id,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {  # source leg is always the left side of the link
+        (_event_id(database, out_deposit), _event_id(database, out_withdrawal)),
+        (_event_id(database, in_deposit), _event_id(database, in_withdrawal)),
+    }
+    deposits, withdrawals = get_unmatched_bridge_events(database=database)
+    assert len(deposits) == len(withdrawals) == 0
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_xdai_bridge_by_nonce(database: DBHandler) -> None:
+    """The two legs of a DAI to xDAI bridging match by the nonce the bridge logs.
+
+    They are the legs decoded from ethereum transaction 0xeb720d57bd48a89a69ba743c98441
+    4f711e06a6edacd2ab5ef6d4bfddc019d6b and gnosis transaction 0xa0a2a6996eadbd50db09787
+    3c37674cd6c0f130bc283b617c8a88c6db606c0f3. The ethereum leg used to be identified by
+    its own transaction hash while the gnosis one repeats the nonce, and ids that
+    contradict each other veto the heuristic tiers as well, so the pair never matched.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=834,
+                timestamp=TimestampMS(1749508919000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_DAI,
+                amount=FVal(amount := '33.85386'),
+                location_label=(user_address := make_evm_address()),
+                counterparty=CPT_GNOSIS_CHAIN,
+                extra_data={'bridge': {
+                    'from_chain': 1,
+                    'to_chain': 100,
+                    'from_address': user_address,
+                    'transfer_id': (transfer_id := (
+                        '0x000000000000000000000000'
+                        '0000000000000000000000000000000000000369'
+                    )),
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=10,
+                timestamp=TimestampMS(1749509175000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_XDAI,
+                amount=FVal(amount),
+                location_label=user_address,
+                counterparty=CPT_GNOSIS_CHAIN,
+                extra_data={'bridge': {
+                    'from_chain': 1,
+                    'to_chain': 100,
+                    'to_address': user_address,
+                    'transfer_id': transfer_id,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_zksync_lite_withdrawal_past_default_window(database: DBHandler) -> None:
+    """A zksync lite exit matches the ethereum leg that settles hours later.
+
+    They are the legs of zksync lite transaction 0x4108ec114f61a486a67e072ae5508ee8a5ed
+    42126f5bf892a5489364ef75e8f3 and ethereum transaction 0xcfb173fc85c133114c065f77101e
+    4f522b45e8948ea34c858864a7d9e769d128, 6.6 hours apart because the funds are only
+    released once the zksync block is verified on ethereum. That is past the default
+    match window, so the pair is only found through the bridge's own slow window, which
+    is reachable only because the zksync lite leg names its counterparty.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(zksync_tx_hash := make_evm_tx_hash())),  # noqa: E501
+                tx_ref=zksync_tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(1774130088000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDT,
+                amount=FVal(amount := '4.0783'),
+                location_label=(user_address := make_evm_address()),
+                counterparty=CPT_ZKSYNC,
+                extra_data={'bridge': {
+                    'from_chain': 'zksync_lite',
+                    'to_chain': 1,
+                    'from_address': user_address,
+                    'to_address': user_address,
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=821,
+                timestamp=TimestampMS(1774153859000),  # 6.6 hours after the exit
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDT,
+                amount=FVal(amount),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+                extra_data={'bridge': {
+                    'from_chain': 'zksync_lite',
+                    'to_chain': 1,
+                    'to_address': user_address,
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_zksync_lite_forced_exit(database: DBHandler) -> None:
+    """A zksync lite forced exit is promoted to a bridge leg by the payout that settles it.
+
+    A forced exit sweeps the account's whole balance of one token, so the zksync API never
+    states the amount and the exit is decoded as an informational zero-amount event. Its
+    amount can only come from the ethereum leg, so it is matched on asset and recipient and
+    takes the amount from its counterpart. Both legs are the ones of zksync lite transaction
+    0x630d0e5d672833fcd034b5989e02dba38c6982a2bac9649311a7086758e7df47 and ethereum
+    transaction 0x234407968b9a688be3fb37cf7ff8ef3b4168d6cd85ec45b8344bb2a88832f982, which
+    paid out five exits of this address at once. The decoy is the same payout's DAI leg: a
+    different asset must not take the PAN exit's amount.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(forced_exit := EvmEvent(
+                group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(exit_tx_hash := make_evm_tx_hash())),  # noqa: E501
+                tx_ref=exit_tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(1604314348000),
+                location=Location.ZKSYNC_LITE,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=(pan := Asset('eip155:1/erc20:0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44')),
+                amount=ZERO,  # the exit never states it
+                location_label=(user_address := make_evm_address()),
+                address=user_address,
+                notes='Forced exit to Ethereum',
+            )), (payout := EvmEvent(
+                tx_ref=(payout_tx_hash := make_evm_tx_hash()),
+                sequence_index=176,
+                timestamp=TimestampMS(1604359203000),  # 12.5 hours later
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=pan,
+                amount=FVal(amount := '1586.6'),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+                extra_data={'bridge': {
+                    'from_chain': 'zksync_lite',
+                    'to_chain': 1,
+                    'to_address': user_address,
+                }},
+            )), EvmEvent(  # decoy: same payout, same address, different asset
+                tx_ref=payout_tx_hash,
+                sequence_index=175,
+                timestamp=TimestampMS(1604359203000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_DAI,
+                amount=FVal('1691.92749999'),
+                location_label=user_address,
+                counterparty=CPT_ZKSYNC,
+            )],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (exit_id := _event_id(database, forced_exit), _event_id(database, payout)),
+    }
+    with database.conn.read_ctx() as cursor:
+        promoted = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[exit_id]),
+        )[0]
+
+    assert isinstance(promoted, EvmEvent)
+    assert promoted.amount == FVal(amount)  # taken from the payout
+    assert promoted.event_type == HistoryEventType.DEPOSIT
+    assert promoted.event_subtype == HistoryEventSubType.BRIDGE
+    assert promoted.counterparty == CPT_ZKSYNC
+    assert promoted.notes == f'Bridge {amount} PAN from ZKSync Lite to Ethereum'
+    assert promoted.extra_data is not None
+    assert promoted.extra_data['bridge'] == {
+        'from_chain': 'zksync_lite',
+        'to_chain': 1,
+        'to_address': user_address,
+    }

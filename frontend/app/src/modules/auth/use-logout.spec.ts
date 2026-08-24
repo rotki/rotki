@@ -37,9 +37,7 @@ vi.mock('@/modules/auth/use-users-api', () => ({
 }));
 
 vi.mock('@/modules/wallet/use-wallet-store', () => ({
-  useWalletStore: vi.fn(() => ({
-    disconnect: mockDisconnectWallet,
-  })),
+  disconnectWalletIfActive: async (): Promise<void> => mockDisconnectWallet(),
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({

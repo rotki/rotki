@@ -164,7 +164,7 @@ defineExpose({
         v-model="priceAsset"
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
-        outlined
+        variant="outlined"
         class="[&_fieldset]:!rounded-l-none"
         :hint="t('manual_balances_form.fields.price_asset_hint')"
         :label="t('manual_balances_form.fields.price_asset')"

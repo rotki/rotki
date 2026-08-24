@@ -1,57 +1,34 @@
 <script setup lang="ts">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Collection } from '@/modules/core/common/collection';
-import type { DuplicateHandlingStatus, HighlightType } from '@/modules/history/events/action-types';
-import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
-import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
+import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
+import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
+import { useHistoryEventsTable } from '@/modules/history/events/use-history-events-table';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
-import { useHistoryEventsData } from '../use-history-events-data';
-import { useHistoryEventsForms } from '../use-history-events-forms';
-import { useHistoryEventsOperations } from '../use-history-events-operations';
-import { useVirtualRows } from '../use-virtual-rows';
-import { useVirtualScrollHighlight } from '../use-virtual-scroll-highlight';
-import HistoryEventsDetailItem from './HistoryEventsDetailItem.vue';
-import HistoryEventsGroupItem from './HistoryEventsGroupItem.vue';
-import HistoryEventsLoadMoreRow from './HistoryEventsLoadMoreRow.vue';
-import HistoryEventsMatchedMovementItem from './HistoryEventsMatchedMovementItem.vue';
-import HistoryEventsSwapCollapseRow from './HistoryEventsSwapCollapseRow.vue';
-import HistoryEventsSwapItem from './HistoryEventsSwapItem.vue';
 import HistoryEventsVirtualHeader from './HistoryEventsVirtualHeader.vue';
+import HistoryEventsVirtualRow from './HistoryEventsVirtualRow.vue';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
 const {
-  groups: rawGroups,
-  requestPayload,
-  excludeIgnored,
-  groupLoading,
+  source,
+  highlight,
   hasActiveFilters,
   processing,
   tableHeightOffset,
-  identifiers,
-  highlightedGroupIdentifier,
-  highlightedIdentifiers,
-  highlightTypes,
   hideActions,
-  selection,
   duplicateHandlingStatus,
 } = defineProps<{
-  groups: Collection<HistoryEventRow>;
-  requestPayload: HistoryEventRequestPayload | undefined;
-  excludeIgnored: boolean;
-  groupLoading: boolean;
+  /** What to render: the groups plus everything scoping the per-group event fetch. */
+  source: HistoryEventsTableSource;
+  /** Which rows to call out, and how. */
+  highlight?: HistoryEventsTableHighlight;
   hasActiveFilters?: boolean;
   processing?: boolean;
   tableHeightOffset?: number;
-  identifiers?: string[];
-  highlightedGroupIdentifier?: string;
-  highlightedIdentifiers?: string[];
-  highlightTypes?: Record<string, HighlightType>;
   hideActions?: boolean;
-  selection?: UseHistoryEventsSelectionModeReturn;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
 
@@ -65,144 +42,37 @@ const { t } = useI18n({ useScope: 'global' });
 
 const DEFAULT_TABLE_HEIGHT_OFFSET = 390;
 
+const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./RedecodeConfirmationDialog.vue'));
+
+const { redecode, rowContext, shell, virtual } = useHistoryEventsTable({
+  duplicateHandlingStatus: () => duplicateHandlingStatus,
+  excludeIgnored: () => source.excludeIgnored,
+  groupLoading: () => source.groupLoading,
+  groups: () => source.groups,
+  hideActions: () => hideActions,
+  highlightedGroupIdentifier: () => highlight?.groupIdentifier,
+  highlightedIdentifiers: () => highlight?.identifiers,
+  highlightTypes: () => highlight?.types,
+  identifiers: () => source.identifiers,
+  pagination,
+  requestPayload: () => source.requestPayload,
+}, emit);
+
+const { entriesFoundTotal, found, groups, loading, showUpgradeRow, total } = shell;
+const { containerProps, list, wrapperProps } = virtual;
+const {
+  confirm: confirmRedecode,
+  hasCustomEvents,
+  modelShow: modelShowRedecodeConfirmation,
+  payload: redecodePayload,
+  showIndexerOptions,
+} = redecode;
+
 const tableContainerStyle = computed<{ height: string }>(() => ({
   height: `calc(100vh - ${tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`,
 }));
 
-const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./RedecodeConfirmationDialog.vue'));
-
-// Event data management
-const {
-  completeEventsMapped,
-  displayedEventsMapped,
-  entriesFoundTotal,
-  events,
-  eventsLoading,
-  found,
-  getCompleteEventsForItem,
-  getCompleteSubgroupEvents,
-  getGroupEvents,
-  groups,
-  groupsShowingIgnoredAssets,
-  groupsWithHiddenIgnoredAssets,
-  isSubgroupIncomplete,
-  loading,
-  rawEvents,
-  showUpgradeRow,
-  toggleShowIgnoredAssets,
-  total,
-} = useHistoryEventsData({
-  excludeIgnored: () => excludeIgnored,
-  groupLoading: () => groupLoading,
-  groups: () => rawGroups,
-  identifiers: () => identifiers,
-  requestPayload: () => requestPayload,
-}, emit);
-
-// Virtual rows - flatten groups into virtual row list
-// Use displayedEventsMapped for display (respects excludeIgnored filter)
-const { flattenedRows, getCardHeight, getRowHeight, loadMoreEvents, toggleMovementExpanded, toggleSwapExpanded } = useVirtualRows(
-  groups,
-  displayedEventsMapped,
-  isSubgroupIncomplete,
-);
-
-// Virtual list with scroll and highlight management
-const {
-  containerProps,
-  getHighlightType,
-  getSwapHighlightType,
-  isCardLayout,
-  isGroupHighlighted,
-  isHighlighted,
-  isSwapHighlighted,
-  virtualList,
-  wrapperProps,
-} = useVirtualScrollHighlight({
-  flattenedRows,
-  getRowHeight,
-  getCardHeight,
-  highlightedGroupIdentifier: () => highlightedGroupIdentifier,
-  highlightedIdentifiers: () => highlightedIdentifiers,
-  highlightTypes: () => highlightTypes,
-  loading,
-  pagination,
-});
-
-// Variant based on breakpoint
-const itemVariant = computed<'row' | 'card'>(() => get(isCardLayout) ? 'card' : 'row');
-
-// Event operations (delete, redecode, etc.)
-const {
-  confirmDelete,
-  confirmRedecode,
-  confirmTxAndEventsDelete,
-  confirmUnlink,
-  unlinkGroup,
-  hasCustomEvents,
-  redecode,
-  redecodePayload,
-  redecodeWithOptions,
-  showIndexerOptions,
-  modelShowRedecodeConfirmation,
-  suggestNextSequenceId,
-  toggle,
-} = useHistoryEventsOperations({
-  completeEventsMapped,
-  flattenedEvents: events,
-}, emit);
-
-// Form operations
-const {
-  addEvent,
-  addMissingRule,
-  editEvent,
-} = useHistoryEventsForms(suggestNextSequenceId, emit);
-
-// Emit event IDs when events change
-watch([events, completeEventsMapped, rawEvents], ([newEvents, groupedEvents, rawEventsData]) => {
-  const eventIds = newEvents.map(event => event.identifier);
-  emit('update-event-ids', { eventIds, groupedEvents, rawEvents: rawEventsData });
-}, { immediate: true });
-
-// Create a lookup map for O(1) group access
-const groupsMap = computed<Map<string, HistoryEventEntry>>(() => {
-  const map = new Map<string, HistoryEventEntry>();
-  for (const group of get(groups)) {
-    map.set(group.groupIdentifier, group);
-  }
-  return map;
-});
-
-// Helper to find group by ID (O(1) lookup)
-function findGroup(groupId: string): HistoryEventEntry | undefined {
-  return get(groupsMap).get(groupId);
-}
-
-// Handler for edit event with group lookup
-function handleEditEvent(data: Parameters<typeof editEvent>[0], groupId: string): void {
-  const group = findGroup(groupId);
-  if (group)
-    editEvent(data, group);
-}
-
-// Handler for missing rule action with group lookup
-function handleMissingRuleAction(data: Parameters<typeof addMissingRule>[0], groupId: string): void {
-  const group = findGroup(groupId);
-  if (group)
-    addMissingRule(data, group);
-}
-
-/**
- * The group's ignored-asset state, or undefined when it has none to reveal and none revealed, in
- * which case the group row shows no indicator.
- */
-function ignoredAssetsState(groupId: string): 'hidden' | 'showing' | undefined {
-  if (get(groupsShowingIgnoredAssets).has(groupId))
-    return 'showing';
-
-  return get(groupsWithHiddenIgnoredAssets).has(groupId) ? 'hidden' : undefined;
-}
+provideHistoryEventsRowContext(rowContext);
 </script>
 
 <template>
@@ -285,163 +155,11 @@ function ignoredAssetsState(groupId: string): 'hidden' | 'showing' | undefined {
       class="overflow-auto will-change-transform dark:bg-dark-surface"
     >
       <div v-bind="wrapperProps">
-        <template
-          v-for="{ data: row, index } in virtualList"
+        <HistoryEventsVirtualRow
+          v-for="{ data: row, index } in list"
           :key="`${row.type}-${row.groupId}-${index}`"
-        >
-          <!-- Group Header -->
-          <HistoryEventsGroupItem
-            v-if="row.type === 'group-header'"
-            :group="row.data"
-            :group-events="getGroupEvents(row.groupId)"
-            :hide-actions="hideActions"
-            :loading="eventsLoading"
-            :duplicate-handling-status="duplicateHandlingStatus"
-            :ignored-assets="ignoredAssetsState(row.groupId)"
-            :highlight-type="isGroupHighlighted(row.groupId) ? getHighlightType(row.data) : undefined"
-            :variant="itemVariant"
-            @add-event="addEvent($event, row.data)"
-            @toggle-ignore="toggle($event)"
-            @toggle-show-ignored-assets="toggleShowIgnoredAssets(row.groupId)"
-            @redecode="redecode($event, row.data.groupIdentifier)"
-            @redecode-with-options="redecodeWithOptions($event, row.data.groupIdentifier)"
-            @delete-tx="confirmTxAndEventsDelete($event)"
-            @delete-events="confirmDelete({ type: 'delete', ids: $event })"
-            @fix-duplicate="emit('refresh')"
-            @ignore-duplicate="emit('refresh')"
-          />
-
-          <!-- Event Placeholder -->
-          <div
-            v-else-if="row.type === 'event-placeholder'"
-            class="animate-pulse contain-content"
-            :class="isCardLayout ? 'p-3 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6'"
-          >
-            <template v-if="isCardLayout">
-              <!-- Top row: Event type with icon -->
-              <div class="flex items-center gap-3 mb-2">
-                <div class="size-10 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700 shrink-0" />
-                <div class="flex flex-col gap-1">
-                  <div class="h-4 w-20 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                  <div class="h-3 w-14 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-                </div>
-              </div>
-              <!-- Middle row: Asset & Amount -->
-              <div class="flex items-center gap-2 mb-2">
-                <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="flex flex-col gap-1">
-                  <div class="h-4 w-24 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                  <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-                </div>
-              </div>
-              <!-- Bottom row: Notes -->
-              <div class="h-3 w-3/4 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-            </template>
-            <template v-else>
-              <div class="w-56 shrink-0 flex items-center gap-3">
-                <div class="size-10 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="flex flex-col gap-1.5">
-                  <div class="h-4 w-20 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                  <div class="h-3 w-14 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-                </div>
-              </div>
-              <div class="w-56 xl:w-60 shrink-0 flex items-center gap-2">
-                <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="flex flex-col gap-1.5">
-                  <div class="h-4 w-24 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                  <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-                </div>
-              </div>
-              <div class="flex-1 min-w-0 flex flex-col gap-1.5">
-                <div class="h-3.5 w-3/4 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="h-3 w-1/2 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-              </div>
-              <div class="w-24 shrink-0" />
-            </template>
-          </div>
-
-          <!-- Event Detail -->
-          <HistoryEventsDetailItem
-            v-else-if="row.type === 'event-row'"
-            :event="row.data"
-            :index="row.index"
-            :complete-group-events="getCompleteEventsForItem(row.groupId, row.data)"
-            :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
-            :matched-movement="row.matchedMovement"
-            :hide-actions="hideActions"
-            :highlight-type="isHighlighted(row.data) ? getHighlightType(row.data) : undefined"
-            :selection="selection"
-            :variant="itemVariant"
-            @edit-event="handleEditEvent($event, row.groupId)"
-            @delete-event="confirmDelete($event)"
-            @show:missing-rule-action="handleMissingRuleAction($event, row.groupId)"
-            @refresh="emit('refresh')"
-          />
-
-          <!-- Swap -->
-          <HistoryEventsSwapItem
-            v-else-if="row.type === 'swap-row'"
-            :events="row.events"
-            :complete-group-events="getCompleteSubgroupEvents(row.events)"
-            :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
-            :hide-actions="hideActions"
-            :highlight="isSwapHighlighted(row.events)"
-            :highlight-type="getSwapHighlightType(row.events)"
-            :selection="selection"
-            :variant="itemVariant"
-            @edit-event="handleEditEvent($event, row.groupId)"
-            @delete-event="confirmDelete($event)"
-            @show:missing-rule-action="handleMissingRuleAction($event, row.groupId)"
-            @refresh="emit('refresh')"
-            @toggle-expand="toggleSwapExpanded(row.swapKey)"
-          />
-
-          <!-- Swap Collapse -->
-          <HistoryEventsSwapCollapseRow
-            v-else-if="row.type === 'swap-collapse'"
-            :event-count="row.eventCount"
-            :subgroup-id="row.subgroupId"
-            :label-type="row.bridge ? 'bridge' : undefined"
-            @collapse="toggleSwapExpanded(row.swapKey)"
-          />
-
-          <!-- Matched Movement -->
-          <HistoryEventsMatchedMovementItem
-            v-else-if="row.type === 'matched-movement-row'"
-            :events="row.events"
-            :complete-group-events="getCompleteSubgroupEvents(row.events)"
-            :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
-            :hide-actions="hideActions"
-            :highlight="isSwapHighlighted(row.events)"
-            :highlight-type="getSwapHighlightType(row.events)"
-            :selection="selection"
-            :variant="itemVariant"
-            @edit-event="handleEditEvent($event, row.groupId)"
-            @delete-event="confirmDelete($event)"
-            @show:missing-rule-action="handleMissingRuleAction($event, row.groupId)"
-            @unlink-event="confirmUnlink($event)"
-            @refresh="emit('refresh')"
-            @toggle-expand="toggleMovementExpanded(row.movementKey)"
-          />
-
-          <!-- Matched Movement Collapse -->
-          <HistoryEventsSwapCollapseRow
-            v-else-if="row.type === 'matched-movement-collapse'"
-            :event-count="row.eventCount"
-            :events="getGroupEvents(row.groupId)"
-            label-type="movement"
-            @unlink-event="unlinkGroup(row.groupId)"
-            @collapse="toggleMovementExpanded(row.movementKey)"
-          />
-
-          <!-- Load More -->
-          <HistoryEventsLoadMoreRow
-            v-else-if="row.type === 'load-more'"
-            :hidden-count="row.hiddenCount"
-            :total-count="row.totalCount"
-            @load-more="loadMoreEvents(row.groupId)"
-          />
-        </template>
+          :row="row"
+        />
       </div>
     </div>
   </div>

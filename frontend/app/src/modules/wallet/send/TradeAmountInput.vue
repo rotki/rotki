@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { bigNumberify } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { bigNumberifyFromRef, parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import { useInjectedTradableAsset } from '@/modules/wallet/use-tradable-asset';
@@ -71,17 +70,21 @@ function swapInput(): void {
 function setMax(): void {
   set(model, max);
   const priceVal = get(price);
-  if (get(isAmountSelected) && priceVal) {
-    set(fiatValue, bigNumberify(max).multipliedBy(priceVal).toString());
+  const amount = parseNumericInput(max);
+  if (get(isAmountSelected) && priceVal && amount) {
+    set(fiatValue, amount.multipliedBy(priceVal).toString());
   }
 }
 
+// Both sides hold what the user is typing, so a value that is not a number yet reads as nothing
+// entered rather than being handed to a parse that throws.
 watch([model, price], ([value, price]) => {
   if (!get(isAmountSelected))
     return;
 
-  if (value && price) {
-    set(fiatValue, bigNumberify(value).multipliedBy(price).toString());
+  const amount = parseNumericInput(value);
+  if (amount && price) {
+    set(fiatValue, amount.multipliedBy(price).toString());
   }
   else {
     set(fiatValue, '0');
@@ -92,8 +95,9 @@ watch([fiatValue, price], ([fiatValue, price]) => {
   if (get(isAmountSelected))
     return;
 
-  if (fiatValue && price) {
-    set(model, bigNumberify(fiatValue).dividedBy(price).toString());
+  const value = parseNumericInput(fiatValue);
+  if (value && price) {
+    set(model, value.dividedBy(price).toString());
   }
   else {
     set(model, '0');

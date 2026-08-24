@@ -26,7 +26,7 @@ const link = externalLinks.defillamaApiKey;
     :title="t('external_services.defillama.title')"
     :subtitle="t('external_services.defillama.description')"
     :image-src="getPublicServiceImagePath('defillama.svg')"
-    :action-disabled="!serviceKeyRef?.currentValue"
+    :action="{ disabled: !serviceKeyRef?.currentValue }"
     @confirm="saveHandler()"
   >
     <template #left-buttons>

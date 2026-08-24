@@ -1,24 +1,20 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
-import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
-import type { IssueDescription } from '@/modules/history/data-issues/types';
+import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
-import { IssueState, NON_TERMINAL_STATES } from '@/modules/history/data-issues/constants';
-import { describeIssue, relatedEventRoute } from '@/modules/history/data-issues/transforms';
+import { panelFilterFields } from '@/modules/history/data-issues/data-issues-panel-utils';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
-import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { DataIssuesFilterKeys, type Filters } from '@/modules/history/data-issues/use-data-issues-filter';
-import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
-import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
+import { useDataIssuesPanelList } from '@/modules/history/data-issues/use-data-issues-panel-list';
+import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
+import { useDataIssuesPanelSelection } from '@/modules/history/data-issues/use-data-issues-panel-selection';
+import { usePanelFilterEngagement } from '@/modules/history/data-issues/use-panel-filter-engagement';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
-import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 /** Mirrors whether a stacked detail/resolve overlay is open, so the host drawer can stay stateless. */
 const subDialogOpen = defineModel<boolean>('subDialogOpen', { default: false });
@@ -29,112 +25,25 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const issues = ref<DataIssue[]>([]);
-const loading = ref<boolean>(false);
-
-const { fetchData } = useDataIssues();
-const { refreshSummary } = useDataIssuesSummary();
-
-// Reuse the full-page filter fields, but expose only the compact subset that fits the preview:
-// state, kind, asset and account. Keyed by wire key, which is what a field carries — the period
-// pill is left out because the preview is a glance at what needs attention now, not a search.
-const PANEL_FILTER_KEYS: readonly string[] = [
-  DataIssuesFilterKeys.STATE,
-  DataIssuesFilterKeys.KIND,
-  DataIssuesFilterKeys.ASSET,
-  DataIssuesFilterKeys.ACCOUNT,
-];
-const panelFields: FieldDef[] = useDataIssueFields()
-  .filter(field => PANEL_FILTER_KEYS.includes(field.key));
-const pillLabels = usePillBarLabels();
 const panelFilters = ref<Filters>({});
+
+const panelFields = panelFilterFields(useDataIssueFields());
+const pillLabels = usePillBarLabels();
 const hasPanelFilters = computed<boolean>(() => Object.keys(get(panelFilters)).length > 0);
 
-// The filter's suggestion dropdown is a RuiMenu teleported to <body>, so clicking a
-// suggestion (e.g. an asset) reads as a click outside the floating drawer and would
-// dismiss it. Keep the drawer stateless while the filter is engaged, and hold that
-// state for a short grace period after focus leaves so the trailing click on a
-// teleported suggestion (which fires after the input blurs) is still ignored.
 const filterWrapper = useTemplateRef<HTMLElement>('filterWrapper');
-const { focused: filterFocused } = useFocusWithin(filterWrapper);
-const filterEngaged = ref<boolean>(false);
-const { start: scheduleDisengage, stop: cancelDisengage } = useTimeoutFn(() => {
-  set(filterEngaged, false);
-}, 300, { immediate: false });
+const filterEngaged = usePanelFilterEngagement(filterWrapper);
 
-watch(filterFocused, (focused) => {
-  if (focused) {
-    cancelDisengage();
-    set(filterEngaged, true);
-  }
-  else {
-    scheduleDisengage();
-  }
-});
-
-// Filter values are typed `string | string[] | boolean`; these fields only ever
-// produce strings/arrays, so narrow to the shapes the request payload accepts.
-type FilterValue = string | string[] | boolean | undefined;
-
-function asMulti(value: FilterValue): string | string[] | undefined {
-  return value === undefined || typeof value === 'boolean' ? undefined : value;
-}
-
-function asSingle(value: FilterValue): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
-
-// The panel is a glanceable inbox preview: it loads one page at a time and appends
-// more as the user scrolls, rather than mounting the entire (possibly 100+) list at
-// once (each card resolves an asset icon/avatar and runs observers).
-const PAGE_SIZE = 25;
-const offset = ref<number>(0);
-const total = ref<number>(0);
-const loadingMore = ref<boolean>(false);
-const canLoadMore = computed<boolean>(() => get(issues).length < get(total));
-
-function buildPayload(): DataIssuesRequestPayload {
-  const filters = get(panelFilters);
-  return {
-    asset: asSingle(filters.asset),
-    kind: asMulti(filters.kind),
-    limit: PAGE_SIZE,
-    locationLabel: asSingle(filters.locationLabel),
-    offset: get(offset),
-    state: asMulti(filters.state) ?? [...NON_TERMINAL_STATES],
-  };
-}
-
-async function loadList(append: boolean): Promise<void> {
-  const busy = append ? loadingMore : loading;
-  set(busy, true);
-  try {
-    const collection = await fetchData(buildPayload());
-    set(issues, append ? [...get(issues), ...collection.data] : collection.data);
-    set(total, collection.found);
-  }
-  finally {
-    set(busy, false);
-  }
-}
-
-/** Reloads from the first page, replacing the current list (on mount, filter change, refresh). */
-async function refreshList(): Promise<void> {
-  set(offset, 0);
-  await loadList(false);
-}
-
-/** Appends the next page; guarded so overlapping scroll events do not double-fetch. */
-async function loadMore(): Promise<void> {
-  if (get(loading) || get(loadingMore) || !get(canLoadMore))
-    return;
-  set(offset, get(offset) + PAGE_SIZE);
-  await loadList(true);
-}
-
-async function reloadAll(): Promise<void> {
-  await Promise.all([refreshList(), refreshSummary()]);
-}
+const {
+  hasRemediatingRows,
+  isEmpty,
+  loading,
+  loadingMore,
+  loadMore,
+  refreshList,
+  reloadAll,
+  rows,
+} = useDataIssuesPanelList(panelFilters);
 
 const {
   modelActionBusy,
@@ -148,62 +57,9 @@ const {
   openDetail,
 } = useDataIssueDetailActions(reloadAll);
 
-const isEmpty = computed<boolean>(() => get(issues).length === 0);
+const { clearSelection, goToEvent, hasActiveSelection, isActiveRow } = useDataIssuesPanelSelection();
 
-const hasRemediatingRows = computed<boolean>(() =>
-  get(issues).some(issue => issue.state === IssueState.AUTO_REMEDIATING));
-
-interface PanelRow {
-  issue: DataIssue;
-  description: IssueDescription;
-  eventRoute: RouteLocationRaw | undefined;
-}
-
-const rows = computed<PanelRow[]>(() => get(issues).map((issue) => {
-  const description = describeIssue(issue);
-  return {
-    description,
-    eventRoute: relatedEventRoute(issue.kind, description.eventIdentifier, issue.groupIdentifier, issue.asset),
-    issue,
-  };
-}));
-
-const router = useRouter();
-const route = useRoute();
-const { clearHighlightTarget } = useHistoryEventNavigation();
-const { syncCompleted } = useSyncCompleted();
-
-async function goToEvent(target: RouteLocationRaw): Promise<void> {
-  await router.push(target);
-}
-
-// The route query is the single source of truth for the highlighted history event,
-// so the "source" card mirrors it: the card whose event is currently highlighted is
-// shown as active. This stays in sync automatically when the highlight is cleared
-// from the events view (the card simply stops matching).
-const activeEventIdentifier = computed<number | undefined>(() => {
-  const raw = get(route).query.highlightedNegativeBalanceEvent;
-  const value = Number(Array.isArray(raw) ? raw[0] : raw);
-  return Number.isInteger(value) && value > 0 ? value : undefined;
-});
-
-const hasActiveSelection = computed<boolean>(() => get(activeEventIdentifier) !== undefined);
-
-function isActiveRow(row: PanelRow): boolean {
-  const identifier = row.description.eventIdentifier;
-  return identifier !== undefined && identifier === get(activeEventIdentifier);
-}
-
-// Clear the selection: strip the highlight query params (which un-highlights both the
-// history row and the source card) and drop the paging target so a later filter change
-// does not re-navigate to the stale event. Mirrors clearHighlight() in the movement
-// matching pinned panel.
-async function clearSelection(): Promise<void> {
-  clearHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE);
-  const { highlightedNegativeBalanceEvent, targetGroupIdentifier, ...remainingQuery } = get(route).query;
-  if (highlightedNegativeBalanceEvent || targetGroupIdentifier)
-    await router.replace({ query: remainingQuery });
-}
+useDataIssuesPanelPolling(hasRemediatingRows, reloadAll);
 
 // Resolving needs the issue selected first (the resolve dialog reads the selected
 // issue), so a card-triggered resolve selects then opens the dialog.
@@ -211,46 +67,6 @@ function onResolveFromCard(issue: DataIssue): void {
   set(modelSelectedIssue, issue);
   onResolveRequest();
 }
-
-const { pause, resume } = useIntervalFn(reloadAll, 10_000, { immediate: false });
-
-// While the panel is backgrounded under <KeepAlive> its reactivity stays live, so
-// gate the poll and the sync-refetch on activation: a hidden inbox must not keep
-// hitting the network. Deferred sync refreshes are caught up once it is shown again.
-const active = ref<boolean>(true);
-const pendingRefresh = ref<boolean>(false);
-
-function syncPolling(): void {
-  if (get(active) && get(hasRemediatingRows))
-    resume();
-  else
-    pause();
-}
-
-watch(hasRemediatingRows, syncPolling);
-
-// Reload when the history sync finishes so the inbox reflects the freshly detected
-// issues (or the all-clear shield) without waiting for the slow poll or a manual refresh.
-watch(syncCompleted, () => {
-  if (get(active))
-    startPromise(reloadAll());
-  else
-    set(pendingRefresh, true);
-});
-
-onActivated(() => {
-  set(active, true);
-  syncPolling();
-  if (get(pendingRefresh)) {
-    set(pendingRefresh, false);
-    startPromise(reloadAll());
-  }
-});
-
-onDeactivated(() => {
-  set(active, false);
-  pause();
-});
 
 watch([modelDrawerOpen, modelResolveOpen, filterEngaged], ([drawer, resolve, filter]) => {
   set(subDialogOpen, drawer || resolve || filter);

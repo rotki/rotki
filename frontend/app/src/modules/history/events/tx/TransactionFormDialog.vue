@@ -66,8 +66,7 @@ async function save() {
   <BigDialog
     :display="!!modelValue"
     :title="t('transactions.dialog.add_tx')"
-    :primary-action="t('common.actions.save')"
-    :action-disabled="loading"
+    :action="{ disabled: loading, primary: t('common.actions.save') }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

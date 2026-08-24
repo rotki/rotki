@@ -1,22 +1,25 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
 import { isEvmNativeToken } from '@/modules/assets/types';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import EvmNativeTokenBreakdown from '@/modules/balances/EvmNativeTokenBreakdown.vue';
 import AssetDetailsLayout from '@/modules/balances/protocols/components/AssetDetailsLayout.vue';
 import AssetProtocolBreakdown from '@/modules/balances/protocols/components/AssetProtocolBreakdown.vue';
 
-defineProps<{
-  isLiability: boolean;
+const { breakdown } = defineProps<{
   row: AssetBalanceWithPrice;
   loading?: boolean;
-  details?: {
-    groupId?: string;
-    chains?: string[];
-  };
-  allBreakdown?: boolean;
-  hideBreakdown?: boolean;
+  breakdown?: AssetBreakdownOptions;
 }>();
+
+// Read per field with `??` rather than spreading the bag over defaults: a caller forwarding its own
+// optional value passes a present key holding `undefined`, which a spread would take as the value.
+const isLiability = computed<boolean>(() => breakdown?.isLiability ?? false);
+
+const hideBreakdown = computed<boolean>(() => breakdown?.hide ?? false);
+
+const blockchainOnly = computed<boolean>(() => !(breakdown?.all ?? false));
 
 function getAssets(item: AssetBalanceWithPrice): string[] {
   return item.breakdown?.map(entry => entry.asset) ?? [];
@@ -28,23 +31,17 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
     <template #breakdown>
       <EvmNativeTokenBreakdown
         v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
-        :blockchain-only="!allBreakdown"
+        :blockchain-only="blockchainOnly"
         :assets="getAssets(row)"
-        :details="details"
+        :details="breakdown?.scope"
         :identifier="row.asset"
         :is-liability="isLiability"
       />
       <AssetBalances
         v-else
-        :details="details"
         :loading="loading"
         hide-total
-        :hide-breakdown="hideBreakdown"
-        :sticky-header="false"
-        :is-liability="isLiability"
-        :all-breakdown="allBreakdown"
-        :visible-columns="[]"
-        :show-per-protocol="false"
+        :breakdown="breakdown"
         :balances="row.breakdown ?? []"
       />
     </template>

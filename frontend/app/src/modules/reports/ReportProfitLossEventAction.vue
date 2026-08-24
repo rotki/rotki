@@ -131,14 +131,14 @@ async function updatePrice(): Promise<void> {
               :label="t('price_form.from_asset')"
               hide-details
               disabled
-              outlined
+              variant="outlined"
             />
             <AssetSelect
               :model-value="currency"
               :label="t('price_form.to_asset')"
               hide-details
               disabled
-              outlined
+              variant="outlined"
             />
             <DateTimePicker
               :model-value="event.timestamp"

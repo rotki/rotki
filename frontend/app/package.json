@@ -1,6 +1,6 @@
 {
   "name": "rotki",
-  "version": "1.43.2",
+  "version": "1.44.0",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "type": "module",
   "license": "AGPL-3.0",
@@ -51,8 +51,6 @@
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "catalog:",
     "@types/ws": "catalog:",
-    "@vuelidate/core": "catalog:",
-    "@vuelidate/validators": "catalog:",
     "@vueuse/core": "catalog:",
     "@vueuse/math": "catalog:",
     "@vueuse/shared": "catalog:",

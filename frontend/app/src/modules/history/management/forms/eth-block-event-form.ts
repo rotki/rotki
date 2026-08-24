@@ -9,6 +9,7 @@ import {
   toNullableText,
 } from '@/modules/history/management/forms/common/group-identifier';
 import {
+  carriedThrough,
   requiredAmount,
   requiredBlockNumber,
   requiredFeeRecipient,
@@ -53,7 +54,7 @@ export function ethBlockSchema(editing: boolean): ZodType {
     groupIdentifier: groupIdentifierSchema(editing),
     hasActualGroupIdentifier: z.boolean(),
     isMevReward: z.boolean(),
-    priceIntent: z.unknown().optional(),
+    priceIntent: carriedThrough(),
     timestamp: z.number(),
     validatorIndex: requiredValidatorIndex(),
   });

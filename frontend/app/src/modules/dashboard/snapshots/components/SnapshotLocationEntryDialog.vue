@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
-import { bigNumberify } from '@rotki/common';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import EditLocationDataSnapshotForm from '@/modules/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/utils/snapshot-fx';
@@ -80,11 +80,15 @@ async function save(): Promise<void> {
   if (!formData)
     return;
 
+  // The field is free text, so a value that is not a number is not written into the row: the parse
+  // it would otherwise go through throws.
+  const entered = parseNumericInput(formData.usdValue);
+  if (!entered)
+    return;
+
   set(submitting, true);
 
-  const usdValue = get(isUsd)
-    ? bigNumberify(formData.usdValue)
-    : convertFiatToUsd(bigNumberify(formData.usdValue), get(rate));
+  const usdValue = get(isUsd) ? entered : convertFiatToUsd(entered, get(rate));
 
   set(submitting, false);
 
@@ -110,9 +114,8 @@ defineExpose({
         ? t('dashboard.snapshot.edit.dialog.location_data.edit_title')
         : t('dashboard.snapshot.edit.dialog.location_data.add_title')
     "
-    :primary-action="t('common.actions.save')"
+    :action="{ disabled: rateMissing, primary: t('common.actions.save') }"
     :loading="submitting"
-    :action-disabled="rateMissing"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="close()"

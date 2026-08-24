@@ -110,6 +110,24 @@ function toggle(value: string): void {
   }
 }
 
+// Last position the pointer was actually at.
+//
+// Any scroll slides rows under a cursor that never moved, and the browser reports that as a
+// mousemove at unchanged coordinates. Taking it at face value breaks both ways of moving through
+// this list: the arrow keys cannot advance past one row, because the row arriving under the pointer
+// hands the highlight straight back, and a wheel scroll drags the highlight along with it.
+let lastX = Number.NaN;
+let lastY = Number.NaN;
+
+function onPointerMove(event: MouseEvent, index: number): void {
+  if (event.clientX === lastX && event.clientY === lastY)
+    return;
+
+  lastX = event.clientX;
+  lastY = event.clientY;
+  set(highlighted, index);
+}
+
 function onKeydown(event: KeyboardEvent): void {
   // Escape comes first, and is handled here rather than left to the surrounding menu: dismissal by
   // the menu only works while its own content holds focus, and this list is what holds it. An
@@ -118,6 +136,12 @@ function onKeydown(event: KeyboardEvent): void {
     emit('close');
     return;
   }
+
+  // While an IME is composing, Enter confirms the candidate and the arrows walk the candidate
+  // list. Acting on them would commit a row and close the list mid-word. Same guard as the send
+  // form's token picker, the app's other virtualized picker.
+  if (event.isComposing)
+    return;
 
   const items = get(filtered);
   if (items.length === 0)
@@ -216,7 +240,7 @@ function onKeydown(event: KeyboardEvent): void {
           :aria-checked="selectedSet.has(item.data.value)"
           data-testid="value-select-option"
           :data-key="item.data.value"
-          @mousemove="highlighted = item.index"
+          @mousemove="onPointerMove($event, item.index)"
           @click="toggle(item.data.value)"
         >
           <!-- aria-checked on the row already states selection, so the indicator is decorative to

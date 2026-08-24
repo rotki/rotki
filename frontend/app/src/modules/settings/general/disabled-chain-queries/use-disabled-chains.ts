@@ -1,4 +1,5 @@
 import { get } from '@vueuse/core';
+import { toChainKey } from '@/modules/core/common/chains';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface AccountLike {
@@ -30,8 +31,9 @@ export interface UseDisabledChainsReturn {
  * different parties: the rule comes from the settings dialog, while what it is matched against
  * arrives over the websocket. Addresses are the case that bites - nothing normalizes them on the
  * way in, so a checksummed address on the wire against a lower-cased one in the rule would silently
- * defeat a rule the user did set. Chains are already lower-cased by `useTxQueryStatusStore`, so
- * normalizing them here is only belt-and-braces for callers that do not.
+ * defeat a rule the user did set. Chains go through {@link toChainKey}, which also folds the
+ * separator, since the same chain is spelled `polygon_pos`, `POLYGON_POS` or `polygonPos`
+ * depending on who wrote it.
  *
  * No two distinct addresses differ only by case in any chain rotki supports, so folding case cannot
  * over-match.
@@ -42,14 +44,14 @@ export function useDisabledChains(): UseDisabledChainsReturn {
   const rules = computed<Record<string, Set<string>>>(() => {
     const entries = Object.entries(get(disabledChainQueries)).map(
       ([chain, addresses]): [string, Set<string>] => [
-        chain.toLowerCase(),
+        toChainKey(chain),
         new Set(addresses.map(address => address.toLowerCase())),
       ],
     );
     return Object.fromEntries(entries);
   });
 
-  const ruleFor = (chain: string): Set<string> | undefined => get(rules)[chain.toLowerCase()];
+  const ruleFor = (chain: string): Set<string> | undefined => get(rules)[toChainKey(chain)];
 
   const isChainExcluded = (chain: string): boolean => ruleFor(chain)?.size === 0;
 

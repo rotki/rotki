@@ -214,6 +214,8 @@ export const FrontendSettings = z.object({
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
   ),
+  /** Empty until first set. `.catch` so a corrupt value costs one reset, not the whole blob. */
+  clientId: z.string().default('').catch(''),
   currencyLocation: CurrencyLocationEnum.default(Defaults.DEFAULT_CURRENCY_LOCATION),
   darkTheme: ThemeColors.default(DARK_COLORS),
   dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default(() => ({
@@ -228,6 +230,9 @@ export const FrontendSettings = z.object({
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
   defaultThemeVersion: z.number().default(1),
   defiSetupDone: z.boolean().default(false),
+  // The external services whose optional-API-key prompt the user has dismissed. No `.catch`: an
+  // unreadable value here should surface rather than silently re-show every prompt.
+  dismissedApiKeyNotices: z.array(z.string()).default([]),
   enableAliasNames: z.boolean().default(true),
   enablePasswordConfirmation: EnablePasswordConfirmation.default(true),
   evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(

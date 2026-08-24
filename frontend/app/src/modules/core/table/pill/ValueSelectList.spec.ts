@@ -91,6 +91,45 @@ describe('valueSelectList', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['uniswap']]);
   });
 
+  it('should move the highlight to a hovered option', async () => {
+    const wrapper = createWrapper([]);
+    const rows = wrapper.findAll('[data-testid="value-select-option"]');
+    await rows[2].trigger('mousemove', { clientX: 10, clientY: 10 });
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['curve']]);
+  });
+
+  // The list is virtualized and the arrows scroll it, so a row the user never pointed at arrives
+  // under a cursor that has not moved. The browser reports that as a mousemove at the same
+  // coordinates; obeying it hands the highlight straight back and the arrows cannot advance.
+  it('should ignore a row that slid under a still cursor', async () => {
+    const wrapper = createWrapper([]);
+    const rows = wrapper.findAll('[data-testid="value-select-option"]');
+    const input = wrapper.find('input');
+
+    await rows[0].trigger('mousemove', { clientX: 10, clientY: 10 });
+    await input.trigger('keydown', { key: 'ArrowDown' }); // 0 -> 1 (Uniswap)
+    // Hovering a row the keyboard did NOT move to: hovering row 1 here would agree with the buggy
+    // behaviour and the test could not fail.
+    await rows[2].trigger('mousemove', { clientX: 10, clientY: 10 });
+    await input.trigger('keydown', { key: 'Enter' });
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['uniswap']]);
+  });
+
+  it('should hand the highlight back once the pointer genuinely moves', async () => {
+    const wrapper = createWrapper([]);
+    const rows = wrapper.findAll('[data-testid="value-select-option"]');
+    const input = wrapper.find('input');
+
+    await rows[0].trigger('mousemove', { clientX: 10, clientY: 10 });
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await rows[2].trigger('mousemove', { clientX: 10, clientY: 40 });
+    await input.trigger('keydown', { key: 'Enter' });
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['curve']]);
+  });
+
   // Searching 'a' keeps Aave and Uniswap. With no pinned rows the highlight lands on the first of
   // them, which is the baseline the pinned cases below are contrasted against.
   it('should highlight the first result after a search', async () => {
@@ -154,5 +193,22 @@ describe('valueSelectList', () => {
     await wrapper.get('[data-testid=value-select-search]').trigger('keydown', { key: 'Escape' });
 
     expect(wrapper.emitted('close')).toHaveLength(1);
+  });
+
+  // An IME confirms its candidate with Enter and walks the candidate list with the arrows, so
+  // acting on either would commit a row and close the list mid-word.
+  it('should ignore keys while an IME is composing', async () => {
+    const wrapper = createWrapper([]);
+    const input = wrapper.find('input');
+
+    await input.trigger('keydown', { isComposing: true, key: 'ArrowDown' });
+    await input.trigger('keydown', { isComposing: true, key: 'Enter' });
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+    // And the highlight never moved: committing after composition picks the first row, not the
+    // second. Asserting only that nothing was emitted would also pass if the arrow had moved it.
+    await input.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['aave']]);
   });
 });

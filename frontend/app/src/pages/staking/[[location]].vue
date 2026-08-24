@@ -115,7 +115,7 @@ onMounted(async () => {
       <DefineIcon #default="{ image }">
         <AppImage
           class="icon-bg"
-          contain
+          fit="contain"
           size="1.5rem"
           :src="image"
         />
@@ -172,7 +172,7 @@ onMounted(async () => {
               <InternalLink :to="getRedirectLink(item.id)">
                 <AppImage
                   :size="imageSize"
-                  contain
+                  fit="contain"
                   :src="item.image"
                 />
               </InternalLink>

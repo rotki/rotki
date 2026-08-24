@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import PremiumLock from '@/modules/premium/PremiumLock.vue';
 import AppImage from '@/modules/shell/components/AppImage.vue';
-import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 export interface FeatureGate {
   allowed: boolean;
   message: string;
 }
 
+export interface ServiceKeyAction {
+  disabled?: boolean;
+  hidden?: boolean;
+  primary?: string;
+  addText?: string;
+  editText?: string;
+}
+
 const {
+  action,
   name,
   title,
   subtitle = '',
@@ -16,11 +25,6 @@ const {
   featureGate,
   roundedIcon = false,
   keySet = false,
-  hideAction = false,
-  primaryAction = '',
-  actionDisabled = false,
-  addButtonText,
-  editButtonText,
 } = defineProps<{
   name?: string;
   title: string;
@@ -29,11 +33,7 @@ const {
   featureGate?: FeatureGate;
   roundedIcon?: boolean;
   keySet?: boolean;
-  hideAction?: boolean;
-  primaryAction?: string;
-  actionDisabled?: boolean;
-  addButtonText?: string;
-  editButtonText?: string;
+  action?: ServiceKeyAction;
 }>();
 
 const emit = defineEmits<{
@@ -77,13 +77,27 @@ watch(route, async (route) => {
   }
 }, { immediate: true });
 
-const addButtonTextComputed = computed<string>(() => addButtonText || t('external_services.actions.enter_api_key'));
+// Each field is read with `??` rather than by spreading the bag over a defaults object: a caller
+// forwarding its own optional value passes a present key holding `undefined`, which a spread takes
+// as the value and a default would be lost.
+const actionDisabled = computed<boolean>(() => action?.disabled ?? false);
 
-const editButtonTextComputed = computed<string>(() => editButtonText || t('external_services.actions.replace_key'));
+const actionHidden = computed<boolean>(() => action?.hidden ?? false);
 
-const primaryActionTextComputed = computed<string>(() => primaryAction || (keySet
+const addButtonText = computed<string>(() => action?.addText || t('external_services.actions.enter_api_key'));
+
+const editButtonText = computed<string>(() => action?.editText || t('external_services.actions.replace_key'));
+
+const primaryActionText = computed<string>(() => action?.primary || (keySet
   ? t('external_services.actions.replace_key')
   : t('external_services.actions.save_key')));
+
+const dialogAction = computed<BigDialogAction>(() => ({
+  disabled: get(actionDisabled),
+  hidden: get(actionHidden),
+  primary: get(primaryActionText),
+  secondary: t('common.actions.close'),
+}));
 
 defineExpose({
   openDialog,
@@ -140,8 +154,8 @@ defineExpose({
       >
         {{
           keySet
-            ? editButtonTextComputed
-            : addButtonTextComputed
+            ? editButtonText
+            : addButtonText
         }}
         <template #append>
           <RuiIcon
@@ -155,10 +169,7 @@ defineExpose({
       :display="openDialog"
       :title="title"
       :subtitle="subtitle"
-      :action-hidden="hideAction"
-      :primary-action="primaryActionTextComputed"
-      :action-disabled="actionDisabled"
-      :secondary-action="t('common.actions.close')"
+      :action="dialogAction"
       @cancel="setOpen(false)"
       @confirm="emit('confirm')"
     >

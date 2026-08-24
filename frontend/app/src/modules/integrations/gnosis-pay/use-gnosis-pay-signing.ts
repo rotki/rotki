@@ -1,5 +1,5 @@
-import type { MaybePromise } from '@rotki/common';
 import type { Ref } from 'vue';
+import { type MaybePromise, NotificationGroup } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -14,6 +14,15 @@ import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import { getAddress, type ViemWalletClient } from '@/modules/wallet/viem-client';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
+
+/**
+ * EIP-4361 line 1 takes an authority (host, optionally with a port), not a URL. Only `URI:` takes a
+ * scheme. Wallets compare this string against the requesting origin's host verbatim, so a `https://`
+ * prefix here can never match any origin.
+ */
+const SIWE_DOMAIN = 'rotki.com';
+
+const SIWE_URI = 'https://rotki.com';
 
 interface UseGnosisPaySigningOptions {
   /** Clears the shared error state before signing, skipped when the pending error is `INVALID_ADDRESS` so that warning stays visible. */
@@ -51,7 +60,7 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
+  const { removeMatching, showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
 
@@ -60,15 +69,14 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   const walletConnect = useWalletConnect();
 
   function createSiweMessage(address: string, nonce: string): string {
-    const domain = 'https://rotki.com';
     const issuedAt = new Date().toISOString();
 
-    return `${domain} wants you to sign in with your Ethereum account:
+    return `${SIWE_DOMAIN} wants you to sign in with your Ethereum account:
 ${address}
 
 Sign in with Ethereum to authenticate with Gnosis Pay.
 
-URI: ${domain}
+URI: ${SIWE_URI}
 Version: 1
 Chain ID: 100
 Nonce: ${nonce}
@@ -84,6 +92,16 @@ Issued At: ${issuedAt}`;
       return injectedWallet.getWalletClient();
 
     return walletConnect.getWalletClient();
+  }
+
+  /**
+   * Drops the session-expired warning once the backend has accepted the signature. Nothing else in
+   * this flow writes to that group - progress goes to the task centre and failures to the message
+   * dialog - so the warning is never superseded the way a grouped notification would be, and would
+   * otherwise sit in the list still offering to re-authenticate a session that is now valid.
+   */
+  function clearSessionExpiredWarning(): void {
+    removeMatching(({ group }) => group === NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED);
   }
 
   /**
@@ -165,6 +183,7 @@ Issued At: ${issuedAt}`;
 
       if (verified) {
         set(signInSuccess, true);
+        clearSessionExpiredWarning();
         if (onSignInComplete)
           await onSignInComplete();
       }

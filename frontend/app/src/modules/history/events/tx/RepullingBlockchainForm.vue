@@ -106,16 +106,15 @@ defineExpose({
         <BlockchainAccountSelector
           v-model="accounts"
           class="flex-1"
-          :chains="usableChains"
           hide-chain-icon
-          outlined
-          show-details
-          multichain
-          unique
-          :custom-hint="t('transactions.repulling.address_hint')"
-          :label="t('common.address')"
-          :error-messages="form.errors('address')"
-          :no-data-text="t('transactions.form.account.no_address_found')"
+          :source="{ chains: usableChains, multichain: true, unique: true }"
+          :field="{
+            errorMessages: form.errors('address'),
+            hint: t('transactions.repulling.address_hint'),
+            label: t('common.address'),
+            noDataText: t('transactions.form.account.no_address_found'),
+            showDetails: true,
+          }"
         />
       </div>
 

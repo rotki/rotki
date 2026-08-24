@@ -114,6 +114,13 @@ export default rotki({
   // count there stays a decomposition signal.
   // `settings/controls` qualifies on the same grounds: it imports nothing outside settings/shell/core,
   // so its components are generic setting widgets rather than feature-specific containers.
+  //
+  // No file is exempted from the cap any more. Before adding an exemption back, check whether the
+  // component is registered in `modules/premium/register-components.ts`: those are rendered by the
+  // separately released premium bundle, so their props are a public API for a consumer outside this
+  // repo, and reshaping them needs the matching bundle change in the same release. Everything else
+  // gets reshaped rather than exempted. Note that a cap has to be restated per group, because a flat
+  // config replaces a rule's options rather than merging them.
   files: [
     '**/src/modules/shell/components/**/*.vue',
     '**/src/modules/assets/amount-display/**/*.vue',
@@ -121,85 +128,6 @@ export default rotki({
   ],
   rules: {
     'vue/max-props': ['error', { maxProps: 12 }],
-  },
-}, {
-  // `modules/premium/register-components.ts` registers 27 of our components globally so the
-  // separately released premium bundle can render them. Their props are therefore a public API for a
-  // consumer that does not live in this repo: renaming or grouping them cannot be verified here and
-  // would break premium at runtime with nothing in our lint, typecheck or test suite noticing.
-  //
-  // These four exceed their cap and cannot be fixed unilaterally, so the rule is downgraded rather
-  // than silenced: the count stays reported, and reducing it needs a coordinated premium release.
-  // Caps are restated per group because a flat config replaces a rule's options rather than merging
-  // them, and dropping the cap here would stop the warning firing at all.
-  //
-  // If another registered component crosses its cap, add it here rather than reshaping its props.
-  files: [
-    '**/src/modules/history/events/HistoryEventsView.vue',
-    '**/src/modules/accounts/BlockchainAccountSelector.vue',
-    '**/src/modules/assets/AssetDetails.vue',
-  ],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 8 }],
-  },
-}, {
-  // Registered too, but under the relaxed primitive cap above, so it keeps 12 and only warns.
-  files: ['**/src/modules/shell/components/inputs/AssetSelect.vue'],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 12 }],
-  },
-}, {
-  // A DIFFERENT GROUP from the premium-registered files above: these are internal, so their props
-  // can be reshaped in this repo. They are warnings only because the work is outstanding, not because
-  // it is blocked, and each one has a known route:
-  //
-  // - BigDialog (16): primaryAction/actionDisabled/actionTooltip/actionHidden are one action, and
-  //   errorCount/autoScrollToError are one error concern. 4+2 props become 2, landing exactly on 12.
-  //   Held up only by its 28 call sites.
-  // - AppImage (13): `contain` and `cover` are mutually exclusive object-fit modes and want to be one
-  //   `fit` prop. One prop to shed, but 31 files pass one of the two.
-  files: [
-    '**/src/modules/shell/components/dialogs/BigDialog.vue',
-    '**/src/modules/shell/components/AppImage.vue',
-  ],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 12 }],
-  },
-}, {
-  // Same group as BigDialog/AppImage above (internal, fixable here), at the stricter default cap:
-  //
-  // - ServiceKeyCard (12): primaryAction/actionDisabled/hideAction/addButtonText/editButtonText are
-  //   all one action; 5 props become 1, which lands exactly on 8.
-  // - HistoryEventNote (9): every prop it takes is derived from `event` plus useHistoryEventItem, so
-  //   it could take the event instead. Gated on whether all six callers actually hold a
-  //   HistoryEventEntry: ProfitLossEvents and TradeHistoryItem look like they do not.
-  // - AssetDetailsBase (12), AssetBalances (11): display flags that are genuinely independent, so no
-  //   honest grouping exists. These need real decomposition. Note AssetDetailsBase is the inner
-  //   component, free to change; its AssetDetails wrapper is premium-registered and frozen.
-  // - HistoryEventsDetailItem (9): already reduced from 10, and the rest are independent
-  //   (groupLocationLabel and matchedMovement are unrelated in both this component and
-  //   HistoryEventType; `index` carries swap sub-event ordering). Fold into the facade work below.
-  // - HistoryEventsVirtualTable (14): deferred to the facade redesign, which also owns its 8
-  //   max-template-depth errors and its 20/20 @rotki/max-dependencies ceiling.
-  files: [
-    '**/src/modules/settings/api-keys/ServiceKeyCard.vue',
-    '**/src/modules/history/events/HistoryEventNote.vue',
-    '**/src/modules/assets/AssetDetailsBase.vue',
-    '**/src/modules/balances/AssetBalances.vue',
-    '**/src/modules/history/events/components/HistoryEventsDetailItem.vue',
-    '**/src/modules/history/events/components/HistoryEventsVirtualTable.vue',
-  ],
-  rules: {
-    'vue/max-props': ['warn', { maxProps: 8 }],
-  },
-}, {
-  // HistoryEventsVirtualTable's remaining depth comes from the row markup it hosts inline. Extracting
-  // that markup needs one more import and the file already sits at the @rotki/max-dependencies ceiling
-  // of 20, so the fix is the facade redesign that also owns its prop count, not a local change. Warn
-  // rather than block until that lands.
-  files: ['**/src/modules/history/events/components/HistoryEventsVirtualTable.vue'],
-  rules: {
-    'vue/max-template-depth': 'warn',
   },
 }, {
   // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that

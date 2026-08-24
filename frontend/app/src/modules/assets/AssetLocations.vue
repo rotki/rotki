@@ -4,6 +4,7 @@ import { type BigNumber, Blockchain } from '@rotki/common';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { assetLocationParams } from '@/modules/assets/asset-location-fields';
+import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetLocationFields } from '@/modules/assets/use-asset-location-fields';
 import { type AssetLocation, useAssetLocationsData } from '@/modules/assets/use-asset-locations-data';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
@@ -31,6 +32,12 @@ const pagination = ref({
 const onlyTags = ref<string[]>([]);
 const locationFilter = ref<string>('');
 const addresses = ref<string[]>([]);
+
+const { isPricePending } = usePriceUtils();
+
+// Every row here is the same asset in a different place, so one price decides all of them. Without
+// it a row shows the value the chain that reported attached to it, next to the full amount.
+const valuePending = computed<boolean>(() => isPricePending(identifier));
 
 const {
   assetLocations,
@@ -192,7 +199,10 @@ watch([onlyTags, locationFilter, addresses], () => {
         <ValueDisplay :value="row.amount" />
       </template>
       <template #item.value="{ row }">
-        <FiatDisplay :value="row.value" />
+        <FiatDisplay
+          :value="row.value"
+          :loading="valuePending"
+        />
       </template>
       <template #item.percentage="{ row }">
         <PercentageDisplay

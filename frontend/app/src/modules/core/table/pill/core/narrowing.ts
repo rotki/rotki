@@ -1,5 +1,5 @@
 import type { OperatorLabels } from '@/modules/core/table/pill/core/operators';
-import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
+import type { ActiveFilter, FieldDef, FilterValueType } from '@/modules/core/table/pill/core/types';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { pillOperator, pillValueSummary } from '@/modules/core/table/pill/core/format';
 import { resolveText } from '@/modules/core/table/pill/core/text';
@@ -46,6 +46,36 @@ export type NarrowSuggestion = FieldSuggestion | ValueSuggestion | FilterSuggest
 /** Previously used values per field key, offered to fields that have no option list. */
 export type RecentValues = (field: FieldDef) => string[];
 
+/**
+ * What the bar says about the fields whose values are written rather than picked, keyed by value
+ * type rather than by field: `>100` and `after 15/01/2024` read the same on every table, so the
+ * copy belongs to the type and no table restates it.
+ *
+ * Already translated, and the date example is rendered in the user's own date format: a hint
+ * showing `01/15/2024` to someone whose format is day-first teaches the wrong order.
+ */
+export interface SyntaxHints {
+  /** Extra words a field of this type is findable by ("date time when"), beyond its own label. */
+  readonly keywords?: Partial<Record<FilterValueType, string>>;
+  /**
+   * Worked examples of what can be typed, shown verbatim in the popover's footer. Literal, never
+   * translated: the operator words the parser knows (`after`, `before`) are English, so a
+   * translated example would not work when the user copies it.
+   */
+  readonly examples?: Partial<Record<FilterValueType, readonly string[]>>;
+}
+
+/**
+ * The examples worth showing for the fields currently on offer.
+ *
+ * Only for the value types actually present: a table with no amount field must not advertise
+ * `>100`, and one whose period pill is already set has nothing left to say about dates.
+ */
+export function syntaxExamples(fields: FieldDef[], hints?: SyntaxHints): string[] {
+  const types = new Set(fields.filter(field => field.matchesTyped).map(field => field.valueType));
+  return [...types].flatMap(type => hints?.examples?.[type] ?? []);
+}
+
 export interface NarrowLimits {
   /** Values offered per field, so one long option list cannot crowd out the others. */
   readonly perField: number;
@@ -65,6 +95,9 @@ const RANK_FIELD_SUBSTRING = 2;
 const RANK_VALUE_SUBSTRING = 3;
 // A typed-value offer is ranked last: it always matches, so it must never crowd out a real one.
 const RANK_TYPED_VALUE = 4;
+// Below everything that matched something concrete: guidance is what a field offers when it has
+// nothing to answer with yet, so any real match is a better answer than telling the user the syntax.
+const RANK_GUIDANCE = 5;
 
 /**
  * How many filters one field may offer for a single query. Two is what an ambiguous bare number
@@ -135,7 +168,12 @@ function typedFilterMatches(field: FieldDef, typed: string, operatorLabels: Oper
  * than an empty state.
  */
 export function fieldSuggestions(fields: FieldDef[]): NarrowSuggestion[] {
-  return fields.map(field => ({ field, kind: 'field', label: resolveText(field.label) }));
+  return fields.map(field => fieldRow(field, resolveText(field.label)));
+}
+
+/** One field as a row. The typed syntax is stated by the popover's footer, not per row. */
+function fieldRow(field: FieldDef, label: string): FieldSuggestion {
+  return { field, kind: 'field', label };
 }
 
 /**
@@ -155,11 +193,47 @@ interface Ranked {
   readonly suggestion: NarrowSuggestion;
 }
 
-/** The field itself, when its label matches. */
-function fieldMatch(field: FieldDef, needle: string): Ranked | undefined {
+/**
+ * The field itself, when its label matches, or failing that when one of the words its value type
+ * is known by does. A period field is labelled `Period`, so `date`, `time` and `when` found nothing
+ * at all; the type keywords are what make it reachable under the word the user actually has in mind.
+ * A keyword hit ranks as a substring match, never a prefix one, so a visible label always wins.
+ *
+ * The blob is a bag of words and is matched only where a word begins: searched as one string it
+ * hands back the field for any fragment sitting inside a keyword, and `in` (in `since`) or `an`
+ * (in `range`) then put Period and Amount above every real value match on a two-letter query.
+ * From a word start rather than per token, so the multi-word keywords (`at least`, `at most`)
+ * stay reachable, and by prefix, so the list still narrows while the user types a keyword out.
+ */
+function keywordMatch(keywords: string | undefined, needle: string): boolean {
+  if (!keywords)
+    return false;
+  const blob = keywords.toLowerCase();
+  return [...blob.matchAll(/\S+/g)].some(word => blob.startsWith(needle, word.index));
+}
+
+function fieldMatch(field: FieldDef, needle: string, hints?: SyntaxHints): Ranked | undefined {
   const label = resolveText(field.label);
   const rank = rankOf(label, needle, RANK_FIELD_PREFIX, RANK_FIELD_SUBSTRING);
-  return rank === undefined ? undefined : { rank, suggestion: { field, kind: 'field', label } };
+  if (rank !== undefined)
+    return { rank, suggestion: fieldRow(field, label) };
+
+  return keywordMatch(hints?.keywords?.[field.valueType], needle)
+    ? { rank: RANK_FIELD_SUBSTRING, suggestion: fieldRow(field, label) }
+    : undefined;
+}
+
+/**
+ * The field offered for a query that is heading towards a filter on it but is not one yet.
+ *
+ * Typing `after`, `>` or `15/01` parses to nothing, and nothing is what the popover showed: an
+ * empty list, which says the bar does not take typed dates when in fact it does and the user was
+ * one keystroke away. Offering the field keeps the footer's syntax on screen beside it.
+ */
+function guidanceMatch(field: FieldDef, typed: string): Ranked | undefined {
+  if (!field.matchesTyped?.(typed))
+    return undefined;
+  return { rank: RANK_GUIDANCE, suggestion: fieldRow(field, resolveText(field.label)) };
 }
 
 /**
@@ -215,6 +289,40 @@ function recentMatches(field: FieldDef, needle: string, perField: number, recent
   return matches;
 }
 
+/** Everything one query is ranked against, gathered so the per-field pass takes one parameter. */
+interface RankContext {
+  readonly needle: string;
+  readonly typed: string;
+  readonly operatorLabels: OperatorLabels;
+  readonly limits: NarrowLimits;
+  readonly recentValues?: RecentValues;
+  readonly hints?: SyntaxHints;
+}
+
+/** Every way one field can answer the query, in one list. */
+function rankField(field: FieldDef, context: RankContext): Ranked[] {
+  const { hints, limits, needle, operatorLabels, recentValues, typed } = context;
+  const remembered = recentValues?.(field) ?? [];
+  const matched = fieldMatch(field, needle, hints);
+  // Read as a whole filter, for the fields whose values are written rather than picked.
+  const parsed = typedFilterMatches(field, typed, operatorLabels);
+  // Guidance only when the query yielded nothing on this field: a query that already reads as a
+  // filter gets the filter itself, and repeating the field beneath it says nothing new.
+  const guidance = parsed.length === 0 && !matched ? guidanceMatch(field, typed) : undefined;
+  const typedValue = typedValueSuggestion(field, typed);
+
+  return [
+    ...(matched ? [matched] : []),
+    ...listMatches(field, needle, limits.perField),
+    // A value used before beats the raw typed one: it is a value known to have been wanted.
+    ...recentMatches(field, needle, limits.perField, remembered),
+    ...parsed,
+    ...(guidance ? [guidance] : []),
+    // Already offered as a remembered value; do not repeat it as the typed one.
+    ...(typedValue && !remembered.includes(typed) ? [{ rank: RANK_TYPED_VALUE, suggestion: typedValue }] : []),
+  ];
+}
+
 /**
  * Cross-field narrowing for the bar's inline input: one query ranked against every field label,
  * every field's option labels, and every value the field was filtered by before, so typing `eth`
@@ -227,6 +335,7 @@ function recentMatches(field: FieldDef, needle: string, perField: number, recent
  * @param operatorLabels already-translated operator labels, for the rows read out of the query
  * @param limits caps on how many suggestions come back
  * @param recentValues previously used values per field, for the fields that have no option list
+ * @param hints per-value-type keywords and syntax examples for the fields that are typed into
  * @returns suggestions, best match first
  */
 export function searchFieldsAndValues(
@@ -235,32 +344,14 @@ export function searchFieldsAndValues(
   operatorLabels: OperatorLabels,
   limits: NarrowLimits = DEFAULT_LIMITS,
   recentValues?: RecentValues,
+  hints?: SyntaxHints,
 ): NarrowSuggestion[] {
   const needle = query.toLowerCase().trim();
   if (!needle)
     return [];
 
   const typed = query.trim();
-  const ranked: Ranked[] = [];
-
-  for (const field of fields) {
-    const remembered = recentValues?.(field) ?? [];
-    const matched = fieldMatch(field, needle);
-    if (matched)
-      ranked.push(matched);
-
-    ranked.push(...listMatches(field, needle, limits.perField));
-    // A value used before beats the raw typed one: it is a value known to have been wanted.
-    ranked.push(...recentMatches(field, needle, limits.perField, remembered));
-
-    // Read as a whole filter, for the fields whose values are written rather than picked.
-    ranked.push(...typedFilterMatches(field, typed, operatorLabels));
-
-    const typedValue = typedValueSuggestion(field, typed);
-    // Already offered as a remembered value; do not repeat it as the typed one.
-    if (typedValue && !remembered.includes(typed))
-      ranked.push({ rank: RANK_TYPED_VALUE, suggestion: typedValue });
-  }
+  const ranked = fields.flatMap(field => rankField(field, { hints, limits, needle, operatorLabels, recentValues, typed }));
 
   // Stable within a rank, so fields keep their declared order and values keep their option order.
   return ranked

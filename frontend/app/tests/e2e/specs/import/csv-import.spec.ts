@@ -39,12 +39,12 @@ test.describe.serial('csv import', () => {
     await historyPage.applyTableFilter('location', 'coinbase');
 
     await expect(async () => {
-      const count = await historyPage.getEventRows();
+      const count = await historyPage.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 0.091 BTC → rounded up to 0.10 with '<' prefix
-    await historyPage.verifyEventAmount('[data-testid=history-event-row]', 0, '0.10');
+    await historyPage.rows.expectAmount(await historyPage.rows.first('[data-testid=history-event-row]'), '0.10');
   });
 
   test('import rotki generic trades', async () => {
@@ -58,12 +58,12 @@ test.describe.serial('csv import', () => {
     await historyPage.applyTableFilter('location', 'kraken');
 
     await expect(async () => {
-      const count = await historyPage.getSwapRows();
+      const count = await historyPage.rows.countSwaps();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 392.887 LTC → rounded up to 392.89 with '<' prefix
-    await historyPage.verifyEventAmount('[data-testid=history-event-swap]', 0, '392.89');
+    await historyPage.rows.expectAmount(await historyPage.rows.first('[data-testid=history-event-swap]'), '392.89');
   });
 
   test('import cointracking csv', async () => {
@@ -81,13 +81,14 @@ test.describe.serial('csv import', () => {
     await historyPage.applyTableFilter('location', 'poloniex');
 
     await expect(async () => {
-      const count = await historyPage.getEventRows();
+      const count = await historyPage.rows.countEvents();
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // 5.00 XMR — exact, no rounding needed
-    await historyPage.verifyEventAmount('[data-testid=history-event-row]', 0, '5.00');
-    await historyPage.verifyEventTypeLabel('[data-testid=history-event-row]', 0, 'Exchange deposit');
+    const deposit = await historyPage.rows.first('[data-testid=history-event-row]');
+    await historyPage.rows.expectAmount(deposit, '5.00');
+    await historyPage.rows.expectTypeLabel(deposit, 'Exchange deposit');
   });
 
   test('import nexo csv', async () => {
@@ -101,8 +102,8 @@ test.describe.serial('csv import', () => {
     await historyPage.applyTableFilter('location', 'nexo');
 
     await expect(async () => {
-      const count = await historyPage.getEventRows();
-      const swaps = await historyPage.getSwapRows();
+      const count = await historyPage.rows.countEvents();
+      const swaps = await historyPage.rows.countSwaps();
       expect(count + swaps).toBeGreaterThanOrEqual(5);
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
@@ -119,12 +120,12 @@ test.describe.serial('csv import', () => {
     await historyPage.applyTableFilter('location', 'binance');
 
     await expect(async () => {
-      const rows = await historyPage.getEventRows();
-      const swaps = await historyPage.getSwapRows();
+      const rows = await historyPage.rows.countEvents();
+      const swaps = await historyPage.rows.countSwaps();
       expect(rows + swaps).toBeGreaterThanOrEqual(2);
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
     // Verify the USDC→ETH swap exists: 1,875.64 USDC spend → rounded up to 1,875.64 (exact 2 decimals)
-    await historyPage.verifyEventAmount('[data-testid=history-event-swap]', 0, '1,875.64');
+    await historyPage.rows.expectAmount(await historyPage.rows.first('[data-testid=history-event-swap]'), '1,875.64');
   });
 });

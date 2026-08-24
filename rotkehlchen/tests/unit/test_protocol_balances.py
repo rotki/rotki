@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -26,7 +26,7 @@ from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as E
 from rotkehlchen.chain.base.modules.morpho_blue.balances import MorphoBlueBalances
 from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.base.modules.runmoney.constants import CPT_RUNMONEY
-from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
+from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance, ProtocolWithGauges
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.across.balances import AcrossBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
@@ -109,6 +109,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -183,13 +184,41 @@ def test_curve_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    curve_balances = curve_balances_inquirer.query_balances()
+    curve_balances = curve_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = curve_balances[ethereum_accounts[0]]
     asset = EvmToken('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F')
     assert user_balance.assets[asset][CPT_CURVE] == Balance(
         amount=FVal('2402.233522210805651105'),
         value=FVal('3603.3502833162084766575'),
     )
+
+
+def test_gauge_queries_are_scoped_per_address(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    curve_balances = CurveBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    user1, user2, gauge1, gauge2 = (make_evm_address() for _ in range(4))
+    token1, token2 = A_CRV.resolve_to_evm_token(), A_CVX.resolve_to_evm_token()
+    with (
+        patch.object(curve_balances, 'addresses_with_gauge_deposits', return_value={
+            user1: [MagicMock(address=gauge1, asset=token1)],
+            user2: [MagicMock(address=gauge2, asset=token2)],
+        }),
+        patch.object(curve_balances, '_query_gauges_balances', return_value={}) as query_mock,
+        patch(
+            'rotkehlchen.chain.ethereum.interfaces.balances.get_rpc_first_chunk_size_call_order',
+            return_value=(100, []),
+        ),
+    ):
+        ProtocolWithGauges.query_balances(curve_balances, addresses=[user1, user2])
+
+    assert [
+        call_args.kwargs['gauges_to_token'] for call_args in query_mock.call_args_list
+    ] == [{gauge1: token1}, {gauge2: token2}]
 
 
 @pytest.mark.vcr
@@ -221,7 +250,7 @@ def test_curve_locked_crv_balances(
         curve_balances = CurveBalances(
             evm_inquirer=ethereum_inquirer,
             tx_decoder=ethereum_transaction_decoder,
-        ).query_balances()
+        ).query_balances(addresses=ethereum_accounts)
         user_balance = curve_balances[address]
         assert user_balance.assets[A_CRV][CPT_CURVE] == Balance(
             amount=locked_crv_amount,
@@ -267,7 +296,7 @@ def test_yearn_vesting_balances(
     vesting_balances = YearnVestingBalances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=ethereum_transaction_decoder,
-    ).query_balances()
+    ).query_balances(addresses=ethereum_accounts)
     vesting_amount = FVal('22623.100898')  # locked + unclaimed at recording time
     assert vesting_balances[user_address].assets[token][CPT_YEARN_VESTING] == Balance(
         amount=vesting_amount,
@@ -348,7 +377,7 @@ def test_across_staked_lp_balances(
         across_balances = AcrossBalances(
             evm_inquirer=ethereum_inquirer,
             tx_decoder=ethereum_transaction_decoder,
-        ).query_balances()
+        ).query_balances(addresses=ethereum_accounts)
 
     staked_amount = FVal('0.941791733')
     updated_token = EvmToken(token.identifier)
@@ -381,7 +410,7 @@ def test_convex_gauges_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    convex_balances = convex_balances_inquirer.query_balances()
+    convex_balances = convex_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = convex_balances[ethereum_accounts[0]]
     asset = EvmToken('eip155:1/erc20:0xF9835375f6b268743Ea0a54d742Aa156947f8C06')
     assert user_balance.assets[asset][CPT_CONVEX] == Balance(
@@ -408,7 +437,7 @@ def test_convex_staking_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    convex_balances = convex_balances_inquirer.query_balances()
+    convex_balances = convex_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = convex_balances[ethereum_accounts[0]]
     # the amount here is the sum of the locked ~44 and the staked tokens ~333
     assert user_balance.assets[A_CVX.resolve_to_evm_token()][CPT_CONVEX] == Balance(
@@ -440,7 +469,7 @@ def test_convex_staking_balances_without_gauges(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    convex_balances = convex_balances_inquirer.query_balances()
+    convex_balances = convex_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = convex_balances[ethereum_accounts[0]]
     assert user_balance.assets[A_CVX.resolve_to_evm_token()][CPT_CONVEX] == Balance(
         amount=FVal('18229.934390350508148387'),
@@ -469,7 +498,7 @@ def test_velodrome_v2_staking_balances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()  # queries the gauge balance of the address if the address has interacted with a known gauge  # noqa: E501
+    balances = balances_inquirer.query_balances(addresses=optimism_accounts)  # queries the gauge balance of the address if the address has interacted with a known gauge  # noqa: E501
     user_balance = balances[optimism_accounts[0]]
     weth_op_lp_token = evm_address_to_identifier(
         address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
@@ -500,7 +529,7 @@ def test_thegraph_balances_arbitrum_one(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    thegraph_balances = thegraph_balances_inquirer.query_balances()
+    thegraph_balances = thegraph_balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     user_balance = thegraph_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[A_GRT_ARB][CPT_THEGRAPH] == Balance(
         amount=amount,
@@ -534,16 +563,16 @@ def test_thegraph_balances_vested_arbitrum_one(
 
     original_get_delegations = ThegraphBalances._get_delegations
 
-    def mock_get_delegations(self):
+    def mock_get_delegations(self, addresses):
         """Mock _get_delegations to ensure deterministic ordering for VCR"""
-        delegations = original_get_delegations(self)
+        delegations = original_get_delegations(self, addresses=addresses)
         return sorted(delegations, key=operator.itemgetter(0, 1, 2, 3))
 
     with patch.object(ThegraphBalances, '_get_delegations', mock_get_delegations):
         thegraph_balances = ThegraphBalances(
             evm_inquirer=arbitrum_one_inquirer,
             tx_decoder=arbitrum_one_transaction_decoder,
-        ).query_balances()
+        ).query_balances(addresses=arbitrum_one_accounts)
     assert thegraph_balances[arbitrum_one_accounts[0]].assets[A_GRT_ARB][CPT_THEGRAPH] == Balance(
         amount=expected_grt_balance,
         value=expected_grt_balance * FVal(1.5),
@@ -568,7 +597,7 @@ def test_octant_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    octant_balances = octant_balances_inquirer.query_balances()
+    octant_balances = octant_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = octant_balances[ethereum_accounts[0]]
     assert user_balance.assets[A_GLM.resolve_to_evm_token()][CPT_OCTANT] == Balance(amount=FVal('9849.361552045676790003'), value=FVal('14774.0423280685151850045'))  # noqa: E501
 
@@ -591,7 +620,7 @@ def test_octant_balances_v2(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    octant_balances = octant_balances_inquirer.query_balances()
+    octant_balances = octant_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = octant_balances[ethereum_accounts[0]]
     assert user_balance.assets[A_GLM.resolve_to_evm_token()][CPT_OCTANT] == Balance(
         amount=FVal('3767.190200498257727034'),
@@ -617,7 +646,7 @@ def test_eigenlayer_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=ethereum_accounts)
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()][CPT_EIGENLAYER] == Balance(  # noqa: E501
         amount=FVal('0.114063122816914142'),
         value=FVal('0.1710946842253712130'),
@@ -643,7 +672,7 @@ def test_eigenpod_balances(
         tx_decoder=tx_decoder,
     )
     eigenpod_balance = FVal('0.054506232')
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=ethereum_accounts)
     assert balances[ethereum_accounts[0]].assets[A_ETH][CPT_EIGENLAYER] == Balance(
         amount=eigenpod_balance,
         value=FVal('1.5') * eigenpod_balance,
@@ -700,7 +729,9 @@ def test_gmx_balances(
             ('0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', False),  # noqa: E501
         ],
     }
-    actual_positions = balances_inquirer._extract_unique_deposits()
+    actual_positions = balances_inquirer._extract_unique_deposits(
+        addresses=arbitrum_one_accounts,
+    )
     for addr, positions in expected_positions.items():
         assert set(actual_positions[addr]) == set(positions)
 
@@ -708,7 +739,7 @@ def test_gmx_balances(
         'rotkehlchen.chain.arbitrum_one.modules.gmx.balances.GmxBalances._extract_unique_deposits',
         return_value=expected_positions,
     ):
-        balances = balances_inquirer.query_balances()
+        balances = balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
 
     weth_arb = Asset('eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1')
     assert balances[arbitrum_one_accounts[0]].assets[weth_arb][CPT_GMX] == Balance(
@@ -752,7 +783,7 @@ def test_gmx_balances_staking(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     assert balances[arbitrum_one_accounts[0]].assets[A_GMX][CPT_GMX] == Balance(
         amount=FVal('4.201981641893733976'),
         value=FVal('32.64939735751431299352'),
@@ -777,7 +808,7 @@ def test_aave_balances_staking(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=ethereum_accounts)
     assert balances[ethereum_accounts[0]].assets[A_AAVE][CPT_AAVE] == Balance(
         amount=amount,
         value=amount * FVal(1.5),
@@ -885,14 +916,17 @@ def test_compound_v3_token_balances_liabilities(
         evm_inquirer=blockchain.ethereum.node_inquirer,
         tx_decoder=blockchain.ethereum.transactions_decoder,
     )
-    unique_borrows, underlying_tokens = compound_v3_balances._extract_unique_borrowed_tokens()
+    unique_borrows, underlying_tokens = compound_v3_balances._extract_unique_borrowed_tokens(
+        addresses=ethereum_accounts,
+    )
 
     def mock_extract_unique_borrowed_tokens(
             self: Compoundv3Balances,  # pylint: disable=unused-argument
+            addresses: list[ChecksumEvmAddress],  # pylint: disable=unused-argument
     ) -> tuple[dict[EvmToken, list[ChecksumEvmAddress]], dict[ChecksumEvmAddress, EvmToken]]:
         return {
-            token: sorted(addresses)  # cast set to list to avoid randomness in VCR
-            for token, addresses in unique_borrows.items()
+            token: sorted(borrowers)  # cast set to list to avoid randomness in VCR
+            for token, borrowers in unique_borrows.items()
         }, underlying_tokens
 
     def mock_query_tokens(addresses):
@@ -936,7 +970,7 @@ def test_blur_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    blur_balances = blur_balances_inquirer.query_balances()
+    blur_balances = blur_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = blur_balances[ethereum_accounts[0]]
     assert user_balance.assets[Asset(BLUR_IDENTIFIER)][CPT_BLUR] == Balance(
         amount=amount,
@@ -962,7 +996,7 @@ def test_hop_balances_staking(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     hop_lp_token = Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')
     hop_reward_token = Asset('eip155:42161/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC')
     assert balances[arbitrum_one_accounts[0]].assets[hop_lp_token][CPT_HOP] == Balance(
@@ -993,7 +1027,7 @@ def test_hop_balances_staking_2(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     hop_lp_token = Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')
     assert balances[arbitrum_one_accounts[0]].assets[hop_lp_token][CPT_HOP] == Balance(
         amount=lp_amount,
@@ -1023,7 +1057,7 @@ def test_gearbox_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[GEAR_TOKEN][CPT_GEARBOX] == Balance(
         amount=amount,
@@ -1049,7 +1083,7 @@ def test_gearbox_balances_arb(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[GEAR_TOKEN_ARB][CPT_GEARBOX] == Balance(
         amount=amount,
@@ -1075,7 +1109,7 @@ def test_safe_locked(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[Asset(SAFE_TOKEN_ID)][CPT_SAFE] == Balance(
         amount=amount,
@@ -1101,7 +1135,7 @@ def test_safenet_staked(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[Asset(SAFE_TOKEN_ID)][CPT_SAFE] == Balance(
         amount=amount,
@@ -1136,7 +1170,7 @@ def test_extrafi_lending_balances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances, velo_amount, extra_amount = protocol_balances_inquirer.query_balances(), FVal('366399.179130825123704582'), FVal('6405.478041239509217895')  # noqa: E501
+    protocol_balances, velo_amount, extra_amount = protocol_balances_inquirer.query_balances(addresses=optimism_accounts), FVal('366399.179130825123704582'), FVal('6405.478041239509217895')  # noqa: E501
     assert protocol_balances[optimism_accounts[0]].assets[Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=velo_amount,
         value=velo_amount * FVal(1.5),
@@ -1176,7 +1210,7 @@ def test_extrafi_farm_balances(
         evm_inquirer=base_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=base_accounts)
     assert protocol_balances[base_accounts[0]].assets[Asset('eip155:8453/erc20:0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=FVal('0.001146519712970269'),
         value=FVal('13715.96845367077767909372680774996'),
@@ -1195,7 +1229,7 @@ def test_extrafi_farm_balances(
         )]
 
     # query again to verify that it works as expected
-    assert (protocol_balances := protocol_balances_inquirer.query_balances())[base_accounts[0]].assets[Asset('eip155:8453/erc20:0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197')][CPT_EXTRAFI] == Balance(  # noqa: E501
+    assert (protocol_balances := protocol_balances_inquirer.query_balances(addresses=base_accounts))[base_accounts[0]].assets[Asset('eip155:8453/erc20:0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=FVal('0.001146519712970269'),
         value=FVal('13715.96845367077767909372680774996'),
     )
@@ -1271,7 +1305,7 @@ def test_umami_balances(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[Asset('eip155:42161/erc20:0x5f851F67D24419982EcD7b7765deFD64fBb50a97')][CPT_UMAMI] == Balance(  # noqa: E501
         amount=FVal('46.422107'),
@@ -1298,7 +1332,7 @@ def test_walletconnect_staked_balances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=optimism_accounts)
     user_balance = protocol_balances[optimism_accounts[0]]
     assert user_balance.assets[Asset(WCT_TOKEN_ID)][CPT_WALLETCONNECT] == Balance(
         amount=amount,
@@ -1324,7 +1358,7 @@ def test_curve_lend_balances(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=arbitrum_one_accounts)
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
 
     assert user_balance.assets[A_WETH_ARB][CPT_CURVE] == Balance(
@@ -1356,7 +1390,7 @@ def test_curve_crvusd_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = protocol_balances[ethereum_accounts[0]]
 
     assert user_balance.assets[A_WBTC][CPT_CURVE] == Balance(
@@ -1387,7 +1421,7 @@ def test_gnosis_giveth_staked_balances(
         evm_inquirer=gnosis_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=gnosis_accounts)
     user_balance = protocol_balances[gnosis_accounts[0]]
     giv_asset = Asset(protocol_balances_inquirer.giv_token_id)
 
@@ -1415,7 +1449,7 @@ def test_optimism_giveth_staked_balances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=optimism_accounts)
     user_balance = protocol_balances[optimism_accounts[0]]
     giv_asset = Asset(protocol_balances_inquirer.giv_token_id)
 
@@ -1442,7 +1476,7 @@ def test_hedgey_locked_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = protocol_balances[ethereum_accounts[0]]
 
     assert user_balance.assets[A_ENS][CPT_HEDGEY] == Balance(
@@ -1468,7 +1502,7 @@ def test_velodrome_locked_balances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=optimism_accounts)
     user_balance = protocol_balances[optimism_accounts[0]]
     assert user_balance.assets[Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db')][CPT_VELODROME] == Balance(  # noqa: E501
         amount=FVal('215.817657296359655794'),
@@ -1493,7 +1527,7 @@ def test_aerodrome_locked_balances(
         evm_inquirer=base_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=base_accounts)
     user_balance = protocol_balances[base_accounts[0]]
     assert user_balance.assets[Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631')][CPT_AERODROME] == Balance(  # noqa: E501
         amount=FVal('927'),
@@ -1529,6 +1563,25 @@ def test_all_balance_classes_used():
     assert unused_classes == set(), f'Found unused classes {unused_classes}'
 
 
+def test_protocol_activity_is_filtered_by_location_labels(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    protocol_balances = Compoundv3Balances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    addresses = [address := make_evm_address()]
+
+    with patch.object(EvmEventFilterQuery, 'make', wraps=EvmEventFilterQuery.make) as make_filter:
+        protocol_balances.addresses_with_activity(
+            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},
+            location_labels=addresses,
+        )
+
+    assert make_filter.call_args.kwargs['location_labels'] == [address]
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x94F567bf71A4A7a88114aB679336522120EE3788']])
@@ -1545,7 +1598,7 @@ def test_pendle_locked_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    protocol_balances = protocol_balances_inquirer.query_balances()
+    protocol_balances = protocol_balances_inquirer.query_balances(addresses=ethereum_accounts)
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[PENDLE_TOKEN][CPT_PENDLE] == Balance(
         amount=FVal('367.772672118320474345'),
@@ -1569,7 +1622,7 @@ def test_runmoney_balances(
     protocol_balances = RunmoneyBalances(
         evm_inquirer=base_inquirer,
         tx_decoder=tx_decoder,
-    ).query_balances()
+    ).query_balances(addresses=base_accounts)
     user_balance = protocol_balances[base_accounts[0]]
     assert user_balance.assets[Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')][CPT_RUNMONEY] == Balance(  # noqa: E501
         amount=FVal('102.973178'),
@@ -1666,7 +1719,7 @@ def test_morpho_blue_balances(
     protocol_balances = MorphoBlueBalances(
         evm_inquirer=base_inquirer,
         tx_decoder=base_transaction_decoder,
-    ).query_balances()
+    ).query_balances(addresses=base_accounts)
     user_balance = protocol_balances[user_address]
     assert user_balance.assets[usdc][CPT_MORPHO_BLUE] == Balance(
         amount=FVal('9'),
@@ -1694,7 +1747,7 @@ def test_woofi_stake_v2_balances(
     protocol_balances = WoofiBalances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
-    ).query_balances()
+    ).query_balances(addresses=optimism_accounts)
     woo_token = Asset('eip155:10/erc20:0x871f2F2ff935FD1eD867842FF2a7bfD051A5E527')
     assert protocol_balances[optimism_accounts[0]].assets[woo_token][CPT_WOO_FI] == Balance(
         amount=FVal('1571.295767977009'),
@@ -1726,7 +1779,7 @@ def test_woofi_stake_vault_token_balances(
     protocol_balances = WoofiBalances(
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
-    ).query_balances()
+    ).query_balances(addresses=optimism_accounts)
     vault_token = Asset('eip155:10/erc20:0xcA7184eA1cb4cF04d49Bf219c49a39231299dA26')
     assert protocol_balances[optimism_accounts[0]].assets[vault_token][CPT_WOO_FI] == Balance(
         amount=FVal('15923.160753145667983352'),
@@ -1788,7 +1841,7 @@ def test_kinetiq_pending_withdrawal_balances(
     protocol_balances = KinetiqBalances(
         evm_inquirer=hyperliquid_inquirer,
         tx_decoder=tx_decoder,
-    ).query_balances()
+    ).query_balances(addresses=hyperliquid_accounts)
     expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
         amount=(amount := FVal('0.620167133105137613')),
         value=amount * FVal(1.5),
@@ -1812,7 +1865,7 @@ def test_kinetiq_earn_pending_withdrawal_balances(
     protocol_balances = KinetiqBalances(
         evm_inquirer=hyperliquid_inquirer,
         tx_decoder=tx_decoder,
-    ).query_balances()
+    ).query_balances(addresses=hyperliquid_accounts)
     expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
         amount=(amount := FVal('10.650464908520496564')),
         value=amount * FVal(1.5),

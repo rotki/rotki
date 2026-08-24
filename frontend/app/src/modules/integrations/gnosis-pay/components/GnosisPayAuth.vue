@@ -5,7 +5,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import ServiceKeyCard, { type FeatureGate } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
@@ -38,6 +38,12 @@ const featureGate = computed<FeatureGate>(() => {
 
   return { allowed: get(allowed), message };
 });
+
+const cardAction = computed<ServiceKeyAction>(() => ({
+  addText: t('external_services.actions.authenticate'),
+  editText: t('external_services.actions.reauthenticate'),
+  hidden: true,
+}));
 
 const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCard');
 
@@ -113,7 +119,7 @@ const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
 
 // Wallet providers
 const walletStore = useWalletStore();
-const { connectedChainId, isDisconnecting, preparing } = storeToRefs(walletStore);
+const { connectedChainId, isDisconnecting, isWalletConnect, preparing } = storeToRefs(walletStore);
 const { switchNetwork } = walletStore;
 
 const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === GNOSIS_CHAIN_ID);
@@ -266,13 +272,11 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
       :feature-gate="featureGate"
       rounded-icon
       :name="name"
-      :add-button-text="t('external_services.actions.authenticate')"
-      :edit-button-text="t('external_services.actions.reauthenticate')"
+      :action="cardAction"
       :key-set="!!key"
       :title="t('external_services.gnosispay.title')"
       :subtitle="t('external_services.gnosispay.description')"
       :image-src="getPublicServiceImagePath('gnosispay.png')"
-      hide-action
     >
       <template
         v-if="key && hasUntrackedSafe"
@@ -418,6 +422,7 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
             :is-on-gnosis-chain="isOnGnosisChain"
             :is-wallet-connected="isWalletConnected"
             :switching-network="switchingNetwork"
+            :is-injected-wallet="!isWalletConnect"
             @sign-in="signInWithEthereum()"
             @cancel="cancelSigning()"
             @switch-to-gnosis="switchToGnosis()"

@@ -15,7 +15,7 @@ vi.mock('@/modules/history/LocationDisplay.vue', () => ({
 vi.mock('@/modules/shell/components/AppImage.vue', () => ({
   default: {
     name: 'AppImage',
-    props: ['src', 'size', 'contain'],
+    props: ['src', 'size', 'fit'],
     template: '<img data-testid="app-image" :src="src" />',
   },
 }));

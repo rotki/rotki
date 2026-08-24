@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
+import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
@@ -9,9 +9,10 @@ import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/modules/history/events/HistoryEventType.vue';
+import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import { useHistorySwapItem } from '../use-history-swap-item';
 
-const { events: eventsProp, selection, variant = 'row' } = defineProps<{
+const { events: eventsProp, variant = 'row' } = defineProps<{
   events: HistoryEventEntry[];
   /**
    * All events in the same group, including hidden and ignored events.
@@ -22,7 +23,6 @@ const { events: eventsProp, selection, variant = 'row' } = defineProps<{
   hideActions?: boolean;
   highlight?: boolean;
   highlightType?: HighlightType;
-  selection?: UseHistoryEventsSelectionModeReturn;
   variant?: 'row' | 'card';
 }>();
 
@@ -37,6 +37,8 @@ const emit = defineEmits<{
 const events = computed<HistoryEventEntry[]>(() => eventsProp);
 
 const { t } = useI18n({ useScope: 'global' });
+
+const selection = injectHistoryEventsSelection();
 
 const {
   chain,
@@ -70,6 +72,11 @@ const isSelectedModel = computed<boolean>({
 });
 
 const isCard = computed<boolean>(() => variant === 'card');
+
+const noteContext = computed<HistoryEventNoteContext>(() => ({
+  amount: get(events).map(item => item.amount),
+  counterparty: get(counterparty),
+}));
 
 // A combined bridge row represents both legs, so show a neutral label instead
 // of the primary (out) leg's directional one.
@@ -179,8 +186,7 @@ const typeLabel = computed<string | undefined>(() =>
       <HistoryEventNote
         :notes="compactNotes"
         :chain="chain"
-        :amount="events.map(item => item.amount)"
-        :counterparty="counterparty"
+        :context="noteContext"
         class="flex-1 min-w-0 overflow-hidden line-clamp-2 text-sm text-rui-text-secondary"
       />
 
@@ -293,8 +299,7 @@ const typeLabel = computed<string | undefined>(() =>
       <HistoryEventNote
         :notes="compactNotes"
         :chain="chain"
-        :amount="events.map(item => item.amount)"
-        :counterparty="counterparty"
+        :context="noteContext"
         class="flex-1 min-w-0 overflow-hidden self-center line-clamp-2"
       />
     </div>

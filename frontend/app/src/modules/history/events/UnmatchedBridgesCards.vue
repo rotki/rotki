@@ -18,7 +18,6 @@ const { rows, highlightedGroupIdentifier } = defineProps<{
   rows: UnmatchedBridgeRow[];
   specFor: (row: UnmatchedBridgeRow) => UnmatchedRowActionSpec;
   emptyDescription: string;
-  maxHeight: string;
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   loading?: boolean;
@@ -42,7 +41,6 @@ defineSlots<{
     :accented="(row: UnmatchedBridgeRow) => row.untrackedCounterpart"
     :empty-description="emptyDescription"
     :loading="loading"
-    :max-height="maxHeight"
   >
     <template
       v-if="$slots.alert"

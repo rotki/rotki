@@ -256,18 +256,22 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
         if (error instanceof Object && 'code' in error && error.code === 4902) {
           const { getWalletNetwork } = await import('../chains-viem');
           const network = getWalletNetwork(chainId);
-          if (network) {
-            await injectedProvider.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                blockExplorerUrls: network.blockExplorers?.default ? [network.blockExplorers.default.url] : [],
-                chainId: `0x${chainId.toString(16)}`,
-                chainName: network.name,
-                nativeCurrency: network.nativeCurrency,
-                rpcUrls: network.rpcUrls.default.http,
-              }],
-            });
-          }
+          // The chain list comes from the backend and can outrun the viem table,
+          // so a chain with no definition is normal. Nothing can be added for it:
+          // rethrow rather than return as if the switch had worked.
+          if (!network)
+            throw error;
+
+          await injectedProvider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              blockExplorerUrls: network.blockExplorers?.default ? [network.blockExplorers.default.url] : [],
+              chainId: `0x${chainId.toString(16)}`,
+              chainName: network.name,
+              nativeCurrency: network.nativeCurrency,
+              rpcUrls: network.rpcUrls.default.http,
+            }],
+          });
         }
         else {
           throw error;

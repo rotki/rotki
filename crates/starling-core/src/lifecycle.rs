@@ -493,6 +493,28 @@ impl<S: Spawner> Supervisor<S> {
         self.stop_one(name, Instant::now() + grace).await
     }
 
+    /// Record whether one service comes up with [`start_all`](Self::start_all).
+    ///
+    /// A preference, not an action: nothing is started or stopped here, and the
+    /// service's current state is untouched. It takes effect at the next
+    /// bring-up, and is visible immediately in [`status`](Self::status) so a
+    /// caller reads back what it set.
+    ///
+    /// Gated on `allow_manual_control` for the same reason `start_service` and
+    /// `stop_service` are: core and colibri are the tree, and a caller able to
+    /// clear their autostart could leave a backend that boots into nothing.
+    pub fn set_autostart(&mut self, name: &str, autostart: bool) -> Result<()> {
+        let rt = self
+            .services
+            .get_mut(name)
+            .ok_or_else(|| SupervisorError::NotFound(name.to_string()))?;
+        if !rt.spec.allow_manual_control {
+            return Err(SupervisorError::ManualControlNotAllowed(name.to_string()));
+        }
+        rt.spec.autostart = autostart;
+        Ok(())
+    }
+
     async fn stop_one(&mut self, name: &str, deadline: Instant) -> Result<()> {
         let rt = self
             .services

@@ -56,7 +56,18 @@ export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterS
    * applied to all of them alike — an edit, a removal, and the route/saved-view restore below.
    */
   function commit(next: FilterState): void {
-    set(state, pruneInadmissible(next, toValue(fields)));
+    const pruned = pruneInadmissible(next, toValue(fields));
+    // A rebuild that changes nothing must not change identity. `matches`/`params` are derived from
+    // this ref, and the bar writes them back on every identity change, so an equal-but-new array is
+    // an update that produces another update. That is survivable while the two sides converge, but
+    // they cannot converge when a field is removed while its filter is still active: the codec
+    // skips a filter whose field is gone, so the derived bag permanently disagrees with the
+    // incoming one, `setFromMatches` rebuilds on every flush, and the bar recurses until Vue aborts
+    // the render. Comparing by value is what makes a no-op rebuild a no-op.
+    if (isEqual(pruned, get(state)))
+      return;
+
+    set(state, pruned);
   }
 
   function addFilter(filter: ActiveFilter): void {

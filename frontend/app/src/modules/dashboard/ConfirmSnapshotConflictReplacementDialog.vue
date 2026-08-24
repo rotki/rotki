@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { BalanceSnapshot } from '@/modules/dashboard/snapshots';
+import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isNft } from '@/modules/assets/nft-utils';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
-import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 
 const { snapshot } = defineProps<{
   snapshot: BalanceSnapshot | null;
@@ -31,12 +32,21 @@ const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
     @confirm="emit('confirm')"
   >
     <div class="flex justify-center items-center gap-4 mt-4 border border-default rounded px-4">
-      <BalanceDisplay
-        :asset="asset"
-        :value="snapshot"
-        class="mr-4"
-        no-icon
-      />
+      <div
+        v-if="snapshot"
+        class="flex flex-col items-end mr-4 py-1"
+      >
+        <AssetAmountDisplay
+          :asset="asset"
+          :amount="snapshot.amount"
+          class="block font-medium"
+        />
+        <SnapshotFiatDisplay
+          :value="snapshot.usdValue"
+          :timestamp="snapshot.timestamp"
+          class="block text-rui-text-secondary"
+        />
+      </div>
 
       <NftDetails
         v-if="isNft(asset)"
@@ -45,10 +55,10 @@ const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
       />
       <AssetDetails
         v-else
-        hide-menu
         class="max-w-[640px]"
         :asset="asset"
-        :enable-association="false"
+        :actions="{ hideMenu: true }"
+        :resolution="{ enableAssociation: false }"
       />
     </div>
   </ConfirmDialog>

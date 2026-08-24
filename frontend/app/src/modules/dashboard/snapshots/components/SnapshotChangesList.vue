@@ -87,8 +87,8 @@ const { containerProps, list, wrapperProps } = useVirtualList(items, { itemHeigh
         <AssetDetails
           v-if="item.asset && !isNft(item.asset)"
           :asset="item.asset"
-          :enable-association="false"
-          size="26px"
+          :display="{ size: '26px' }"
+          :resolution="{ enableAssociation: false }"
         />
         <span v-else-if="item.asset">{{ item.asset }}</span>
 

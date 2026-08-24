@@ -22,10 +22,22 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def get_logged_transfer_id(tx_log: EvmTxReceiptLog) -> str | None:
+    """Return the transfer id logged as the third argument of a bridge event, if any.
+
+    Newer bridge events log a nonce there and the event of the other leg repeats it, so
+    it identifies the transfer on both chains. Older ones only log the recipient and the
+    amount, and there it is the source chain transaction hash that the destination chain
+    event references instead.
+    """
+    return f'0x{tx_log.data[64:96].hex()}' if len(tx_log.data) >= 96 else None
 
 
 class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
@@ -71,14 +83,16 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
         if context.tx_log.topics[0] in self.deposit_topics:
             from_address = context.transaction.from_address
             to_address = self.bridge_address
-            # the destination side event references the source transaction hash,
-            # so the deposit's own tx hash identifies the transfer on both legs
-            transfer_id: str | None = context.transaction.tx_hash.hex()
+            # without a logged nonce the destination side event references the source
+            # transaction hash, so the deposit's own tx hash identifies the transfer
+            transfer_id: str | None = (
+                get_logged_transfer_id(context.tx_log) or context.transaction.tx_hash.hex()
+            )
         elif context.tx_log.topics[0] == self.withdrawal_topic:
             from_address = self.bridge_address
             to_address = bytes_to_address(context.tx_log.data[0:32])
-            # both RelayedMessage and AffirmationCompleted carry the source chain tx hash
-            transfer_id = f'0x{context.tx_log.data[64:96].hex()}' if len(context.tx_log.data) >= 96 else None  # noqa: E501
+            # both RelayedMessage and AffirmationCompleted carry the id of the source leg
+            transfer_id = get_logged_transfer_id(context.tx_log)
             if self.source_chain == ChainID.GNOSIS and self.target_chain == ChainID.ETHEREUM:
                 create_event = True
 

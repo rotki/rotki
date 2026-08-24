@@ -46,25 +46,16 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRow
   showRestore: () => showRestore,
 });
 
-const descriptionEl = useTemplateRef<HTMLElement>('description');
-const { height: descriptionHeight } = useElementSize(descriptionEl);
-
-const maxHeight = computed<string>(() =>
-  isPinned
-    // the card list keeps its select-all bar and pager outside the scroll area,
-    // so it gets less room than the table did at the same width
-    ? `calc(100vh - 20rem - ${get(descriptionHeight)}px)`
-    : 'calc(100vh - 23rem)',
-);
+// Pinned, the host is a bounded flex column, so the card list is sized by what is left over
+// and the pager stays in view. The dialog cannot propagate a height down to the table, so it
+// keeps its viewport cap.
+const maxHeight = 'calc(100vh - 23rem)';
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center justify-between gap-2 mb-4">
-      <p
-        ref="description"
-        class="text-body-2 text-rui-text-secondary"
-      >
+  <div :class="isPinned ? 'flex-1 min-h-0 flex flex-col' : ''">
+    <div class="shrink-0 flex items-center justify-between gap-2 mb-4">
+      <p class="text-body-2 text-rui-text-secondary">
         {{ description }}
       </p>
       <RuiButton
@@ -90,7 +81,7 @@ const maxHeight = computed<string>(() =>
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
-      :max-height="maxHeight"
+      :max-height="isPinned ? undefined : maxHeight"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       :loading="loading"

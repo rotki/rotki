@@ -112,23 +112,29 @@ mod tests {
     use std::collections::HashSet;
     use tokio::sync::{Mutex, RwLock};
 
-    async fn create_test_state() -> Arc<AppState> {
-        let globaldb = Arc::new(create_globaldb!().await.unwrap());
+    /// Returns the state along with the temp dirs backing it. Dropping those
+    /// removes the files, so callers must keep them alive for the whole test.
+    async fn create_test_state() -> (Arc<AppState>, Vec<tempfile::TempDir>) {
+        let (globaldb, globaldb_dir) = create_globaldb!().await.unwrap();
+        let globaldb = Arc::new(globaldb);
+        let (test_userdb, userdb_dir) = create_test_userdb!();
         let mut userdb = DBHandler::new();
-        userdb.client = create_test_userdb!().client;
+        userdb.client = test_userdb.client;
+        let data_dir = tempfile::tempdir().expect("Failed to create temp data dir");
         let coingecko = Arc::new(Coingecko::new(
             globaldb.clone(),
             "http://fake.coingecko.test".to_string(),
         ));
         let evm_manager = Arc::new(EvmInquirerManager::new(globaldb.clone()));
-        Arc::new(AppState {
-            data_dir: std::env::temp_dir(),
+        let state = Arc::new(AppState {
+            data_dir: data_dir.path().to_path_buf(),
             globaldb,
             coingecko,
             userdb: Arc::new(RwLock::new(userdb)),
             active_tasks: Arc::new(Mutex::new(HashSet::new())),
             evm_manager,
-        })
+        });
+        (state, vec![globaldb_dir, userdb_dir, data_dir])
     }
 
     async fn call_oracle_prices(
@@ -145,7 +151,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_oracle_prices_filters_and_paginates() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         {
             let conn = state.globaldb.conn.lock().await;
             conn.execute(
@@ -220,7 +226,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_oracle_prices_maps_frontend_source_type_to_db_value() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         {
             let conn = state.globaldb.conn.lock().await;
             conn.execute(
@@ -281,7 +287,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_oracle_price_existence_reports_oracle_rows_only() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         {
             let conn = state.globaldb.conn.lock().await;
             // ETH has a coingecko (oracle) row -> true.
@@ -324,7 +330,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_oracle_prices_rejects_invalid_source_type() {
-        let state = create_test_state().await;
+        let (state, _tmp_dirs) = create_test_state().await;
         let (status, body) = call_oracle_prices(
             state,
             OraclePricesQuery {

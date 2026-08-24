@@ -85,6 +85,53 @@ pnpm run test:unit
 pnpm run typecheck
 ```
 
+#### Attaching a devtools client to the Electron window (`DEBUGGER_PORT`)
+
+`pnpm dev` can start Electron with Chromium's remote debugging endpoint open, so an external CDP
+client (Chrome DevTools, `connectOverCDP` from Playwright or Puppeteer, an MCP devtools server) can
+inspect and drive the running app. It is off unless you ask for it.
+
+Set the port in `frontend/app/.env.development.local`, which is gitignored:
+
+```bash
+DEBUGGER_PORT=9222
+```
+
+`pnpm dev` then forwards `--remote-debugging-port=9222` to the Electron child and logs
+`starting rotki with args: --remote-debugging-port=9222` at startup. Attach on
+`http://127.0.0.1:9222`.
+
+- Do not put it in `frontend/app/.env`: that file is tracked, so the value would apply to everyone.
+- Electron only. `pnpm dev:web` drops the flag, because in web mode there is no Electron child to
+  pass it to.
+- It is not allocated per dev instance the way the dev/REST/proxy/colibri ports are, so two
+  instances started with the same `DEBUGGER_PORT` collide and the second Electron comes up without
+  a debugger. Give each instance its own value if you run more than one at a time. Anything outside
+  13000-22995 (the instance port block) and clear of 9229 (node `--inspect`) works; 9222 is
+  Chromium's own default.
+
+The wiring, if you need to change it: `getDebuggerPort()` in
+`frontend/scripts/dev/prerequisites.ts` reads the variable, `startDevServer()` in
+`frontend/scripts/dev/services.ts` appends the flag, and `frontend/app/scripts/serve.ts` passes it
+to the spawned Electron process.
+
+An MCP-based assistant can reach the same endpoint through a stdio devtools server:
+
+```json
+{
+  "mcpServers": {
+    "electron-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:9222"]
+    }
+  }
+}
+```
+
+Keep that configuration outside the repository (user-level assistant settings, or an untracked
+`.mcp.json` above the checkout) so it is not imposed on contributors who do not use the tool.
+
 #### Command durations: always set an explicit timeout
 
 The frontend gates are slow, and CI is slower than a development machine. Budget against a slow-CI
@@ -469,21 +516,75 @@ free of side effects.
 - Avoid dynamic keys for translations, as they can break the linter.
 
 #### Testing
-- Run all tests with `pnpm run test:unit` from `frontend/` directory
-- Run a single test file: `pnpm run test:unit src/modules/path/to/file.spec.ts` (no `-- --run` needed)
-- Use Vitest for unit tests with Vue Test Utils
-- **Unit test file naming**: `.spec.ts` files should follow the naming of the tested file and be located in the same folder
+
+Vitest with Vue Test Utils for units and components, Playwright for e2e. This section is the single
+home for how to write a frontend test. See "Fast checks via pnpm scripts" immediately below for how
+to run one, and `## Testing Strategy` for running e2e.
+
+##### Where specs live
+
+- **Co-located** next to the source file they test, never in a separate `tests/` directory. The
+  `.spec.ts` takes the name of the file it tests:
   ```
-  // Example structure:
   src/modules/balances/use-balances-store.ts
   src/modules/balances/use-balances-store.spec.ts
-
-  src/modules/accounts/use-account-import-export.ts
-  src/modules/accounts/use-account-import-export.spec.ts
   ```
-- **All unit tests are co-located** next to the source file they test (not in a separate `tests/` directory)
-- Test descriptions must follow the `it('should ...'` pattern
-- Component tests should follow existing patterns in co-located `*.spec.ts` files
+- Shared fixtures, mocks and setup stay in `frontend/app/tests/unit/`, imported through `@test/*`.
+- Test descriptions follow the `it('should ...')` pattern.
+
+##### Testing components that are not pure display
+
+**Component tests are not optional here, and this is the single most important thing in this
+section.** Measured 2026-08-17 against the coverage push in rotki/rotki#11252: `.ts` files sit at
+~86% line coverage, `.vue` files at ~34%. Covering every remaining line of every `.ts` file would
+still leave the project short of its 70% target, so the uncovered lines that matter are logic living
+inside SFCs. Roughly 256 of ~875 specs already mount a component; follow them. Re-measure with
+`pnpm run test:unit` rather than trusting these figures indefinitely.
+
+**Extract before you test.** A component holding a hundred lines of script is the hardest thing to
+test and the thing the SFC size guidance above already says to split. Move the logic into a
+`use-*.ts` beside it, test that directly with no mounting or stubs, and let the component spec cover
+the wiring that remains. Testing a fat component first *pins its current shape*: the spec becomes an
+obstacle to the extraction that should have happened first. `accounts/management/AccountForm.vue`
+is the standing example of the cost, with 317 script lines now held in place by a spec.
+
+**Name the seam, then test only that.** Before writing assertions, decide what this component
+promises its parent, and put it in a comment at the top of the spec. In practice the seam is some
+combination of:
+- what it **renders** for a given set of props (`data-testid` queries, not classes or child
+  internals),
+- what it **emits**, and with what payload (`wrapper.emitted('update:modelValue')`),
+- what it **calls** on an injected composable or store, and
+- what it **disables or enables**, which for a form is usually the real validity contract.
+
+`modules/auth/login/LoginForm.spec.ts` is a good model: it states the seam in a header comment,
+types its mocks off the real composables (`ReturnType<typeof useSavedProfiles>`) so a drift in a
+dependency fails the typecheck instead of silently passing a test, and explains which binding the
+tests exist to catch.
+
+**Do not assert implementation detail.** No reaching into `wrapper.vm` for internal refs, no
+asserting the class list of a child component. Those tests break on every refactor and catch nothing.
+
+**A mount-only test is worse than no test.** `mount()` alone lights up most of a component's lines,
+because v8 counts template lines, so it moves the coverage number while proving nothing. If the only
+assertion is that the component rendered, either write a real assertion or skip the file. Pure
+presentational wrappers with no logic are legitimately not worth testing.
+
+**Unmount what you mount.** A spec that leaves wrappers alive leaks reactive instances. Where the
+module under test holds a shared module-level `ref`, leaked components keep reacting to it and their
+effects run during *later* tests, surfacing as calls on a mock the failing test never touched. Track
+the wrappers and unmount them in `afterEach`; ~148 specs already do.
+
+**Mocking notes.**
+- A component rendered inside `RuiDialog` (or any teleporting overlay) is not inside the wrapper.
+  Stub the dialog with a pass-through (`template: '<div v-if="modelValue"><slot /></div>'`) so its
+  contents can be queried.
+- `happy-dom` reports every element as zero-height, so anything driven by measured layout
+  (`useVirtualList`, `useElementSize`, `useFocusWithin`) does not behave as it does in a browser.
+  Stub it and assert the configuration you pass it, then check the real behaviour in the app.
+
+##### Writing any spec
+
 - **Re-run the full `pnpm run typecheck` after editing any `.spec.ts`**, even if you typechecked
   earlier in the change. The "Frontend lint" CI job runs `pnpm run build`, and `vue-tsc --build`
   type-checks specs too, so a green `test:unit` plus a green `lint:file:check` does not prove the
@@ -505,6 +606,10 @@ free of side effects.
     branded, class, or large types where the test only reads a few fields, instead of a
     `as unknown as T` double cast. It returns a `Proxy`, so proxies do not deep-equal: build a real
     object when you need `toEqual`.
+    ⚠️ The proxy answers **every** property, so anything you did not set reads back as an
+    auto-stub, which is **truthy**. A boolean you omit therefore behaves as `true`: leaving
+    `isComposing` off a mocked `KeyboardEvent` makes every key look like it arrived mid-IME
+    composition. Set the booleans your code under test reads, explicitly.
   - `mockT` from `@test/i18n` is the echo translator. `useI18n` is globally mocked in
     `tests/unit/setup-files/setup.ts` to use it, so composables calling `useI18n()` get `t` for free.
   - Other fixtures: `@test/mocks/file`, `@test/utils/create-pinia`, `@test/utils/events`.
@@ -513,7 +618,32 @@ free of side effects.
   so a `data-testid` on a `Rui*` component falls through `$attrs` onto its root element.
 - **e2e: never locate a row by index.** Anchoring a history-events assertion on row position makes
   the test pass for the wrong reason as soon as ordering or fixture data shifts. Anchor on fixture
-  content, and pair the assertion with a negative control that proves the test can fail.
+  content. Counting rendered rows in a virtualized list asserts the overscan, not the data.
+
+##### Proving the test works
+
+**A passing test is not evidence that the code works; it is evidence that the test passed.** Before
+citing a suite as proof, break the thing it covers and watch it go red. Revert the fix, invert the
+condition, or delete the guard, run the spec, then restore. This costs one extra run and is the only
+thing that separates a test from a decoration.
+
+- **Break the specific line, not the feature.** Deleting a whole function fails everything and tells
+  you nothing about which test was doing the work.
+- **Check the right tests failed, and only those.** If fewer fail than you expected, the surplus
+  tests are not testing what their names claim.
+- **A negative control that passes is a finding.** It means the test cannot fail, so it is not
+  pinning the behaviour. Re-aim it rather than shrugging. The usual cause is an assertion that agrees
+  with both the correct and the broken behaviour: asserting a value the buggy path also produces,
+  or hovering the row the keyboard had already moved to.
+- **One control proves one test.** It says nothing about its neighbours.
+- Assertions of the form "was not called" and "emitted nothing" are the likeliest to pass for the
+  wrong reason, because an exception thrown mid-handler produces exactly that. Control them first.
+
+##### Gates before pushing
+
+`pnpm run test:unit`, `pnpm run lint:file:check`, `pnpm run lint:style` and `pnpm run typecheck`
+are not the whole set. **`pnpm run knip` runs in CI and no local lint script invokes it**, so an
+export used only inside its own file passes every local gate and fails the PR. Run it before pushing.
 
 #### Fast checks via pnpm scripts
 
@@ -701,6 +831,42 @@ alphabetically sorted). A key referenced only from the registry/catalog must be 
 | Category visual grouping | `frontend/app/src/modules/settings/SettingCategory.vue` |
 | Settings pages | `frontend/app/src/pages/settings/*/index.vue` |
 
+### Navigation, search & tab metadata (`meta.nav`)
+
+Routing uses the typed, file-based router (`unplugin-vue-router`). Route **names are generated from the file path** (e.g. `pages/balances/blockchain/index.vue` -> `'/balances/blockchain/'`); do not add custom `name:` overrides. Navigate by typed name: `router.push({ name: '/balances/blockchain/' })` or `<RouterLink :to="{ name: '/balances/blockchain/' }">`. The drawer, the global search palette and sub-page tab bars are all **derived from route meta** - there is no route registry to maintain.
+
+Add navigation for a page by declaring `nav` in its `definePage`:
+
+```ts
+definePage({
+  meta: {
+    nav: {
+      labelKey: 'navigation_menu.balances_sub.blockchain_balances', // i18n key (required)
+      icon: 'lu-blockchain',                                        // RuiIcons (required)
+      parent: '/balances/',      // logical parent: drawer nesting + search breadcrumb
+      order: 10,                 // order among siblings
+      section: 1,                // drawer top-level section (dividers between sections); omit for sub-items
+      drawer: 'balances-blockchain', // present => shown in the drawer; value is the entry's data-key test selector
+      searchable: false,         // optional: exclude from the (default-on) search palette
+      keywords: ['some.i18n.alias'], // optional: extra i18n keys the search palette matches
+    },
+  },
+});
+```
+
+Rules of thumb:
+- **Drawer entry**: set `drawer` (the test id). Top-level items also set `section` + `order`; sub-items set `parent` + `order` (the parent route must also have a `nav`). `useNavigationMenu` builds the tree.
+- **Search palette**: every route with `nav` is searchable automatically (the superset of the drawer) unless `searchable: false`. The breadcrumb is the `nav.labelKey` of the route named by `parent`. `useRouteSearch` builds it; `GlobalSearch.vue` renders it.
+- **Sub-page tab bars**: use `useChildNavTabs('/parent/')` when the bar is every child of a parent (e.g. price-manager), or `useNavTabs(['/a/', '/b/'])` for a specific subset/order (e.g. asset-manager/more). Both live in `use-nav-tabs.ts`.
+- **Settings tabs**: each tab's route/label/icon comes from its page `nav`; the per-setting search rows are derived from the settings registry + `settings-search-catalog.ts` (no hand-maintained per-tab list).
+
+| Purpose | File |
+|---------|------|
+| `nav` meta type | `frontend/app/src/types/router.d.ts` |
+| Drawer derivation | `frontend/app/src/modules/shell/layout/use-navigation-menu.ts` |
+| Search derivation | `frontend/app/src/modules/shell/layout/use-route-search.ts` |
+| Tab bars from meta | `frontend/app/src/modules/shell/layout/use-nav-tabs.ts` |
+
 ### Adding EVM protocol decoders
 
 As an example decoder, we can look at [MakerDAO](https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/decoder.py).
@@ -843,8 +1009,6 @@ When editing backend Python and tests, follow these preferences unless explicitl
  - Match nearby file style even if generic Python style differs.
  - For rotki tests, prefer concise expected-event construction with inline assignments where practical.
 
-## Testing Strategy
-
 ### Historical balance / accounting refactor context
 
 When a user mentions the "accounting refactor", "accounting buckets", "balance buckets", or issue/PR `#12204`, assume they are referring to the historical balance engine in `rotkehlchen/tasks/historical_balances.py` and its `event_metrics` bucket tracking, not the legacy accounting pot/cost-basis code unless they explicitly say cost basis or PnL accounting.
@@ -856,8 +1020,10 @@ Key files:
 - `rotkehlchen/db/history_events.py` — stale marker invalidation when events change.
 - `rotkehlchen/tests/unit/test_historical_balances.py` and `rotkehlchen/tests/api/test_historical_balances.py` — primary tests.
 
+## Testing Strategy
+
 ### Backend Testing
-- Uses pytest with gevent for async testing
+- Uses pytest, with concurrency via rotkehlchen.concurrency tasks (threads)
 - Extensive fixtures in `rotkehlchen/tests/fixtures/`
 - Mock external APIs for deterministic tests
 - Database fixtures for integration testing
@@ -866,11 +1032,16 @@ Key files:
 - For Etherscan use the api key from ETHERSCAN_API_KEY env variable and use etherscan v2. It's as v1 but using https://api.etherscan.io/v2/api?chainid=${chainid} . As described here: https://docs.etherscan.io/etherscan-v2. If there is no API key in the env variable then prompt the user for it when you need to query etherscan.
 
 ### Frontend Testing
-- Vitest for unit tests with Vue Test Utils
-- **Unit tests are co-located**: `.spec.ts` files live next to the source file they test in `frontend/app/src/`
-- Test utilities (fixtures, mocks, setup) remain in `frontend/app/tests/unit/`
-- Playwright for E2E testing (specs in `frontend/app/tests/e2e/specs/`, page objects in `frontend/app/tests/e2e/pages/`, helpers in `frontend/app/tests/e2e/helpers/`)
-- Test descriptions must follow the `it('should ...'` pattern
+
+**How to write a frontend test is documented once, under "Testing" in the Frontend Development
+Guidelines above.** That covers unit specs, component specs (including why they are mandatory and
+how to test a component that is not pure display), negative controls and the gates. Do not restate
+it here; a second copy drifts from the first.
+
+Layout only:
+- Unit and component specs are co-located in `frontend/app/src/`; fixtures, mocks and setup are in
+  `frontend/app/tests/unit/`.
+- Playwright e2e lives in `frontend/app/tests/e2e/`: `specs/`, `pages/` for page objects, `helpers/`.
 
 #### Running e2e locally, sharded
 

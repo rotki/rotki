@@ -148,3 +148,16 @@ export function validCounterparty(counterparties: () => string[]): z.ZodType<str
 export function serverValidatedOnly(): z.ZodString {
   return z.string();
 }
+
+/**
+ * A value the form carries but never validates, named so that the absence of a rule reads as a
+ * decision rather than an omission.
+ *
+ * `priceIntent` is a pending historic-price write that `HistoryEventAssetPriceForm` reports upwards
+ * for the form to run at save time. It is bound to no input of its own, so a structural rule over it
+ * could only fail with nothing on screen to explain why, the same error-sink the no-op Vuelidate
+ * rules were. Its shape is enforced by `PriceIntent` at the type level instead.
+ */
+export function carriedThrough(): z.ZodOptional<z.ZodUnknown> {
+  return z.unknown().optional();
+}

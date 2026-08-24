@@ -526,17 +526,9 @@
         "description": "Failed to match bridge transaction: {error}",
         "title": "Bridge Transaction Matching"
       },
-      "external_success": {
-        "description": "Bridge deposit marked as a payment to an external address.",
-        "title": "Bridge Transaction Resolved"
-      },
       "fetch_error": {
         "description": "Failed to fetch unmatched bridge transactions: {error}",
         "title": "Fetching Unmatched Bridge Transactions"
-      },
-      "ignored": {
-        "description": "It moved to the ignored list.",
-        "title": "Transaction ignored"
       },
       "success": {
         "description": "Bridge transaction successfully matched to its counterpart event.",
@@ -1157,6 +1149,9 @@
     },
     "underlying_tokens": "Underlying tokens",
     "validation": {
+      "address_non_empty": "The address cannot be empty",
+      "asset_type_non_empty": "The type of the asset cannot be empty",
+      "collectible_id_non_empty": "The collectible id cannot be empty",
       "valid_address": "Please input valid address"
     }
   },
@@ -1351,6 +1346,7 @@
     }
   },
   "asset_select": {
+    "label": "Asset",
     "no_results": "No assets matching your search",
     "placeholder": "Search by asset symbol, name, or the contract address."
   },
@@ -1809,9 +1805,7 @@
     "refresh_tooltip": "Refresh Binance market pairs"
   },
   "blockchain_account_selector": {
-    "all": "all",
     "default_label": "Filter account(s)",
-    "hint": "Showing results across {hintText} accounts.",
     "no_data": "No more usable addresses"
   },
   "blockchain_balances": {
@@ -1876,6 +1870,7 @@
     "dialog": {
       "confirm_ignore": "Ignore this transaction?",
       "confirm_mark_external": "Resolve as an external payment?",
+      "confirm_mark_external_in": "Resolve as external income?",
       "create_counterpart": "Create Counterpart",
       "create_counterpart_in_tooltip": "Create a synthetic mirror event on the source chain and link it to this bridge withdrawal. Use this when the source chain can no longer be queried, so the transfer stays a movement of your own funds.",
       "create_counterpart_tooltip": "Create a synthetic mirror event on the destination chain and link it to this bridge deposit. Use this when the destination chain can no longer be queried, so the transfer stays a movement of your own funds.",
@@ -1905,6 +1900,11 @@
     "premium": {
       "free_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. {link} to unlock this feature.",
       "premium_tooltip": "Bridge transaction matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+    },
+    "resolved": {
+      "external_deposit": "Bridge deposit resolved as a payment to an external address.",
+      "external_withdrawal": "Bridge withdrawal resolved as income from an external address.",
+      "ignored": "Bridge transaction marked as having no counterpart. It moved to the ignored list."
     }
   },
   "calendar": {
@@ -2578,7 +2578,6 @@
               "location": "The location's balance data is adjusted automatically to keep its subtotal reconciled with the total."
             },
             "nft": "NFT",
-            "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
             "only_show_existing": "Only show existing locations",
             "preview": {
               "from": "From",
@@ -3212,6 +3211,11 @@
       "title": "Alchemy"
     },
     "api_key": "API key",
+    "api_key_menu": {
+      "consensus_rpc_title": "Staking data source",
+      "dismiss": "Don't show again",
+      "optional": "Optional API key"
+    },
     "beaconchain": {
       "api_key_message": "If you have a Beaconcha.in API key, you can add it here to retrieve block production history and improved staking analytics. It is not required to add a validator.",
       "description": "rotki uses Beaconcha.in to retrieve block production history and improved staking analytics. An API key is needed if you want this data.",
@@ -3287,6 +3291,7 @@
         "connected_address": "Connected Address",
         "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
         "disconnect": "Disconnect Wallet",
+        "domain_notice": "Your wallet may warn that the site does not match the domain in the message. This is expected: the page asking for the signature is not served from rotki.com, but Gnosis Pay only accepts rotki.com in the message. Before approving, check that the message names Gnosis Pay and the address is yours.",
         "explanation": "To authenticate with Gnosis Pay, you need to sign a message with an Ethereum wallet that is a controller of the Gnosis Pay Safe.",
         "failed": "Failed to authenticate Gnosis Pay",
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
@@ -5968,7 +5973,12 @@
       "narrow": "Filter…",
       "narrow_empty": "No matches",
       "remove": "Remove filter",
-      "search": "Filter by…"
+      "search": "Filter by…",
+      "syntax": {
+        "date_keywords": "date time when period since after before until",
+        "label": "Type directly:",
+        "range_keywords": "amount number value range more less over under above below at least at most"
+      }
     },
     "saved_views": {
       "actions": {
@@ -6232,6 +6242,9 @@
       "title": "rotki Browser Wallet Bridge",
       "wallet_status": "Wallet Status"
     },
+    "errors": {
+      "rejected": "Request is rejected by user"
+    },
     "never_interacted": "You have never interacted with this address before.",
     "recent_transactions": {
       "no_data": "No recent transactions",
@@ -6245,9 +6258,13 @@
       "tracked_addresses": "Tracked Addresses"
     },
     "select_asset": {
+      "asset_count": "{count} asset | {count} assets",
       "balance": "Balance",
       "max": "Max",
       "no_assets_found": "No assets found",
+      "no_search_results": "No assets match \"{query}\"",
+      "result_count": "{count} of {total}",
+      "search": "Search by symbol or name",
       "select_token": "Select a token",
       "title": "Select Asset"
     },

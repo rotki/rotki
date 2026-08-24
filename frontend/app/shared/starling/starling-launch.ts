@@ -1,8 +1,8 @@
-import type { StarlingBackendOptions, StarlingInvocation } from './starling-args';
 import type { StarlingRpc } from './starling-rpc';
 import { type ChildProcess, spawn } from 'node:child_process';
 import process from 'node:process';
 import readline from 'node:readline';
+import { SHUTDOWN_GRACE_SECS, type StarlingBackendOptions, type StarlingInvocation } from './starling-args';
 import { StarlingMethod } from './starling-protocol';
 
 /** How the supervisor went away: an exit code, or the signal that killed it. */
@@ -87,6 +87,100 @@ export async function requestStarlingStart(
   loglevel: string,
 ): Promise<void> {
   await rpc.request(StarlingMethod.START, { ...definedOptions(options), loglevel });
+}
+
+/** The two lines this teardown has to say. Satisfied by LogService, consola and the dev logger alike. */
+export interface StopStarlingLogger {
+  debug: (message: string) => void;
+  warn: (message: string) => void;
+}
+
+export interface StopStarlingOptions {
+  /** The control client. Its `stop` is the ordered-teardown request. */
+  rpc: StarlingRpc;
+  child: ChildProcess;
+  /** Settles once the child is gone — `StarlingProcess.exited`, or any promise that tracks it. */
+  exited: Promise<unknown>;
+  /**
+   * How long `stop` may take to answer. starling only replies once the backend tree is down, which
+   * it gives itself `SHUTDOWN_GRACE_SECS` to do, so anything shorter gives up on a shutdown that is
+   * still going fine.
+   */
+  stopTimeoutMs?: number;
+  /** Extra time the supervisor gets to exit itself once its own grace elapsed, before SIGKILL. */
+  exitMarginMs?: number;
+  logger?: StopStarlingLogger;
+}
+
+export interface StopStarlingResult {
+  /** The child was already gone, so nothing was requested. */
+  alreadyExited: boolean;
+  /** `stop` answered within its timeout, rather than the timeout winning the race. */
+  acknowledged: boolean;
+  /** The supervisor had to be SIGKILLed because it outlasted both waits. */
+  killed: boolean;
+}
+
+const SECOND = 1000;
+const DEFAULT_EXIT_MARGIN_MS = 5_000;
+
+/**
+ * Local on purpose. `shared/utils.ts` has the same helper, but it is not in the tsconfig project
+ * that compiles `shared/starling/` (TS6307), so importing it there does not typecheck — which is
+ * why this timer was hand-written in each launcher to begin with.
+ */
+async function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Ask starling to stop, give it its own grace, and only then kill it.
+ *
+ * ⚠️ The waits are not politeness. starling spawns core and colibri into their own process groups
+ * precisely so it can reap them, which means **nothing else can**: killing the supervisor before its
+ * escalation has run orphans both. That rule is the reason the supervisor exists, and it was
+ * hand-written three times (electron, dev, e2e) with three different sets of mistakes before it
+ * moved here.
+ *
+ * Callers keep their own re-entry guard. This function does not own one, because the flag also tells
+ * each caller's `exit` handler whether the exit was expected, which is caller state — but it is safe
+ * to call on an already-dead child, which it reports as `alreadyExited`.
+ */
+export async function stopStarling(options: StopStarlingOptions): Promise<StopStarlingResult> {
+  const {
+    rpc,
+    child,
+    exited,
+    stopTimeoutMs = SHUTDOWN_GRACE_SECS * SECOND,
+    exitMarginMs = DEFAULT_EXIT_MARGIN_MS,
+    logger,
+  } = options;
+
+  if (child.exitCode !== null || child.signalCode !== null)
+    return { acknowledged: false, alreadyExited: true, killed: false };
+
+  logger?.debug('stopping starling');
+
+  // A rejected `stop` is not a failure to handle: the child dying mid-request rejects every pending
+  // one (see spawnStarling), and that is the outcome we were waiting for anyway.
+  const acknowledged = await Promise.race([
+    rpc.request(StarlingMethod.STOP).then(() => true).catch(() => false),
+    wait(stopTimeoutMs).then(() => false),
+  ]);
+
+  // Second wait, on the child rather than the request: `stop` answering does not mean the process is
+  // gone, and it timing out does not mean the shutdown failed.
+  const exitedInTime = await Promise.race([
+    exited.then(() => true),
+    wait(exitMarginMs).then(() => false),
+  ]);
+
+  if (exitedInTime || child.exitCode !== null || child.signalCode !== null)
+    return { acknowledged, alreadyExited: false, killed: false };
+
+  logger?.warn('starling did not exit in time, killing it');
+  child.kill('SIGKILL');
+  return { acknowledged, alreadyExited: false, killed: true };
 }
 
 /**

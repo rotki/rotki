@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, NamedTuple, Union
+from typing import TYPE_CHECKING, Final, NamedTuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import OracleSource, Price, Timestamp
@@ -41,6 +41,12 @@ DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = (
     HistoricalPriceOracle.UNISWAPV3,
     HistoricalPriceOracle.UNISWAPV2,
 )
+
+# Oracles whose historical endpoint has daily granularity: one price per UTC day.
+# Coingecko's coins/{id}/history takes only a date and returns the 00:00 UTC snapshot.
+# Prices from these sources are cached at the day-start timestamp so that any other
+# query within the same UTC day is served from the cache instead of the remote oracle.
+DAILY_GRANULARITY_ORACLES: Final = {HistoricalPriceOracle.COINGECKO}
 
 
 class HistoricalPrice(NamedTuple):

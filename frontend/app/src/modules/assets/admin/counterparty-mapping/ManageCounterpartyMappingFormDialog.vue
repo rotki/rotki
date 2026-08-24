@@ -76,7 +76,7 @@ async function save(): Promise<boolean> {
   <BigDialog
     :display="!!modelValue"
     :title="dialogTitle"
-    :primary-action="t('common.actions.save')"
+    :action="{ primary: t('common.actions.save') }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

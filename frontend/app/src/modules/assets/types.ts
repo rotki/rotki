@@ -1,7 +1,48 @@
+import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { AssetCollection, AssetInfoWithId, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
+
+/**
+ * The three groups below are the props `AssetDetails` and `AssetDetailsBase` share. They are grouped
+ * because the groups ARE the forwarding boundary: `AssetDetails` resolves an identifier and hands
+ * display and actions straight through untouched, so every prop added to one had to be added to the
+ * other, and the two counts drifted apart as that upkeep was missed.
+ *
+ * Read every field with `??` rather than spreading a bag over a defaults object: a caller forwarding
+ * an optional value produces a present key holding `undefined`, which a spread would use to clobber
+ * the default.
+ */
+
+/** How the asset is drawn. */
+export interface AssetDisplay {
+  dense?: boolean;
+  iconOnly?: boolean;
+  size?: string;
+  optimizeForVirtualScroll?: boolean;
+}
+
+/** What the user may do with the asset. */
+export interface AssetActions {
+  hideMenu?: boolean;
+  hideActions?: boolean;
+}
+
+/** Which asset this one is. */
+export interface AssetResolution {
+  enableAssociation?: boolean;
+  isCollectionParent?: boolean;
+  forceChain?: string;
+}
+
+/**
+ * Resolving an identifier takes one thing more than resolving an already-resolved asset: the options
+ * handed to `useAssetInfo`.
+ */
+export interface AssetIdentifierResolution extends AssetResolution {
+  options?: AssetResolutionOptions;
+}
 
 export interface AssetDBVersion {
   readonly local: number;

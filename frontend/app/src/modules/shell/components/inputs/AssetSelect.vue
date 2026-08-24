@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
+import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
+import { NftHandling } from '@/modules/assets/nft-handling';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
-import { useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
+import { type AssetSearchSource, useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
 
 defineOptions({
   inheritAttrs: false,
@@ -20,36 +22,40 @@ const modelValue = defineModel<string | undefined>({ required: true });
 const asset = defineModel<AssetInfoWithId | NftAsset | undefined>('asset');
 
 const {
-  chain,
   clearable = false,
   dense = false,
   disabled = false,
   errorMessages = [],
-  excludes = [],
   hideDetails = false,
   hint = '',
-  includeNfts = false,
-  items = [],
-  label = 'Asset',
-  outlined = false,
+  label,
+  variant = 'default',
   required = false,
-  showIgnored = false,
+  source,
   successMessages = '',
 } = defineProps<{
-  items?: string[];
-  excludes?: string[];
+  /**
+   * Which assets may be picked, as one object rather than five loose props.
+   *
+   * These are the five the search itself consumes, and it already took them as a single argument;
+   * stating them together is also what keeps this component's prop list inside the lint ceiling,
+   * which matters here because it is registered globally for the premium bundle, so every prop is
+   * part of an external API.
+   */
+  source?: AssetSearchSource;
   hint?: string;
   successMessages?: string;
   errorMessages?: string[];
   label?: string;
   disabled?: boolean;
-  outlined?: boolean;
+  /**
+   * Passed straight to `RuiAutoComplete`, whose own variant this mirrors. It used to be an
+   * `outlined` boolean, which could name only two of the three the field actually has.
+   */
+  variant?: 'default' | 'filled' | 'outlined';
   clearable?: boolean;
   required?: boolean;
-  showIgnored?: boolean;
   hideDetails?: boolean;
-  includeNfts?: boolean;
-  chain?: string;
   /**
    * Declared rather than left to `$attrs` so the asset itself draws dense too: it used to reach
    * `RuiAutoComplete` and shrink the field while the picked asset stayed at its full size, which is
@@ -65,13 +71,27 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAssetSearch({
-  chain: () => chain,
-  excludes: () => excludes,
-  includeNfts: () => includeNfts,
-  items: () => items,
+  chain: () => source?.chain,
+  excludes: () => source?.excludes ?? [],
+  items: () => source?.items ?? [],
   modelValue,
-  showIgnored: () => showIgnored,
+  nftHandling: () => source?.nfts ?? NftHandling.EXCLUDE,
+  // A selection that drops out of the options takes the resolved asset with it.
+  onSelectionLost: (): void => {
+    onUpdateModelValue('');
+  },
+  showIgnored: () => source?.showIgnored ?? false,
 });
+
+// Defaulted here rather than on the prop, so the fallback is translated: a prop default is a
+// static value and cannot call `t`, which is why it used to read a hardcoded English "Asset".
+const fieldLabel = computed<string>(() => label ?? t('asset_select.label'));
+
+// Both slots render the asset without its context menu; hoisted so the bag is one stable identity
+// rather than a fresh object per rendered row.
+const noMenu: AssetActions = { hideMenu: true };
+
+const itemDisplay = computed<AssetDisplay>(() => ({ dense }));
 
 const errors = computed<string[]>(() => {
   const messages = [...errorMessages];
@@ -86,21 +106,6 @@ function onUpdateModelValue(value: string): void {
   set(modelValue, value);
   set(asset, getVisibleAsset(value));
 }
-
-watch(visibleAssets, (_, oldVisibleAssets) => {
-  const identifier = get(modelValue);
-  if (!identifier || !oldVisibleAssets)
-    return;
-
-  // Only clear if the asset was previously visible and is now not visible
-  // This prevents clearing newly selected values that haven't been loaded yet
-  const wasVisible = oldVisibleAssets.some(asset => asset.identifier === identifier);
-  if (!wasVisible)
-    return;
-
-  if (!getVisibleAsset(identifier))
-    onUpdateModelValue('');
-});
 </script>
 
 <template>
@@ -112,7 +117,7 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
     class="asset-select w-full [&_.group]:py-1.5"
     menu-class="!min-w-full"
     :hint="hint"
-    :label="label"
+    :label="fieldLabel"
     :clearable="clearable"
     :placeholder="t('asset_select.placeholder')"
     :required="required"
@@ -125,7 +130,7 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
     auto-select-first
     :dense="dense"
     :loading="loading"
-    :variant="outlined ? 'outlined' : 'default'"
+    :variant="variant"
     :item-height="dense ? 44 : 50"
     v-bind="$attrs"
     no-filter
@@ -159,7 +164,7 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
           v-else
           class="!py-0 pl-1"
           :asset="item"
-          hide-menu
+          :actions="noMenu"
         />
       </template>
     </template>
@@ -177,8 +182,8 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
         :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"
         :class="dense ? '!py-0 -my-0.5' : '!py-0 -my-1'"
         :asset="item"
-        :dense="dense"
-        hide-menu
+        :display="itemDisplay"
+        :actions="noMenu"
       />
     </template>
     <template #no-data>

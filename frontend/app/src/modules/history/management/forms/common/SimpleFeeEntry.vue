@@ -69,11 +69,10 @@ watchImmediate(() => location, (newLocation) => {
         />
         <AssetSelect
           v-model="modelValue.asset"
-          outlined
-          show-ignored
+          variant="outlined"
           :disabled="disabled"
           data-testid="fee-asset"
-          :chain="chain"
+          :source="{ chain, showIgnored: true }"
           :error-messages="errorMessages.asset"
           @blur="emit('blur', 'asset')"
         />

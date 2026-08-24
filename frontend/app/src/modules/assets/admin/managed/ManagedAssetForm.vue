@@ -1,29 +1,25 @@
 <script setup lang="ts">
+import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
+import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import type { SelectOption } from '@/modules/core/common/common-types';
-import {
-  EvmTokenKind,
-  isValidEthAddress,
-  onlyIfTruthy,
-  type SupportedAsset,
-  toSentenceCase,
-  type UnderlyingToken,
-} from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
-import { omit, pick } from 'es-toolkit';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
+import { decimalsTextModel, startedEpochModel } from '@/modules/assets/admin/asset-field-models';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
-import { prepareNonEvmAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
-import { useManagedAssetFormValidation } from '@/modules/assets/admin/managed/use-managed-asset-form-validation';
+import { toAssetTypeOptions, useAssetKind } from '@/modules/assets/admin/managed/asset-kind';
+import {
+  type ManagedAssetFormState,
+  managedAssetSchema,
+  toManagedAssetFormState,
+} from '@/modules/assets/admin/managed/managed-asset-form';
+import ManagedAssetOracleFields from '@/modules/assets/admin/managed/ManagedAssetOracleFields.vue';
+import { useManagedAssetErrors } from '@/modules/assets/admin/managed/use-managed-asset-errors';
+import { useManagedAssetSave } from '@/modules/assets/admin/managed/use-managed-asset-save';
+import { useManagedTokenLookup } from '@/modules/assets/admin/managed/use-managed-token-lookup';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
-import { type ManagedAssetPayload, useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
-import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
+import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
-import HelpLink from '@/modules/shell/components/HelpLink.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
@@ -37,208 +33,72 @@ const { editMode = false, assetTypes } = defineProps<{
   assetTypes: string[];
 }>();
 
-const fetching = ref<boolean>(false);
-const dontAutoFetch = ref<boolean>(false);
+const { t } = useI18n({ useScope: 'global' });
+
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
-const identifier = useRefPropVModel(modelValue, 'identifier');
-const address = refOptional(useRefPropVModel(modelValue, 'address'), '');
-const name = refOptional(useRefPropVModel(modelValue, 'name'), '');
-const symbol = refOptional(useRefPropVModel(modelValue, 'symbol'), '');
-const decimals = useRefPropVModel(modelValue, 'decimals');
-const coingecko = refOptional(useRefPropVModel(modelValue, 'coingecko'), '');
-const cryptocompare = refOptional(useRefPropVModel(modelValue, 'cryptocompare'), '');
-const assetType = useRefPropVModel(modelValue, 'assetType');
-const evmChain = useRefPropVModel(modelValue, 'evmChain');
-const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
-const protocol = refOptional(useRefPropVModel(modelValue, 'protocol'), '');
-const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
-const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
-const isRebasing = refOptional(useRefPropVModel(modelValue, 'isRebasing'), false);
-const started = useRefPropVModel(modelValue, 'started');
-const collectibleId = refOptional(useRefPropVModel(modelValue, 'collectibleId'), '');
+const { allEvmChains } = useSupportedChains();
 
-const startedModel = computed<number>({
-  get: () => {
-    const startedVal = get(started);
-    return startedVal || 0;
-  },
-  set: (value?: number) => {
-    set(started, value || 0);
-  },
-});
+// Read off the payload rather than the form state below, which keeps this side of the form free of
+// the state it has not created yet. Every edit is mirrored into the payload on a pre-flush watcher,
+// so what these answer is current by the time anything renders or validates.
+const identifier = computed<string>(() => get(modelValue).identifier);
 
-const decimalsModel = computed({
-  get() {
-    return `${get(decimals)}`;
-  },
-  set(value: string) {
-    set(decimals, parseDecimals(value));
-  },
-});
-
-const { t } = useI18n({ useScope: 'global' });
-const { allEvmChains, txEvmChains } = useSupportedChains();
-const { fetchTokenDetails } = useAssetInfoRetrieval();
-const { addAsset, editAsset } = useAssetManagementApi();
-
-const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
-const isHyperliquidToken = computed<boolean>(() => get(assetType) === HYPERLIQUID_TOKEN);
-const isSolanaToken = computed<boolean>(() => get(assetType) === SOLANA_TOKEN);
-const isNft = computed<boolean>(() => get(tokenKind) === EvmTokenKind.ERC721);
-
-const isTokenRequiresAddress = logicOr(isEvmToken, isHyperliquidToken, isSolanaToken);
-
-const states = {
-  address,
-  assetType,
-  coingecko,
-  collectibleId,
-  cryptocompare,
-  decimals,
-  evmChain,
-  forked,
-  isRebasing,
-  name,
-  protocol,
-  started,
-  swappedFor,
-  symbol,
-  tokenKind,
-};
-
-const { toMessages, v$ } = useManagedAssetFormValidation({
-  errors,
+const {
   isEvmToken,
   isHyperliquidToken,
   isNft,
   isSolanaToken,
-  isTokenRequiresAddress,
-  states,
-  stateUpdated,
+  requiresAddress: isTokenRequiresAddress,
+} = useAssetKind(() => get(modelValue).assetType, () => get(modelValue).tokenKind);
+
+const { saveAsset } = useManagedAssetSave({
+  asset: modelValue,
+  editMode: () => editMode,
+  underlyingTokens,
 });
 
-function parseDecimals(value?: string): number | null {
-  if (!value)
-    return null;
+const { clearFields } = useManagedAssetErrors(errors, () => get(modelValue).assetType);
 
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? null : parsedValue;
-}
+const schema = computed<ZodType>(() => managedAssetSchema({
+  addressInvalid: t('asset_form.validation.valid_address'),
+  addressMissing: t('asset_form.validation.address_non_empty'),
+  assetTypeMissing: t('asset_form.validation.asset_type_non_empty'),
+  collectibleIdMissing: t('asset_form.validation.collectible_id_non_empty'),
+}, {
+  isNft: get(isNft),
+  requiresAddress: get(isTokenRequiresAddress),
+}));
 
-function clearFieldError(field: keyof SupportedAsset) {
-  set(errors, omit(get(errors), [field]));
-}
+// The inputs bind into `form.state` directly. Mapping the optional text fields to a string once,
+// here, is what saves every one of them a writable computed of its own.
+const form = useMappedModelForm<SupportedAsset, ManagedAssetFormState>({
+  model: modelValue,
+  schema,
+  serverErrors: errors,
+  stateUpdated,
+  toModel: (state, asset): SupportedAsset => ({ ...asset, ...state }),
+  toState: toManagedAssetFormState,
+});
 
-function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
-  fields.forEach(clearFieldError);
-}
+const startedModel = startedEpochModel(toRef(form.state, 'started'));
+const decimalsModel = decimalsTextModel(toRef(form.state, 'decimals'));
 
-async function saveAsset() {
-  let newIdentifier: string;
-  const data = get(modelValue);
-
-  const payload: SupportedAsset = omit({
-    ...data,
-    coingecko: get(coingecko),
-    cryptocompare: get(cryptocompare),
-    evmChain: get(evmChain) || null,
-    forked: get(forked) || undefined,
-    protocol: onlyIfTruthy(get(protocol)),
-    swappedFor: onlyIfTruthy(get(swappedFor)),
-    tokenKind: get(tokenKind) || null,
-    underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
-  }, ['ended', 'active', 'customAssetType']);
-
-  let assetPayload: ManagedAssetPayload = payload;
-
-  if (!get(isEvmToken)) {
-    assetPayload = {
-      ...prepareNonEvmAssetPayload(assetPayload),
-      isRebasing: false,
-    };
-  }
-  else if (get(isNft)) {
-    assetPayload = {
-      ...assetPayload,
-      isRebasing: false,
-    };
-  }
-  else {
-    assetPayload = omit(assetPayload, ['collectibleId']);
-  }
-
-  if (editMode) {
-    newIdentifier = get(identifier);
-    await editAsset({ ...assetPayload, identifier: newIdentifier });
-  }
-  else {
-    ({ identifier: newIdentifier } = await addAsset(omit(assetPayload, ['identifier'])));
-  }
-  return newIdentifier;
-}
+// The lookup writes what it found into the payload, which the mirroring brings back into the state,
+// so a filled-in name lands in the input the same way a typed one does.
+const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup({
+  address: () => form.state.address,
+  asset: modelValue,
+  evmChain: () => get(modelValue).evmChain,
+  onFilled: clearFields,
+});
 
 function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
-async function fetchTokenData(address: string, evmChain: string): Promise<void> {
-  if (!isValidEvmChain(evmChain)) {
-    return;
-  }
-  set(fetching, true);
-
-  try {
-    const tokenInfo = pick(get(modelValue), ['decimals', 'name', 'symbol']);
-    const tokenDetails = await fetchTokenDetails({ address, evmChain });
-
-    const updateTokenInfo = {
-      decimals: tokenDetails.decimals ? tokenDetails.decimals : tokenInfo.decimals,
-      name: tokenDetails.name ? tokenDetails.name : tokenInfo.name,
-      symbol: tokenDetails.symbol ? tokenDetails.symbol : tokenInfo.symbol,
-    };
-
-    set(modelValue, { ...get(modelValue), ...updateTokenInfo });
-    clearFieldErrors(['decimals', 'name', 'symbol']);
-  }
-  finally {
-    // Always re-enable the fields, even if the lookup throws, so the form never stays locked.
-    set(fetching, false);
-  }
-}
-
-async function refreshTokenData() {
-  if (!isDefined(evmChain)) {
-    return;
-  }
-
-  await fetchTokenData(get(address), get(evmChain));
-}
-
-function isValidEvmChain(evmChain: string) {
-  return get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain);
-}
-
-const types = computed(() => assetTypes.filter(item => item !== CUSTOM_ASSET)
-  .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })));
-
-watch([address, evmChain], async ([address, evmChain]) => {
-  if (!evmChain)
-    return;
-
-  if (get(dontAutoFetch) || !isValidEthAddress(address)) {
-    set(dontAutoFetch, false);
-    return;
-  }
-
-  await fetchTokenData(address, evmChain);
-});
-
-watch(assetType, () => {
-  // clearing errors because the errors are unique based on the asset type
-  set(errors, {});
-});
+const types = computed<ReturnType<typeof toAssetTypeOptions>>(() => toAssetTypeOptions(assetTypes));
 
 watchImmediate(modelValue, (asset: SupportedAsset) => {
   if (asset.underlyingTokens && asset.underlyingTokens.length > 0) {
@@ -250,13 +110,15 @@ watchImmediate(modelValue, (asset: SupportedAsset) => {
 });
 
 onMounted(() => {
-  set(dontAutoFetch, editMode);
+  // An opened edit dialog seeds the address it already has, which must not read as a fresh one.
+  if (editMode)
+    suppressNextLookup();
 });
 
 defineExpose({
   saveAsset,
   saveIcon,
-  validate: () => get(v$).$validate(),
+  validate: (): boolean => form.validate(),
 });
 </script>
 
@@ -283,11 +145,11 @@ defineExpose({
         data-testid="type-select"
       >
         <RuiMenuSelect
-          v-model="assetType"
+          v-model="form.state.assetType"
           :label="t('asset_form.labels.asset_type')"
           :options="types"
           :disabled="types.length === 1 || editMode"
-          :error-messages="toMessages(v$.assetType)"
+          :error-messages="form.errors('assetType')"
           key-attr="key"
           text-attr="label"
           variant="outlined"
@@ -297,11 +159,11 @@ defineExpose({
       <template v-if="isEvmToken">
         <div data-testid="chain-select">
           <RuiAutoComplete
-            v-model="evmChain"
+            v-model="form.state.evmChain"
             :label="t('asset_form.labels.chain')"
             :options="allEvmChains"
             :disabled="editMode"
-            :error-messages="toMessages(v$.evmChain)"
+            :error-messages="form.errors('evmChain')"
             auto-select-first
             key-attr="name"
             text-attr="label"
@@ -324,11 +186,11 @@ defineExpose({
 
         <div data-testid="token-select">
           <RuiMenuSelect
-            v-model="tokenKind"
+            v-model="form.state.tokenKind"
             :label="t('asset_form.labels.token_kind')"
             :options="evmTokenKindsData"
             :disabled="editMode"
-            :error-messages="toMessages(v$.tokenKind)"
+            :error-messages="form.errors('tokenKind')"
             key-attr="identifier"
             text-attr="label"
             variant="outlined"
@@ -339,15 +201,15 @@ defineExpose({
           data-testid="address-input"
         >
           <RuiTextField
-            v-model="address"
+            v-model="form.state.address"
             class="flex-1"
             variant="outlined"
             color="primary"
             :loading="fetching"
-            :error-messages="toMessages(v$.address)"
+            :error-messages="form.errors('address')"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @blur="v$.address.$touch()"
+            @update:model-value="form.touch('address')"
           >
             <template
               v-if="editMode"
@@ -366,13 +228,14 @@ defineExpose({
 
           <RuiTextField
             v-if="isNft"
-            v-model="collectibleId"
+            v-model="form.state.collectibleId"
+            data-testid="collectible-id-input"
             class="sm:w-1/4"
             variant="outlined"
             color="primary"
             type="number"
             :label="t('asset_form.labels.collectible_id')"
-            :error-messages="toMessages(v$.collectibleId)"
+            :error-messages="form.errors('collectibleId')"
             :disabled="loading || editMode"
           />
         </div>
@@ -384,11 +247,11 @@ defineExpose({
           data-testid="token-select"
         >
           <RuiMenuSelect
-            v-model="tokenKind"
+            v-model="form.state.tokenKind"
             :label="t('asset_form.labels.token_kind')"
             :options="solanaTokenKindsData"
             :disabled="editMode"
-            :error-messages="toMessages(v$.tokenKind)"
+            :error-messages="form.errors('tokenKind')"
             key-attr="identifier"
             text-attr="label"
             variant="outlined"
@@ -399,14 +262,14 @@ defineExpose({
           data-testid="address-input"
         >
           <RuiTextField
-            v-model="address"
+            v-model="form.state.address"
             variant="outlined"
             color="primary"
             :loading="fetching"
-            :error-messages="toMessages(v$.address)"
+            :error-messages="form.errors('address')"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @blur="v$.address.$touch()"
+            @update:model-value="form.touch('address')"
           />
         </div>
       </template>
@@ -417,39 +280,39 @@ defineExpose({
         data-testid="address-input"
       >
         <RuiTextField
-          v-model="address"
+          v-model="form.state.address"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.address)"
+          :error-messages="form.errors('address')"
           :label="t('common.address')"
           :disabled="loading || editMode"
-          @blur="v$.address.$touch()"
+          @update:model-value="form.touch('address')"
         />
       </div>
 
       <div class="col-span-2 grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
         <RuiTextField
-          v-model="name"
+          v-model="form.state.name"
           data-testid="name-input"
           class="md:col-span-2"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.name)"
+          :error-messages="form.errors('name')"
           :label="t('common.name')"
           :disabled="loading || fetching"
-          @blur="v$.name.$touch()"
+          @update:model-value="form.touch('name')"
         />
 
         <RuiTextField
-          v-model="symbol"
+          v-model="form.state.symbol"
           :class="isTokenRequiresAddress ? 'md:col-span-1' : 'md:col-span-2'"
           data-testid="symbol-input"
           variant="outlined"
           color="primary"
-          :error-messages="toMessages(v$.symbol)"
+          :error-messages="form.errors('symbol')"
           :label="t('asset_form.labels.symbol')"
           :disabled="loading || fetching"
-          @blur="v$.symbol.$touch()"
+          @update:model-value="form.touch('symbol')"
         />
         <div
           v-if="isTokenRequiresAddress"
@@ -463,51 +326,19 @@ defineExpose({
             max="18"
             type="number"
             :label="t('asset_form.labels.decimals')"
-            :error-messages="toMessages(v$.decimals)"
+            :error-messages="form.errors('decimals')"
             :disabled="loading || fetching"
-            @blur="v$.decimals.$touch()"
+            @update:model-value="form.touch('decimals')"
           />
         </div>
-        <RuiTextField
-          v-model="coingecko"
-          variant="outlined"
-          color="primary"
-          clearable
-          class="col-span-2"
-          :hint="t('asset_form.labels.coingecko_hint')"
-          :label="t('asset_form.labels.coingecko')"
-          :error-messages="toMessages(v$.coingecko)"
+        <ManagedAssetOracleFields
+          v-model:coingecko="form.state.coingecko"
+          v-model:cryptocompare="form.state.cryptocompare"
+          :coingecko-errors="form.errors('coingecko')"
+          :cryptocompare-errors="form.errors('cryptocompare')"
           :disabled="loading"
-          @blur="v$.coingecko.$touch()"
-        >
-          <template #append>
-            <HelpLink
-              small
-              :url="externalLinks.contributeSection.coingecko"
-              :tooltip="t('asset_form.help_coingecko')"
-            />
-          </template>
-        </RuiTextField>
-        <RuiTextField
-          v-model="cryptocompare"
-          variant="outlined"
-          color="primary"
-          clearable
-          class="col-span-2"
-          :label="t('asset_form.labels.cryptocompare')"
-          :hint="t('asset_form.labels.cryptocompare_hint')"
-          :error-messages="toMessages(v$.cryptocompare)"
-          :disabled="loading"
-          @blur="v$.cryptocompare.$touch()"
-        >
-          <template #append>
-            <HelpLink
-              small
-              :url="externalLinks.contributeSection.cryptocompare"
-              :tooltip="t('asset_form.help_cryptocompare')"
-            />
-          </template>
-        </RuiTextField>
+          @touch="form.touch($event)"
+        />
       </div>
     </div>
 
@@ -530,43 +361,43 @@ defineExpose({
                 v-model="startedModel"
                 variant="outlined"
                 :label="t('asset_form.labels.started')"
-                :error-messages="toMessages(v$.started)"
+                :error-messages="form.errors('started')"
                 type="epoch"
                 :disabled="loading"
               />
               <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
                 <RuiTextField
                   v-if="isEvmToken"
-                  v-model="protocol"
+                  v-model="form.state.protocol"
                   variant="outlined"
                   color="primary"
                   clearable
                   class="asset-form__protocol"
                   :label="t('common.protocol')"
-                  :error-messages="toMessages(v$.protocol)"
+                  :error-messages="form.errors('protocol')"
                   :disabled="loading"
-                  @blur="v$.protocol.$touch()"
+                  @update:model-value="form.touch('protocol')"
                 />
                 <AssetSelect
-                  v-model="swappedFor"
-                  outlined
+                  v-model="form.state.swappedFor"
+                  variant="outlined"
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
-                  :error-messages="toMessages(v$.swappedFor)"
+                  :error-messages="form.errors('swappedFor')"
                   :disabled="loading"
                 />
                 <AssetSelect
-                  v-if="!isEvmToken && assetType"
-                  v-model="forked"
-                  outlined
+                  v-if="!isEvmToken && form.state.assetType"
+                  v-model="form.state.forked"
+                  variant="outlined"
                   clearable
                   :label="t('asset_form.labels.forked')"
-                  :error-messages="toMessages(v$.forked)"
+                  :error-messages="form.errors('forked')"
                   :disabled="loading"
                 />
                 <RuiSwitch
                   v-if="isEvmToken && !isNft"
-                  v-model="isRebasing"
+                  v-model="form.state.isRebasing"
                   class="md:col-span-2"
                   :disabled="loading"
                   :hint="t('asset_form.labels.rebasing_hint')"

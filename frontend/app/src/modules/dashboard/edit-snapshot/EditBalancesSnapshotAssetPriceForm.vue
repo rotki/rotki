@@ -83,26 +83,18 @@ defineExpose({
 <template>
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
+      <!--
+        One picker for both, narrowed to nfts when the row is an nft. The nft case used to be a
+        plain text field asking the user to type `_nft_<address>_<number>` from the hint, because
+        the search had no way to return nfts alone.
+      -->
       <AssetSelect
-        v-if="!nft"
         v-model="form.state.asset"
-        outlined
+        variant="outlined"
         :disabled="disableAsset"
-        show-ignored
+        :source="{ nfts: nft ? 'show_only' : 'exclude', showIgnored: true }"
         data-testid="asset"
         :error-messages="disableAsset ? [''] : form.errors('asset')"
-        @blur="form.touch('asset')"
-      />
-      <RuiTextField
-        v-else
-        v-model="form.state.asset"
-        :label="t('common.asset')"
-        variant="outlined"
-        color="primary"
-        :disabled="disableAsset"
-        class="mb-1.5"
-        :error-messages="disableAsset ? [''] : form.errors('asset')"
-        :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
         @blur="form.touch('asset')"
       />
       <AmountInput

@@ -68,11 +68,12 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     HistoryEvent,
 )
-from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY
+from rotkehlchen.history.events.structures.evm_event import BRIDGE_EXTRA_DATA_KEY, EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tasks.calendar import acknowledge_matched_l2_bridge_calendar_entry
 from rotkehlchen.tasks.events import (
     TIMESTAMP_TOLERANCE_MS,
     _match_amount,
@@ -83,6 +84,7 @@ from rotkehlchen.types import (
     EVM_LOCATIONS,
     ChainID,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
 )
@@ -119,6 +121,11 @@ SLOW_BRIDGE_MATCH_WINDOWS: Final[dict[str, int]] = {
     CPT_ZKSYNC: 7 * DAY_IN_SECONDS,
     CPT_GNOSIS_CHAIN: 7 * DAY_IN_SECONDS,  # gnosis -> ethereum claims are manual
 }
+# Legs rotki decodes without a counterparty. Their location is then the only thing saying
+# which bridge, and so which settlement window, they belong to.
+BRIDGE_COUNTERPARTY_BY_LOCATION: Final[dict[Location, str]] = {
+    Location.ZKSYNC_LITE: CPT_ZKSYNC,
+}
 
 
 def get_event_bridge_data(event: HistoryBaseEntry) -> dict[str, Any]:
@@ -142,8 +149,14 @@ def _location_chain_label(location: Location) -> str:
     return str(location)
 
 
-def get_bridge_match_window(counterparty: str | None, default_window: int) -> int:
-    """Candidate search window in seconds for a bridge deposit of this counterparty."""
+def get_bridge_match_window(event: HistoryBaseEntry, default_window: int) -> int:
+    """Candidate search window in seconds for this bridge deposit.
+
+    Which bridge a leg belongs to is normally read off its counterparty. The legs rotki
+    decodes without one, such as a zksync lite exit, are recognized by their location.
+    """
+    if (counterparty := getattr(event, 'counterparty', None)) is None:
+        counterparty = BRIDGE_COUNTERPARTY_BY_LOCATION.get(event.location)
     if counterparty is not None and (slow_window := SLOW_BRIDGE_MATCH_WINDOWS.get(counterparty)) is not None:  # noqa: E501
         return max(slow_window, default_window)
     return default_window
@@ -171,6 +184,15 @@ def get_unmatched_bridge_events(
                 ],
             ),
         )
+        deposits.extend(events_db.get_history_events_internal(
+            cursor=cursor,  # exits bridge out too, they just cannot state their amount yet
+            filter_query=HistoryEventFilterQuery.make(
+                location=Location.ZKSYNC_LITE,
+                type_and_subtype_combinations=[
+                    (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+                ],
+            ),
+        ))
         excluded_ids = get_already_matched_event_ids(
             cursor=cursor,
             link_type=HistoryEventLinkType.BRIDGE_MATCH,
@@ -218,6 +240,23 @@ def _events_conflict_on_bridge_data(
     )
 
 
+def is_zksync_lite_exit(event: HistoryBaseEntry) -> bool:
+    """Check whether the event is a zksync lite forced or full exit.
+
+    Such an exit sweeps the account's whole balance of one token, so the amount is only
+    settled when the rollup executes it and the zksync API never states it. rotki decodes
+    it as an informational event with a zero amount, which is the only informational event
+    it creates for that chain. It is a real bridging out though, so it is matched on asset
+    and recipient alone and promoted to a proper bridge leg, taking its amount from the
+    ethereum leg that paid it out, once that counterpart is found.
+    """
+    return (
+        event.location == Location.ZKSYNC_LITE and
+        event.event_type == HistoryEventType.INFORMATIONAL and
+        event.event_subtype == HistoryEventSubType.NONE
+    )
+
+
 def _is_bridge_withdrawal(event: HistoryBaseEntry) -> bool:
     """Check whether the event is a decoded destination-side bridge leg."""
     return (
@@ -231,17 +270,41 @@ def _bridge_counterparties_match(
         second_counterparty: str | None,
 ) -> bool:
     """Return whether counterparties can describe the two legs of one bridge transfer."""
+    counterparties = frozenset((first_counterparty, second_counterparty))
     return (
         first_counterparty == second_counterparty or
-        frozenset((first_counterparty, second_counterparty)) == frozenset((CPT_LIFI, CPT_RELAY))
+        counterparties == frozenset((CPT_LIFI, CPT_RELAY)) or
+        CPT_SOCKET in counterparties
+    )
+
+
+def _have_exact_transfer_id_match(
+        first_event: HistoryBaseEntry,
+        second_event: HistoryBaseEntry,
+) -> bool:
+    """Return whether both events carry the same non-empty protocol transfer id."""
+    return (
+        (first_id := get_event_bridge_data(first_event).get('transfer_id')) is not None and
+        first_id == get_event_bridge_data(second_event).get('transfer_id')
+    )
+
+
+def _is_socket_bridge_pair(
+        first_event: HistoryBaseEntry,
+        second_event: HistoryBaseEntry,
+) -> bool:
+    """Return whether Socket labels either side of a possible bridge pair."""
+    return CPT_SOCKET in (
+        getattr(first_event, 'counterparty', None),
+        getattr(second_event, 'counterparty', None),
     )
 
 
 def _get_bridge_target_asset(event: HistoryBaseEntry) -> Asset | None:
-    """Resolve the target asset recorded on a source-side bridge event."""
+    """Resolve the target asset recorded on a source-side LI.FI bridge event."""
     if (
         _is_bridge_withdrawal(event) or
-        getattr(event, 'counterparty', None) not in {CPT_LIFI, CPT_SOCKET}
+        getattr(event, 'counterparty', None) != CPT_LIFI
     ):
         return None
 
@@ -278,9 +341,25 @@ def _bridge_candidate_tier(
     receives/spends that could be an undecoded counterpart leg, or None if the
     candidate cannot be the counterpart.
     """
+    if is_zksync_lite_exit(bridge_event):
+        # The exit states no amount, so only its asset and recipient can identify the
+        # payout. Nothing weaker than an identified bridge leg is accepted, since the
+        # match is what the exit's amount gets taken from.
+        return 'close' if (
+            candidate.identifier not in excluded_ids and
+            candidate.location != bridge_event.location and
+            _is_bridge_withdrawal(candidate) and
+            candidate.asset == bridge_event.asset and
+            candidate.location_label == bridge_event.location_label
+        ) else None
+
     anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
     deposit_side, withdrawal_side = (
         (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
+    )
+    has_exact_transfer_id = (
+        not _is_socket_bridge_pair(bridge_event, candidate) and
+        _have_exact_transfer_id_match(bridge_event, candidate)
     )
     is_cross_asset_route = (
         anchor_is_withdrawal is False and
@@ -292,6 +371,7 @@ def _bridge_candidate_tier(
         candidate.identifier in excluded_ids or
         candidate.location == bridge_event.location or  # bridging is always cross-chain
         (
+            has_exact_transfer_id is False and
             is_cross_asset_route is False and
             not _match_amount(
                 movement_amount=bridge_event.amount,
@@ -333,6 +413,46 @@ def _bridge_candidate_tier(
     return None
 
 
+def find_bridge_transaction_exact_matches(
+        events_db: DBHistoryEvents,
+        bridge_event: HistoryBaseEntry,
+        cursor: DBCursor,
+        excluded_ids: set[int],
+) -> list[HistoryBaseEntry]:
+    """Find non-Socket opposite bridge legs with the same exact protocol transfer id."""
+    if get_event_bridge_data(bridge_event).get('transfer_id') is None:
+        return []
+
+    anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
+    candidates = events_db.get_history_events_internal(
+        cursor=cursor,
+        filter_query=HistoryEventFilterQuery.make(type_and_subtype_combinations=[(
+            HistoryEventType.DEPOSIT if anchor_is_withdrawal else HistoryEventType.WITHDRAWAL,
+            HistoryEventSubType.BRIDGE,
+        )]),
+    )
+    matches: list[HistoryBaseEntry] = []
+    for candidate in candidates:
+        deposit_side, withdrawal_side = (
+            (candidate, bridge_event) if anchor_is_withdrawal else (bridge_event, candidate)
+        )
+        if (
+            _is_socket_bridge_pair(bridge_event, candidate) or
+            candidate.identifier in excluded_ids or
+            candidate.location == bridge_event.location or
+            not _have_exact_transfer_id_match(bridge_event, candidate) or
+            not _bridge_counterparties_match(
+                first_counterparty=getattr(bridge_event, 'counterparty', None),
+                second_counterparty=getattr(candidate, 'counterparty', None),
+            ) or
+            _events_conflict_on_bridge_data(deposit=deposit_side, candidate=withdrawal_side)
+        ):
+            continue
+        matches.append(candidate)
+
+    return matches
+
+
 def _narrow_bridge_candidates(
         bridge_event: HistoryBaseEntry,
         candidates: list[HistoryBaseEntry],
@@ -347,6 +467,11 @@ def _narrow_bridge_candidates(
     if len(candidates) <= 1:
         return candidates
 
+    if len(transfer_id_matches := [
+        candidate for candidate in candidates
+        if _have_exact_transfer_id_match(bridge_event, candidate)
+    ]) > 0:
+        candidates = transfer_id_matches
     if _is_bridge_withdrawal(bridge_event):  # candidates are source legs carrying the address
         if bridge_event.location_label is not None and len(address_matches := [
             x for x in candidates
@@ -458,6 +583,23 @@ def update_bridge_matched_event(
     DB. A fee is inferred only when both legs use economically equivalent assets.
     Both edits keep backups so unlinking can restore them.
     """
+    if is_zksync_lite_exit(bridge_event):  # promote it now that its payout is known
+        bridge_event.amount = matched_event.amount
+        bridge_event.event_type = HistoryEventType.DEPOSIT
+        bridge_event.event_subtype = HistoryEventSubType.BRIDGE
+        if isinstance(bridge_event, OnchainEvent):
+            bridge_event.counterparty = CPT_ZKSYNC
+        bridge_event.notes = (
+            f'Bridge {bridge_event.amount} '
+            f'{bridge_event.asset.resolve_to_asset_with_symbol().symbol} '
+            f'from ZKSync Lite to Ethereum'
+        )
+        bridge_event.extra_data = (bridge_event.extra_data or {}) | {BRIDGE_EXTRA_DATA_KEY: {
+            'from_chain': SupportedBlockchain.ZKSYNC_LITE.serialize(),
+            'to_chain': ChainID.ETHEREUM.serialize(),
+            'to_address': bridge_event.location_label,
+        }}
+
     anchor_counterparty = getattr(bridge_event, 'counterparty', None)
     anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
     expected_type = (
@@ -532,6 +674,12 @@ def update_bridge_matched_event(
                 withdrawal.identifier,
                 HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
             ),
+        )
+
+    if isinstance(deposit, EvmEvent):
+        acknowledge_matched_l2_bridge_calendar_entry(
+            database=events_db.db,
+            bridge_event=deposit,
         )
 
 
@@ -843,15 +991,19 @@ def match_bridge_transactions(
             pending_deposits = []
             for deposit in deposits:
                 if (transfer_id := get_event_bridge_data(deposit).get('transfer_id')) is not None and len(candidates := [  # noqa: E501
-                    x for x in withdrawals_by_transfer_id[transfer_id]
+                    withdrawal for withdrawal in withdrawals_by_transfer_id[transfer_id]
                     if (
-                        x.identifier not in excluded_ids and
-                        x.location != deposit.location and
+                        not _is_socket_bridge_pair(deposit, withdrawal) and
+                        withdrawal.identifier not in excluded_ids and
+                        withdrawal.location != deposit.location and
                         _bridge_counterparties_match(
                             first_counterparty=getattr(deposit, 'counterparty', None),
-                            second_counterparty=getattr(x, 'counterparty', None),
+                            second_counterparty=getattr(withdrawal, 'counterparty', None),
                         ) and
-                        not _events_conflict_on_bridge_data(deposit=deposit, candidate=x)
+                        not _events_conflict_on_bridge_data(
+                            deposit=deposit,
+                            candidate=withdrawal,
+                        )
                     )
                 ]) == 1:
                     matched_pairs.append((deposit, matched_event := candidates[0]))
@@ -882,7 +1034,7 @@ def match_bridge_transactions(
                         excluded_ids=excluded_ids,
                         tolerance=settings.bridge_match_amount_tolerance,
                         match_window=get_bridge_match_window(
-                            counterparty=getattr(deposit, 'counterparty', None),
+                            event=deposit,
                             default_window=settings.bridge_match_time_range,
                         ),
                     )

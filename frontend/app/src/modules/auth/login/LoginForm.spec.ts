@@ -319,17 +319,16 @@ describe('loginForm', () => {
       expect(messagesOf(field)).toStrictEqual([]);
     });
 
-    // Characterizing, NOT endorsing: `isValidUrl` requires a dotted host, so the most obvious local
-    // backend address a user would type is rejected. Pinned so the migration reproduces today's
-    // behaviour rather than silently changing it; fixing it is a separate decision.
-    it('should reject http://localhost:4242', async () => {
+    // Was pinned as rejected while the rule used the shared dotted-host regex, which took
+    // `http://127.0.0.1:4242` and refused the name for the same machine. Fixed deliberately.
+    it('should accept http://localhost:4242', async () => {
       wrapper = createWrapper();
       set(backendDisplay, true);
       set(backendUrl, 'http://localhost:4242');
       await nextTick();
 
       const field = wrapper.findComponent<StubInstance>({ name: 'LoginCustomBackendFields' });
-      expect(messagesOf(field)).toStrictEqual(['login.custom_backend.validation.url']);
+      expect(messagesOf(field)).toStrictEqual([]);
     });
 
     // The length bound sits in the same rule as the url check, so it reports the same message.
@@ -378,6 +377,18 @@ describe('loginForm', () => {
         'login.validation.non_empty_password',
         'Wrong password for user',
       ]);
+    });
+
+    // The core retires a server error once the field it was reported against is edited. Filling the
+    // name from the saved profile happens after the error is recorded and is not a user edit, so it
+    // must not count as one: the alert would go on naming the user while the field said nothing.
+    it('should keep a username error through the restore from storage', async () => {
+      set(storedUsername, 'saved-user');
+      wrapper = createWrapper({ errors: ['User saved-user does not exist'] });
+      await flushPromises();
+
+      expect(usernameField().props('modelValue')).toBe('saved-user');
+      expect(messagesOf(usernameField())).toStrictEqual(['User saved-user does not exist']);
     });
 
     it('should route an unrecognised error to neither field', async () => {

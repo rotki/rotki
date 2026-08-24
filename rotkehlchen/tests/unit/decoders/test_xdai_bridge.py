@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
@@ -21,7 +21,13 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.types import ChecksumEvmAddress
+
+# the nonce the bridge logged for this transfer, carried by both of its legs
+BRIDGE_NONCE_TRANSFER_ID: Final = (
+    '0x0000000000000000000000000000000000000000000000000000000000000369'
+)
 
 
 @pytest.mark.vcr
@@ -105,7 +111,7 @@ def test_bridge_dai_from_ethereum_pre_usds_upgrade(
             'to_chain': 100,
             'from_address': user_address,
             'to_address': user_address,
-            'transfer_id': '0x220b7397ce4b2f03b6871eb57762396aa0140d57dac4623d241e5eb02a0bc349',
+            'transfer_id': '0x00000000000000000000000000000000000000000000000000000000000003e4',
         }},
     )]
 
@@ -150,7 +156,7 @@ def test_bridge_dai_from_ethereum_post_usds_upgrade(
             'to_chain': 100,
             'from_address': user_address,
             'to_address': user_address,
-            'transfer_id': '0xf26d574f5136c0aa93ad996484b04522910481a1c4ae055cbeeac36a8ef41337',
+            'transfer_id': '0x0000000000000000000000000000000000000000000000000000000000001a01',
         }},
     )]
 
@@ -310,5 +316,87 @@ def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_et
             'to_chain': 100,
             'to_address': user_address,
             'transfer_id': '0x75834bda4a78f436f4fcf6159bbbb1c0e2957f35fb19492ec3ddba26c7d5eb3d',
+        }},
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_bridge_dai_from_ethereum_with_nonce(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that a deposit whose bridge log carries a nonce is identified by that nonce.
+
+    The gnosis leg of this transfer, decoded in test_receive_dai_on_gnosis_with_nonce
+    below, repeats the nonce rather than this transaction's hash, so taking the hash
+    left the two legs unmatchable.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xeb720d57bd48a89a69ba743c984414f711e06a6edacd2ab5ef6d4bfddc019d6b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1749508919000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00025714752024969'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        tx_ref=tx_hash,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        sequence_index=834,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_DAI,
+        amount=FVal(bridge_amount := '33.85386'),
+        location_label=user_address,
+        notes=f'Bridge {bridge_amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge',
+        tx_ref=tx_hash,
+        counterparty=CPT_GNOSIS_CHAIN,
+        address=BRIDGE_ADDRESS,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 100,
+            'from_address': user_address,
+            'transfer_id': BRIDGE_NONCE_TRANSFER_ID,
+        }},
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('gnosis_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_receive_dai_on_gnosis_with_nonce(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """The gnosis leg of the deposit decoded in test_bridge_dai_from_ethereum_with_nonce.
+
+    Both legs carry the same transfer id, which is what lets the bridge matching pair them.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xa0a2a6996eadbd50db097873c37674cd6c0f130bc283b617c8a88c6db606c0f3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        sequence_index=10,
+        timestamp=TimestampMS(1749509175000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_XDAI,
+        amount=FVal(bridge_amount := '33.85386'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Bridge {bridge_amount} XDAI from Ethereum to Gnosis via Gnosis Chain bridge',
+        tx_ref=tx_hash,
+        counterparty=CPT_GNOSIS_CHAIN,
+        address=GNOSIS_BRIDGE_ADDRESS,
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 100,
+            'to_address': user_address,
+            'transfer_id': BRIDGE_NONCE_TRANSFER_ID,
         }},
     )]

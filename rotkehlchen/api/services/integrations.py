@@ -13,7 +13,12 @@ from rotkehlchen.externalapis.gnosispay import (
 )
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import (
+    ASSET_MOVEMENT_MATCHING_CAPABILITY,
+    has_premium_capability,
+)
 from rotkehlchen.serialization.serialize import process_result
+from rotkehlchen.tasks.bridges import process_bridge_transactions
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 
 if TYPE_CHECKING:
@@ -209,9 +214,28 @@ class IntegrationsService:
             after_seconds=None,
             task_name='Query monerium orders after oauth',
             exception_is_error=True,
-            method=self.rotkehlchen.monerium.get_and_process_orders,
+            method=self._query_monerium_orders,
         )
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def _query_monerium_orders(self) -> None:
+        """Process all monerium orders and match any bridge legs the run creates.
+
+        Decoding, and the bridge matching that follows it, have both already happened by
+        the time credentials are (re)authorized here, so the chain to chain legs this run
+        creates would otherwise sit unmatched until something else moved history events.
+        """
+        assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
+        if self.rotkehlchen.monerium.get_and_process_orders() is False:
+            return
+
+        process_bridge_transactions(
+            database=self.rotkehlchen.data.db,
+            should_auto_match=has_premium_capability(
+                premium=self.rotkehlchen.premium,
+                capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
+            ),
+        )
 
     def disconnect_monerium(self) -> dict[str, Any]:
         assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'

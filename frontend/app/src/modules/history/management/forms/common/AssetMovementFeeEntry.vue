@@ -43,7 +43,7 @@ const { t } = useI18n({ useScope: 'global' });
       <AssetSelect
         v-model="feeAsset"
         :disabled="!hasFee"
-        outlined
+        variant="outlined"
         clearable
         data-testid="fee-asset"
         :label="t('transactions.events.form.fee_asset.label')"

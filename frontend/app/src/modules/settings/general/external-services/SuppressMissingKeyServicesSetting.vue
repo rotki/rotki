@@ -40,7 +40,7 @@ const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: Ser
         :src="item.icon"
         :size="size"
         class="icon-bg"
-        contain
+        fit="contain"
       />
       <span>{{ item.name }}</span>
     </div>

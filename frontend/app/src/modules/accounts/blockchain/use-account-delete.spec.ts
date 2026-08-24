@@ -3,7 +3,9 @@ import type {
   BlockchainAccount,
   BlockchainAccountGroupWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
+import type { TaskError } from '@/modules/core/tasks/task-result';
 import { bigNumberify } from '@rotki/common';
+import { ok, type Result } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -12,9 +14,9 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import '@test/i18n';
 
 const mocks = vi.hoisted(() => ({
-  deleteXpub: vi.fn(),
-  removeAccount: vi.fn(async (_payload: { accounts: string[]; chain: string }): Promise<void> => {}),
-  removeAgnosticAccount: vi.fn(async (): Promise<void> => {}),
+  deleteXpub: vi.fn(async (): Promise<Result<void, TaskError>> => ok(undefined)),
+  removeAccount: vi.fn(async (_payload: { accounts: string[]; chain: string }): Promise<Result<void, TaskError>> => ok(undefined)),
+  removeAgnosticAccount: vi.fn(async (): Promise<Result<void, TaskError>> => ok(undefined)),
 }));
 
 vi.mock('@/modules/accounts/use-account-removals', () => ({
@@ -160,9 +162,10 @@ describe('useAccountDelete', () => {
       const gate = new Promise<void>((resolve) => {
         release = resolve;
       });
-      mocks.removeAccount.mockImplementation(async ({ chain }: { chain: string }): Promise<void> => {
+      mocks.removeAccount.mockImplementation(async ({ chain }: { chain: string }): Promise<Result<void, TaskError>> => {
         started.push(chain);
-        return gate;
+        await gate;
+        return ok(undefined);
       });
 
       const removal = confirmRemoval(groupAccount(['eth', 'optimism'], ['eth', 'optimism', 'base']));

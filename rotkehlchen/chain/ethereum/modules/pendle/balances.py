@@ -20,6 +20,7 @@ from .constants import PENDLE_TOKEN, VE_PENDLE_ABI, VE_PENDLE_CONTRACT_ADDRESS
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -45,10 +46,12 @@ class PendleBalances(ProtocolWithBalance):
             deployed_block=16032087,
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Query locked PENDLE balances."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
+        if len(addresses_with_deposits := list(self.addresses_with_deposits(
+            location_labels=addresses,
+        ))) == 0:
             return balances
 
         call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)[1]

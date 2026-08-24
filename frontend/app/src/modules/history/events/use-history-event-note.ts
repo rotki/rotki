@@ -45,6 +45,21 @@ interface FormatNoteParams {
   extraData?: MaybeRefOrGetter<Record<string, any> | undefined>;
 }
 
+/**
+ * What a note is resolved against: the same inputs as `FormatNoteParams` minus the note itself,
+ * as plain values. Callers hold these together (they all come off one event, one P&L row or one
+ * wallet transaction), so they travel as one prop rather than seven.
+ */
+export interface HistoryEventNoteContext {
+  amount?: BigNumber | BigNumber[];
+  asset?: string;
+  noTxRef?: boolean;
+  validatorIndex?: number;
+  blockNumber?: number;
+  counterparty?: string;
+  extraData?: Record<string, any>;
+}
+
 interface UseHistoryEventNoteReturn {
   formatNotes: (params: FormatNoteParams) => ComputedRef<NoteFormat[]>;
 }

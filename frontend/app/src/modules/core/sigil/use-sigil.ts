@@ -9,7 +9,9 @@ import { useBalancesSummaryHandler } from '@/modules/core/sigil/handlers/balance
 import { useExchangesSummaryHandler } from '@/modules/core/sigil/handlers/exchanges-summary';
 import { useHistorySyncHandler } from '@/modules/core/sigil/handlers/history-sync';
 import { useSessionConfigHandler } from '@/modules/core/sigil/handlers/session-config';
+import { cacheClientId, clearCurrentClientId, createClientId, getInstanceId, readCachedClientId, setCurrentClientId } from '@/modules/core/sigil/use-sigil-identity';
 import { enqueue, startQueue, stopQueue, WEBSITE_ID } from '@/modules/core/sigil/use-sigil-queue';
+import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';
 import { router } from '@/router';
 
@@ -45,8 +47,10 @@ function buildSafeUrl(to: { name?: string | symbol | null | undefined; params: R
 }
 
 export const useSigil = createPersistentSharedComposable(({ acquireBusy, releaseBusy }) => {
-  const { logged } = storeToRefs(useSessionAuthStore());
+  const { logged, username } = storeToRefs(useSessionAuthStore());
   const submitUsageAnalytics = useSetting('submitUsageAnalytics');
+  const clientId = useSetting('clientId');
+  const { updateFrontendSetting } = useFrontendSettingsWriter();
   const { isDevelop } = storeToRefs(useMainStore());
 
   // Initialize handlers in Vue context so they can resolve stores/composables.
@@ -84,6 +88,11 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
     if (sessionReadyHandled)
       return;
     sessionReadyHandled = true;
+
+    // Here rather than in activate() to keep the dependency explicit: an empty read must mean
+    // unset, never not-loaded-yet. The unlock flow happens to land the settings before it flips
+    // `logged`, so today both are equivalent; this does not rely on that staying true.
+    await resolveUser();
 
     chronicle('session_config', collectSessionConfig());
     chronicle('exchanges_summary', collectExchangesSummary());
@@ -123,6 +132,44 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
 
   let active = false;
 
+  /**
+   * The settings win whenever they hold a value, and are adopted synchronously, so only a session
+   * that has to write pays a round trip. A failed write is dropped rather than used, since a value
+   * that did not persist would differ next session.
+   */
+  async function resolveUser(): Promise<void> {
+    const user = get(username);
+    const existing = get(clientId);
+    if (existing) {
+      cacheClientId(user, existing);
+      setCurrentClientId(existing);
+      identify(existing);
+      return;
+    }
+
+    const resolved = readCachedClientId(user) ?? createClientId();
+    const status = await updateFrontendSetting({ clientId: resolved });
+    if (!status.success) {
+      logger.warn(`[sigil] could not persist the client id: ${status.message}`);
+      return;
+    }
+
+    cacheClientId(user, resolved);
+    setCurrentClientId(resolved);
+    identify(resolved);
+  }
+
+  /** Queued once per activation, ahead of the events it should apply to. */
+  function identify(id: string): void {
+    startPromise(enqueue({
+      kind: 'identify',
+      clientId: id,
+      data: { instance_id: getInstanceId() },
+      url: buildSafeUrl(router.currentRoute.value),
+      timestamp: Date.now(),
+    }));
+  }
+
   function activate(): void {
     if (active)
       return;
@@ -150,6 +197,8 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
     sigilBus.off('balances:loaded', onBalancesLoaded);
     sigilBus.off('history:ready', onHistoryReady);
     unregisterPageTracking();
+    // before stopQueue, which drains what is left: nothing may go out under the account that just left
+    clearCurrentClientId();
     stopQueue();
     releaseBusy();
   }

@@ -36,7 +36,9 @@ dependencies = [
     "beautifulsoup4==4.14.2",
     "defusedxml==0.7.1",
     "maxminddb==3.1.1",
-    "cryptography==50.0.0",
+    # Newer releases dropped x86_64 macOS wheels, causing source builds whose OpenSSL
+    # dependency conflicts with the libssl bundled by PyInstaller.
+    "cryptography==48.0.1",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
@@ -171,7 +173,7 @@ rotkehlchen_mock = "rotkehlchen_mock.__main__:main"
 # dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools_scm]
-fallback_version = "1.43.2"
+fallback_version = "1.44.0"
 
 [tool.setuptools.package-data]
 "rotkehlchen.data" = ["*"]

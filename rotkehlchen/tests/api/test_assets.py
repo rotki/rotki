@@ -1215,7 +1215,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server: APIServer) -> None
         json={
             'value': 'super-duper',
             'limit': 50,
-            'search_nfts': True,
+            'nft_handling': 'include',
         },
     )
     result = assert_proper_sync_response_with_result(response)
@@ -1228,7 +1228,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server: APIServer) -> None
 
     # Check that:
     # 1. Searching by nft collection name works
-    # 2. Nfts are searched only with search_nfts set to True
+    # 2. Nfts are searched only when nft_handling asks for them
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1249,12 +1249,30 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server: APIServer) -> None
         json={
             'value': 'Bitcoin',
             'limit': 50,
-            'search_nfts': True,
+            'nft_handling': 'include',
         },
     )
     result = assert_proper_sync_response_with_result(response)
     results_with_nfts = [x['identifier'] for x in result]
     assert set(results_with_nfts) - set(results_without_nfts) == {'my-nft-identifier'}
+
+    # Check that show_only returns the nfts alone. This cannot be had by filtering the response
+    # of an 'include' search: both result sets are merged and truncated to limit together, so the
+    # nfts can be cut off entirely when enough assets sort ahead of them.
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'Bitcoin',
+            'limit': 50,
+            'nft_handling': 'show_only',
+        },
+    )
+    nfts_only = assert_proper_sync_response_with_result(response)
+    assert [x['identifier'] for x in nfts_only] == ['my-nft-identifier']
+    assert all(entry['asset_type'] == 'nft' for entry in nfts_only)
 
     # Check that the order makes sense
     previous_levenshtein_distance = 0

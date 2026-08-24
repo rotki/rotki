@@ -65,16 +65,24 @@ export type SigilEvent = keyof SigilEventMap;
 
 /** A queued entry stored in IndexedDB before being flushed via the batch endpoint. */
 export interface SigilQueueEntry {
+  /** IndexedDB key, not sent. */
   id?: number;
+  /**
+   * `identify` links the session to the client value; everything else is an event. Queued with the
+   * rest rather than sent apart, so it keeps its place in the batch and survives being offline.
+   */
+  kind?: 'identify';
   url: string;
   /** Set for custom events (chronicle calls), absent for page views. */
   name?: string;
-  /** Custom event data payload. */
+  /** Custom event data, or session data on an identify. */
   data?: Record<string, unknown>;
+  /** The value to link the session to. Identify only. */
+  clientId?: string;
   timestamp: number;
 }
 
-/** Payload shape for a single event sent to the analytics backend. */
+/** Payload shape for a single entry sent to the analytics backend. */
 interface SigilEventPayload {
   website: string;
   hostname: string;
@@ -85,9 +93,11 @@ interface SigilEventPayload {
   referrer: string;
   name?: string;
   data?: Record<string, unknown>;
+  /** The distinct id, capped at 50 characters upstream. Identify only. */
+  id?: string;
 }
 
 export interface SigilBatchEntry {
-  type: 'event';
+  type: 'event' | 'identify';
   payload: SigilEventPayload;
 }

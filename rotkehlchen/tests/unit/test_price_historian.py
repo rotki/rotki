@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
+from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BTC,
@@ -44,6 +45,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import FiatAsset
@@ -295,6 +297,53 @@ def test_disabled_historical_oracle_cache_is_ignored(
             to_asset=A_USD,
             timestamp=query_timestamp,
         )
+
+
+def test_daily_oracle_price_reused_for_whole_day(
+        globaldb,
+        fake_price_historian,
+        inquirer,  # pylint: disable=unused-argument
+):
+    """Prices from daily-granularity oracles (coingecko) are cached at the UTC
+    day-start timestamp and reused by any other query in the same UTC day,
+    instead of re-querying the remote oracle for every distinct timestamp.
+    """
+    price_historian = fake_price_historian
+    price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
+    coingecko = price_historian._oracle_instances[0]
+    coingecko.can_query_history.return_value = True
+    coingecko.query_historical_price.return_value = (expected_price := Price(FVal('2080')))
+
+    morning_ts = Timestamp(1611567600)  # 25/01/2021 09:00 UTC
+    assert price_historian.query_historical_price(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=morning_ts,
+    ) == expected_price
+    assert coingecko.query_historical_price.call_count == 1
+    assert globaldb.get_historical_price(  # the price got stored at the day start
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=timestamp_to_daystart_timestamp(morning_ts),
+        max_seconds_distance=0,
+    ).price == expected_price
+
+    # queries at other times of the same UTC day are served from the cache
+    for hours_later in (4, 13):
+        assert price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=Timestamp(morning_ts + hours_later * HOUR_IN_SECONDS),
+        ) == expected_price
+    assert coingecko.query_historical_price.call_count == 1
+
+    # while a query on the next day hits the remote oracle again
+    assert price_historian.query_historical_price(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=Timestamp(morning_ts + DAY_IN_SECONDS),
+    ) == expected_price
+    assert coingecko.query_historical_price.call_count == 2
 
 
 def test_get_historical_prices(globaldb: GlobalDBHandler) -> None:

@@ -63,7 +63,12 @@ describe('lidoCsmAddDialog', () => {
     return mount(LidoCsmAddDialog, {
       global: {
         stubs: {
-          BlockchainAccountSelector: inputStub('BlockchainAccountSelector'),
+          BlockchainAccountSelector: {
+            emits: ['update:modelValue', 'blur'],
+            name: 'BlockchainAccountSelector',
+            props: ['modelValue', 'field', 'source'],
+            template: '<div />',
+          },
           RuiCard: {
             name: 'RuiCard',
             template: '<div><slot name="header" /><slot /><slot name="footer" /></div>',
@@ -85,7 +90,13 @@ describe('lidoCsmAddDialog', () => {
   }
 
   function messages(testId: string): string[] {
-    const value: unknown = field(testId).props('errorMessages');
+    // The account selector carries its validation inside the `field` bag; the text inputs still
+    // take errorMessages at the top level.
+    const props = field(testId).props();
+    const bag: unknown = props.field;
+    const value: unknown = typeof bag === 'object' && bag !== null
+      ? Reflect.get(bag, 'errorMessages')
+      : props.errorMessages;
     assert(Array.isArray(value));
     return value.map(String);
   }

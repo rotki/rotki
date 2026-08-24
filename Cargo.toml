@@ -13,7 +13,7 @@ exclude = ["tools/find-duplicate-constants"]
 # (see the `Cargo.toml` entry in `.bumpversion.cfg`). Every member
 # inherits it via `version.workspace = true`, so this is the single place the
 # bump has to touch.
-version = "1.43.2"
+version = "1.44.0"
 edition = "2021"
 license = "AGPL-3.0-only"
 rust-version = "1.86.0"

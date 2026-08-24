@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceMutation, LocationAttribution, LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
-import { assert, type BigNumber, bigNumberify, Zero } from '@rotki/common';
+import { assert, type BigNumber, Zero } from '@rotki/common';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import ConfirmSnapshotConflictReplacementDialog
   from '@/modules/dashboard/ConfirmSnapshotConflictReplacementDialog.vue';
 import EditBalancesSnapshotForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
@@ -57,14 +58,16 @@ const previousUsdValue = computed<BigNumber>(() => {
   return idx === null ? Zero : snapshot.balancesSnapshot[idx]?.usdValue ?? Zero;
 });
 
+/** What the value field holds, or Zero while it holds nothing a number can be read out of. */
+const enteredUsdValue = computed<BigNumber>(() => parseNumericInput(get(formModel)?.usdValue ?? '', Zero));
+
 /**
  * Signed change to the balance's USD value (`new − old`) — the amount the split
  * distributes across locations. On an add this is the whole new value; on an
  * edit it is only the difference, so each location moves by its own share rather
  * than the stale stored value being dumped on one row.
  */
-const valueDelta = computed<BigNumber>(() =>
-  bigNumberify(get(formModel)?.usdValue || '0').minus(get(previousUsdValue)));
+const valueDelta = computed<BigNumber>(() => get(enteredUsdValue).minus(get(previousUsdValue)));
 
 /** The magnitude the split rows must add up to (the amount added or removed). */
 const splitTotal = computed<BigNumber>(() => get(valueDelta).abs());
@@ -101,7 +104,7 @@ const disabledLocations = computed<string[]>(() => {
   const formVal = get(formModel);
   if (!formVal)
     return [];
-  const usdValue = bigNumberify(formVal.usdValue || '0');
+  const usdValue = get(enteredUsdValue);
   return overdrawnLocationIds(snapshot, formVal.category, location =>
     locationBalanceAfterEdit({ category: formVal.category, editIndex: get(editIndex), location, snapshot, usdValue }).after);
 });
@@ -119,7 +122,7 @@ const previewLocationBalance = computed<LocationBalancePreview | null>(() => {
     editIndex: get(editIndex),
     location: formVal.location,
     snapshot,
-    usdValue: bigNumberify(formVal.usdValue),
+    usdValue: get(enteredUsdValue),
   });
 });
 
@@ -234,6 +237,44 @@ function close(): void {
   resetSplit();
 }
 
+/**
+ * The row the form describes, or undefined while the amount or the value holds no number.
+ *
+ * The schema gates the category and the location; the amount and the value are free text, and the
+ * price sub-form's rules over them only decorate the fields. Reading them here is what keeps a
+ * cleared field from being saved as a nought nobody entered, or from reaching a parse that throws.
+ */
+function toBalance(formData: BalanceSnapshotPayload): BalanceSnapshot | undefined {
+  const amount = parseNumericInput(formData.amount);
+  const usdValue = parseNumericInput(formData.usdValue);
+  if (!amount || !usdValue)
+    return undefined;
+
+  return {
+    amount,
+    assetIdentifier: formData.assetIdentifier,
+    category: formData.category,
+    timestamp,
+    usdValue,
+  };
+}
+
+/**
+ * Where the balance is attributed: the split rows, or the single location the form holds.
+ *
+ * The split rows hold positive amounts; a removal moves the location subtotals down, so negate each
+ * portion into the signed delta the mutation applies.
+ */
+function toLocation(location: string): LocationAttribution {
+  if (!get(splitMode))
+    return location;
+
+  const splitEntries: LocationSplit[] = get(splitIsRemoval)
+    ? get(splits).map(entry => ({ ...entry, usdValue: entry.usdValue.negated() }))
+    : get(splits);
+  return splitEntries;
+}
+
 async function save(): Promise<void> {
   if (get(rateMissing))
     return;
@@ -252,24 +293,13 @@ async function save(): Promise<void> {
     return;
 
   set(submitting, true);
-
-  const balance: BalanceSnapshot = {
-    amount: bigNumberify(formData.amount),
-    assetIdentifier: formData.assetIdentifier,
-    category: formData.category,
-    timestamp,
-    usdValue: bigNumberify(formData.usdValue),
-  };
-
+  const balance = toBalance(formData);
   set(submitting, false);
 
-  // The split rows hold positive amounts; a removal moves the location subtotals
-  // down, so negate each portion into the signed delta the mutation applies.
-  const splitEntries: LocationSplit[] = get(splitIsRemoval)
-    ? get(splits).map(entry => ({ ...entry, usdValue: entry.usdValue.negated() }))
-    : get(splits);
-  const location: LocationAttribution = get(splitMode) ? splitEntries : formData.location;
-  emit('submit', { index: get(editIndex), mutation: { balance, location } });
+  if (!balance)
+    return;
+
+  emit('submit', { index: get(editIndex), mutation: { balance, location: toLocation(formData.location) } });
 
   formRef?.submitPrice();
   close();
@@ -289,9 +319,11 @@ defineExpose({
         ? t('dashboard.snapshot.edit.dialog.balances.edit_title')
         : t('dashboard.snapshot.edit.dialog.balances.add_title')
     "
-    :primary-action="t('common.actions.save')"
+    :action="{
+      disabled: rateMissing || (splitMode && !splitValid),
+      primary: t('common.actions.save'),
+    }"
     :loading="submitting"
-    :action-disabled="rateMissing || (splitMode && !splitValid)"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="close()"

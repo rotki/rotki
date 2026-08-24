@@ -4,9 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainTotalSummary } from './use-blockchain-total-summary';
 
 const balances = ref<Balances>({});
+const pendingAssets = ref<Set<string>>(new Set());
 
 vi.mock('@/modules/balances/use-balances-store', () => ({
   useBalancesStore: vi.fn(() => ({ balances })),
+}));
+
+vi.mock('@/modules/assets/prices/use-price-utils', () => ({
+  usePriceUtils: vi.fn(() => ({
+    isPricePending: (asset: string): boolean => get(pendingAssets).has(asset),
+  })),
 }));
 
 function chain(...assets: { amount: number; value: number }[]): Balances[string] {
@@ -20,6 +27,7 @@ function chain(...assets: { amount: number; value: number }[]): Balances[string]
 describe('useBlockchainTotalSummary', () => {
   beforeEach(() => {
     set(balances, {});
+    set(pendingAssets, new Set());
   });
 
   it('should return no totals for empty balances', () => {
@@ -44,6 +52,34 @@ describe('useBlockchainTotalSummary', () => {
     });
     const { blockchainTotals } = useBlockchainTotalSummary();
     expect(get(blockchainTotals).map(t => t.chain)).toEqual(['eth']);
+  });
+
+  it('should report a chain as loading while any of its assets is unpriced', () => {
+    set(balances, {
+      eth: chain({ amount: 1, value: 100 }, { amount: 2, value: 0 }),
+    });
+    set(pendingAssets, new Set(['ASSET_1']));
+
+    const { blockchainTotals } = useBlockchainTotalSummary();
+
+    expect(get(blockchainTotals)).toEqual([
+      { chain: 'eth', loading: true, value: bigNumberify(100) },
+    ]);
+  });
+
+  it('should keep a chain that sums to zero while its assets are unpriced', () => {
+    set(balances, {
+      eth: chain({ amount: 1, value: 100 }),
+      gnosis: chain({ amount: 5, value: 0 }),
+    });
+    set(pendingAssets, new Set(['ASSET_0']));
+
+    const { blockchainTotals } = useBlockchainTotalSummary();
+
+    expect(get(blockchainTotals).map(total => [total.chain, total.loading])).toEqual([
+      ['eth', true],
+      ['gnosis', true],
+    ]);
   });
 
   it('should sort chains by descending value', () => {

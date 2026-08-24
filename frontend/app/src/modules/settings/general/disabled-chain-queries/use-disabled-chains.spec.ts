@@ -37,6 +37,20 @@ describe('useDisabledChains', () => {
       setDisabled({ polygon_pos: [] });
       expect(composable.isChainExcluded('POLYGON_POS')).toBe(true);
     });
+
+    it('should match a camelCased key against the snake_case chain id', () => {
+      // `camelCaseTransformer` renames every key of the settings response, and this setting is a
+      // map keyed by chain id, so a multi-word id reaches us as `polygonPos`. Matching only on case
+      // left exactly those chains unfiltered while `base` and `scroll` worked.
+      setDisabled({ binanceSc: [], polygonPos: [] });
+      expect(composable.isChainExcluded('polygon_pos')).toBe(true);
+      expect(composable.isChainExcluded('binance_sc')).toBe(true);
+    });
+
+    it('should not match a different chain that shares a prefix', () => {
+      setDisabled({ polygonPos: [] });
+      expect(composable.isChainExcluded('polygon')).toBe(false);
+    });
   });
 
   describe('isAddressExcluded', () => {
@@ -61,6 +75,12 @@ describe('useDisabledChains', () => {
       // the websocket, so a case-only difference must not silently defeat the rule.
       setDisabled({ eth: [ETH_ADDRESS.toLowerCase()] });
       expect(composable.isAddressExcluded('eth', ETH_ADDRESS)).toBe(true);
+    });
+
+    it('should apply a camelCased key to the addresses of that chain', () => {
+      setDisabled({ zksyncLite: [ETH_ADDRESS] });
+      expect(composable.isAddressExcluded('zksync_lite', ETH_ADDRESS)).toBe(true);
+      expect(composable.isAddressExcluded('zksync_lite', OTHER_ETH_ADDRESS)).toBe(false);
     });
   });
 

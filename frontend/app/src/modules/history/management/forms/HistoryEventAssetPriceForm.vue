@@ -108,14 +108,13 @@ watchImmediate(pendingPriceIntent, (intent) => {
       <div class="flex">
         <AssetSelect
           v-model="asset"
-          outlined
-          show-ignored
+          variant="outlined"
           :disabled="disabled || disableAsset"
           :data-testid="type ? 'sub-event-asset' : 'asset'"
           :data-key="type"
           :label="type ? t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) }) : t('common.asset')"
           required
-          :chain="chain"
+          :source="{ chain, showIgnored: true }"
           :error-messages="disableAsset ? [''] : errorMessages.asset ?? []"
           @blur="emit('blur', 'asset')"
         />

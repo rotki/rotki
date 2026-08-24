@@ -1,3 +1,4 @@
+import type { NftHandling } from '@/modules/assets/nft-handling';
 import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import { AssetMap, AssetsWithId } from '@/modules/assets/types';
 import { RequestTarget } from '@/modules/core/api/constants';
@@ -11,7 +12,7 @@ export interface AssetSearchParams {
   assetType?: string;
   address?: string;
   limit?: number;
-  searchNfts?: boolean;
+  nftHandling?: NftHandling;
   signal?: AbortSignal;
 }
 

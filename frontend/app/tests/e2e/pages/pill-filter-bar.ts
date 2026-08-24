@@ -76,6 +76,12 @@ export class PillFilterBar {
    * narrowed — every selection goes through the search box first. Search matches the option's
    * *label*, so pass `search` explicitly whenever the label differs from the wire value
    * (`uniswap-v2` renders as `Uniswap V2`).
+   *
+   * Narrowing is only enough when the query names the value. On the asset field the search runs
+   * remotely and returns up to fifty ranked results, so a query matching many assets equally well
+   * (a symbol several chains share) leaves the intended one somewhere in the list but outside the
+   * rendered window, and this waits for a row that never appears. Search such a field by
+   * identifier or address, which the app parses into an exact address lookup.
    */
   async selectValue(value: string, search?: string): Promise<void> {
     await this.searchValues(search ?? value);
@@ -148,6 +154,11 @@ export class PillFilterBar {
    *
    * The picker auto-advances between segments as digits arrive, and it opens a calendar popover
    * on focus, so the popover is dismissed afterwards or it covers whatever is clicked next.
+   *
+   * That escape only closes the calendar: it never reaches the field itself, so a bound left
+   * incomplete is not committed here. A full entry is already a value the moment its last digit
+   * lands, but a bare date is written when the field is done with - setting the other bound blurs
+   * this one, and `closeEditor` sends the press that finishes the last one.
    */
   async setDateBound(bound: 'from' | 'to', digits: string): Promise<void> {
     const input = this.page.locator(`[data-testid=date-${bound}] input`);
@@ -188,14 +199,18 @@ export class PillFilterBar {
     // wait on. Leaving one open matters beyond the editor itself, since its popover covers part of
     // the bar and swallows the next click.
     //
-    // The date editor is deliberately absent: `RuiDateTimePicker` opens a calendar popover that
-    // eats Escape, so its editor cannot be closed this way. `setDateBound` dismisses the calendar
-    // itself, and the picker's keyboard handling is being fixed upstream in rotki/ui-library.
+    // The date editor takes two presses, and `setDateBound` has already spent the first: escape
+    // closes the picker's calendar before it means anything to the editor, so the press sent here
+    // is the one that reaches `DateValueEditor`'s own handler and closes it. That same press is
+    // what commits a bound typed as a bare date, which is why the date editor has to be waited on
+    // here rather than left to the caller.
     const editor = this.page
       .locator([
         '[data-testid=value-select-search]',
         '[data-testid=text-input]',
         '[data-testid=range-min]',
+        '[data-testid=date-from] input',
+        '[data-testid=date-to] input',
       ].join(', '))
       .first();
 

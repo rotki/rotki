@@ -1,8 +1,7 @@
+import type { ComponentPublicInstance } from 'vue';
 import { EvmTokenKind, type UnderlyingToken } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import useVuelidate from '@vuelidate/core';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h } from 'vue';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
 import '@test/i18n';
 
@@ -249,22 +248,16 @@ describe('underlyingTokenManager', () => {
     expect(lastModel()).toEqual([]);
   });
 
-  it('should keep its permanently invalid staging row out of a parent validator', async () => {
-    const Parent = defineComponent({
-      setup() {
-        const v$ = useVuelidate();
-        // Read in the render so the collector stays subscribed.
-        return (): unknown => h('div', { 'data-invalid': String(get(v$).$invalid) }, [
-          h(UnderlyingTokenManager, { 'modelValue': [], 'onUpdate:modelValue': (): void => {} }),
-        ]);
-      },
-    });
-
-    const parent = mount(Parent, { global: { stubs } });
+  it('should keep its permanently invalid staging row to itself', async () => {
+    wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    // The staging row is empty, so the child is invalid; the parent must not see it.
-    expect(parent.find('[data-invalid]').attributes('data-invalid')).toBe('false');
-    parent.unmount();
+    // The staging row is empty, so this component's own form is invalid for as long as it is
+    // mounted. Under vuelidate that mattered: a child registered itself into whatever collector was
+    // above it, and this one made every parent form invalid, which is what the test below the
+    // rewrite guarded against. A zod form is local and reaches a parent only through something the
+    // child hands it, and this one hands out nothing at all.
+    expect('validate' in wrapper.vm).toBe(false);
+    expect(wrapper.emitted('update:valid')).toBeUndefined();
   });
 });

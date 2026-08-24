@@ -49,6 +49,7 @@ vi.mock('./bridge/use-injected-wallet', () => ({ useInjectedWallet: (): Fake => 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({ useInterop: (): ReturnType<typeof useInterop> => createMock<ReturnType<typeof useInterop>>({ isPackaged: mocks.state.isPackaged }) }));
 vi.mock('@/modules/wallet/use-wallet-helper', () => ({ useWalletHelper: (): Fake => mocks.state.walletHelper }));
 vi.mock('@/modules/core/common/use-supported-chains', () => ({ useSupportedChains: (): Fake => mocks.state.supportedChains }));
+vi.mock('./use-wallet-chains', () => ({ useWalletChains: (): Fake => mocks.state.walletChains }));
 
 function makeInjectedWallet(): Record<string, any> {
   return {
@@ -64,6 +65,22 @@ function makeInjectedWallet(): Record<string, any> {
     })),
     isConnecting: ref(false),
     switchNetwork: vi.fn(async () => {}),
+  };
+}
+
+// The chain list itself belongs to `use-wallet-chains`, which has its own spec.
+// What the store owns is the wiring: which chain ids it hands to a WalletConnect
+// pairing, and which ones it narrows the account's chains by.
+function makeWalletChains(): Record<string, any> {
+  const walletChains = ref([
+    { chain: 'eth', chainId: 1 },
+    { chain: 'monad', chainId: 143 },
+  ]);
+
+  return {
+    getSessionChains: vi.fn((chainIds?: number[]) => chainIds?.map(id => `session-${id}`) ?? ['all-chains']),
+    walletChainIds: computed(() => get(walletChains).map(item => item.chainId)),
+    walletChains,
   };
 }
 
@@ -102,6 +119,7 @@ describe('modules/wallet/use-wallet-store', () => {
       transactionManager: {
         handleTransactionSuccess: vi.fn(async () => {}),
         recentTransactions: ref([]),
+        reset: vi.fn(),
         updateTransactionStatus: vi.fn(),
       },
       unifiedProviders: {
@@ -112,6 +130,7 @@ describe('modules/wallet/use-wallet-store', () => {
         selectProvider: vi.fn(async () => {}),
         showProviderSelection: ref<boolean>(false),
       },
+      walletChains: makeWalletChains(),
       walletConnect: makeWalletConnect(),
       walletHelper: {
         getChainFromChainId: vi.fn((chainId: number) => `chain-${chainId}`),
@@ -130,6 +149,23 @@ describe('modules/wallet/use-wallet-store', () => {
     expect(get(store.walletMode)).toBe(WALLET_MODES.LOCAL_BRIDGE);
     expect(get(store.connected)).toBe(false);
     expect(get(store.isWalletConnect)).toBe(false);
+  });
+
+  it('should not clear the selected provider when the store is created', async () => {
+    await getStore();
+    await nextTick();
+
+    expect(providers().clearProvider).not.toHaveBeenCalled();
+  });
+
+  it('should disconnect when the wallet mode changes', async () => {
+    const store = await getStore();
+
+    store.walletMode = WALLET_MODES.WALLET_CONNECT;
+    await nextTick();
+    // back to local bridge, the mode disconnect() clears the provider for
+    store.walletMode = WALLET_MODES.LOCAL_BRIDGE;
+    await vi.waitFor(() => expect(providers().clearProvider).toHaveBeenCalledTimes(1));
   });
 
   it('should reflect walletconnect mode in isWalletConnect', async () => {
@@ -201,6 +237,16 @@ describe('modules/wallet/use-wallet-store', () => {
       await store.connect();
       expect(walletConnect().connect).toHaveBeenCalledTimes(1);
     });
+
+    it('should request every chain rotki supports in the session', async () => {
+      const store = await getStore();
+      store.walletMode = WALLET_MODES.WALLET_CONNECT;
+      await nextTick();
+
+      await store.connect();
+      // Not a hardcoded list: these are the ids the backend reported.
+      expect(walletConnect().connect).toHaveBeenCalledWith([1, 143]);
+    });
   });
 
   describe('disconnect', () => {
@@ -214,6 +260,67 @@ describe('modules/wallet/use-wallet-store', () => {
       expect(providers().clearProvider).toHaveBeenCalled();
       expect(get(store.connected)).toBe(false);
       expect(get(store.isDisconnecting)).toBe(false);
+    });
+
+    it('should forget the remembered provider on a deliberate disconnect', async () => {
+      const store = await getStore();
+      await store.connect();
+
+      await store.disconnect();
+
+      expect(providers().clearProvider).toHaveBeenCalledWith({ forget: true });
+    });
+  });
+
+  describe('disconnectWalletIfActive', () => {
+    it('should not create the store when it does not exist yet', async () => {
+      const { disconnectWalletIfActive } = await import('./use-wallet-store');
+
+      await disconnectWalletIfActive();
+
+      expect(providers().clearProvider).not.toHaveBeenCalled();
+      expect(injected().disconnect).not.toHaveBeenCalled();
+    });
+
+    it('should disconnect when the store already exists', async () => {
+      const { disconnectWalletIfActive } = await import('./use-wallet-store');
+      const store = await getStore();
+      await store.connect(); // initialise the injected instance
+
+      await disconnectWalletIfActive();
+
+      expect(injected().disconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep the remembered provider so the next login can restore it', async () => {
+      const { disconnectWalletIfActive } = await import('./use-wallet-store');
+      const store = await getStore();
+      await store.connect();
+
+      await disconnectWalletIfActive();
+
+      expect(providers().clearProvider).toHaveBeenCalledWith({ forget: false });
+    });
+  });
+
+  describe('reset', () => {
+    it('should clear the connection state and the recent transactions', async () => {
+      const store = await getStore();
+      await store.connect();
+
+      store.reset();
+
+      expect(get(store.connected)).toBe(false);
+      expect(get(store.connectedAddress)).toBeUndefined();
+      expect(mocks.state.transactionManager.reset).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not expose the recent transactions as patchable state', async () => {
+      const store = await getStore();
+
+      // they are a getter over the transaction manager's readonly ref, so the store
+      // reset plugin must not try to `$patch` them
+      expect(store.$state).not.toHaveProperty('recentTransactions');
     });
   });
 
@@ -234,18 +341,33 @@ describe('modules/wallet/use-wallet-store', () => {
   });
 
   describe('supportedChainsForConnectedAccount', () => {
-    it('should list all supported chains in local bridge mode', async () => {
+    // The session namespaces only reach the store through the sync watcher that
+    // `getWalletConnect()` installs, so the store has to actually connect first.
+    async function connectWithNamespaces(namespaces: string[]): Promise<Awaited<ReturnType<typeof getStore>>> {
       const store = await getStore();
-      expect(get(store.supportedChainsForConnectedAccount)).toEqual([
-        'chain-1',
-        'chain-8453',
-        'chain-42161',
-        'chain-10',
-        'chain-56',
-        'chain-100',
-        'chain-137',
-        'chain-534352',
-      ]);
+      store.walletMode = WALLET_MODES.WALLET_CONNECT;
+      await nextTick();
+      await store.connect();
+      set(walletConnect().supportedChainIds, namespaces);
+      await nextTick();
+      return store;
+    }
+
+    const walletChains = (): Record<string, any> => mocks.state.walletChains;
+
+    it('should not narrow the chains in local bridge mode', async () => {
+      const store = await getStore();
+
+      expect(get(store.supportedChainsForConnectedAccount)).toEqual(['all-chains']);
+      expect(walletChains().getSessionChains).toHaveBeenCalledWith(undefined);
+    });
+
+    it('should narrow by the chain ids the walletconnect session reports', async () => {
+      const store = await connectWithNamespaces(['eip155:1', 'eip155:143']);
+
+      // Read first: the computed is lazy, so nothing is called until it is.
+      expect(get(store.supportedChainsForConnectedAccount)).toEqual(['session-1', 'session-143']);
+      expect(walletChains().getSessionChains).toHaveBeenCalledWith([1, 143]);
     });
   });
 

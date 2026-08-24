@@ -9,7 +9,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use starling_core::{
-    BackendOptions, ControlError, ControlEvent, ControlHandle, Method, ServiceParams, Transport,
+    BackendOptions, ControlError, ControlEvent, ControlHandle, Method, ServiceAutostartParams,
+    ServiceParams, Transport,
 };
 
 const JSONRPC_VERSION: &str = "2.0";
@@ -75,7 +76,9 @@ fn error_code(err: &ControlError) -> i64 {
         ControlError::AlreadyStarted => ERR_RESTART_FAILED,
         ControlError::RestartFailed(_)
         | ControlError::StartFailed(_)
-        | ControlError::ServiceOperationFailed(_) => ERR_RESTART_FAILED,
+        | ControlError::ServiceOperationFailed(_)
+        // The request was valid and was applied in memory; only the write failed.
+        | ControlError::AutostartNotPersisted(_) => ERR_RESTART_FAILED,
         ControlError::ControllerStopped => INTERNAL_ERROR,
     }
 }
@@ -211,6 +214,19 @@ pub async fn handle_line(handle: &ControlHandle, transport: Transport, line: &st
                 ))
             }
         },
+        Method::SetServiceAutostart => match parse_service_autostart(request.params) {
+            Ok(params) => handle
+                .set_service_autostart(transport, params.service, params.autostart)
+                .await
+                .map(to_value),
+            Err(message) => {
+                return render(err(
+                    id,
+                    INVALID_PARAMS,
+                    format!("invalid params: {message}"),
+                ))
+            }
+        },
     };
 
     render(match result {
@@ -223,6 +239,13 @@ fn parse_service(params: Option<Value>) -> Result<ServiceParams, String> {
     match params {
         Some(value) => serde_json::from_value(value).map_err(|error| error.to_string()),
         None => Err("missing service params".to_string()),
+    }
+}
+
+fn parse_service_autostart(params: Option<Value>) -> Result<ServiceAutostartParams, String> {
+    match params {
+        Some(value) => serde_json::from_value(value).map_err(|error| error.to_string()),
+        None => Err("missing service autostart params".to_string()),
     }
 }
 
@@ -447,6 +470,35 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("not found"));
+    }
+
+    #[tokio::test]
+    async fn set_service_autostart_needs_both_params() {
+        let handle = handle_with_loop().await;
+        for params in [
+            json!({}),
+            json!({"service":"mcp"}),
+            json!({"autostart":true}),
+        ] {
+            let line = json!({
+                "jsonrpc":"2.0","id":1,"method":"setServiceAutostart","params":params
+            })
+            .to_string();
+            let out = parse(&handle_line(&handle, Transport::Stdio, &line).await);
+            assert_eq!(out["error"]["code"], INVALID_PARAMS, "for {params}");
+        }
+    }
+
+    #[tokio::test]
+    async fn set_service_autostart_is_refused_on_the_public_surface() {
+        let handle = handle_with_loop().await;
+        let line = json!({
+            "jsonrpc":"2.0","id":1,"method":"setServiceAutostart",
+            "params":{"service":"mcp","autostart":true}
+        })
+        .to_string();
+        let out = parse(&handle_line(&handle, Transport::PublicHealth, &line).await);
+        assert_eq!(out["error"]["code"], ERR_UNAUTHORIZED);
     }
 
     #[test]

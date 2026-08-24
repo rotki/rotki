@@ -140,7 +140,12 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
     </RuiButtonGroup>
 
     <!-- No `Now` action: the picker offers one by default, but as a filter bound this instant is
-         either empty (From: nothing happened after now) or the same as no bound at all (To). -->
+         either empty (From: nothing happened after now) or the same as no bound at all (To).
+
+         `partial-time` lets a bound be given as a bare date, which is how a date range is usually
+         thought of: the picker then fills the time the entry left out, and the two ends take
+         opposite sides of the day so that From/To spans whole days rather than cutting the last
+         one off at midnight. -->
     <RuiDateTimePicker
       v-if="showFrom"
       v-model:menu-open="fromMenuOpen"
@@ -150,6 +155,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       :actions="[]"
       type="epoch"
       accuracy="second"
+      partial-time="start"
       allow-empty
       dense
       variant="outlined"
@@ -169,6 +175,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       :actions="[]"
       type="epoch"
       accuracy="second"
+      partial-time="end"
       allow-empty
       dense
       variant="outlined"

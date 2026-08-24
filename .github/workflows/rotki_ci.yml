@@ -67,7 +67,9 @@ jobs:
                   - tag: run all py tests
                     value: nightly
               - name: colibri
-                paths: [colibri, Cargo.toml, Cargo.lock]
+                # The colibri tests read the packaged global database, so a new asset list has to
+                # run them too. Leaving it out let a shipped asset break them for six days.
+                paths: [colibri, Cargo.toml, Cargo.lock, rotkehlchen/data/global.db]
               - name: starling
                 paths: [crates, Cargo.toml, Cargo.lock]
               - name: documentation

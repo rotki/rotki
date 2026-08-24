@@ -136,13 +136,14 @@ async function submitForm(): Promise<void> {
         <div class="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <BlockchainAccountSelector
             v-model="form.state.selectedAccount"
-            :chains="[Blockchain.ETH]"
-            outlined
-            show-details
-            :label="t('staking_page.lido_csm.form.address_label')"
-            :custom-hint="t('staking_page.lido_csm.form.address_hint')"
-            :error-messages="form.errors('selectedAccount')"
             data-testid="lido-csm-address"
+            :source="{ chains: [Blockchain.ETH] }"
+            :field="{
+              errorMessages: form.errors('selectedAccount'),
+              hint: t('staking_page.lido_csm.form.address_hint'),
+              label: t('staking_page.lido_csm.form.address_label'),
+              showDetails: true,
+            }"
             @update:model-value="form.touch('selectedAccount')"
           />
           <RuiTextField

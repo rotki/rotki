@@ -78,7 +78,7 @@ onBeforeMount(async () => {
 <template>
   <RuiTabs
     v-model="activeTab"
-    class="border-b border-default"
+    class="border-b border-default shrink-0"
     color="primary"
   >
     <RuiTab>
@@ -105,10 +105,44 @@ onBeforeMount(async () => {
     </RuiTab>
   </RuiTabs>
 
+  <!-- Pinned bypasses RuiTabItems: it sizes itself from its content and hides the overflow, so
+       in a bounded column the bottom of the panel - the pager - is silently cut off. Rendering
+       the active list straight into a flex column lets it size to the space it actually has. -->
+  <div
+    v-if="isPinned"
+    class="flex-1 min-h-0 flex flex-col px-3 my-4"
+  >
+    <UnmatchedMovementsList
+      v-if="activeTab === 0"
+      v-model:selected="modelSelectedUnmatched"
+      :movements="unmatchedMovements"
+      :highlighted-group-identifier="highlightedGroupIdentifier"
+      :ignore-loading="ignoreLoading"
+      is-pinned
+      :loading="loading"
+      :match-disabled="!isAutoMatchAllowed"
+      :match-minimum-tier="autoMatchMinimumTier"
+      @action="handleAction($event)"
+      @pin="emit('pin')"
+    />
+    <UnmatchedMovementsList
+      v-else
+      v-model:selected="modelSelectedIgnored"
+      :movements="ignoredMovements"
+      :highlighted-group-identifier="highlightedGroupIdentifier"
+      :loading="ignoredLoading"
+      :ignore-loading="ignoreLoading"
+      is-pinned
+      show-restore
+      @action="handleAction($event)"
+      @pin="emit('pin')"
+    />
+  </div>
+
   <RuiTabItems
+    v-else
     v-model="activeTab"
     class="my-4"
-    :class="{ 'px-3': isPinned }"
   >
     <RuiTabItem>
       <UnmatchedMovementsList
@@ -116,7 +150,6 @@ onBeforeMount(async () => {
         :movements="unmatchedMovements"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :ignore-loading="ignoreLoading"
-        :is-pinned="isPinned"
         :loading="loading"
         :match-disabled="!isAutoMatchAllowed"
         :match-minimum-tier="autoMatchMinimumTier"
@@ -131,7 +164,6 @@ onBeforeMount(async () => {
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :loading="ignoredLoading"
         :ignore-loading="ignoreLoading"
-        :is-pinned="isPinned"
         show-restore
         @action="handleAction($event)"
         @pin="emit('pin')"

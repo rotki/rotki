@@ -38,8 +38,8 @@ class BridgeExtraData(TypedDict, total=False):
     protocol-specific native-asset or default-routing sentinel.
     transfer_id is the protocol-native identifier of the transfer (deposit id, message
     nonce, transfer hash etc.) normalized to a string: decimal for numeric ids, 0x-hex
-    for hash ids. It is unique per (counterparty, from_chain) and when present on both
-    sides of a bridge allows exact matching of the two legs.
+    for hash ids. It is unique for a protocol route and, when present on both sides of
+    a bridge, allows exact matching even if an aggregator labels the source differently.
     """
     from_chain: int | str
     to_chain: int | str

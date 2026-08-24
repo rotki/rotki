@@ -130,10 +130,12 @@ class KinetiqBalances(ProtocolWithBalance):
             if request_id in pending_ids
         ]
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         staking_requests, earn_requests = [], []
-        for user_address, events in self.addresses_with_deposits().items():
+        for user_address, events in self.addresses_with_deposits(
+            location_labels=addresses,
+        ).items():
             for event in events:
                 if event.extra_data is None or event.address is None:
                     continue  # instant unstakes share the type/subtype combo but have no extra data  # noqa: E501

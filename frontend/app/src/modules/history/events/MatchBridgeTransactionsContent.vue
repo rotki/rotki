@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import UnmatchedBridgesList from '@/modules/history/events/UnmatchedBridgesList.vue';
+import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useBridgeTransactionActions } from '@/modules/history/events/use-bridge-transaction-actions';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 
@@ -39,12 +40,15 @@ const {
   confirmCreateCounterpart,
   confirmIgnoreSelected,
   confirmRestoreSelected,
+  dismissResolution,
   ignoreLoading,
   ignoreTransaction,
   markExternal,
   restoreTransaction,
+  resolutionNotice,
   modelSelectedIgnored,
   modelSelectedUnmatched,
+  undoResolution,
 } = useBridgeTransactionActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
@@ -80,7 +84,7 @@ onBeforeMount(async () => {
 <template>
   <RuiTabs
     v-model="activeTab"
-    class="border-b border-default"
+    class="border-b border-default shrink-0"
     color="primary"
   >
     <RuiTab>
@@ -107,10 +111,58 @@ onBeforeMount(async () => {
     </RuiTab>
   </RuiTabs>
 
+  <!-- A resolution reports itself here rather than as a notification: the outcome and its undo
+       belong next to the list they changed, and the panel the action was taken from is still
+       open. It sits above both branches so it shows on either tab, since an undo puts the leg
+       back in the unmatched one. -->
+  <UnmatchedResolutionStrip
+    v-if="resolutionNotice"
+    :message="resolutionNotice.message"
+    :loading="ignoreLoading"
+    class="shrink-0"
+    :class="isPinned ? 'mx-3 mt-3' : 'mt-4'"
+    @undo="startPromise(undoResolution())"
+    @dismiss="dismissResolution()"
+  />
+
+  <!-- Pinned bypasses RuiTabItems: it sizes itself from its content and hides the overflow, so
+       in a bounded column the bottom of the panel - the pager - is silently cut off. Rendering
+       the active list straight into a flex column lets it size to the space it actually has. -->
+  <div
+    v-if="isPinned"
+    class="flex-1 min-h-0 flex flex-col px-3 my-4"
+  >
+    <UnmatchedBridgesList
+      v-if="activeTab === 0"
+      v-model:selected="modelSelectedUnmatched"
+      :transactions="unmatchedTransactions"
+      :highlighted-group-identifier="highlightedGroupIdentifier"
+      :ignore-loading="ignoreLoading"
+      is-pinned
+      :loading="loading"
+      :match-disabled="!isAutoMatchAllowed"
+      :match-minimum-tier="autoMatchMinimumTier"
+      @action="handleAction($event)"
+      @pin="emit('pin')"
+    />
+    <UnmatchedBridgesList
+      v-else
+      v-model:selected="modelSelectedIgnored"
+      :transactions="ignoredTransactions"
+      :highlighted-group-identifier="highlightedGroupIdentifier"
+      :loading="ignoredLoading"
+      :ignore-loading="ignoreLoading"
+      is-pinned
+      show-restore
+      @action="handleAction($event)"
+      @pin="emit('pin')"
+    />
+  </div>
+
   <RuiTabItems
+    v-else
     v-model="activeTab"
     class="my-4"
-    :class="{ 'px-3': isPinned }"
   >
     <RuiTabItem>
       <UnmatchedBridgesList
@@ -118,7 +170,6 @@ onBeforeMount(async () => {
         :transactions="unmatchedTransactions"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :ignore-loading="ignoreLoading"
-        :is-pinned="isPinned"
         :loading="loading"
         :match-disabled="!isAutoMatchAllowed"
         :match-minimum-tier="autoMatchMinimumTier"
@@ -133,7 +184,6 @@ onBeforeMount(async () => {
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :loading="ignoredLoading"
         :ignore-loading="ignoreLoading"
-        :is-pinned="isPinned"
         show-restore
         @action="handleAction($event)"
         @pin="emit('pin')"

@@ -45,7 +45,7 @@ catalog:
   '@playwright/test': 1.62.1
   '@rotki/eslint-config': 7.0.0
   '@rotki/eslint-plugin': 1.5.1
-  '@rotki/ui-library': 2.23.4
+  '@rotki/ui-library': 2.24.0
   '@tsconfig/node24': 24.0.4
   '@types/node': 24.13.3
   '@types/qrcode': 1.5.6
@@ -57,8 +57,6 @@ catalog:
   '@vue/devtools-api': 8.2.1
   '@vue/test-utils': 2.4.11
   '@vue/tsconfig': 0.9.1
-  '@vuelidate/core': 2.0.3
-  '@vuelidate/validators': 2.0.4
   '@vueuse/core': 14.4.0
   '@vueuse/math': 14.4.0
   '@vueuse/shared': 14.4.0

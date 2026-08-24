@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { getValidSelectorFromEvmAddress } from '@rotki/common';
 import {
   type AssetMovementEventFixture,
@@ -16,13 +16,19 @@ import {
 } from '../fixtures/history-events';
 import { TIMEOUT_LONG, TIMEOUT_MEDIUM } from '../helpers/constants';
 import { selectAsset } from '../helpers/utils';
+import { HistoryEventRows } from './history-event-rows';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 export class HistoryEventsPage {
   private dateSequence = 0;
 
-  constructor(private readonly page: Page) {}
+  /** Addressing, reading and acting on the table's rows. See `HistoryEventRows`. */
+  readonly rows: HistoryEventRows;
+
+  constructor(private readonly page: Page) {
+    this.rows = new HistoryEventRows(page);
+  }
 
   async visit(): Promise<void> {
     await RotkiApp.navigateTo(this.page, 'history');
@@ -172,75 +178,6 @@ export class HistoryEventsPage {
     await bar.expectPillVisible(fieldKey);
   }
 
-  async getEventRows(): Promise<number> {
-    const rows = this.page.locator('[data-testid=history-event-row]');
-    return rows.count();
-  }
-
-  async getSwapRows(): Promise<number> {
-    const rows = this.page.locator('[data-testid=history-event-swap]');
-    return rows.count();
-  }
-
-  /**
-   * A row addressed by the id of the event it stands for — the only stable handle. The table sorts
-   * timestamp DESC and re-renders, so `nth(i)` names a different row from one query to the next.
-   */
-  rowById(eventId: string): Locator {
-    return this.page.locator(`[data-event-id="${eventId}"]`);
-  }
-
-  /** The event id of the first row matching `rowSelector`. */
-  async eventIdOf(rowSelector: string): Promise<string> {
-    const id = await this.page.locator(rowSelector).first().getAttribute('data-event-id');
-    expect(id, `${rowSelector} carries no data-event-id`).toBeTruthy();
-    return id ?? '';
-  }
-
-  async getMovementRows(): Promise<number> {
-    const rows = this.page.locator('[data-testid=history-event-movement]');
-    return rows.count();
-  }
-
-  async verifyEventTypeLabel(rowSelector: string, index: number, expectedText: string): Promise<void> {
-    const row = this.page.locator(rowSelector).nth(index);
-    const eventType = row.locator('[data-testid=event-type]');
-    await expect(eventType).toContainText(expectedText, { timeout: TIMEOUT_MEDIUM });
-  }
-
-  async verifyEventNotes(rowSelector: string, index: number, expectedNotes: string): Promise<void> {
-    const row = this.page.locator(rowSelector).nth(index);
-    const notes = row.locator('[data-testid=event-notes]');
-    await expect(notes).toContainText(expectedNotes, { timeout: TIMEOUT_MEDIUM });
-  }
-
-  async verifyEventAmount(rowSelector: string, index: number, expectedAmount: string): Promise<void> {
-    const row = this.page.locator(rowSelector).nth(index);
-    const amount = row.locator('[data-testid=event-amount]').first();
-    await expect(amount).toContainText(expectedAmount, { timeout: TIMEOUT_MEDIUM });
-  }
-
-  async editEvent(rowSelector: string, index: number): Promise<void> {
-    const row = this.page.locator(rowSelector).nth(index);
-    await row.hover();
-    await row.locator('[data-testid=row-edit]').click();
-    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
-  }
-
-  async deleteEvent(rowSelector: string, index: number): Promise<void> {
-    return this.deleteEventRow(this.page.locator(rowSelector).nth(index));
-  }
-
-  /** Deletes an already-resolved row — `deleteEvent` re-queries by index and the list re-sorts. */
-  async deleteEventRow(row: Locator): Promise<void> {
-    await row.hover();
-    await row.locator('[data-testid=row-delete]').click();
-    // Confirm the delete dialog
-    const dialog = this.page.locator('[data-testid=confirm-dialog]');
-    await dialog.locator('[data-testid=button-confirm]').click();
-    await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-  }
-
   private async fillAddressAutocomplete(dataTestid: string, address: string): Promise<void> {
     const field = this.page.locator(`[data-testid=${dataTestid}]`);
     await field.locator('input').click();
@@ -362,12 +299,6 @@ export class HistoryEventsPage {
       await this.page.locator(`${amount} input`).nth(i).clear();
       await this.page.locator(`${amount} input`).nth(i).fill(item.amount);
     }
-  }
-
-  async expandSwap(index: number): Promise<void> {
-    const swapRow = this.page.locator('[data-testid=history-event-swap]').nth(index);
-    await swapRow.hover();
-    await swapRow.locator('[data-testid=swap-expand]').click();
   }
 
   async getExpandedEventRows(): Promise<number> {

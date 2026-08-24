@@ -48,6 +48,7 @@ from rotkehlchen.history.events.utils import (
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
+    ASSET_MOVEMENT_MATCHING_CAPABILITY,
     GNOSIS_PAY_CAPABILITY,
     MONERIUM_CAPABILITY,
     UserLimitType,
@@ -56,6 +57,7 @@ from rotkehlchen.premium.premium import (
     has_premium_check,
 )
 from rotkehlchen.serialization.serialize import PreSerializedList
+from rotkehlchen.tasks.bridges import process_bridge_transactions
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -335,7 +337,14 @@ class HistoryService:
                     self.rotkehlchen.monerium is not None and
                     self.rotkehlchen.monerium.oauth_client.is_authenticated()
                 ):
-                    self.rotkehlchen.monerium.get_and_process_orders()
+                    if self.rotkehlchen.monerium.get_and_process_orders():
+                        process_bridge_transactions(  # match the legs this run created
+                            database=self.rotkehlchen.data.db,
+                            should_auto_match=has_premium_capability(
+                                premium=self.rotkehlchen.premium,
+                                capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
+                            ),
+                        )
                     return {'result': True, 'message': ''}
                 return {
                     'result': None,

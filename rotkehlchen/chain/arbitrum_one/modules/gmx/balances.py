@@ -44,7 +44,10 @@ class GmxBalances(ProtocolWithBalance):
         )
         self.gmx = A_GMX.resolve_to_evm_token()
 
-    def _extract_unique_deposits(self) -> dict[ChecksumEvmAddress, set[tuple[str, str, bool]]]:
+    def _extract_unique_deposits(
+            self,
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, set[tuple[str, str, bool]]]:
         """
         fetch deposit events and remove duplicate positions. Since a user can modify the same
         position increasing or decreasing the collateral we want to remove duplicates to make
@@ -52,6 +55,7 @@ class GmxBalances(ProtocolWithBalance):
         """
         addresses_events = self.addresses_with_activity(
             event_types=self.deposit_event_types,
+            location_labels=addresses,
         )
         unique_deposits = {}
         for address, events in addresses_events.items():
@@ -73,7 +77,10 @@ class GmxBalances(ProtocolWithBalance):
             unique_deposits[address] = positions
         return unique_deposits
 
-    def query_position_balances(self) -> BalancesSheetType:
+    def query_position_balances(
+            self,
+            addresses: list[ChecksumEvmAddress],
+    ) -> BalancesSheetType:
         """
         Query balances for GMX open positions and returns it.
 
@@ -91,7 +98,7 @@ class GmxBalances(ProtocolWithBalance):
         and the token amount is calculated by dividing the USD value by the token's USD price.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        unique_deposits = self._extract_unique_deposits()
+        unique_deposits = self._extract_unique_deposits(addresses=addresses)
         if len(unique_deposits) == 0:
             return balances
 
@@ -168,7 +175,11 @@ class GmxBalances(ProtocolWithBalance):
 
         return balances
 
-    def query_staking_balances(self, balances: BalancesSheetType) -> BalancesSheetType:
+    def query_staking_balances(
+            self,
+            balances: BalancesSheetType,
+            addresses: list[ChecksumEvmAddress],
+    ) -> BalancesSheetType:
         """
         Query staked balances for GMX. It modifies the `balances` argument to include
         the staking balances and returns it.
@@ -180,6 +191,7 @@ class GmxBalances(ProtocolWithBalance):
         """
         addresses_events = self.addresses_with_activity(
             event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
+            location_labels=addresses,
         )
         if len(addresses_events) == 0:
             return balances
@@ -203,7 +215,7 @@ class GmxBalances(ProtocolWithBalance):
 
         return balances
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Query balances for GMX open positions"""
-        balances = self.query_position_balances()
-        return self.query_staking_balances(balances)
+        balances = self.query_position_balances(addresses=addresses)
+        return self.query_staking_balances(balances=balances, addresses=addresses)

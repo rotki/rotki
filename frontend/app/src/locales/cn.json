@@ -940,9 +940,7 @@
     }
   },
   "blockchain_account_selector": {
-    "all": "全部",
     "default_label": "过滤账户",
-    "hint": "显示 {hintText} 账户的结果。",
     "no_data": "没有可用地址"
   },
   "blockchain_balances": {
@@ -1232,7 +1230,6 @@
             "hints": {
               "location": "这是可选的。如果指定，位置余额数据将自动调整。如果没有，您必须手动更新位置余额数据。"
             },
-            "nft_hint": "接受格式： \"_nft_{'ETH address'}_{'collection number'}\"",
             "preview": {
               "from": "从",
               "title": "此位置值将被更新",

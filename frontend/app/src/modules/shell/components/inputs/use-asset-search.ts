@@ -2,6 +2,8 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { NftAsset } from '@/modules/assets/nfts';
 import { assert, type AssetInfoWithId, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { NftHandling } from '@/modules/assets/nft-handling';
+import { isNft } from '@/modules/assets/nft-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { uniqueObjects } from '@/modules/core/common/data/data';
 import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/core/common/display/assets';
@@ -9,6 +11,27 @@ import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 type Asset = AssetInfoWithId | NftAsset;
+
+/**
+ * Which assets a picker may offer: the allow-list, the exclusions, the chain it is scoped to, and
+ * how ignored assets and NFTs are treated.
+ *
+ * One object rather than five arguments because they are one decision — what the user may pick —
+ * and because `AssetSelect` passes them straight through, where five separate props pushed it past
+ * the lint ceiling on a component that is part of the premium bundle's API.
+ */
+export interface AssetSearchSource {
+  /** Restricts the options to this allow-list of identifiers. */
+  items?: string[];
+  /** Removes these identifiers from the options. */
+  excludes?: string[];
+  /** Scopes the remote search to a chain. */
+  chain?: string;
+  /** When true, ignored assets stay in the options. */
+  showIgnored?: boolean;
+  /** Whether NFTs are left out of the search, searched alongside the assets, or searched alone. */
+  nfts?: NftHandling;
+}
 
 interface UseAssetSearchOptions {
   /** The selected asset identifier; kept in the options and used to gate ignored-asset filtering. */
@@ -21,8 +44,14 @@ interface UseAssetSearchOptions {
   items?: MaybeRefOrGetter<string[]>;
   /** Removes these identifiers from the options. */
   excludes?: MaybeRefOrGetter<string[]>;
-  /** Includes NFTs in the search results. */
-  includeNfts?: MaybeRefOrGetter<boolean>;
+  /** Whether NFTs are left out of the search, searched alongside the assets, or searched alone. */
+  nftHandling?: MaybeRefOrGetter<NftHandling>;
+  /**
+   * Called when a selection that *was* in the options drops out of them, e.g. after the chain
+   * scope changes under it. The caller decides what to do about it, since only it knows what else
+   * hangs off the selection.
+   */
+  onSelectionLost?: () => void;
 }
 
 interface UseAssetSearchReturn {
@@ -42,7 +71,7 @@ interface UseAssetSearchReturn {
  * autocomplete.
  */
 export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchReturn {
-  const { chain, excludes, includeNfts, items, modelValue, showIgnored } = options;
+  const { chain, excludes, items, modelValue, nftHandling, onSelectionLost, showIgnored } = options;
 
   const { isAssetIgnored } = useAssetsStore();
   const { getEvmChainName, matchChain } = useSupportedChains();
@@ -128,6 +157,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
 
   async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
     set(loading, true);
+    const requested = currentScope();
     try {
       const { address, value } = parseAssetSearchKeyword(keyword);
       const usedChain = getSanitizedChain(toValue(chain), matchChain, getEvmChainName);
@@ -136,10 +166,18 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
         address,
         ...getAssetSearchTypeParams(usedChain),
         limit: 50,
-        searchNfts: toValue(includeNfts) ?? false,
+        nftHandling: toValue(nftHandling) ?? NftHandling.EXCLUDE,
         signal,
         value,
       });
+
+      // The scope can change while this is in flight, and aborting alone does not cover it: a
+      // response that has already resolved is only a microtask away from being written, past the
+      // point where the signal can stop it. Writing it would put the previous scope's results back
+      // over the ones the user is now looking at — tokens under a row switched to nft.
+      if (requested !== currentScope())
+        return;
+
       if (get(modelValue))
         await retainSelectedValueInOptions(fetchedAssets);
       else
@@ -167,6 +205,23 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     await checkValue();
   });
 
+  /**
+   * Only a selection that was visible and then stopped being visible counts as lost. A value that
+   * was never in the options is a freshly picked one whose mapping has not arrived yet, and
+   * clearing on that would undo the user's own selection a moment after they made it.
+   */
+  watch(visibleAssets, (_, previous) => {
+    const identifier = get(modelValue);
+    if (!identifier || !previous)
+      return;
+
+    if (!previous.some(asset => asset.identifier === identifier))
+      return;
+
+    if (!getVisibleAsset(identifier))
+      onSelectionLost?.();
+  });
+
   watch(modelSearch, (value) => {
     if (value)
       set(loading, true);
@@ -175,10 +230,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
   });
 
   async function runSearch(keyword: string): Promise<void> {
-    if (pending) {
-      pending.abort();
-      pending = null;
-    }
+    abortPending();
     set(error, '');
     pending = new AbortController();
     await searchAssets(keyword, pending.signal);
@@ -189,15 +241,59 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
       return set(loading, false);
 
     await runSearch(value);
-  }, { debounce: 800 });
+  }, { debounce: 350 });
 
-  watch(() => toValue(chain), async () => {
-    if (!get(modelValue)) {
-      // Drop options cached for the previous chain so a stale, off-chain asset can't be picked;
-      // the next search repopulates for the new chain.
+  /** The inputs that decide what a search may return, as one comparable value. */
+  function currentScope(): string {
+    return `${toValue(chain) ?? ''}|${toValue(nftHandling) ?? NftHandling.EXCLUDE}`;
+  }
+
+  function abortPending(): void {
+    if (!pending)
+      return;
+
+    pending.abort();
+    pending = null;
+  }
+
+  /** Whether the current scope would offer this identifier at all. */
+  function admitsSelection(identifier: string): boolean {
+    const handling = toValue(nftHandling) ?? NftHandling.EXCLUDE;
+    if (handling === NftHandling.SHOW_ONLY)
+      return isNft(identifier);
+    if (handling === NftHandling.EXCLUDE)
+      return !isNft(identifier);
+    return true;
+  }
+
+  // Both inputs scope the remote search, so a change to either leaves the cached options describing
+  // a search nobody asked for. `nftHandling` changes under the user in the snapshot editor, where a
+  // radio flips the row between token and nft.
+  watch([
+    (): string | undefined => toValue(chain),
+    (): NftHandling | undefined => toValue(nftHandling),
+  ], async () => {
+    // A search for the old scope is no longer an answer to anything. Its response is guarded on
+    // write too, since a request that has already resolved is past what the signal can stop.
+    abortPending();
+    set(loading, false);
+
+    const selected = get(modelValue);
+    if (!selected) {
+      // Drop options cached for the previous scope so a stale, out-of-scope asset can't be picked;
+      // the next search repopulates for the new one.
       set(assets, []);
       return;
     }
+
+    // A selection the new scope cannot offer has to go with it: keeping it is how a token stayed
+    // picked on a row the user had just switched to nft.
+    if (!admitsSelection(selected)) {
+      set(assets, []);
+      onSelectionLost?.();
+      return;
+    }
+
     await retainSelectedValueInOptions([]);
   });
 
@@ -206,7 +302,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
    * picker can open on a non-empty list while its search box stays empty. Writing the keyword to
    * `modelSearch` would show it as text the user has to clear before typing their own.
    *
-   * Runs immediately, skipping the 800ms debounce the typed path uses.
+   * Runs immediately, skipping the debounce the typed path uses.
    */
   async function preload(keyword: string): Promise<void> {
     await runSearch(keyword);

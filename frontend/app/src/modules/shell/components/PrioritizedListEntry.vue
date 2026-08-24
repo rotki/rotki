@@ -46,7 +46,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
     <AppImage
       v-if="data.icon"
       :size="size"
-      contain
+      fit="contain"
       :src="data.icon"
       class="icon-bg"
     />

@@ -1,11 +1,10 @@
 <script setup lang="ts">
+import type { ZodType } from 'zod';
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
-import { isValidUrl } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { focusInput } from '@/modules/auth/login/focus-input';
 import IncompleteUpgradeAlert from '@/modules/auth/login/IncompleteUpgradeAlert.vue';
+import { classifyLoginErrors, type LoginFormState, loginSchema } from '@/modules/auth/login/login-form';
 import LoginBackendToggle from '@/modules/auth/login/LoginBackendToggle.vue';
 import LoginCustomBackendFields from '@/modules/auth/login/LoginCustomBackendFields.vue';
 import LoginRememberOptions from '@/modules/auth/login/LoginRememberOptions.vue';
@@ -17,7 +16,7 @@ import { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { toMessages } from '@/modules/core/common/validation/validation';
+import { useForm } from '@/modules/core/form/use-form';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const {
@@ -50,9 +49,7 @@ const backendChanged = (url: string | null) => emit('backend-changed', url);
 
 const { logoutRemoteSession } = useLogout();
 
-const username = ref<string>('');
 const usernameSearch = ref<string>('');
-const password = ref<string>('');
 
 const usernameFieldRef = useTemplateRef<InstanceType<typeof LoginUsernameField>>('usernameFieldRef');
 const passwordRef = useTemplateRef('passwordRef');
@@ -77,71 +74,42 @@ const {
   storedUsername,
 } = useLoginRememberOptions({ isDocker: () => !!isDocker });
 
-const rules = {
-  customBackendUrl: {
-    isValidUrl: helpers.withMessage(
-      t('login.custom_backend.validation.url'),
-      (v: string): boolean => !get(customBackendDisplay) || (v.length < 300 && isValidUrl(v)),
-    ),
-    required: helpers.withMessage(t('login.custom_backend.validation.non_empty'), requiredIf(customBackendDisplay)),
-  },
-  password: {
-    required: helpers.withMessage(t('login.validation.non_empty_password'), required),
-  },
-  username: {
-    isValidUsername: helpers.withMessage(
-      t('login.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
-    ),
-    required: helpers.withMessage(t('login.validation.non_empty_username'), required),
-  },
-};
+const schema = computed<ZodType>(() => loginSchema({
+  emptyPassword: t('login.validation.non_empty_password'),
+  emptyUrl: t('login.custom_backend.validation.non_empty'),
+  invalidUrl: t('login.custom_backend.validation.url'),
+  invalidUsername: t('login.validation.valid_username'),
+  requiredUsername: t('login.validation.non_empty_username'),
+}, get(customBackendDisplay)));
 
-const v$ = useVuelidate(
-  rules,
-  {
-    customBackendUrl,
-    password,
-    username,
-  },
-  {
-    $autoDirty: true,
-  },
-);
-
-watch([username, password], ([username, password], [oldUsername, oldPassword]) => {
-  // touched should not be emitted when restoring from local storage
-  if (!oldUsername && username === get(storedUsername))
-    return;
-
-  if (username !== oldUsername || password !== oldPassword)
-    touched();
+const {
+  errors: fieldErrors,
+  setServerErrors,
+  state,
+  touch,
+  valid: parses,
+} = useForm<LoginFormState, LoginFormState>({
+  initial: (): LoginFormState => ({ customBackendUrl: '', password: '', username: '' }),
+  schema,
+  // The screen above owns the attempt; this form only reports the credentials through its emit.
+  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  transform: (current): LoginFormState => ({ ...current }),
 });
+
+const serverErrors = computed<Record<string, string[]>>(() => classifyLoginErrors(errors));
+
+/** Whether the rejection is about the credentials, which is what picks the actionable alert. */
+const hasServerError = computed<boolean>(() => Object.keys(get(serverErrors)).length > 0);
 
 const isLoggedInError = useArraySome(() => errors, error => error.includes('is already logged in'));
 
-const usernameError = useArrayFind(() => errors, error => error.startsWith('User '));
-const passwordError = useArrayFind(() => errors, error => error.startsWith('Wrong password '));
-
-const hasServerError = computed(() => !!get(usernameError) || !!get(passwordError));
-
-const usernameErrors = computed(() => {
-  const formErrors = [...toMessages(get(v$).username)];
-  const serverError = get(usernameError);
-  if (serverError)
-    formErrors.push(serverError);
-
-  return formErrors;
-});
-
-const passwordErrors = computed(() => {
-  const formErrors = [...toMessages(get(v$).password)];
-  const serverError = get(passwordError);
-  if (serverError)
-    formErrors.push(serverError);
-
-  return formErrors;
-});
+// Note for anyone porting another form: `form.valid` read off the api object does NOT unwrap in a
+// template, so `:disabled="!form.valid"` would gate on a truthy ref and never engage. Destructuring
+// it, as here, makes it a setup binding the compiler unwraps, so that trap does not apply. This
+// computed exists only because the gate is four terms wide.
+const submitDisabled = computed<boolean>(() =>
+  !get(parses) || loading || get(conflictExist) || get(customBackendDisplay),
+);
 
 async function logout() {
   const { success } = await logoutRemoteSession();
@@ -151,7 +119,7 @@ async function logout() {
 
 function updateFocus() {
   nextTick(() => {
-    if (get(username))
+    if (state.username)
       focusInput(get(passwordRef));
     else
       get(usernameFieldRef)?.focus();
@@ -164,11 +132,55 @@ function updateFocus() {
 // component can never race that flow.
 function loadSettings(): void {
   loadRememberSettings();
-  if (!get(username))
-    set(username, resolveStoredUsername());
+  if (!state.username) {
+    state.username = resolveStoredUsername();
+    // A server error is remembered against the value it was reported for, so that editing the field
+    // retires it. Filling the name from the saved profile is not such an edit, and would otherwise
+    // drop a rejection the screen is still showing in its alert.
+    setServerErrors(get(serverErrors));
+  }
 
   loadBackendSettings();
 }
+
+async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean }) {
+  const credentials: LoginCredentials = {
+    password: state.password,
+    username: state.username,
+    ...actions,
+  };
+  emit('login', credentials);
+  await rememberCredentials(state.username, state.password);
+}
+
+function abortLogin() {
+  resetSyncConflict();
+  resetIncompleteUpgradeConflict();
+}
+
+watch(() => [state.username, state.password], ([username, password], [oldUsername, oldPassword]) => {
+  // touched should not be emitted when restoring from local storage
+  if (!oldUsername && username === get(storedUsername))
+    return;
+
+  if (username !== oldUsername || password !== oldPassword)
+    touched();
+});
+
+// The url is owned by the backend panel's composable; the form carries a copy so it can be validated
+// alongside the credentials. Touch is deliberately not part of the immediate run: an untouched empty
+// url must stay silent until the user has actually been in the field.
+watchImmediate(customBackendUrl, (url) => {
+  state.customBackendUrl = url;
+});
+
+watch(customBackendUrl, () => {
+  touch('customBackendUrl');
+});
+
+watchImmediate(serverErrors, (value) => {
+  setServerErrors(value);
+}, { deep: true });
 
 onBeforeMount(async () => {
   await loadProfiles();
@@ -182,21 +194,6 @@ onBeforeMount(async () => {
 onMounted(() => {
   updateFocus();
 });
-
-async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean }) {
-  const credentials: LoginCredentials = {
-    password: get(password),
-    username: get(username),
-    ...actions,
-  };
-  emit('login', credentials);
-  await rememberCredentials(get(username), get(password));
-}
-
-function abortLogin() {
-  resetSyncConflict();
-  resetIncompleteUpgradeConflict();
-}
 </script>
 
 <template>
@@ -240,27 +237,29 @@ function abortLogin() {
           >
             <LoginUsernameField
               ref="usernameFieldRef"
-              v-model="username"
+              v-model="state.username"
               v-model:search="usernameSearch"
               :disabled="loading || conflictExist || customBackendDisplay"
               :loading="loading"
               :is-docker="isDocker"
-              :error-messages="usernameErrors"
+              :error-messages="fieldErrors('username')"
+              @update:model-value="touch('username')"
               @new-account="newAccount()"
             />
 
             <RuiRevealableTextField
               ref="passwordRef"
-              v-model="password"
+              v-model="state.password"
               variant="outlined"
               color="primary"
               autocomplete="current-password"
-              :error-messages="passwordErrors"
+              :error-messages="fieldErrors('password')"
               :disabled="loading || conflictExist || customBackendDisplay"
               class="mb-2 [&>div]:bg-transparent"
               :label="t('login.label_password')"
               data-testid="password-input"
               dense
+              @update:model-value="touch('password')"
             />
 
             <div class="flex items-center justify-between">
@@ -285,7 +284,7 @@ function abortLogin() {
               :loading="loading"
               :saved="customBackendSaved"
               :color="serverColor"
-              :error-messages="toMessages(v$.customBackendUrl)"
+              :error-messages="fieldErrors('customBackendUrl')"
               @save="saveBackend()"
               @clear="clearBackend()"
             />
@@ -301,7 +300,7 @@ function abortLogin() {
               <RuiButton
                 color="primary"
                 size="lg"
-                :disabled="v$.$invalid || loading || conflictExist || customBackendDisplay"
+                :disabled="submitDisabled"
                 :loading="loading"
                 type="submit"
                 data-testid="login-submit"

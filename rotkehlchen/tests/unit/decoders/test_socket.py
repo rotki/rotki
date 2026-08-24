@@ -2,7 +2,6 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET, GATEWAY_ADDRESS
 from rotkehlchen.constants.assets import A_ETH, A_POL
 from rotkehlchen.fval import FVal
@@ -52,6 +51,52 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
                 'to_chain': 42161,
                 'from_address': user_address,
                 'to_address': user_address,
+                'transfer_id': '35259',
+            }},
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('scroll_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_scroll_to_arbitrum_across_bridge(scroll_inquirer, scroll_accounts):
+    tx_hash = deserialize_evm_tx_hash(
+        '0xee8b1b99f88ab4d9924c4aec444e45ab53589b918a2cf54e9bc133481c7dbbb9',
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
+    user_address = scroll_accounts[0]
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1739477339000)),
+            location=Location.SCROLL,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.00000785918'),
+            location_label=user_address,
+            notes='Burn 0.00000785918 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),
+            amount=FVal('365.729555'),
+            location_label=user_address,
+            notes=f'Bridge 365.729555 USDC to {user_address} at Arbitrum One using Socket',
+            counterparty=CPT_SOCKET,
+            address=GATEWAY_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 534352,
+                'to_chain': 42161,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '1295289',
             }},
         ),
     ]
@@ -145,7 +190,7 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
                 'to_chain': 100,
                 'from_address': user_address,
                 'to_address': user_address,
-                'to_asset': ZERO_ADDRESS,
+                'transfer_id': '0x19c1beb9da864f19672879bc093297c19ead364769f28633fd18aaf12e9d95f2',  # noqa: E501
             }},
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -159,5 +204,51 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
             location_label=user_address,
             notes=f'Revoke USDC spending approval of {user_address} by {GATEWAY_ADDRESS}',
             address=GATEWAY_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_base_to_gnosis_hop_bridge(base_inquirer, base_accounts):
+    tx_hash = deserialize_evm_tx_hash(
+        '0x3e88cd749ab657299b10a6f079b2b63380edb5f2f700c421c3f1c77f7a3b7949',
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    user_address = base_accounts[0]
+    source_asset = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1703766791000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000411690516301503'),
+            location_label=user_address,
+            notes='Burn 0.000411690516301503 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=47,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=source_asset,
+            amount=FVal('399.365908'),
+            location_label=user_address,
+            notes=f'Bridge 399.365908 USDC to {user_address} at Gnosis using Socket',
+            counterparty=CPT_SOCKET,
+            address=GATEWAY_ADDRESS,
+            extra_data={'bridge': {
+                'from_chain': 8453,
+                'to_chain': 100,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x515a483a21beb5543dc74f6dbcb2bcfbb190cc01e10f2209fd195c47b24a0275',  # noqa: E501
+            }},
         ),
     ]

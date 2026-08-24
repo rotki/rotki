@@ -51,8 +51,6 @@ export const vendorGroups: VendorGroup[] = [
       '@vueuse/math',
       '@vueuse/core',
       '@vueuse/shared',
-      '@vuelidate/core',
-      '@vuelidate/validators',
       'ofetch',
       'es-toolkit',
       'imask',

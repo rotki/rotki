@@ -17,8 +17,42 @@ type PlainAssetInfoReturn = (identifier: string | undefined) => AssetWithResolut
 interface UseAssetSelectInfoReturn {
   getAssetField: (identifier: string | undefined, field: AssetStringField) => string;
   getAssetInfo: PlainAssetInfoReturn;
+  prefetchAssetInfo: (identifiers: string[]) => void;
   useAssetField: (identifier: MaybeRefOrGetter<string | undefined>, field: AssetStringField) => ComputedRef<string>;
   useAssetInfo: (identifier: MaybeRefOrGetter<string | undefined>) => ComputedRef<AssetWithResolutionStatus | null>;
+}
+
+/**
+ * How long queued identifiers are collected before a batch is sent.
+ *
+ * This coalesces the burst a list emits while it renders, so it only needs to outlast one render
+ * pass. It used to be 1500ms, which is long enough for a user to type a search term and read an
+ * empty table before the first request even leaves: an unresolved asset has no name or symbol to
+ * match, so a cold cache filters everything out.
+ */
+const BATCH_DEBOUNCE_MS = 200;
+
+/** How many mapping requests may be in flight at once for one batch of queued identifiers. */
+export const MAX_PARALLEL_ASSET_BATCHES = 4;
+
+/**
+ * Like `items.map(fn)` awaited together, but with at most `limit` calls outstanding.
+ *
+ * Results keep the order of the input regardless of the order they complete in.
+ */
+async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = Array.from({ length: items.length });
+  let next = 0;
+
+  async function worker(): Promise<void> {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => worker()));
+  return results;
 }
 
 export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoReturn => {
@@ -45,8 +79,19 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
     const collectionInfoMap: Record<string, AssetInfo | null> = {};
     const ids = identifiers.map(id => resolveAssetIdentifier(id));
 
-    for (const batch of chunk(ids, 50)) {
-      const mappings = await getAssetMapping(batch);
+    // The batches are independent, so several are in flight at once: awaiting them one after the
+    // other made a large balance list wait for one round trip per 50 assets before the search could
+    // match anything. They are capped rather than all released together, because a large portfolio
+    // is 20 batches, more than one table prefetches its own list, and the backend serving them is a
+    // single local process.
+    const batches = chunk(ids, 50);
+    const responses = await mapWithConcurrency(
+      batches,
+      MAX_PARALLEL_ASSET_BATCHES,
+      async batch => ({ batch, mappings: await getAssetMapping(batch) }),
+    );
+
+    for (const { batch, mappings } of responses) {
       if (mappings === undefined) {
         continue;
       }
@@ -60,11 +105,10 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
         collectionInfoMap[collection] = assetCollections[collection];
       }
 
-      const foundIdentifiers = Object.keys(assets);
-      const missingIdentifiers = batch.filter(id => !foundIdentifiers.includes(id));
+      const foundIdentifiers = new Set(Object.keys(assets));
 
-      for (const identifier of missingIdentifiers) {
-        if (assetInfoMap[identifier] === undefined) {
+      for (const identifier of batch) {
+        if (!foundIdentifiers.has(identifier) && assetInfoMap[identifier] === undefined) {
           assetInfoMap[identifier] = null;
         }
       }
@@ -73,36 +117,75 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
   }
 
   const processBatch = useDebounceFn(async () => {
+    if (queuedAssets.size === 0) {
+      return;
+    }
+
+    const assetsToProcess = Array.from(queuedAssets);
+    queuedAssets.forEach(asset => pendingAssets.add(asset));
+    queuedAssets.clear();
+
     try {
-      if (queuedAssets.size === 0) {
-        return;
-      }
-
-      const assetsToProcess = Array.from(queuedAssets);
-      queuedAssets.forEach(asset => pendingAssets.add(asset));
-      queuedAssets.clear();
-
       logger.debug(`Processing batch of ${assetsToProcess.length} asset requests for AssetSelect`);
 
       const { assets, collections } = await retrieveAssetInfo(assetsToProcess);
-      set(assetCache, Object.assign({}, get(assetCache), assets));
-      set(collectionCache, Object.assign({}, get(collectionCache), collections));
 
-      pendingAssets.clear();
+      // A round that retrieved nothing must not replace the ref. Every request failing is exactly
+      // when it would hold nothing new, and replacing it wakes every reader, each of which re-queues
+      // the identifiers it still cannot resolve, which fail again one debounce later. A backend
+      // returning errors would be polled for as long as the table stayed on screen.
+      if (Object.keys(assets).length > 0)
+        set(assetCache, Object.assign({}, get(assetCache), assets));
+
+      if (Object.keys(collections).length > 0)
+        set(collectionCache, Object.assign({}, get(collectionCache), collections));
     }
     catch (error: unknown) {
       logger.error('Error processing asset info batch for AssetSelect', error);
     }
-  }, 1500);
+    finally {
+      // Only this batch is released. Clearing the whole set would let a concurrent batch's
+      // identifiers be queued a second time while their request is still in flight.
+      assetsToProcess.forEach(asset => pendingAssets.delete(asset));
+    }
+  }, BATCH_DEBOUNCE_MS);
 
-  function queueAssetInformation(key: string): void {
+  function queueAssetInformation(key: string): boolean {
     const cache = get(assetCache);
     if (cache[key] !== undefined || queuedAssets.has(key) || pendingAssets.has(key)) {
-      return;
+      return false;
     }
 
     queuedAssets.add(key);
-    startPromise(processBatch());
+    return true;
+  }
+
+  function queueAndProcess(key: string): void {
+    if (queueAssetInformation(key)) {
+      startPromise(processBatch());
+    }
+  }
+
+  /**
+   * Warms the cache for a known set of identifiers in one batch.
+   *
+   * Resolution is otherwise driven by rendering, so an identifier that is in a list but not on the
+   * visible page stays unresolved. Anything reading the whole list (a search, a sort by name) needs
+   * every entry resolved, and discovering that only once the user types costs a full round trip
+   * with the result on screen already reading "no results".
+   */
+  function prefetchAssetInfo(identifiers: string[]): void {
+    let queued = false;
+    for (const identifier of identifiers) {
+      if (!identifier) {
+        continue;
+      }
+      queued = queueAssetInformation(resolveAssetIdentifier(identifier)) || queued;
+    }
+
+    if (queued) {
+      startPromise(processBatch());
+    }
   }
 
   const getAssetInfo: PlainAssetInfoReturn = (
@@ -112,7 +195,7 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
       return null;
 
     const key = resolveAssetIdentifier(identifier);
-    queueAssetInformation(key);
+    queueAndProcess(key);
 
     const cache = get(assetCache);
     const data = cache[key];
@@ -157,6 +240,7 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
   return {
     getAssetField,
     getAssetInfo,
+    prefetchAssetInfo,
     useAssetField,
     useAssetInfo,
   };

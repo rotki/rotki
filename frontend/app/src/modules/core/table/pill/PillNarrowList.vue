@@ -4,19 +4,36 @@ import { resolveText } from '@/modules/core/table/pill/core/text';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 
-const { suggestions, highlighted = 0, emptyText = '', loading = false } = defineProps<{
+const { suggestions, highlighted = 0, emptyText = '', loading = false, examples = [], examplesLabel = '' } = defineProps<{
   /** Cross-field narrowing results for what the user typed in the bar. */
   suggestions: NarrowSuggestion[];
-  /** Index of the keyboard-highlighted row; the bar owns it, since the input lives there. */
+  /**
+   * Index of the keyboard-highlighted item; the bar owns it, since the input lives there.
+   *
+   * One index over the rows and the footer chips in sequence, chips last: the caret stays in the
+   * input, so nothing here is ever focused and Tab never reaches the footer (the popover is
+   * teleported and the bar sets `disable-auto-focus`). Arrowing through both is what makes a chip
+   * reachable without a mouse at all; an index past the last row highlights the chip beneath it.
+   */
   highlighted?: number;
   emptyText?: string;
   /** An asset search is still running; its rows will be appended to what is already shown. */
   loading?: boolean;
+  /**
+   * Verbatim things that can be typed into the bar (`after 15/01/2024`, `>100`), shown in the
+   * footer. Drawn as code rather than prose: the whole point is that they are literal text the
+   * user types, which a sentence describing them cannot convey.
+   */
+  examples?: string[];
+  /** Lead-in for the footer, e.g. `Type directly:`. */
+  examplesLabel?: string;
 }>();
 
 const emit = defineEmits<{
   'select': [suggestion: NarrowSuggestion];
   'update:highlighted': [index: number];
+  /** A footer example was clicked; the bar puts it in the input rather than applying it. */
+  'example': [example: string];
 }>();
 
 function keyOf(suggestion: NarrowSuggestion): string {
@@ -55,82 +72,114 @@ watch(() => highlighted, (index) => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-0.5 p-1.5 min-w-[16rem] max-w-[20rem] max-h-[17rem] overflow-y-auto">
-    <button
-      v-for="(suggestion, index) in suggestions"
-      :id="`pill-narrow-row-${index}`"
-      :key="keyOf(suggestion)"
-      ref="rows"
-      type="button"
-      role="menuitem"
-      class="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-md text-sm text-left transition-colors"
-      :class="index === highlighted
-        ? 'bg-rui-primary/10 text-rui-primary'
-        : 'text-rui-text-primary hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
-      data-testid="pill-narrow-row"
-      :data-key="keyOf(suggestion)"
-      @mousemove="highlightFromPointer(index)"
-      @click="emit('select', suggestion)"
-    >
-      <!-- A value row carries the same icon its pill will: the asset's mark up front, its chain
+  <!-- The scroll area and the footer are siblings, so the footer stays put while the rows scroll:
+       a syntax hint that scrolls out of sight is one the user has to already know about to find. -->
+  <div class="flex flex-col min-w-[16rem] max-w-[20rem]">
+    <div class="flex flex-col gap-0.5 p-1.5 max-h-[17rem] overflow-y-auto">
+      <button
+        v-for="(suggestion, index) in suggestions"
+        :id="`pill-narrow-row-${index}`"
+        :key="keyOf(suggestion)"
+        ref="rows"
+        type="button"
+        role="menuitem"
+        class="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-md text-sm text-left transition-colors"
+        :class="index === highlighted
+          ? 'bg-rui-primary/10 text-rui-primary'
+          : 'text-rui-text-primary hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
+        data-testid="pill-narrow-row"
+        :data-key="keyOf(suggestion)"
+        @mousemove="highlightFromPointer(index)"
+        @click="emit('select', suggestion)"
+      >
+        <!-- A value row carries the same icon its pill will: the asset's mark up front, its chain
            after it, so `USDC` on five chains reads as five distinct rows. -->
-      <PillValueIcon
-        v-if="suggestion.kind === 'value' && (suggestion.field.display || suggestion.field.resolveIcon || suggestion.field.resolveSwatch)"
-        :display="suggestion.field.display"
-        :icon="suggestion.field.resolveIcon?.(suggestion.value)"
-        :swatch="suggestion.field.resolveSwatch?.(suggestion.value)"
-        :value="suggestion.value"
-        size="18px"
-      />
-      <span class="flex-1 min-w-0 truncate">
-        {{ suggestion.label }}
-        <span
-          v-if="suggestion.kind === 'value' && suggestion.caption"
-          class="text-rui-text-secondary"
-        >
-          {{ suggestion.caption }}
+        <PillValueIcon
+          v-if="suggestion.kind === 'value' && (suggestion.field.display || suggestion.field.resolveIcon || suggestion.field.resolveSwatch)"
+          :display="suggestion.field.display"
+          :icon="suggestion.field.resolveIcon?.(suggestion.value)"
+          :swatch="suggestion.field.resolveSwatch?.(suggestion.value)"
+          :value="suggestion.value"
+          size="18px"
+        />
+        <span class="flex-1 min-w-0 truncate">
+          {{ suggestion.label }}
+          <span
+            v-if="suggestion.kind === 'value' && suggestion.caption"
+            class="text-rui-text-secondary"
+          >
+            {{ suggestion.caption }}
+          </span>
         </span>
-      </span>
-      <EvmChainIcon
-        v-if="suggestion.kind === 'value' && suggestion.chain"
-        :chain="suggestion.chain"
-        size="14px"
-        tooltip
-      />
-      <!-- A value or a read-out filter is tagged with the field it belongs to, so `ETH` reads as
+        <EvmChainIcon
+          v-if="suggestion.kind === 'value' && suggestion.chain"
+          :chain="suggestion.chain"
+          size="14px"
+          tooltip
+        />
+        <!-- A value or a read-out filter is tagged with the field it belongs to, so `ETH` reads as
            an Asset value and `greater than 100` as an Amount one. A field row needs no tag: its
            label already is the field. -->
-      <span
-        v-if="suggestion.kind !== 'field'"
-        class="text-xs text-rui-text-secondary shrink-0"
-      >
-        {{ resolveText(suggestion.field.label) }}
-      </span>
-    </button>
-    <!-- Announced: asset rows are appended when a remote search returns, so without a live region
+        <span
+          v-if="suggestion.kind !== 'field'"
+          class="text-xs text-rui-text-secondary shrink-0"
+        >
+          {{ resolveText(suggestion.field.label) }}
+        </span>
+      </button>
+      <!-- Announced: asset rows are appended when a remote search returns, so without a live region
          nothing tells a screen reader the list grew under it. -->
-    <div
-      v-if="loading"
-      class="flex justify-center py-2"
-      role="status"
-      aria-live="polite"
-      data-testid="pill-narrow-loading"
-    >
-      <RuiProgress
-        circular
-        variant="indeterminate"
-        size="16"
-        color="primary"
-      />
+      <div
+        v-if="loading"
+        class="flex justify-center py-2"
+        role="status"
+        aria-live="polite"
+        data-testid="pill-narrow-loading"
+      >
+        <RuiProgress
+          circular
+          variant="indeterminate"
+          size="16"
+          color="primary"
+        />
+      </div>
+      <div
+        v-else-if="suggestions.length === 0"
+        class="text-rui-text-secondary text-sm px-2.5 py-3 text-center"
+        role="status"
+        aria-live="polite"
+        data-testid="pill-narrow-empty"
+      >
+        {{ emptyText }}
+      </div>
     </div>
+
+    <!-- Drawn as code chips, not prose: `after 15/01/2024` is text the user types verbatim, and a
+         sentence about it would leave them guessing which words are the literal ones. Each one is a
+         button, so the footer demonstrates the syntax instead of describing it: clicking puts the
+         text in the input and the row it produces appears above, which is the actual lesson. -->
     <div
-      v-else-if="suggestions.length === 0"
-      class="text-rui-text-secondary text-sm px-2.5 py-3 text-center"
-      role="status"
-      aria-live="polite"
-      data-testid="pill-narrow-empty"
+      v-if="examples.length > 0"
+      class="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-rui-grey-200 dark:border-rui-grey-700"
+      data-testid="pill-narrow-syntax"
     >
-      {{ emptyText }}
+      <span class="text-xs text-rui-text-secondary shrink-0">{{ examplesLabel }}</span>
+      <button
+        v-for="(example, index) in examples"
+        :id="`pill-narrow-example-${index}`"
+        :key="example"
+        type="button"
+        role="menuitem"
+        class="px-1.5 py-0.5 rounded transition-colors"
+        :class="suggestions.length + index === highlighted
+          ? 'bg-rui-primary/10 text-rui-primary'
+          : 'bg-rui-grey-100 dark:bg-rui-grey-800 text-rui-text-primary hover:bg-rui-primary/10 hover:text-rui-primary'"
+        data-testid="pill-narrow-syntax-chip"
+        @mousemove="highlightFromPointer(suggestions.length + index)"
+        @click="emit('example', example)"
+      >
+        <code class="font-mono text-[11px] leading-4">{{ example }}</code>
+      </button>
     </div>
   </div>
 </template>

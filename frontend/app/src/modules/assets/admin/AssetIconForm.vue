@@ -124,14 +124,13 @@ defineExpose({
           v-if="icon && previewImageSource"
           :src="previewImageSource"
           size="4.5rem"
-          contain
+          fit="contain"
         />
         <AssetIcon
           v-else-if="preview"
           :key="refreshKey"
           :identifier="preview"
           size="72px"
-          changeable
           no-tooltip
           :show-chain="false"
         />

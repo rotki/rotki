@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
-import { bigNumberify, toSentenceCase } from '@rotki/common';
+import { type BigNumber, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -36,12 +37,11 @@ function close(): void {
 const existingIsManual = computed<boolean>(() => get(existingEntry)?.sourceType === PriceOracle.MANUAL);
 const showModeChoice = computed<boolean>(() => Boolean(get(existingEntry)) && !get(existingIsManual));
 
+const parsedPrice = computed<BigNumber | undefined>(() => parseNumericInput(get(price).trim()));
+
 const priceValid = computed<boolean>(() => {
-  const value = get(price).trim();
-  if (!value)
-    return false;
-  const parsed = bigNumberify(value);
-  return parsed.isFinite() && parsed.isGreaterThan(0);
+  const parsed = get(parsedPrice);
+  return parsed !== undefined && parsed.isGreaterThan(0);
 });
 
 const priceErrors = computed<string[]>(() => {
@@ -84,11 +84,15 @@ async function save(): Promise<void> {
   if (!payload)
     return;
 
+  const parsed = get(parsedPrice);
+  if (!parsed)
+    return;
+
   const entry = get(existingEntry);
   const nextPrice = get(price).trim();
   const selectedMode = get(mode);
   const unchanged = entry
-    && bigNumberify(nextPrice).isEqualTo(entry.price)
+    && parsed.isEqualTo(entry.price)
     && (selectedMode === 'oracle' || entry.sourceType === PriceOracle.MANUAL);
   if (unchanged) {
     close();
@@ -162,8 +166,8 @@ watch(modelValue, (payload) => {
         <div class="flex items-center justify-between gap-3 rounded-md bg-rui-grey-50 dark:bg-rui-grey-900 px-3 py-2">
           <AssetDetails
             :asset="modelValue.asset"
-            size="28px"
-            hide-menu
+            :display="{ size: '28px' }"
+            :actions="{ hideMenu: true }"
           />
           <div class="flex flex-col items-end">
             <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">

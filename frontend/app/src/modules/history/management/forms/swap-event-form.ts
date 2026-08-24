@@ -11,6 +11,7 @@ import { omit } from 'es-toolkit';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 import {
+  carriedThrough,
   requiredAmount,
   requiredAsset,
   requiredLocation,
@@ -89,11 +90,11 @@ export function swapSchema(): ZodType {
     receiveAmount: requiredAmount(),
     receiveAsset: requiredAsset(),
     receiveNotes: serverValidatedOnly(),
-    receivePriceIntent: z.unknown().optional(),
+    receivePriceIntent: carriedThrough(),
     spendAmount: requiredAmount(),
     spendAsset: requiredAsset(),
     spendNotes: serverValidatedOnly(),
-    spendPriceIntent: z.unknown().optional(),
+    spendPriceIntent: carriedThrough(),
     timestamp: z.number(),
     uniqueId: serverValidatedOnly(),
   });

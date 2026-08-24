@@ -95,10 +95,12 @@ class AcrossBalances(ProtocolWithBalance):
             underlying_tokens=underlying_tokens,
         )
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Query Across LP tokens staked in the Across accelerating distributor."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:
+        if len(addresses_with_deposits := self.addresses_with_deposits(
+            location_labels=addresses,
+        )) == 0:
             return balances
 
         staking_contract = EvmContract(

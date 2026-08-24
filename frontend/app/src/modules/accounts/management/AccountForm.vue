@@ -20,7 +20,6 @@ import { isBtcChain } from '@/modules/core/common/chains';
 import { InputMode } from '@/modules/core/common/input-mode';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -42,7 +41,22 @@ const form = useTemplateRef<
   | InstanceType<typeof BtcAccountForm>
 >('form');
 
-const chain = useRefPropVModel(modelValue, 'chain');
+// Read-only, because a chain is chosen rather than edited: `selectChain` below is the only thing
+// that answers a choice, and it answers it with a whole state rather than a field.
+const chain = computed<string | undefined>(() => get(modelValue).chain);
+
+/**
+ * A validator edit only ever reaches a state that holds a validator, which is what the guard says.
+ * Narrowing first is what lets the rest of the state be carried over as itself, rather than a field
+ * being written onto whichever variant happens to be there.
+ */
+function setValidator(data: StakingValidatorManage['data']): void {
+  const state = get(modelValue);
+  if (state.type !== 'validator')
+    return;
+
+  set(modelValue, { ...state, data });
+}
 
 const { getChainName, isEarlyIntegrationChain, isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
@@ -228,11 +242,8 @@ async function handleDetectedAddress(address: string): Promise<void> {
   if (!targetChain)
     return;
 
-  if (targetChain === Blockchain.BTC && address.startsWith('bitcoincash:')) {
+  if (targetChain === Blockchain.BTC && address.startsWith('bitcoincash:'))
     targetChain = Blockchain.BCH;
-    set(chain, targetChain);
-    await nextTick();
-  }
 
   set(inputMode, InputMode.MANUAL_ADD);
   await nextTick();
@@ -251,36 +262,41 @@ watch(modelValue, (modelValue) => {
   immediate: true,
 });
 
-watchImmediate(chain, (chain) => {
-  if (get(modelValue).mode === 'edit' || !chain)
+/**
+ * Answers a chosen chain with a whole state.
+ *
+ * Each chain implies a kind of account: eth2 a validator, anything else an address account, each
+ * with a different shape of `data` and a different form below to edit it in. So this replaces the
+ * state rather than writing a field into it — writing the chain alone would leave it paired with
+ * the previous kind, which is a state the union does not admit and nothing downstream expects.
+ *
+ * An account being edited already exists on its chain, so there is nothing to choose.
+ */
+function selectChain(next: string | undefined): void {
+  if (!next || get(modelValue).mode === 'edit')
     return;
 
   if (get(inputMode) === InputMode.XPUB_ADD)
     set(inputMode, InputMode.MANUAL_ADD);
 
-  if (chain === Blockchain.ETH2) {
+  if (next === Blockchain.ETH2) {
     set(modelValue, {
       chain: Blockchain.ETH2,
       data: {},
       mode: 'add',
       type: 'validator',
     } satisfies StakingValidatorManage);
+    return;
   }
-  else {
-    const account = createNewBlockchainAccount();
-    const newModelValue = {
-      ...account,
-      chain,
-    };
 
-    const data = get(modelValue).data;
-    if (data && Array.isArray(data)) {
-      newModelValue.data = data;
-    }
-
-    set(modelValue, newModelValue);
-  }
-});
+  // Only the chain was answered, so addresses already typed still answer a different question.
+  const data = get(modelValue).data;
+  set(modelValue, {
+    ...createNewBlockchainAccount(),
+    chain: next,
+    ...(Array.isArray(data) ? { data } : {}),
+  });
+}
 
 watch(inputMode, (mode) => {
   const selectedChain = get(chain);
@@ -372,17 +388,20 @@ defineExpose({
     </RuiAlert>
 
     <AccountSelector
-      v-model:chain="chain"
+      :chain="chain"
       :chain-ids="chainIds"
       :edit-mode="modelValue.mode === 'edit'"
+      @update:chain="selectChain($event)"
     />
 
     <ValidatorAccountForm
       v-if="modelValue.type === 'validator'"
       ref="form"
-      v-model="modelValue"
       v-model:error-messages="errors"
+      :validator="modelValue.data"
+      :edit-mode="modelValue.mode === 'edit'"
       :loading="loading"
+      @update:validator="setValidator($event)"
     />
 
     <BtcAccountForm

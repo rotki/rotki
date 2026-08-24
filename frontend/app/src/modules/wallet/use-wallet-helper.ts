@@ -6,30 +6,45 @@ import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-
 import { EIP155 } from './constants';
 
 interface UseWalletHelperReturn {
-  getEvmChainNameFromChainId: (chainId: number | bigint) => string;
-  getChainFromChainId: (chainId: number | bigint) => Blockchain;
-  getChainIdFromChain: (chain: string) => number;
+  getEvmChainNameFromChainId: (chainId: number | bigint) => string | undefined;
+  getChainFromChainId: (chainId: number | bigint) => Blockchain | undefined;
+  getChainIdFromChain: (chain: string) => number | undefined;
   getChainIdFromNamespace: (namespace: string) => number;
   updateStatePostTransaction: (tx?: RecentTransaction) => Promise<void>;
   getEip155ChainId: (chainId: string | number) => string;
 }
 
 export function useWalletHelper(): UseWalletHelperReturn {
-  const { allEvmChains, getChain } = useSupportedChains();
+  const { allEvmChains, getChain, getEvmChainName } = useSupportedChains();
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { addTransactionHash } = useHistoryTransactions();
 
-  function getEvmChainNameFromChainId(chainId: number | bigint): string {
+  /**
+   * The chain id is whatever the connected wallet reports, which is not
+   * constrained to the chains rotki supports. An unknown id resolves to nothing:
+   * defaulting it to ethereum made a wallet sitting on an unsupported chain look
+   * like it was on mainnet, so the "wrong network" warning never appeared.
+   */
+  function getEvmChainNameFromChainId(chainId: number | bigint): string | undefined {
     const id = typeof chainId === 'bigint' ? Number(chainId) : chainId;
-    return get(allEvmChains).find(item => item.id === id)?.name ?? 'ethereum';
+    return get(allEvmChains).find(item => item.id === id)?.name;
   }
 
-  function getChainFromChainId(chainId: number | bigint): Blockchain {
+  function getChainFromChainId(chainId: number | bigint): Blockchain | undefined {
     const name = getEvmChainNameFromChainId(chainId);
-    return getChain(name);
+    return name === undefined ? undefined : getChain(name);
   }
 
-  const getChainIdFromChain = (chain: string): number => get(allEvmChains).find(item => item.name === chain)?.id ?? 1;
+  /**
+   * `chain` is a rotki blockchain id (`eth`), while `allEvmChains` is keyed by the
+   * evm chain name (`ethereum`), so the two have to be bridged. They happen to be
+   * identical for every chain but ethereum, which is why matching the id directly
+   * used to work: it missed and fell through to a hardcoded `1`.
+   */
+  const getChainIdFromChain = (chain: string): number | undefined => {
+    const name = getEvmChainName(chain) ?? chain;
+    return get(allEvmChains).find(item => item.name === name)?.id;
+  };
 
   const getEip155ChainId = (chainId: string | number): string => `${EIP155}:${chainId}`;
 

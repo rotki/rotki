@@ -340,15 +340,13 @@ mod tests {
     const COLLECTION_ICON_FILENAME: &str =
         "eip155%3A1%2Ferc20%3A0x6B175474E89094C44Da98b954EedeAC495271d0F_small.png";
 
-    async fn create_test_state() -> (Arc<AppState>, std::path::PathBuf) {
-        let globaldb = Arc::new(create_globaldb!().await.unwrap());
-        let data_dir = std::env::temp_dir().join(format!(
-            "icon_test_{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
+    /// Returns the state and its data dir, along with the temp dirs backing them.
+    /// Dropping those removes the files, so callers must keep them alive.
+    async fn create_test_state() -> (Arc<AppState>, std::path::PathBuf, Vec<tempfile::TempDir>) {
+        let (globaldb, globaldb_dir) = create_globaldb!().await.unwrap();
+        let globaldb = Arc::new(globaldb);
+        let data_tmp_dir = tempfile::tempdir().expect("Failed to create temp data dir");
+        let data_dir = data_tmp_dir.path().to_path_buf();
         fs::create_dir_all(data_dir.join("images/assets/all"))
             .await
             .unwrap();
@@ -366,7 +364,7 @@ mod tests {
             active_tasks: Arc::new(Mutex::new(HashSet::new())),
             evm_manager,
         });
-        (state, data_dir)
+        (state, data_dir, vec![globaldb_dir, data_tmp_dir])
     }
 
     fn icons_dir(data_dir: &std::path::Path) -> std::path::PathBuf {
@@ -383,7 +381,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_own_present() {
-        let (state, data_dir) = create_test_state().await;
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
         let own_data = b"own_icon_data";
         fs::write(icons_dir(&data_dir).join(OWN_ICON_FILENAME), own_data)
             .await
@@ -404,7 +402,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_both_missing() {
-        let (state, _data_dir) = create_test_state().await;
+        let (state, _data_dir, _tmp_dirs) = create_test_state().await;
 
         let response = get_icon(
             State(state),
@@ -421,7 +419,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_own_takes_priority() {
-        let (state, data_dir) = create_test_state().await;
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
         let own_data = b"own_icon_data";
         let collection_data = b"collection_icon_data";
         fs::write(icons_dir(&data_dir).join(OWN_ICON_FILENAME), own_data)
@@ -455,7 +453,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_falls_back_to_collection() {
-        let (state, data_dir) = create_test_state().await;
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
         let collection_data = b"collection_icon_data";
         fs::write(
             icons_dir(&data_dir).join(COLLECTION_ICON_FILENAME),
@@ -483,7 +481,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_own_present() {
-        let (state, data_dir) = create_test_state().await;
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
         fs::write(
             icons_dir(&data_dir).join(OWN_ICON_FILENAME),
             b"own_icon_data",
@@ -506,7 +504,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_falls_back_to_collection() {
-        let (state, data_dir) = create_test_state().await;
+        let (state, data_dir, _tmp_dirs) = create_test_state().await;
         fs::write(
             icons_dir(&data_dir).join(COLLECTION_ICON_FILENAME),
             b"collection_icon_data",

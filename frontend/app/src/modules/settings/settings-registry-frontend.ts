@@ -46,6 +46,7 @@ export const frontendRegistry = {
   autoRerunOnEdit: frontend('autoRerunOnEdit'),
   balanceValueThreshold: frontend('balanceValueThreshold'),
   blockchainRefreshButtonBehaviour: frontend('blockchainRefreshButtonBehaviour'),
+  clientId: frontend('clientId', { userFacing: false }),
   currencyLocation: frontend('currencyLocation', {
     anchor: SettingsHighlightIds.CURRENCY_LOCATION,
     search: { category: SettingsCategoryIds.AMOUNT, titleKey: msg.$t('general_settings.amount.label.currency_location') },
@@ -55,6 +56,7 @@ export const frontendRegistry = {
   dateInputFormat: frontend('dateInputFormat'),
   decimalSeparator: frontend('decimalSeparator', { anchor: SettingsHighlightIds.AMOUNT_FORMAT, effects: [applyBigNumberFormat] }),
   defaultThemeVersion: frontend('defaultThemeVersion'),
+  dismissedApiKeyNotices: frontend('dismissedApiKeyNotices', { userFacing: false }),
   enableAliasNames: frontend('enableAliasNames'),
   enablePasswordConfirmation: frontend('enablePasswordConfirmation', {
     anchor: SettingsHighlightIds.PASSWORD_CONFIRMATION,

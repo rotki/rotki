@@ -67,7 +67,7 @@ def test_lido_csm_balances_accumulates():
             evm_inquirer=_make_evm_inquirer(),
             tx_decoder=MagicMock(),
         )
-        result = balances.query_balances()
+        result = balances.query_balances(addresses=[entry.address])
 
     assert result[entry.address].assets[A_STETH][CPT_LIDO_CSM] == Balance(
         amount=FVal('1.5'),
@@ -108,7 +108,7 @@ def test_lido_csm_balances_skips_on_error():
             evm_inquirer=_make_evm_inquirer(),
             tx_decoder=MagicMock(),
         )
-        result = balances.query_balances()
+        result = balances.query_balances(addresses=[entry.address])
     assert len(result) == 0
 
 
@@ -139,7 +139,7 @@ def test_lido_csm_balances_real_data(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=ethereum_transaction_decoder,
     )
-    result = balances.query_balances()
+    result = balances.query_balances(addresses=[node_operator_address])
 
     operator_balance = result[node_operator_address].assets[A_STETH][CPT_LIDO_CSM]
     assert operator_balance.amount.is_close(FVal('26.318054536101981594'))
