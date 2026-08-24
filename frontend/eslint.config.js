@@ -135,14 +135,22 @@ export default rotki({
   // structural, a wrong block name reads as plausible - one form shipped another form's id, and its
   // spec asserted the same wrong value and passed.
   //
-  // This catches a static attribute only. Three shapes stay review-only, because no lint rule sees
-  // them: a value passed as a prop (`testId:` on CreateAccountIntroduction, the `switchTestId` /
-  // `fieldTestId` props on settings/controls/SettingToggleNumber.vue), a value built at runtime
-  // (`tabTestId`), and a template-literal selector in a test.
+  // The `key` option is passed through `toRegExp`, so this covers the components that forward a test
+  // id under their own attribute name too - `switch-test-id` / `field-test-id` on
+  // settings/controls/SettingToggleNumber.vue, whose only caller is accounting/TaxFreeSetting.vue.
+  //
+  // One shape is genuinely unlintable: an id built at runtime, which today means `tabTestId`. Its own
+  // spec asserts the generated value never contains `__`, which is the closest thing to a gate.
   files: ['**/*.vue'],
   rules: {
+    'no-restricted-syntax': ['error', {
+      // The object-literal form of the same thing: `testId: 'a__b'` in a `<script setup>`, which is
+      // how CreateAccountIntroduction.vue carries the ids for its two mode cards.
+      message: 'data-testid values are kebab-case; `__` is a BEM leftover.',
+      selector: 'Property[key.name=/[Tt]est[Ii]d$/] > Literal[value=/__/]',
+    }],
     'vue/no-restricted-static-attribute': ['error', {
-      key: 'data-testid',
+      key: '/(^data-testid$|-test-id$)/',
       message: 'data-testid values are kebab-case. The BEM `__` separator is a Vuetify-era leftover.',
       value: '/__/',
     }],
@@ -157,6 +165,11 @@ export default rotki({
     'no-restricted-syntax': ['error', {
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'Literal[value=/data-testid[^_\\]]*__/]',
+    }, {
+      // `Literal` does not match a `TemplateLiteral`, and page objects build selectors that way -
+      // `[data-testid=settings-${tab}]` in helpers/utils.ts is the pattern. Match the static chunks.
+      message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
+      selector: 'TemplateElement[value.raw=/data-testid[^_\\]]*__/]',
     }],
   },
 }, {
@@ -224,6 +237,9 @@ export default rotki({
       // `data-testid` prefix to anchor on - so that shape stays review-only.
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'Literal[value=/data-testid[^_\\]]*__/]',
+    }, {
+      message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
+      selector: 'TemplateElement[value.raw=/data-testid[^_\\]]*__/]',
     }],
   },
 }, {
