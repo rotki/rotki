@@ -50,7 +50,7 @@ export class RotkiApp {
     // Check if we're on the login page (accounts exist) or create page (fresh start)
     // On fresh start without any accounts, it might show create account form directly
     const newAccountButton = this.page.locator('[data-testid=new-account]');
-    const introductionContinue = this.page.locator('[data-testid=create-account__introduction__create]');
+    const introductionContinue = this.page.locator('[data-testid=create-account-introduction-create]');
 
     // Wait for either the login form's "Create account" button or the create wizard's continue button
     const visibleElement = await Promise.race([
@@ -63,14 +63,14 @@ export class RotkiApp {
       await newAccountButton.click();
     }
 
-    await this.page.locator('[data-testid=create-account__introduction__create]').click();
-    await this.page.locator('[data-testid=create-account__premium__button__continue]').click();
-    await this.page.locator('[data-testid=create-account__fields__username] input').fill(username);
-    await this.page.locator('[data-testid=create-account__fields__password] input').fill(password);
-    await this.page.locator('[data-testid=create-account__fields__password-repeat] input').fill(password);
-    await this.page.locator('[data-testid=create-account__boxes__user-prompted] > label').click();
-    await this.page.locator('[data-testid=create-account__credentials__button__continue]').click();
-    await this.page.locator('[data-testid=create-account__submit-analytics__button__continue]').click();
+    await this.page.locator('[data-testid=create-account-introduction-create]').click();
+    await this.page.locator('[data-testid=create-account-premium-continue]').click();
+    await this.page.locator('[data-testid=create-account-username] input').fill(username);
+    await this.page.locator('[data-testid=create-account-password] input').fill(password);
+    await this.page.locator('[data-testid=create-account-password-repeat] input').fill(password);
+    await this.page.locator('[data-testid=create-account-user-prompted] > label').click();
+    await this.page.locator('[data-testid=create-account-credentials-continue]').click();
+    await this.page.locator('[data-testid=create-account-analytics-continue]').click();
     await this.page.locator('[data-testid=account-management-forms]').waitFor({ state: 'detached' });
     await this.checkGetPremiumButton();
     await apiUpdateAssets(this.request);

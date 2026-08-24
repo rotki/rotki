@@ -36,7 +36,7 @@ describe('modules/auth/create-account/analytics/CreateAccountSubmitStep', () => 
   it('should emit confirm when the submit button is clicked', async () => {
     const wrapper = mountStep();
 
-    await wrapper.find('[data-testid=create-account__submit-analytics__button__continue]').trigger('click');
+    await wrapper.find('[data-testid=create-account-analytics-continue]').trigger('click');
 
     expect(wrapper.emitted('confirm')).toHaveLength(1);
     expect(wrapper.emitted('back')).toBeUndefined();
@@ -45,7 +45,7 @@ describe('modules/auth/create-account/analytics/CreateAccountSubmitStep', () => 
   it('should keep the e2e submit selector on the submit button', () => {
     const wrapper = mountStep();
 
-    expect(wrapper.find('[data-testid=create-account__submit-analytics__button__continue]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=create-account-analytics-continue]').exists()).toBe(true);
   });
 
   it('should hide the error alert when there is no error', () => {
