@@ -58,14 +58,14 @@ export class ManualBalancesPage {
   async balanceShouldMatch(balances: FixtureManualBalance[]): Promise<void> {
     for (const balance of balances) {
       const row = this.rowByLabel(balance.label);
-      await expect(row.locator('[data-testid=manual-balances__amount]')).toContainText(formatAmount(balance.amount));
+      await expect(row.locator('[data-testid=manual-balance-amount]')).toContainText(formatAmount(balance.amount));
     }
   }
 
   async balanceShouldNotMatch(balances: FixtureManualBalance[]): Promise<void> {
     for (const balance of balances) {
       const row = this.rowByLabel(balance.label);
-      await expect(row.locator('[data-testid=manual-balances__amount]')).not.toContainText(formatAmount(balance.amount));
+      await expect(row.locator('[data-testid=manual-balance-amount]')).not.toContainText(formatAmount(balance.amount));
     }
   }
 
@@ -73,11 +73,11 @@ export class ManualBalancesPage {
     const row = this.rowByLabel(balance.label);
 
     await expect(row.locator('[data-testid=label]')).toContainText(balance.label);
-    await expect(row.locator('[data-testid=manual-balances__amount]')).toContainText(formatAmount(balance.amount));
+    await expect(row.locator('[data-testid=manual-balance-amount]')).toContainText(formatAmount(balance.amount));
 
     await this.page.locator('[data-testid=manual-balances] thead').first().scrollIntoViewIfNeeded();
 
-    await expect(row.locator('[data-testid=manual-balances__location]')).toContainText(toSentenceCase(balance.location));
+    await expect(row.locator('[data-testid=manual-balance-location]')).toContainText(toSentenceCase(balance.location));
     await expect(row.locator('[data-testid=list-title]')).toContainText(balance.asset);
 
     for (const tag of balance.tags) {
@@ -94,7 +94,7 @@ export class ManualBalancesPage {
     // Skip the last row (total row)
     for (let i = 0; i < count - 1; i++) {
       const row = rows.nth(i);
-      const locationElement = row.locator('[data-testid=manual-balances__location]');
+      const locationElement = row.locator('[data-testid=manual-balance-location]');
       const location = await locationElement.getAttribute('data-location');
       if (!location)
         continue;

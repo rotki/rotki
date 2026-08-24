@@ -23,7 +23,7 @@ export class AccountSettingsPage {
   }
 
   async confirmSuccess(): Promise<void> {
-    await expect(this.page.locator('[data-testid=message-dialog__title]')).toContainText('Success');
-    await this.page.locator('[data-testid=message-dialog__ok]').click();
+    await expect(this.page.locator('[data-testid=message-dialog-title]')).toContainText('Success');
+    await this.page.locator('[data-testid=message-dialog-ok]').click();
   }
 }

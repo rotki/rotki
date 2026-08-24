@@ -134,7 +134,7 @@ async function updateScramble(value: boolean): Promise<void> {
           id="privacy-mode-slider"
           :model-value="privacyMode"
           class="h-40 w-8"
-          data-testid="privacy-mode-dropdown__input"
+          data-testid="privacy-mode-dropdown-input"
           :step="1"
           :max="2"
           :min="0"
@@ -168,7 +168,7 @@ async function updateScramble(value: boolean): Promise<void> {
           v-model="modelScrambleData"
           color="secondary"
           size="sm"
-          data-testid="privacy-mode-scramble__toggle"
+          data-testid="privacy-mode-scramble-toggle"
           hide-details
           @update:model-value="updateScramble($event)"
         >
@@ -183,7 +183,7 @@ async function updateScramble(value: boolean): Promise<void> {
           :disabled="!modelScrambleData"
           variant="outlined"
           color="secondary"
-          data-testid="privacy-mode-scramble__multiplier"
+          data-testid="privacy-mode-scramble-multiplier"
           hide-details
           dense
           @update:model-value="handleMultiplierUpdate($event)"
@@ -194,7 +194,7 @@ async function updateScramble(value: boolean): Promise<void> {
               variant="text"
               type="button"
               class="-mr-2 !p-2"
-              data-testid="privacy-mode-scramble__random-multiplier"
+              data-testid="privacy-mode-scramble-random-multiplier"
               icon
               @click="handleMultiplierUpdate(randomMultiplier())"
             >

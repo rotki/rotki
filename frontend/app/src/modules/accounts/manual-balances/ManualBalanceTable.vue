@@ -211,7 +211,7 @@ watchDebounced(
       </template>
       <template #item.amount="{ row }">
         <ValueDisplay
-          data-testid="manual-balances__amount"
+          data-testid="manual-balance-amount"
           :value="row.amount"
         />
       </template>
@@ -228,7 +228,7 @@ watchDebounced(
       <template #item.location="{ row }">
         <LocationDisplay
           :identifier="row.location"
-          data-testid="manual-balances__location"
+          data-testid="manual-balance-location"
         />
       </template>
       <template #item.actions="{ row }">
@@ -257,7 +257,7 @@ watchDebounced(
           <FiatDisplay
             v-if="state.totalValue"
             class="p-4"
-            data-testid="manual-balances__amount"
+            data-testid="manual-balance-total"
             :value="state.totalValue"
           />
         </RowAppend>

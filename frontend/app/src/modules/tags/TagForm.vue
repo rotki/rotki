@@ -99,7 +99,7 @@ defineExpose({
         <RuiColorPicker
           v-model="form.state.foregroundColor"
           class="w-full"
-          data-testid="tag-creator__color-picker__foreground"
+          data-testid="tag-creator-color-picker-foreground"
         />
       </RuiCard>
       <RuiCard class="flex flex-col items-center">
@@ -109,7 +109,7 @@ defineExpose({
         <RuiColorPicker
           v-model="form.state.backgroundColor"
           class="w-full"
-          data-testid="tag-creator__color-picker__background"
+          data-testid="tag-creator-color-picker-background"
         />
       </RuiCard>
     </div>

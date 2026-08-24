@@ -28,7 +28,7 @@ const message = computed<string>(() => {
     />
     <p
       class="mb-0 text-rui-text-secondary text-center"
-      data-testid="connection-loading__content"
+      data-testid="connection-loading-content"
     >
       {{ message }}
     </p>

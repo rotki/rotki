@@ -6,7 +6,7 @@ import { RotkiApp } from './rotki-app';
 type Scope = 'global' | 'private';
 
 async function dismissErrorIfShown(page: Page): Promise<void> {
-  const okBtn = page.locator('[data-testid=message-dialog__ok]');
+  const okBtn = page.locator('[data-testid=message-dialog-ok]');
   // Wait briefly for a delayed popup to appear; if none, move on.
   try {
     await okBtn.waitFor({ state: 'visible', timeout: 500 });

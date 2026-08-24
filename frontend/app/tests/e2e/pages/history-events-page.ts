@@ -35,7 +35,7 @@ export class HistoryEventsPage {
   }
 
   async openAddDialog(): Promise<void> {
-    await this.page.locator('[data-testid=history-events__add]').click();
+    await this.page.locator('[data-testid=history-events-add]').click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
   }
 

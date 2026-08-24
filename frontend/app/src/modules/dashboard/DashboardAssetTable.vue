@@ -95,7 +95,7 @@ watch(modelSearch, () => setPage(1));
     </template>
     <RuiDataTable
       v-model:sort.external="modelSort"
-      data-testid="dashboard-asset-table__balances"
+      data-testid="dashboard-asset-table-balances"
       :cols="tableHeaders"
       :rows="sorted"
       :loading="loading"

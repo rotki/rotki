@@ -55,7 +55,7 @@ watch(writeError, (message) => {
   <div class="flex flex-col md:flex-col gap-8">
     <SettingSwitch
       setting="abbreviateNumber"
-      data-testid="frontend-settings__fields__abbreviate_number"
+      data-testid="frontend-settings-abbreviate-number"
       :label="t('frontend_settings.abbreviate_number.label')"
       :hint="t('frontend_settings.abbreviate_number.hint')"
     />
@@ -63,7 +63,7 @@ watch(writeError, (message) => {
       v-model="minimumDigit"
       :disabled="!abbreviateNumber"
       :options="items"
-      data-testid="frontend-settings__fields__minimum_digit_to_be_abbreviated"
+      data-testid="frontend-settings-minimum-digit-to-be-abbreviated"
       :label="t('frontend_settings.abbreviate_number.minimum_digit.label')"
       key-attr="value"
       text-attr="label"

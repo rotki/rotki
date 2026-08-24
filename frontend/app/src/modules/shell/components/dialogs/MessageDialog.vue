@@ -30,6 +30,7 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
         <h5
           :class="message.success ? 'text-rui-success' : 'text-rui-error'"
           class="text-h5"
+          data-testid="message-dialog-title"
         >
           {{ message.title }}
         </h5>
@@ -45,7 +46,7 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
         </div>
         <div
           class="hyphens-auto break-words"
-          data-testid="message-dialog__title"
+          data-testid="message-dialog-description"
         >
           {{ message.description }}
         </div>
@@ -54,7 +55,7 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
       <template #footer>
         <div class="grow" />
         <RuiButton
-          data-testid="message-dialog__ok"
+          data-testid="message-dialog-ok"
           :color="message.success ? 'success' : 'error'"
           @click="emit('dismiss')"
         >
