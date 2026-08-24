@@ -375,7 +375,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: APIServer) -> None:
                 'binance_sc',
                 'monad',
                 'sonic',
-                  'zksync_lite',
+                'zksync_lite',
               ],
           },
     }

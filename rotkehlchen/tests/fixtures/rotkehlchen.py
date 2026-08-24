@@ -489,7 +489,7 @@ def initialize_mock_rotkehlchen_instance(
             (SupportedBlockchain.BINANCE_SC, binance_sc_manager_connect_at_start, rotki.chains_aggregator.binance_sc),  # noqa: E501
             (SupportedBlockchain.HYPERLIQUID, hyperliquid_manager_connect_at_start, rotki.chains_aggregator.hyperliquid),  # noqa: E501
             (SupportedBlockchain.MONAD, monad_manager_connect_at_start, rotki.chains_aggregator.monad),  # noqa: E501
-              (SupportedBlockchain.SONIC, sonic_manager_connect_at_start, rotki.chains_aggregator.sonic),  # noqa: E501
+            (SupportedBlockchain.SONIC, sonic_manager_connect_at_start, rotki.chains_aggregator.sonic),  # noqa: E501
     ):
         actual_nodes = maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501

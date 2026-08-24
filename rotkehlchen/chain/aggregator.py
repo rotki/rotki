@@ -263,7 +263,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances,),
     ChainID.MONAD: (),
-      ChainID.SONIC: (),
+    ChainID.SONIC: (),
 }
 
 
