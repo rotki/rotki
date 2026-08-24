@@ -1,9 +1,11 @@
+import { useOverlayStack } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { createRouter, createWebHashHistory, type RouteLocationRaw, type RouteRecordNameGeneric } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { loginRouteFor } from '@/modules/shell/layout/login-redirect';
+import { createBackNavigationTracker } from '@/modules/shell/overlay/use-back-navigation';
 import NotFound from '@/pages/404.vue';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
@@ -54,6 +56,29 @@ export const router = createRouter({
       return { left: 0, top: 0 };
     }
   },
+});
+
+const { dismissTop } = useOverlayStack();
+const backNavigation = createBackNavigationTracker();
+
+/**
+ * Back with a dialog open used to leave the page underneath it. None of the app's overlays
+ * is a history entry of its own, so the pop skipped every open layer at once and landed on
+ * whatever route preceded the current one - from the history events page mid-way through
+ * bridge matching, that was some unrelated page visited earlier in the session.
+ *
+ * Take the topmost layer down and swallow the gesture instead. Aborting a pop makes
+ * vue-router restore the history position, so the URL stays where it was.
+ */
+router.beforeEach(() => {
+  if (backNavigation.isBack() && dismissTop())
+    return false;
+
+  return true;
+});
+
+router.afterEach((_to, _from, failure) => {
+  backNavigation.settle(Boolean(failure));
 });
 
 const userRoutes: RouteLocationRaw[] = ['/user/create', '/user/login', '/user'];
