@@ -134,13 +134,13 @@ describe('forms/SolanaEventForm.vue', () => {
         "data-testid=datetime",
         "data-testid=event-action-picker",
         "data-testid=group-identifier",
-        "data-testid=grouped-amount-input__swap-button",
+        "data-testid=grouped-amount-input-swap",
         "data-testid=location",
         "data-testid=notes",
         "data-testid=primary",
         "data-testid=secondary",
         "data-testid=sequence-index",
-        "data-testid=solana-event-form__advance",
+        "data-testid=solana-event-form-advance",
         "data-testid=tx-ref",
       ]
     `);
@@ -376,7 +376,7 @@ describe('forms/SolanaEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=solana-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=solana-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
@@ -390,7 +390,7 @@ describe('forms/SolanaEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=solana-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=solana-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');

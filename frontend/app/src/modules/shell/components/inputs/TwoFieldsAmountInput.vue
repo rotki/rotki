@@ -128,7 +128,7 @@ const uiClasses = {
       icon
       class="absolute right-5 top-14 transform -translate-y-1/2 z-[1] !p-2"
       color="primary"
-      data-testid="grouped-amount-input__swap-button"
+      data-testid="grouped-amount-input-swap"
       @click="reverse()"
     >
       <RuiIcon

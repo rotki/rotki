@@ -110,10 +110,10 @@ describe('forms/EthBlockEventForm.vue', () => {
         "data-testid=asset",
         "data-testid=block-number",
         "data-testid=datetime",
-        "data-testid=eth-block-event-form__advance",
+        "data-testid=eth-block-event-form-advance",
         "data-testid=fee-recipient",
         "data-testid=group-identifier",
-        "data-testid=grouped-amount-input__swap-button",
+        "data-testid=grouped-amount-input-swap",
         "data-testid=is-mev-reward",
         "data-testid=primary",
         "data-testid=secondary",
@@ -324,7 +324,7 @@ describe('forms/EthBlockEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=eth-block-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');
@@ -338,7 +338,7 @@ describe('forms/EthBlockEventForm.vue', () => {
       });
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-testid=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await wrapper.find('[data-testid=eth-block-event-form-advance] [data-accordion-trigger]').trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
       const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-testid=group-identifier] input');

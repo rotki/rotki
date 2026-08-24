@@ -264,7 +264,7 @@ defineExpose({
 
     <RuiAccordions>
       <RuiAccordion
-        data-testid="evm-event-form__advance"
+        data-testid="evm-event-form-advance"
         header-class="py-4"
         eager
       >
