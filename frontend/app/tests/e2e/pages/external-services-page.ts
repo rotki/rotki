@@ -57,7 +57,7 @@ export class ExternalServicesPage {
 
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_DIALOG });
-    await dialog.locator('[data-testid=service-key__api-key] input').fill(key);
+    await dialog.locator('[data-testid=service-key-api-key] input').fill(key);
     await dialog.locator('[data-testid=confirm]').click();
   }
 

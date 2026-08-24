@@ -31,7 +31,7 @@ describe('service-key', () => {
   it('should leave edit mode when updated with non-empty value', async () => {
     expect.assertions(2);
     await nextTick();
-    expect(wrapper.find('[data-testid=service-key__api-key] input').attributes()).toMatchObject(
+    expect(wrapper.find('[data-testid=service-key-api-key] input').attributes()).toMatchObject(
       expect.not.objectContaining({
         disabled: '',
       }),
@@ -40,7 +40,7 @@ describe('service-key', () => {
       apiKey: '1234',
     });
     await nextTick();
-    expect(wrapper.find('[data-testid=service-key__api-key] input').attributes()).toMatchObject(
+    expect(wrapper.find('[data-testid=service-key-api-key] input').attributes()).toMatchObject(
       expect.objectContaining({
         disabled: '',
       }),
