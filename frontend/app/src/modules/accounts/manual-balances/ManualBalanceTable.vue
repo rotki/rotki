@@ -76,10 +76,6 @@ function edit(balance: ManualBalanceWithPrice): void {
   emit('edit', prepareForEdit(balance));
 }
 
-function getRowClass(item: ManualBalance) {
-  return `manual-balance__location__${item.location}`;
-}
-
 const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
   align: 'center',
   cellClass: 'py-2 w-[120px]',
@@ -172,7 +168,6 @@ watchDebounced(
       :cols="cols"
       row-attr="label"
       :rows="state.data"
-      :item-class="getRowClass"
       data-testid="manual-balances"
       class="lg:[&_table]:w-full"
     >

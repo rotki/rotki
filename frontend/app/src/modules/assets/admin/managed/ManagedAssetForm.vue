@@ -372,7 +372,6 @@ defineExpose({
                   variant="outlined"
                   color="primary"
                   clearable
-                  class="asset-form__protocol"
                   :label="t('common.protocol')"
                   :error-messages="form.errors('protocol')"
                   :disabled="loading"

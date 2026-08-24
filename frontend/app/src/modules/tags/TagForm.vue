@@ -76,7 +76,6 @@ defineExpose({
       v-model="form.state.name"
       variant="outlined"
       color="primary"
-      class="tag_creator__name"
       data-testid="tag-creator-name"
       :label="t('common.name')"
       :error-messages="form.errors('name')"
@@ -86,7 +85,6 @@ defineExpose({
       v-model="descriptionModel"
       variant="outlined"
       color="primary"
-      class="tag_creator__description"
       data-testid="tag-creator-description"
       :label="t('common.description')"
     />

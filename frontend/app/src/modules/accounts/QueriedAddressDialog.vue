@@ -112,7 +112,7 @@ function close() {
       <div class="flex items-center gap-2">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
-          class="queried-address-dialog__selector flex-1"
+          class="flex-1"
           :source="{ chains: [ETH], hideOnEmptyUsable: true, usableAddresses }"
           :field="{ dense: true, label: t('queried_address_dialog.add') }"
         />

@@ -7,7 +7,6 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingSwitch
     setting="pnlCsvWithFormulas"
-    class="csv_export_settings__exportCSVFormulas"
     :debounce="1500"
     :label="t('account_settings.csv_export_settings.labels.export_csv_formulas')"
     :error-message="t('account_settings.messages.export_csv_formulas')"
