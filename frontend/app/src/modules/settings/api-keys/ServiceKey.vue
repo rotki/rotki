@@ -103,14 +103,14 @@ defineExpose({
   <div class="flex flex-col gap-4">
     <div
       class="flex items-start gap-4"
-      data-testid="service-key__content"
+      data-testid="service-key-content"
     >
       <RuiRevealableTextField
         v-model.trim="currentValue"
         variant="outlined"
         color="primary"
         class="grow"
-        data-testid="service-key__api-key"
+        data-testid="service-key-api-key"
         :text-color="!editMode && !hideActions && errorMessages.length === 0 ? 'success' : undefined"
         :error-messages="errorMessages"
         :success-messages="successMessages"
@@ -129,7 +129,7 @@ defineExpose({
           <RuiButton
             icon
             variant="text"
-            data-testid="service-key__delete"
+            data-testid="service-key-delete"
             class="mt-1"
             :disabled="loading || !apiKey"
             color="primary"
@@ -145,11 +145,11 @@ defineExpose({
     <div
       v-if="!hideActions"
       class="flex gap-2"
-      data-testid="service-key__buttons"
+      data-testid="service-key-buttons"
     >
       <RuiButton
         v-if="editMode && cancellable"
-        data-testid="service-key__cancel"
+        data-testid="service-key-cancel"
         variant="outlined"
         color="primary"
         @click="cancel()"
@@ -158,7 +158,7 @@ defineExpose({
       </RuiButton>
 
       <RuiButton
-        data-testid="service-key__save"
+        data-testid="service-key-save"
         color="primary"
         :disabled="(editMode && !currentValue) || loading"
         @click="saveHandler()"
