@@ -7,6 +7,10 @@ export interface TabContent {
   readonly route: RouteLocationRaw;
 }
 
-export function getClass(route: string): string {
-  return route.toLowerCase().replace('/', '').replace(/\//g, '__');
+/**
+ * Derives a tab's `data-testid` from its resolved route path, so
+ * `/settings/rpc` becomes `settings-rpc`.
+ */
+export function tabTestId(route: string): string {
+  return route.toLowerCase().replace(/^\//, '').replace(/\//g, '-');
 }

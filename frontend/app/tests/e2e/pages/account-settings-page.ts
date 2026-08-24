@@ -8,7 +8,7 @@ export class AccountSettingsPage {
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-testid="settings__account"]').click();
+    await this.page.locator('[data-testid="settings-account"]').click();
     await this.page.locator('[data-testid=current-password]').waitFor({ state: 'visible' });
   }
 

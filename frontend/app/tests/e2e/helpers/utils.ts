@@ -27,7 +27,7 @@ export async function openSettingsTab(page: Page, tab: string): Promise<void> {
   await page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
   await page.locator('[data-testid=settings-button]').click();
   await page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-  await page.locator(`[data-testid="settings__${tab}"]`).click();
+  await page.locator(`[data-testid="settings-${tab}"]`).click();
 }
 
 /**

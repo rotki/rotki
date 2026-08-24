@@ -16,7 +16,7 @@ export class PurgeDataPage {
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-testid=settings__database]').click();
+    await this.page.locator('[data-testid=settings-database]').click();
     await this.page.getByTestId('purge-source').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 

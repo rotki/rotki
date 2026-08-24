@@ -10,7 +10,7 @@ export class GeneralSettingsPage {
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-testid="settings__general"]').click();
+    await this.page.locator('[data-testid="settings-general"]').click();
     await this.page.locator('[data-testid=floating-precision-settings]').waitFor({ state: 'visible' });
   }
 

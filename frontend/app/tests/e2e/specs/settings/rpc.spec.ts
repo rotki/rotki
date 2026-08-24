@@ -93,7 +93,7 @@ test.describe.serial('settings::rpc narrow viewport', () => {
     await ctx.sharedPage.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await ctx.sharedPage.locator('[data-testid=settings-button]').click();
     await ctx.sharedPage.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await ctx.sharedPage.locator('[data-testid="settings__rpc"]').click();
+    await ctx.sharedPage.locator('[data-testid="settings-rpc"]').click();
     await ctx.sharedPage.getByTestId('rpc-settings-dropdowns').waitFor({ state: 'visible' });
   });
 
