@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The buttons that ignore or unignore the selected assets in the asset manager, in non-fungible balances and in the blockchain accounts selection mode are labelled "Ignore" and "Unignore" again, and their tooltips say what they do. They read "Exclude" and "Include" and claimed to add or remove actions from the profit and loss report, which is not what they do to an asset.
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
 * :feature:`12317` rotki is ready to resolve ENS v2 names.

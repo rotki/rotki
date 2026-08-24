@@ -1968,10 +1968,10 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "Exclure",
-    "ignore_tooltip": "Exclure les actions sélectionnées du rapport de profit/perte",
-    "unignore": "Inclure",
-    "unignore_tooltip": "Inclure les actions sélectionnées dans le rapport de profit/perte"
+    "ignore": "Ignorer",
+    "ignore_tooltip": "Ignorer les actifs sélectionnés",
+    "unignore": "Ne plus ignorer",
+    "unignore_tooltip": "Ne plus ignorer les actifs sélectionnés"
   },
   "import_data": {
     "binance": {
