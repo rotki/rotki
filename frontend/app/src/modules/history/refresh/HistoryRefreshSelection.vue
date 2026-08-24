@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { ChainAddress } from '@/modules/history/events/event-payloads';
-import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';
 import HistoryRefreshProtocolEvents from '@/modules/history/refresh/HistoryRefreshProtocolEvents.vue';
 import HistoryRefreshStakingEvents from '@/modules/history/refresh/HistoryRefreshStakingEvents.vue';
+import { HistoryRefreshTab, useHistoryRefreshSelection } from '@/modules/history/refresh/use-history-refresh-selection';
 
 const {
   processing,
@@ -22,21 +20,6 @@ const emit = defineEmits<{
 }>();
 
 const open = ref<boolean>(false);
-const search = ref<string>('');
-const tab = ref<'chains' | 'exchanges' | 'events' | 'protocols'>('chains');
-
-const selectedAccounts = ref<ChainAddress[]>([]);
-const allAccountsSelected = ref<boolean>(false);
-const selectedChain = ref<string>();
-
-const selectedExchanges = ref<Exchange[]>([]);
-const allExchangesSelected = ref<boolean>(false);
-
-const selectedQueries = ref<OnlineHistoryEventsQueryType[]>([]);
-const allQueriesSelected = ref<boolean>(false);
-
-const selectedProtocolQueries = ref<OnlineHistoryEventsQueryType[]>([]);
-const allProtocolQueriesSelected = ref<boolean>(false);
 
 const chains = useTemplateRef<ComponentExposed<typeof HistoryRefreshChains>>('chains');
 const exchanges = useTemplateRef<ComponentExposed<typeof HistoryRefreshExchanges>>('exchanges');
@@ -45,143 +28,40 @@ const protocols = useTemplateRef<ComponentExposed<typeof HistoryRefreshProtocolE
 
 const { t } = useI18n({ useScope: 'global' });
 
-const indeterminate = computed<boolean>(() => {
-  switch (get(tab)) {
-    case 'chains':
-      return get(selectedAccounts).length > 0 && !get(allAccountsSelected);
-    case 'exchanges':
-      return get(selectedExchanges).length > 0 && !get(allExchangesSelected);
-    case 'events':
-      return get(selectedQueries).length > 0 && !get(allQueriesSelected);
-    case 'protocols':
-      return get(selectedProtocolQueries).length > 0 && !get(allProtocolQueriesSelected);
-    default:
-      return false;
-  }
-});
+const {
+  getRefreshPayload,
+  indeterminate,
+  modelSearch,
+  modelSelectedAccounts,
+  modelSelectedChain,
+  modelSelectedExchanges,
+  modelSelectedProtocolQueries,
+  modelSelectedQueries,
+  modelTab,
+  reset,
+  searchLabel,
+  selected,
+  setAllSelected,
+  totalSelected,
+  typeText,
+} = useHistoryRefreshSelection();
 
-const selected = computed<boolean>(() => {
-  switch (get(tab)) {
-    case 'chains':
-      return get(selectedAccounts).length > 0 && get(allAccountsSelected);
-    case 'exchanges':
-      return get(selectedExchanges).length > 0 && get(allExchangesSelected);
-    case 'events':
-      return get(selectedQueries).length > 0 && get(allQueriesSelected);
-    case 'protocols':
-      return get(selectedProtocolQueries).length > 0 && get(allProtocolQueriesSelected);
-    default:
-      return false;
-  }
-});
-
-const totalSelected = computed<number>(() => {
-  switch (get(tab)) {
-    case 'chains':
-      return get(selectedAccounts).length;
-    case 'exchanges':
-      return get(selectedExchanges).length;
-    case 'events':
-      return get(selectedQueries).length;
-    case 'protocols':
-      return get(selectedProtocolQueries).length;
-    default:
-      return 0;
-  }
-});
-
-const searchLabel = computed<string>(() => {
-  switch (get(tab)) {
-    case 'chains':
-      return isDefined(selectedChain)
-        ? t('history_refresh_selection.search_address')
-        : t('history_refresh_selection.search_chain');
-    case 'exchanges':
-      return t('history_refresh_selection.search_exchanges');
-    case 'events':
-      return t('history_refresh_selection.search_events');
-    case 'protocols':
-      return t('history_refresh_selection.search_protocols');
-    default:
-      return '';
-  }
-});
-
-const typeText = computed<string>(() => {
-  const total = get(totalSelected);
-  switch (get(tab)) {
-    case 'chains':
-      return t('history_refresh_selection.type.accounts', total);
-    case 'exchanges':
-      return t('history_refresh_selection.type.exchanges', total);
-    case 'events':
-      return t('history_refresh_selection.type.events', total);
-    case 'protocols':
-      return t('history_refresh_selection.type.protocols', total);
-    default:
-      return '';
-  }
-});
-
-function reset() {
-  set(search, '');
-  set(selectedChain, undefined);
-  set(selectedAccounts, []);
-  set(allAccountsSelected, false);
-  set(selectedExchanges, []);
-  set(allExchangesSelected, false);
-  set(selectedQueries, []);
-  set(allQueriesSelected, false);
-  set(selectedProtocolQueries, []);
-  set(allProtocolQueriesSelected, false);
-}
-
-function refresh() {
-  switch (get(tab)) {
-    case 'chains':
-      emit('refresh', { accounts: get(selectedAccounts) });
-      break;
-    case 'exchanges':
-      emit('refresh', { exchanges: get(selectedExchanges) });
-      break;
-    case 'events':
-      emit('refresh', { queries: get(selectedQueries) });
-      break;
-    case 'protocols':
-      emit('refresh', { queries: get(selectedProtocolQueries) });
-      break;
-    default:
-      return '';
-  }
-
+function refresh(): void {
+  emit('refresh', getRefreshPayload());
   reset();
   set(open, false);
 }
 
-function toggleSelectAll() {
-  switch (get(tab)) {
-    case 'chains':
-      get(chains)?.toggleSelectAll();
-      break;
-    case 'exchanges':
-      get(exchanges)?.toggleSelectAll();
-      break;
-    case 'events':
-      get(validatorEvents)?.toggleSelectAll();
-      break;
-    case 'protocols':
-      get(protocols)?.toggleSelectAll();
-      break;
-  }
+function toggleSelectAll(): void {
+  const tabs: Record<HistoryRefreshTab, { toggleSelectAll: () => void } | null> = {
+    [HistoryRefreshTab.CHAINS]: get(chains),
+    [HistoryRefreshTab.EVENTS]: get(validatorEvents),
+    [HistoryRefreshTab.EXCHANGES]: get(exchanges),
+    [HistoryRefreshTab.PROTOCOLS]: get(protocols),
+  };
+
+  tabs[get(modelTab)]?.toggleSelectAll();
 }
-
-watch(tab, () => {
-  reset();
-});
-
-onMounted(() => {
-  reset();
-});
 </script>
 
 <template>
@@ -206,7 +86,8 @@ onMounted(() => {
     <div class="w-[450px]">
       <div class="p-4 border-b border-default">
         <RuiTextField
-          v-model="search"
+          v-model="modelSearch"
+          data-testid="refresh-selection-search"
           dense
           color="primary"
           variant="outlined"
@@ -216,17 +97,17 @@ onMounted(() => {
           clearable
         />
       </div>
-      <RuiTabs v-model="tab">
-        <RuiTab value="chains">
+      <RuiTabs v-model="modelTab">
+        <RuiTab :value="HistoryRefreshTab.CHAINS">
           {{ t('history_refresh_selection.tabs.chains') }}
         </RuiTab>
-        <RuiTab value="exchanges">
+        <RuiTab :value="HistoryRefreshTab.EXCHANGES">
           {{ t('history_refresh_selection.tabs.exchanges') }}
         </RuiTab>
-        <RuiTab value="events">
+        <RuiTab :value="HistoryRefreshTab.EVENTS">
           {{ t('history_refresh_selection.tabs.events') }}
         </RuiTab>
-        <RuiTab value="protocols">
+        <RuiTab :value="HistoryRefreshTab.PROTOCOLS">
           {{ t('history_refresh_selection.tabs.protocols') }}
         </RuiTab>
       </RuiTabs>
@@ -235,42 +116,42 @@ onMounted(() => {
         {{ t('history_refresh_selection.selection') }}
       </div>
 
-      <RuiTabItems v-model="tab">
-        <RuiTabItem value="chains">
+      <RuiTabItems v-model="modelTab">
+        <RuiTabItem :value="HistoryRefreshTab.CHAINS">
           <HistoryRefreshChains
             ref="chains"
-            v-model:search="search"
-            v-model:chain="selectedChain"
-            v-model="selectedAccounts"
+            v-model:search="modelSearch"
+            v-model:chain="modelSelectedChain"
+            v-model="modelSelectedAccounts"
             :processing="processing"
-            @update:all-selected="allAccountsSelected = $event"
+            @update:all-selected="setAllSelected('chains', $event)"
           />
         </RuiTabItem>
-        <RuiTabItem value="exchanges">
+        <RuiTabItem :value="HistoryRefreshTab.EXCHANGES">
           <HistoryRefreshExchanges
             ref="exchanges"
-            v-model:search="search"
-            v-model="selectedExchanges"
+            v-model:search="modelSearch"
+            v-model="modelSelectedExchanges"
             :processing="processing"
-            @update:all-selected="allExchangesSelected = $event"
+            @update:all-selected="setAllSelected('exchanges', $event)"
           />
         </RuiTabItem>
-        <RuiTabItem value="events">
+        <RuiTabItem :value="HistoryRefreshTab.EVENTS">
           <HistoryRefreshStakingEvents
             ref="validatorEvents"
-            v-model="selectedQueries"
-            v-model:search="search"
+            v-model="modelSelectedQueries"
+            v-model:search="modelSearch"
             :processing="processing"
-            @update:all-selected="allQueriesSelected = $event"
+            @update:all-selected="setAllSelected('events', $event)"
           />
         </RuiTabItem>
-        <RuiTabItem value="protocols">
+        <RuiTabItem :value="HistoryRefreshTab.PROTOCOLS">
           <HistoryRefreshProtocolEvents
             ref="protocols"
-            v-model="selectedProtocolQueries"
-            v-model:search="search"
+            v-model="modelSelectedProtocolQueries"
+            v-model:search="modelSearch"
             :processing="processing"
-            @update:all-selected="allProtocolQueriesSelected = $event"
+            @update:all-selected="setAllSelected('protocols', $event)"
           />
         </RuiTabItem>
       </RuiTabItems>
@@ -278,6 +159,7 @@ onMounted(() => {
       <div class="px-4 py-2 border-t border-default flex items-center justify-between">
         <RuiCheckbox
           color="primary"
+          data-testid="refresh-selection-select-all"
           :disabled="processing"
           :indeterminate="indeterminate"
           :model-value="selected"
@@ -290,6 +172,7 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <RuiButton
             v-if="indeterminate || selected"
+            data-testid="refresh-selection-cancel"
             variant="text"
             @click="reset()"
           >
@@ -297,6 +180,7 @@ onMounted(() => {
           </RuiButton>
           <RuiButton
             color="primary"
+            data-testid="refresh-selection-refresh"
             :disabled="!(indeterminate || selected)"
             :loading="processing"
             @click="refresh()"
