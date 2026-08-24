@@ -83,6 +83,8 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
 /* HYPERLIQUID TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('\\', 28);
+/* EXCHANGE FUTURES */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES (']', 29);
 """
 
 # Custom enum table for token kinds

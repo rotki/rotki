@@ -43,6 +43,7 @@ class AssetType(DBCharEnumMixIn):
     NFT = 26
     CUSTOM_ASSET = 27
     HYPERLIQUID_TOKEN = 28
+    EXCHANGE_FUTURES = 29
 
     @staticmethod
     def is_crypto_asset(asset_type: AssetType) -> bool:
@@ -56,9 +57,13 @@ class AssetFlag(StrEnum):
     REBASING = 'rebasing'
 
 
-ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.CUSTOM_ASSET}
-NON_CRYPTO_ASSETS = {AssetType.CUSTOM_ASSET, AssetType.FIAT}
-ASSET_TYPES_EXCLUDED_FOR_USERS = {AssetType.NFT}
+ASSETS_WITH_NO_CRYPTO_ORACLES = {
+    AssetType.CUSTOM_ASSET,
+    AssetType.EXCHANGE_FUTURES,
+    AssetType.NFT,
+}
+NON_CRYPTO_ASSETS = {AssetType.CUSTOM_ASSET, AssetType.EXCHANGE_FUTURES, AssetType.FIAT}
+ASSET_TYPES_EXCLUDED_FOR_USERS = {AssetType.EXCHANGE_FUTURES, AssetType.NFT}
 
 
 class AssetData(NamedTuple):

@@ -2062,3 +2062,31 @@ def test_asset_upgrade_run_before_breaking_versions(tmp_path, messages_aggregato
             assert mocked_assets_updater.call_count == expected_calls
     finally:
         connection.close()
+
+
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_upgrade_v17_to_v18(globaldb: GlobalDBHandler, messages_aggregator) -> None:
+    assert globaldb._data_directory is not None
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute("DELETE FROM asset_types WHERE type=']'")
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', '17'),
+        )
+
+    maybe_upgrade_globaldb(
+        connection=globaldb.conn,
+        global_dir=globaldb._data_directory / GLOBALDIR_NAME,
+        db_filename=GLOBALDB_NAME,
+        msg_aggregator=messages_aggregator,
+    )
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            ('version',),
+        ).fetchone()[0] == str(GLOBAL_DB_VERSION)
+        assert cursor.execute(
+            'SELECT seq FROM asset_types WHERE type=?',
+            (']',),
+        ).fetchone()[0] == 29

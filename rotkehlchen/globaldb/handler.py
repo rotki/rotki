@@ -418,7 +418,10 @@ class GlobalDBHandler:
                         'decimals': entry[3],
                     })
                     data.update(common_data)
-                elif AssetType.is_crypto_asset(asset_type):
+                elif (
+                        asset_type == AssetType.EXCHANGE_FUTURES or
+                        AssetType.is_crypto_asset(asset_type)
+                ):
                     data.update(common_data)
                 elif asset_type == AssetType.CUSTOM_ASSET:
                     data.update({

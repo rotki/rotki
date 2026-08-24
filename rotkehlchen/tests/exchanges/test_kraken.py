@@ -23,6 +23,7 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -1816,6 +1817,11 @@ def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer
             aggregate_by_group_ids=False,
         )
 
+    pf_xbtusd = Asset('exchange_futures_pf_xbtusd')
+    pi_ethusd = Asset('exchange_futures_pi_ethusd')
+    assert pf_xbtusd.get_asset_type() == AssetType.EXCHANGE_FUTURES
+    assert pi_ethusd.get_asset_type() == AssetType.EXCHANGE_FUTURES
+
     assert events == [SwapEvent(
         identifier=5,
         group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
@@ -1845,7 +1851,7 @@ def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer
         timestamp=TimestampMS(1771068124000),
         location=Location.KRAKEN,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_BTC,
+        asset=pf_xbtusd,
         amount=FVal('0.0001'),
         location_label='mockkraken',
         notes='Kraken Futures futures assignor: pf_xbtusd',
@@ -1856,7 +1862,7 @@ def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer
         timestamp=TimestampMS(1771068124000),
         location=Location.KRAKEN,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_BTC,
+        asset=pf_xbtusd,
         amount=FVal('0.0028'),
         location_label='mockkraken',
         notes='Kraken Futures futures liquidation: pf_xbtusd',
@@ -1899,9 +1905,10 @@ def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer
         timestamp=TimestampMS(1771748093000),
         location=Location.KRAKEN,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=A_ETH,
+        asset=pi_ethusd,
         amount=FVal('3'),
         location_label='mockkraken',
+        notes='Kraken Futures futures trade: pi_ethusd',
     ), SwapEvent(
         identifier=3,
         group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
@@ -1924,3 +1931,50 @@ def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer
         amount=FVal('7.59E-7'),
         location_label='mockkraken',
     )]
+
+
+def test_kraken_futures_history_uses_independent_query_range(kraken: Kraken) -> None:
+    """A futures failure must neither block spot progress nor leave a futures history gap."""
+    kraken.set_futures_api_key(
+        ApiKey('futures_key'), ApiSecret(base64.b64encode(b'futures_secret')),
+    )
+    end_ts = Timestamp(100)
+    with (
+        patch('rotkehlchen.exchanges.kraken.ts_now', return_value=end_ts),
+        patch.object(
+            kraken,
+            'query_online_history_events_into_queue',
+            return_value=end_ts,
+        ) as spot_query,
+        patch.object(
+            kraken,
+            'query_futures_history_into_queue',
+            return_value=Timestamp(0),
+        ) as futures_query,
+    ):
+        kraken.query_history_events()
+
+    spot_range_name = f'{Location.KRAKEN!s}_history_events_{kraken.name}'
+    futures_range_name = f'{Location.KRAKEN!s}_history_events_futures_{kraken.name}'
+    with kraken.db.conn.read_ctx() as cursor:
+        assert kraken.db.get_used_query_range(cursor, spot_range_name) == (Timestamp(0), end_ts)
+        assert kraken.db.get_used_query_range(cursor, futures_range_name) is None
+
+    spot_query.assert_called_once()
+    futures_query.assert_called_once()
+
+    with (
+        patch('rotkehlchen.exchanges.kraken.ts_now', return_value=end_ts),
+        patch.object(kraken, 'query_online_history_events_into_queue') as spot_query,
+        patch.object(
+            kraken,
+            'query_futures_history_into_queue',
+            return_value=end_ts,
+        ) as futures_query,
+    ):
+        kraken.query_history_events()
+
+    spot_query.assert_not_called()
+    futures_query.assert_called_once()
+    with kraken.db.conn.read_ctx() as cursor:
+        assert kraken.db.get_used_query_range(cursor, futures_range_name) == (Timestamp(0), end_ts)

@@ -15,7 +15,10 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import (
     KRAKEN_API_VERSION,
@@ -31,9 +34,10 @@ from rotkehlchen.db.constants import (
     KRAKEN_FUTURES_API_SECRET_KEY,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -43,6 +47,7 @@ from rotkehlchen.exchanges.exchange import (
 )
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
@@ -86,7 +91,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
@@ -100,7 +105,6 @@ log = RotkehlchenLogsAdapter(logger)
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
-FUTURES_INFO_LIQUIDATION_VALUES = ('futures liquidation', 'futures assignor')
 
 
 def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, HistoryEventSubType]:
@@ -422,7 +426,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
             # else success
-            log.debug(f'Kraken API query successful for {method}. Query result: {result!r}')
             return result
 
         raise RemoteError(
@@ -928,7 +931,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         """
         log.debug(f'Querying kraken ledger entries from {start_ts} to {end_ts}')
         spot_events: list[HistoryBaseEntry] = []
-        spot_max_ts = start_ts
         try:
             response, spot_with_errors = self.query_until_finished(
                 endpoint='Ledgers',
@@ -957,7 +959,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 else:
                     spot_events.append(event)
 
-            swap_events, spot_max_ts = self.process_kraken_trades(
+            swap_events, _ = self.process_kraken_trades(
                 trade_events=trade_events,
                 adjustments=adjustment_events,
             )
@@ -974,16 +976,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
             spot_with_errors = True
 
-        final_events: list[HistoryBaseEntry] = spot_events
-        futures_with_errors = False
-        if self._has_futures_keys():
-            futures_events, futures_with_errors = self.query_futures_history(start_ts, end_ts)
-            final_events.extend(futures_events)
+        if spot_with_errors:
+            return spot_events, start_ts
 
-        if spot_with_errors or futures_with_errors:
-            return final_events, Timestamp(spot_max_ts)
-
-        return final_events, end_ts
+        return spot_events, end_ts
 
     def query_futures_history(
             self,
@@ -999,10 +995,77 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             processed_logs = self.process_futures_account_log(raw_logs)
             all_events.extend(processed_logs)
         except RemoteError as e:
-            log.error(f'Failed to query kraken futures account-log: {e}')
+            log.error('Failed to query kraken futures account-log: %s', e)
             with_errors = True
 
         return all_events, with_errors
+
+    def query_futures_history_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, with_errors = self.query_futures_history(start_ts=start_ts, end_ts=end_ts)
+        event_queue.flush(events)
+        return start_ts if with_errors else end_ts
+
+    def _query_and_save_history_event_ranges(
+            self,
+            location_string: str,
+            query_method: Callable[[Timestamp, Timestamp, HistoryEventQueue], Timestamp],
+    ) -> None:
+        with self.db.conn.read_ctx() as cursor:
+            ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
+                cursor=cursor,
+                location_string=location_string,
+                start_ts=Timestamp(0),
+                end_ts=ts_now(),
+            )
+
+        for query_start_ts, query_end_ts in ranges_to_query:
+            self.send_history_events_status_msg(
+                step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                period=[query_start_ts, query_end_ts],
+            )
+            event_queue = HistoryEventQueue(
+                database=self.db,
+                location_string=location_string,
+                query_start_ts=query_start_ts,
+            )
+            actual_end_ts: Timestamp | None = None
+            try:
+                actual_end_ts = query_method(query_start_ts, query_end_ts, event_queue)
+            finally:
+                event_queue.flush(queried_until_ts=actual_end_ts)
+
+            if actual_end_ts != query_end_ts:
+                log.error(
+                    'Failed to query all %s history events between %s and %s. '
+                    'Last successfully queried timestamp: %s',
+                    self.name,
+                    query_start_ts,
+                    query_end_ts,
+                    actual_end_ts,
+                )
+                break
+
+    @protect_with_lock()
+    def query_history_events(self) -> None:
+        """Query and save spot and futures history using independent ranges."""
+        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
+        try:
+            self._query_and_save_history_event_ranges(
+                location_string=f'{self.location!s}_history_events_{self.name}',
+                query_method=self.query_online_history_events_into_queue,
+            )
+            if self._has_futures_keys():
+                self._query_and_save_history_event_ranges(
+                    location_string=f'{self.location!s}_history_events_futures_{self.name}',
+                    query_method=self.query_futures_history_into_queue,
+                )
+        finally:
+            self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
 
     def _query_futures_account_log(
             self,
@@ -1013,11 +1076,16 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         all_logs = []
         params: dict[str, Any] = {'limit': 100, 'since': ts_sec_to_ms(start_ts),
                                   'before': ts_sec_to_ms(end_ts)}
-        log.debug(f'Querying futures account-log with params {params} from {start_ts} to {end_ts}')
+        log.debug(
+            'Querying futures account-log with params %s from %s to %s',
+            params,
+            start_ts,
+            end_ts,
+        )
         while True:
             response = self.api_query('account-log', params)
             logs = response.get('logs', [])
-            log.debug(f'Got {len(logs)} logs from account-log')
+            log.debug('Got %s logs from account-log', len(logs))
             if not logs:
                 break
 
@@ -1091,7 +1159,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 notes=f"Futures realized funding: {entry.get('contract', '')}",
             )
         except (DeserializationError, KeyError, UnknownAsset) as e:
-            log.error(f'Failed to process kraken futures realized funding {entry}: {e}')
+            log.error('Failed to process kraken futures realized funding %s: %s', entry, e)
             return None
 
     def _process_futures_trade_entries(
@@ -1133,20 +1201,24 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             fee_amount = deserialize_fval(quote_entry.get('fee') or ZERO)
             liquidation_fee = deserialize_fval(quote_entry.get('liquidation_fee') or ZERO)
             total_fee = fee_amount + liquidation_fee
-            base_asset_str = self._heuristic_futures_asset_name(contract)
-            base_asset = asset_from_kraken(base_asset_str)
+            base_asset = self._get_or_create_futures_contract_asset(contract)
 
             # For single collateral futures, quote_entry['asset'] is the collateral (e.g. ETH)
             # For multi-collateral futures, quote_entry['asset'] is USD
             quote_asset = asset_from_kraken(quote_entry['asset'].upper())
+            is_single_collateral = quote_asset == asset_from_kraken(
+                self._heuristic_futures_asset_name(contract),
+            )
             fee_asset = quote_asset  # Fee is always paid in the collateral/quote asset
+            spend_asset: Asset
+            receive_asset: Asset
 
             if amount > ZERO:
                 # buy side
                 spend_asset = quote_asset
                 receive_amount = abs_amount
                 receive_asset = base_asset
-                if quote_asset == base_asset:
+                if is_single_collateral:
                     # Single collateral: calculate the collateral value from price
                     # Inverse contracts: value = contracts / price
                     if price == ZERO:
@@ -1159,7 +1231,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 spend_asset = base_asset
                 spend_amount = abs_amount
                 receive_asset = quote_asset
-                if quote_asset == base_asset:
+                if is_single_collateral:
                     # Single collateral: calculate the collateral value from price
                     # Inverse contracts: value = contracts / price
                     if price == ZERO:
@@ -1169,10 +1241,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     receive_amount = abs_amount * price
 
             info = base_entry.get('info') or quote_entry.get('info')
-            is_liquidation = info in FUTURES_INFO_LIQUIDATION_VALUES
-
             notes = f'Kraken Futures {info}: {contract}'
-            spend_notes = notes if is_liquidation else None
+            spend_notes = notes
 
             fees = [(AssetAmount(asset=fee_asset, amount=total_fee), None, None)]
 
@@ -1191,9 +1261,32 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 receive_notes=notes,
             )
         except (DeserializationError, KeyError, UnknownAsset) as e:
-            log.error(f'Failed to process kraken futures trade execution {execution_id}: {e}')
+            log.error('Failed to process kraken futures trade execution %s: %s', execution_id, e)
 
         return []
+
+    def _get_or_create_futures_contract_asset(self, contract: str) -> Asset:
+        identifier = f'exchange_futures_{contract.lower()}'
+        asset = Asset(identifier)
+        if not asset.exists():
+            contract_symbol = contract.upper()
+            try:
+                GlobalDBHandler.add_asset(CryptoAsset.initialize(
+                    identifier=identifier,
+                    asset_type=AssetType.EXCHANGE_FUTURES,
+                    name=f'Kraken Futures {contract_symbol}',
+                    symbol=contract_symbol,
+                    coingecko='',
+                    cryptocompare='',
+                ))
+            except InputError:
+                if not asset.exists():  # Another task may have inserted the same contract.
+                    raise
+
+        with self.db.user_write() as write_cursor:
+            self.db.add_asset_identifiers(write_cursor, [identifier])
+
+        return asset
 
     def _heuristic_futures_asset_name(self, contract: str) -> str:
         """
@@ -1206,6 +1299,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         contract_upper_split = contract_upper.split('_')
         currency_pair = contract_upper_split[1]
 
+        # Account-log currently reports these single-collateral contracts against USD.
         return currency_pair.removesuffix('USD')
 
     def query_online_history_events_into_queue(
@@ -1495,7 +1589,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         'Authent': signature,
                     },
                 )
-                log.debug(f'raw response from kraken for API method {method} = {response}')
+                log.debug('Raw response from Kraken for API method %s = %s', method, response)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Kraken API request failed due to {e!s}') from e
 
