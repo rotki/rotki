@@ -555,8 +555,6 @@ class Rotkehlchen:
                     task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
-                    blockscout=blockscout,
-                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
