@@ -2011,6 +2011,27 @@ class DBHistoryEvents:
                 )
         return assets
 
+    @staticmethod
+    def get_counterparties_at_location(
+            cursor: DBCursor,
+            location: Location,
+            entry_types: Sequence[HistoryBaseEntryType],
+    ) -> set[str]:
+        """Return the distinct counterparties the user has events of `entry_types` for at
+        `location`.
+
+        One scan answering "which protocols appear at all on this chain", so a caller with a
+        long list of protocols to check can skip the ones that cannot match instead of running
+        a narrow per-protocol query only to get an empty result back.
+        """
+        placeholders = ','.join(['?'] * len(entry_types))
+        return {row[0] for row in cursor.execute(
+            'SELECT DISTINCT counterparty FROM history_events INNER JOIN chain_events_info ON '
+            'history_events.identifier=chain_events_info.identifier '
+            f'WHERE location=? AND entry_type IN ({placeholders}) AND counterparty IS NOT NULL',
+            (location.serialize_for_db(), *(x.serialize_for_db() for x in entry_types)),
+        )}
+
     def get_history_event_group_position(
             self,
             group_identifier: str,
