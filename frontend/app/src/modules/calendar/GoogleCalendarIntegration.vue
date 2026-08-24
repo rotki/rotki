@@ -151,7 +151,9 @@ onUnmounted(() => {
           class="text-body-2"
           data-testid="google-calendar-status"
         >
-          {{ connectedUserEmail ? `Connected as ${connectedUserEmail}` : t('external_services.google_calendar.connected_status') }}
+          {{ connectedUserEmail
+            ? t('external_services.google_calendar.connected_as', { email: connectedUserEmail })
+            : t('external_services.google_calendar.connected_status') }}
         </span>
       </div>
 
