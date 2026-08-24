@@ -24,6 +24,7 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
     @close="emit('dismiss')"
     @keydown.esc="emit('dismiss')"
     @keydown.enter="emit('dismiss')"
+    @dismiss="emit('dismiss')"
   >
     <RuiCard>
       <template #header>

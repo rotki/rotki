@@ -1,24 +1,34 @@
+import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import BigDialog from './BigDialog.vue';
 
 describe('modules/shell/components/dialogs/BigDialog', () => {
   let wrapper: VueWrapper<InstanceType<typeof BigDialog>>;
   let pinia: Pinia;
 
+  /**
+   * Mounts the dialog with its sheet stubbed as a pass-through.
+   *
+   * @remarks
+   * `realSheet` mounts the library's bottom sheet instead, for tests that need its `RuiDialog`
+   * registered on the overlay stack.
+   */
   function createWrapper(
     props: Record<string, unknown> = {},
     slots: Record<string, string> = {},
+    { realSheet = false }: { realSheet?: boolean } = {},
   ): VueWrapper<InstanceType<typeof BigDialog>> {
     return mount(BigDialog, {
       attachTo: document.body,
       global: {
         plugins: [pinia],
         stubs: {
-          RuiBottomSheet: {
-            template: '<div data-testid="bottom-sheet"><slot /></div>',
-          },
+          RuiBottomSheet: realSheet
+            ? false
+            : { template: '<div data-testid="bottom-sheet"><slot /></div>' },
           RuiButton: {
             inheritAttrs: false,
             template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /><slot name="append" /></button>',
@@ -50,6 +60,7 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
   beforeEach(() => {
     pinia = createPinia();
     setActivePinia(pinia);
+    resetOverlayStack();
   });
 
   afterEach(() => {
@@ -194,5 +205,58 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
     wrapper.unmount();
     wrapper = createWrapper({ layout: { autoHeight: true } });
     expect(wrapper.find('.min-h-\\[50vh\\]').exists()).toBe(false);
+  });
+
+  describe('dismissed from the overlay stack, as the back gesture does', () => {
+    function createSheet(props: Record<string, unknown> = {}): VueWrapper<InstanceType<typeof BigDialog>> {
+      return createWrapper(props, {}, { realSheet: true });
+    }
+
+    it('should cancel a plain dialog', () => {
+      wrapper = createSheet();
+
+      expect(useOverlayStack().dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toHaveLength(1);
+    });
+
+    it('should leave nothing to dismiss while it is not displayed', () => {
+      wrapper = createSheet({ display: false });
+
+      expect(useOverlayStack().dismissTop()).toBe(false);
+    });
+
+    it('should swallow the gesture without cancelling a persistent dialog', () => {
+      wrapper = createSheet({ persistent: true });
+
+      expect(useOverlayStack().dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+    });
+
+    it('should keep swallowing the gesture after turning persistent while open', async () => {
+      wrapper = createSheet({ persistent: false });
+
+      await wrapper.setProps({ persistent: true });
+
+      expect(useOverlayStack().dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+    });
+
+    it('should raise the discard prompt rather than cancel when the caller asked to be prompted', () => {
+      wrapper = createSheet({ promptOnClose: true });
+
+      expect(useOverlayStack().dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+      expect(get(useConfirmStore().visible)).toBe(true);
+    });
+
+    it('should stay the top layer while the discard prompt is unanswered', () => {
+      wrapper = createSheet({ promptOnClose: true });
+      const { dismissTop } = useOverlayStack();
+
+      dismissTop();
+
+      expect(dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+    });
   });
 });
