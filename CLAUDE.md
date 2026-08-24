@@ -616,6 +616,9 @@ the wrappers and unmount them in `afterEach`; ~148 specs already do.
 - **Test selectors**: use `data-testid`, in components and in queries alike. `data-cy` is gone from
   the codebase; do not reintroduce it. `@rotki/ui-library` exposes no test-id attribute of its own,
   so a `data-testid` on a `Rui*` component falls through `$attrs` onto its root element.
+  Values are kebab-case, scoped by the component the id lives on (`service-key-api-key`), never BEM
+  (`service-key__api-key`) and never a DOM path (`service-key__content__api-key`). Lint enforces the
+  common cases; a value built at runtime or passed as a prop is review-only.
 - **e2e: never locate a row by index.** Anchoring a history-events assertion on row position makes
   the test pass for the wrong reason as soon as ordering or fixture data shifts. Anchor on fixture
   content. Counting rendered rows in a virtualized list asserts the overscan, not the data.

@@ -130,6 +130,36 @@ export default rotki({
     'vue/max-props': ['error', { maxProps: 12 }],
   },
 }, {
+  // `data-testid` values are kebab-case. The `__` separator is a leftover from the Vuetify/`data-cy`
+  // era: it encodes a DOM hierarchy that has since been refactored away, and because a BEM id looks
+  // structural, a wrong block name reads as plausible - one form shipped another form's id, and its
+  // spec asserted the same wrong value and passed.
+  //
+  // This catches a static attribute only. Three shapes stay review-only, because no lint rule sees
+  // them: a value passed as a prop (`testId:` on CreateAccountIntroduction, the `switchTestId` /
+  // `fieldTestId` props on settings/controls/SettingToggleNumber.vue), a value built at runtime
+  // (`tabTestId`), and a template-literal selector in a test.
+  files: ['**/*.vue'],
+  rules: {
+    'vue/no-restricted-static-attribute': ['error', {
+      key: 'data-testid',
+      message: 'data-testid values are kebab-case. The BEM `__` separator is a Vuetify-era leftover.',
+      value: '/__/',
+    }],
+  },
+}, {
+  // The template rule above cannot see a selector string in a page object, so the e2e side gets its
+  // own. Specs are covered by the `no-restricted-syntax` block further down - a flat config replaces
+  // a rule's options rather than merging them, so the selector has to join that array rather than
+  // arrive in a block of its own.
+  files: ['**/tests/e2e/**/*.ts'],
+  rules: {
+    'no-restricted-syntax': ['error', {
+      message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
+      selector: 'Literal[value=/data-testid[^_\\]]*__/]',
+    }],
+  },
+}, {
   // Coverage is armed on the `page` fixture in `tests/e2e/fixtures/test-fixtures`, so a spec that
   // takes `test` straight from playwright silently contributes nothing to the coverage report.
   // That failure is invisible - the spec passes, it is just never counted - so it is worth a rule
@@ -188,6 +218,12 @@ export default rotki({
     }, {
       message: 'Do not sleep on the real clock in a spec. Use fake timers (vi.advanceTimersByTimeAsync), poll a condition (vi.waitUntil/vi.waitFor), or resolve a promise the test controls.',
       selector: 'AwaitExpression > NewExpression[callee.name=\'Promise\']:has(CallExpression[callee.name=\'setTimeout\'])',
+    }, {
+      // Kebab-case test ids, same rule the `**/*.vue` block applies to the components. A spec that
+      // holds the id in a bare constant (`const USERNAME = '...'`) is not matched - it carries no
+      // `data-testid` prefix to anchor on - so that shape stays review-only.
+      message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
+      selector: 'Literal[value=/data-testid[^_\\]]*__/]',
     }],
   },
 }, {
