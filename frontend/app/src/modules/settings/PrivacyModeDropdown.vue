@@ -152,6 +152,8 @@ async function updateScramble(value: boolean): Promise<void> {
             :key="label.title"
             class="flex flex-col flex-1 justify-center gap-0.5 pl-4 cursor-pointer text-rui-grey-500 dark:text-rui-grey-600"
             :class="{ '!text-rui-primary dark:!text-rui-primary-lighter': privacyMode >= index }"
+            data-testid="privacy-mode-option"
+            :data-mode="index"
             @click="changePrivacyMode(index)"
           >
             <div class="uppercase text-sm font-bold">

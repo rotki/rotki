@@ -220,8 +220,7 @@ export class RotkiApp {
   async changePrivacyMode(mode: number): Promise<void> {
     await this.togglePrivacyMenu(true);
     // Mode 0 = Normal, 1 = Semi Private, 2 = Private
-    // Sibling div after slider contains mode labels
-    const label = this.page.locator(`[data-testid=privacy-mode-dropdown-input] + div > div:nth-child(${mode + 1})`);
+    const label = this.page.locator(`[data-testid=privacy-mode-option][data-mode="${mode}"]`);
     await label.waitFor({ state: 'visible' });
     await label.click();
     await this.togglePrivacyMenu();
