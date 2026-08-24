@@ -3311,6 +3311,7 @@
       "auth_failed": "Failed to start authentication flow",
       "authorizing": "Authorizing",
       "connect_to_google": "Connect to Google Calendar",
+      "connected_as": "Connected as {email}",
       "connected_status": "Successfully connected to Google Calendar",
       "description": "Sync rotki calendar events (ENS expirations, CRV locks, airdrops, etc.) to your Google Calendar for notifications and reminders.",
       "disconnect": "Disconnect",
