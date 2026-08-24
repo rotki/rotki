@@ -568,7 +568,9 @@ class MockKraken(Kraken):
             # else
             return jsonloads_dict(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
         if method == 'account-log':
-            return jsonloads_dict(KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE)
+            futures_response = jsonloads_dict(KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE)
+            futures_response['accountUid'] = '1ca86f16-f900-4631-88b5-8f729bac6d53'
+            return futures_response
         if method == 'AssetPairs':
             data = self._load_results_from_file('assets_kraken.json')
             return data['result']

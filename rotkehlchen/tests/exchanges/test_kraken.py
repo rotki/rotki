@@ -9,7 +9,7 @@ from http import HTTPStatus
 from http.client import RemoteDisconnected
 from pathlib import Path
 from threading import Event
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import _patch, patch
 from uuid import uuid4
 
@@ -23,7 +23,6 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -50,9 +49,17 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
-from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntryType,
+    HistoryEvent,
+    get_event_direction,
+)
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
@@ -74,7 +81,11 @@ from rotkehlchen.tests.utils.exchanges import (
     try_get_first_exchange,
 )
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
+from rotkehlchen.tests.utils.kraken import (
+    KRAKEN_DELISTED,
+    KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE,
+    MockKraken,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Location, Timestamp, TimestampMS
@@ -96,6 +107,22 @@ def _check_trade_history_events_order(db, expected):
             assert event.event_subtype == expected[event.sequence_index][2]
 
 
+def _get_events_balance_delta(events: list[HistoryEvent]) -> FVal:
+    """Return the location balance change represented by history events."""
+    balance_delta = ZERO
+    for event in events:
+        direction = get_event_direction(
+            event_type=event.event_type,
+            event_subtype=event.event_subtype,
+            location=event.location,
+            for_balance_tracking=True,
+        )
+        assert direction in {EventDirection.IN, EventDirection.OUT}
+        balance_delta += event.amount if direction == EventDirection.IN else -event.amount
+
+    return balance_delta
+
+
 def _patch_ledger(kraken: MockKraken, ledger_data: str) -> _patch:
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
@@ -104,6 +131,36 @@ def _patch_ledger(kraken: MockKraken, ledger_data: str) -> _patch:
         target='rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE',
         new=ledger_data,
     )
+
+
+def _make_futures_account_log_entry(**overrides: Any) -> dict[str, Any]:
+    """Create a complete account-log row while keeping Futures regressions readable."""
+    entry: dict[str, Any] = {
+        'asset': 'usd',
+        'booking_uid': 'booking-1',
+        'collateral': None,
+        'contract': None,
+        'conversion_spread_percentage': None,
+        'date': '2026-08-24T15:16:10.614Z',
+        'execution': None,
+        'fee': None,
+        'funding_rate': None,
+        'id': 1,
+        'info': 'conversion',
+        'liquidation_fee': None,
+        'margin_account': 'flex',
+        'mark_price': None,
+        'new_average_entry_price': None,
+        'new_balance': 0,
+        'old_average_entry_price': None,
+        'old_balance': 0,
+        'position_uid': None,
+        'realized_funding': None,
+        'realized_pnl': None,
+        'trade_price': None,
+    }
+    entry.update(overrides)
+    return entry
 
 
 def test_name():
@@ -1033,6 +1090,75 @@ def test_kraken_adjustment(kraken):
         )]
 
 
+def test_kraken_futures_spot_ledger_duplicates_and_wallet_transfer(kraken: Kraken) -> None:
+    """Futures spot-ledger mirrors must not duplicate canonical account-log history."""
+    kraken.set_futures_api_key(
+        ApiKey('futures_key'), ApiSecret(base64.b64encode(b'futures_secret')),
+    )
+    timestamp = 1787580890.337015
+    events, processed_refids = kraken.process_kraken_raw_events(
+        events=[
+            {
+                'aclass': 'currency',
+                'amount': '-5.0000',
+                'asset': 'ZEUR',
+                'balance': '15.2564',
+                'fee': '0.0000',
+                'refid': 'spot-transfer',
+                'subtype': '',
+                'time': timestamp,
+                'type': 'transfer',
+            }, {
+                'aclass': 'currency',
+                'amount': '5.0000',
+                'asset': 'ZEUR',
+                'balance': '5.0000',
+                'fee': '0.0000',
+                'refid': 'Unknown',
+                'subtype': '',
+                'time': timestamp,
+                'type': 'derivativescrossexchangetransfer',
+            }, {
+                'aclass': 'currency',
+                'amount': '0.0005',
+                'asset': 'ZUSD',
+                'balance': '0.0005',
+                'fee': '0.0000',
+                'refid': 'Unknown',
+                'subtype': '',
+                'time': timestamp + 107,
+                'type': 'derivativesflexconversion',
+            }, {
+                'aclass': 'currency',
+                'amount': '0.0000',
+                'asset': 'ZUSD',
+                'balance': '0.0000',
+                'fee': '0.0005',
+                'refid': 'Unknown',
+                'subtype': '',
+                'time': timestamp + 107,
+                'type': 'derivativesfuturestrade',
+            },
+        ],
+        events_source='test',
+        save_skipped_events=False,
+    )
+
+    assert processed_refids == {'spot-transfer'}
+    assert events == [HistoryEvent(
+        group_identifier='spot-transfer',
+        sequence_index=0,
+        timestamp=TimestampMS(1787580890337),
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_EUR,
+        amount=FVal(5),
+        location_label=kraken.name,
+        notes='Transfer from Kraken spot to Futures wallet',
+    )]
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_no_counterpart(kraken):
     """Test that trades with no counterpart are processed properly"""
@@ -1794,8 +1920,8 @@ def test_parse_single_collateral_futures_margin(kraken):
     assert parsed_margin == {'bch': 10.0184941402}
 
 
-def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer):
-    """Test that Kraken Futures history retrieval and processing works"""
+def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
+    """Futures history must contain only the collateral changes that really occurred."""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     kraken = cast('MockKraken', try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN))
     kraken.set_futures_api_key(
@@ -1817,120 +1943,182 @@ def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: APIServer
             aggregate_by_group_ids=False,
         )
 
-    pf_xbtusd = Asset('exchange_futures_pf_xbtusd')
-    pi_ethusd = Asset('exchange_futures_pi_ethusd')
-    assert pf_xbtusd.get_asset_type() == AssetType.EXCHANGE_FUTURES
-    assert pi_ethusd.get_asset_type() == AssetType.EXCHANGE_FUTURES
+    actual_events = set()
+    events_by_booking_uid: defaultdict[str, list[HistoryEvent]] = defaultdict(list)
+    for event in events:
+        assert isinstance(event, HistoryEvent)
+        assert event.extra_data is not None
+        actual_events.add((
+            event.timestamp,
+            event.event_type,
+            event.event_subtype,
+            event.asset,
+            event.amount,
+            event.extra_data['component'],
+        ))
+        events_by_booking_uid[event.extra_data['booking_uid']].append(event)
 
-    assert events == [SwapEvent(
-        identifier=5,
-        group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
-        sequence_index=0,
-        timestamp=TimestampMS(1771068124000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.SPEND,
-        asset=A_USD,
-        amount=FVal('7.1042'),
-        location_label='mockkraken',
-        notes='Kraken Futures futures assignor: pf_xbtusd',
-    ), SwapEvent(
-        identifier=8,
-        group_identifier='33180f3ba61d7a410f30b661becfa57c2df8c8957ea002794266182e26f3a92c',
-        sequence_index=0,
-        timestamp=TimestampMS(1771068124000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.SPEND,
-        asset=A_USD,
-        amount=FVal('197.1676'),
-        location_label='mockkraken',
-        notes='Kraken Futures futures liquidation: pf_xbtusd',
-    ), SwapEvent(
-        identifier=6,
-        group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
-        sequence_index=1,
-        timestamp=TimestampMS(1771068124000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.RECEIVE,
-        asset=pf_xbtusd,
-        amount=FVal('0.0001'),
-        location_label='mockkraken',
-        notes='Kraken Futures futures assignor: pf_xbtusd',
-    ), SwapEvent(
-        identifier=9,
-        group_identifier='33180f3ba61d7a410f30b661becfa57c2df8c8957ea002794266182e26f3a92c',
-        sequence_index=1,
-        timestamp=TimestampMS(1771068124000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.RECEIVE,
-        asset=pf_xbtusd,
-        amount=FVal('0.0028'),
-        location_label='mockkraken',
-        notes='Kraken Futures futures liquidation: pf_xbtusd',
-    ), SwapEvent(
-        identifier=7,
-        group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
-        sequence_index=2,
-        timestamp=TimestampMS(1771068124000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_USD,
-        amount=FVal('0.0035521'),
-        location_label='mockkraken',
-    ), SwapEvent(
-        identifier=10,
-        group_identifier='33180f3ba61d7a410f30b661becfa57c2df8c8957ea002794266182e26f3a92c',
-        sequence_index=2,
-        timestamp=TimestampMS(1771068124000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_USD,
-        amount=FVal('1.10838555'),
-        location_label='mockkraken',
-    ), HistoryEvent(
-        identifier=1,
-        group_identifier='realized_funding_372',
-        sequence_index=0,
-        timestamp=TimestampMS(1771304400000),
-        location=Location.KRAKEN,
-        event_type=HistoryEventType.RECEIVE,
-        event_subtype=HistoryEventSubType.REWARD,
-        asset=A_ETH,
-        amount=FVal('3.1E-10'),
-        location_label='mockkraken',
-        notes='Futures realized funding: pi_ethusd',
-    ), SwapEvent(
-        identifier=2,
-        group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
-        sequence_index=0,
-        timestamp=TimestampMS(1771748093000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.SPEND,
-        asset=pi_ethusd,
-        amount=FVal('3'),
-        location_label='mockkraken',
-        notes='Kraken Futures futures trade: pi_ethusd',
-    ), SwapEvent(
-        identifier=3,
-        group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
-        sequence_index=1,
-        timestamp=TimestampMS(1771748093000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_ETH,
-        amount=FVal('0.00151798815969235439963568284167383494408743611799827961341901533168041289277944'),
-        location_label='mockkraken',
-        notes='Kraken Futures futures trade: pi_ethusd',
-    ), SwapEvent(
-        identifier=4,
-        group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
-        sequence_index=2,
-        timestamp=TimestampMS(1771748093000),
-        location=Location.KRAKEN,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_ETH,
-        amount=FVal('7.59E-7'),
-        location_label='mockkraken',
-    )]
+    assert len(events) == 9
+    assert {event.asset for event in events} == {A_ETH, A_USD}
+    assert actual_events == {
+        (TimestampMS(1771068124000), HistoryEventType.MARGIN, HistoryEventSubType.LOSS, A_USD, FVal('0.14005'), 'realized_pnl'),  # noqa: E501
+        (TimestampMS(1771068124000), HistoryEventType.SPEND, HistoryEventSubType.FEE, A_USD, FVal('0.0035521'), 'fee'),  # noqa: E501
+        (TimestampMS(1771068124000), HistoryEventType.MARGIN, HistoryEventSubType.LOSS, A_USD, FVal('2.1714'), 'realized_pnl'),  # noqa: E501
+        (TimestampMS(1771068124000), HistoryEventType.SPEND, HistoryEventSubType.FEE, A_USD, FVal('0.0985838'), 'fee'),  # noqa: E501
+        (TimestampMS(1771068124000), HistoryEventType.SPEND, HistoryEventSubType.FEE, A_USD, FVal('1.00980175'), 'liquidation_fee'),  # noqa: E501
+        (TimestampMS(1771304400000), HistoryEventType.MARGIN, HistoryEventSubType.PROFIT, A_ETH, FVal('3.1E-10'), 'realized_funding'),  # noqa: E501
+        (TimestampMS(1771748093000), HistoryEventType.MARGIN, HistoryEventSubType.LOSS, A_ETH, FVal('0.00011406889'), 'realized_pnl'),  # noqa: E501
+        (TimestampMS(1771748093000), HistoryEventType.MARGIN, HistoryEventSubType.LOSS, A_ETH, FVal('1E-11'), 'realized_funding'),  # noqa: E501
+        (TimestampMS(1771748093000), HistoryEventType.SPEND, HistoryEventSubType.FEE, A_ETH, FVal('7.59E-7'), 'fee'),  # noqa: E501
+    }
+
+    expected_deltas = {
+        '2bb781e4-7017-4a1b-a9c7-b04501b398d7': FVal('-3.27978555'),
+        '5c731408-03ad-4b41-ad37-392dc0eeb4a9': FVal('-0.1436021'),
+        '7cb41fd7-1fce-42c5-9433-657b107ed10a': FVal('-0.00011482790'),
+        '7de6e258-acc2-48b2-966a-3693577e84c6': FVal('3.1E-10'),
+    }
+    assert set(events_by_booking_uid) == set(expected_deltas)
+    for booking_uid, booking_events in events_by_booking_uid.items():
+        assert _get_events_balance_delta(booking_events) == expected_deltas[booking_uid]
+
+    trade_events = events_by_booking_uid['7cb41fd7-1fce-42c5-9433-657b107ed10a']
+    for event in trade_events:
+        assert event.extra_data is not None
+        assert event.extra_data['position_changes'] == [{
+            'booking_uid': '70d4c68d-463b-49cb-a17b-2f8337a8c566',
+            'new_average_entry_price': 2136.875,
+            'new_size': '0',
+            'old_average_entry_price': 2136.875,
+            'old_size': '3',
+            'trade_price': 1976.3,
+        }]
+
+
+def test_kraken_futures_account_log_pagination(kraken: Kraken) -> None:
+    """The inclusive ID boundary must be decremented when requesting the next page."""
+    first_page = {
+        'accountUid': 'account-1',
+        'logs': [
+            {'booking_uid': 'booking-3', 'id': 3},
+            {'booking_uid': 'booking-2', 'id': 2},
+        ],
+    }
+    last_page = {
+        'accountUid': 'account-1',
+        'logs': [{'booking_uid': 'booking-1', 'id': 1}],
+    }
+    with (
+        patch('rotkehlchen.exchanges.kraken.KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE', 2),
+        patch.object(kraken, 'api_query', side_effect=[first_page, last_page]) as api_query,
+    ):
+        logs, account_uid = kraken._query_futures_account_log(
+            start_ts=Timestamp(10),
+            end_ts=Timestamp(20),
+        )
+
+    assert account_uid == 'account-1'
+    assert [entry['id'] for entry in logs] == [3, 2, 1]
+    assert api_query.call_args_list[0].args == ('account-log', {
+        'before': TimestampMS(20000),
+        'count': 2,
+        'since': TimestampMS(10000),
+        'sort': 'desc',
+    })
+    assert api_query.call_args_list[1].args == ('account-log', {
+        'before': TimestampMS(20000),
+        'count': 2,
+        'since': TimestampMS(10000),
+        'sort': 'desc',
+        'to': 1,
+    })
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_futures_conversion_and_cross_exchange_transfer(kraken: Kraken) -> None:
+    """Decode collateral conversion legs and avoid duplicating the spot-side wallet transfer."""
+    events, skipped_logs = kraken.process_futures_account_log(
+        logs=[
+            _make_futures_account_log_entry(
+                asset='usd',
+                booking_uid='conversion-receive',
+                id=4,
+                new_balance=0.0005,
+                old_balance=0,
+            ),
+            _make_futures_account_log_entry(
+                asset='eur',
+                booking_uid='conversion-spend',
+                conversion_spread_percentage=0,
+                id=3,
+                new_balance=4.9996,
+                old_balance=5,
+            ),
+            _make_futures_account_log_entry(
+                asset='eur',
+                booking_uid='wallet-transfer',
+                date='2026-08-24T14:14:50.337Z',
+                fee=0,
+                id=1,
+                info='cross-exchange transfer',
+                new_balance=5,
+                old_balance=0,
+            ),
+        ],
+        account_uid='account-1',
+    )
+
+    assert skipped_logs == []
+    assert len(events) == 2
+    assert all(isinstance(event, SwapEvent) for event in events)
+    assert all(event.entry_type == HistoryBaseEntryType.SWAP_EVENT for event in events)
+    assert events[0].group_identifier == events[1].group_identifier
+    assert [(
+        event.sequence_index,
+        event.event_type,
+        event.event_subtype,
+        event.asset,
+        event.amount,
+        event.extra_data['component'] if event.extra_data is not None else None,
+    ) for event in events] == [
+        (0, HistoryEventType.TRADE, HistoryEventSubType.SPEND, A_EUR, FVal('0.0004'), 'conversion'),  # noqa: E501
+        (1, HistoryEventType.TRADE, HistoryEventSubType.RECEIVE, A_USD, FVal('0.0005'), 'conversion'),  # noqa: E501
+    ]
+
+
+def test_kraken_futures_history_skips_unreconciled_collateral(kraken: Kraken) -> None:
+    """Never persist a partial interpretation of an execution's collateral changes."""
+    raw_logs = jsonloads_dict(KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE)['logs']
+    valid_log = raw_logs[2].copy()
+    valid_log['execution'] = 'shared-execution'
+    invalid_log = raw_logs[0].copy()
+    invalid_log['execution'] = 'shared-execution'
+    invalid_log['new_balance'] = invalid_log['old_balance']
+
+    events, skipped_logs = kraken.process_futures_account_log(
+        logs=[valid_log, invalid_log],
+        account_uid='account-1',
+    )
+
+    assert events == []
+    assert skipped_logs == [valid_log, invalid_log]
+
+
+def test_kraken_futures_history_group_is_account_scoped(kraken: Kraken) -> None:
+    """The same account-log identifiers from different accounts must not collide."""
+    raw_log = jsonloads_dict(KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE)['logs'][2]
+    first_events, first_skipped = kraken.process_futures_account_log(
+        logs=[raw_log],
+        account_uid='account-1',
+    )
+    second_events, second_skipped = kraken.process_futures_account_log(
+        logs=[raw_log],
+        account_uid='account-2',
+    )
+
+    assert first_skipped == second_skipped == []
+    assert len(first_events) == len(second_events) == 1
+    assert first_events[0].group_identifier != second_events[0].group_identifier
 
 
 def test_kraken_futures_history_uses_independent_query_range(kraken: Kraken) -> None:

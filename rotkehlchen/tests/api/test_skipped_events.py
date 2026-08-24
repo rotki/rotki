@@ -1,4 +1,5 @@
 import csv
+import json
 import string
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
@@ -11,18 +12,51 @@ from rotkehlchen.accounting.export.csv import FILENAME_SKIPPED_EXTERNAL_EVENTS_C
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
+from rotkehlchen.history.skipped import reprocess_skipped_external_events
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
-from rotkehlchen.tests.utils.kraken import KRAKEN_GENERAL_LEDGER_RESPONSE, MockKraken
+from rotkehlchen.tests.utils.kraken import (
+    KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE,
+    KRAKEN_GENERAL_LEDGER_RESPONSE,
+    MockKraken,
+)
 from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+def test_reprocess_skipped_kraken_futures_event(
+        rotkehlchen_api_server_with_exchanges: APIServer,
+) -> None:
+    """Skipped Futures rows must use the Futures parser when they are retried."""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    raw_log = jsonloads_dict(KRAKEN_FUTURES_ACCOUNT_LOG_RESPONSE)['logs'][2]
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.add_skipped_external_event(
+            write_cursor=write_cursor,
+            location=Location.KRAKEN,
+            data=raw_log,
+            extra_data={
+                'account_uid': 'account-1',
+                'location_label': 'mockkraken',
+                'source': 'futures_account_log',
+            },
+        )
+
+    assert reprocess_skipped_external_events(rotki) == (1, 1)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 0
+        extra_data = cursor.execute('SELECT extra_data FROM history_events').fetchone()[0]
+
+    assert json.loads(extra_data)['component'] == 'realized_funding'
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])

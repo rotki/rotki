@@ -73,7 +73,7 @@ class SwapEvent(HistoryBaseEntry):
             location_label: str | None = None,
             notes: str | None = None,
             sequence_index: int | None = None,
-            extra_data: SwapEventExtraData | None = None,
+            extra_data: SwapEventExtraData | dict[str, Any] | None = None,
     ):
         """An event representing part of a swap (spend/receive/fee).
 

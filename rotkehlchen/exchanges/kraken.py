@@ -16,9 +16,7 @@ from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
-from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.converters import asset_from_kraken
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import (
     KRAKEN_API_VERSION,
@@ -37,7 +35,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -45,9 +43,9 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeWithExtras,
     HistoryEventQueue,
 )
+from rotkehlchen.exchanges.kraken_futures import KrakenFuturesAccountLogProcessor
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
@@ -77,7 +75,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import (
     combine_dicts,
-    iso8601ts_to_timestamp,
     pairwise,
     timestamp_to_date,
     ts_ms_to_sec,
@@ -105,6 +102,30 @@ log = RotkehlchenLogsAdapter(logger)
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
+KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE = 500
+KRAKEN_FUTURES_SPOT_LEDGER_TYPES = {
+    'derivativescrossexchangetransfer',
+    'derivativesflexconversion',
+    'derivativesfuturestrade',
+}
+KRAKEN_FUTURES_TRANSFER_DIRECTION = '_rotki_futures_transfer_direction'
+
+
+def _get_futures_spot_transfer_key(
+        entry: dict[str, Any],
+) -> tuple[str, FVal, FVal] | None:
+    """Return the fields shared by the spot and derivatives sides of a wallet transfer."""
+    if not isinstance(asset_symbol := entry.get('asset'), str):
+        return None
+
+    try:
+        return (
+            asset_symbol,
+            deserialize_fval(entry['time'], 'time', 'kraken futures transfer matching'),
+            deserialize_fval(entry['amount'], 'amount', 'kraken futures transfer matching'),
+        )
+    except (DeserializationError, KeyError):
+        return None
 
 
 def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, HistoryEventSubType]:
@@ -879,6 +900,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         Returns a list of the newly created rotki events and a set of all processed refids
         """
+        if self._has_futures_keys():
+            events = self._prepare_futures_spot_ledger_events(events)
+
         # Group related events
         raw_events_grouped = defaultdict(list)
         processed_refids = set()
@@ -912,6 +936,55 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             new_events.extend(group_events)
 
         return new_events, processed_refids
+
+    @staticmethod
+    def _prepare_futures_spot_ledger_events(
+            events: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Remove Futures duplicates and mark their matching spot-side wallet transfers."""
+        spot_transfers: defaultdict[
+            tuple[str, FVal, FVal],
+            list[dict[str, Any]],
+        ] = defaultdict(list)
+        for raw_event in events:
+            if (
+                    raw_event.get('type') == 'transfer' and
+                    raw_event.get('subtype') == '' and
+                    (transfer_key := _get_futures_spot_transfer_key(raw_event)) is not None
+            ):
+                spot_transfers[transfer_key].append(raw_event)
+
+        matched_directions: dict[int, Literal['from_futures', 'to_futures']] = {}
+        for raw_event in events:
+            if (
+                    raw_event.get('type') != 'derivativescrossexchangetransfer' or
+                    (derivatives_key := _get_futures_spot_transfer_key(raw_event)) is None
+            ):
+                continue
+
+            asset_symbol, timestamp, amount = derivatives_key
+            candidates = spot_transfers.get((asset_symbol, timestamp, -amount))
+            if not candidates:
+                continue
+
+            spot_event = candidates.pop()
+            matched_directions[id(spot_event)] = (
+                'to_futures' if amount > ZERO else 'from_futures'
+            )
+
+        prepared_events: list[dict[str, Any]] = []
+        for raw_event in events:
+            if raw_event.get('type') in KRAKEN_FUTURES_SPOT_LEDGER_TYPES:
+                continue  # The Futures account-log is the canonical source for these rows.
+
+            if (direction := matched_directions.get(id(raw_event))) is not None:
+                prepared_event = raw_event.copy()
+                prepared_event[KRAKEN_FUTURES_TRANSFER_DIRECTION] = direction
+                prepared_events.append(prepared_event)
+            else:
+                prepared_events.append(raw_event)
+
+        return prepared_events
 
     @protect_with_lock()
     def query_online_history_events(
@@ -991,9 +1064,25 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         with_errors = False
 
         try:
-            raw_logs = self._query_futures_account_log(start_ts, end_ts)
-            processed_logs = self.process_futures_account_log(raw_logs)
+            raw_logs, account_uid = self._query_futures_account_log(start_ts, end_ts)
+            processed_logs, skipped_logs = self.process_futures_account_log(
+                logs=raw_logs,
+                account_uid=account_uid,
+            )
             all_events.extend(processed_logs)
+            if skipped_logs:
+                with self.db.user_write() as write_cursor:
+                    for skipped_log in skipped_logs:
+                        self.db.add_skipped_external_event(
+                            write_cursor=write_cursor,
+                            location=Location.KRAKEN,
+                            data=skipped_log,
+                            extra_data={
+                                'location_label': self.name,
+                                'source': 'futures_account_log',
+                                'account_uid': account_uid,
+                            },
+                        )
         except RemoteError as e:
             log.error('Failed to query kraken futures account-log: %s', e)
             with_errors = True
@@ -1071,11 +1160,17 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[dict[str, Any]]:
-        """Query futures account-log endpoint with pagination"""
-        all_logs = []
-        params: dict[str, Any] = {'limit': 100, 'since': ts_sec_to_ms(start_ts),
-                                  'before': ts_sec_to_ms(end_ts)}
+    ) -> tuple[list[dict[str, Any]], str]:
+        """Query Futures account-log without duplicating its inclusive ID boundary."""
+        all_logs: list[dict[str, Any]] = []
+        seen_booking_uids: set[str] = set()
+        account_uid: str | None = None
+        params: dict[str, Any] = {
+            'before': ts_sec_to_ms(end_ts),
+            'count': KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE,
+            'since': ts_sec_to_ms(start_ts),
+            'sort': 'desc',
+        }
         log.debug(
             'Querying futures account-log with params %s from %s to %s',
             params,
@@ -1083,224 +1178,71 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             end_ts,
         )
         while True:
-            response = self.api_query('account-log', params)
+            response = self.api_query('account-log', params.copy())
             logs = response.get('logs', [])
+            if not isinstance(logs, list):
+                raise RemoteError('Kraken Futures account-log response contains invalid logs')
+            if (
+                    not isinstance(page_account_uid := response.get('accountUid'), str) or
+                    page_account_uid == ''
+            ):
+                raise RemoteError('Kraken Futures account-log response is missing accountUid')
+            if account_uid is None:
+                account_uid = page_account_uid
+            elif account_uid != page_account_uid:
+                raise RemoteError('Kraken Futures account-log accountUid changed while paginating')
+
             log.debug('Got %s logs from account-log', len(logs))
             if not logs:
                 break
 
-            all_logs.extend(logs)
+            for raw_log in logs:
+                if not isinstance(raw_log, dict):
+                    raise RemoteError(
+                        'Kraken Futures account-log response contains an invalid row',
+                    )
+                if (
+                        not isinstance(booking_uid := raw_log.get('booking_uid'), str) or
+                        booking_uid == ''
+                ):
+                    raise RemoteError('Kraken Futures account-log row is missing booking_uid')
+                if booking_uid not in seen_booking_uids:
+                    seen_booking_uids.add(booking_uid)
+                    all_logs.append(raw_log)
 
-            # when the number of logs returned is less than our limit we've reached the end
-            if len(logs) < params['limit']:
+            if len(logs) < KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE:
                 break
 
-            # logs have a numerical id starting at one. By default Kraken returns most recent first
-            earliest_log_id = logs[-1]['id']
-            params['to'] = earliest_log_id
-
-        return all_logs
-
-    def process_futures_account_log(self, logs: list[dict[str, Any]]) -> list[HistoryBaseEntry]:
-        """Process futures account-log entries into SwapEvents and HistoryEvents"""
-        events: list[HistoryBaseEntry] = []
-
-        # Group entries by execution ID to match trade parts
-        # Entries for a trade have the same 'execution' ID
-        trades_by_execution = defaultdict(list)
-        for entry in logs:
-            if (execution_id := entry.get('execution')) is not None:
-                trades_by_execution[execution_id].append(entry)
-                continue
-
-            realized_funding_event = self._process_realized_funding(entry)
-            if realized_funding_event:
-                events.append(realized_funding_event)
-
-        for execution_id, entries in trades_by_execution.items():
-            trade_events = self._process_futures_trade_entries(execution_id, entries)
-            events.extend(trade_events)
-
-        return events
-
-    def _process_realized_funding(self, entry: dict[str, Any]) -> HistoryEvent | None:
-        """Process realized_funding if it's non-zero"""
-        try:
-            realized_funding = entry.get('realized_funding')
-            if not realized_funding:
-                return None
-
-            if (amount := deserialize_fval(realized_funding)) == ZERO:
-                return None
-
-            timestamp = ts_sec_to_ms(iso8601ts_to_timestamp(entry['date']))
-            asset_str = entry['asset']
-            if asset_str == entry.get('contract'):
-                asset_str = self._heuristic_futures_asset_name(asset_str)
-
-            asset = asset_from_kraken(asset_str.upper())
-            if amount > ZERO:
-                event_type = HistoryEventType.RECEIVE
-                event_subtype = HistoryEventSubType.REWARD
-            else:
-                event_type = HistoryEventType.SPEND
-                event_subtype = HistoryEventSubType.FEE
-
-            return HistoryEvent(
-                group_identifier=f"realized_funding_{entry['id']}",
-                sequence_index=0,
-                timestamp=timestamp,
-                location=Location.KRAKEN,
-                location_label=self.name,
-                asset=asset,
-                amount=abs(amount),
-                event_type=event_type,
-                event_subtype=event_subtype,
-                notes=f"Futures realized funding: {entry.get('contract', '')}",
-            )
-        except (DeserializationError, KeyError, UnknownAsset) as e:
-            log.error('Failed to process kraken futures realized funding %s: %s', entry, e)
-            return None
-
-    def _process_futures_trade_entries(
-            self,
-            execution_id: str,
-            entries: list[dict[str, Any]],
-    ) -> list[SwapEvent]:
-        """Process grouped trade entries into SwapEvents"""
-        if len(entries) == 0:
-            return []
-
-        # A trade has 2 entries:
-        # 1. Entry with asset == contract (e.g. pf_solusd), containing the trade amount
-        # 2. Entry with asset as collateral (e.g. usd, eth), containing the fee and trade_price
-        try:
-            base_entry = quote_entry = None
-            for entry in entries:
-                contract = entry.get('contract')
-                if entry.get('asset') == contract:
-                    base_entry = entry
-                else:
-                    quote_entry = entry
-
-            if not base_entry or not quote_entry:
-                msg = f'Could not find both base and quote entries for execution {execution_id}'
-                log.error(msg)
-                return []
-
-            timestamp = iso8601ts_to_timestamp(base_entry['date'])
-            contract = base_entry['contract']
-
-            old_bal = deserialize_fval(base_entry['old_balance'])
-            new_bal = deserialize_fval(base_entry['new_balance'])
-            if (amount := new_bal - old_bal) == ZERO:
-                return []
-
-            abs_amount = abs(amount)
-            price = deserialize_fval(quote_entry['trade_price'])
-            fee_amount = deserialize_fval(quote_entry.get('fee') or ZERO)
-            liquidation_fee = deserialize_fval(quote_entry.get('liquidation_fee') or ZERO)
-            total_fee = fee_amount + liquidation_fee
-            base_asset = self._get_or_create_futures_contract_asset(contract)
-
-            # For single collateral futures, quote_entry['asset'] is the collateral (e.g. ETH)
-            # For multi-collateral futures, quote_entry['asset'] is USD
-            quote_asset = asset_from_kraken(quote_entry['asset'].upper())
-            is_single_collateral = quote_asset == asset_from_kraken(
-                self._heuristic_futures_asset_name(contract),
-            )
-            fee_asset = quote_asset  # Fee is always paid in the collateral/quote asset
-            spend_asset: Asset
-            receive_asset: Asset
-
-            if amount > ZERO:
-                # buy side
-                spend_asset = quote_asset
-                receive_amount = abs_amount
-                receive_asset = base_asset
-                if is_single_collateral:
-                    # Single collateral: calculate the collateral value from price
-                    # Inverse contracts: value = contracts / price
-                    if price == ZERO:
-                        return []
-                    spend_amount = abs_amount / price
-                else:
-                    spend_amount = abs_amount * price
-            else:
-                # sell side
-                spend_asset = base_asset
-                spend_amount = abs_amount
-                receive_asset = quote_asset
-                if is_single_collateral:
-                    # Single collateral: calculate the collateral value from price
-                    # Inverse contracts: value = contracts / price
-                    if price == ZERO:
-                        return []
-                    receive_amount = abs_amount / price
-                else:
-                    receive_amount = abs_amount * price
-
-            info = base_entry.get('info') or quote_entry.get('info')
-            notes = f'Kraken Futures {info}: {contract}'
-            spend_notes = notes
-
-            fees = [(AssetAmount(asset=fee_asset, amount=total_fee), None, None)]
-
-            return create_swap_events_multi_fee(
-                timestamp=ts_sec_to_ms(timestamp),
-                location=Location.KRAKEN,
-                spend=AssetAmount(asset=spend_asset, amount=spend_amount),
-                receive=AssetAmount(asset=receive_asset, amount=receive_amount),
-                fees=fees,
-                group_identifier=create_group_identifier_from_unique_id(
-                    location=self.location,
-                    unique_id=execution_id,
-                ),
-                location_label=self.name,
-                spend_notes=spend_notes,
-                receive_notes=notes,
-            )
-        except (DeserializationError, KeyError, UnknownAsset) as e:
-            log.error('Failed to process kraken futures trade execution %s: %s', execution_id, e)
-
-        return []
-
-    def _get_or_create_futures_contract_asset(self, contract: str) -> Asset:
-        identifier = f'exchange_futures_{contract.lower()}'
-        asset = Asset(identifier)
-        if not asset.exists():
-            contract_symbol = contract.upper()
             try:
-                GlobalDBHandler.add_asset(CryptoAsset.initialize(
-                    identifier=identifier,
-                    asset_type=AssetType.EXCHANGE_FUTURES,
-                    name=f'Kraken Futures {contract_symbol}',
-                    symbol=contract_symbol,
-                    coingecko='',
-                    cryptocompare='',
-                ))
-            except InputError:
-                if not asset.exists():  # Another task may have inserted the same contract.
-                    raise
+                earliest_log_id = min(raw_log['id'] for raw_log in logs)
+            except (KeyError, TypeError) as e:
+                raise RemoteError('Kraken Futures account-log row is missing a valid id') from e
+            if (
+                    not isinstance(earliest_log_id, int) or
+                    isinstance(earliest_log_id, bool) or
+                    earliest_log_id < 1
+            ):
+                raise RemoteError('Kraken Futures account-log row contains an invalid id')
+            if earliest_log_id == 1:
+                break
 
-        with self.db.user_write() as write_cursor:
-            self.db.add_asset_identifiers(write_cursor, [identifier])
+            next_to = earliest_log_id - 1
+            if (previous_to := params.get('to')) is not None and next_to >= previous_to:
+                raise RemoteError('Kraken Futures account-log pagination did not advance')
+            params['to'] = next_to
 
-        return asset
+        return all_logs, account_uid
 
-    def _heuristic_futures_asset_name(self, contract: str) -> str:
-        """
-        Heuristic to get the actual asset from contract name (e.g. pf_solusd -> SOL)
-        Ticker symbols are defined as:
-        <Product Code>_<Currency Pair>_<Maturity Date (if applicable)>
-        Source: https://support.kraken.com/articles/360022835891-ticker-symbols-derivatives
-        """
-        contract_upper = contract.upper()
-        contract_upper_split = contract_upper.split('_')
-        currency_pair = contract_upper_split[1]
-
-        # Account-log currently reports these single-collateral contracts against USD.
-        return currency_pair.removesuffix('USD')
+    def process_futures_account_log(
+            self,
+            logs: list[dict[str, Any]],
+            account_uid: str,
+    ) -> tuple[list[HistoryEvent | SwapEvent], list[dict[str, Any]]]:
+        """Delegate Futures account-log interpretation to the dedicated processor."""
+        return KrakenFuturesAccountLogProcessor(
+            account_uid=account_uid,
+            location_label=self.name,
+        ).process(logs)
 
     def query_online_history_events_into_queue(
             self,
@@ -1364,7 +1306,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 # event type the logic will be to store it as unknown and if in the future
                 # we need some information from it we can take actions to process them
                 if event_type == HistoryEventType.TRANSFER:
-                    if raw_event['subtype'] == '':  # Internal kraken events
+                    if (direction := raw_event.get(KRAKEN_FUTURES_TRANSFER_DIRECTION)) is not None:
+                        notes = (
+                            'Transfer from Kraken spot to Futures wallet'
+                            if direction == 'to_futures' else
+                            'Transfer from Kraken Futures wallet to spot'
+                        )
+                    elif raw_event['subtype'] == '':  # Internal kraken events
                         # Lefteris has seen it in: Crediting airdrops/fork coins
                         # such as ETC, BCH, BSV. OR the XXLM airdrop. Also for forced
                         # removal of a coin due to delisting(negative amount), which is followed

@@ -79,7 +79,11 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
     Returns number of current skipped events processed, and how many were
     reprocessed successfully.
     """
-    raw_kraken_events = defaultdict(list)
+    raw_kraken_events: defaultdict[str, list[tuple[int, dict[str, Any]]]] = defaultdict(list)
+    raw_kraken_futures_events: defaultdict[
+        tuple[str, str],
+        list[tuple[int, dict[str, Any]]],
+    ] = defaultdict(list)
     total_num, processed_num = 0, 0
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT identifier, data, location, extra_data FROM skipped_external_events')  # noqa: E501
@@ -98,7 +102,15 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
             if extra_json is None or (location_label := extra_json.get('location_label')) is None:
                 continue  # kraken skipped events should be saved with name as location label
 
-            raw_kraken_events[location_label].append((identifier, json.loads(data)))
+            raw_event = json.loads(data)
+            if extra_json.get('source') == 'futures_account_log':
+                if not isinstance(account_uid := extra_json.get('account_uid'), str):
+                    continue
+                raw_kraken_futures_events[location_label, account_uid].append(
+                    (identifier, raw_event),
+                )
+            else:
+                raw_kraken_events[location_label].append((identifier, raw_event))
 
     identifiers_to_delete = set()
     # Now that we got the skipped kraken events from the DB, find the kraken instances
@@ -119,7 +131,6 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
             with rotki.data.db.user_write() as write_cursor:
                 DBHistoryEvents(rotki.data.db).add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
 
-        processed_num = 0
         for identifier, raw_data in raw_events:
             try:
                 if raw_data['refid'] in processed_refids:
@@ -128,6 +139,31 @@ def reprocess_skipped_external_events(rotki: Rotkehlchen) -> tuple[int, int]:
             except KeyError:  # should never really happen
                 log.error(f'Processing skipped kraken event could not find refid in {raw_data}')
                 continue
+
+    for (kraken_name, account_uid), raw_events in raw_kraken_futures_events.items():
+        exchange = rotki.exchange_manager.get_exchange(name=kraken_name, location=Location.KRAKEN)
+        if exchange is None:
+            identifiers_to_delete.update({entry[0] for entry in raw_events})
+            continue
+
+        total_num += len(raw_events)
+        exchange = cast('Kraken', exchange)
+        futures_events, skipped_events = exchange.process_futures_account_log(
+            logs=[entry[1] for entry in raw_events],
+            account_uid=account_uid,
+        )
+        if futures_events:
+            with rotki.data.db.user_write() as write_cursor:
+                DBHistoryEvents(rotki.data.db).add_history_events(
+                    write_cursor=write_cursor,
+                    history=futures_events,
+                )
+
+        skipped_booking_uids = {entry.get('booking_uid') for entry in skipped_events}
+        for identifier, raw_data in raw_events:
+            if raw_data.get('booking_uid') not in skipped_booking_uids:
+                identifiers_to_delete.add(identifier)
+                processed_num += 1
 
     if len(identifiers_to_delete) != 0:  # delete some skipped events if needed
         with rotki.data.db.user_write() as write_cursor:
