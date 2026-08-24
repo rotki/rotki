@@ -300,7 +300,7 @@ function showResetConfirmation() {
 
     <RuiAccordions>
       <RuiAccordion
-        data-testid="onboarding-setting__advance"
+        data-testid="onboarding-setting-advance"
         header-class="py-4"
         eager
       >
@@ -336,7 +336,7 @@ function showResetConfirmation() {
           {{ t('common.actions.cancel') }}
         </RuiButton>
         <RuiButton
-          data-testid="onboarding-setting__reset-button"
+          data-testid="onboarding-setting-reset"
           variant="outlined"
           color="primary"
           @click="showResetConfirmation()"
@@ -344,7 +344,7 @@ function showResetConfirmation() {
           {{ t('backend_settings.actions.reset') }}
         </RuiButton>
         <RuiButton
-          data-testid="onboarding-setting__submit-button"
+          data-testid="onboarding-setting-submit"
           color="primary"
           :disabled="!anyValueChanged || invalid"
           type="submit"
