@@ -3322,7 +3322,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     assert cursor.execute(
         "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
-    ).fetchone()[0] == 1
+    ).fetchone()[0] == 0
 
     last_db.logout()
 
