@@ -183,7 +183,7 @@ describe('useNewlyDetectedTokens', () => {
       const payload: NewDetectedTokensRequestPayload = {
         limit: 10,
         offset: 0,
-        orderByAttributes: ['detectedAt'],
+        orderByAttributes: ['detected_at'],
         ascending: [false],
       };
       const result = await getData(payload);

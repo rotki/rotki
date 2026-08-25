@@ -260,7 +260,7 @@ describe('useNewlyDetectedTokensDb', () => {
       const payload: NewDetectedTokensRequestPayload = {
         limit: 2,
         offset: 0,
-        orderByAttributes: ['detectedAt'],
+        orderByAttributes: ['detected_at'],
         ascending: [false],
       };
 
