@@ -1549,6 +1549,7 @@ def test_all_balance_classes_used():
             'ExtrafiCommonBalances',
             'VelodromeLikeBalances',
             'GivethCommonBalances',
+            'BeetsBalances',
         },
     )
     unused_classes = set()
