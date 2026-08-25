@@ -1187,8 +1187,8 @@ class AssetsService:
                         (ChainID.OPTIMISM, optimism_inquirer),
                         (ChainID.POLYGON_POS, polygon_inquirer),
                         (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
-                    )
-                ])
+                      )
+                  ])
             case ProtocolsWithCache.BALANCER_V3:
                 cache_rules.extend([
                     (

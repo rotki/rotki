@@ -182,6 +182,9 @@ A_WHYPE: Final = Asset('eip155:999/erc20:0x5555555555555555555555555555555555555
 
 A_WMON: Final = Asset('eip155:143/erc20:0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A')
 
+A_S: Final = Asset('S')
+A_WS: Final = Asset('eip155:146/erc20:0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38')
+
 A_WSOL: Final = Asset('solana/token:So11111111111111111111111111111111111111112')
 
 CONSTANT_ASSETS = {var_data for var_name, var_data in locals().items() if var_name.startswith('A_')}  # noqa: E501

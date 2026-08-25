@@ -29,6 +29,8 @@ from rotkehlchen.chain.polygon_pos.decoding.decoder import PolygonPOSTransaction
 from rotkehlchen.chain.polygon_pos.transactions import PolygonPOSTransactions
 from rotkehlchen.chain.scroll.decoding.decoder import ScrollTransactionDecoder
 from rotkehlchen.chain.scroll.transactions import ScrollTransactions
+from rotkehlchen.chain.sonic.decoding.decoder import SonicTransactionDecoder
+from rotkehlchen.chain.sonic.transactions import SonicTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -456,6 +458,7 @@ def get_decoded_events_of_transaction(
         ChainID.SCROLL: (ScrollTransactions, ScrollTransactionDecoder),
         ChainID.BINANCE_SC: (BinanceSCTransactions, BinanceSCTransactionDecoder),
         ChainID.MONAD: (MonadTransactions, MonadTransactionDecoder),
+        ChainID.SONIC: (SonicTransactions, SonicTransactionDecoder),
         ChainID.HYPERLIQUID: (HyperliquidTransactions, HyperliquidTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)

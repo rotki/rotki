@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
 * :feature:`12317` rotki is ready to resolve ENS v2 names.

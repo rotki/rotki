@@ -80,6 +80,7 @@ LOCATION_DETAILS: dict = {
     Location.SCROLL: {'image': 'scroll.svg'},
     Location.BINANCE_SC: {'image': 'binance_sc.svg'},
     Location.MONAD: {'image': 'monad.svg'},
+    Location.SONIC: {'image': 'sonic.svg'},
     Location.AVALANCHE: {'image': 'avalanche.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},

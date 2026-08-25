@@ -222,6 +222,7 @@ export const backendMappingKeys = [
   'backend_mappings.trade_location.scroll',
   'backend_mappings.trade_location.shapeshift',
   'backend_mappings.trade_location.solana',
+  'backend_mappings.trade_location.sonic',
   'backend_mappings.trade_location.sushiswap',
   'backend_mappings.trade_location.total',
   'backend_mappings.trade_location.uniswap',
