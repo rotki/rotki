@@ -74,7 +74,7 @@ describe('useCounterpartyMappingApi', () => {
       await fetchAllCounterpartyMapping({
         limit: 10,
         offset: 0,
-        orderByAttributes: ['counterpartySymbol'],
+        orderByAttributes: ['counterparty_symbol'],
         ascending: [true],
       });
 

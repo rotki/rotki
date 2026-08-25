@@ -491,7 +491,7 @@ describe('useAccountingApi', () => {
       await fetchAccountingRuleConflicts({
         limit: 10,
         offset: 0,
-        orderByAttributes: ['localId'],
+        orderByAttributes: ['local_id'],
         ascending: [true],
       });
 
