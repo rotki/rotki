@@ -1,19 +1,15 @@
 <script lang="ts" setup>
-import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
-import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
-import { arrayify } from '@/modules/core/common/data/array';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocations } from '@/modules/core/table/filtering';
-import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
 import HistoryEventsExport from '@/modules/history/events/HistoryEventsExport.vue';
-import { isValidHistoryEventState } from '@/modules/history/events/mapping/use-history-event-state-mapping';
+import { useHistoryEventsPillBar } from '@/modules/history/events/use-history-events-pill-bar';
 import HistoryTableActions from '@/modules/history/HistoryTableActions.vue';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 
@@ -41,63 +37,13 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Not a pill: it constrains how the other filters apply instead of filtering anything itself.
-function toggleMatchExact(): void {
-  set(toggles, { ...get(toggles), matchExactEvents: !get(toggles).matchExactEvents });
-}
-
-const pillLabels = usePillBarLabels();
-
-// The account, state and show-ignored filters are param-bound pills in the bar (paramKeys
-// `locationLabels`, `stateMarkers`, `showIgnoredAssets`). Bridge the bar's param bag to the models
-// that back them so the bar drives the same sources the standalone selector and dropdown used to.
-// An absent param clears its model — for the boolean that is the pill's whole state, since
-// removing it is how it is turned off.
-const pillParams = computed<Record<string, string | string[] | boolean>>({
-  get(): Record<string, string | string[] | boolean> {
-    const labels = get(locationLabels);
-    const { showIgnoredAssets, stateMarkers } = get(toggles);
-    const result: Record<string, string | string[] | boolean> = {};
-    const verb = get(action);
-    if (verb !== undefined)
-      result.action = verb;
-    if (labels.length > 0)
-      result.locationLabels = labels;
-    if (stateMarkers.length > 0)
-      result.stateMarkers = stateMarkers;
-    if (showIgnoredAssets)
-      result.showIgnoredAssets = true;
-    return result;
-  },
-  set(value: Record<string, string | string[] | boolean>): void {
-    const nextAction = value.action;
-    set(action, typeof nextAction === 'string' ? nextAction : undefined);
-
-    const nextLabels = value.locationLabels;
-    set(locationLabels, nextLabels === undefined || typeof nextLabels === 'boolean' ? [] : arrayify(nextLabels));
-
-    const nextMarkers = value.stateMarkers;
-    set(toggles, {
-      ...get(toggles),
-      showIgnoredAssets: value.showIgnoredAssets === true,
-      stateMarkers: nextMarkers === undefined || typeof nextMarkers === 'boolean'
-        ? []
-        : arrayify(nextMarkers).filter(isValidHistoryEventState),
-    });
-  },
-});
-
-// A saved view is the bar's two models under a name, so it both reads from and writes to the same
-// pair the bar is bound to.
-const pillState = computed<SavedViewState>(() => ({
-  matches: get(filters),
-  params: get(pillParams),
-}));
-
-function applyView(view: SavedView): void {
-  set(filters, view.matches);
-  set(pillParams, view.params);
-}
+const {
+  applyView,
+  modelPillParams,
+  pillLabels,
+  pillState,
+  toggleMatchExact,
+} = useHistoryEventsPillBar({ action, filters, locationLabels, toggles });
 
 const canIgnore = computed<boolean>(() => {
   const status = ignoreStatus;
@@ -147,7 +93,7 @@ function handleToggleSelectAllMatching(): void {
     <template #filter>
       <PillFilterBar
         v-model:matches="filters"
-        v-model:params="pillParams"
+        v-model:params="modelPillParams"
         class="flex-1 min-w-[12rem] md:min-w-[24rem]"
         :fields="fields"
         :labels="pillLabels"
@@ -219,6 +165,7 @@ function handleToggleSelectAllMatching(): void {
             color="primary"
             hide-details
             size="sm"
+            data-testid="selection-select-all-page"
             @update:model-value="handleToggleAll()"
           />
         </template>
@@ -227,6 +174,7 @@ function handleToggleSelectAllMatching(): void {
       <span
         v-if="!selection.selectAllMatching"
         class="text-sm text-rui-text-secondary -ml-1 mr-2 select-none"
+        data-testid="selection-count"
       >
         {{ t('transactions.events.selection_mode.selected_count', { count: selection.selectedCount }) }}
       </span>
@@ -241,6 +189,7 @@ function handleToggleSelectAllMatching(): void {
         size="sm"
         class="text-sm hover:underline cursor-pointer mr-2"
         :class="selection.selectAllMatching ? '-ml-3' : '-ml-1'"
+        data-testid="selection-select-all-matching"
         @click="handleToggleSelectAllMatching()"
       >
         {{ selection.selectAllMatching ? t('transactions.events.selection_mode.all_matching_selected', { count: selection.totalMatchingCount }) : t('transactions.events.selection_mode.select_all_matching') }}
@@ -261,6 +210,7 @@ function handleToggleSelectAllMatching(): void {
             variant="outlined"
             class="h-7 px-2.5"
             :disabled="selection.selectedCount === 0"
+            data-testid="selection-delete"
             @click="handleDelete()"
           >
             <RuiIcon
@@ -278,6 +228,7 @@ function handleToggleSelectAllMatching(): void {
               variant="outlined"
               class="h-7 px-2.5 !rounded-r-none"
               :disabled="selection.selectedCount === 0 || !canIgnore || selection.selectAllMatching"
+              data-testid="selection-ignore"
               @click="handleIgnore()"
             >
               <RuiIcon
@@ -294,6 +245,7 @@ function handleToggleSelectAllMatching(): void {
               variant="outlined"
               class="h-7 px-2.5 !rounded-l-none -ml-[1px]"
               :disabled="selection.selectedCount === 0 || !canUnignore || selection.selectAllMatching"
+              data-testid="selection-unignore"
               @click="handleUnignore()"
             >
               <RuiIcon
@@ -312,6 +264,7 @@ function handleToggleSelectAllMatching(): void {
             variant="outlined"
             class="h-7 px-2.5"
             :disabled="selection.selectedCount === 0 || selection.selectAllMatching"
+            data-testid="selection-create-rule"
             @click="handleCreateRule()"
           >
             <RuiIcon
@@ -325,6 +278,7 @@ function handleToggleSelectAllMatching(): void {
       <RuiButton
         variant="text"
         class="h-7 px-2.5"
+        data-testid="selection-exit"
         @click="handleExit()"
       >
         {{ t('common.actions.cancel') }}
@@ -337,6 +291,7 @@ function handleToggleSelectAllMatching(): void {
             variant="text"
             size="xl"
             :disabled="!selection.hasAvailableEvents"
+            data-testid="selection-toggle-mode"
             @click="handleToggleMode()"
           >
             <template #prepend>
