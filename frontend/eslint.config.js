@@ -130,22 +130,13 @@ export default rotki({
     'vue/max-props': ['error', { maxProps: 12 }],
   },
 }, {
-  // `data-testid` values are kebab-case. The `__` separator is a leftover from the Vuetify/`data-cy`
-  // era: it encodes a DOM hierarchy that has since been refactored away, and because a BEM id looks
-  // structural, a wrong block name reads as plausible - one form shipped another form's id, and its
-  // spec asserted the same wrong value and passed.
-  //
-  // The `key` option is passed through `toRegExp`, so this covers the components that forward a test
-  // id under their own attribute name too - `switch-test-id` / `field-test-id` on
-  // settings/controls/SettingToggleNumber.vue, whose only caller is accounting/TaxFreeSetting.vue.
-  //
-  // One shape is genuinely unlintable: an id built at runtime, which today means `tabTestId`. Its own
-  // spec asserts the generated value never contains `__`, which is the closest thing to a gate.
+  // Test ids are kebab-case; `__` is a Vuetify-era BEM leftover. `key` is a regex, so the rule also
+  // covers ids forwarded under a component's own `*-test-id` attribute. A bound `:data-testid` is
+  // invisible to all of this: keep the attribute static and put anything variable on `data-key`.
   files: ['**/*.vue'],
   rules: {
     'no-restricted-syntax': ['error', {
-      // The object-literal form of the same thing: `testId: 'a__b'` in a `<script setup>`, which is
-      // how CreateAccountIntroduction.vue carries the ids for its two mode cards.
+      // The object-literal form: `testId: 'a__b'` in a `<script setup>`.
       message: 'data-testid values are kebab-case; `__` is a BEM leftover.',
       selector: 'Property[key.name=/[Tt]est[Ii]d$/] > Literal[value=/__/]',
     }],
@@ -156,18 +147,16 @@ export default rotki({
     }],
   },
 }, {
-  // The template rule above cannot see a selector string in a page object, so the e2e side gets its
-  // own. Specs are covered by the `no-restricted-syntax` block further down - a flat config replaces
-  // a rule's options rather than merging them, so the selector has to join that array rather than
-  // arrive in a block of its own.
+  // The template rule cannot see a selector string in a page object, so the e2e side gets its own.
+  // A flat config replaces a rule's options rather than merging them, so specs join the
+  // `no-restricted-syntax` array further down instead of getting a block of their own.
   files: ['**/tests/e2e/**/*.ts'],
   rules: {
     'no-restricted-syntax': ['error', {
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'Literal[value=/data-testid[^_\\]]*__/]',
     }, {
-      // `Literal` does not match a `TemplateLiteral`, and page objects build selectors that way -
-      // `[data-testid=settings-${tab}]` in helpers/utils.ts is the pattern. Match the static chunks.
+      // `Literal` does not match a `TemplateLiteral`, and page objects build selectors that way.
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'TemplateElement[value.raw=/data-testid[^_\\]]*__/]',
     }],
@@ -232,9 +221,7 @@ export default rotki({
       message: 'Do not sleep on the real clock in a spec. Use fake timers (vi.advanceTimersByTimeAsync), poll a condition (vi.waitUntil/vi.waitFor), or resolve a promise the test controls.',
       selector: 'AwaitExpression > NewExpression[callee.name=\'Promise\']:has(CallExpression[callee.name=\'setTimeout\'])',
     }, {
-      // Kebab-case test ids, same rule the `**/*.vue` block applies to the components. A spec that
-      // holds the id in a bare constant (`const USERNAME = '...'`) is not matched - it carries no
-      // `data-testid` prefix to anchor on - so that shape stays review-only.
+      // Anchored on the `data-testid` prefix, so an id held in a bare constant stays review-only.
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'Literal[value=/data-testid[^_\\]]*__/]',
     }, {
