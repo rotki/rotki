@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import type { AssetBalanceWithPrice } from '@rotki/common';
 import { msg } from '@/message-key';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
 import AssetExternalLinks from '@/modules/assets/AssetExternalLinks.vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { AssetAmountAndValueOverTime } from '@/modules/premium/premium';
-import { usePremium } from '@/modules/premium/use-premium';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import AssetAmountAndValuePlaceholder from '@/modules/statistics/AssetAmountAndValuePlaceholder.vue';
-import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
+import { useAssetDetail } from '@/pages/assets/use-asset-detail';
 
 definePage({
   meta: {
@@ -36,85 +32,24 @@ const { identifier } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-const route = useRoute();
-
-const { refetchAssetInfo, useAssetContractInfo, useAssetInfo } = useAssetInfoRetrieval();
-const premium = usePremium();
-const { useBalances } = useAggregatedBalances();
-
-const aggregatedBalances = useBalances();
-
-const isCollectionParent = computed<boolean>(() => {
-  const currentRoute = get(route);
-  const collectionParent = currentRoute.query.collectionParent;
-
-  return !!collectionParent;
-});
-
-const assetRetrievalOption = computed<AssetResolutionOptions>(() => ({
-  collectionParent: get(isCollectionParent),
-}));
-
-const asset = useAssetInfo(() => identifier, assetRetrievalOption);
-const contractInfo = useAssetContractInfo(() => identifier, assetRetrievalOption);
 
 const {
+  asset,
+  collectionAssetWithPrice,
+  collectionBalance,
+  collectionId,
+  contractInfo,
+  goToEdit,
+  isCollectionParent,
+  isCustomAsset,
   loadingIgnore,
   loadingSpam,
   loadingWhitelist,
+  premium,
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
-} = useAssetPageActions({
-  asset,
-  identifier: computed<string>(() => identifier),
-  refetchAssetInfo,
-});
-
-const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
-
-const collectionId = computed<number | undefined>(() => {
-  if (!get(isCollectionParent))
-    return undefined;
-
-  const collectionId = get(asset)?.collectionId;
-  return (collectionId && parseInt(collectionId)) || undefined;
-});
-
-const editRoute = computed(() => ({
-  path: get(isCustomAsset) ? '/asset-manager/custom' : '/asset-manager/managed',
-  query: {
-    id: identifier,
-  },
-}));
-
-const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
-  if (!get(isCollectionParent))
-    return [];
-
-  return get(aggregatedBalances).find(data => data.asset === identifier)?.breakdown || [];
-});
-
-const collectionAssetWithPrice = computed<string | undefined>(() => {
-  const collectionBalanceVal = get(collectionBalance);
-
-  const id = identifier;
-
-  if (collectionBalanceVal.length === 0) {
-    return id;
-  }
-
-  if (collectionBalanceVal.some(item => item.asset === id)) {
-    return id;
-  }
-
-  return collectionBalanceVal[0].asset;
-});
-
-function goToEdit(): void {
-  router.push(get(editRoute));
-}
+} = useAssetDetail(() => identifier);
 </script>
 
 <template>
@@ -174,6 +109,7 @@ function goToEdit(): void {
           v-if="!isCollectionParent"
           icon
           variant="text"
+          data-testid="edit-asset"
           @click="goToEdit()"
         >
           <RuiIcon name="lu-pencil" />

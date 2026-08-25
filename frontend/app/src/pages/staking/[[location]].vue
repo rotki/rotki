@@ -1,20 +1,11 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
-import { startPromise } from '@shared/utils';
+import type { StakingLocation } from '@/pages/staking/staking-pages';
 import { msg } from '@/message-key';
-import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
-
-type NavType = 'eth2' | 'liquity' | 'kraken' | 'lido-csm';
-
-interface StakingInfo {
-  id: NavType;
-  image: string;
-  name: string;
-}
+import { useStakingPage } from '@/pages/staking/use-staking-page';
 
 definePage({
   meta: {
@@ -25,88 +16,16 @@ definePage({
 });
 
 const { location: locationProp } = defineProps<{
-  location: NavType | '';
+  location: StakingLocation | '';
 }>();
 
 const imageSize = '64px';
 
-const pages = {
-  'eth2': defineAsyncComponent(() => import('@/modules/staking/eth/EthStakingPage.vue')),
-  'kraken': defineAsyncComponent(() => import('@/modules/staking/kraken/KrakenPage.vue')),
-  'lido-csm': defineAsyncComponent(() => import('@/modules/staking/lido-csm/LidoCsmPage.vue')),
-  'liquity': defineAsyncComponent(() => import('@/modules/staking/liquity/LiquityPage.vue')),
-};
-
 const { t } = useI18n({ useScope: 'global' });
 
-const lastLocation = useLocalStorage('rotki.staking.last_location', '');
-
-const location = computed({
-  get() {
-    return locationProp || undefined;
-  },
-  set(value?: NavType) {
-    set(lastLocation, value);
-    if (value)
-      startPromise(redirect(value));
-  },
-});
-
-const staking = computed<StakingInfo[]>(() => [
-  {
-    id: 'eth2',
-    image: getPublicProtocolImagePath('ethereum.svg'),
-    name: t('staking.eth2'),
-  },
-  {
-    id: 'liquity',
-    image: getPublicProtocolImagePath('liquity.png'),
-    name: t('staking.liquity'),
-  },
-  {
-    id: 'kraken',
-    image: getPublicProtocolImagePath('kraken.svg'),
-    name: t('staking.kraken'),
-  },
-  {
-    id: 'lido-csm',
-    image: getPublicProtocolImagePath('lido_csm.svg'),
-    name: t('staking.lido_csm'),
-  },
-]);
-
-const router = useRouter();
 const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
-function getRedirectLink(location: string): RouteLocationRaw {
-  return {
-    name: '/staking/[[location]]',
-    params: { location },
-  };
-}
-
-async function redirect(location: string) {
-  await nextTick(() => {
-    router.push(getRedirectLink(location));
-  });
-}
-
-const page = computed(() => {
-  const selectedLocation = get(location);
-  return selectedLocation ? pages[selectedLocation] : null;
-});
-
-onMounted(async () => {
-  if (locationProp) {
-    set(location, locationProp);
-    return;
-  }
-  const lastLocationVal = get(lastLocation);
-  if (!lastLocationVal)
-    return;
-
-  await redirect(lastLocationVal);
-});
+const { getRedirectLink, modelLocation, page, staking } = useStakingPage(() => locationProp);
 </script>
 
 <template>
@@ -121,7 +40,7 @@ onMounted(async () => {
         />
       </DefineIcon>
       <RuiMenuSelect
-        v-model="location"
+        v-model="modelLocation"
         :options="staking"
         :label="t('staking_page.dropdown_label')"
         key-attr="id"
@@ -145,10 +64,14 @@ onMounted(async () => {
     <div
       v-if="page"
       class="pt-8"
+      data-testid="staking-page"
     >
       <Component :is="page" />
     </div>
-    <div v-else>
+    <div
+      v-else
+      data-testid="staking-picker"
+    >
       <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">
         <RuiIcon
           class="shrink-0"
