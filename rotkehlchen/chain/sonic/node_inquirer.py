@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.constants.assets import A_S
-from rotkehlchen.types import ChainID, EVMTxHash, SupportedBlockchain
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
 from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.fval import FVal
     from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 

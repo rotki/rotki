@@ -20,4 +20,3 @@ SONIC_CPT_DETAILS: Final = CounterpartyDetails(
     label='Sonic',
     image='sonic.svg',
 )
-

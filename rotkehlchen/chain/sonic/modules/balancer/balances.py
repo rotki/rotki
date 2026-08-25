@@ -46,8 +46,12 @@ class BeetsBalances(ProtocolWithGauges):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=counterparty,  # type: ignore  # beets counterparties added to PROTOCOLS_WITH_BALANCES
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
-            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
+            deposit_event_types={
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
+            },
+            gauge_deposit_event_types={
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
+            },
         )
         version = BALANCER_VERSION_MAPPING[counterparty]
         cache_type = BALANCER_CACHE_TYPE_MAPPING[counterparty]
@@ -105,9 +109,17 @@ class BeetsBalances(ProtocolWithGauges):
 
 class BeetsV2Balances(BeetsBalances):
     def __init__(self, evm_inquirer: EvmNodeInquirer, tx_decoder: EVMTransactionDecoder) -> None:
-        super().__init__(evm_inquirer=evm_inquirer, tx_decoder=tx_decoder, counterparty=CPT_BEETS_V2)
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
+            counterparty=CPT_BEETS_V2,
+        )
 
 
 class BeetsV3Balances(BeetsBalances):
     def __init__(self, evm_inquirer: EvmNodeInquirer, tx_decoder: EVMTransactionDecoder) -> None:
-        super().__init__(evm_inquirer=evm_inquirer, tx_decoder=tx_decoder, counterparty=CPT_BEETS_V3)
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
+            counterparty=CPT_BEETS_V3,
+        )
