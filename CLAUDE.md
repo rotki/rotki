@@ -613,9 +613,9 @@ the wrappers and unmount them in `afterEach`; ~148 specs already do.
   - `mockT` from `@test/i18n` is the echo translator. `useI18n` is globally mocked in
     `tests/unit/setup-files/setup.ts` to use it, so composables calling `useI18n()` get `t` for free.
   - Other fixtures: `@test/mocks/file`, `@test/utils/create-pinia`, `@test/utils/events`.
-- **Test selectors**: use `data-testid`, in components and in queries alike. `data-cy` is gone from
-  the codebase; do not reintroduce it. `@rotki/ui-library` exposes no test-id attribute of its own,
-  so a `data-testid` on a `Rui*` component falls through `$attrs` onto its root element.
+- **Test selectors**: use `data-testid`, in components and in queries alike. `@rotki/ui-library`
+  exposes no test-id attribute of its own, so a `data-testid` on a `Rui*` component falls through
+  `$attrs` onto its root element.
   Values are kebab-case, scoped by the component the id lives on (`service-key-api-key`), never BEM
   (`service-key__api-key`) and never a DOM path (`service-key__content__api-key`). Lint enforces the
   common cases; a value built at runtime or passed as a prop is review-only.
