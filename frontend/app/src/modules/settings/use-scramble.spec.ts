@@ -54,6 +54,13 @@ describe('useScramble', () => {
       expect(consistOfNumbers(result)).toBe(true);
     });
 
+    it('should keep identifiers distinct when the multiplier is zero', () => {
+      store.updateFrontend({ scrambleData: true, scrambleMultiplier: 0 });
+      const { scrambleIdentifier } = useScramble();
+
+      expect(scrambleIdentifier('123456')).not.toEqual(scrambleIdentifier('654321'));
+    });
+
     it('should scramble integer', () => {
       const { scrambleInteger } = useScramble();
       const result = scrambleInteger(42);

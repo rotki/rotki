@@ -1,5 +1,6 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { normalizeScrambleMultiplier } from '@/modules/session/session-utils';
 
 export interface ScramblerOptions {
   value: MaybeRefOrGetter<BigNumber>;
@@ -13,6 +14,6 @@ export function useNumberScrambler(options: ScramblerOptions): ComputedRef<BigNu
     if (!toValue(options.enabled))
       return value;
 
-    return value.multipliedBy(toValue(options.multiplier));
+    return value.multipliedBy(normalizeScrambleMultiplier(toValue(options.multiplier)));
   });
 }

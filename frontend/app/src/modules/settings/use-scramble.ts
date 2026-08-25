@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { findAddressKnownPrefix } from '@/modules/core/common/display/truncate';
-import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
+import { generateRandomScrambleMultiplier, normalizeScrambleMultiplier } from '@/modules/session/session-utils';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseScrambleReturn {
@@ -29,13 +29,14 @@ export function useScramble(): UseScrambleReturn {
 
   const scrambleData = logicOr(scrambleSetting, logicNot(shouldShowAmount));
 
+  /** Every scramble function below reads the multiplier through here, never the raw setting. */
+  const boundedMultiplier = computed<number>(() => normalizeScrambleMultiplier(+get(scrambleMultiplier)));
+
   const scrambleAddress = (address: string): string => {
     if (!get(scrambleData))
       return address;
 
-    let multiplier = +get(scrambleMultiplier);
-    if (multiplier < 1)
-      multiplier += 1;
+    const multiplier = get(boundedMultiplier);
 
     const knownPrefix = findAddressKnownPrefix(address);
 
@@ -60,7 +61,7 @@ export function useScramble(): UseScrambleReturn {
   };
 
   const scrambleInteger = (number: number, min = 0, max = -1): number => {
-    const multiplied = Math.floor(number * number * get(scrambleMultiplier)) + min;
+    const multiplied = Math.floor(number * number * get(boundedMultiplier)) + min;
 
     if (max > -1)
       return (multiplied % (max - min)) + min;
@@ -83,9 +84,7 @@ export function useScramble(): UseScrambleReturn {
     if (!get(scrambleData))
       return timestamp;
 
-    let multiplier = +get(scrambleMultiplier);
-    if (multiplier < 1)
-      multiplier += 1;
+    const multiplier = get(boundedMultiplier);
 
     /**
      * Deterministic offset using prime-based factors to ensure all date

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Privacy mode no longer renders every balance as zero, or smaller than it really is, depending on the scramble multiplier you set. A multiplier below 1 shrank every number instead of hiding it, and 0 turned them all into zeros, which read as rotki losing your balances rather than concealing them. Randomly generated multipliers could also land below 1, so this could happen without you setting anything.
 * :bug:`-` Cancelling a running sync from the task centre no longer leaves the sync progress panel claiming it completed. The panel says the sync was cancelled, and the grouped rows inside it ("9 chains complete") no longer report a clean completion for chains, locations, decoding or protocol caches that were cancelled or failed, which contradicted the rows they contained.
 * :bug:`-` The Help menu's logs directory entry now opens the directory rotki is actually logging to. If you had set a custom log directory it opened the default one instead, so being told to check the logs sent you to a folder with nothing in it.
 * :bug:`-` Logging in again takes the balance snapshot your net worth graph is built from, when one is due by your balance save frequency. Since 1.44.0 that snapshot was only taken if you left rotki open for ten minutes or synced your history, so opening rotki for a quick look and closing it left a gap in the graph.
