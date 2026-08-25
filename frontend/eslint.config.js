@@ -144,6 +144,10 @@ export default rotki({
       key: '/(^data-testid$|-test-id$)/',
       message: 'data-testid values are kebab-case. The BEM `__` separator is a Vuetify-era leftover.',
       value: '/__/',
+    }, {
+      // No `value`, so any use at all is an error.
+      key: 'data-cy',
+      message: 'Use `data-testid`. `data-cy` is a Cypress-era leftover.',
     }],
   },
 }, {
@@ -159,6 +163,12 @@ export default rotki({
       // `Literal` does not match a `TemplateLiteral`, and page objects build selectors that way.
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'TemplateElement[value.raw=/data-testid[^_\\]]*__/]',
+    }, {
+      message: 'Query on `data-testid`. `data-cy` is a Cypress-era leftover.',
+      selector: 'Literal[value=/data-cy/]',
+    }, {
+      message: 'Query on `data-testid`. `data-cy` is a Cypress-era leftover.',
+      selector: 'TemplateElement[value.raw=/data-cy/]',
     }],
   },
 }, {
@@ -227,6 +237,12 @@ export default rotki({
     }, {
       message: 'data-testid selectors are kebab-case; `__` is a BEM leftover.',
       selector: 'TemplateElement[value.raw=/data-testid[^_\\]]*__/]',
+    }, {
+      message: 'Query on `data-testid`. `data-cy` is a Cypress-era leftover.',
+      selector: 'Literal[value=/data-cy/]',
+    }, {
+      message: 'Query on `data-testid`. `data-cy` is a Cypress-era leftover.',
+      selector: 'TemplateElement[value.raw=/data-cy/]',
     }],
   },
 }, {
