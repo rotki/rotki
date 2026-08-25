@@ -19,8 +19,17 @@ const active = computed<boolean>(() => route.path.startsWith(item.path));
     :to="item.path"
     custom
   >
-    <template #default="{ isActive, href }">
-      <a :href="href">
+    <template #default="{ isActive, href, navigate }">
+      <!--
+        `custom` leaves the anchor's default action in place, so without this handler the
+        click is a plain hash navigation racing the router's own. The browser's entry
+        carries no state, and vue-router replaces such an entry with the position it was
+        already on, leaving two entries sharing one position.
+      -->
+      <a
+        :href="href"
+        @click="navigate($event)"
+      >
         <NavigationMenuItem
           data-testid="navigation"
           :data-key="item.testId"
