@@ -1,37 +1,16 @@
 <script setup lang="ts">
+import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type {
   LocationAndTxRef,
   PullEventPayload,
 } from '@/modules/history/events/event-payloads';
 import type {
-  EthBlockEvent,
-  EvmHistoryEvent,
-  EvmSwapEvent,
-  HistoryEvent,
   HistoryEventEntry,
-  SolanaEvent,
-  SolanaSwapEvent,
   StandaloneEditableEvents,
 } from '@/modules/history/events/schemas';
-import { useReportIssue } from '@/modules/core/common/use-report-issue';
-import {
-  isEthBlockEvent,
-  isEthBlockEventRef,
-  isEvmEvent,
-  isEvmSwapEvent,
-  isOnlineHistoryEvent,
-  isSolanaEvent,
-  isSolanaSwapEvent,
-  toLocationAndTxRef,
-} from '@/modules/history/event-utils';
-import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import RedecodeEventsButton from '@/modules/history/events/RedecodeEventsButton.vue';
-import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import {
-  type DecodableEventType,
-  isGroupEditableHistoryEvent,
-} from '@/modules/history/management/forms/form-guards';
+import { useHistoryEventActionMenu } from '@/modules/history/events/use-history-event-action-menu';
+import { type DecodableEventType, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
 
 const { event, loading, redecoding, duplicateHandlingStatus, groupEvents } = defineProps<{
   event: HistoryEventEntry;
@@ -56,169 +35,52 @@ const emit = defineEmits<{
   'ignore-duplicate': [];
 }>();
 
-const {
-  ethBlockEventsDecoding,
-  txEventsDecoding,
-} = useHistoryEventsStatus();
-
-const { confirmAndFixDuplicate, confirmAndMarkNonDuplicated, fixLoading, ignoreLoading } = useCustomizedEventDuplicates();
-
-const isAutoFixable = computed<boolean>(() => duplicateHandlingStatus === DuplicateHandlingStatus.AUTO_FIX);
-const isDuplicate = computed<boolean>(() => !!duplicateHandlingStatus && duplicateHandlingStatus !== DuplicateHandlingStatus.IGNORED);
+const { t } = useI18n({ useScope: 'global' });
 
 const showMenu = ref<boolean>(false);
 
-const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
-  if (isEvmSwapEvent(event) || isEvmEvent(event)) {
-    return event;
-  }
-
-  return undefined;
+const {
+  blockEvent,
+  canAddEvent,
+  canDeleteEvents,
+  confirmFixDuplicate,
+  confirmIgnoreDuplicate,
+  decodableEvmEvent,
+  deletableEventIds,
+  ethBlockEventsDecoding,
+  eventWithDecoding,
+  eventWithTxRef,
+  fixLoading,
+  ignoreLoading,
+  isAutoFixable,
+  isDuplicate,
+  openReportDialog,
+  toRedecodePayload,
+  txEventsDecoding,
+} = useHistoryEventActionMenu({
+  duplicateHandlingStatus: () => duplicateHandlingStatus,
+  event: () => event,
+  groupEvents: () => groupEvents,
+  onFixDuplicate: () => emit('fix-duplicate'),
+  onIgnoreDuplicate: () => emit('ignore-duplicate'),
 });
 
-const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
-  if (isSolanaSwapEvent(event) || isSolanaEvent(event)) {
-    return event;
-  }
-
-  return undefined;
-});
-
-const eventWithDecoding = computed<DecodableEventType | undefined>(() => {
-  const direct = get(evmEvent) || get(solanaEvent);
-  if (direct)
-    return direct;
-
-  if (!groupEvents)
-    return undefined;
-
-  for (const child of groupEvents) {
-    if (isEvmEvent(child) || isEvmSwapEvent(child) || isSolanaEvent(child) || isSolanaSwapEvent(child))
-      return child;
-  }
-
-  return undefined;
-});
-
-const decodableEvmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
-  const decoded = get(eventWithDecoding);
-  if (decoded && (isEvmEvent(decoded) || isEvmSwapEvent(decoded)))
-    return decoded;
-
-  return undefined;
-});
-
-const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
-  const evm = get(evmEvent);
-  const solana = get(solanaEvent);
-  if (evm) {
-    return {
-      location: evm.location,
-      txRef: evm.txRef,
-    };
-  }
-
-  if (solana) {
-    return {
-      location: solana.location,
-      txRef: solana.txRef,
-    };
-  }
-
-  if (isOnlineHistoryEvent(event) && 'txRef' in event && event.txRef) {
-    return {
-      location: event.location,
-      txRef: event.txRef,
-    };
-  }
-
-  return undefined;
-});
-
-const blockEvent = isEthBlockEventRef(() => event);
-
-const { t } = useI18n({ useScope: 'global' });
-
-function addEvent(event: HistoryEvent) {
-  if (isGroupEditableHistoryEvent(event)) {
+function addEvent(): void {
+  // `canAddEvent` already hides the action for a group-editable event; this narrows the
+  // row to the shape the event carries.
+  if (isGroupEditableHistoryEvent(event))
     return;
-  }
+
   emit('add-event', event);
 }
-const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 
-function redecode(event: EthBlockEvent | DecodableEventType): void {
-  if (isEthBlockEvent(event)) {
-    emit('redecode', {
-      data: [event.blockNumber],
-      type: event.entryType,
-    });
-    return;
-  }
-
-  emit('redecode', {
-    data: toLocationAndTxRef(event),
-    type: event.entryType,
-  });
+function redecode(target: DecodableEventType): void {
+  emit('redecode', toRedecodePayload(target));
 }
 
-function redecodeWithOptions(event: DecodableEventType): void {
+function redecodeWithOptions(target: DecodableEventType): void {
   set(showMenu, false);
-  emit('redecode-with-options', {
-    data: toLocationAndTxRef(event),
-    type: event.entryType,
-  });
-}
-
-function deleteTxAndEvents(params: LocationAndTxRef): void {
-  emit('delete-tx', params);
-}
-
-function deleteEvents(): void {
-  const ids = groupEvents?.map(e => e.identifier) ?? [event.identifier];
-  emit('delete-events', ids);
-}
-
-const canDeleteEvents = computed<boolean>(() => !get(eventWithTxRef) && !get(blockEvent));
-
-function hideAddAction(item: HistoryEvent): boolean {
-  return isGroupEditableHistoryEvent(item);
-}
-
-const { show: showReportIssue } = useReportIssue();
-
-function openReportDialog(): void {
-  const txRef = get(eventWithTxRef)?.txRef;
-
-  const description = [
-    t('actions.history_events.report_issue.description_intro'),
-    txRef ? t('actions.history_events.report_issue.tx_hash', { hash: txRef }) : '',
-    t('actions.history_events.report_issue.location', { location: event.location }),
-    '',
-    t('actions.history_events.report_issue.more_detail'),
-    t('actions.history_events.report_issue.placeholder'),
-  ].filter(Boolean).join('\n');
-
-  showReportIssue({
-    description,
-    title: t('actions.history_events.report_issue.title'),
-  });
-}
-
-function confirmFixDuplicate(): void {
-  const groupIdentifier = event.groupIdentifier;
-  if (!groupIdentifier)
-    return;
-
-  confirmAndFixDuplicate([groupIdentifier], () => emit('fix-duplicate'));
-}
-
-function confirmIgnoreDuplicate(): void {
-  const groupIdentifier = event.groupIdentifier;
-  if (!groupIdentifier)
-    return;
-
-  confirmAndMarkNonDuplicated([groupIdentifier], () => emit('ignore-duplicate'));
+  emit('redecode-with-options', toRedecodePayload(target));
 }
 </script>
 
@@ -230,6 +92,7 @@ function confirmIgnoreDuplicate(): void {
       color="primary"
       class="mr-1"
       :loading="fixLoading"
+      data-testid="event-fix-duplicate"
       @click="confirmFixDuplicate()"
     >
       <template #prepend>
@@ -246,6 +109,7 @@ function confirmIgnoreDuplicate(): void {
       size="sm"
       class="mr-2"
       :loading="ignoreLoading"
+      data-testid="event-ignore-duplicate"
       @click="confirmIgnoreDuplicate()"
     >
       <template #prepend>
@@ -268,6 +132,7 @@ function confirmIgnoreDuplicate(): void {
           icon
           size="sm"
           class="!p-2"
+          data-testid="event-actions-menu"
           v-bind="attrs"
         >
           <RuiIcon
@@ -277,9 +142,10 @@ function confirmIgnoreDuplicate(): void {
         </RuiButton>
       </template>
       <RuiButton
-        v-if="!hideAddAction(event)"
+        v-if="canAddEvent"
         variant="list"
-        @click="addEvent(event)"
+        data-testid="event-add"
+        @click="addEvent()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -288,7 +154,8 @@ function confirmIgnoreDuplicate(): void {
       </RuiButton>
       <RuiButton
         variant="list"
-        @click="toggleIgnore(event)"
+        data-testid="event-toggle-ignore"
+        @click="emit('toggle-ignore', event)"
       >
         <template #prepend>
           <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
@@ -299,7 +166,8 @@ function confirmIgnoreDuplicate(): void {
         <RuiButton
           variant="list"
           :disabled="loading || redecoding || ethBlockEventsDecoding"
-          @click="redecode(blockEvent)"
+          data-testid="event-redecode-block"
+          @click="emit('redecode', toRedecodePayload(blockEvent))"
         >
           <template #prepend>
             <RuiIcon name="lu-rotate-ccw" />
@@ -320,7 +188,8 @@ function confirmIgnoreDuplicate(): void {
         variant="list"
         color="error"
         :disabled="loading"
-        @click="deleteTxAndEvents(eventWithTxRef)"
+        data-testid="event-delete-tx"
+        @click="emit('delete-tx', eventWithTxRef)"
       >
         <template #prepend>
           <RuiIcon name="lu-trash-2" />
@@ -332,7 +201,8 @@ function confirmIgnoreDuplicate(): void {
         variant="list"
         color="error"
         :disabled="loading"
-        @click="deleteEvents()"
+        data-testid="event-delete-events"
+        @click="emit('delete-events', deletableEventIds())"
       >
         <template #prepend>
           <RuiIcon name="lu-trash-2" />
@@ -342,6 +212,7 @@ function confirmIgnoreDuplicate(): void {
       <RuiDivider class="my-2" />
       <RuiButton
         variant="list"
+        data-testid="event-report-issue"
         @click="openReportDialog()"
       >
         <template #prepend>
