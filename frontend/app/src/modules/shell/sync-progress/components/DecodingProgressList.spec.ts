@@ -156,8 +156,10 @@ describe('modules/sync-progress/components/DecodingProgressList', () => {
       expect(items).toHaveLength(1);
       expect(items[0].attributes('data-chain')).toBe('optimism');
 
-      // Cancelled item should be in the completed toggle
-      expect(wrapper.text()).toContain('sync_progress.completed_decoding');
+      // The cancelled item settles into the group, whose label then says the group finished
+      // rather than claiming every chain in it was decoded.
+      expect(wrapper.text()).toContain('sync_progress.finished_decoding');
+      expect(wrapper.text()).not.toContain('sync_progress.completed_decoding');
     });
 
     it('should show cancelled items when completed toggle is clicked', async () => {
@@ -168,7 +170,7 @@ describe('modules/sync-progress/components/DecodingProgressList', () => {
       wrapper = createWrapper(decoding);
 
       const buttons = wrapper.findAll('button');
-      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.completed_decoding'));
+      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.finished_decoding'));
       await toggleButton?.trigger('click');
 
       const items = wrapper.findAll('[data-testid="decoding-item"]');

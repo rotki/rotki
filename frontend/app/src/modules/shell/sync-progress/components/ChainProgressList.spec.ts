@@ -54,6 +54,24 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
     };
   }
 
+  /** A chain the user cancelled part way: some addresses done, the rest stopped. */
+  function createCancelledChainProgress(chain: string, completed: number, total: number): ChainProgress {
+    return {
+      addresses: Array.from({ length: total }, (_, i) => ({
+        address: `0x${chain}${i.toString().padStart(38, '0')}`,
+        status: i < completed ? AddressStatus.COMPLETE : AddressStatus.CANCELLED,
+      })),
+      cancelled: total - completed,
+      chain,
+      completed,
+      failed: 0,
+      inProgress: 0,
+      pending: 0,
+      progress: 100,
+      total,
+    };
+  }
+
   function createWrapper(chains: ChainProgress[]): VueWrapper<InstanceType<typeof ChainProgressList>> {
     return mount(ChainProgressList, {
       global: {
@@ -117,7 +135,31 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       wrapper = createWrapper(chains);
 
       expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
+      // "Finished", not "complete" — the group summary must not claim a clean finish for a
+      // chain that failed.
+      expect(wrapper.text()).toContain('sync_progress.finished_chains');
+    });
+
+    it('should not call a cancelled group complete', () => {
+      const chains = [
+        createChainProgress('eth', 3, 3),
+        createCancelledChainProgress('gnosis', 1, 3),
+      ];
+      wrapper = createWrapper(chains);
+
+      expect(wrapper.text()).toContain('sync_progress.finished_chains');
+      expect(wrapper.text()).not.toContain('sync_progress.completed_chains');
+    });
+
+    it('should still say complete when every chain finished cleanly', () => {
+      const chains = [
+        createChainProgress('eth', 3, 3),
+        createChainProgress('optimism', 3, 3),
+      ];
+      wrapper = createWrapper(chains);
+
       expect(wrapper.text()).toContain('sync_progress.completed_chains');
+      expect(wrapper.text()).not.toContain('sync_progress.finished_chains');
     });
   });
 
@@ -226,27 +268,28 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
   });
 
   describe('cancelled chains', () => {
-    it('should treat cancelled chains as completed', () => {
+    it('should treat cancelled chains as settled', () => {
       const chains = [
         createChainProgress('eth', 1, 3),
         { ...createChainProgress('optimism', 2, 3), cancelled: 1 },
       ];
       wrapper = createWrapper(chains);
 
-      // optimism has 2 completed + 1 cancelled = 3 total, so it's done
-      expect(wrapper.text()).toContain('sync_progress.completed_chains');
+      // optimism has 2 completed + 1 cancelled = 3 total, so it is settled and moves into the
+      // group — which then says "finished" rather than claiming a clean completion.
+      expect(wrapper.text()).toContain('sync_progress.finished_chains');
     });
 
-    it('should show warning color when completed section has cancelled chains', () => {
+    it('should show the alert icon in warning color when the group has cancelled chains', () => {
       const chains = [
         { ...createChainProgress('optimism', 2, 3), cancelled: 1 },
       ];
       wrapper = createWrapper(chains);
 
       const icons = wrapper.findAll('[data-testid="icon"]');
-      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
-      expect(checkIcon).toBeDefined();
-      expect(checkIcon?.classes()).toContain('text-rui-warning');
+      const alertIcon = icons.find(icon => icon.text() === 'lu-circle-alert');
+      expect(alertIcon).toBeDefined();
+      expect(alertIcon?.classes()).toContain('text-rui-warning');
     });
 
     it('should show success color when completed section has no cancelled chains', () => {

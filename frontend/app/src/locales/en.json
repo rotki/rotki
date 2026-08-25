@@ -5923,6 +5923,10 @@
     "events": "Events",
     "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready.",
     "explanation_etherscan_hint": "A personal (free) Etherscan API key speeds this up significantly.",
+    "finished_chains": "{count} chain finished | {count} chains finished",
+    "finished_decoding": "{count} chain decoding finished | {count} chains decoding finished",
+    "finished_locations": "{count} location finished | {count} locations finished",
+    "finished_protocol_cache": "{count} protocol finished | {count} protocols finished",
     "locations_label": "location | locations",
     "period": {
       "beginning": "Beginning"

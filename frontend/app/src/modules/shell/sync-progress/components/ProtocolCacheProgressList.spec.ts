@@ -159,8 +159,10 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       expect(items).toHaveLength(1);
       expect(items[0].attributes('data-chain')).toBe('optimism');
 
-      // Cancelled item should be in the completed toggle
-      expect(wrapper.text()).toContain('sync_progress.completed_protocol_cache');
+      // The cancelled item settles into the group, whose label then says the group finished
+      // rather than claiming every protocol in it was refreshed.
+      expect(wrapper.text()).toContain('sync_progress.finished_protocol_cache');
+      expect(wrapper.text()).not.toContain('sync_progress.completed_protocol_cache');
     });
 
     it('should show cancelled items when completed toggle is clicked', async () => {
@@ -171,7 +173,7 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       wrapper = createWrapper(protocolCache);
 
       const buttons = wrapper.findAll('button');
-      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.completed_protocol_cache'));
+      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.finished_protocol_cache'));
       await toggleButton?.trigger('click');
 
       const items = wrapper.findAll('[data-testid="protocol-cache-item"]');

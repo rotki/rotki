@@ -27,6 +27,17 @@ const completedIconColor = computed<string>(() =>
   get(hasCancelledLocations) ? 'text-rui-warning' : 'text-rui-success',
 );
 
+// A cancelled location sits in this group too, so the summary must not claim completion for it —
+// the rows inside already say cancelled.
+const completedLabel = computed<string>(() => {
+  const count = get(completedCount);
+  return get(hasCancelledLocations)
+    ? t('sync_progress.finished_locations', { count }, count)
+    : t('sync_progress.completed_locations', { count }, count);
+});
+
+const completedIcon = computed<string>(() => (get(hasCancelledLocations) ? 'lu-circle-alert' : 'lu-circle-check'));
+
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
 }
@@ -51,11 +62,11 @@ function toggleCompleted(): void {
         @click="toggleCompleted()"
       >
         <RuiIcon
-          name="lu-circle-check"
+          :name="completedIcon"
           :class="completedIconColor"
           size="16"
         />
-        <span>{{ t('sync_progress.completed_locations', { count: completedCount }, completedCount) }}</span>
+        <span>{{ completedLabel }}</span>
         <RuiIcon
           name="lu-chevron-down"
           size="16"
@@ -71,11 +82,11 @@ function toggleCompleted(): void {
           @click="toggleCompleted()"
         >
           <RuiIcon
-            name="lu-circle-check"
+            :name="completedIcon"
             :class="completedIconColor"
             size="16"
           />
-          <span>{{ t('sync_progress.completed_locations', { count: completedCount }, completedCount) }}</span>
+          <span>{{ completedLabel }}</span>
           <RuiIcon
             name="lu-chevron-up"
             size="16"
