@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
-import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import { useHistoryEventsFiltersChips } from '@/modules/history/events/use-history-events-filters-chips';
 
 const { groupIdentifiers, duplicateHandlingStatus } = defineProps<{
   groupIdentifiers?: string[];
@@ -13,138 +12,35 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-const route = useRoute();
-const { show } = useConfirmStore();
+
 const {
-  autoFixGroupIds,
-  fixDuplicates,
+  allDuplicatesResolved,
+  confirmFixDuplicate,
+  duplicateChangesMessage,
+  duplicateChipText,
   fixLoading,
-  manualReviewGroupIds,
-} = useCustomizedEventDuplicates();
-
-const isAutoFixable = computed<boolean>(() => duplicateHandlingStatus === DuplicateHandlingStatus.AUTO_FIX);
-
-const hasGroupIdentifiers = computed<boolean>(() => !!groupIdentifiers && groupIdentifiers.length > 0);
-
-const duplicateChipText = computed<string>(() => {
-  if (get(isAutoFixable))
-    return t('customized_event_duplicates.chips.viewing_auto_fixable');
-  return t('customized_event_duplicates.chips.viewing_manual_review');
+  hasDuplicateChanges,
+  isAutoFixable,
+  refreshDuplicateView,
+  removeAccountingEventParam,
+  removeDuplicateEventsParam,
+  removeMissingAcquisitionParam,
+  removeNegativeBalanceParam,
+  showAccountingEvent,
+  showDuplicates,
+  showMissingAcquisition,
+  showNegativeBalance,
+} = useHistoryEventsFiltersChips({
+  duplicateHandlingStatus: () => duplicateHandlingStatus,
+  groupIdentifiers: () => groupIdentifiers,
+  onRefresh: () => emit('refresh'),
 });
-
-// Track the current valid group IDs from the composable
-const currentValidGroupIds = computed<string[]>(() =>
-  get(isAutoFixable) ? get(autoFixGroupIds) : get(manualReviewGroupIds),
-);
-
-// Calculate the difference between URL params and current valid IDs
-const duplicateChanges = computed<{ resolved: number; added: number; remaining: string[] }>(() => {
-  const urlIds = groupIdentifiers ?? [];
-  const validIds = get(currentValidGroupIds);
-
-  if (urlIds.length === 0)
-    return { added: 0, remaining: [], resolved: 0 };
-
-  const remaining = urlIds.filter(id => validIds.includes(id));
-  const resolved = urlIds.length - remaining.length;
-  const added = validIds.filter(id => !urlIds.includes(id)).length;
-
-  return { added, remaining, resolved };
-});
-
-const hasDuplicateChanges = computed<boolean>(() => {
-  const { added, resolved } = get(duplicateChanges);
-  return resolved > 0 || added > 0;
-});
-
-const allDuplicatesResolved = computed<boolean>(() => {
-  const { remaining } = get(duplicateChanges);
-  return get(hasGroupIdentifiers) && remaining.length === 0;
-});
-
-const duplicateChangesMessage = computed<string>(() => {
-  const { added, resolved } = get(duplicateChanges);
-
-  if (get(allDuplicatesResolved))
-    return t('customized_event_duplicates.chips.all_resolved');
-
-  const messages: string[] = [];
-  if (resolved > 0)
-    messages.push(t('customized_event_duplicates.chips.resolved_count', { count: resolved }));
-
-  if (added > 0)
-    messages.push(t('customized_event_duplicates.chips.added_count', { count: added }));
-
-  return messages.join(' ');
-});
-
-function removeMissingAcquisitionParam(): void {
-  const query = { ...route.query };
-  delete query.missingAcquisitionIdentifier;
-  router.push({ query });
-}
-
-function removeNegativeBalanceParam(): void {
-  const query = { ...route.query };
-  delete query.highlightedNegativeBalanceEvent;
-  delete query.targetGroupIdentifier;
-  router.push({ query });
-}
-
-function removeAccountingEventParam(): void {
-  const query = { ...route.query };
-  delete query.highlightedAccountingEvent;
-  delete query.targetGroupIdentifier;
-  router.push({ query });
-}
-
-function removeDuplicateEventsParam(): void {
-  const query = { ...route.query };
-  delete query.groupIdentifiers;
-  delete query.duplicateHandlingStatus;
-  router.push({ query });
-}
-
-async function fixDuplicateEvent(): Promise<void> {
-  const ids = groupIdentifiers;
-  if (!ids || ids.length === 0)
-    return;
-
-  const result = await fixDuplicates(ids);
-  if (result.success) {
-    removeDuplicateEventsParam();
-    emit('refresh');
-  }
-}
-
-function confirmFixDuplicate(): void {
-  const count = groupIdentifiers?.length ?? 0;
-  show({
-    message: t('customized_event_duplicates.actions.fix_selected_confirm', { count }),
-    primaryAction: t('common.actions.confirm'),
-    title: t('customized_event_duplicates.actions.fix_selected'),
-  }, async () => fixDuplicateEvent());
-}
-
-function refreshDuplicateView(): void {
-  const validIds = get(currentValidGroupIds);
-
-  if (validIds.length === 0) {
-    removeDuplicateEventsParam();
-  }
-  else {
-    const query = { ...route.query, groupIdentifiers: validIds.join(',') };
-    router.replace({ query });
-  }
-  emit('refresh');
-}
 </script>
 
 <template>
   <div>
     <div
-      v-if="route.query.missingAcquisitionIdentifier"
+      v-if="showMissingAcquisition"
       class="pb-4"
     >
       <RuiChip
@@ -152,6 +48,7 @@ function refreshDuplicateView(): void {
         color="primary"
         size="sm"
         variant="outlined"
+        data-testid="missing-acquisition-chip"
         @click:close="removeMissingAcquisitionParam()"
       >
         {{ t('transactions.events.show_missing_acquisition') }}
@@ -159,7 +56,7 @@ function refreshDuplicateView(): void {
     </div>
 
     <RuiTooltip
-      v-if="route.query.highlightedNegativeBalanceEvent"
+      v-if="showNegativeBalance"
       class="pb-4"
       :popper="{ placement: 'bottom' }"
       :open-delay="400"
@@ -171,6 +68,7 @@ function refreshDuplicateView(): void {
           color="error"
           size="sm"
           variant="outlined"
+          data-testid="negative-balance-chip"
           @click:close="removeNegativeBalanceParam()"
         >
           {{ t('transactions.events.show_negative_balance') }}
@@ -180,7 +78,7 @@ function refreshDuplicateView(): void {
     </RuiTooltip>
 
     <RuiTooltip
-      v-if="route.query.highlightedAccountingEvent"
+      v-if="showAccountingEvent"
       class="pb-4"
       :popper="{ placement: 'bottom' }"
       :open-delay="400"
@@ -192,6 +90,7 @@ function refreshDuplicateView(): void {
           color="warning"
           size="sm"
           variant="outlined"
+          data-testid="accounting-divergence-chip"
           @click:close="removeAccountingEventParam()"
         >
           {{ t('transactions.events.show_accounting_divergence') }}
@@ -201,7 +100,7 @@ function refreshDuplicateView(): void {
     </RuiTooltip>
 
     <div
-      v-if="hasGroupIdentifiers"
+      v-if="showDuplicates"
       class="pb-4"
     >
       <RuiChip
@@ -209,6 +108,7 @@ function refreshDuplicateView(): void {
         color="warning"
         size="sm"
         variant="outlined"
+        data-testid="duplicate-events-chip"
         @click:close="removeDuplicateEventsParam()"
       >
         <div class="flex gap-1">
@@ -221,6 +121,7 @@ function refreshDuplicateView(): void {
             class="!py-0 underline !text-xs gap-1"
             color="primary"
             :loading="fixLoading"
+            data-testid="duplicate-fix-all"
             @click="confirmFixDuplicate()"
           >
             <template #prepend>
@@ -237,6 +138,7 @@ function refreshDuplicateView(): void {
       <div
         v-if="hasDuplicateChanges"
         class="mt-1 flex items-center gap-1 text-xs text-rui-secondary"
+        data-testid="duplicate-changes"
       >
         <RuiIcon
           name="lu-info"
@@ -248,6 +150,7 @@ function refreshDuplicateView(): void {
           variant="text"
           color="secondary"
           class="!py-0 underline"
+          data-testid="duplicate-refresh"
           @click="refreshDuplicateView()"
         >
           {{ allDuplicatesResolved ? t('customized_event_duplicates.chips.clear_filter') : t('common.refresh') }}
