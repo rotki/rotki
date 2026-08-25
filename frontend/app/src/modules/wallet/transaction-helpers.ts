@@ -1,4 +1,5 @@
 import type {
+  PreparedTransaction,
   PrepareERC20TransferPayload,
   PrepareERC20TransferResponse,
   PrepareNativeTransferPayload,
@@ -59,7 +60,7 @@ export async function prepareTransactionPayload(
   fromAddress: string,
   evmChain: string,
   deps: TransactionDependencies,
-): Promise<PrepareERC20TransferResponse | PrepareNativeTransferResponse> {
+): Promise<PreparedTransaction> {
   const { prepareERC20Transfer, prepareNativeTransfer } = deps;
 
   if (!params.native) {

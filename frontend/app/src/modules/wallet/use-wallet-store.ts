@@ -1,7 +1,6 @@
 import type {
   GasFeeEstimation,
-  PrepareERC20TransferResponse,
-  PrepareNativeTransferResponse,
+  PreparedTransaction,
   RecentTransaction,
   TransactionParams,
 } from '@/modules/wallet/types';
@@ -268,9 +267,9 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     }
   };
 
-  const executeTransaction = async (client: ViemWalletClient, backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse): Promise<Hash> => {
+  const executeTransaction = async (client: ViemWalletClient, backendPayload: PreparedTransaction): Promise<Hash> => {
     set(waitingForWalletConfirmation, true);
-    const data = 'data' in backendPayload ? backendPayload.data : '0x';
+    const { data } = backendPayload;
     if (!isHex(data)) {
       throw new Error('Invalid transaction data');
     }
