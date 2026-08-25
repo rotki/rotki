@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
@@ -11,8 +11,13 @@ interface UseHistoryEventsSelectionActionsOptions {
   deletion: {
     deleteSelected: () => Promise<void>;
   };
-  /** Unfiltered rows the selection ids are resolved against, so an action still finds an event that the displayed rows hide. */
-  originalGroups: Ref<HistoryEventRow[]>;
+  /**
+   * Unfiltered rows the selection ids are resolved against, so an action still finds an event that
+   * the displayed rows hide. The page passes a `shallowReadonly` ref, so a write here is a silent
+   * no-op. `MaybeRefOrGetter` rather than `Readonly<Ref<T>>` because readonly modifiers are ignored
+   * in assignability, so `set()` still compiles against the latter.
+   */
+  originalGroups: MaybeRefOrGetter<HistoryEventRow[]>;
   /** Invoked after an ignore or unignore succeeds, once selection mode has been exited, to reload the table. */
   refreshCallback: () => Promise<void>;
   /** Selection state and actions; `state.selectedIds` is read to resolve the targets and `actions.exit` is called once an action completes. */
@@ -55,7 +60,7 @@ export function useHistoryEventsSelectionActions(
 
   function getSelectedEvents(): HistoryEventEntry[] {
     const selectedIds = Array.from(get(selectionMode.state).selectedIds);
-    const allEvents = get(originalGroups).flat();
+    const allEvents = toValue(originalGroups).flat();
     return allEvents.filter(
       (event): event is HistoryEventEntry => !Array.isArray(event) && selectedIds.includes(event.identifier),
     );
@@ -88,7 +93,7 @@ export function useHistoryEventsSelectionActions(
    * and is rejected rather than silently using the first event's pair.
    */
   function startRuleCreation(selectedIds: number[]): void {
-    const selectedEvents = get(originalGroups).flat().filter(event =>
+    const selectedEvents = toValue(originalGroups).flat().filter(event =>
       !Array.isArray(event) && selectedIds.includes(event.identifier),
     );
 

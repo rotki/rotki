@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
-import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
-import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
 import type { Filters } from '@/modules/history/events/use-events-filter';
 import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
@@ -34,6 +32,8 @@ import {
   provideEventPriceUpdate,
 } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import { provideHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
+import { useHistoryEventsViewActions } from '@/modules/history/events/use-history-events-view-actions';
+import { toTableSource } from '@/modules/history/events/view-projections';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -49,7 +49,6 @@ const { mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
 const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/shell/sync-progress/components/SyncProgressPanel.vue'));
 
 const { t } = useI18n({ useScope: 'global' });
-const route = useRoute();
 
 const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 // Synced through the router query by useHistoryEventsFilters' queryParamsOnly (see below).
@@ -125,12 +124,12 @@ const selectionMode = useHistoryEventsSelectionMode();
 // Read at the leaves (the row checkboxes) rather than threaded through the table and row switch.
 provideHistoryEventsSelection(selectionMode);
 
-const tableSource = computed<HistoryEventsTableSource>(() => ({
-  excludeIgnored: !get(toggles).showIgnoredAssets,
+const tableSource = computed<HistoryEventsTableSource>(() => toTableSource({
   groupLoading: get(groupLoading),
   groups: get(groups),
   identifiers: get(identifiers),
-  requestPayload: get(toggles).matchExactEvents ? get(requestPayload) : undefined,
+  requestPayload: get(requestPayload),
+  toggles: get(toggles),
 }));
 
 const tableHighlight = computed<HistoryEventsTableHighlight>(() => ({
@@ -139,10 +138,30 @@ const tableHighlight = computed<HistoryEventsTableHighlight>(() => ({
   types: get(highlightTypes),
 }));
 
-// Store grouped events for checking complete EVM transactions
-const groupedEventsByTxRef = ref<Record<string, HistoryEventRow[]>>({});
-// Store original groups data to preserve swap groups
-const originalGroups = ref<HistoryEventRow[]>([]);
+const debouncedProcessing = refDebounced(processing, 200);
+const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+const { autoMatchLoading: bridgeAutoMatchLoading, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
+const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading, bridgeAutoMatchLoading);
+
+const {
+  groupedEventsByTxRef,
+  handleBridgeChanged,
+  handleMovementChanged,
+  handleRedecode,
+  handleUpdateEventIds,
+  originalGroups,
+} = useHistoryEventsViewActions({
+  autoMatchMovement,
+  backgroundLoading,
+  fetchDataAndLocations: async () => actions.fetch.dataAndLocations(),
+  fetchDataAndRedecode: async event => actions.fetch.dataAndRedecode(event),
+  groups,
+  refreshAll: async () => actions.refresh.all(),
+  refreshUnmatchedAssetMovements,
+  refreshUnmatchedBridgeTransactions,
+  setAvailableIds: ids => selectionMode.setAvailableIds(ids),
+  setTotalMatchingCount: count => selectionMode.setTotalMatchingCount(count),
+});
 
 const deletion = useHistoryEventsDeletion(
   selectionMode,
@@ -165,40 +184,7 @@ const {
   selectionMode,
 });
 
-const debouncedProcessing = refDebounced(processing, 200);
-const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
-const { autoMatchLoading: bridgeAutoMatchLoading, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
 useHistoryEventNavigationConsumer(pagination, requestPayload, groupLoading);
-const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading, bridgeAutoMatchLoading);
-
-// Handle updating available event IDs from the table
-function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
-  selectionMode.setAvailableIds(eventIds);
-
-  // Store the grouped events for checking complete transactions
-  set(groupedEventsByTxRef, groupedEvents);
-  // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
-  set(originalGroups, rawEvents || get(groups).data);
-}
-
-async function handleRedecode(event?: PullLocationTransactionPayload): Promise<void> {
-  await actions.fetch.dataAndRedecode(event);
-  if (event?.linkedMovement) {
-    const matched = await autoMatchMovement(event.linkedMovement);
-    if (matched)
-      await actions.fetch.dataAndLocations();
-  }
-}
-
-async function handleMovementChanged(): Promise<void> {
-  await refreshUnmatchedAssetMovements();
-  await actions.fetch.dataAndLocations();
-}
-
-async function handleBridgeChanged(): Promise<void> {
-  await refreshUnmatchedBridgeTransactions();
-  await actions.fetch.dataAndLocations();
-}
 
 provideEventPriceUpdate({
   open: (payload) => {
@@ -206,25 +192,7 @@ provideEventPriceUpdate({
   },
 });
 
-// Set total matching count from groups
-watchImmediate(groups, (newGroups) => {
-  selectionMode.setTotalMatchingCount(newGroups.found);
-});
-
 useHistoryEventsDialogRouting(dialogContainer);
-
-watch(backgroundLoading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading)
-    await actions.fetch.dataAndLocations();
-});
-
-// Wait until the route doesn't change anymore to give time for the persisted filter to be set.
-watchDebounced(route, async () => {
-  if (import.meta.env.VITE_NO_AUTO_FETCH === 'true')
-    await actions.fetch.dataAndLocations();
-  else
-    await actions.refresh.all();
-}, { debounce: 500, immediate: true, once: true });
 </script>
 
 <template>
