@@ -94,7 +94,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useSettingsRepo().updateFrontend({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 1.02 });
     });
 
     it('should scramble the value', async () => {
@@ -102,10 +102,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
         from: 'USD',
         value: bigNumberify(1.20440001),
       });
-      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('1.44');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('1.47');
       await wrapper.find('[data-testid="display-amount"]').trigger('mouseover');
       await nextTick();
-      expect(wrapper.find('[data-testid="display-full-value"]').text()).not.toBe('1.445280012');
+      expect(wrapper.find('[data-testid="display-full-value"]').text()).toMatch('1.47418561224');
     });
 
     it('should not scramble the value when noScramble is true', async () => {

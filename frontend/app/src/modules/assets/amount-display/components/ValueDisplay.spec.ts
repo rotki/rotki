@@ -86,7 +86,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useSettingsRepo().updateFrontend({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 1.02 });
     });
 
     it('should scramble the value', async () => {
@@ -94,7 +94,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
         global: { plugins: [pinia] },
         props: { value: bigNumberify(1.5) },
       });
-      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('1.50');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('1.53');
     });
 
     it('should not scramble the value when noScramble is true', async () => {
