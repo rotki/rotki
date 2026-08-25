@@ -34,6 +34,20 @@ const completedIconColor = computed<string>(() => {
   return get(hasCancelledChains) ? 'text-rui-warning' : 'text-rui-success';
 });
 
+// The group holds every *settled* chain, which includes cancelled and failed ones. Calling that
+// "complete" contradicts the rows inside it, which already say cancelled or failed — so only a
+// clean group claims completion, and any other mix says it finished.
+const cleanFinish = computed<boolean>(() => !get(hasFailedChains) && !get(hasCancelledChains));
+
+const completedLabel = computed<string>(() => {
+  const count = get(completedCount);
+  return get(cleanFinish)
+    ? t('sync_progress.completed_chains', { count }, count)
+    : t('sync_progress.finished_chains', { count }, count);
+});
+
+const completedIcon = computed<string>(() => (get(cleanFinish) ? 'lu-circle-check' : 'lu-circle-alert'));
+
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
 }
@@ -58,11 +72,11 @@ function toggleCompleted(): void {
         @click="toggleCompleted()"
       >
         <RuiIcon
-          name="lu-circle-check"
+          :name="completedIcon"
           :class="completedIconColor"
           size="16"
         />
-        <span>{{ t('sync_progress.completed_chains', { count: completedCount }, completedCount) }}</span>
+        <span>{{ completedLabel }}</span>
         <RuiIcon
           name="lu-chevron-down"
           size="16"
@@ -78,11 +92,11 @@ function toggleCompleted(): void {
           @click="toggleCompleted()"
         >
           <RuiIcon
-            name="lu-circle-check"
+            :name="completedIcon"
             :class="completedIconColor"
             size="16"
           />
-          <span>{{ t('sync_progress.completed_chains', { count: completedCount }, completedCount) }}</span>
+          <span>{{ completedLabel }}</span>
           <RuiIcon
             name="lu-chevron-up"
             size="16"
