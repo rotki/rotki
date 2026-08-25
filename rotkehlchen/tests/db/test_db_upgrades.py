@@ -4890,10 +4890,10 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
         ).fetchone()[0] == 0
-        # the obsolete unsupported-assets update setting is still present
+        # v52->v53 already removed the obsolete unsupported-assets update setting
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == 0
 
     db_v53.logout()
     db = _init_db_with_target_version(
