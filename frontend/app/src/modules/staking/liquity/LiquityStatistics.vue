@@ -1,164 +1,31 @@
 <script setup lang="ts">
-import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One, Zero } from '@rotki/common';
+import type { LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
+import { LUSD_ID } from '@/modules/staking/liquity/liquity-assets';
+import { StatisticView } from '@/modules/staking/liquity/liquity-statistics';
 import LiquityAssetBalanceList from '@/modules/staking/liquity/LiquityAssetBalanceList.vue';
 import LiquityPnlRow from '@/modules/staking/liquity/LiquityPnlRow.vue';
 import LiquityStatisticRow from '@/modules/staking/liquity/LiquityStatisticRow.vue';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useLiquityStatistics } from '@/modules/staking/liquity/use-liquity-statistics';
 
 const { pool = null, statistic = null } = defineProps<{
   statistic?: LiquityStatisticDetails | null;
   pool?: LiquityPoolDetailEntry | null;
 }>();
 
-const selection = ref<'historical' | 'current'>('historical');
-
 const { t } = useI18n({ useScope: 'global' });
-const { getAssetPrice, useAssetPrice } = usePriceUtils();
-const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
-const lusdPrice = useAssetPrice(LUSD_ID);
 
-function priceOrOne(asset: string): BigNumber {
-  const price = getAssetPrice(asset);
-  return price && price.gt(0) ? price : One;
-}
-
-const lusdPriceOrOne = computed<BigNumber>(() => {
-  const price = get(lusdPrice);
-  return price && price.gt(0) ? price : One;
-});
-
-const { useIsActive } = useTaskCenter();
-const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STATISTICS);
-
-const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
-  if (!statistic)
-    return null;
-
-  if (get(selection) === 'historical')
-    return statistic;
-
-  const stakingGains = statistic.stakingGains.map((stakingGain: AssetBalance) => {
-    const price = getAssetPrice(stakingGain.asset, One);
-
-    return {
-      ...stakingGain,
-      value: price.gt(0) ? stakingGain.amount.multipliedBy(price) : Zero,
-    };
-  });
-
-  const stabilityPoolGains = statistic.stabilityPoolGains.map((stabilityPoolGain: AssetBalance) => {
-    const price = getAssetPrice(stabilityPoolGain.asset, One);
-
-    return {
-      ...stabilityPoolGain,
-      value: price.gt(0) ? stabilityPoolGain.amount.multipliedBy(price) : Zero,
-    };
-  });
-
-  const totalValueGainsStabilityPool = bigNumberSum(stabilityPoolGains.map(({ value }) => value));
-
-  const totalValueGainsStaking = bigNumberSum(stakingGains.map(({ value }) => value));
-
-  return {
-    ...statistic,
-    stabilityPoolGains,
-    stakingGains,
-    totalDepositedStabilityPoolValue: statistic.totalDepositedStabilityPool.multipliedBy(get(lusdPriceOrOne)),
-    totalValueGainsStabilityPool,
-    totalValueGainsStaking,
-    totalWithdrawnStabilityPoolValue: statistic.totalWithdrawnStabilityPool.multipliedBy(get(lusdPriceOrOne)),
-  };
-});
-
-const totalDepositedStabilityPoolBalance = computed<Balance | null>(() => {
-  const data = get(statisticWithAdjustedPrice);
-  if (!data)
-    return null;
-
-  return {
-    amount: data.totalDepositedStabilityPool,
-    value: data.totalDepositedStabilityPoolValue,
-  };
-});
-
-const totalWithdrawnStabilityPoolBalance = computed<Balance | null>(() => {
-  const data = get(statisticWithAdjustedPrice);
-  if (!data)
-    return null;
-
-  return {
-    amount: data.totalWithdrawnStabilityPool,
-    value: data.totalWithdrawnStabilityPoolValue,
-  };
-});
-
-/**
- * Calculate the estimated PnL, by finding difference between these two things:
- * - Total LUSD that user have lost in stability pool, and find the current price.
- * - Current price of all asset user have now + total gains from the stability pool.
- *
- * The calculation:
- * A = Total Deposited Stability Pool - Total Withdrawn Stability Pool
- * LG = Liquidity gains in current price.
- * R = Rewards incurrent price.
- * B = Total Gains Stability Pool + LG + R
- * C = (A - Current deposited amount) in current price
- * PnL = B - C
- *
- * @param totalDepositedStabilityPool
- * @param totalWithdrawnStabilityPool
- * @param totalValueGainsStabilityPool
- * @param poolGains
- * @param poolRewards
- * @param poolDeposited
- * @return BigNumber
- */
-function calculatePnl(
-  totalDepositedStabilityPool: BigNumber,
-  totalWithdrawnStabilityPool: BigNumber,
-  totalValueGainsStabilityPool: BigNumber,
-  poolGains: AssetBalance,
-  poolRewards: AssetBalance,
-  poolDeposited: AssetBalance,
-): ComputedRef<BigNumber> {
-  return computed(() => {
-    const expectedAmount = totalDepositedStabilityPool.minus(totalWithdrawnStabilityPool);
-
-    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(priceOrOne(poolGains.asset));
-
-    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(priceOrOne(poolRewards.asset));
-
-    const totalWithdrawals = totalValueGainsStabilityPool
-      .plus(liquidationGainsInCurrentPrice)
-      .plus(rewardsInCurrentPrice);
-
-    const diffDeposited = expectedAmount.minus(poolDeposited.amount);
-
-    const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(get(lusdPriceOrOne));
-
-    return totalWithdrawals.minus(diffDepositedInCurrentUsdPrice);
-  });
-}
-
-const totalPnl = computed<BigNumber | null>(() => {
-  if (!statistic || !pool)
-    return null;
-
-  return get(
-    calculatePnl(
-      statistic.totalDepositedStabilityPool,
-      statistic.totalWithdrawnStabilityPool,
-      statistic.totalValueGainsStabilityPool,
-      pool.gains,
-      pool.rewards,
-      pool.deposited,
-    ),
-  );
+const {
+  loading,
+  modelSelection,
+  statisticWithAdjustedPrice,
+  totalDepositedStabilityPoolBalance,
+  totalPnl,
+  totalWithdrawnStabilityPoolBalance,
+} = useLiquityStatistics({
+  pool: () => pool,
+  statistic: () => statistic,
 });
 </script>
 
@@ -170,15 +37,21 @@ const totalPnl = computed<BigNumber | null>(() => {
           {{ t('liquity_statistic.title') }}
         </h6>
         <RuiButtonGroup
-          v-model="selection"
+          v-model="modelSelection"
           required
           variant="outlined"
           color="primary"
         >
-          <RuiButton model-value="current">
+          <RuiButton
+            :model-value="StatisticView.CURRENT"
+            data-testid="view-current"
+          >
             {{ t('liquity_statistic.switch.current') }}
           </RuiButton>
-          <RuiButton model-value="historical">
+          <RuiButton
+            :model-value="StatisticView.HISTORICAL"
+            data-testid="view-historical"
+          >
             {{ t('liquity_statistic.switch.historical') }}
           </RuiButton>
         </RuiButtonGroup>
@@ -194,6 +67,7 @@ const totalPnl = computed<BigNumber | null>(() => {
             :value="statisticWithAdjustedPrice.totalValueGainsStabilityPool"
             :loading="loading"
             class="font-bold"
+            data-testid="total-gains-stability-pool"
           />
         </div>
         <div class="flex justify-between">
@@ -204,6 +78,7 @@ const totalPnl = computed<BigNumber | null>(() => {
             :value="statisticWithAdjustedPrice.totalValueGainsStaking"
             :loading="loading"
             class="font-bold"
+            data-testid="total-gains-staking"
           />
         </div>
       </div>
@@ -222,6 +97,7 @@ const totalPnl = computed<BigNumber | null>(() => {
                   :asset="LUSD_ID"
                   :value="totalDepositedStabilityPoolBalance"
                   :loading="loading"
+                  data-testid="total-deposited"
                 />
               </LiquityStatisticRow>
               <LiquityStatisticRow
@@ -231,6 +107,7 @@ const totalPnl = computed<BigNumber | null>(() => {
                   :asset="LUSD_ID"
                   :value="totalWithdrawnStabilityPoolBalance"
                   :loading="loading"
+                  data-testid="total-withdrawn"
                 />
               </LiquityStatisticRow>
               <LiquityStatisticRow
@@ -271,6 +148,7 @@ const totalPnl = computed<BigNumber | null>(() => {
     <div
       v-else
       class="text-center text-rui-text-secondary pb-4"
+      data-testid="no-statistics"
     >
       {{ t('liquity_statistic.no_statistics') }}
     </div>
