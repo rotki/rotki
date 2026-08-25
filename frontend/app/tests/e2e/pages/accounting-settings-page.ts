@@ -91,7 +91,7 @@ export class AccountingSettingsPage {
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-testid="settings-accounting"]').click();
+    await this.page.locator('[data-testid=nav-tab][data-key="settings-accounting"]').click();
     await this.page.locator('[data-testid=crypto2crypto-switch]').waitFor({ state: 'visible' });
   }
 

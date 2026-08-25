@@ -8,9 +8,11 @@ export interface TabContent {
 }
 
 /**
- * Derives a tab's `data-testid` from its resolved route path, so
- * `/settings/rpc` becomes `settings-rpc`.
+ * Derives a tab's `data-key` from its resolved route path.
+ *
+ * @param route - a resolved route path, e.g. `/settings/rpc`
+ * @returns the key, e.g. `settings-rpc`
  */
-export function tabTestId(route: string): string {
+export function tabKey(route: string): string {
   return route.toLowerCase().replace(/^\//, '').replace(/\//g, '-');
 }

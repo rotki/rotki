@@ -9,7 +9,7 @@ export class RpcSettingsPage {
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-testid="settings-rpc"]').click();
+    await this.page.locator('[data-testid=nav-tab][data-key="settings-rpc"]').click();
     // Default Playwright viewport is wide enough to show the rail.
     await this.page.getByTestId('rpc-settings-rail').waitFor({ state: 'visible' });
   }
