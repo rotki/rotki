@@ -15,6 +15,7 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import (
@@ -31,6 +32,7 @@ from rotkehlchen.db.constants import (
     KRAKEN_FUTURES_API_SECRET_KEY,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -41,6 +43,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeWithExtras,
     HistoryEventQueue,
 )
+from rotkehlchen.exchanges.kraken_futures import KrakenFuturesAccountLogProcessor
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -77,6 +80,7 @@ from rotkehlchen.utils.misc import (
     ts_ms_to_sec,
     ts_now,
     ts_now_in_ms,
+    ts_sec_to_ms,
 )
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
@@ -84,7 +88,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
@@ -98,6 +102,30 @@ log = RotkehlchenLogsAdapter(logger)
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
+KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE = 500
+KRAKEN_FUTURES_SPOT_LEDGER_TYPES = {
+    'derivativescrossexchangetransfer',
+    'derivativesflexconversion',
+    'derivativesfuturestrade',
+}
+KRAKEN_FUTURES_TRANSFER_DIRECTION = '_rotki_futures_transfer_direction'
+
+
+def _get_futures_spot_transfer_key(
+        entry: dict[str, Any],
+) -> tuple[str, FVal, FVal] | None:
+    """Return the fields shared by the spot and derivatives sides of a wallet transfer."""
+    if not isinstance(asset_symbol := entry.get('asset'), str):
+        return None
+
+    try:
+        return (
+            asset_symbol,
+            deserialize_fval(entry['time'], 'time', 'kraken futures transfer matching'),
+            deserialize_fval(entry['amount'], 'amount', 'kraken futures transfer matching'),
+        )
+    except (DeserializationError, KeyError):
+        return None
 
 
 def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, HistoryEventSubType]:
@@ -172,7 +200,7 @@ def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> 
 
 def _check_and_get_response(
         response: Response,
-        method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],
+        method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
 ) -> str | dict:
     """Checks the kraken response and if it's successful returns the result.
 
@@ -356,7 +384,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _manage_call_counter(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
     ) -> None:
         with self.nonce_lock:  # += from concurrent queries would lose increments
             self.last_query_ts = ts_now()
@@ -367,7 +395,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def api_query(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
             req: dict | None = None,
     ) -> dict:
         tries = KRAKEN_QUERY_TRIES
@@ -403,8 +431,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 call_counter=self.call_counter,
             )
 
-            if method == 'accounts':
-                result = self._query_futures_api_method(method)
+            if method in ['accounts', 'account-log']:
+                result = self._query_futures_api_method(method, req)
             else:
                 result = self._query_private(method, req)
             if isinstance(result, str):
@@ -427,7 +455,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_private(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
             req: dict | None = None,
     ) -> dict | str:
         """API queries that require a valid key/secret pair.
@@ -872,6 +900,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         Returns a list of the newly created rotki events and a set of all processed refids
         """
+        if self._has_futures_keys():
+            events = self._prepare_futures_spot_ledger_events(events)
+
         # Group related events
         raw_events_grouped = defaultdict(list)
         processed_refids = set()
@@ -906,6 +937,55 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return new_events, processed_refids
 
+    @staticmethod
+    def _prepare_futures_spot_ledger_events(
+            events: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Remove Futures duplicates and mark their matching spot-side wallet transfers."""
+        spot_transfers: defaultdict[
+            tuple[str, FVal, FVal],
+            list[dict[str, Any]],
+        ] = defaultdict(list)
+        for raw_event in events:
+            if (
+                    raw_event.get('type') == 'transfer' and
+                    raw_event.get('subtype') == '' and
+                    (transfer_key := _get_futures_spot_transfer_key(raw_event)) is not None
+            ):
+                spot_transfers[transfer_key].append(raw_event)
+
+        matched_directions: dict[int, Literal['from_futures', 'to_futures']] = {}
+        for raw_event in events:
+            if (
+                    raw_event.get('type') != 'derivativescrossexchangetransfer' or
+                    (derivatives_key := _get_futures_spot_transfer_key(raw_event)) is None
+            ):
+                continue
+
+            asset_symbol, timestamp, amount = derivatives_key
+            candidates = spot_transfers.get((asset_symbol, timestamp, -amount))
+            if not candidates:
+                continue
+
+            spot_event = candidates.pop()
+            matched_directions[id(spot_event)] = (
+                'to_futures' if amount > ZERO else 'from_futures'
+            )
+
+        prepared_events: list[dict[str, Any]] = []
+        for raw_event in events:
+            if raw_event.get('type') in KRAKEN_FUTURES_SPOT_LEDGER_TYPES:
+                continue  # The Futures account-log is the canonical source for these rows.
+
+            if (direction := matched_directions.get(id(raw_event))) is not None:
+                prepared_event = raw_event.copy()
+                prepared_event[KRAKEN_FUTURES_TRANSFER_DIRECTION] = direction
+                prepared_events.append(prepared_event)
+            else:
+                prepared_events.append(raw_event)
+
+        return prepared_events
+
     @protect_with_lock()
     def query_online_history_events(
             self,
@@ -923,14 +1003,40 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         and the last successfully queried timestamp.
         """
         log.debug(f'Querying kraken ledger entries from {start_ts} to {end_ts}')
+        spot_events: list[HistoryBaseEntry] = []
         try:
-            response, with_errors = self.query_until_finished(
+            response, spot_with_errors = self.query_until_finished(
                 endpoint='Ledgers',
                 keyname='ledger',
                 start_ts=start_ts,
                 end_ts=end_ts,
                 extra_dict={},
             )
+            new_events, _ = self.process_kraken_raw_events(
+                events=response,
+                events_source=f'{start_ts} to {end_ts}',
+                save_skipped_events=True,
+            )
+
+            trade_events: list[HistoryEvent] = []
+            adjustment_events: list[HistoryEvent] = []
+            for event in new_events:
+                if event.event_type in {
+                    HistoryEventType.TRADE,
+                    HistoryEventType.RECEIVE,
+                    HistoryEventType.SPEND,
+                }:
+                    trade_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check
+                elif event.event_type == HistoryEventType.ADJUSTMENT:
+                    adjustment_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check
+                else:
+                    spot_events.append(event)
+
+            swap_events, _ = self.process_kraken_trades(
+                trade_events=trade_events,
+                adjustments=adjustment_events,
+            )
+            spot_events.extend(swap_events)
         except RemoteError as e:
             if (
                     "('Connection aborted.', "
@@ -941,35 +1047,202 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
                     f'{timestamp_to_date(end_ts)}. {e!s}',
                 )
-            return [], start_ts
+            spot_with_errors = True
 
-        new_events, _ = self.process_kraken_raw_events(
-            events=response,
-            events_source=f'{start_ts} to {end_ts}',
-            save_skipped_events=True,
+        if spot_with_errors:
+            return spot_events, start_ts
+
+        return spot_events, end_ts
+
+    def query_futures_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> tuple[list[HistoryBaseEntry], bool]:
+        """Query Kraken Futures history using account-log"""
+        all_events: list[HistoryBaseEntry] = []
+        with_errors = False
+
+        try:
+            raw_logs, account_uid = self._query_futures_account_log(start_ts, end_ts)
+            processed_logs, skipped_logs = self.process_futures_account_log(
+                logs=raw_logs,
+                account_uid=account_uid,
+            )
+            all_events.extend(processed_logs)
+            if skipped_logs:
+                with self.db.user_write() as write_cursor:
+                    for skipped_log in skipped_logs:
+                        self.db.add_skipped_external_event(
+                            write_cursor=write_cursor,
+                            location=Location.KRAKEN,
+                            data=skipped_log,
+                            extra_data={
+                                'location_label': self.name,
+                                'source': 'futures_account_log',
+                                'account_uid': account_uid,
+                            },
+                        )
+        except RemoteError as e:
+            log.error('Failed to query kraken futures account-log: %s', e)
+            with_errors = True
+
+        return all_events, with_errors
+
+    def query_futures_history_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        events, with_errors = self.query_futures_history(start_ts=start_ts, end_ts=end_ts)
+        event_queue.flush(events)
+        return start_ts if with_errors else end_ts
+
+    def _query_and_save_history_event_ranges(
+            self,
+            location_string: str,
+            query_method: Callable[[Timestamp, Timestamp, HistoryEventQueue], Timestamp],
+    ) -> None:
+        with self.db.conn.read_ctx() as cursor:
+            ranges_to_query = DBQueryRanges(self.db).get_location_query_ranges(
+                cursor=cursor,
+                location_string=location_string,
+                start_ts=Timestamp(0),
+                end_ts=ts_now(),
+            )
+
+        for query_start_ts, query_end_ts in ranges_to_query:
+            self.send_history_events_status_msg(
+                step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                period=[query_start_ts, query_end_ts],
+            )
+            event_queue = HistoryEventQueue(
+                database=self.db,
+                location_string=location_string,
+                query_start_ts=query_start_ts,
+            )
+            actual_end_ts: Timestamp | None = None
+            try:
+                actual_end_ts = query_method(query_start_ts, query_end_ts, event_queue)
+            finally:
+                event_queue.flush(queried_until_ts=actual_end_ts)
+
+            if actual_end_ts != query_end_ts:
+                log.error(
+                    'Failed to query all %s history events between %s and %s. '
+                    'Last successfully queried timestamp: %s',
+                    self.name,
+                    query_start_ts,
+                    query_end_ts,
+                    actual_end_ts,
+                )
+                break
+
+    @protect_with_lock()
+    def query_history_events(self) -> None:
+        """Query and save spot and futures history using independent ranges."""
+        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
+        try:
+            self._query_and_save_history_event_ranges(
+                location_string=f'{self.location!s}_history_events_{self.name}',
+                query_method=self.query_online_history_events_into_queue,
+            )
+            if self._has_futures_keys():
+                self._query_and_save_history_event_ranges(
+                    location_string=f'{self.location!s}_history_events_futures_{self.name}',
+                    query_method=self.query_futures_history_into_queue,
+                )
+        finally:
+            self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
+
+    def _query_futures_account_log(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> tuple[list[dict[str, Any]], str]:
+        """Query Futures account-log without duplicating its inclusive ID boundary."""
+        all_logs: list[dict[str, Any]] = []
+        seen_booking_uids: set[str] = set()
+        account_uid: str | None = None
+        params: dict[str, Any] = {
+            'before': ts_sec_to_ms(end_ts),
+            'count': KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE,
+            'since': ts_sec_to_ms(start_ts),
+            'sort': 'desc',
+        }
+        log.debug(
+            'Querying futures account-log with params %s from %s to %s',
+            params,
+            start_ts,
+            end_ts,
         )
+        while True:
+            response = self.api_query('account-log', params.copy())
+            logs = response.get('logs', [])
+            if not isinstance(logs, list):
+                raise RemoteError('Kraken Futures account-log response contains invalid logs')
+            if (
+                    not isinstance(page_account_uid := response.get('accountUid'), str) or
+                    page_account_uid == ''
+            ):
+                raise RemoteError('Kraken Futures account-log response is missing accountUid')
+            if account_uid is None:
+                account_uid = page_account_uid
+            elif account_uid != page_account_uid:
+                raise RemoteError('Kraken Futures account-log accountUid changed while paginating')
 
-        trade_events: list[HistoryEvent] = []
-        adjustment_events: list[HistoryEvent] = []
-        final_events: list[HistoryBaseEntry] = []
-        for event in new_events:
-            if event.event_type in {
-                HistoryEventType.TRADE,
-                HistoryEventType.RECEIVE,
-                HistoryEventType.SPEND,
-            }:
-                trade_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check
-            elif event.event_type == HistoryEventType.ADJUSTMENT:
-                adjustment_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check
-            else:
-                final_events.append(event)
+            log.debug('Got %s logs from account-log', len(logs))
+            if not logs:
+                break
 
-        swap_events, _ = self.process_kraken_trades(
-            trade_events=trade_events,
-            adjustments=adjustment_events,
-        )
-        final_events.extend(swap_events)
-        return final_events, start_ts if with_errors else end_ts
+            for raw_log in logs:
+                if not isinstance(raw_log, dict):
+                    raise RemoteError(
+                        'Kraken Futures account-log response contains an invalid row',
+                    )
+                if (
+                        not isinstance(booking_uid := raw_log.get('booking_uid'), str) or
+                        booking_uid == ''
+                ):
+                    raise RemoteError('Kraken Futures account-log row is missing booking_uid')
+                if booking_uid not in seen_booking_uids:
+                    seen_booking_uids.add(booking_uid)
+                    all_logs.append(raw_log)
+
+            if len(logs) < KRAKEN_FUTURES_ACCOUNT_LOG_PAGE_SIZE:
+                break
+
+            try:
+                earliest_log_id = min(raw_log['id'] for raw_log in logs)
+            except (KeyError, TypeError) as e:
+                raise RemoteError('Kraken Futures account-log row is missing a valid id') from e
+            if (
+                    not isinstance(earliest_log_id, int) or
+                    isinstance(earliest_log_id, bool) or
+                    earliest_log_id < 1
+            ):
+                raise RemoteError('Kraken Futures account-log row contains an invalid id')
+            if earliest_log_id == 1:
+                break
+
+            next_to = earliest_log_id - 1
+            if (previous_to := params.get('to')) is not None and next_to >= previous_to:
+                raise RemoteError('Kraken Futures account-log pagination did not advance')
+            params['to'] = next_to
+
+        return all_logs, account_uid
+
+    def process_futures_account_log(
+            self,
+            logs: list[dict[str, Any]],
+            account_uid: str,
+    ) -> tuple[list[HistoryEvent | SwapEvent], list[dict[str, Any]]]:
+        """Delegate Futures account-log interpretation to the dedicated processor."""
+        return KrakenFuturesAccountLogProcessor(
+            account_uid=account_uid,
+            location_label=self.name,
+        ).process(logs)
 
     def query_online_history_events_into_queue(
             self,
@@ -1033,7 +1306,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 # event type the logic will be to store it as unknown and if in the future
                 # we need some information from it we can take actions to process them
                 if event_type == HistoryEventType.TRANSFER:
-                    if raw_event['subtype'] == '':  # Internal kraken events
+                    if (direction := raw_event.get(KRAKEN_FUTURES_TRANSFER_DIRECTION)) is not None:
+                        notes = (
+                            'Transfer from Kraken spot to Futures wallet'
+                            if direction == 'to_futures' else
+                            'Transfer from Kraken Futures wallet to spot'
+                        )
+                    elif raw_event['subtype'] == '':  # Internal kraken events
                         # Lefteris has seen it in: Crediting airdrops/fork coins
                         # such as ETC, BCH, BSV. OR the XXLM airdrop. Also for forced
                         # removal of a coin due to delisting(negative amount), which is followed
@@ -1211,28 +1490,43 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_futures_api_method(
             self,
-            method: Literal['accounts'],
+            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
+            req: dict | None = None,
     ) -> dict | str:
         """API queries that require a valid key/secret pair.
 
         Arguments:
         method -- API method name (string, no default)
+        req    -- additional API request parameters (default: {})
         """
-        urlpath: str = '/derivatives/api/' + KRAKEN_FUTURES_API_VERSION + '/' + method
+        if req is None:
+            req = {}
+
+        if method == 'accounts':
+            urlpath: str = '/derivatives/api/' + KRAKEN_FUTURES_API_VERSION + '/' + method
+        else:
+            urlpath = '/api/history/' + KRAKEN_FUTURES_API_VERSION + '/' + method
+
         urlpath_without_prefix = urlpath.removeprefix('/derivatives')
         with self.nonce_lock:  # hold across nonce generation + send so nonces reach kraken in order  # noqa: E501
             nonce = str(ts_now_in_ms())
+            post_data = urlencode(req)
 
             # any unicode strings must be turned to bytes
-            hashable = (nonce + urlpath_without_prefix).encode()
+            hashable = (post_data + nonce + urlpath_without_prefix).encode()
             message = hashlib.sha256(hashable).digest()
             signature = self.generate_hmac_b64_signature(
                 secret=self.futures_api_secret,
                 message=message,
                 digest_algorithm=hashlib.sha512,
             )
-            full_url = KRAKEN_FUTURES_BASE_URL + urlpath
-            log.debug('Querying Kraken for %s with %s at URL: %s', method, nonce, full_url)
+            full_url = KRAKEN_FUTURES_BASE_URL + urlpath + (f'?{post_data}' if post_data else '')
+            log.debug(
+                'Querying Kraken Futures',
+                method=method,
+                nonce=nonce,
+                url=full_url,
+            )
             try:
                 response = self.session.get(
                     full_url,
@@ -1243,7 +1537,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         'Authent': signature,
                     },
                 )
-                log.debug('raw response from kraken for API method %s = %s', method, response)
+                log.debug('Raw response from Kraken for API method %s = %s', method, response)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Kraken API request failed due to {e!s}') from e
 
