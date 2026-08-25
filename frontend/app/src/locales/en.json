@@ -5911,6 +5911,7 @@
   "sync_progress": {
     "chains_label": "chain | chains",
     "complete": "Sync Complete",
+    "complete_cancelled": "Sync Cancelled",
     "complete_with_warnings": "Sync Complete with warnings",
     "completed_chains": "{count} chain complete | {count} chains complete",
     "completed_decoding": "{count} chain decoded | {count} chains decoded",
