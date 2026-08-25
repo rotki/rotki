@@ -149,7 +149,7 @@ export class MenuManager {
         },
         {
           label: 'Logs Directory',
-          click: () => this.openPath(app.getPath('logs')),
+          click: () => this.openPath(this.logger.logDirectory),
         },
         {
           id: DATA_DIRECTORY_ID,
