@@ -1,5 +1,4 @@
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
-import { startPromise } from '@shared/utils';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
@@ -10,6 +9,7 @@ import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useSnapshotSchedule } from '@/modules/balances/use-snapshot-schedule';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
@@ -30,6 +30,7 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { fetchNetValue } = useStatisticsDataFetching();
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { skipReason: autoDetectSkipReason, withDetection } = useAutoTokenDetection();
+  const { isSnapshotDue } = useSnapshotSchedule();
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
     const description = payload.ignoreErrors
@@ -68,19 +69,14 @@ export const useBalanceFetching = createSharedComposable(() => {
   };
 
   /**
-   * ⭐ A refresh never snapshots. It used to end in `fetchBalances()` with an empty payload —
-   * `GET /balances` reads the shared in-memory balances and persists on the backend's own
-   * schedule, so a refresh was implicitly asking for a snapshot while its own per-chain queries
-   * were still clearing and repopulating chains. That is how a 0-value row could reach the user's
-   * net-worth history, and it forced the whole refresh to be ordered around it.
+   * The login load: every chain, then the day's snapshot if the schedule is due.
    *
-   * Nothing is lost by dropping it: the backend takes automatic snapshots itself
-   * (`tasks/manager.py::_maybe_update_snapshot_balances`, which checks `balance_save_frequency`,
-   * runs `maybe_detect_new_tokens` first and passes `requested_save_data=True`). Explicit user
-   * snapshots go through {@link fetchBalances} from `forceSave`, which is unchanged.
+   * The aggregate query must run after the batch, never alongside it — querying while the per-chain
+   * queries were still repopulating chains is what wrote 0-value rows into the net-worth history.
    *
-   * ⚠️ The result of that call was discarded anyway (`mapResult(…, () => {})`) — it was only ever
-   * made for the backend side effect, never for data this app reads.
+   * It carries no payload on purpose: `save_data` defaults to false and the backend saves when
+   * `requested_save_data or should_save_balances(...)`, so this asks for a snapshot rather than
+   * forcing one. Forcing is {@link fetchBalances} from `forceSave`.
    */
   const refreshFromChain = async (): Promise<void> => withDetection(async (detect) => {
     logger.debug(detect
@@ -94,12 +90,16 @@ export const useBalanceFetching = createSharedComposable(() => {
     // split has nothing left to express — a chain that cannot hold tokens simply has no detect
     // stage.
     await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, { detect });
-  });
 
-  const fetch = async (): Promise<void> => {
-    await fetchCached();
-    startPromise(refreshFromChain());
-  };
+    const due = await isSnapshotDue();
+
+    if (!due) {
+      logger.debug('refreshFromChain: snapshot not due, skipping the aggregate query');
+      return;
+    }
+
+    await fetchBalances();
+  });
 
   /**
    * §6's periodic flow: every chain, entering at the job, no detection.
@@ -130,7 +130,6 @@ export const useBalanceFetching = createSharedComposable(() => {
 
   return {
     autoRefresh,
-    fetch,
     fetchBalances,
     fetchCached,
     refreshFromChain,
