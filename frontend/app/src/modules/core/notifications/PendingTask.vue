@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { useScramble } from '@/modules/settings/use-scramble';
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type Activity, ActivityStatus, type ActivitySteps, resolveText } from '@/modules/task-center/core/types';
+import { type Activity, ActivityStatus, type ActivitySteps, type ActivityText, resolveText } from '@/modules/task-center/core/types';
 
 const { activity, cancellable, nested = false, now, percentage, steps } = defineProps<{
   activity: Activity;
@@ -24,8 +25,44 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { scrambleAddress } = useScramble();
+
+/**
+ * Rewrites a param that may hold one address or several.
+ *
+ * @remarks
+ * A batch joins several addresses into one string, so each is scrambled separately and the
+ * separators put back verbatim. `scrambleAddress` returns its input unchanged while privacy mode
+ * is off, so this needs no condition of its own.
+ *
+ * @param value a subtitle param, which is only rewritten when it is a string
+ * @returns the value with each address replaced
+ */
+function scrambleAddresses(value: unknown): unknown {
+  if (typeof value !== 'string')
+    return value;
+
+  return value
+    .split(/([\s,]+)/)
+    .map(part => (/^[\s,]*$/.test(part) ? part : scrambleAddress(part)))
+    .join('');
+}
+
+/**
+ * The subtitle with its address param scrambled, before {@link resolveText} interpolates it —
+ * afterwards nothing can tell the address apart from the wording around it. Every producer that
+ * carries an address passes it as `address`, so that is the one key rewritten.
+ */
+const displaySubtitle = computed<ActivityText | undefined>(() => {
+  const value = activity.subtitle;
+  if (value === undefined || typeof value === 'string' || value.params?.address === undefined)
+    return value;
+
+  return { ...value, params: { ...value.params, address: scrambleAddresses(value.params.address) } };
+});
+
 // Resolved here rather than at submit time, so a language change updates work already in flight.
-const subtitle = computed<string | undefined>(() => resolveText(t, activity.subtitle));
+const subtitle = computed<string | undefined>(() => resolveText(t, get(displaySubtitle)));
 
 // A child of "History refresh" reads better as "Ethereum" than as "Transaction sync / Ethereum":
 // a chain and its accounts carry the same title, so under a parent the subtitle is the identity.

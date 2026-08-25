@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { assert, describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+import { assert, beforeEach, describe, expect, it } from 'vitest';
 import PendingTaskNode from '@/modules/core/notifications/PendingTaskNode.vue';
 import { buildTree } from '@/modules/task-center/core/tree';
 import {
@@ -53,6 +54,10 @@ function createWrapper(): VueWrapper {
 }
 
 describe('pendingTaskNode', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   /**
    * Collapsed at every level, the job's own fan-out included. The rolled-up row already says what
    * is running and how far along; unfolding eleven chains times four accounts into a 400px drawer

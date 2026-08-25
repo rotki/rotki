@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The task centre now scrambles the addresses it shows while privacy mode is on. Rows such as "Querying transactions for 0x..." and account additions printed the real address, so the one setting meant to make rotki safe to screen-share or screenshot did not cover the panel that is open while you work.
 * :bug:`-` Privacy mode no longer renders every balance as zero, or smaller than it really is, depending on the scramble multiplier you set. A multiplier below 1 shrank every number instead of hiding it, and 0 turned them all into zeros, which read as rotki losing your balances rather than concealing them. Randomly generated multipliers could also land below 1, so this could happen without you setting anything.
 * :bug:`-` Cancelling a running sync from the task centre no longer leaves the sync progress panel claiming it completed. The panel says the sync was cancelled, and the grouped rows inside it ("9 chains complete") no longer report a clean completion for chains, locations, decoding or protocol caches that were cancelled or failed, which contradicted the rows they contained.
 * :bug:`-` The Help menu's logs directory entry now opens the directory rotki is actually logging to. If you had set a custom log directory it opened the default one instead, so being told to check the logs sent you to a folder with nothing in it.
