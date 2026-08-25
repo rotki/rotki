@@ -41,12 +41,9 @@ FROM python:3.14-bookworm AS backend-build-stage
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# arm64 has no wheels for the Rust-backed bindings (py-bip39, py-ed25519-zebra,
-# py-sr25519), so uv builds them from source with maturin. With no cargo in the
-# image, maturin bootstraps its own toolchain per package into one shared cache,
-# and the concurrent builds race on exec'ing the half-written binary:
-# "failed to start `cargo metadata`: Text file busy". Copied from the image
-# rather than from rust-build-stage, so the two stages still build in parallel.
+# The non-amd64 PyInstaller bootloader is built from source below. Copy the Rust
+# toolchain from its image rather than from rust-build-stage, so both stages can
+# still build in parallel.
 COPY --from=rust:1.91-bookworm /usr/local/cargo /usr/local/cargo
 COPY --from=rust:1.91-bookworm /usr/local/rustup /usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo \
