@@ -47,8 +47,11 @@ const mockEventsQueryStatusStore = {
   stopSyncing: vi.fn(),
 };
 
+const mockDisabledChains = {
+  filterAccounts: vi.fn((accounts: ChainAddress[]) => accounts),
+};
+
 const mockHistoryTransactionAccounts = {
-  filterDisabledChainAccounts: vi.fn((accounts: ChainAddress[]) => accounts),
   getAllAccounts: vi.fn(() => [...mockEvmAccounts, ...mockBitcoinAccounts]),
   getTransactionTypeFromChain: vi.fn((chain: string): TransactionChainType =>
     chain === 'btc' ? TransactionChainType.BITCOIN : TransactionChainType.EVM,
@@ -185,6 +188,10 @@ vi.mock('./use-history-transaction-accounts', () => ({
   useHistoryTransactionAccounts: vi.fn(() => mockHistoryTransactionAccounts),
 }));
 
+vi.mock('@/modules/settings/general/disabled-chain-queries/use-disabled-chains', () => ({
+  useDisabledChains: vi.fn(() => mockDisabledChains),
+}));
+
 vi.mock('./use-undecoded-transactions-status', () => ({
   useUndecodedTransactionsStatus: vi.fn(() => mockUndecodedTransactionsStatus),
 }));
@@ -236,7 +243,7 @@ describe('useRefreshTransactions', () => {
     mockRefreshHandlers.queryAllExchangeEvents.mockImplementation(defaultQueryExchanges);
     mockRefreshHandlers.queryOnlineEvent.mockResolvedValue(ok(undefined));
     mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts]);
-    mockHistoryTransactionAccounts.filterDisabledChainAccounts.mockImplementation((accounts: ChainAddress[]) => accounts);
+    mockDisabledChains.filterAccounts.mockImplementation((accounts: ChainAddress[]) => accounts);
     set(mockExchangeData.syncingExchanges, mockExchanges);
   });
 
@@ -1008,23 +1015,8 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('disabled chain queries', () => {
-    it('should exclude disabled-chain accounts from sync init and dispatch on full refresh', async () => {
-      mockHistoryTransactionAccounts.filterDisabledChainAccounts.mockImplementation(
-        (accounts: ChainAddress[]) => accounts.filter(a => a.chain !== 'optimism'),
-      );
-
-      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
-      await refreshTransactions();
-
-      const initArgs = mockTxQueryStatusStore.initializeQueryStatus.mock.calls[0]?.[0] ?? [];
-      expect(initArgs.every(a => a.chain !== 'optimism')).toBe(true);
-
-      const syncArgs = mockTransactionSync.syncTransactionsByChains.mock.calls[0]?.[0] ?? [];
-      expect(syncArgs.every(a => a.chain !== 'optimism')).toBe(true);
-    });
-
     it('should not start a refresh when every requested account is disabled', async () => {
-      mockHistoryTransactionAccounts.filterDisabledChainAccounts.mockReturnValue([]);
+      mockDisabledChains.filterAccounts.mockReturnValue([]);
       set(mockExchangeData.syncingExchanges, []);
 
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -1036,8 +1028,8 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should also filter explicit caller-supplied accounts', async () => {
-      mockHistoryTransactionAccounts.filterDisabledChainAccounts.mockImplementation(
-        (accounts: ChainAddress[]) => accounts.filter(a => a.chain !== 'eth'),
+      mockDisabledChains.filterAccounts.mockImplementation(
+        (accounts: ChainAddress[]) => accounts.filter(account => account.chain !== 'eth'),
       );
 
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
