@@ -40,7 +40,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
-  const { filterDisabledChainAccounts, getTransactionTypeFromChain } = useHistoryTransactionAccounts();
+  const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
   const { statusOf, submitTask } = useNativeTask();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
   const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, resumeDecodingSyncProgress, stopDecodingSyncProgress } = useDecodingStatusStore();
@@ -201,9 +201,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
    */
   function drainPending(params: RefreshTransactionsParams): void {
     const { chains = [] } = params;
-    // Disabled chains are filtered before the novelty question, never after — an account the backend
-    // silently skips would otherwise read as novel forever and drain on every refresh.
-    const accounts = filterDisabledChainAccounts(resolveInputAccounts(undefined, true, chains));
+    const accounts = resolveInputAccounts(undefined, true, chains);
     const { newAccounts, newExchanges } = detectNovelty(accounts, filterSyncingExchanges(undefined));
 
     if (newAccounts.length === 0 && newExchanges.length === 0)
@@ -244,11 +242,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       await accountRead;
 
     const usedExchanges = filterSyncingExchanges(payload.exchanges);
-    // Filter before novelty detection so disabled-chain accounts are not flagged as newly
-    // added and queued as pending refreshes that the backend would silently skip.
-    const allCurrentAccounts = filterDisabledChainAccounts(
-      resolveInputAccounts(payload.accounts, fullRefresh, chains),
-    );
+    const allCurrentAccounts = resolveInputAccounts(payload.accounts, fullRefresh, chains);
     const novelty = detectNovelty(allCurrentAccounts, usedExchanges);
 
     const status = statusOf(ActivityKind.HISTORY_SYNC);
@@ -264,6 +258,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       chains,
       everRefreshed: status.everCompleted,
       fullRefresh,
+      inputAccounts: allCurrentAccounts,
       usedExchanges,
       userInitiated,
     });

@@ -166,67 +166,36 @@ describe('useHistoryTransactionAccounts', () => {
     });
   });
 
-  describe('filterDisabledChainAccounts', () => {
-    const sample = [
-      { address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c', chain: 'eth' },
-      { address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', chain: 'eth' },
-      { address: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199', chain: 'optimism' },
-      { address: '0xdD2FD4581271e230360230F9337D5c0430Bf44C0', chain: 'polygon_pos' },
-      { address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', chain: 'btc' },
-    ];
-
+  describe('disabled chains', () => {
     function setDisabled(value: Record<string, string[]>): void {
       const store = useSettingsRepo();
       store.updateGeneral({ ...store.general, disabledChainQueries: value });
     }
 
-    it('should return input unchanged when the setting is empty', () => {
-      expect(composable.filterDisabledChainAccounts(sample)).toEqual(sample);
-    });
-
-    it('should drop all accounts on a chain disabled with an empty list', () => {
+    it('should drop a fully disabled chain from getAllAccounts', () => {
       setDisabled({ eth: [] });
-      const filtered = composable.filterDisabledChainAccounts(sample);
-      expect(filtered).toHaveLength(3);
-      expect(filtered.every(a => a.chain !== 'eth')).toBe(true);
+
+      expect(composable.getAllAccounts().every(account => account.chain !== 'eth')).toBe(true);
     });
 
-    it('should drop only the listed addresses on a partially-disabled chain', () => {
+    it('should drop only the listed addresses on a partially disabled chain', () => {
       setDisabled({ eth: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'] });
-      const filtered = composable.filterDisabledChainAccounts(sample);
-      expect(filtered).toHaveLength(4);
-      expect(filtered).not.toContainEqual({
-        address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-        chain: 'eth',
-      });
-      expect(filtered).toContainEqual({
-        address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-        chain: 'eth',
-      });
+
+      const eth = composable.getAllAccounts().filter(account => account.chain === 'eth');
+      expect(eth).toEqual([{ address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', chain: 'eth' }]);
     });
 
-    it('should leave chains not present in the setting untouched', () => {
+    it('should drop a disabled chain from the per-type getters too', () => {
+      setDisabled({ btc: [] });
+
+      expect(composable.getBitcoinAccounts().every(account => account.chain !== 'btc')).toBe(true);
+      expect(composable.getEvmAccounts()).toHaveLength(5);
+    });
+
+    it('should honour a chain scope and the disabled setting together', () => {
       setDisabled({ optimism: [] });
-      const filtered = composable.filterDisabledChainAccounts(sample);
-      expect(filtered).toHaveLength(4);
-      expect(filtered.every(a => a.chain !== 'optimism')).toBe(true);
-      expect(filtered).toContainEqual({
-        address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-        chain: 'btc',
-      });
-    });
 
-    it('should combine full-chain and per-address rules across chains', () => {
-      setDisabled({
-        eth: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],
-        polygon_pos: [],
-      });
-      const filtered = composable.filterDisabledChainAccounts(sample);
-      expect(filtered).toEqual([
-        { address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', chain: 'eth' },
-        { address: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199', chain: 'optimism' },
-        { address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', chain: 'btc' },
-      ]);
+      expect(composable.getAllAccounts(['eth', 'optimism'])).toHaveLength(2);
     });
   });
 });
