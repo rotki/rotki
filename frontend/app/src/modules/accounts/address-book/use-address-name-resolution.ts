@@ -4,7 +4,7 @@ import type {
   AddressBookSimplePayload,
   AddressNameRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
-import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
+import { Blockchain, isValidAddress, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { isBlockchain } from '@/modules/core/common/chains';
@@ -96,20 +96,38 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
 
   const createKey = (address: string, chain: string): string => `${address}#${chain}`;
 
+  function isAddressResolvable(address: string, chain: string): boolean {
+    if (get(evmChainIds).includes(chain))
+      return isValidEthAddress(address);
+
+    if (get(solanaChainIds).includes(chain))
+      return isValidSolanaAddress(address);
+
+    if (get(bitcoinChainIds).includes(chain))
+      return isValidBtcAddress(address) || isValidBchAddress(address);
+
+    return isValidAddress(address);
+  }
+
   const fetchAddressesNames = async (keys: string[]) => {
     const payload: AddressNameRequestPayload[] = [];
     for (const key of keys) {
       const [address, blockchain] = key.split('#');
-      if (isBlockchain(blockchain))
+      if (isBlockchain(blockchain) && isAddressResolvable(address, blockchain))
         payload.push({ address, blockchain });
     }
 
     let result: AddressBookEntry[];
-    try {
-      result = await getAddressesNames(payload);
+    if (payload.length > 0) {
+      try {
+        result = await getAddressesNames(payload);
+      }
+      catch (error: unknown) {
+        logger.error(error);
+        result = [];
+      }
     }
-    catch (error: unknown) {
-      logger.error(error);
+    else {
       result = [];
     }
 
@@ -117,8 +135,7 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     for (const entry of result) resultMap.set(createKey(entry.address, entry.blockchain ?? ''), entry);
 
     return function* (): Generator<{ key: string; item: AddressBookEntry | undefined }, void> {
-      for (const entry of payload) {
-        const key = createKey(entry.address, entry.blockchain);
+      for (const key of keys) {
         yield { item: resultMap.get(key), key };
       }
     };
