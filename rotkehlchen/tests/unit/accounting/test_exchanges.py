@@ -1,6 +1,6 @@
 from collections import defaultdict
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -19,6 +19,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks.events import resolve_asset_movement_external
 from rotkehlchen.tests.utils.accounting import accounting_create_and_process_history
 from rotkehlchen.tests.utils.exchanges import mock_normal_coinbase_query
 from rotkehlchen.tests.utils.history import prices
@@ -218,6 +219,74 @@ def test_asset_movement_fee_respects_accounting_rules(
     fee_event = fee_events[0]
     assert fee_event.taxable_amount == ZERO
     assert fee_event.asset == A_BTC
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('added_exchanges', [[]])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+def test_asset_movement_resolved_as_external_is_accounted(
+        rotkehlchen_api_server_with_exchanges: APIServer,
+) -> None:
+    """A withdrawal to an untracked address is only taxed on its fee until it is resolved
+    as external. Resolving it turns it into a payment, so the whole amount is spent.
+    """
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.user_write() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=create_swap_events(  # acquire the BTC first, so there is a cost basis
+                timestamp=TimestampMS(1611426200000),
+                location=Location.COINBASE,
+                group_identifier='1xyz',
+                spend=AssetAmount(asset=A_EUR, amount=(btc_cost := FVal(1000))),
+                receive=AssetAmount(asset=A_BTC, amount=ONE),
+            ),
+        )
+        withdrawal = AssetMovement(
+            timestamp=TimestampMS(1611426201000),
+            location=Location.COINBASE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_BTC,
+            amount=(withdrawn_amount := FVal('0.5')),
+        )
+        withdrawal.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=withdrawal,
+        )
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=AssetMovement(
+                group_identifier=withdrawal.group_identifier,
+                timestamp=TimestampMS(1611426201000),
+                location=Location.COINBASE,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_BTC,
+                amount=(fee_amount := FVal('0.00001')),
+            ),
+        )
+
+    def taxable_overview() -> dict[str, Any]:
+        """The report overview, which unlike the report data is read back per report id."""
+        return accounting_create_and_process_history(
+            rotki=rotki,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1611426233),
+        )[0]['overview']
+
+    # unresolved, the movement contributes nothing and only its fee is a taxable spend
+    assert (overview := taxable_overview())[str(AccountingEventType.ASSET_MOVEMENT)]['taxable'] == str(-fee_amount * btc_cost)  # noqa: E501
+    assert str(AccountingEventType.TRANSACTION_EVENT) not in overview
+
+    # Resolved as external, the whole withdrawn amount is spent at its cost basis, and the
+    # fee is still taxed for the same amount -- the rules for exchange transfer/fee and
+    # spend/fee carry the same treatment, so rewriting the fee only moves which accounting
+    # event type it is filed under, keeping both halves of the transfer in the same bucket.
+    assert resolve_asset_movement_external(events_db=dbevents, event=withdrawal) is True
+    assert (overview := taxable_overview())[str(AccountingEventType.TRANSACTION_EVENT)]['taxable'] == str(-(withdrawn_amount + fee_amount) * btc_cost)  # noqa: E501
+    assert str(AccountingEventType.ASSET_MOVEMENT) not in overview
 
 
 @pytest.mark.parametrize('have_decoders', [True])

@@ -3,8 +3,9 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from operator import itemgetter
 from time import perf_counter
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -13,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_DAI, A_GLM, A_MKR, A_REP, A_SAI
+from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.constants.resolver import SOLANA_CHAIN_DIRECTIVE, identifier_to_evm_chain
 from rotkehlchen.constants.timing import SAI_DAI_MIGRATION_TS
 from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheStatic
@@ -23,7 +25,7 @@ from rotkehlchen.db.constants import (
     HistoryEventLinkType,
     HistoryMappingState,
 )
-from rotkehlchen.db.filtering import AssetMovementMatchFilterQuery
+from rotkehlchen.db.filtering import AssetMovementMatchFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import get_query_chunks
@@ -99,6 +101,8 @@ MANUALLY_MATCHABLE_ASSET_MAP: Final = {
     for asset in asset_group
 }
 AMOUNT_DIFFERENCE_THRESHOLD: Final = FVal('0.1')  # 10% threshold for duplicate detection
+# extra_data key holding an asset movement's match or external resolution
+MATCHED_ASSET_MOVEMENT_KEY: Final = 'matched_asset_movement'
 
 
 def _amounts_within_threshold(amount_a: FVal, amount_b: FVal) -> bool:
@@ -1078,7 +1082,7 @@ def update_asset_movement_matched_event(
     if matched_event.extra_data is None:
         matched_event.extra_data = {}
 
-    matched_event.extra_data['matched_asset_movement'] = {
+    matched_event.extra_data[MATCHED_ASSET_MOVEMENT_KEY] = {
         'group_identifier': asset_movement.group_identifier,
         'exchange': asset_movement.location.serialize(),
     }
@@ -1117,7 +1121,7 @@ def update_asset_movement_matched_event(
             # Keep movement to movement matches symmetric in links and metadata.
             if asset_movement.extra_data is None:
                 asset_movement.extra_data = {}
-            asset_movement.extra_data['matched_asset_movement'] = {
+            asset_movement.extra_data[MATCHED_ASSET_MOVEMENT_KEY] = {
                 'group_identifier': matched_event.group_identifier,
                 'exchange': matched_event.location.serialize(),
             }
@@ -1136,6 +1140,114 @@ def update_asset_movement_matched_event(
                     HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
                 ),
             )
+
+
+def resolve_asset_movement_external(
+        events_db: DBHistoryEvents,
+        event: HistoryBaseEntry,
+) -> bool:
+    """Resolve an unmatched asset movement as moving to/from an untracked address.
+
+    A withdrawal becomes a payment (SPEND/PAYMENT) and a deposit becomes income
+    (RECEIVE/PAYMENT), so the accounting rules of those combinations apply and the whole
+    amount is accounted instead of only the movement's fee. The event stops being an asset
+    movement -- an AssetMovement is by definition an EXCHANGE_TRANSFER -- so it is rewritten
+    as a plain history event that keeps its identifier, group, location and extra data, and
+    is stamped with the resolution and the movement's original direction.
+
+    The group's fee is rewritten alongside it, as a plain SPEND/FEE, so the group does not
+    end up half asset movement and half history event: the per-row actions in the frontend
+    hide a movement fee's own edit and delete because a movement is edited as a group, which
+    would leave the fee unreachable, and the report would file the two halves of one transfer
+    under different accounting event types. The rules for exchange transfer/fee and spend/fee
+    carry the same treatment, so the fee is accounted as before.
+
+    Both edits save a backup so unlinking restores the original movement and fee. Returns
+    False when the event is not an asset movement deposit or withdrawal.
+    """
+    if not isinstance(event, AssetMovement):
+        return False
+
+    symbol = event.asset.resolve_to_asset_with_symbol().symbol
+    location_name = get_formatted_location_name(event.location)
+    if event.event_subtype == HistoryEventSubType.SPEND:
+        direction = 'withdrawal'
+        event_type = HistoryEventType.SPEND
+        notes = f'Send {event.amount} {symbol} from {location_name} to an untracked address'
+    elif event.event_subtype == HistoryEventSubType.RECEIVE:
+        direction = 'deposit'
+        event_type = HistoryEventType.RECEIVE
+        notes = f'Receive {event.amount} {symbol} in {location_name} from an untracked address'
+    else:
+        return False  # a fee event has no untracked counterpart of its own
+
+    if event.notes is not None:  # movement notes are the user's own, so they are kept
+        notes = f'{notes}. {event.notes}'
+
+    extra_data: dict[str, Any] = dict(event.extra_data) if event.extra_data is not None else {}
+    extra_data[MATCHED_ASSET_MOVEMENT_KEY] = {'resolution': 'external', 'direction': direction}
+    resolved: list[HistoryEvent] = [HistoryEvent(
+        identifier=event.identifier,
+        group_identifier=event.group_identifier,
+        sequence_index=event.sequence_index,
+        timestamp=event.timestamp,
+        location=event.location,
+        location_label=event.location_label,
+        asset=event.asset,
+        amount=event.amount,
+        notes=notes,
+        event_type=event_type,
+        event_subtype=HistoryEventSubType.PAYMENT,
+        extra_data=extra_data,
+    )]
+    with events_db.db.conn.read_ctx() as cursor:
+        for fee_event in events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                entry_types=IncludeExcludeFilterData(
+                    values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
+                ),
+                group_identifiers=[event.group_identifier],
+                event_subtypes=[HistoryEventSubType.FEE],
+            ),
+        ):
+            fee_symbol = fee_event.asset.resolve_to_asset_with_symbol().symbol
+            fee_notes = f'Pay {fee_event.amount} {fee_symbol} as {location_name} {direction} fee'
+            if fee_event.notes is not None:
+                fee_notes = f'{fee_notes}. {fee_event.notes}'
+
+            fee_extra_data = dict(fee_event.extra_data) if fee_event.extra_data is not None else None  # noqa: E501
+
+            resolved.append(HistoryEvent(
+                identifier=fee_event.identifier,
+                group_identifier=fee_event.group_identifier,
+                sequence_index=fee_event.sequence_index,
+                timestamp=fee_event.timestamp,
+                location=fee_event.location,
+                location_label=fee_event.location_label,
+                asset=fee_event.asset,
+                amount=fee_event.amount,
+                notes=fee_notes,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+                extra_data=fee_extra_data,
+            ))
+
+    with events_db.db.conn.write_ctx() as write_cursor:
+        for resolved_event in resolved:
+            events_db.edit_history_event(
+                write_cursor=write_cursor,
+                event=resolved_event,
+                mapping_state=HistoryMappingState.MATCHED,
+                save_backup=True,
+            )
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO history_event_link_ignores(event_id, link_type) '
+            'VALUES(?, ?)',
+            (event.identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),
+        )
+
+    return True
 
 
 def should_exclude_possible_match(
