@@ -56,6 +56,15 @@ describe('useLocationLabels', () => {
     expect(getBlockchainLocation('unknown')).toBeUndefined();
   });
 
+  it('should not send an exchange location to address resolution', () => {
+    const exchangeItem: LocationLabel = { location: 'kraken', locationLabel: 'Kraken 1' };
+    const { getAccountName, isAccountNamePending } = useLocationLabels(ref(undefined));
+
+    expect(getAccountName(exchangeItem)).toBeUndefined();
+    expect(isAccountNamePending(exchangeItem)).toBe(false);
+    expect(mockGetAddressName).not.toHaveBeenCalled();
+  });
+
   it('should expose the tags and tracked label of a registered account', () => {
     trackAccount();
     const { getTags, getTrackedAccountLabel } = useLocationLabels(ref(undefined));
