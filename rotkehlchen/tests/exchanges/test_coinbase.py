@@ -6,8 +6,11 @@ import warnings as test_warnings
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
+import jwt
 import pytest
 import requests
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
@@ -18,7 +21,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.coinbase import Coinbase
+from rotkehlchen.exchanges.coinbase import COINBASE_CANDLES_MAX_LIMIT, Coinbase
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
@@ -29,7 +32,7 @@ from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.factories import make_random_bytes
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ApiSecret, Location, TimestampMS
+from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -43,6 +46,61 @@ def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
 def test_name(mock_coinbase):
     assert mock_coinbase.location == Location.COINBASE
     assert mock_coinbase.name == 'coinbase1'
+
+
+def test_advanced_trade_candle_request(mock_coinbase: Coinbase) -> None:
+    """The JWT must bind to the full Advanced Trade path, without query parameters."""
+    with (
+        patch.object(mock_coinbase, 'build_jwt', return_value='jwt-token') as jwt_mock,
+        patch.object(
+            mock_coinbase.session,
+            'get',
+            return_value=MockResponse(200, '{"candles": [{"start": "1", "close": "2"}]}'),
+        ) as get_mock,
+    ):
+        result = mock_coinbase.query_product_candles(
+            product_id='BTC-USD',
+            start=Timestamp(1000),
+            end=Timestamp(2000),
+            granularity='ONE_HOUR',
+            limit=COINBASE_CANDLES_MAX_LIMIT + 1,
+        )
+
+    assert result == [{'start': '1', 'close': '2'}]
+    jwt_mock.assert_called_once_with(
+        uri='GET api.coinbase.com/api/v3/brokerage/products/BTC-USD/candles',
+    )
+    assert get_mock.call_args.kwargs['params'] == {
+        'start': '1000',
+        'end': '2000',
+        'granularity': 'ONE_HOUR',
+        'limit': COINBASE_CANDLES_MAX_LIMIT,
+    }
+    assert get_mock.call_args.kwargs['headers'] == {'Authorization': 'Bearer jwt-token'}
+
+
+def test_advanced_trade_jwt_supports_both_key_types(messages_aggregator) -> None:
+    """Both legacy Ed25519 and current CDP ECDSA credentials sign the endpoint URI."""
+    # types-cryptography predates this method, but it is part of cryptography's runtime API.
+    ecdsa_secret = ec.generate_private_key(ec.SECP256R1()).private_bytes(  # type: ignore[attr-defined]
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    credentials = (
+        (str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)), 'EdDSA', 'coinbase-cloud'),
+        ('organizations/org-id/apiKeys/key-id', ecdsa_secret, 'ES256', 'cdp'),
+        ('organizations/org-id/apiKeys/ed-key-id', base64.b64encode(make_random_bytes(32)), 'EdDSA', 'cdp'),  # noqa: E501
+    )
+    uri = 'GET api.coinbase.com/api/v3/brokerage/products/BTC-USD/candles'
+    for api_key, secret, algorithm, issuer in credentials:
+        coinbase = Coinbase('coinbase', api_key, secret, object(), messages_aggregator)  # type: ignore
+        assert coinbase.validate_api_key() == (True, '')
+        token = coinbase.build_jwt(uri=uri)
+        assert jwt.get_unverified_header(token)['alg'] == algorithm
+        payload = jwt.decode(token, options={'verify_signature': False})
+        assert payload['uri'] == uri
+        assert payload['iss'] == issuer
 
 
 def test_coinbase_query_balances(function_scope_coinbase):

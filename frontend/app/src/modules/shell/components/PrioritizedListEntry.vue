@@ -29,6 +29,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [PriceOracle.ALCHEMY]: '',
   [PriceOracle.BLOCKCHAIN]: '',
   [PriceOracle.COINGECKO]: '',
+  [PriceOracle.COINBASE]: '',
   [PriceOracle.CRYPTOCOMPARE]: '',
   [PriceOracle.DEFILLAMA]: '',
   [PriceOracle.FIAT]: '',

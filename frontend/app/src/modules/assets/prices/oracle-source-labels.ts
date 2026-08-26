@@ -14,6 +14,7 @@
 const sourceLabels: Record<string, string> = {
   'alchemy': 'Alchemy',
   'coingecko': 'CoinGecko',
+  'coinbase': 'Coinbase',
   'cryptocompare': 'CryptoCompare',
   'defillama': 'DefiLlama',
   'manual': 'Manual',

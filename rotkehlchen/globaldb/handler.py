@@ -2522,6 +2522,25 @@ class GlobalDBHandler:
         return default if identifier is None else identifier[0]
 
     @staticmethod
+    def get_exchange_name_from_assetid(
+            exchange: Location,
+            identifier: str,
+            default: str,
+    ) -> str:
+        """Return an exchange symbol for an asset identifier, or ``default`` if unmapped.
+
+        A location-specific mapping wins over a shared mapping.
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT exchange_symbol FROM location_asset_mappings WHERE local_id=? AND '
+                '(location=? OR location IS NULL) ORDER BY location IS NULL LIMIT 1',
+                (identifier, exchange.serialize_for_db()),
+            ).fetchone()
+
+        return default if result is None else result[0]
+
+    @staticmethod
     def query_asset_mappings_by_type(
             dict_keys: tuple[str, str, str],
             mapping_type: Literal['location', 'counterparty'],

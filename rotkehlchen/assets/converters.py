@@ -215,6 +215,16 @@ def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWit
     ))
 
 
+def asset_to_coinbase(asset: Asset) -> str:
+    """Return Coinbase's symbol for an asset, respecting location mappings."""
+    resolved_asset = asset.resolve_to_asset_with_oracles()
+    return GlobalDBHandler.get_exchange_name_from_assetid(
+        exchange=Location.COINBASE,
+        identifier=resolved_asset.identifier,
+        default=resolved_asset.symbol,
+    ).upper()
+
+
 def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError

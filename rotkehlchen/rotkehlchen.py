@@ -100,6 +100,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import Price, PriceHistorian
+from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOracle
 from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
@@ -621,6 +622,7 @@ class Rotkehlchen:
             defillama=self.defillama,
             alchemy=self.alchemy,
             moralis=self.moralis,
+            coinbase=CoinbaseHistoricalPriceOracle(exchange_manager=self.exchange_manager),
             uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
             uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
         )
@@ -1514,6 +1516,17 @@ class Rotkehlchen:
                     f'You have enabled the {oracle_name} price oracle but you do not have an '
                     'API key set. Please go to API Keys -> External Services and add one.'
                 )
+
+        if (
+                oracle_type is HistoricalPriceOracle and
+                oracles is not None and
+                HistoricalPriceOracle.COINBASE in oracles and
+                not self.exchange_manager.connected_exchanges.get(Location.COINBASE)
+        ):
+            return False, (
+                'You have enabled the Coinbase price oracle but you do not have a Coinbase '
+                'exchange connection configured.'
+            )
 
         set_oracles_order_method(oracles)
         return True, ''

@@ -4,6 +4,7 @@ export const PriceOracle = {
   ALCHEMY: 'alchemy',
   BLOCKCHAIN: 'blockchain',
   COINGECKO: 'coingecko',
+  COINBASE: 'coinbase',
   CRYPTOCOMPARE: 'cryptocompare',
   DEFILLAMA: 'defillama',
   FIAT: 'fiat',

@@ -2,6 +2,7 @@ import type { PrioritizedListItemData } from '@/modules/settings/types/prioritiz
 import {
   ALCHEMY_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
+  COINBASE_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
   KRAKEN_PRIO_LIST_ITEM,
@@ -19,6 +20,7 @@ import {
 export const HISTORICAL_PRICE_ORACLE_ITEMS: Array<PrioritizedListItemData<PrioritizedListId>> = [
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
+  COINBASE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
   ALCHEMY_PRIO_LIST_ITEM,
   MORALIS_PRIO_LIST_ITEM,
@@ -32,6 +34,12 @@ export const HISTORICAL_PRICE_ORACLE_ITEMS: Array<PrioritizedListItemData<Priori
  * Kept in sync with the backend via price-oracle-lists.spec.ts.
  */
 export const CURRENT_PRICE_ORACLE_ITEMS: Array<PrioritizedListItemData<PrioritizedListId>> = [
-  ...HISTORICAL_PRICE_ORACLE_ITEMS,
+  CRYPTOCOMPARE_PRIO_LIST_ITEM,
+  COINGECKO_PRIO_LIST_ITEM,
+  DEFILAMA_PRIO_LIST_ITEM,
+  ALCHEMY_PRIO_LIST_ITEM,
+  MORALIS_PRIO_LIST_ITEM,
+  UNISWAP2_PRIO_LIST_ITEM,
+  UNISWAP3_PRIO_LIST_ITEM,
   KRAKEN_PRIO_LIST_ITEM,
 ];
