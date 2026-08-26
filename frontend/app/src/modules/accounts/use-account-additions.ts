@@ -31,6 +31,14 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
   const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
 
+  /**
+   * Adds one account, or one xpub, and reports the address the backend actually stored.
+   *
+   * @remarks
+   * A cancellation, a failure and an empty result are all the error branch. Nothing was added in
+   * any of them, so there is no address to hand back, and an `ok('')` would put `{ address: '' }`
+   * into `addedAccounts` and refresh on a blank address.
+   */
   const addAccount = async (
     chain: string,
     payload: AccountPayload[] | XpubAccountPayload,
@@ -54,11 +62,6 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    // `''` used to mean three different things at once: cancelled, non-actionable failure, and a
-    // genuinely empty result. The caller read all three as a successful addition, so a cancelled
-    // add was reported as added. Cancellation and failure are now the error branch, and an empty
-    // result joins them: nothing was added, so there is no address to hand back, and returning
-    // `ok('')` would put `{ address: '' }` into `addedAccounts` and refresh on a blank address.
     return flatMapResult(outcome, (result) => {
       if (result === true)
         return ok(address);

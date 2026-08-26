@@ -17,14 +17,11 @@ function createContext(word: string, overrides: Partial<WordProcessorContext> = 
 }
 
 describe('note word processors', () => {
-  // Notes are arbitrary text, and a processor throwing here is not contained: it escapes the
-  // `formatNotes` computed mid-render and takes the surrounding patch down with it. `processWord`
-  // catches as a safety net, which is exactly why this asserts on the processors directly, where
-  // nothing hides a throw.
-  //
-  // `09/09/2026` is the real case, from an ENS registration note. `parseFloat` reports 9 for it
-  // because it stops at the first slash, so a guard built on `parseFloat` waves the whole string
-  // through to BigNumber, which since v11 throws rather than yielding NaN.
+  // Asserts on the processors directly rather than through `processWord`, whose catch would hide a
+  // throw. `09/09/2026` is the real case, from an ENS registration note: `parseFloat` stops at the
+  // first slash and reports 9, so a `parseFloat` guard waves the whole string through to BigNumber,
+  // which since v11 throws rather than yielding NaN — and that throw escapes the `formatNotes`
+  // computed mid-render, leaving Vue with unmounted vnodes that kill every later patch.
   it.each([
     '09/09/2026',
     '1/2/2027',

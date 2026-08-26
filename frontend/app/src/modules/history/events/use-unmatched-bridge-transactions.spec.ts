@@ -231,8 +231,6 @@ describe('use-unmatched-bridge-transactions', () => {
       });
     });
 
-    // A leg resolved as external is turned into a bridge spend/receive, so its direction can
-    // no longer come from the event type and has to come from the recorded matchedBridge stamp.
     it('should derive the direction of an external-resolved leg from the matched bridge stamp', async () => {
       spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-d', identifier: 6 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({

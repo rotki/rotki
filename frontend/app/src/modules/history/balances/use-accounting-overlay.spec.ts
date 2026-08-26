@@ -54,11 +54,20 @@ describe('useAccountingOverlay', () => {
     overlay: ReturnType<typeof useAccountingOverlay>;
     pairsRef: Ref<OverlayPair[]>;
     enabledRef: Ref<boolean>;
+    fromRef: Ref<number | undefined>;
+    toRef: Ref<number | undefined>;
   } {
     const pairsRef = ref<OverlayPair[]>(pairs);
     const enabledRef = ref<boolean>(enabled);
-    const overlay = useAccountingOverlay({ enabled: enabledRef, pairs: pairsRef });
-    return { enabledRef, overlay, pairsRef };
+    const fromRef = ref<number>();
+    const toRef = ref<number>();
+    const overlay = useAccountingOverlay({
+      enabled: enabledRef,
+      fromTimestamp: fromRef,
+      pairs: pairsRef,
+      toTimestamp: toRef,
+    });
+    return { enabledRef, fromRef, overlay, pairsRef, toRef };
   }
 
   it('should be disabled and resolve nothing when turned off', () => {
@@ -79,6 +88,20 @@ describe('useAccountingOverlay', () => {
     expect(overlay.balanceAfter('0xA', 'ETH', 150_000)?.toString()).toBe('1');
     expect(overlay.balanceAfter('0xA', 'ETH', 250_000)?.toString()).toBe('3');
     expect(overlay.balanceAfter('0xA', 'ETH', 999_000)?.toString()).toBe('2'); // after last point
+  });
+
+  it('should not dedup two refreshes that differ only by time range', async () => {
+    runTaskMock.mockResolvedValue(success([entry({ times: [100], values: ['1'] })]));
+    const { fromRef, overlay, toRef } = create([{ asset: 'ETH', locationLabel: '0xA' }]);
+
+    const first = overlay.refresh();
+    set(fromRef, 1000);
+    set(toRef, 2000);
+    const second = overlay.refresh();
+    await Promise.all([first, second]);
+    await flushPromises();
+
+    expect(runTaskMock).toHaveBeenCalledTimes(2);
   });
 
   it('should sum across wallet and protocol buckets at the same timestamp', async () => {

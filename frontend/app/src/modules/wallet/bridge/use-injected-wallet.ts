@@ -75,7 +75,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   const { isPackaged } = useInterop();
   const { disconnectProxy, startConnectionHealthCheck, stopConnectionHealthCheck } = useWalletProxy();
 
-  // Remove event listeners from the injected provider
   const removeProviderEventListeners = (provider: EIP1193Provider): void => {
     logger.debug('Removing injected wallet event listeners from provider');
     if (provider.removeListener) {
@@ -90,7 +89,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     }
   };
 
-  // Connect to injected provider (request accounts)
   const connectInjectedProvider = async (): Promise<void> => {
     if (!injectedProvider) {
       throw new Error('Injected provider not initialized');
@@ -121,7 +119,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     }
   };
 
-  // Add event listeners to the injected provider
   const addProviderEventListeners = (provider: EIP1193Provider): void => {
     logger.debug('Adding injected wallet event listeners to provider');
 
@@ -132,7 +129,15 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     provider.on?.('error', handleError);
   };
 
-  // Connect to the selected provider (called after selection)
+  /**
+   * Wires up the provider the user picked, then asks it for accounts.
+   *
+   * @remarks
+   * The account request has to come last. Asking before the provider is wired prompts the user
+   * against whichever wallet happened to be active, which is not the one they chose. Listeners are
+   * removed before being added because a provider can be selected again without changing, and the
+   * second pass would otherwise leave two of each.
+   */
   async function connectToSelectedProvider(): Promise<void> {
     const selectedProvider = get(providerStore.selectedProvider);
     if (!selectedProvider) {
@@ -141,10 +146,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
     logger.debug('Connecting to selected provider:', selectedProvider.info.name);
 
-    // Always use the provider from the unified provider store
     const selectedEthereumProvider = selectedProvider.provider;
 
-    // Clean up previous provider if different
     if (injectedProvider && injectedProvider !== selectedEthereumProvider) {
       removeProviderEventListeners(injectedProvider);
     }
@@ -152,13 +155,10 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     injectedProvider = selectedEthereumProvider;
     logger.debug(`Using provider from unified store: ${selectedProvider.info.name} (source: ${selectedProvider.source})`);
 
-    // Always remove existing listeners first to prevent duplicates
     removeProviderEventListeners(injectedProvider);
 
-    // Add event listeners
     addProviderEventListeners(injectedProvider);
 
-    // Start health check if packaged
     if (isPackaged) {
       startConnectionHealthCheck(
         () => injectedProvider !== undefined && get(connected),
@@ -170,25 +170,31 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       );
     }
 
-    // CRITICAL: NOW request accounts - only after provider selection
     logger.debug('Provider setup complete, requesting accounts...');
     await connectInjectedProvider();
   }
 
+  /**
+   * Tells the wallet the session is over, as far as it is willing to be told.
+   *
+   * @remarks
+   * Neither method is universal: `wallet_revokePermissions` is the one that actually makes the
+   * wallet forget the approval, `disconnect` is the older fallback, and a wallet supporting
+   * neither leaves the user to disconnect from its own UI. Every failure here is logged and
+   * swallowed, since local disconnection must proceed either way.
+   */
   async function sendDisconnectToWallet(): Promise<void> {
     if (!injectedProvider) {
       return;
     }
 
     try {
-      // Try to revoke permissions if supported
       await injectedProvider.request({
         method: 'wallet_revokePermissions',
         params: [{ eth_accounts: {} }],
       });
     }
     catch (error: unknown) {
-      // wallet_revokePermissions is not widely supported
       logger.debug('wallet_revokePermissions not supported:', getErrorMessage(error));
       try {
         if ('disconnect' in injectedProvider && typeof injectedProvider.disconnect === 'function') {
@@ -208,10 +214,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       await sendDisconnectToWallet();
 
       try {
-        // Remove event listeners to prevent memory leaks
         removeProviderEventListeners(injectedProvider);
 
-        // Only disable wallet bridge if packaged
         if (isPackaged) {
           await disconnectProxy();
         }
@@ -222,7 +226,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       }
     }
 
-    // Reset state
     set(connected, false);
     set(connectedAddress, undefined);
     set(connectedChainId, undefined);
@@ -256,9 +259,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
         if (error instanceof Object && 'code' in error && error.code === 4902) {
           const { getWalletNetwork } = await import('../chains-viem');
           const network = getWalletNetwork(chainId);
-          // The chain list comes from the backend and can outrun the viem table,
-          // so a chain with no definition is normal. Nothing can be added for it:
-          // rethrow rather than return as if the switch had worked.
           if (!network)
             throw error;
 

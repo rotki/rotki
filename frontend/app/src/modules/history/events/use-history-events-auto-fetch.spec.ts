@@ -176,8 +176,6 @@ describe('useHistoryEventsAutoFetch', () => {
     const onProgress = vi.fn().mockResolvedValue(undefined);
     const { markStale } = mountAutoFetch(ref(true), onProgress);
 
-    // Both signals share one debounce; two of them used to land on the same instant and read the
-    // identical page twice.
     startProducers(2);
     await vi.advanceTimersByTimeAsync(10);
     finishOne();

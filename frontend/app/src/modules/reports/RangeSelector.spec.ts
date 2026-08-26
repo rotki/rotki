@@ -194,6 +194,31 @@ describe('rangeSelector', () => {
     expect(updateFrontendSetting).toHaveBeenCalledWith({ profitLossReportPeriod: selection });
   });
 
+  it('should blank the range while the persisted switch to custom is still in flight', async () => {
+    let settle = (): void => {};
+    updateFrontendSetting.mockImplementation(async () => new Promise<void>((resolve) => {
+      settle = resolve;
+    }));
+
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    wrapper.findComponent<StubInstance>({ name: 'ReportPeriodSelector' })
+      .vm
+      .$emit('update:selection', { quarter: Quarter.Q1, year: 'custom' });
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The reset has to land before the persist resolves: a preset clicked in this window must not
+    // see the previous year/quarter as its max-date constraint.
+    expect(wrapper.emitted<[Range]>('update:modelValue')?.at(-1)?.[0]).toEqual({
+      end: dayjs().unix(),
+      start: undefined,
+    });
+
+    settle();
+    await vi.advanceTimersToNextTimerAsync();
+  });
+
   /*
    * A parent holding the range in a real ref, so both directions are exercised. The shared
    * `mountModelForm` does not fit: it binds a `stateUpdated` prop this form does not declare, and

@@ -44,6 +44,16 @@ export function validateTransactionRequirements(options: ValidationOptions): {
   return { chainId, evmChain, fromAddress };
 }
 
+/**
+ * Asks the backend to build the transaction this send describes.
+ *
+ * @remarks
+ * `params.native` picks the path: a token transfer carries its calldata from the backend, while a
+ * native one has none, so `data` is set to `0x` here rather than left absent. An absent `data`
+ * makes some wallets fill in their own.
+ *
+ * @param params - the send as the user described it; `assetIdentifier` is required unless `native`
+ */
 export async function prepareTransactionPayload(
   params: TransactionParams,
   fromAddress: string,
@@ -53,7 +63,6 @@ export async function prepareTransactionPayload(
   const { prepareERC20Transfer, prepareNativeTransfer } = deps;
 
   if (!params.native) {
-    // ERC20 transfer
     const token = params.assetIdentifier;
     assert(token);
 
@@ -66,7 +75,6 @@ export async function prepareTransactionPayload(
     return prepareERC20Transfer(payload);
   }
   else {
-    // Native token transfer
     const payload = {
       amount: params.amount,
       chain: evmChain,

@@ -85,14 +85,12 @@ describe('parseEventId', () => {
     expect(parseEventId({ eventId: '' })).toBeUndefined();
   });
 
-  // `Number('abc')` is NaN, which used to flow on as an event id and query for events of rule NaN.
-  it('should read nothing when the link names nonsense', () => {
+  it('should read nothing when the link names nonsense, rather than passing on NaN', () => {
     expect(parseEventId({ eventId: 'abc' })).toBeUndefined();
     expect(parseEventId({ eventId: ['1', '2'] })).toBeUndefined();
   });
 
-  // Identifiers start at 1, and `Number(' ')` is a finite 0. Treating that as an event opened the
-  // "which rule did you mean" dialog for an event that cannot exist.
+  // Identifiers start at 1, and `Number(' ')` is a finite 0, so a range check is not enough.
   it('should read nothing for an id no event can have', () => {
     expect(parseEventId({ eventId: '0' })).toBeUndefined();
     expect(parseEventId({ eventId: ' ' })).toBeUndefined();

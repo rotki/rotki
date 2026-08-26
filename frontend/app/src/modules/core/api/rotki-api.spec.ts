@@ -20,7 +20,6 @@ describe('modules/api/rotki-api', () => {
     api = new RotkiApi();
     vi.clearAllMocks();
 
-    // Mock window.location
     Object.defineProperty(window, 'location', {
       value: { href: '', origin: 'http://localhost:3000' },
       writable: true,

@@ -49,9 +49,6 @@ export function toAccountingRuleFields(
       suggest: options.eventTypes,
     }),
     toMatchFieldDef({
-      // A rule is written for a type/subtype pair, and the request reads the two as a cross
-      // product, so a subtype the selected types do not admit matches no rule at all. The bar
-      // narrows what can be added and drops what stops being admitted, both off one lookup.
       admits: values => options.subtypesFor(values[AccountingRuleFilterKeys.EVENT_TYPE] ?? []),
       key: AccountingRuleFilterKeys.EVENT_SUBTYPE,
       label: (): string => t('accounting_settings.rule.filter_field_labels.event_subtype'),

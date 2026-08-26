@@ -15,7 +15,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
 
       if (existingIndex === -1) {
         // Having no entry yet does not make this new to the user: the list starts empty on every
-        // login, which is why an unresolved condition used to interrupt again at each one.
+        // login, so the cooldown decides whether to interrupt, not the absence of an entry.
         const notification = createNotification(context.getNextId(), {
           ...payload,
           display: (payload.display ?? false) && !suppressed,

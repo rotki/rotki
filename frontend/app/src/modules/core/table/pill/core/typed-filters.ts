@@ -2,14 +2,15 @@ import type { ActiveFilter, TypedFilterDraft } from '@/modules/core/table/pill/c
 import { FilterOps } from '@/modules/core/table/filtering';
 
 /**
- * Readers of the bar's inline input for the fields that have no option list to match against:
- * an amount and a date are not picked from a list, they are written down. Typing `>100` or
- * `15/01/2024` used to offer nothing at all, since narrowing could only rank a query against
- * labels and option values.
+ * Readers of the bar's inline input for the fields with no option list to match against: an amount
+ * and a date are written down rather than picked, so narrowing cannot rank them against labels.
  *
- * A field owns the interpretation of what was typed (`FieldDef.parseTyped`), the same way it owns
- * its label and icon resolution, so this layer stays free of any table's or locale's notion of
- * what a date looks like: the timestamp parser is injected.
+ * @remarks
+ * A field owns the interpretation of what was typed, through `FieldDef.parseTyped`, the same way it
+ * owns its label and icon resolution. That keeps this layer free of any table's or locale's notion
+ * of what a date looks like: the timestamp parser is injected.
+ *
+ * @packageDocumentation
  */
 
 /**
@@ -172,9 +173,8 @@ export function parseDateQuery(query: string, parse: ParseTimestamp): TypedFilte
  * Whether the query is on its way to a date filter, whether or not it is one yet.
  *
  * The counterpart of {@link parseDateQuery} for what has been typed *so far*. A half-written date
- * parses to nothing, and nothing is what the bar used to show for it: typing `after` or `15/01`
- * produced an empty popover, which reads as "this field cannot be typed into" rather than "keep
- * going". A field that says yes here is offered with its syntax example instead.
+ * parses to nothing, and showing nothing for it reads as "this field cannot be typed into" rather
+ * than "keep going". A field that says yes here is offered with its syntax example instead.
  *
  * Wider than the parser on purpose, and narrower than "any text": it must not claim a bare number,
  * which belongs to the amount fields.

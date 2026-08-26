@@ -187,11 +187,6 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     };
 
     try {
-      // Per-request id keyed by the (account, asset) pair *and the date range*: we fan out one
-      // task per pair concurrently, so the ids must differ or `submitTask` would dedup distinct
-      // pairs — and a range change is a different question about the same pair. Without the
-      // timestamps, changing the range while a series was in flight deduped onto the old request,
-      // so the series never re-fetched and the cell sat on LOADING forever.
       const outcome = await submitTask<HistoricalBalanceSeriesResponse>({
         id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.SERIES, pair.locationLabel, pair.asset, from ?? 0, to ?? 0),
         kind: ActivityKind.HISTORICAL_BALANCES,

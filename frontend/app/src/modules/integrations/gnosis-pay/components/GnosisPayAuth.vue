@@ -50,7 +50,6 @@ const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serv
 // Message store for showing success notifications
 const { setMessage } = useMessageStore();
 
-// Initialize auth state
 const authState = useGnosisPayAuthState();
 const {
   checkingRegisteredAccounts,
@@ -70,7 +69,6 @@ const {
   validatingAddress,
 } = authState;
 
-// Initialize wallet connection
 const wallet = useGnosisPayWallet({
   checkingRegisteredAccounts,
   clearError,
@@ -93,7 +91,6 @@ const {
   validateAddress,
 } = wallet;
 
-// Initialize signing
 const signing = useGnosisPaySigning({
   clearError,
   connectedAddress,
@@ -109,7 +106,6 @@ const signing = useGnosisPaySigning({
 
 const { signInWithEthereum } = signing;
 
-// Step management
 const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
   hasRegisteredAccounts,
   isWalletConnected,
@@ -117,7 +113,6 @@ const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
   signInSuccess,
 );
 
-// Wallet providers
 const walletStore = useWalletStore();
 const { connectedChainId, isDisconnecting, isWalletConnect, preparing } = storeToRefs(walletStore);
 const { switchNetwork } = walletStore;
@@ -202,7 +197,6 @@ async function onConnectClicked(): Promise<void> {
 async function goToStep(step: number): Promise<void> {
   const current = get(currentStep);
 
-  // Can only go back to previous steps
   if (step >= current)
     return;
 

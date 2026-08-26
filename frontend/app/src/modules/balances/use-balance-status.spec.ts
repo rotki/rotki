@@ -49,7 +49,7 @@ describe('useBalanceStatus', () => {
     });
 
     /**
-     * 🔴 Hydration is not an activity, so the orchestrator reports a chain being read from the DB
+     * Hydration is not an activity, so the orchestrator reports a chain being read from the DB
      * as idle. Without the store half, the whole cached phase renders settled-and-empty.
      */
     it('should cover a chain being hydrated as well as refreshed', () => {

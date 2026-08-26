@@ -73,8 +73,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     get(supportedChains).map(chain => chain.id),
   );
 
-  // ENS lookups
-
   function getEnsName(address: string): string | null {
     if (!get(enableAliasNames))
       return null;
@@ -95,8 +93,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
 
     return ensAvatarUrl(ens, get(lastRefreshedAvatar));
   });
-
-  // Address name cache
 
   const createKey = (address: string, chain: string): string => `${address}#${chain}`;
 
@@ -140,8 +136,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     size: 500,
     storage: addressNameStorage,
   });
-
-  // Address name selectors
 
   function resolveAddressInfo<T extends keyof AddressBookEntry>(
     address: string,
@@ -208,8 +202,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
       .map(entry => entry.split('#')[0])
       .filter(uniqueStrings);
   });
-
-  // Cache invalidation
 
   function getChainsForAddress(address: string): string[] {
     if (isValidEthAddress(address))

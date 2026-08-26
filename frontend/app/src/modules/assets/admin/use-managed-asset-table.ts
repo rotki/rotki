@@ -52,7 +52,6 @@ export function useManagedAssetTable(
     label: '',
   }]);
 
-  // Collection handler logic integration
   const data = computed<SupportedAsset[]>(() => toValue(collection).data ?? []);
   const found = computed<number>(() => toValue(collection).found ?? 0);
 

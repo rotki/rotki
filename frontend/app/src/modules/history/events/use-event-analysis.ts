@@ -126,7 +126,6 @@ function processEvmTransaction(
   const txEvents = groupedEvents[groupIdentifier];
 
   if (txEvents && txEvents.length > 0) {
-    // Check if this transaction contains swap events
     const hasSwapEvents = txEvents.some((event: HistoryEventRow) => {
       if (Array.isArray(event)) {
         return event.some(e => isSwapTypeEvent(e.entryType));
@@ -134,7 +133,6 @@ function processEvmTransaction(
       return isSwapTypeEvent(event.entryType);
     });
 
-    // Get all event IDs for this transaction
     const eventIds = txEvents.flatMap((event: HistoryEventRow) =>
       Array.isArray(event) ? event.map(e => e.identifier) : event.identifier,
     );

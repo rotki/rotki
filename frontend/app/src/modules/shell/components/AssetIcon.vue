@@ -124,9 +124,10 @@ const displayAsset = computed<string>(() => {
 /**
  * Whether the asset has anything to call itself by.
  *
- * The catch is that an asset with no metadata is still handed a name and a symbol: `EVM Token:
- * 0x…`. Both are non-empty, so a plain `name ?? symbol` check says "named" for exactly the assets
- * that have none, and every consumer of it would have to know that. It is asked once here instead.
+ * @remarks
+ * An asset with no metadata is still handed a name and a symbol, of the form `EVM Token: 0x…`.
+ * Both are non-empty, so a plain `name ?? symbol` check reports "named" for exactly the assets that
+ * have no name. Asked once here rather than in every consumer.
  */
 const hasAssetText = computed<boolean>(() => {
   if (get(currency))

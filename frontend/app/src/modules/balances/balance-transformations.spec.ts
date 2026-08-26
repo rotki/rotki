@@ -35,11 +35,9 @@ describe('balance transformations with chains', () => {
     expect(result.ETH).toBeDefined();
     expect(result.ETH.address).toBeDefined();
 
-    // Should have aggregated totals
     expect(result.ETH.address.amount.toString()).toBe('3');
     expect(result.ETH.address.value.toString()).toBe('300');
 
-    // Should have per-chain breakdown
     expect(result.ETH.address.chains).toBeDefined();
     expect(result.ETH.address.chains!.eth).toBeDefined();
     expect(result.ETH.address.chains!.polygon).toBeDefined();
@@ -80,15 +78,13 @@ describe('balance transformations with chains', () => {
     expect(result.ETH).toBeDefined();
     expect(result.ETH['uniswap-v3']).toBeDefined();
 
-    // Should have aggregated totals
     expect(result.ETH['uniswap-v3'].amount.toString()).toBe('3');
     expect(result.ETH['uniswap-v3'].value.toString()).toBe('300');
 
-    // Should NOT have per-chain breakdown for non-address protocols
     expect(result.ETH['uniswap-v3'].chains).toBeUndefined();
   });
 
-  it('should handle single chain with address protocol', () => {
+  it('should still add a per-chain breakdown when there is only one chain', () => {
     const mockBalances: Balances = {
       eth: {
         '0x1234': {
@@ -107,11 +103,9 @@ describe('balance transformations with chains', () => {
     expect(result.ETH).toBeDefined();
     expect(result.ETH.address).toBeDefined();
 
-    // Should have the balance values
     expect(result.ETH.address.amount.toString()).toBe('1');
     expect(result.ETH.address.value.toString()).toBe('100');
 
-    // Should have per-chain breakdown even for single chain
     expect(result.ETH.address.chains).toBeDefined();
     expect(result.ETH.address.chains!.eth).toBeDefined();
     expect(result.ETH.address.chains!.eth.amount.toString()).toBe('1');

@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { isCompact } from '../test-utils';
 import { AddressStatus, type ChainProgress } from '../types';
 import ChainProgressList from './ChainProgressList.vue';
 
@@ -190,10 +191,8 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       const completedItem = wrapper.findAll('[data-testid="chain-item"]').find(
         item => item.attributes('data-chain') === 'optimism',
       );
-      // In-progress items are not compact
-      expect(inProgressItem?.attributes('data-compact')).toBe('false');
-      // Completed items are rendered in compact mode
-      expect(completedItem?.attributes('data-compact')).toBe('true');
+      expect(isCompact(inProgressItem)).toBe(false);
+      expect(isCompact(completedItem)).toBe(true);
     });
   });
 

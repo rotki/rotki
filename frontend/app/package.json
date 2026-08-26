@@ -21,6 +21,7 @@
     "check:premium-keys": "tsx scripts/extract-premium-keys.ts",
     "check:icons": "tsx scripts/extract-backend-icons.ts",
     "check:linked-keys": "tsx scripts/check-linked-keys.ts",
+    "audit:comments": "tsx scripts/audit-comments.ts",
     "generate:backend-icons": "tsx scripts/extract-backend-icons.ts --generate",
     "generate:backend-strings": "tsx scripts/extract-backend-strings.ts --generate",
     "generate:premium-keys": "tsx scripts/extract-premium-keys.ts --generate",
@@ -42,6 +43,7 @@
     "test:contract": "tsx scripts/contract-tests.ts",
     "test:unit": "vitest --coverage",
     "test:unit:run": "vitest run --coverage",
+    "test:unit:fast": "vitest run --no-coverage",
     "typecheck": "vue-tsc --build --force",
     "traces": "vue-tsc --build --force --generateTrace traces"
   },

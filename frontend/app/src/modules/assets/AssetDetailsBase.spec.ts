@@ -134,13 +134,11 @@ describe('assetDetailsBase', () => {
       expect(wrapper.find('[data-testid="asset-icon"]').attributes('changeable')).toBeUndefined();
     });
 
-    // showChain is derived from isCollectionParent rather than being its own prop, so the two can
-    // no longer contradict each other. A collection parent stands for several chains.
     it('should show the chain by default', () => {
       expect(icon(createWrapper()).props('showChain')).toBe(true);
     });
 
-    it('should hide the chain for a collection parent', () => {
+    it('should hide the chain for a collection parent, which stands for several chains', () => {
       expect(icon(createWrapper({ resolution: { isCollectionParent: true } })).props('showChain')).toBe(false);
     });
 

@@ -15,9 +15,9 @@ export interface SearchCategory {
   readonly titleKey: MessageKey;
   readonly keywords?: readonly MessageKey[];
   /**
-   * When set, the category's member rows omit the category title from their breadcrumb (tab > row
-   * instead of tab > category > row). The header row still shows. Matches a flat settings page whose
-   * settings are not visually nested under a category heading (the interface tab).
+   * When set, the category's member rows omit the category title from their breadcrumb, leaving just
+   * tab and row. The header row still shows. Matches a flat settings page, such as the interface tab,
+   * whose settings are not visually nested under a category heading.
    */
   readonly flat?: boolean;
 }

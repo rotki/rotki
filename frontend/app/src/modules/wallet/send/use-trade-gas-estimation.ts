@@ -5,7 +5,6 @@ import { getWalletErrorMessage } from '@/modules/wallet/constants';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
-/** Rejection used to unwind an estimation the user has already moved past. */
 const CANCELLED = 'Gas estimation cancelled';
 
 interface UseTradeGasEstimationOptions {
@@ -72,7 +71,6 @@ export function useTradeGasEstimation(options: UseTradeGasEstimationOptions): Us
 
     const estimation = await Promise.race([getGasFeeForChain(), aborted]);
 
-    // The selection moved on while this was in flight, so the answer is no longer about it.
     if (currentAsset !== get(asset))
       return undefined;
 

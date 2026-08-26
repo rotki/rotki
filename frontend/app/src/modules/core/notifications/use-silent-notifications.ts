@@ -15,7 +15,7 @@ export interface UseSilentNotificationsReturn {
  * It is an account-wide frontend setting rather than a session flag, so it follows the user
  * between logins and machines instead of quietly turning itself back on.
  *
- * ⚠️ The settings stores are resolved on first read, not at construction. This composable is built
+ * The settings stores are resolved on first read, not at construction. This composable is built
  * by the notification dispatcher, which is itself built wherever notifications are used - including
  * contexts that never set up a pinia. Resolving up front makes those blow up with "no active
  * Pinia" without ever having sent a notification.

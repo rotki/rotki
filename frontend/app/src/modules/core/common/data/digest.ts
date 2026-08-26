@@ -5,7 +5,7 @@
  * Order-independent by construction (the input is sorted first), so two callers naming the same
  * subjects dedup onto one activity however each of them happened to build its list.
  *
- * ⚠️ FNV-1a over 32 bits: a compact id part, not a collision-proof hash. That is the right trade
+ * FNV-1a over 32 bits: a compact id part, not a collision-proof hash. That is the right trade
  * for an activity id, where a collision costs a shared row and never data.
  */
 export function setDigest(values: readonly string[]): string {

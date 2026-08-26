@@ -28,19 +28,14 @@ export type TargetedRedecodeWork =
 /**
  * Re-derive a *named* set of transactions and block events, pulling them from the node first.
  *
- * Distinct from {@link redecodeFlow} in the way the docs distinguish the verbs: the chain sweep
- * re-reads what is already stored, while this pulls from the node before decoding. That is the real
- * boundary, and it is why there are two flows rather than one — or five.
+ * Distinct from {@link redecodeFlow}, which re-reads what is already stored; this pulls from the node
+ * first. That verb boundary is why there are two flows and not one per entry point — row-level
+ * re-decode, the dialog, block events, the dev-only re-decode page and conflict resolution are all
+ * this same work over a different scope.
  *
- * One flow with a scope, not one per entry point. Row-level re-decode, the re-decode dialog, block
- * events, the development-only "re-decode page" and conflict resolution are all *this* work over a
- * different set. "Re-decode page" in particular is a scope, not a flow: it resolved to these same
- * two calls over whatever the page happened to show.
- *
- * Reset-bearing, unconditionally. `deleteCustom` stopped being a user choice — the confirmation
- * dialog forces it whenever a group holds customized events, so custom events are always removed
- * and regenerated from chain data; and with none present the non-customized events are still
- * deleted and re-derived. So this must not overlap matching, which writes links onto those rows.
+ * Reset-bearing unconditionally: customized events are always deleted and regenerated (the
+ * confirmation dialog forces `deleteCustom`), and with none present the non-customized events are
+ * still deleted and re-derived. So this must never overlap matching, which writes to those rows.
  */
 export const targetedRedecodeFlow: HistoryFlow<TargetedRedecodeScope, TargetedRedecodeWork> = {
   /**
@@ -68,7 +63,7 @@ export const targetedRedecodeFlow: HistoryFlow<TargetedRedecodeScope, TargetedRe
    * The request *is* the identity. Members are sorted so the same set asked for in any order is one
    * run, and joined into a single part so `activityParts` recovers the set rather than shredding it.
    *
-   * ⚠️ There is no unscoped form. Omitting the scope on the chain sweep means "everything", which
+   * There is no unscoped form. Omitting the scope on the chain sweep means "everything", which
    * is a meaningful request; a targeted re-decode of nothing is not, so an empty scope still yields
    * a distinct id rather than collapsing onto some canonical run.
    */

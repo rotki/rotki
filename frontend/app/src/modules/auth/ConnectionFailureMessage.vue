@@ -19,12 +19,13 @@ const { available, probe, restart: controlRestart, supportsOptions } = useContro
 const interop = useInterop();
 
 const defaultBackend = api.defaultBackend;
-// A debug retry restarts the backend *with* a log level, so it needs a runtime
-// that will carry one. The desktop persists it through the saved backend
-// options; docker sends it on the `/_control` restart, which accepts `loglevel`
-// and nothing else. Where neither is true the button is hidden rather than shown
-// and then refused — until now the web build rendered it and threw on the
-// `window.interop` assertion behind it.
+/**
+ * Whether this runtime can carry a log level through a restart.
+ *
+ * @remarks
+ * The desktop persists one through its saved backend options, and docker sends it on the
+ * `/_control` restart. Where neither holds, the button is hidden rather than offered and refused.
+ */
 const canRestartWithDebug = computed<boolean>(() => supportsOptions || get(available));
 
 async function retry(enableDebug = false): Promise<void> {
@@ -38,9 +39,6 @@ async function retry(enableDebug = false): Promise<void> {
         await controlRestart(LogLevel.DEBUG);
     }
     catch (error_: unknown) {
-      // Very likely on this screen: the session may have lapsed, or the proxy
-      // may not reach core to authorise. Report it and still reconnect — an
-      // unhandled rejection here would skip the retry the button is named for.
       set(restartError, getErrorMessage(error_));
     }
     finally {

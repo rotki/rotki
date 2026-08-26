@@ -197,17 +197,12 @@ describe('toHistoryEventFields', () => {
     expect(fieldOf('eventSubtypes')?.suggest?.()).toStrictEqual(['receive_wrapped']);
   });
 
-  // The offered subtypes narrow with the selected event types, so one the selection no longer
-  // admits must not be applied either.
   it('should apply only a subtype the selected event types admit', () => {
     expect(fieldOf('eventSubtypes')?.validate?.('receive_wrapped')).toBe(true);
     expect(fieldOf('eventSubtypes')?.validate?.('spend')).toBe(false);
   });
 
-  // The other half of the same rule: a subtype already picked has to leave the filter once the
-  // selected types stop admitting it, or the cross-product query returns nothing. The bar applies
-  // this through `pruneInadmissible`; here it is the declaration that is pinned.
-  it('should admit only the subtypes of the types it is asked about', () => {
+  it('should declare, through admits, only the subtypes of the types it is asked about', () => {
     const admits = fieldOf('eventSubtypes')?.admits;
 
     expect(admits?.({ eventTypes: ['informational'] })).toStrictEqual(['receive_wrapped']);

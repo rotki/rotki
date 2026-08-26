@@ -15,7 +15,7 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   /**
    * Seed the panel with the exchanges a sync is about to query.
    *
-   * ⚠️ `extend` carries the same meaning as its counterpart in `useTxQueryStatusStore`: a drained
+   * `extend` carries the same meaning as its counterpart in `useTxQueryStatusStore`: a drained
    * follow-up wave belongs to the sync already on screen, so it must not clear what the first wave
    * finished, and must not restart an exchange that is already recorded.
    */

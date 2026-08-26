@@ -79,19 +79,13 @@ describe('useSessionStateCleaner', () => {
     expect(stop).toHaveBeenCalledOnce();
     expect(clearUploadStatus).toHaveBeenCalledOnce();
     expect(reset).toHaveBeenCalledOnce();
-    // An id left in the submission map outlives the session, and submitTask dedups by id, so the
-    // next session would join a promise that can never resolve.
     expect(resetNativeTasks).toHaveBeenCalledOnce();
-    // Hydration dedups by chain against an app-scoped map, so a read that can never settle would
-    // be handed to the next session's caller for that chain — which then never hydrates.
     expect(resetHydration).toHaveBeenCalledOnce();
     expect(resetState).toHaveBeenCalledOnce();
-    // The login-time suggestion probes are not awaited by the login, so they can outlive it.
     expect(cancelByTag).toHaveBeenCalledWith(SUGGESTION_PROBE_TAG);
-    // 🔴 The cache-only read is a plain GET, so nothing above settles it. Uncancelled, it resolves
-    // against the session that just ended and writes that user's balances into the next user's
-    // store — `resetHydration` only clears the dedup map, it cannot stop a request.
     expect(cancelByTag).toHaveBeenCalledWith(BALANCE_HYDRATION_TAG);
+    expect(cancelByTag.mock.invocationCallOrder.at(-1))
+      .toBeLessThan(resetHydration.mock.invocationCallOrder[0]);
   });
 
   it('should not clean up while the user stays logged in', async () => {

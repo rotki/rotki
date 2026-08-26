@@ -14,10 +14,11 @@ interface AddressSelection {
 /**
  * The addresses offered for a chain, which are the tracked ones that have no name yet.
  *
- * The list is driven by the chosen chain, so an address picked for one chain can disappear from it
- * when the chain changes. Leaving it selected would name an address the entry no longer offers, so
- * it is cleared: only when it was on the previous list, since an address the user typed themselves
- * was never offered and must survive.
+ * @remarks
+ * The list is driven by the chosen chain, so a selected address can drop off it when the chain
+ * changes, and keeping it would name an address the entry does not offer. It is cleared only when
+ * it came from the previous list: an address the user typed themselves was never offered, and has
+ * to survive.
  */
 export function useAddressSuggestions(
   blockchain: MaybeRefOrGetter<string | null>,

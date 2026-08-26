@@ -45,6 +45,14 @@ export function useBackendConnection(): UseBackendConnectionReturn {
     }
   };
 
+  /**
+   * Reads the backend's info and mirrors it into the session refs.
+   *
+   * @remarks
+   * The data directory is handed to interop from here rather than from a watcher on `connected`,
+   * which turns true ahead of this call and would re-arm the entry with the previous backend's
+   * directory.
+   */
   const getInfo = async (): Promise<void> => {
     const {
       acceptUnauthenticatedApi,
@@ -55,12 +63,6 @@ export function useBackendConnection(): UseBackendConnectionReturn {
     } = await info(false);
 
     set(dataDirectory, appDataDirectory);
-    // Point the menu entry at the directory this answer just reported, rather
-    // than watching the store: `connected` turns true before this call returns,
-    // so a watcher would re-arm the entry with the previous backend's directory
-    // for the length of the round trip. Only a backend this app started runs on
-    // this machine; against a custom url the path belongs to another host, so
-    // there is nothing local to open.
     interop.setDataDirectory(interop.appSession ? appDataDirectory : '');
     set(logLevel, level);
     set(unauthenticatedApiAccepted, acceptUnauthenticatedApi);

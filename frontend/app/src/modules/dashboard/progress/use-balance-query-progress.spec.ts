@@ -55,7 +55,7 @@ function detectionActivity(chain: string, address: string, status: ActivityStatu
   };
 }
 
-/** The §5 run umbrella: same kind as the chain jobs beneath it, but not a subject. */
+/** The run umbrella: same kind as the chain jobs beneath it, but not a subject. */
 function runUmbrella(status: ActivityStatus): Activity {
   return {
     cancellable: true,
@@ -92,7 +92,7 @@ describe('useBalanceQueryProgress', () => {
   });
 
   /**
-   * 🔴 Seen in the app as "(7/19) Querying Run balances...". The run umbrella carries the same
+   * Seen in the app as "(7/19) Querying Run balances...". The run umbrella carries the same
    * kind as its chain jobs, so it was counted as one of them — inflating the denominator, and
    * naming itself from its id's first part, which is the literal `run`.
    */
@@ -114,7 +114,7 @@ describe('useBalanceQueryProgress', () => {
   });
 
   /**
-   * 🔴🔴 Watched live climbing 35 → 53 → 62 → 65 → 73. A chain's addresses are only submitted once
+   * Watched live climbing 35 → 53 → 62 → 65 → 73. A chain's addresses are only submitted once
    * its own job starts, so counting detections made the total grow through the run — the number
    * moved while the user watched it. The count is the run's scope, which is fixed up front.
    */

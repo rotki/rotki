@@ -6,16 +6,18 @@ defineOptions({
   inheritAttrs: false,
 });
 
-// Bottom sheet for a detail surface opened from inside a pinned panel: it slides up over the
-// panel's own body rather than opening yet another drawer beside the rail.
-//
-// It is positioned `absolute` on purpose, so the host panel must be `relative`. A teleporting
-// overlay (RuiNavigationDrawer/RuiDialog) is NOT usable here: the rail keeps backgrounded panels
-// alive with <KeepAlive>, and a deactivated panel's teleported content leaks out of / empties its
-// target. Absolute positioning keeps the sheet inside the panel it belongs to.
-//
-// Only the behaviour lives here (scrim, slide-up, placement, modality). Panels bring their own
-// header and actions, because the detail surfaces differ too much to share chrome.
+/**
+ * Bottom sheet for a detail surface opened inside a pinned panel, sliding up over the panel's own
+ * body rather than opening another drawer beside the rail.
+ *
+ * @remarks
+ * Positioned `absolute`, so the host panel must be `relative`, and a teleporting overlay
+ * (`RuiNavigationDrawer`, `RuiDialog`) is **not** usable here: the rail keeps backgrounded panels
+ * alive with `KeepAlive`, and a deactivated panel's teleported content leaks out of its target.
+ *
+ * Carries only the behaviour — scrim, slide-up, placement, modality. Panels bring their own header
+ * and actions, since the detail surfaces differ too much to share chrome.
+ */
 const open = defineModel<boolean>({ required: true });
 
 const { height = '95%', label } = defineProps<{

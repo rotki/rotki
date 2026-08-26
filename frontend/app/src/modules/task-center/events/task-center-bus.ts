@@ -2,9 +2,12 @@ import type { EditKind } from '../core/rerun/policy';
 import mitt from 'mitt';
 
 /**
- * Payload of an {@link TaskCenterBusEvents['event:mutated']} signal: which kind of history
- * event mutation succeeded. `use-smart-rerun` maps it through the pure re-run policy to the
- * work that needs re-running (issue #6825).
+ * Payload of a `TaskCenterBusEvents['event:mutated']` signal: which kind of history event mutation
+ * succeeded.
+ *
+ * @remarks
+ * `use-smart-rerun` maps it through the pure re-run policy to the work that needs re-running
+ * (issue #6825).
  */
 export interface EventMutated {
   readonly kind: EditKind;

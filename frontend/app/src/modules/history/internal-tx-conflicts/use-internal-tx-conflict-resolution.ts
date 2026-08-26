@@ -56,11 +56,14 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
     return get(resolvingKeys).has(getConflictKey(conflict));
   }
 
-  // Both REPULL and FIX_REDECODE resolve via the same backend API (pull + redecode).
-  // The action type distinction is visual — it categorizes the problem for the user,
-  // not the resolution strategy.
-  // Uses pullAndDecodeTransactionsRaw which throws on failure,
-  // so errors are properly tracked by the resolution progress.
+  /**
+   * Resolves one conflict by pulling and re-decoding its transaction.
+   *
+   * @remarks
+   * REPULL and FIX_REDECODE both resolve through this same call; the action type is a visual
+   * categorisation of the problem for the user, not a different strategy. Uses the `Raw` variant,
+   * which throws on failure, so the resolution progress tracks errors.
+   */
   async function executeResolution(conflict: InternalTxConflict): Promise<void> {
     const chain = getChain(conflict.chain);
 

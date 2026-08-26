@@ -115,7 +115,6 @@ export const useDatabase = createSharedComposable((): UseDatabaseReturn => {
     if (user === oldUser && directory === oldDirectory) {
       return;
     }
-    // Close existing database
     const existingDb = get(dbInstance);
     if (existingDb) {
       existingDb.close();
@@ -132,7 +131,6 @@ export const useDatabase = createSharedComposable((): UseDatabaseReturn => {
       const database = new RotkiDB(identifier);
       set(dbInstance, database);
 
-      // Run migrations
       await migrateFromOldMissingMappingsDb(database, user);
       await migrateNewlyDetectedTokensFromLocalStorage(database, user);
 

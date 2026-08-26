@@ -31,19 +31,16 @@ interface UseHistoryEventsDataOptions {
 }
 
 interface UseHistoryEventsDataReturn {
-  // Loading states
   eventsLoading: Readonly<Ref<boolean>>;
   sectionLoading: ComputedRef<boolean>;
   loading: Readonly<Ref<boolean>>;
 
-  // Collection data
   entriesFoundTotal: ComputedRef<number | undefined>;
   found: ComputedRef<number>;
   limit: ComputedRef<number>;
   total: ComputedRef<number>;
   showUpgradeRow: ComputedRef<boolean>;
 
-  // Event data
   /**
    * All events grouped by groupIdentifier, including events with ignored assets.
    * Only hidden events are excluded. Used for operations like editing and redecoding
@@ -61,7 +58,6 @@ interface UseHistoryEventsDataReturn {
   fetchEvents: () => Promise<void>;
   toggleShowIgnoredAssets: (groupId: string) => void;
 
-  // Complete events helpers
   getGroupEvents: (groupId: string) => HistoryEventEntry[];
   getCompleteSubgroupEvents: (displayedEvents: HistoryEventEntry[]) => HistoryEventEntry[];
   getCompleteEventsForItem: (groupId: string, event: HistoryEventEntry) => HistoryEventEntry[];
@@ -82,7 +78,6 @@ export function useHistoryEventsData(
   const events = ref<HistoryEventRow[]>([]);
   let fetchVersion = 0;
 
-  // Extract collection data
   const itemsPerPage = useSetting('itemsPerPage');
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
@@ -140,6 +135,11 @@ export function useHistoryEventsData(
    * All events grouped by groupIdentifier, including events with ignored assets.
    * Only hidden events are excluded. Used for operations like editing and redecoding
    * where the complete set of events is needed.
+   *
+   * @remarks
+   * A swap group is wrapped as a single subgroup here: the backend does not subgroup one, every
+   * event in it already belonging to the same subgroup, and `HistoryEventsSwapItem` renders it
+   * that way.
    */
   const completeEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
     const eventsList = get(events);
@@ -161,9 +161,8 @@ export function useHistoryEventsData(
       }
     }
 
-    // For swap event groups, the backend doesn't subgroup because all events
-    // in the group are guaranteed to be in the same subgroup. Wrap them as a
-    // single subgroup array so the frontend renders them with HistoryEventsSwapItem.
+    // The backend does not subgroup a swap group, every event in it being one subgroup already, so
+    // it is wrapped here for `HistoryEventsSwapItem` to render.
     for (const [groupId, groupEvents] of Object.entries(mapping)) {
       if (isSwapOnlyGroup(groupEvents))
         mapping[groupId] = [groupEvents];
@@ -307,9 +306,8 @@ export function useHistoryEventsData(
     startPromise(fetchEvents());
   });
 
-  // Refresh when ignored assets change (e.g. mark-as-spam from context menu).
-  // The emit from the child component is lost because the row is destroyed
-  // before the emit propagates, so we watch the store directly.
+  // Watched on the store rather than taken from the child's emit: marking an asset as spam
+  // destroys the row before its emit propagates.
   watch(ignoredAssets, () => {
     emit('refresh');
   });

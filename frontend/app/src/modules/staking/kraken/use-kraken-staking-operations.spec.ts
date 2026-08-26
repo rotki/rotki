@@ -195,7 +195,6 @@ describe('useKrakenStakingOperations', () => {
       const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       await fetchEvents();
 
-      // Dropping it would leave the table on rows the pills no longer describe.
       expect(mockFetchKrakenStakingEvents).toHaveBeenCalled();
       expect(mockRefreshKrakenStaking).not.toHaveBeenCalled();
     });

@@ -25,10 +25,11 @@ export interface UseFiatConversionReturn {
 /**
  * Converts fiat values from one currency to the user's display currency.
  *
- * Handles:
- * - Real-time currency conversion using exchange rates
- * - Historic currency conversion when timestamp is provided
- * - No conversion when source equals user's currency
+ * @remarks
+ * A timestamp selects the historic rate, its absence the live one, and a source currency equal to
+ * the user's converts nothing. The historic path resolves to zero, not to the unconverted value,
+ * while the rate is still being fetched or when it turns out to be unavailable, so read `loading`
+ * before showing `converted`.
  */
 export function useFiatConversion(options: UseFiatConversionOptions): UseFiatConversionReturn {
   const {
@@ -81,7 +82,6 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
       return currentValue;
     }
 
-    // Get exchange rates
     const multiplierRate = to === CURRENCY_USD ? One : getExchangeRate(to);
     const dividerRate = fromVal === CURRENCY_USD ? One : getExchangeRate(fromVal);
 
@@ -102,12 +102,10 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
     const fromVal = toValue(from);
     const ts = get(timestampToUse);
 
-    // No conversion needed if currencies match
     if (!fromVal || to === fromVal) {
       return currentValue;
     }
 
-    // Use historic rate if timestamp is provided
     if (ts > 0) {
       const historicRate = getHistoricPrice(fromVal, ts);
 
@@ -115,11 +113,9 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
         return currentValue.multipliedBy(historicRate);
       }
 
-      // If historic rate not available, return zero (still loading or unavailable)
       return Zero;
     }
 
-    // Use real-time conversion
     return get(latestConvertedValue);
   });
 

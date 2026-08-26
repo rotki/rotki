@@ -123,8 +123,6 @@ describe('modules/dashboard/snapshots/components/SnapshotFxOverrideControl', () 
     expect(setOverride.mock.calls[0][0].toNumber()).toBe(0.88);
   });
 
-  // bignumber.js throws on a value it cannot parse, so applying a half-typed rate used to raise out
-  // of the click handler. A rate of nothing is refused for the same reason it always was.
   it.each(['', '-', '1.2.3', '0'])('should refuse to apply %s as a rate', async (input) => {
     wrapper = createWrapper();
 

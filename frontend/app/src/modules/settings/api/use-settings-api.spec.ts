@@ -236,7 +236,7 @@ describe('composables/api/settings/settings-api', () => {
         .toThrow(ApiValidationError);
     });
 
-    it('should throw ApiValidationError with parsed validation errors', async () => {
+    it('should throw ApiValidationError whose error keys are camelCased, not the wire snake_case', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json({
@@ -255,7 +255,6 @@ describe('composables/api/settings/settings-api', () => {
         expect(error).toBeInstanceOf(ApiValidationError);
         if (!(error instanceof ApiValidationError))
           throw new Error('Expected ApiValidationError');
-        // Errors should be transformed to camelCase
         expect(error.errors).toHaveProperty('uiFloatingPrecision');
       }
     });
@@ -393,7 +392,6 @@ describe('composables/api/settings/settings-api', () => {
       const { updateBackendConfiguration } = useSettingsApi();
       await updateBackendConfiguration('debug');
 
-      // Verify loglevel is converted to uppercase
       expect(capturedBody).toEqual({
         loglevel: 'DEBUG',
       });

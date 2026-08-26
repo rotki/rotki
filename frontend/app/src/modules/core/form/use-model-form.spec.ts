@@ -102,10 +102,7 @@ describe('useModelForm', () => {
       expect(get(stateUpdated)).toBe(false);
     });
 
-    // A dialog holds its prompt-on-close flag in its own ref, which outlives the form it passes it
-    // to. Reopening it after an abandoned edit used to rely on the form disarming the flag as it
-    // unmounted; the sync being immediate covers it from the other end.
-    it('should disarm a flag left armed by a previous edit', () => {
+    it('should disarm, on creation, a flag left armed by a previous edit', () => {
       const stateUpdated = ref<boolean>(true);
       createWithFlag(stateUpdated);
 

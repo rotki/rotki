@@ -100,8 +100,6 @@ describe('route query schemas', () => {
     });
   });
 
-  // The url shape used to be restated per table beside a field list that already said the same
-  // thing, so the two could disagree with nothing to catch it.
   describe('routeSchemaFromFields', () => {
     const single: FieldDef = toMatchFieldDef({ key: 'location', label: 'Location', multiple: false });
     const many: FieldDef = toMatchFieldDef({ key: 'counterparties', label: 'Protocol', multiple: true });

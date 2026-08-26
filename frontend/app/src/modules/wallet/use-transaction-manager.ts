@@ -86,9 +86,6 @@ export function useTransactionManager(): {
     params: TransactionParams,
     initiatorAddress: string | undefined,
   ): Promise<void> => {
-    // The chain the transfer was prepared for, not the one the wallet reports.
-    // Nothing checks that those agree, and only this one is known to be a chain
-    // rotki supports, which the balance refresh and hash import both require.
     startPromise(addRecentTransaction(hash, params.chain, params, initiatorAddress));
     await client.waitForTransactionReceipt({ hash });
     updateTransactionStatus(hash, 'completed');

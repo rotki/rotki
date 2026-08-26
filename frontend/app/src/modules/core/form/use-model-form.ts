@@ -50,6 +50,10 @@ export interface MappedModelFormOptions<
  *
  * For a form whose state is the payload, use `useModelForm`, which is this with both mappers set to
  * a copy.
+ *
+ * @param options - `seed` shapes the opening state, and is applied here rather than by writing the
+ * model first: a model write only reads back on the next tick, so a caller doing it by hand takes
+ * its baseline from the payload as it was before the write and the seeding counts as the first edit
  */
 export function useMappedModelForm<TModel extends object, TState extends object>(
   options: MappedModelFormOptions<TModel, TState>,
@@ -57,9 +61,6 @@ export function useMappedModelForm<TModel extends object, TState extends object>
   const { model, schema, seed, serverErrors, stateUpdated, toModel, toState, transientKeys } = options;
 
   const form = useForm<TState, UnwrapNestedRefs<TState>>({
-    // Seeded here rather than by the caller writing the model first: a write to the model is only
-    // readable back on the next tick, so a caller doing it by hand takes its baseline from the
-    // payload as it was before the write, and the seeding then counts as the first edit.
     initial: (): TState => {
       const current = toState(get(model));
       return seed ? seed(current) : current;

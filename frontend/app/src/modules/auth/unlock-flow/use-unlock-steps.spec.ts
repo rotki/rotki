@@ -327,6 +327,22 @@ describe('useUnlockSteps', () => {
       expect(colibriLogin).toHaveBeenCalledWith({ password: 'pw', username: 'new-user' });
     });
 
+    it('should treat a premium restore as an existing account, keeping the suggestions dialog', async () => {
+      setupStore();
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
+
+      const restore: CreateAccountPayload = {
+        ...payload,
+        premiumSetup: { apiKey: 'k', apiSecret: 's', syncDatabase: true },
+      };
+
+      const steps = useUnlockSteps().createSteps(restore);
+      await steps.login(restore.credentials);
+      await steps.loadSession();
+
+      expect(initialize).toHaveBeenCalledWith(expect.anything(), [], false);
+    });
+
     it('should return err(unknown) with the message when the create task fails', async () => {
       setupStore();
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
@@ -346,6 +362,17 @@ describe('useUnlockSteps', () => {
       expect(await steps.probeSession(payload.credentials)).toEqual({ ok: true, value: false });
       expect(await steps.checkUpdate()).toEqual({ ok: true, value: { some: false } });
       expect(checkUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should offer no stored credentials and no resume, so create never auto-unlocks', async () => {
+      setupStore();
+
+      const steps = useUnlockSteps().createSteps(payload);
+
+      expect(await steps.resolveCredentials()).toEqual({ ok: true, value: { some: false } });
+      expect(resolveStoredCredentials).not.toHaveBeenCalled();
+      expect(await steps.resume(payload.credentials)).toEqual({ ok: true, value: undefined });
+      expect(getRawSettings).not.toHaveBeenCalled();
     });
 
     it('should not open the socket on connect (deferred to post-ack)', async () => {

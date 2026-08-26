@@ -1,11 +1,12 @@
 /**
+ * Collapses runs of consecutive numbers into ranges, for display.
  *
- * @param {number[]} numbers - Array of sorted numbers
- * @return {string} - Readable text of these sorted numbers
+ * @param numbers - the values to group; must already be sorted ascending
  * @example
- * groupConsecutiveNumbers([1, 2, 3, 5, 7, 10, 11, 12, 13]); // "1-3, 5, 7, 10-13"
+ * ```ts
+ * groupConsecutiveNumbers([1, 2, 3, 5, 7, 10, 11, 12, 13]); // '1-3, 5, 7, 10-13'
+ * ```
  */
-
 export function groupConsecutiveNumbers(numbers: number[]): string {
   if (numbers.length === 0)
     return '';

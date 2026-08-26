@@ -2,7 +2,7 @@ import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
@@ -56,6 +56,11 @@ describe('usePriceTaskManager', () => {
       expect(usePriceApi().queryPrices).toHaveBeenCalledWith(assets, expectedCurrency, false);
     };
 
+    afterEach(() => {
+      const { findCurrency } = useCurrencies();
+      updateGeneralSettings({ mainCurrency: findCurrency('USD') });
+    });
+
     it('should update the prices when fetchPrices is called', async () => {
       const mockPricesResponse = createMockPriceResponse({ DAI: [1, 0] });
 
@@ -96,9 +101,6 @@ describe('usePriceTaskManager', () => {
       const mockPricesResponse = createMockPriceResponse({ DAI: [1, 0] }, 'EUR');
 
       await executeFetchPrices(['DAI'], mockPricesResponse, 'EUR');
-
-      // Reset to USD for other tests
-      updateGeneralSettings({ mainCurrency: findCurrency('USD') });
     });
   });
 
@@ -156,9 +158,7 @@ describe('usePriceTaskManager', () => {
 
     /**
      * Two identical lookups legitimately share one activity, so the second caller's `run` never
-     * executes. While the price was smuggled out through a variable in the producer's closure,
-     * that caller was handed `-1` — which `use-snapshot-asset-price.ts` reads as "no historic
-     * price" and silently replaces with `usdValue/amount`, writing a fabricated number.
+     * executes and must still be handed the real price rather than the producer's closure local.
      */
     it('should give both concurrent callers of an identical lookup the real price', async () => {
       runTaskMock.mockResolvedValue(ok({ assets: { DAI: { [timestamp]: '10' } }, targetAsset: 'USD' }));
@@ -173,6 +173,17 @@ describe('usePriceTaskManager', () => {
       expect(second).toEqual(bigNumberify(10));
       // Genuinely deduped: the shared id means the backend was queried once, not twice.
       expect(usePriceApi().queryHistoricalRate).toHaveBeenCalledOnce();
+    });
+
+    it('should not dedup two lookups that differ only by timestamp', async () => {
+      runTaskMock.mockResolvedValue(ok({ assets: { DAI: { [timestamp]: '10' } }, targetAsset: 'USD' }));
+
+      await Promise.all([
+        priceTaskManager.getHistoricPrice({ fromAsset: 'DAI', timestamp, toAsset: 'USD' }),
+        priceTaskManager.getHistoricPrice({ fromAsset: 'DAI', timestamp: timestamp + 86_400_000, toAsset: 'USD' }),
+      ]);
+
+      expect(usePriceApi().queryHistoricalRate).toHaveBeenCalledTimes(2);
     });
   });
 });

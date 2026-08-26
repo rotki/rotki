@@ -91,9 +91,6 @@ export function createGnosisIndexerSuggestion(
       },
     ],
     recommendedChoice,
-    // A free etherscan key is indistinguishable from a paid one, so an etherscan key alone is no
-    // proof that gnosis can be queried at all — and with neither key it certainly cannot. Both
-    // cases get the same way out: blockscout, the only one of the two that can be had for free.
     ...(hasBlockscoutKey
       ? {}
       : {

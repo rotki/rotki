@@ -19,7 +19,6 @@ defineProps<{ modules: Module[] }>();
 const { t } = useI18n({ useScope: 'global' });
 const { useIsAssetIgnored } = useAssetsStore();
 
-// Data management
 const {
   cols,
   currencySymbol,
@@ -34,7 +33,6 @@ const {
   totalValue,
 } = useNftData();
 
-// Price management
 const {
   customPrice,
   modelOpenPriceDialog,
@@ -42,7 +40,6 @@ const {
   showDeleteConfirmation,
 } = useNftPriceManagement(fetchData);
 
-// Asset ignoring
 const {
   massIgnore,
   modelSelected,

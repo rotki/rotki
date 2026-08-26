@@ -51,6 +51,7 @@ describe('createAutoLogin', () => {
     // startAuto.mockImplementation would otherwise leak it into later tests under
     // shuffle. Reset just that spy to its default resolved value.
     startAuto.mockReset().mockResolvedValue(undefined);
+    resetSessionBackend.mockReset().mockResolvedValue(undefined);
     set(lastLoginRef, '');
     set(controllerStateRef, { kind: 'idle' });
     scope = effectScope();
@@ -70,6 +71,26 @@ describe('createAutoLogin', () => {
     expect(resetSessionBackend).toHaveBeenCalled();
     expect(startAuto).toHaveBeenCalledTimes(1);
     expect(get(autoLogin!.autolog)).toBe(false);
+  });
+
+  it('should raise the loader before the backend reset, so the login form never flashes', async () => {
+    set(lastLoginRef, 'alice');
+    const autoLogin = scope.run(() => createAutoLogin());
+    let loaderDuringReset: boolean | undefined;
+    let loaderDuringStart: boolean | undefined;
+    resetSessionBackend.mockImplementation(async () => {
+      loaderDuringReset = get(autoLogin!.autolog);
+    });
+    startAuto.mockImplementation(async () => {
+      loaderDuringStart = get(autoLogin!.autolog);
+      set(controllerStateRef, { kind: 'ready' });
+    });
+
+    connect(true);
+    await flushPromises();
+
+    expect(loaderDuringReset).toBe(true);
+    expect(loaderDuringStart).toBe(true);
   });
 
   it('should keep the loader up on a successful auto-unlock while navigation is pending', async () => {

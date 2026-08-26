@@ -6,6 +6,8 @@ import { hasTag, tag } from 'plainfp/tagged';
  * {@link TaskError} rather than a branch on a union. This lives in the task layer (not in any
  * feature) because it describes task outcomes, and the orchestrator / producers consume it
  * without the task layer ever depending on them.
+ *
+ * @packageDocumentation
  */
 
 /** User explicitly cancelled the task. */
@@ -19,7 +21,7 @@ export const BackendCancelled = tag('BackendCancelled');
  * inactive module). Terminal and explainable: `message` is the user-facing reason ("disabled in
  * settings"), which the task center renders on the row.
  *
- * ⚠️ Not the `Skipped` tag removed in `6e128fcaa5`. That one meant "a duplicate was already in
+ * Not the `Skipped` tag removed in `6e128fcaa5`. That one meant "a duplicate was already in
  * flight" — an artefact of the dedup guard, invisible to users. This is a user-facing outcome.
  */
 export const Skipped = tag('Skipped');
@@ -66,14 +68,14 @@ export function errorOf(error: TaskError): Error {
 /**
  * Fold a fan-out's child outcomes into the one verdict its parent should settle on.
  *
- * 🔴 A parent must not claim a success its children did not earn. The shape this exists to kill is
+ * A parent must not claim a success its children did not earn. The shape this exists to kill is
  * `await Promise.all(children); return ok(undefined)`, which completes even when every child
  * failed — and where the parent's completion-ledger entry is load-bearing, that writes "we have
  * data" over nothing at all. Concretely: backend unreachable on the first history sync, every
  * account fails, the umbrella completes anyway, `everCompleted` goes true and every later
  * non-user-initiated refresh short-circuits on it, so history silently never syncs again.
  *
- * ⭐ One success is enough. A fan-out is partial by nature — one chain failing is that chain's
+ * One success is enough. A fan-out is partial by nature — one chain failing is that chain's
  * failure, not the refresh's — so this reports a failure only when *nothing* got through. An empty
  * batch is `Skipped`: no work ran, so no work succeeded, and a parent that ran nothing must not
  * record a completion either.

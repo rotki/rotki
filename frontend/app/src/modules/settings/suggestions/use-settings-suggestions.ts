@@ -114,8 +114,10 @@ interface UseSettingsSuggestionsReturn {
 }
 
 /**
- * @param providers the registry to consider. Injected rather than imported so a spec can hand in the
- * providers it is about instead of mocking the module the rest of the pipeline is typed against.
+ * Collects the settings suggestions a session should be offered.
+ *
+ * @param providers - the registry to consider. Injected rather than imported so a spec can hand in
+ * the providers it is about, instead of mocking the module the rest of the pipeline is typed against.
  */
 export function useSettingsSuggestions(
   providers: SuggestionProvider[] = SUGGESTION_PROVIDERS,
@@ -186,16 +188,6 @@ export function useSettingsSuggestions(
     if (!version || version.includes('dev'))
       return;
 
-    // A freshly created account is already on the current defaults, so recommendations from
-    // past versions never apply to it. Stamp the version instead of replaying them — the
-    // stored `0.0.0` default would otherwise make every historical suggestion pending, and
-    // applying one would move the account *off* the defaults it was just created with.
-    //
-    // Decisions have to be retired by id here as well, not just by the version stamp: they
-    // survive the version cursor by design, so stamping alone would let one resurface the moment
-    // the account happens to land in the state the question looks for. Someone who deliberately
-    // picks an etherscan-first gnosis order on a new 1.44 account has not upgraded into the
-    // problem the question is about — they have answered it in advance.
     if (newAccount) {
       const answeredSuggestions = mergeAnswered(
         providers.flatMap(provider => provider.decisionId !== undefined ? [provider.decisionId] : []),
@@ -209,9 +201,6 @@ export function useSettingsSuggestions(
 
     const { registry, settled } = await resolveRegistry({ frontend: frontendSettings, general: generalSettings });
 
-    // The probes above are network calls, so the user may well have logged out while they were in
-    // flight. Writing here regardless would show one account's suggestions to the next one to log
-    // in, and apply them to that account's settings.
     if (!get(logged))
       return;
 

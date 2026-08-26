@@ -31,7 +31,7 @@ vi.mock('@/modules/core/common/use-location-store', async () => {
     useLocationStore: defineStore('location-stub', () => ({
       exchangesWithoutApiSecret: computed(() => capabilities.withoutSecret),
       exchangesWithPassphrase: computed(() => capabilities.withPassphrase),
-      // 🔴 Not optional padding: `onMounted` rewrites `name` to `suggestedName(location)` in add
+      // Not optional padding: `onMounted` rewrites `name` to `suggestedName(location)` in add
       // mode, and an unknown location yields `''` — which fails the required-name rule and makes
       // every scenario look invalid for the wrong reason. Emptying it models the store before its
       // locations have been fetched.
@@ -108,7 +108,7 @@ describe('settings/api-keys/exchange validation', () => {
   }
 
   /**
-   * 🔴 These mount through a parent that owns the entry, the way the dialog does. Bound by props
+   * These mount through a parent that owns the entry, the way the dialog does. Bound by props
    * alone the form's own `modelValue` writes resolve immediately, which hides the tick the real
    * binding takes and makes a re-taken baseline look correct when it is not.
    */

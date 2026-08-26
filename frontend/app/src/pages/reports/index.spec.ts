@@ -74,11 +74,6 @@ vi.mock('pinia', async importOriginal => ({
 describe('pages/reports/index', () => {
   let wrapper: VueWrapper<InstanceType<typeof ReportsIndexPage>>;
 
-  /**
-   * The generator and the table are toggled with `v-show`, so they stay in the tree and only the
-   * inline style changes. VTU's `isVisible()` reports true for both states on a wrapper that was
-   * never attached to the document, so the style is read directly.
-   */
   /** The debug-data model the mocked composable published on the last mount. */
   function debugDataModel(): Ref<File | undefined> {
     const model = pageState.modelReportDebugData;
@@ -88,6 +83,11 @@ describe('pages/reports/index', () => {
     return model;
   }
 
+  /**
+   * The generator and the table are toggled with `v-show`, so they stay in the tree and only the
+   * inline style changes. VTU's `isVisible()` reports true for both states on a wrapper that was
+   * never attached to the document, so the style is read directly.
+   */
   function isHidden(testId: string): boolean {
     return wrapper.find(`[data-testid=${testId}]`).attributes('style')?.includes('display: none') ?? false;
   }

@@ -98,10 +98,6 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
         }],
       }, { wait: true });
 
-      // Additions report failure as a value, not a throw, so the `catch` below no longer sees a
-      // rejected add. Without this the Safe was announced as added and the suggestion dismissed
-      // while the account was never stored. A cancellation leaves the suggestion in place to retry
-      // and says nothing, because the user asked for it.
       if (summary.added.length === 0) {
         if (summary.failed.length > 0) {
           showErrorMessage(

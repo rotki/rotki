@@ -4,14 +4,11 @@ import { type ActivityId, type ActivityKind, ActivityPart, makeActivityId } from
 /**
  * Every leading slice of a tuple, including the empty one: `[A, B]` gives `[] | [A] | [A, B]`.
  *
- * This is what makes a coarse read safe. An activity's key parts are ordered from broadest to
- * narrowest (chain, then what is being acted on), so asking about "everything on this chain" means
- * supplying a *prefix* of the key. Typing it this way stops a reader asking for more of the key
- * than exists, or for a shape no producer builds.
+ * Key parts run broadest to narrowest (chain, then what is acted on), so a coarse read supplies a
+ * prefix* of the key. Typing it this way stops a reader asking for more key than exists.
  *
- * ⚠️ It does not stop a semantically wrong value of the right shape: where two key components share
- * a type (both `string`), passing them in the wrong order is well-typed. Branded components would
- * close that; until then it is a review concern, not a compiler one.
+ * It does not stop a wrong value of the right shape: where two components are both `string`,
+ * passing them in the wrong order is well-typed. That stays a review concern.
  */
 type Prefixes<T extends readonly unknown[]> =
   T extends readonly [infer Head, ...infer Rest]
@@ -24,16 +21,11 @@ type KeyParts = readonly (string | number)[];
  * One kind of work, declared once: how it is identified, which lane it runs in, and how a reader
  * asks about it.
  *
- * The point is that there is no second declaration. Composing `makeActivityId(...)` at the producer
- * and a matching `useWorkStatus(...)` at each reader is an agreement between files that nothing
- * checks, and every way it can break is silent: a key missing a component makes `submitTask` dedup
- * distinct work onto one promise and report it done, while a key that *grows* a component leaves
- * every exact reader matching nothing at all — no error, the spinner simply never fires. Both
- * happened, in both directions, in `accounts:add` and `accounts:remove`.
- *
- * `modules/history/events/flows.ts` already says to build both sides from one shared constructor;
- * `decodeActivityId` obeys it by convention. This is that convention with the second declaration
- * removed rather than kept in sync.
+ * The point is that there is no second declaration. Spelling `makeActivityId(...)` at the producer
+ * and a matching `useWorkStatus(...)` at each reader is an agreement nothing checks, and both ways
+ * it breaks are silent: a key missing a component makes `submitTask` dedup distinct work onto one
+ * promise and report it done; a key that *grows* one leaves every exact reader matching nothing, so
+ * the spinner never fires.
  */
 export interface ActivityDescriptor<TSubject, TKey extends KeyParts> {
   readonly kind: ActivityKind;

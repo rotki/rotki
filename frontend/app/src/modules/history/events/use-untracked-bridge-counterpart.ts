@@ -24,11 +24,12 @@ export function getBridgeCounterpartChain(transaction: UnmatchedBridgeTransactio
 }
 
 /**
- * Detects bridge legs whose counterpart chain can no longer be queried, so the
- * counterpart event can never be pulled. Decoders record EVM chains as numeric chain
- * ids; a string chain is a non-EVM chain, which today means ZKsync Lite — whose API
- * has shut down. For such legs creating a synthetic counterpart event is the
- * suggested resolution.
+ * Whether a leg's counterpart chain cannot be queried, so its counterpart event can never be
+ * pulled.
+ *
+ * @remarks
+ * Decoders record EVM chains as numeric ids, so a string chain is non-EVM, which today means
+ * ZKsync Lite and its shut-down API.
  */
 export function isCounterpartUnqueryable(transaction: UnmatchedBridgeTransaction): boolean {
   return typeof getBridgeCounterpartChain(transaction) === 'string';
@@ -37,11 +38,10 @@ export function isCounterpartUnqueryable(transaction: UnmatchedBridgeTransaction
 /**
  * Whether offering to create a synthetic counterpart event makes sense for a leg.
  *
- * Only the unqueryable case qualifies: the counterpart chain cannot be pulled, so the
- * event has to be written by hand. A leg whose counterpart address is simply not tracked
- * belongs to someone else, so no counterpart event should exist at all and the correct
- * resolution is to mark it external. Offering both at once (which merely knowing the
- * counterpart chain used to do) invites fabricating an event for a payment out.
+ * @remarks
+ * Only the unqueryable case qualifies. A leg whose counterpart address is untracked belongs to
+ * someone else, so no counterpart event should exist and the resolution is to mark it external;
+ * offering both at once invites fabricating an event for a payment out.
  */
 export function canCreateBridgeCounterpart(transaction: UnmatchedBridgeTransaction, counterpartUntracked: boolean): boolean {
   return !counterpartUntracked && isCounterpartUnqueryable(transaction);

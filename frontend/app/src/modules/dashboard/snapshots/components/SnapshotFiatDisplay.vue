@@ -7,27 +7,19 @@ defineOptions({
 });
 
 /**
- * Displays a USD-denominated snapshot value in the user's currency, converted
- * at the *historic* rate of the snapshot's timestamp.
+ * Displays a USD-denominated snapshot value in the user's currency, converted at the *historic* rate
+ * of the snapshot's timestamp.
  *
- * Why this wrapper exists
- * -----------------------
- * Every value stored in a snapshot is USD. Showing it in a non-USD main
- * currency must use the FX rate that applied *at the snapshot's time*, not
- * today's rate (#12277). With `FiatDisplay` that means always pairing
- * `from="USD"` with the snapshot timestamp.
+ * @remarks
+ * Every value stored in a snapshot is USD, so showing it in another main currency needs the rate that
+ * applied at the snapshot's time. Prefer this over `FiatDisplay from="USD"` throughout the snapshot
+ * editor: it is the spelling that cannot get either foot-gun wrong.
  *
- * Two foot-guns made this worth centralising:
- *  - Forgetting the timestamp entirely falls back to today's FX rate — a silent
- *    correctness bug that looks fine on screen.
- *  - The snapshot `timestamp` is in **seconds**. `FiatDisplay`/`normalizeTimestamp`
- *    treat a raw number as seconds but `{ ms }` as milliseconds, so passing
- *    `{ ms: timestamp }` floors it to a near-zero key, the historic price is
- *    never found, and the value renders as 0.
+ * Omitting the timestamp silently falls back to today's rate, which looks correct on screen.
  *
- * This component is the single correct spelling: pass a USD `value` and the
- * snapshot `timestamp` (seconds), and historic conversion is guaranteed. Prefer
- * it over `FiatDisplay from="USD"` anywhere in the snapshot editor.
+ * The snapshot `timestamp` is in **seconds**. `normalizeTimestamp` reads a bare number as seconds
+ * but `{ ms }` as milliseconds, so `{ ms: timestamp }` floors to a near-zero key, finds no historic
+ * price, and renders 0.
  */
 const { value, timestamp } = defineProps<{
   /** The value to display, denominated in USD. */

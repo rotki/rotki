@@ -33,11 +33,9 @@ function isRunning(activity: Activity): boolean {
  * The panel's view of the orchestrator: live work as a list of jobs rather than a flat list of
  * every activity in flight.
  *
- * A job is listed while **anything in its subtree is RUNNING**. That keeps the rule the flat panel
- * had — a fully queued tree is not shown, since producers declare every account of every chain up
- * front and listing those would bury the running work under dozens of rows that have not begun —
- * while fixing what it got wrong: cancelling the last running leaf no longer leaves a card headed
- * "0 pending tasks" spinning above its queued siblings, because the job goes with them.
+ * A job is listed while **anything in its subtree is RUNNING**. A fully queued tree stays hidden,
+ * because producers declare every account of every chain up front and listing those would bury the
+ * running work; and cancelling the last running leaf drops the job along with its queued siblings.
  */
 export function usePendingJobs(): UsePendingJobsReturn {
   const { model } = useTaskCenter();

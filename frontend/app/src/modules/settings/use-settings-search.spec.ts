@@ -122,9 +122,7 @@ describe('useSettingsSearch', () => {
       expect(ownedByNeither, 'highlight ids owned by neither a setting nor an action').toEqual([]);
     });
 
-    it('should derive migrated category rows from the registry search blocks', () => {
-      // the external service category no longer lives in a getXTab builder; its header and per-setting
-      // rows are derived from SEARCH_CATEGORIES + the registry `search` blocks.
+    it('should derive a category header and its per-setting rows from the registry search blocks', () => {
       const rows = allEntries.filter(entry => entry.categoryId === SettingsCategoryIds.EXTERNAL_SERVICE);
       const headers = rows.filter(entry => entry.highlightId === undefined);
       const anchors = rows.map(entry => entry.highlightId).filter(Boolean);

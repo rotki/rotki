@@ -53,7 +53,7 @@ export const HistoryEventsQueryData = z.object({
 export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
 /**
- * ⚠️ Not purely the backend's enum. `TransactionStatusStep` (api/websockets/typedefs.py) sends the
+ * Not purely the backend's enum. `TransactionStatusStep` (api/websockets/typedefs.py) sends the
  * seven querying/decoding steps; `ACCOUNT_CHANGE`, `CANCELLED` and `FAILED` are frontend-assigned
  * outcomes for states the backend has no message for.
  */
@@ -112,7 +112,6 @@ export const UnifiedTransactionStatusData = z.union([
 
 export type UnifiedTransactionStatusData = z.infer<typeof UnifiedTransactionStatusData>;
 
-// Progress update related types
 export const EvmUnDecodedTransactionsData = CommonQueryStatusData.extend({
   chain: z.string(),
 });

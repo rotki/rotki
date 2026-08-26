@@ -65,7 +65,6 @@ describe('useWalletChains', () => {
   it('should include a chain the backend has newly gained', () => {
     const { walletChainIds, walletChains } = useWalletChains();
 
-    // The two chains the previously hardcoded list was missing.
     expect(get(walletChains).map(item => item.chain)).toContain(Blockchain.MONAD);
     expect(get(walletChainIds)).toContain(999);
   });

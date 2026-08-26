@@ -13,7 +13,7 @@ export const ROW_HEIGHTS = {
   'load-more': 36,
 } as const;
 
-// Card heights for mobile layout
+/** Row heights for the mobile card layout, which stacks the same rows taller than the table does. */
 const CARD_HEIGHTS = {
   'group-header': 72,
   'event-row': 140,
@@ -113,15 +113,12 @@ function isMatchedBridgeGroup(events: HistoryEventEntry[]): boolean {
 /**
  * Identity of a subgroup (a swap or a matched movement), for remembering that it is expanded.
  *
- * Keyed by the primary event rather than by the subgroup's position in its group. A positional key
- * does not survive the list changing underneath it: adding or deleting any event that shifts the
- * index silently collapsed an expanded subgroup — or handed its expanded state to whichever
- * subgroup landed on that index. Anything that refetches the table could do it, so a swap the user
- * had opened would snap shut on its own after a background refresh.
+ * Keyed by the primary event, never by position. A positional key does not survive the list
+ * changing underneath it: any shift collapses an expanded subgroup or hands its state to whichever
+ * subgroup landed on that index, and a background refetch is enough to do it.
  *
- * The primary event is the one the collapsed row represents, and it outlives the edits that used to
- * break this: deleting a swap's fee leaves the swap (and this key) intact, while deleting the
- * primary event takes the whole subgroup with it.
+ * The primary event outlives the edits that break a positional key: deleting a swap's fee leaves the
+ * swap intact, and deleting the primary event takes the whole subgroup with it.
  */
 function subgroupKey(groupId: string, events: HistoryEventEntry[]): string {
   return `${groupId}-${events[0]?.identifier ?? 0}`;
@@ -169,7 +166,6 @@ export function useVirtualRows(
         data: group,
       });
 
-      // 2. Events for this group
       const allEvents = eventsMap[groupId] || [];
       const customLimit = visibleCounts.get(groupId);
       const limit = customLimit ?? INITIAL_EVENTS_LIMIT;
@@ -236,7 +232,6 @@ export function useVirtualRows(
             }
           }
           else {
-            // Regular swap or matched bridge transfer
             const swapKey = subgroupKey(groupId, event);
             const isSwapExpanded = incomplete || expandedSwapsSet.has(swapKey);
             const bridge = isMatchedBridgeGroup(event);
@@ -254,10 +249,8 @@ export function useVirtualRows(
                 });
               }
 
-              // When expanded, show individual event rows for each event in the swap.
-              // subIndex is used so the first event (index 0) retains edit/delete actions.
-              // Bridge legs come from different transactions on different chains, so mark
-              // them as linked sub-events to surface per-leg chain and transaction context.
+              // `subIndex` restarts at 0 so the first row keeps its edit and delete actions. A
+              // bridge leg is marked linked, its legs being separate transactions on two chains.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',

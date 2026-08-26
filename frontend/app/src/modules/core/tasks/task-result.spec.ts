@@ -90,7 +90,7 @@ describe('combineOutcomes', () => {
   });
 
   it('should not report a success when nothing ran', () => {
-    // 🔴 The empty case is the whole point: a parent that ran no children has produced no data, so
+    // The empty case is the whole point: a parent that ran no children has produced no data, so
     // it must not write a completion its consumers read as "we already have this".
     const combined = combineOutcomes([]);
 

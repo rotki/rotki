@@ -5,14 +5,14 @@ import { BalanceType } from '@/modules/balances/types/balances';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 
 /**
- * Snapshot total helpers.
+ * Snapshot total helpers. Every value here is USD, snapshots being USD-denominated.
  *
- * Snapshots are USD-denominated. A snapshot's location rows include a synthetic
- * `total` row that must equal the sum of the real location rows (and of the
- * net balances). These helpers centralise that aggregation — previously
- * re-implemented inline in the balances table, the location table and the
- * total step — so the "subtotals sum to the total" invariant lives in one
- * tested place. All returned values are USD.
+ * @remarks
+ * Aggregate through these rather than summing inline, so the "subtotals sum to the total"
+ * invariant holds in one tested place across the balances table, the location table and the total
+ * step.
+ *
+ * @packageDocumentation
  */
 
 /**

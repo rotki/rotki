@@ -202,8 +202,6 @@ describe('dataIssuesPanelContent', () => {
     expect(clearSelection).toHaveBeenCalledOnce();
   });
 
-  // The resolve dialog reads the selected issue, so a card-triggered resolve has to
-  // select before it opens, or it would resolve whatever was selected last.
   it('should select the issue before opening the resolve dialog from a card', async () => {
     state.issues = [createIssue(7)];
     const wrapper = await createWrapper();

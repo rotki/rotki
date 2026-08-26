@@ -129,7 +129,7 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
     >
       <template #activator>
         <!--
-          ⚠️ `role` and `tabindex` are overrides, not decoration. RuiChip hardcodes `role="button"`
+          `role` and `tabindex` are overrides, not decoration. RuiChip hardcodes `role="button"`
           and `tabindex="0"` on its root whether or not it is clickable, so an untouched status chip
           is a focusable fake button: a keyboard user tabs through a "Done" button on every row and
           hears one announced per settled child. `role="img"` makes the icon carry its `aria-label`.

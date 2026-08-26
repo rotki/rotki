@@ -7,15 +7,16 @@ export interface UsePinnedHighlightNavigationReturn {
 }
 
 /**
- * Shared teardown for pinned history panels that drive route-query highlights
- * (asset-movement matching, internal-tx conflicts). Each panel used to duplicate
- * the same three pieces: a `clearHighlight` that resets local state + clears the
- * shared highlight targets + removes its query keys from the URL, a watcher that
- * resets local state once the targets are emptied elsewhere, and an on-unmount
- * cleanup. This centralizes them; `queryKeys` are the URL keys the panel owns and
- * `reset` clears the panel's local highlight refs. `isStillPinned` lets the panel
- * distinguish a `<KeepAlive>` tab-switch (still pinned, keep the highlight so it
- * survives the round-trip) from an actual close (unpinned, clear it).
+ * Wires the shared teardown for a pinned panel that drives route-query highlights.
+ *
+ * @remarks
+ * Covers all three pieces a panel needs: `clearHighlight`, a watcher that resets local state once
+ * the shared targets are emptied elsewhere, and an unmount cleanup.
+ *
+ * @param queryKeys - the URL keys this panel owns
+ * @param reset - clears the panel's own highlight refs
+ * @param isStillPinned - distinguishes a `<KeepAlive>` tab switch, where the highlight has to
+ * survive the round-trip, from an actual close
  */
 export function usePinnedHighlightNavigation(
   queryKeys: string[],
@@ -42,10 +43,6 @@ export function usePinnedHighlightNavigation(
       reset();
   });
 
-  // Clear the highlight when the panel is unpinned, not on <KeepAlive> deactivation.
-  // A backgrounded panel keeps its effects live, so this watch still fires when its
-  // tab is closed while another tab is in front (onDeactivated would not fire then);
-  // a tab-switch leaves the panel pinned, so the highlight survives the round-trip.
   if (isStillPinned) {
     watch(isStillPinned, (pinnedNow, wasPinned) => {
       if (wasPinned && !pinnedNow)

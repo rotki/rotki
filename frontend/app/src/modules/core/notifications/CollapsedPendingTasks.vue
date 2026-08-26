@@ -13,8 +13,6 @@ const { count, percentage, steps } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Producers declare their subtrees up front, so a refresh knows its own denominator from the first
-// tick. The header used to spin indeterminately beside that number and throw it away.
 const isDeterminate = computed<boolean>(() => percentage >= 0 && steps.total > 0);
 </script>
 

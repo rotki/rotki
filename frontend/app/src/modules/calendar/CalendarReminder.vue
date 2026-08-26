@@ -192,7 +192,6 @@ onBeforeMount(() => startPromise(loadStored()));
 
 defineExpose({
   save,
-  /** The event form gates on this: vuelidate used to collect the rows on its own, zod does not. */
   validate: (): boolean => form.validate(),
 });
 </script>

@@ -6,14 +6,14 @@ function valuesByField(state: FilterState): Record<string, readonly string[]> {
 }
 
 /**
- * Drops the values a field no longer admits, given what the other fields hold.
+ * Prunes the values a narrowing has made inadmissible, given what the other fields hold.
  *
- * The other half of `FieldDef.admits`: narrowing an option list only governs what can be *added*,
- * so without this a value picked before the narrowing stays in the filter and keeps being sent. A
- * filter left with no values at all is removed, since an empty pill filters nothing.
+ * @remarks
+ * The other half of `FieldDef.admits`, which governs only what can be *added*: without this, a
+ * value picked before the narrowing stays in the filter and keeps being sent.
  *
- * Returns the state unchanged, by reference, when nothing was inadmissible. Callers set this
- * straight back onto a ref, so preserving identity is what keeps a no-op from being an update.
+ * @returns the same state by reference when nothing was pruned, so callers can set it back onto a
+ * ref without that counting as an update
  */
 export function pruneInadmissible(state: FilterState, fields: readonly FieldDef[]): FilterState {
   if (!fields.some(field => field.admits))

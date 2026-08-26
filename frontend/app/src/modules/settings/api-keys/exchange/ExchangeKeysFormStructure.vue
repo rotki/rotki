@@ -55,7 +55,6 @@ const customLabel: Record<string, LocationConfig> = {
   },
 };
 
-// Default data fallback
 const defaultData: Record<LocationKey, SlotProps> = {
   apiKey: {
     label: t('exchange_settings.inputs.api_key'),

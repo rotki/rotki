@@ -59,7 +59,7 @@ describe('usePoolBalances', () => {
       expect(get(balances)).toEqual([]);
     });
 
-    it('should aggregate and sort balances by value descending', () => {
+    it('should sort balances by value descending and renumber ids to match the new order', () => {
       setStoreData({
         uniswap: {
           '0xAccount1': [
@@ -73,10 +73,8 @@ describe('usePoolBalances', () => {
       const result = get(balances);
 
       expect(result).toHaveLength(2);
-      // Sorted descending: Pool2 (200) before Pool1 (100)
       expect(result[0].value).toEqual(bigNumberify('200'));
       expect(result[1].value).toEqual(bigNumberify('100'));
-      // IDs reassigned after sort
       expect(result[0].id).toBe(0);
       expect(result[1].id).toBe(1);
     });

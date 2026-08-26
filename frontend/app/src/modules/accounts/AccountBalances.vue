@@ -71,7 +71,6 @@ const {
   toggleSelectionMode,
 } = useAccountAssetSelection(fetchData);
 
-// Computed
 const isSolana = computed<boolean>(() => category === 'solana');
 const showSelectionToggle = computed<boolean>(() => get(isEvm) || get(isSolana));
 

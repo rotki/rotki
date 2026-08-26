@@ -73,13 +73,6 @@ describe('connectionFailureMessage', () => {
 
   const hasDebugButton = (wrapper: VueWrapper): boolean => findDebugButton(wrapper) !== undefined;
 
-  /**
-   * A debug retry restarts the backend *carrying a log level*, so it needs a
-   * runtime that will accept one. The plain web build has neither Electron's
-   * saved options nor a `/_control` endpoint, so offering the button there means
-   * offering one that cannot work — it used to render and then throw on the
-   * `window.interop` assertion behind it.
-   */
   it('should hide the debug retry where no runtime can carry a log level', async () => {
     const wrapper = createWrapper();
     await flushPromises();

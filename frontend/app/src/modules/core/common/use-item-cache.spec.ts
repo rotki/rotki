@@ -1,8 +1,9 @@
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { watchSyncEffect } from 'vue';
+import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 import { logger } from '@/modules/core/common/logging/logging';
-import { createItemCache, createItemCacheStorage } from '@/modules/core/common/use-item-cache';
+import { createItemCache } from '@/modules/core/common/use-item-cache';
 
 interface TestEntry {
   key: string;
@@ -135,7 +136,6 @@ describe('createItemCache', () => {
       expect(resolve('KEY')).toBeNull();
       expect(calls).toHaveLength(1);
 
-      // Now make it resolve successfully
       results.KEY = 'found';
       refresh('KEY');
       vi.advanceTimersByTime(1000);
@@ -343,8 +343,11 @@ describe('createItemCache', () => {
     });
 
     it('should re-queue an unknown key after its expiry', async () => {
+      const EXPIRY_MS = 1000;
+      const PAST_EXPIRY_MS = 1500;
+
       const { calls, fetch } = createMockFetch({ KEY: null });
-      const { queueIdentifier } = createItemCache(fetch, { expiry: 1000 });
+      const { queueIdentifier } = createItemCache(fetch, { expiry: EXPIRY_MS });
 
       queueIdentifier('KEY');
       vi.advanceTimersByTime(1000);
@@ -352,8 +355,7 @@ describe('createItemCache', () => {
 
       expect(calls).toHaveLength(1);
 
-      // Advance past expiry
-      vi.advanceTimersByTime(1500);
+      vi.advanceTimersByTime(PAST_EXPIRY_MS);
 
       queueIdentifier('KEY');
       vi.advanceTimersByTime(1000);

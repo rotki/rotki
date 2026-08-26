@@ -19,28 +19,26 @@ export function useSessionStateCleaner(): void {
   const { reset: resetAccountLoad } = useAccountLoadState();
   const { reset: resetHydration } = useBalanceHydration();
 
+  /**
+   * Tears down everything a session leaves behind that a pinia reset does not reach.
+   *
+   * @remarks
+   * The orchestrator, the submission map, the account-load tracker and the hydration map are all
+   * app-scoped. Anything they still hold at logout outlives the session, and because each dedups by
+   * identity, the *next* session is handed work that can never settle — a promise nothing resolves,
+   * or a read belonging to a user who is gone.
+   *
+   * Order matters twice: `resetNativeTasks` runs after the orchestrator so its emit can settle each
+   * caller normally and this only sweeps what that missed, and the hydration request is cancelled
+   * before its map is cleared, since clearing first leaves nothing to cancel against.
+   */
   function cleanup(): void {
     clearUploadStatus();
-    // Suggestion probes are fired at login and not awaited by it, so on a quick logout they can
-    // still be queued against the session that just ended.
     api.cancelByTag(SUGGESTION_PROBE_TAG);
-    // Drop native activities and the completion ledger so freshness/liveness never leak across
-    // users (the orchestrator is app-scoped, not a pinia store reset by resetState).
     orchestrator.reset();
-    // After the orchestrator, so its emit gets the chance to settle each caller normally and this
-    // only sweeps up what that missed. An id left in the submission map outlives the session and
-    // `submitTask` dedups by id, so the next session joins a promise that can never resolve — how
-    // `prices:exchange-rates` stalled `fetchCached` on its first await after a re-login, leaving
-    // the new session with no exchange rates, no accounts and no balances.
     resetNativeTasks();
-    // Same reason, same scope: a read tracked here outlives the session that started it.
     resetAccountLoad();
-    // 🔴 Cancel before clearing the map. The cache-only read is a plain GET, not a backend task, so
-    // nothing above settles it: left alone it resolves against the session that just ended and
-    // `processBalanceResult` writes that user's balances into the next user's store.
     api.cancelByTag(BALANCE_HYDRATION_TAG);
-    // Hydration dedups by chain against an app-scoped map, so a read that can never settle would be
-    // handed to the next session's caller for that chain — which then never hydrates, silently.
     resetHydration();
     resetState();
   }

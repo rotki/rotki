@@ -1,6 +1,6 @@
 import type { BigNumber, CommonQueryStatusData, FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
-import { createItemCacheStorage } from '@/modules/core/common/use-item-cache';
+import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
   // App-lifetime cache storage for historic prices; the fetch/debounce/LRU logic

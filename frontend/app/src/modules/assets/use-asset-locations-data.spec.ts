@@ -50,8 +50,6 @@ function options(over: Partial<Parameters<typeof useAssetLocationsData>[0]> = {}
 
 describe('useAssetLocationsData', () => {
   beforeEach(() => {
-    // `useBalancesLoading` reads hydration liveness off a pinia store now that hydration is not
-    // an activity the orchestrator can report on.
     setActivePinia(createPinia());
     spies.getAssetPriceInfo.mockReturnValue({ value: bigNumberify(500) });
     spies.getAccountByAddress.mockReturnValue({ label: 'My Account' });

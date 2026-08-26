@@ -158,15 +158,12 @@ describe('modules/accounts/blockchain/Eth2Input', () => {
     expect(messages('eth2-validator-index')).toEqual(['Validator 123 is already tracked']);
   });
 
-  it('should show a server error that arrives after mount', async () => {
+  it('should show a server error that arrives after mount, without making the form invalid', async () => {
     wrapper = createWrapper({ validatorIndex: '123' });
     await wrapper.setProps({ errorMessages: { validatorIndex: ['Validator 123 is already tracked'] } });
     await nextTick();
 
     expect(messages('eth2-validator-index')).toEqual(['Validator 123 is already tracked']);
-    // FLIP: a server error no longer makes the form itself invalid, because the core keys them
-    // separately from the schema. Unobservable through the dialog, which clears the errors it holds
-    // before it validates, so a retry was never blocked by one under vuelidate either.
     expect(wrapper.vm.validate()).toBe(true);
   });
 

@@ -92,12 +92,6 @@ export function useTaskPollingScheduler(): UseTaskPollingSchedulerReturn {
 
   async function tick(): Promise<void> {
     try {
-      // Skip the pass while the backend is deliberately down — a restart in
-      // flight, or a backend being switched. It cannot answer, so polling it
-      // only fills the console with failed requests for the whole window (a
-      // core restart takes seconds, and the active pace is twice a second).
-      // Skipping rather than stopping means polling resumes on its own when the
-      // connection returns, with no one having to restart the scheduler.
       if (get(connected))
         await monitor();
     }

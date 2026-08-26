@@ -75,8 +75,8 @@ interface UseSnapshotDraftReturn {
  * Undo uses a bounded full-state stack (snapshot + the NFT flag) rather than
  * op-inversion — simpler and impossible to desync for the v1 editor.
  *
- * @param initial the loaded snapshot (value, ref or getter); re-seeds the draft
- *   whenever it changes (e.g. navigating to a different snapshot).
+ * @param initial - the loaded snapshot, as a value, ref or getter; the draft is re-seeded whenever
+ * it changes, such as on navigating to a different snapshot
  */
 export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>): UseSnapshotDraftReturn {
   const original = ref<Snapshot>();

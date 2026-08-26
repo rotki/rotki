@@ -454,9 +454,7 @@ describe('useAccount', () => {
       await checkIfPasswordConfirmationNeeded('testUser');
       const afterTime = dayjs().unix();
 
-      // Should not show dialog on first use
       expect(get(needsPasswordConfirmation)).toBe(false);
-      // Should have initialized the timestamp
       expect(frontendStore.frontend.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
       expect(frontendStore.frontend.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
     });

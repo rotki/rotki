@@ -45,17 +45,14 @@ interface UseSnapshotAssetPriceReturn {
 }
 
 /**
- * Owns the asset <-> USD <-> display-currency price-sync state machine used by
- * the snapshot balance edit form.
+ * The price-sync state machine between asset, USD and display currency, for the snapshot balance
+ * edit form.
  *
- * Snapshots are stored in USD. In a non-USD main currency the user edits the
- * fiat price/value, so the stored `usdValue` must be kept in sync via the
- * historic USD -> fiat rate at the snapshot's timestamp (#12277). That rate is
- * derived from the two fetched asset prices (asset->fiat / asset->USD): it is
- * the rate that applied then and is stable across the user's edits.
- *
- * Extracted from EditBalancesSnapshotAssetPriceForm so this bidirectional,
- * rounding-sensitive logic can be unit-tested without mounting the component.
+ * @remarks
+ * Snapshots are stored in USD, so in another main currency the user edits the fiat price while the
+ * stored `usdValue` is kept in sync through the historic rate at the snapshot's timestamp. That rate
+ * is derived from the two fetched asset prices, asset-to-fiat over asset-to-USD, which is what
+ * applied then and stays stable across the user's edits.
  */
 export function useSnapshotAssetPrice(
   options: UseSnapshotAssetPriceOptions,
@@ -98,9 +95,6 @@ export function useSnapshotAssetPrice(
   }
 
   function onAssetToUsdPriceChange(forceUpdate = false): void {
-    // USD main currency only: in a non-USD currency the stored USD value is
-    // driven from the fiat value via the direct rate (see syncUsdValueFromFiat),
-    // so this must not also write it from the asset's USD price.
     if (get(isCurrentCurrencyUsd) && get(amount) && get(modelAssetToUsdPrice) && (!get(modelFiatValueFocused) || forceUpdate))
       set(usdValue, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
   }

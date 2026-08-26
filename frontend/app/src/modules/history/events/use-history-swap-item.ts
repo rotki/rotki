@@ -13,12 +13,9 @@ export interface UseHistorySwapItemProps {
 }
 
 export interface UseHistorySwapItemReturn {
-  // Primary event
   primaryEvent: ComputedRef<HistoryEventEntry>;
-  // State
   hasMissingRule: ComputedRef<boolean>;
   chain: ComputedRef<Blockchain>;
-  // Selection
   showCheckbox: ComputedRef<boolean>;
   isCheckboxDisabled: ComputedRef<boolean>;
   swapEventIds: ComputedRef<number[]>;
@@ -67,13 +64,11 @@ export function useHistorySwapItem(
     return get(selection.isSelectAllMatching);
   });
 
-  // All event IDs in this swap for selection
   const swapEventIds = computed<number[]>(() => get(events).map(e => e.identifier));
 
   const isSelected = computed<boolean>(() => {
     if (!selection)
       return false;
-    // A swap is selected if all its events are selected
     return get(swapEventIds).every(id => selection.isEventSelected(id));
   });
 
@@ -164,7 +159,6 @@ export function useHistorySwapItem(
           ...receiveNotes,
         });
 
-    // Append fee if exists
     const fee = get(events).filter(item => item.eventSubtype === 'fee');
     if (fee.length === 0)
       return notes;

@@ -110,7 +110,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
   });
 
   describe('format options', () => {
-    it('should display integer when format.integer is true', () => {
+    it('should round an integer format up, using the amount rounding mode rather than the value one', () => {
       wrapper = mount(ValueDisplay, {
         global: { plugins: [pinia] },
         props: {
@@ -118,7 +118,6 @@ describe('modules/amount-display/components/ValueDisplay', () => {
           value: bigNumberify(128.205),
         },
       });
-      // Uses amountRoundingMode which defaults to ROUND_UP
       expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('129');
     });
   });
@@ -133,7 +132,6 @@ describe('modules/amount-display/components/ValueDisplay', () => {
         },
       });
       expect(wrapper.find('[data-testid="amount-display"].skeleton').exists()).toBe(true);
-      // Content should be hidden when loading
       expect(wrapper.find('[data-testid="display-amount"]').exists()).toBe(false);
     });
   });

@@ -398,7 +398,6 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
-      // First update sets originalPeriodStart
       store.setUnifiedTxQueryStatus({
         address: '0x123',
         chain: 'ETH',
@@ -407,7 +406,6 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'evm',
       });
 
-      // Subsequent update should preserve originalPeriodStart
       store.setUnifiedTxQueryStatus({
         address: '0x123',
         chain: 'ETH',
@@ -442,7 +440,6 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
-      // Set initial status
       store.setUnifiedTxQueryStatus({
         address: '0x123',
         chain: 'ETH',
@@ -451,11 +448,9 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'evm',
       });
 
-      // Cancel the address
       store.markAddressCancelled({ address: '0x123', chain: 'eth' });
       expect(get(store.queryStatus)['0x123eth'].status).toBe(TransactionsQueryStatus.CANCELLED);
 
-      // Late WS update should be ignored
       store.setUnifiedTxQueryStatus({
         address: '0x123',
         chain: 'ETH',
@@ -471,7 +466,6 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
-      // Set initial bitcoin status
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
         chain: 'BTC',
@@ -479,11 +473,9 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
-      // Cancel the address
       store.markAddressCancelled({ address: 'bc1abc', chain: 'btc' });
       expect(get(store.queryStatus).bc1abcbtc.status).toBe(TransactionsQueryStatus.CANCELLED);
 
-      // Late WS update should be ignored
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
         chain: 'BTC',

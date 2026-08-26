@@ -19,19 +19,15 @@ export interface UseHistoryEventItemProps {
 }
 
 export interface UseHistoryEventItemReturn {
-  // Asset state
   isIgnoredAsset: ComputedRef<boolean>;
   isSpam: ComputedRef<boolean>;
   hiddenEvent: ComputedRef<boolean>;
-  // Selection state
   showCheckbox: ComputedRef<boolean>;
   isCheckboxDisabled: ComputedRef<boolean>;
   isSelected: ComputedRef<boolean>;
   toggleSelected: () => void;
-  // Event state
   hasMissingRule: ComputedRef<boolean>;
   chain: ComputedRef<Blockchain>;
-  // Event data
   notes: ComputedRef<string | undefined>;
   counterparty: ComputedRef<string | undefined>;
   validatorIndex: ComputedRef<number | undefined>;

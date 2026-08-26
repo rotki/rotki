@@ -156,7 +156,7 @@ export function useSavedViews(
    * Both settings are written in one call: the conversion has to be atomic, or a failure between
    * the two would either lose the filters or convert them twice.
    *
-   * ⭐ Called when the views UI is opened, deliberately NOT when the composable mounts. Every
+   * Called when the views UI is opened, deliberately NOT when the composable mounts. Every
    * frontend setting is stored as one blob, and a write sends `{...store, ...patch}`, so two
    * writers whose requests overlap lose the earlier one's keys. Logging in fires a burst of such
    * writes (the notification schedule, the last password confirmation), and a conversion running

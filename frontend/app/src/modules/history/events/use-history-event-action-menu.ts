@@ -86,7 +86,7 @@ export interface UseHistoryEventActionMenuReturn {
  * Everything the row's action menu has to work out about its event: which actions apply, what
  * they act on, and what each request looks like.
  *
- * ⚠️ A row is not always the event an action runs on: a re-decode runs on the first decodable event
+ * A row is not always the event an action runs on: a re-decode runs on the first decodable event
  * in the group (possibly a child), a delete removes the whole group, and a block event names its
  * re-decode by block number where everything else names it by location and transaction reference.
  */

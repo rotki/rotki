@@ -52,16 +52,11 @@ export interface ParamFieldSpec {
 }
 
 /**
- * A pair of scalar bound matchers (min/max amount, start/end date) collapsed into one
- * range/date field. `lowerKey`/`upperKey` are the wire keys the two bounds serialize to
- * (the codec routes `range.min`/`date.from` to `lowerKey`, `range.max`/`date.to` to `upperKey`).
- */
-/**
  * A field bound to the table's filter bag, declared directly rather than through a matcher.
  *
- * The counterpart of `ParamFieldSpec` for the other binding. A matcher exists to describe a field
- * to the old text bar, which no longer exists, so a table feeding only the pill bar has no reason
- * to build one: everything the bar actually reads is declared here.
+ * The counterpart of `ParamFieldSpec` for the other binding. A matcher exists only to describe a
+ * field to the text bar, so a table feeding the pill bar alone has no reason to build one:
+ * everything the pill bar reads is declared here.
  */
 export interface MatchFieldSpec {
   readonly key: string;
@@ -100,7 +95,7 @@ export interface BoundsFieldSpec {
   readonly operators?: readonly FilterOp[];
 }
 
-/** A date field additionally carries the display <-> wire (timestamp) serializers for each bound. */
+/** A date field additionally carries the serializers between display and wire timestamp, per bound. */
 export interface DateFieldSpec extends BoundsFieldSpec {
   readonly serializer?: (value: string) => string;
   readonly deserializer?: (value: string) => string;
@@ -187,11 +182,13 @@ function matchFieldOperators(
 }
 
 /**
- * Which operators a param-backed field offers. A param carries a plain list of values, with no
- * form for the `!` negation the codec writes for an excluding matcher — hence `allowExclusion:
- * false` below. So `is_not` is not offered either: the chip would be inert, silently dropping
- * what the user asked for. Range/date keep their defaults; those are expressed by which bound is
- * sent, not by a prefix.
+ * Which operators a param-backed field offers.
+ *
+ * @remarks
+ * A param carries a plain list of values with no form for the `!` negation the codec writes for an
+ * excluding matcher, hence `allowExclusion: false` below. `is_not` is therefore not offered
+ * either: the chip would be inert, silently dropping what the user asked for. Range and date keep
+ * their defaults, since those are expressed by which bound is sent rather than by a prefix.
  */
 function paramOperators(valueType: FilterValueType, operators?: readonly FilterOp[]): readonly FilterOp[] {
   if (operators && operators.length > 0)

@@ -102,7 +102,6 @@ describe('useTaskPollingScheduler', () => {
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + 50);
     expect(monitor).toHaveBeenCalledOnce();
 
-    // Another fast interval is no longer enough to earn a second poll.
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS);
     expect(monitor).toHaveBeenCalledOnce();
 

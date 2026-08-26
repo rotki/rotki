@@ -24,8 +24,7 @@ import { useUnlockSteps } from './use-unlock-steps';
 
 type UnlockMode = 'login' | 'create' | 'auto';
 
-// Phases where the form must show a busy state (the asset-update prompt/conflict phases
-// are excluded — they wait on the user, not on us).
+/** The phases that mean work is in progress; the phases that wait on the user are absent. */
 const IN_FLIGHT: ReadonlySet<string> = new Set([
   UnlockPhase.resolving,
   UnlockPhase.authenticating,
@@ -53,11 +52,9 @@ export interface UseUnlockFlowControllerReturn {
 }
 
 /**
- * The single funnel for every unlock path — manual login, account creation, and
- * auto-login/resume all drive ONE shared `useUnlockFlow` instance (so the login page
- * renders progress regardless of which path started it). Owns the active step-set per
- * mode and runs the post-unlock side-effects on `ready`: the shared ones via
- * `useSessionReady`, plus the small per-mode extras.
+ * Builds the single funnel every unlock path runs through: manual login, account creation and
+ * auto-login/resume all drive one shared `useUnlockFlow`, so the login page renders progress no
+ * matter which path started it.
  */
 export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -65,9 +62,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const { handleSessionReady } = useSessionReady();
   const { logged, upgradeVisible, username } = storeToRefs(useSessionAuthStore());
 
-  // A 401 only means "session lost" when a session is actually active. While logged out
-  // (login screen) a 401 is expected and must stay local to its caller, or it would abort an
-  // in-progress login. This is the pre-auth-hardening gate — it must be wired for every run.
   api.setOnAuthFailure(
     () => set(logged, false),
     () => get(logged),
@@ -78,9 +72,8 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const { restarting } = useRestartingStatus();
 
   const mode = ref<UnlockMode>('login');
-  // The step-set the proxy currently delegates to; swapped synchronously before each start.
   let active: UnlockSteps = loginSteps;
-  // When the current account-creation started, to gate the slow-upgrade UX pad in onReady.
+  /** Epoch milliseconds of when the current account creation started; 0 outside a creation. */
   let createStartedAt = 0;
 
   const proxy: UnlockSteps = {
@@ -100,11 +93,16 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
 
   const flow = useUnlockFlow(proxy);
 
-  // Auto-unlock runs in the background — it must not flip the login form into its disabled
-  // "loading" state (the disable→enable toggle on the autocomplete would otherwise fire a
-  // spurious empty-username validation on first open).
+  /**
+   * Whether the form shows a busy state. Never during an auto-unlock: toggling the username
+   * autocomplete's disabled state fires a spurious empty-username validation on first open.
+   */
   const loading = computed<boolean>(() => get(mode) !== 'auto' && IN_FLIGHT.has(get(flow.state).kind));
 
+  /**
+   * The unlock failures the form itself renders. A wrong password is not one: it reaches the user
+   * as the server's own message under {@link UnlockErrorKind.unknown}.
+   */
   const errors = computed<string[]>(() => {
     const current = get(flow.state);
     if (current.kind !== UnlockPhase.error)
@@ -117,8 +115,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
         return [error.message];
       case UnlockErrorKind.restartFailed:
         return [t('unlock_flow.errors.restart_failed')];
-      // wrong-password surfaces via the server message (unknown); sync/upgrade conflicts
-      // drive their own store-backed alerts inside LoginForm.
       case UnlockErrorKind.wrongPassword:
       case UnlockErrorKind.syncConflict:
       case UnlockErrorKind.incompleteUpgrade:
@@ -126,19 +122,21 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     }
   });
 
+  /**
+   * Runs the post-unlock side-effects once the flow reports ready.
+   *
+   * @remarks
+   * `ready.resumed`, not the caller's mode, picks the branch: a saved-password auto-unlock can end
+   * in either. A create that also ran an upgrade is padded only when it was fast, so the progress
+   * bar is seen at all; a slow upgrade was on screen long enough already.
+   */
   async function onReady(): Promise<void> {
     const current = get(mode);
     const state = get(flow.state);
-    // The flow owns the resume-vs-fresh-login branch, so `ready.resumed` — not the caller's
-    // mode — decides which post-unlock effects apply (a saved-password auto-unlock can end
-    // in either branch).
     const resumed = state.kind === UnlockPhase.ready && state.resumed;
 
-    // Pad only a *fast* create+upgrade so the progress bar is actually seen — a long upgrade
-    // is already visible long enough and shouldn't tack on a needless delay before navigating.
     if (current === 'create' && get(upgradeVisible) && (dayjs().valueOf() - createStartedAt) / 1000 < 10)
       await wait(3000);
-    // A fresh login (manual or saved-password auto-unlock) proves the password; record it.
     if (!resumed && current !== 'create')
       await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
     if (current === 'create')
@@ -148,8 +146,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
 
     if (current === 'create')
       return;
-    // A resumed session hasn't re-proven the password, so it may still need confirmation; a
-    // fresh login just did, and disconnects any wallet lingering from the previous session.
     if (resumed)
       await checkIfPasswordConfirmationNeeded(get(username));
     else
@@ -157,19 +153,19 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   }
 
   watch(flow.state, (current) => {
-    // Surface the flow's restart as the shared "restarting" status so the connection screen
-    // shows a restart message (the backend connection drops while it restarts).
+    // The backend connection drops while it restarts, so the connection screen needs the shared
+    // status to show a restart message rather than a lost-connection one.
     set(restarting, current.kind === UnlockPhase.restarting);
-    // Log unexpected failures so a failed login is diagnosable in the field (conflicts and
-    // wrong-password are expected and drive their own UI, so they are not logged).
     if (current.kind === UnlockPhase.error && current.error.kind === UnlockErrorKind.unknown && current.error.message)
       logger.error(`unlock failed: ${current.error.message}`);
     if (current.kind === UnlockPhase.ready)
       startPromise(onReady());
   });
 
-  // Only one flow runs at a time: ignore a start while another is mid-flight (e.g. the two
-  // `useAutoLogin` instances both reacting to `connected`, or a resume racing a manual login).
+  /**
+   * Reports whether a new flow may start; only one runs at a time. The starts it turns away are
+   * real: both `useAutoLogin` instances react to `connected`, and a resume can race a manual login.
+   */
   function canStart(): boolean {
     const kind = get(flow.state).kind;
     return kind === UnlockPhase.idle || kind === UnlockPhase.error;
@@ -198,9 +194,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     set(mode, 'auto');
     active = loginSteps;
     await flow.startAuto();
-    // A background auto-unlock that hit a real failure (e.g. a stale saved password) ends in
-    // `error` — fall back to a clean idle form rather than parking the login screen in error.
-    // Guarded by the canStart() check above so it can never clear another in-flight flow.
     if (get(flow.state).kind === UnlockPhase.error)
       flow.reset();
   }
@@ -220,7 +213,7 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
 }
 
 /**
- * App-wide singleton: every consumer (login page, account-management, auto-login) shares
- * one flow instance so the UI reflects whichever path is driving the unlock.
+ * App-wide singleton. Every consumer (login page, account management, auto-login) shares one flow
+ * instance so the UI reflects whichever path is driving the unlock.
  */
 export const useUnlockFlowController = createSharedComposable(createUnlockFlowController);

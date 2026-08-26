@@ -44,10 +44,8 @@ describe('useDynamicMessages', () => {
       store = usePremiumStore();
     }
 
-    // Clear session storage
     sessionStorage.clear();
 
-    // Reset premium to false for each test
     const { premium } = storeToRefs(store);
     set(premium, false);
   });
@@ -189,7 +187,6 @@ describe('useDynamicMessages', () => {
     vi.setSystemTime(dayjs('2023/10/12').toDate());
     await fetchMessages();
 
-    // Verify premium status is correctly set
     expect(get(premium)).toBe(true);
     expect(get(activeDashboardMessages)).toHaveLength(0);
   });

@@ -27,7 +27,7 @@ interface BatchUmbrella extends BatchLabels {
   /**
    * Keep this umbrella out of the completion ledger — see {@link ActivitySpec.container}.
    *
-   * ⚠️ Opt-in per caller, because it is not always right: an umbrella that *is* the subject for its
+   * Opt-in per caller, because it is not always right: an umbrella that *is* the subject for its
    * kind (`HISTORY_SYNC`) has a load-bearing ledger entry. Set it where the children are the
    * subjects and the umbrella is only their container.
    */
@@ -48,9 +48,8 @@ export function useActivityBatch(): UseActivityBatchReturn {
   /**
    * Runs one activity per subject under a single umbrella row.
    *
-   * Throttling is the lane's job, not this function's — each subject's own submit carries the
-   * descriptor's lane. Wrapping this in a limiter as well would put two mechanisms on one piece of
-   * work, which is what the warning on `DECODE_LANE` is about.
+   * Throttling is the lane's job: each subject's own submit carries the descriptor's lane, so adding
+   * a limiter here would put two mechanisms on one piece of work.
    *
    * The umbrella runs on {@link UMBRELLA_LANE}, never the children's lane: a parent holding a slot
    * in the lane it is waiting on throttles its own children, and at a cap of 1 deadlocks.
@@ -63,9 +62,6 @@ export function useActivityBatch(): UseActivityBatchReturn {
     if (items.length === 0)
       return [];
 
-    // One item needs no umbrella: a parent over a single child is a second row in the task centre
-    // describing the same work. Suppressing it here is what lets the caller stop branching on the
-    // item count — the batch decides presentation, the caller always fans out.
     if (items.length === 1)
       return [await run(items[0], umbrella.parent)];
 
@@ -85,9 +81,6 @@ export function useActivityBatch(): UseActivityBatchReturn {
       lane: UMBRELLA_LANE,
       parent: umbrella.parent,
       rerunnable: false,
-      // allSettled, never all: one subject failing must not abandon the rest. The umbrella settles
-      // complete either way — a failure belongs to the subject that failed, and marking the parent
-      // failed would say the whole batch never happened.
       run: async (): Promise<Result<void, TaskError>> => {
         await Promise.allSettled(await subtree);
         return ok(undefined);

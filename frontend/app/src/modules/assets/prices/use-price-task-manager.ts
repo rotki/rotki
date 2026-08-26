@@ -78,15 +78,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       return One;
     }
 
-    // One native PRICES activity per (fromAsset, toAsset, timestamp). The id must carry all
-    // three: `submitTask` dedups by id, so a shared id would hand two distinct queries the same
-    // promise and return one the other's price. Readers aggregate with `useWorkStatusPrefix`.
-    //
-    // The price is the activity's *return value*, not a variable in this closure. Two identical
-    // concurrent lookups legitimately dedup onto one activity, and the second caller's `run`
-    // never executes — reading a local left it at `One.negated()`, which
-    // `use-snapshot-asset-price.ts` treats as "no historic price" and silently replaces with
-    // `usdValue/amount`. A fabricated price is worse than a slow one.
     const outcome = await submitTask<BigNumber>({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, fromAsset, toAsset, timestamp),
       kind: ActivityKind.PRICES,

@@ -61,9 +61,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       parent: placement.parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => {
-        // Declared up front alongside the syncs it waits on, so the shape of a refresh does not
-        // depend on what the data turns out to be. When there is nothing left to decode it
-        // completes without calling the backend, rather than never appearing.
         if (placement.skipWhen?.())
           return ok(undefined);
 
@@ -98,13 +95,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
     const isEvmType = type === TransactionChainType.EVM;
-    // The store already keys on the canonical chain id, so no resolution is needed here.
-    //
-    // ⚠️ The evmlike test alone splits the world in two, so anything that is not evmlike counts as
-    // EVM. Bitcoin has no redecode endpoint at all: it decodes only as a phase inside its own
-    // `query_transactions`, and the backend's `CHAINS_WITH_TX_DECODING` covers EVM, evmlike and
-    // Solana only, so the schema rejects it. Without this guard it would be posted there anyway,
-    // since it reaches this store as soon as it reports decoding progress over the websocket.
     const chains = getUndecodedTransactionStatus()
       .filter(({ chain, processed, total }) =>
         processed < total && !isBtcChains(chain) && isEvmType === !isEvmLikeChains(chain),
@@ -127,7 +117,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
    * run, bounded by {@link DECODE_LANE}.
    *
    * This resolves the scope and then reads the shape off {@link redecodeFlow} rather than rebuilding
-   * it, so what a test asserts about the declaration is what runs. ⚠️ The id carries the scope: a
+   * it, so what a test asserts about the declaration is what runs. The id carries the scope: a
    * scoped request identifying itself as the full run would be deduped onto a concurrent
    * redecode-all and silently handed that broader run's promise. A request naming every decodable
    * chain *is* the full run, so it takes the canonical id and dedups deliberately.
@@ -152,18 +142,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       kind: redecodeFlow.kind,
       lane: UMBRELLA_LANE,
       rerunnable: false,
-      // Declared, not hardcoded: the flow is what knows it deletes before re-deriving, and the
-      // eligibility rules are what act on it by holding matching off the same rows.
       resets: redecodeFlow.resets,
       run: async (): Promise<Result<void, TaskError>> => {
-        // allSettled, never all: one chain failing must not abandon the others.
-        //
-        // The flow settles COMPLETE even when chains failed. A failure marks the child, never the
-        // parent: to an observer the flow did run to completion, and the chain that failed carries
-        // its own FAILED status and keeps its stale freshness, so a later run retries exactly that
-        // chain and leaves the ones that succeeded alone. Failing the umbrella instead would say
-        // the whole re-decode did not happen, and would leave nothing able to distinguish the
-        // chains that need retrying from the ones that do not.
         const outcomes = await Promise.allSettled(await subtree);
         const failed = outcomes.filter(outcome => outcome.status === 'rejected').length;
 
@@ -195,9 +175,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     cancelDecoding,
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
-    // Re-exported, not owned: a decode is always preceded by reading what is left to decode, so
-    // callers that drive one need both. Consumers that only want the counts take
-    // `useUndecodedTransactionsStatus` directly.
+    // Re-exported because a decode is always preceded by a read of what is left to decode. For the
+    // counts alone, take `useUndecodedTransactionsStatus` directly.
     fetchUndecodedTransactionsBreakdown,
     redecodeTransactions,
   };

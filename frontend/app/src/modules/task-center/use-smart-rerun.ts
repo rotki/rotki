@@ -23,8 +23,8 @@ interface UseSmartRerunReturn {
  *  - **on:** re-runs them immediately through the controller.
  *  - **off (default):** collects them into {@link needsRerun} for a later UI prompt.
  *
- * Headless this round: until a producer (P&L, historical balances) runs native, there are no
- * matching terminal activities, so this is a no-op — the wiring is what lands now.
+ * Headless until a producer (P&L, historical balances) runs native: with no matching terminal
+ * activities this is a no-op.
  */
 export const useSmartRerun = createSharedComposable((): UseSmartRerunReturn => {
   const autoRerunOnEdit = useSetting('autoRerunOnEdit');

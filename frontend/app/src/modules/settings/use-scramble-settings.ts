@@ -23,7 +23,6 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
   const multiplier = useSetting('scrambleMultiplier');
   const { applyFrontendSettingLocal, updateFrontendSetting } = useSettingsOperations();
 
-  // Debounced backend update
   const debouncedBackendUpdate = useDebounceFn(async (value: number) => {
     await updateFrontendSetting({ scrambleMultiplier: value });
   }, 500);
@@ -42,7 +41,6 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
     applyFrontendSettingLocal({ scrambleMultiplier: numValue });
 
-    // Debounce backend update
     startPromise(debouncedBackendUpdate(numValue));
     timeoutId = setTimeout(set, 600, isUpdating, false);
   }

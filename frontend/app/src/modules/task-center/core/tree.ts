@@ -6,9 +6,7 @@ import { INDETERMINATE, isTerminalStatus } from './status';
  *
  * Producers declare their whole subtree in one tick — a history refresh submits the umbrella, a
  * chain per group and an account per chain before any of it runs — so the shape is known from the
- * first snapshot. Everything downstream of the orchestrator used to flatten it: the render model
- * bucketed by kind, which put a parent and its children in different buckets and (via `kindRank`)
- * guaranteed they were never adjacent.
+ * first snapshot.
  *
  * Pure over a snapshot, like the rest of `core/`: no Vue, no orchestrator.
  */
@@ -32,11 +30,10 @@ function compareSiblings(a: Activity, b: Activity): number {
 /**
  * Groups a flat snapshot into {@link ActivityTree}.
  *
- * An activity whose declared parent is not in the snapshot is treated as a **root**, never
- * dropped: `clearTerminal` prunes settled records, so a parent can legitimately disappear while
- * its children are still live. This mirrors the orchestrator's own stance, where an unknown parent
- * does not gate a child (`orchestrator.ts` `eligible`), so nothing can be wedged — or here,
- * hidden — by a parent that no longer exists.
+ * @remarks
+ * An absent parent is a normal state, not a broken one: `clearTerminal` prunes settled records
+ * while their children are still live. The orchestrator takes the same stance in `eligible`, where
+ * an unknown parent does not gate a child.
  */
 export function buildTree(activities: Activity[], compareRoots: (a: Activity, b: Activity) => number): ActivityTree {
   const present = new Set(activities.map(activity => activity.id));
@@ -90,16 +87,19 @@ export function someInSubtree(
 /**
  * How much of a subtree is done, counted in **leaves**.
  *
+ * @remarks
  * Leaves are the only nodes that do work: an umbrella awaits its chains, a chain awaits its
- * accounts, and only the accounts talk to the backend. Counting them is what makes "4 of 11 steps"
- * mean something to a reader — counting rows instead would have every intermediate node inflate
- * the total, and a two-chain refresh would claim more work than it does.
+ * accounts, and only the accounts talk to the backend. Counting rows instead would let every
+ * intermediate node inflate the total.
  *
- * ⚠️ Deliberately not the same denominator as `Activity.percentage`, which the orchestrator
- * derives from **direct** children only (`projection.ts` `childProgress`). For a two-level tree
- * they agree; for three levels the percentage is "how many chains finished" while this is "how
- * many accounts finished". Whichever a surface shows, it must show both its number and its bar
- * from the same one.
+ * Not the same denominator as `Activity.percentage`, which the orchestrator derives from
+ * **direct** children only (`projection.ts` `childProgress`). Two-level trees agree; at three
+ * levels that is "how many chains finished" and this is "how many accounts finished". A surface
+ * must take its number and its bar from the same one.
+ *
+ * @param children - direct children by parent id, as {@link ActivityTree.children} builds them
+ * @param root - the activity whose subtree is counted; counts as its own leaf when childless
+ * @returns settled leaves over total leaves, both counted across the whole subtree
  */
 export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): ActivitySteps {
   let current = 0;
@@ -134,18 +134,18 @@ export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root
 /**
  * How far along a subtree is, 0-100, or {@link INDETERMINATE} when nothing in it can be quantified.
  *
- * Same leaves as {@link subtreeSteps}, but a leaf counts fractionally: a running leaf that reports
- * 45% contributes 0.45, not 0. Counting only settled leaves made the header discard the one number
- * a single-task job actually has — a price refresh at 45% rendered its own row at 45% under a
- * header ring pinned at 0%, because "0 of 1 steps" was all the tally could say.
+ * @remarks
+ * Same leaves as {@link subtreeSteps}, but fractional: a running leaf reporting 45% contributes
+ * 0.45, not 0. An unquantifiable leaf contributes 0 and still counts toward the denominator, so
+ * unknown work reads as unfinished rather than leaving the average.
  *
- * A leaf nobody counted contributes 0 while still counting toward the denominator, so unknown work
- * reads as unfinished rather than quietly leaving the average. Only when *no* leaf anywhere is
- * quantifiable does this give up and say so.
+ * This is the number a bar or ring shows, {@link subtreeSteps} the number the text shows. Same
+ * denominator, different precision, so "0 of 1 steps" beside a 45% ring is correct. Never pair this
+ * with a *different* denominator's text.
  *
- * ⚠️ This is the number a bar or ring shows; {@link subtreeSteps} is the number the text shows.
- * They are the same denominator but not the same precision, so a subtree can legitimately read
- * "0 of 1 steps" beside a 45% ring. Never pair this with a *different* denominator's text.
+ * @param children - direct children by parent id, as {@link ActivityTree.children} builds them
+ * @param root - the activity whose subtree is measured
+ * @returns 0-100, or {@link INDETERMINATE} (-1) when no leaf anywhere reports a percentage
  */
 export function subtreeProgress(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): number {
   let done = 0;

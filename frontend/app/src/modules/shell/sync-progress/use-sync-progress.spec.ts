@@ -67,14 +67,19 @@ describe('useSyncProgress', () => {
     total,
   });
 
+  /**
+   * Seeds the store the way a real sync does: addresses registered first, statuses after.
+   *
+   * @remarks
+   * `setUnifiedTxQueryStatus` only updates addresses `initializeQueryStatus` already knows, so
+   * seeding statuses alone leaves the store empty and the assertions pass against nothing.
+   */
   const setupTxStore = (statuses: UnifiedTransactionStatusData[]): void => {
     const txStore = useTxQueryStatusStore();
-    // First initialize with addresses
     const addresses = statuses
       .filter((s): s is UnifiedTransactionStatusData & { address: string } => 'address' in s)
       .map(s => ({ address: s.address, chain: s.chain, subtype: s.subtype }));
     txStore.initializeQueryStatus(addresses);
-    // Then update each status
     for (const status of statuses) {
       txStore.setUnifiedTxQueryStatus(status);
     }
@@ -136,10 +141,7 @@ describe('useSyncProgress', () => {
       expect(get(overallProgress)).toBe(100);
     });
 
-    it('should report warnings when a chain failed', () => {
-      // Complete, but not clean: the header renders "Sync Complete with warnings" off this, and
-      // previously only online-events could raise it, so a run could show a plain green
-      // "Sync Complete" with failed addresses sitting in the notification drawer.
+    it('should report warnings, with an entry each, when a chain failed', () => {
       setupTxStore([
         createEvmTxStatus('0x456', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
@@ -147,8 +149,6 @@ describe('useSyncProgress', () => {
 
       const { hasWarnings, warnings } = useSyncProgress();
       expect(get(hasWarnings)).toBe(true);
-      // The section renders this list, so a flag without an entry gave a "Warnings" heading with
-      // nothing underneath it.
       expect(get(warnings)).toHaveLength(1);
       expect(get(warnings)[0].key).toBe('gnosis');
       expect(get(warnings)[0].message).toBeTruthy();

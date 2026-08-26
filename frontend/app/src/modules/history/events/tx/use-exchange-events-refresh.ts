@@ -20,10 +20,12 @@ interface UseExchangeEventsRefreshReturn {
 }
 
 /**
- * Queries exchange history events. Each {location, name} account runs as its own native
- * EXCHANGE_EVENTS activity, so the orchestrator owns liveness (read off
- * `useWorkStatus(ActivityKind.EXCHANGE_EVENTS)`), cancellation and re-run. The cap-2,
- * sequential-within-location fan-out lives in {@link queryAllExchangeEvents}.
+ * Queries exchange history events.
+ *
+ * @remarks
+ * Each `{ location, name }` account runs as its own native EXCHANGE_EVENTS activity, so the
+ * orchestrator owns liveness (read off `useWorkStatus(ActivityKind.EXCHANGE_EVENTS)`), cancellation
+ * and re-run. The cap-2, sequential-within-location fan-out lives in `queryAllExchangeEvents`.
  */
 export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -76,10 +78,10 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
   /**
    * Accounts of the same location run sequentially; distinct locations run two at a time.
    *
-   * That shape is the lanes' now — a per-location lane capped at 1, with the family's active cap
-   * allowing two locations. It used to be a hand-rolled `awaitGroupedExecution(..., 2)` wrapped
-   * around work the scheduler was already governing, so the effective limit was the tighter of two
-   * mechanisms and neither was written down.
+   * @remarks
+   * The lanes enforce that shape: a per-location lane capped at 1, with the family's active cap
+   * allowing two locations. Do not add a limiter here as well, or the effective cap becomes the
+   * tighter of two mechanisms and neither is written down.
    */
   const queryAllExchangeEvents = async (exchanges: Exchange[], parent?: ActivityId): Promise<Result<void, TaskError>[]> =>
     Promise.all(exchanges.map(async exchange => queryExchange(exchange, parent)));

@@ -24,7 +24,7 @@ export interface FormOptions<TState extends object, TPayload, TMessage = string>
    * field that is only required while editing.
    */
   readonly schema: MaybeRefOrGetter<ZodType>;
-  /** UI state -> API payload (trim, empty->null, BigNumber, ...). Pure. */
+  /** Pure conversion of UI state into the API payload: trimming, empty to null, BigNumber, and so on. */
   readonly transform: (state: UnwrapNestedRefs<TState>) => TPayload;
   /** Injected persistence, returning the store/API `ActionStatus`. */
   readonly submit: (payload: TPayload) => Promise<{ readonly message?: TMessage; readonly success: boolean }>;

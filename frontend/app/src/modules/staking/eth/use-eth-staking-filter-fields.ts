@@ -21,14 +21,13 @@ export const EthStakingFilterValueKeys = {
 const selectableStatuses = validStatuses.filter(status => status !== 'all');
 
 /**
- * The pill-bar fields for the eth staking page: the two date matchers collapsed into one `period`
- * pill, and the validator status.
+ * Builds the pill-bar fields for the eth staking page: one `period` pill and the validator status.
  *
- * The one field list here that is genuinely reactive rather than only locale-dependent: which
- * fields exist turns on `disableStatus`, so this keeps a computed where the other tables no longer
- * need one.
+ * @remarks
+ * Returns a computed because which fields exist depends on `disableStatus`, unlike the other
+ * tables' field lists, which vary only with the locale.
  *
- * @param disableStatus when validators are picked by hand, a status filter cannot narrow anything
+ * @param disableStatus - when validators are picked by hand, a status filter cannot narrow anything
  * further, so the field is not offered at all.
  */
 export function useEthStakingFilterFields(

@@ -12,7 +12,16 @@ const mockRefreshPrices = vi.fn();
 const mockSeedFromHistoric = vi.fn();
 const mockFetchTags = vi.fn();
 const mockFetchAllLocations = vi.fn();
+const mockArmAccountLoad = vi.fn();
+const mockReleaseAccountLoad = vi.fn();
 const mockShouldFetchData = ref<boolean>(true);
+
+vi.mock('@/modules/accounts/use-account-load-state', () => ({
+  useAccountLoadState: vi.fn(() => ({
+    arm: mockArmAccountLoad,
+    release: mockReleaseAccountLoad,
+  })),
+}));
 
 vi.mock('@/modules/session/use-scheduler-state', () => ({
   useSchedulerState: vi.fn(() => ({
@@ -188,6 +197,43 @@ describe('composables::session::load', () => {
       await flushPromises();
 
       expect(mockOnBalancesLoaded).not.toHaveBeenCalled();
+    });
+
+    it('should arm the account gate before the load yields, not once the read is reached', async () => {
+      const { load } = useDataLoader();
+
+      load();
+
+      // no flushPromises: the gate must already be closed by the time `load` returns, or a
+      // consumer snapshotting the account store in the meantime sees it empty.
+      expect(mockArmAccountLoad).toHaveBeenCalledTimes(1);
+      expect(mockArmAccountLoad.mock.invocationCallOrder[0])
+        .toBeLessThan(mockFetchIgnoredAssets.mock.invocationCallOrder[0]);
+    });
+
+    it('should not arm the account gate when there is nothing to fetch', async () => {
+      set(mockShouldFetchData, false);
+
+      const { load } = useDataLoader();
+
+      load();
+      await flushPromises();
+
+      expect(mockArmAccountLoad).not.toHaveBeenCalled();
+    });
+
+    it('should release the account gate when the balance read throws before it starts', async () => {
+      mockFetchNetValue.mockImplementation(() => {
+        throw new Error('Fetch failed');
+      });
+
+      const { load } = useDataLoader();
+
+      load();
+      await flushPromises();
+
+      expect(mockReleaseAccountLoad).toHaveBeenCalledTimes(1);
+      expect(mockSeedFromHistoric).not.toHaveBeenCalled();
     });
 
     it('should call onBalancesLoaded even if some fetches fail', async () => {

@@ -465,11 +465,9 @@ describe('useSigil', () => {
       sigilBus.emit('session:ready');
       await flushPromises();
 
-      // Deactivate
       set(mockLogged, false);
       await nextTick();
 
-      // Reactivate
       mockEnqueue.mockClear();
       set(mockLogged, true);
       await nextTick();

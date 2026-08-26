@@ -18,9 +18,6 @@ const { t } = useI18n({ useScope: 'global' });
 const datetime = ref<number>(0);
 const open = ref<boolean>(false);
 
-// Both the Today label and the chevron reflect the same "already on today"
-// state so the pair reads as a single control — the chevron used to stay
-// primary-outlined while Today greyed out, breaking the visual group.
 const alreadyOnToday = computed<boolean>(() => visibleDate.isSame(today, 'day'));
 
 function goToSelectedDate(): void {

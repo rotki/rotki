@@ -133,6 +133,24 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     expect(get(hasSnapshots)).toBe(true);
   });
 
+  it('should fetch on mount when the series is empty', async () => {
+    setCurrency('USD');
+    withSetup(() => useSnapshotList());
+    await flushPromises();
+
+    expect(fetchNetValue).toHaveBeenCalledOnce();
+  });
+
+  it('should not fetch on mount when the series is already loaded', async () => {
+    setCurrency('USD');
+    set(netValue, { data: [bigNumberify(100), bigNumberify(150)], times: [day1, day2] });
+
+    withSetup(() => useSnapshotList());
+    await flushPromises();
+
+    expect(fetchNetValue).not.toHaveBeenCalled();
+  });
+
   it('should reflect loading state across a refresh call', async () => {
     setCurrency('USD');
     const { loading, refresh } = withSetup(() => useSnapshotList()).result;

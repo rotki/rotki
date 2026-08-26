@@ -93,16 +93,13 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   }
 
   /**
-     * Calculates the position for a tooltip based on the current mouse position while ensuring
-     * the tooltip does not overflow the boundaries of a specified container.
-     *
-     * The method adjusts the tooltip position dynamically by flipping its placement
-     * horizontally or vertically if it exceeds the container's dimensions.
-     *
-     * @return {Object} An object containing the x and y coordinates for the tooltip position:
-     * - x: The adjusted horizontal position for the tooltip.
-     * - y: The adjusted vertical position for the tooltip.
-     */
+   * Places the tooltip near the pointer without letting it overflow its container.
+   *
+   * @remarks
+   * Flips the placement horizontally or vertically when the tooltip would cross an edge.
+   *
+   * @returns the tooltip's adjusted `x` and `y`, in container coordinates
+   */
   function calculateTooltipPosition(): { x: number; y: number } {
     // Start from the last known mouse coordinates
     const pos = get(mousePos);
@@ -139,11 +136,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   }
 
   /**
-     * Sets up the handler for adjusting the axis pointer and tooltip display on the provided ECharts instance.
-     *
-     * @param {EChartsType} instance - The instance of the ECharts chart on which the axis pointer handler will be set up.
-     * @return {void} This function does not return a value.
-     */
+   * Sets up the handler that moves the axis pointer and the tooltip together.
+   */
   function setupAxisPointerHandler(instance: EChartsType): void {
     instance.on('updateAxisPointer', (event: any) => {
       const { axesInfo, dataIndex } = event;
@@ -175,11 +169,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   }
 
   /**
-     * Sets up an event handler to hide the tooltip when the pointer leaves the entire chart area.
-     *
-     * @param {EChartsType} instance - The ECharts instance to configure the mouse leave handler for.
-     * @return {void} Does not return a value.
-     */
+   * Hides the tooltip when the pointer leaves the chart area entirely.
+   */
   function setupMouseLeaveHandler(instance: EChartsType): void {
     instance.getZr().on('globalout', () => {
       resetTooltip();
@@ -196,12 +187,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   }
 
   /**
-     * Sets up a handler for double-click events on the given ECharts instance.
-     * The handler includes resetting the data zoom to its initial state.
-     *
-     * @param {EChartsType} instance - The ECharts instance on which the double-click handler is set up.
-     * @return {void} This function does not return a value.
-     */
+   * Handles double-click on the chart, which resets the data zoom to its initial state.
+   */
   function setupDoubleClickHandler(instance: EChartsType): void {
     instance.getZr().on('dblclick', () => {
       if (isDefined(clickTimer)) {
@@ -212,7 +199,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     });
   }
 
-  // Store event handlers for cleanup
   let containerEventHandlers: {
     mousedown?: (e: MouseEvent) => void;
     mousemove?: (e: MouseEvent) => void;
@@ -237,12 +223,12 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   }
 
   /**
- * Sets up a click event handler on the specified container element. This handler processes single and double-clicks
- * with a timer mechanism, allowing specific actions to be triggered based on the user's click interactions.
- *
- * @param {HTMLElement} container - The HTML element on which the click event listener will be added.
- * @return {void} This method does not return a value.
- */
+   * Handles clicks on the container, separating a single click from a double one.
+   *
+   * @remarks
+   * A timer holds the single-click action back long enough for a second click to cancel it, and
+   * mousedown/mouseup positions are tracked so a drag is not mistaken for a click.
+   */
   function setupContainerClickHandler(container: HTMLElement): void {
     // Track mouse down/up for drag detection
     containerEventHandlers.mousedown = (e): void => {
@@ -272,7 +258,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     };
 
     containerEventHandlers.click = (): void => {
-      // Ignore click if it was a drag operation
       if (get(isDragging)) {
         return;
       }
@@ -354,7 +339,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       return;
     }
 
-    // Clear existing handlers
     chartEventHandlers.forEach(cleanup => cleanup());
     chartEventHandlers = [];
 
@@ -367,7 +351,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     setupZoomToolHandler();
     setupZoomChangeHandler(instance);
 
-    // Store cleanup functions
     chartEventHandlers = [
       (): EChartsType => instance?.off('updateAxisPointer'),
       (): EChartsType => instance?.off('finished'),
@@ -379,7 +362,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     ];
   }
 
-  // Cleanup on unmount
   onUnmounted(() => {
     chartEventHandlers.forEach(cleanup => cleanup());
     const timer = get(clickTimer);

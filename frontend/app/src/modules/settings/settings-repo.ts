@@ -45,12 +45,12 @@ function defaultSessionSettings(): SessionSettings {
 }
 
 /**
- * Single source of truth for the four settings channels. Holds each channel's already-parsed
- * settings object (the same objects the four per-channel stores used to hold) and the imperative
- * update methods that mutate them. Feature code never reads these refs directly: it goes through
- * `useSetting` (reads) and `settingsWriter` / `useSettingModel` (writes), both of which route via
- * the settings registry. Only the read primitive, the write pipeline (`useSettingsOperations`,
- * `useSettingsWriter`) and login bootstrap (`useSessionSettings`) touch the repo.
+ * Holds the four settings channels and the methods that mutate them.
+ *
+ * @remarks
+ * Feature code must not read these refs or call these methods directly. Reads go through
+ * `useSetting`, writes through `settingsWriter` / `useSettingModel`, both routing via the settings
+ * registry. Only the read primitive, the write pipeline and login bootstrap touch the repo.
  */
 export const useSettingsRepo = defineStore('settings', () => {
   const { defaultCurrency } = useCurrencies();

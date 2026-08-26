@@ -107,9 +107,7 @@ describe('useBlockchainAccountManagement', () => {
       expect(h.addAccounts).not.toHaveBeenCalled();
     });
 
-    // The address count no longer selects a mechanism: one and many take the same call, and the
-    // batch decides whether an umbrella is warranted.
-    it('should delegate the filtered payload for one address and for many', async () => {
+    it('should delegate the filtered payload through the same call for one address and for many', async () => {
       h.addAccounts.mockResolvedValue(NOTHING);
       const many = [{ address: '0xabc', tags: null }, { address: '0xdef', tags: null }];
       h.getNewAccountPayload.mockReturnValue(many);

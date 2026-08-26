@@ -33,7 +33,6 @@ function activeFor(part?: string): boolean {
     return get(mockAddRunning);
   if (part === 'remove')
     return get(mockRemoveRunning);
-  // The eth2 chain's balance activity, which used to be read as a Section subsection.
   if (part === 'eth2')
     return get(mockLoading);
   return false;

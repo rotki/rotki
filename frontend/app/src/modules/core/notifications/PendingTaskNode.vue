@@ -35,7 +35,7 @@ const steps = computed<ActivitySteps | undefined>(() => (get(isParent) ? subtree
 const percentage = computed<number>(() => (get(isParent) ? subtreeProgress(children, activity) : activity.percentage));
 
 /**
- * ⭐ A parent's stop control ends its whole subtree, because `orchestrator.cancel` cascades: the
+ * A parent's stop control ends its whole subtree, because `orchestrator.cancel` cascades: the
  * settle walks the children, each of which walks its own. Until that landed this row deliberately
  * rendered no control at all — cancelling a parent settled its row and stopped nothing, since the
  * handle only aborts a backend task id an umbrella never has.

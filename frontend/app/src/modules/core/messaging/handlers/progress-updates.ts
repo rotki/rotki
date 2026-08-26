@@ -33,9 +33,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS:
         setHistoricalDailyPriceStatus(data);
-        // The status arrives without request identity, while each query is its own activity, so
-        // it goes to whichever daily-price activity is running. Keeps the pending-tasks bar
-        // determinate now that it reads progress off the activity instead of this store.
         reportProgressByPrefix(
           { current: data.processed, total: data.total },
           ActivityKind.PRICES,
@@ -43,7 +40,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         );
         break;
       case SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY:
-        // Progress for the one liquity staking activity; it owns an exact id, so no prefix match.
         reportProgress(
           makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKING),
           { current: data.processed, total: data.total },
@@ -56,8 +52,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         setHistoricalPriceStatus(data);
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING:
-        // The producer fires processing once and awaits it; the backend streams progress here.
-        // Push it onto the native activity so the orchestrator owns the progress bar.
         reportProgress(makeActivityId(ActivityKind.HISTORICAL_BALANCES), { current: data.processed, total: data.total });
         break;
     }

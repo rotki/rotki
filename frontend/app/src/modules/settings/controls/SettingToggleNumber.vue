@@ -7,12 +7,15 @@ import { useClearableMessages } from '@/modules/settings/use-clearable-messages'
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 
 /**
- * Generic owning component for a setting that pairs an enable switch with a numeric field on a SINGLE
- * key: toggling on writes `enabledValue`, toggling off writes `offValue` (a sentinel, default -1), and
- * the field edits the stored value while enabled. Optional `toField`/`fromField` map between the stored
- * value and the field string (e.g. seconds<->days). Validation is `required` (only while enabled) plus
- * `between`/`minValue` from `min`/`max`. Renders only the switch + field; wrap it in a `SettingsItem`
- * for a header. Optional `success.onToggle`/`success.onValue` provide per-action success copy.
+ * Owning component for a setting that pairs an enable switch with a numeric field on a **single** key.
+ *
+ * @remarks
+ * Toggling on writes `enabledValue` and toggling off writes the `offValue` sentinel, which defaults
+ * to -1; while enabled, the field edits the stored value. `toField` and `fromField` map between the
+ * stored value and the field string, seconds against days say. Validation is `required` while
+ * enabled, plus a range rule from `min` and `max`.
+ *
+ * Renders only the switch and the field, so wrap it in a `SettingsItem` for a header.
  */
 defineOptions({ inheritAttrs: false });
 
@@ -44,9 +47,9 @@ const {
   enabledValue: number;
   /** Sentinel written when toggled off. */
   offValue?: number;
-  /** Map the stored number to the field string (e.g. seconds -> days). */
+  /** Maps the stored number to the field string, seconds to days say. */
   toField?: (stored: number) => string;
-  /** Map the field string to the stored number (e.g. days -> seconds). */
+  /** Maps the field string back to the stored number, days to seconds say. */
   fromField?: (input: string) => number;
   /** Validation messages: `invalid` for the range rule, `empty` for the required rule (while enabled). */
   validation: { invalid: string; empty: string };

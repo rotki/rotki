@@ -63,8 +63,8 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   /**
    * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
    *
-   * @param publicKey the validator's public key is used to identify the balance
-   * @param newOwnershipPercentage the ownership percentage of the validator after the edit
+   * @param publicKey - identifies which validator's balance to adjust
+   * @param newOwnershipPercentage - the ownership percentage after the edit
    */
   const updateEthStakingOwnership = (publicKey: string, newOwnershipPercentage: BigNumber): void => {
     const validators = [...get(accounts)[Blockchain.ETH2]?.filter(isValidatorAccount) ?? []];

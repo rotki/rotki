@@ -89,7 +89,6 @@ describe('createGnosisIndexerSuggestion', () => {
   });
 
   it('should still offer the blockscout key when only an etherscan key is set', () => {
-    // That key may well be a free one, which no longer serves gnosis, and nothing here can tell.
     const suggestion = createGnosisIndexerSuggestion(t, createContext({ hasEtherscanKey: true }));
 
     expect(suggestion?.action?.service).toBe('blockscout');

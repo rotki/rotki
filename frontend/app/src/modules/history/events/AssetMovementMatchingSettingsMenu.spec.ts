@@ -108,9 +108,6 @@ describe('assetMovementMatchingSettingsMenu', () => {
     expect(get(tolerance)).toBe('0.000001');
   });
 
-  // The schemas pass a field that holds nothing yet, since the menu writes on every keystroke, so
-  // clearing the tolerance used to convert `''` and throw, and clearing the time range wrote NaN
-  // seconds. Neither field is written until it holds a number again.
   it.each(['', '-', '1.2.3'])('should not write a tolerance of %s', async (typed) => {
     await edit(0, typed);
 

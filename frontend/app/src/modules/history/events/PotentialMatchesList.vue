@@ -61,17 +61,16 @@ const tableMaxHeight = computed<string>(() =>
     : 'calc(100vh - 33rem)',
 );
 
-/** The time field's own max. */
+/** Seven days, matching the time field's own max. */
 const MAX_SEARCH_HOURS = 168;
 
-/** Past a full 100% either side, the tolerance no longer excludes anything. */
+/** Raising this past 100 changes nothing: a full 100% either side already excludes no candidate. */
 const MAX_TOLERANCE_PERCENTAGE = 100;
 
-/** Nothing left to widen once both criteria sit at their ceiling, so stop offering it. */
 const canWiden = computed<boolean>(() =>
   Number(get(searchTimeRange)) < MAX_SEARCH_HOURS || Number(get(tolerancePercentage)) < MAX_TOLERANCE_PERCENTAGE);
 
-/** Doubling both criteria is the cheapest useful next attempt, capped at each field's max. */
+/** Doubles both criteria, capped at each field's max. */
 function widenSearch(): void {
   const hours = Number(get(searchTimeRange));
   if (!Number.isNaN(hours))

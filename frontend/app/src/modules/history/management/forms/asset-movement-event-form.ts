@@ -168,8 +168,11 @@ export function assetMovementStateFromEvents(events: AssetMovementEvent[]): Asse
 }
 
 /**
- * @param uniqueId - the caller supplies it because a new movement needs a generated one, which is
- * not something a pure transform can produce.
+ * Builds the API payload for an asset-movement event from its form state.
+ *
+ * @param state - the validated form state
+ * @param uniqueId - supplied by the caller, because a new movement needs a generated one and a pure
+ * transform cannot produce it
  */
 export function toAssetMovementPayload(
   state: AssetMovementFormState,

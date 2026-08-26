@@ -254,9 +254,7 @@ describe('modules/core/control/use-control', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('should still report the desktop as the only runtime that takes restart options', async () => {
-    // Auto-start no longer rides on a restart, so this stays false in docker
-    // while the auto-start toggle is offered there.
+  it('should report the desktop as the only runtime that takes restart options, even where auto-start is offered', async () => {
     capabilities();
     const useControl = await freshUseControl();
     expect(useControl().supportsOptions).toBe(false);

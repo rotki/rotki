@@ -109,11 +109,9 @@ describe('premiumDeviceForm', () => {
     await wrapper.setProps({ device: device('renamed') });
     await vi.advanceTimersToNextTimerAsync();
 
-    // The snapshot is still 'laptop', so the new prop value is accepted...
     await edit('renamed');
     expect(await wrapper.vm.validate()).toBe(true);
 
-    // ...and the value the prop no longer holds is still rejected.
     await edit('laptop');
     expect(await wrapper.vm.validate()).toBe(false);
   });

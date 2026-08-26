@@ -185,14 +185,11 @@ function closeModal(): void {
 
 export function useWalletConnect(): UseWalletConnectReturn {
   /**
-   * @param chainIds the EIP-155 chain ids to request in the session namespace.
-   * They come from the caller rather than from `chains-viem` so the session
-   * covers every chain rotki supports, not only the ones viem is imported for.
+   * @param chainIds - the EIP-155 chain ids to request in the session namespace. They come from the
+   * caller rather than from `chains-viem`, so the session covers every chain rotki supports and not
+   * only the ones viem is imported for.
    */
   const connect = async (chainIds: number[]): Promise<void> => {
-    // A session that negotiates no chains is useless and the failure is silent
-    // later, so refuse it here. Empty means the supported-chains fetch has not
-    // landed or failed; the previous hardcoded list could never be empty.
     if (chainIds.length === 0)
       throw new Error(WALLET_ERRORS.NO_SUPPORTED_CHAINS);
 

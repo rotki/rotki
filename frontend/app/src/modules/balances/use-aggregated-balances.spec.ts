@@ -370,12 +370,10 @@ describe('useAggregatedBalances', () => {
       const ungrouped = getAssetPriceInfo('ETH', false);
       const grouped = getAssetPriceInfo('ETH', true);
 
-      // Ungrouped should only show ETH balances (no collection grouping)
       expect(ungrouped.amount).toEqual(bigNumberify(3));
       expect(ungrouped.price).toEqual(bigNumberify(40000));
       expect(ungrouped.value).toEqual(bigNumberify(120000));
 
-      // Grouped should include both ETH and WETH in the collection
       expect(grouped.amount).toEqual(bigNumberify(3.5));
       expect(grouped.price).toEqual(bigNumberify(40000));
       expect(grouped.value).toEqual(bigNumberify(140000));
@@ -401,7 +399,6 @@ describe('useAggregatedBalances', () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       const { getBalances } = useAggregatedBalances();
 
-      // User has WETH but not ETH (the main asset of the ethereum collection)
       set(blockchainBalances, {
         [Blockchain.ETH]: {
           '0x123': {
@@ -422,26 +419,18 @@ describe('useAggregatedBalances', () => {
 
       const result = getBalances(true, true);
 
-      // Should return one result (the ethereum collection)
       expect(result).toHaveLength(1);
 
       const collectionResult = result[0];
 
-      // Should use ETH as the main asset (not WETH)
       expect(collectionResult.asset).toBe('ETH');
       expect(collectionResult.price).toEqual(bigNumberify(4000));
-
-      // Should have breakdown only WETH
       expect(collectionResult.breakdown).toHaveLength(1);
 
-      // Find ETH and WETH in breakdown
       const ethBreakdown = collectionResult.breakdown?.find(item => item.asset === 'ETH');
       const wethBreakdown = collectionResult.breakdown?.find(item => item.asset === 'WETH');
 
-      // ETH should not be present
       expect(ethBreakdown).toBeUndefined();
-
-      // WETH should have the original balance
       expect(wethBreakdown).toBeDefined();
       expect(wethBreakdown?.amount).toEqual(bigNumberify(10));
       expect(wethBreakdown?.value).toEqual(bigNumberify(40000));
@@ -454,7 +443,6 @@ describe('useAggregatedBalances', () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       const { getBalances } = useAggregatedBalances();
 
-      // User has both ETH and WETH
       set(blockchainBalances, {
         [Blockchain.ETH]: {
           '0x123': {
@@ -481,18 +469,15 @@ describe('useAggregatedBalances', () => {
       expect(result).toHaveLength(1);
       const collectionResult = result[0];
 
-      // Should still use ETH as main asset
       expect(collectionResult.asset).toBe('ETH');
       expect(collectionResult.amount).toEqual(bigNumberify(15));
       expect(collectionResult.value).toEqual(bigNumberify(60000));
 
-      // Should have breakdown with both assets, no duplicate ETH created
       expect(collectionResult.breakdown).toHaveLength(2);
 
       const ethItems = collectionResult.breakdown?.filter(item => item.asset === 'ETH') ?? [];
       expect(ethItems).toHaveLength(1); // Only one ETH entry
 
-      // ETH should have its original balance
       const ethBreakdown = ethItems[0];
       expect(ethBreakdown.amount).toEqual(bigNumberify(5));
       expect(ethBreakdown.value).toEqual(bigNumberify(20000));
@@ -520,7 +505,6 @@ describe('useAggregatedBalances', () => {
 
       expect(result.ethereum).toBeDefined();
       expect(result.ethereum.gt(0)).toBe(true);
-      // Non-chain locations (exchanges) are not included here.
       expect(result.kraken).toBeUndefined();
     });
 
@@ -543,7 +527,6 @@ describe('useAggregatedBalances', () => {
       const { manualBalances } = storeToRefs(useBalancesStore());
       const { useLocationBreakdown } = useAggregatedBalances();
 
-      // Set up manual balances with ETH and ETH2
       const ethAndEth2Balances = [{
         amount: bigNumberify(50),
         asset: 'ETH',
@@ -615,7 +598,6 @@ describe('useAggregatedBalances', () => {
       const { updateAccounts } = useBlockchainAccountsStore();
       const { useLocationBreakdown } = useAggregatedBalances();
 
-      // One manual balance tagged with location 'ethereum'.
       set(manualBalances, [{
         amount: bigNumberify(10),
         asset: 'ETH',
@@ -627,16 +609,12 @@ describe('useAggregatedBalances', () => {
         value: bigNumberify(10),
       }]);
 
-      // And blockchain balances on the eth chain.
       updateBalances('eth', testEthereumBalances);
       updateAccounts('eth', testAccounts);
 
       const breakdown = useLocationBreakdown('ethereum');
       const result = get(breakdown);
 
-      // Both sources should contribute — the manual ETH adds to the blockchain
-      // ETH balance, and other chain assets (e.g. DAI from testEthereumBalances)
-      // should also appear.
       const eth = result.find(entry => entry.asset === 'ETH');
       expect(eth, 'eth entry should be present').toBeDefined();
       expect(eth?.amount.gte(bigNumberify(10))).toBe(true);
@@ -650,7 +628,6 @@ describe('useAggregatedBalances', () => {
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
       const { useLocationBreakdown } = useAggregatedBalances();
 
-      // An exchange named 'ethereum' must not pollute the chain breakdown.
       set(connectedExchanges, [{ location: 'ethereum', name: 'Bogus' }]);
       set(exchangeBalances, {
         ethereum: {
@@ -667,7 +644,6 @@ describe('useAggregatedBalances', () => {
       const { updateAccounts } = useBlockchainAccountsStore();
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
-      // Set up test data for collection grouping
       set(connectedExchanges, [{
         location: 'kraken',
         name: 'Kraken 1',

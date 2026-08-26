@@ -25,7 +25,6 @@ import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 
 definePage({
   meta: {
-    // label-only: gives the notes sidebar a title; not shown in the drawer or search.
     nav: { labelKey: msg.$t('navigation_menu.statistics_sub.snapshots'), icon: 'lu-camera', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.STATISTICS_SNAPSHOTS,
@@ -46,8 +45,6 @@ const saveSuccess = ref<boolean>(false);
 const loaded = ref<Snapshot>();
 const exportDialog = ref<boolean>(false);
 const locationsDrawer = ref<boolean>(false);
-// Owned here so the summary's zero-value warning can isolate those rows in the
-// balances table below it.
 const balanceFilters = ref<Filters>({});
 
 const { fetchSnapshot, persist, remove } = useSnapshotStore();
@@ -117,9 +114,6 @@ const previous = computed<{ value: BigNumber; timestamp: number } | undefined>((
 });
 
 async function load(): Promise<void> {
-  // Only show the full-page loader on the first load. On prev/next navigation the
-  // current snapshot stays on screen and updates in place once the next one
-  // arrives, so the near-identical layout doesn't flash through ProgressScreen.
   if (!get(loaded))
     set(loading, true);
   set(loadError, undefined);
@@ -149,9 +143,6 @@ async function save(): Promise<void> {
     const success = await commit(snapshot => persist(get(timestamp), snapshot));
     if (success) {
       set(saveSuccess, true);
-      // The edited total changes this snapshot's point in the net-value series,
-      // which drives the list, prev/next order and deltas — re-pull it so they
-      // don't keep showing the pre-edit value.
       await refreshNetValue();
     }
     else {
@@ -171,9 +162,6 @@ async function performDelete(): Promise<void> {
   try {
     const success = await remove(get(timestamp));
     if (success) {
-      // Drop this snapshot from the net-value series before returning, so the
-      // list doesn't still show the just-deleted row (it only auto-fetches when
-      // the series is empty).
       await refreshNetValue();
       await router.push('/statistics/snapshots');
       return;

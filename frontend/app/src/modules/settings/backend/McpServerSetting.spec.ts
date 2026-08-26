@@ -435,8 +435,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should drive the MCP lifecycle in Docker, not just describe it', async () => {
-    // The gap this closes: docker used to get a static notice saying the server
-    // is started for you, with no way to stop or restart it.
     vi.stubEnv('VITE_DOCKER', 'true');
     mocks.isPackaged = false;
     controlAvailable(false);
@@ -453,8 +451,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should let a Docker deployment opt out of starting MCP with the tree', async () => {
-    // Docker used to hardcode auto-start on, with no opt-out at any tier: the
-    // preference existed only as an Electron app setting.
     vi.stubEnv('VITE_DOCKER', 'true');
     mocks.isPackaged = false;
     controlAvailable(false);

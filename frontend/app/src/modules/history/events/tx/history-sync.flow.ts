@@ -37,7 +37,7 @@ export interface RefreshScope {
  * every surface, including callers in other modules that button-state guarding cannot reach.
  * Unlike a re-decode it deletes nothing, so it needs no exclusion against matching.
  *
- * ⚠️ Its re-entrancy branch and teardown deliberately live in the producer, not here: a declaration
+ * Its re-entrancy branch and teardown deliberately live in the producer, not here: a declaration
  * describes the work, and `run` is the only place teardown can happen.
  */
 export const historySyncFlow: HistoryFlow<RefreshScope, RefreshWork> = {

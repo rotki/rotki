@@ -143,15 +143,20 @@ function parsePayload(
   return rules;
 }
 
+/**
+ * Collapses duplicate rules, one row per chain and one per address.
+ *
+ * @remarks
+ * The picker offers chains and addresses that are already ruled, and the payload keys on them, so
+ * a re-add has to merge into the existing row: a second row would commit nothing and survive until
+ * the next reload.
+ */
 function mergeAddressRules(rules: readonly Rule[]): Rule[] {
   const merged: Rule[] = [];
   const indexByAddress = new Map<string, number>();
   const seenChains = new Set<string>();
   for (const rule of rules) {
     if (rule.kind === 'chain') {
-      // One row per chain. The picker offers chains that are already ruled, and the payload keys on
-      // the chain, so a re-add used to show the chain twice while committing nothing - a phantom row
-      // that only went away on the next reload.
       if (seenChains.has(rule.chainId))
         continue;
       seenChains.add(rule.chainId);

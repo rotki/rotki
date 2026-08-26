@@ -14,7 +14,7 @@ export interface OraclePriceFieldOptions {
   readonly searchAsset: (value: string) => Promise<AssetsWithId>;
   /** The oracles offered as the source field's values. */
   readonly sources: () => string[];
-  /** An oracle id -> what the row it filters to calls it. */
+  /** Maps an oracle id to what the row it filters to calls it. */
   readonly resolveSourceLabel: (value: string) => string;
 }
 

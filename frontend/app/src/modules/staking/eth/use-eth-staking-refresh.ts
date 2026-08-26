@@ -48,7 +48,6 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
 
   const lastRefresh = createLastRefreshStorage(get(username));
 
-  // Loading states
   const performanceRefreshing = computed<boolean>(() => get(performanceStatus).active);
   // Both layers: eth2's balances are read from the DB as well as queried, and hydration is not an
   // activity the orchestrator can report on.

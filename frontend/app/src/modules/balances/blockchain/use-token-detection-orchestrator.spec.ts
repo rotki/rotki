@@ -97,7 +97,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
   describe('detectForChain', () => {
     /**
-     * 🔴🔴 Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
+     * Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
      * holds a balances slot for its whole body, and the cap is 2 — so children queued on the same
      * lane could never get one, and two chain jobs would sit waiting on addresses that cannot
      * start. A hang, not a slowdown, and no unit test that stubs `submitTask` can see it: the lane
@@ -126,7 +126,7 @@ describe('useTokenDetectionOrchestrator', () => {
     });
 
     /**
-     * ⭐ Every detection path queues through `queueDetectionForChain`, so filtering there covers
+     * Every detection path queues through `queueDetectionForChain`, so filtering there covers
      * `detectTokens` and `detectAllTokens` too — automated detection was still firing
      * `POST /blockchains/<chain>/tokens/detect` for chains the user had switched off.
      */

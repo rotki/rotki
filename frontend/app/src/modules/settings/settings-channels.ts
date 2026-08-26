@@ -63,8 +63,13 @@ export interface RegistryEntry {
   readonly search?: SettingSearch;
 }
 
-/** A setting backed by a real field on its channel object, identified by the typed wire key `W`. */
-/** @public referenced only through inferred types; the export is required for declaration emit. */
+/**
+ * A setting backed by a real field on its channel object, identified by the typed wire key `W`.
+ *
+ * Referenced only through inferred types; the export is required for declaration emit.
+ *
+ * @public
+ */
 export interface FieldDef<C extends SettingChannel, W extends string> {
   readonly channel: C;
   readonly wireKey: W;
@@ -76,8 +81,13 @@ export interface FieldDef<C extends SettingChannel, W extends string> {
   readonly search?: SettingSearch;
 }
 
-/** A read-only setting whose value is derived from the whole channel object (e.g. `currencySymbol`). */
-/** @public referenced only through inferred types; the export is required for declaration emit. */
+/**
+ * A read-only setting whose value is derived from the whole channel object (e.g. `currencySymbol`).
+ *
+ * Referenced only through inferred types; the export is required for declaration emit.
+ *
+ * @public
+ */
 export interface ProjectedDef<C extends SettingChannel, V> {
   readonly channel: C;
   readonly project: (settings: any) => V;
@@ -87,7 +97,7 @@ export interface ProjectedDef<C extends SettingChannel, V> {
 }
 
 interface FieldOptions<T, W extends keyof T> {
-  /** Transforms the read value to its wire type on write, when they differ (e.g. Currency -> ticker). */
+  /** Transforms the read value to its wire type on write when they differ, a Currency to its ticker say. */
   readonly encode?: (value: T[W]) => unknown;
   /** `false` = internal state, excluded from settings forms and search. */
   readonly userFacing?: boolean;

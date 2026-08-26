@@ -304,12 +304,13 @@ describe('useAccountAdditionService', () => {
     });
 
     /**
-     * 🔴 The regression this guards: the cached GET used to escalate to a node query on an empty
-     * cache, which is the only reason a just-added address ever got its native balance. It is
-     * cache-only now, so the addition has to run the query itself — and it must run *after*
-     * detection, whose cache write deletes the address's default-label asset rows (the native coin
-     * among them). A `detect: false` job, or a plain hydrate, leaves the new account showing its
-     * tokens and no ETH.
+     * Detection has to come first, and the query has to happen at all.
+     *
+     * @remarks
+     * Detection's cache write deletes the address's default-label asset rows, the native coin
+     * among them, so a query running before it is undone. The cached GET is cache-only and will
+     * not escalate to the nodes, so a `detect: false` job or a plain hydrate leaves the new
+     * account showing its tokens and no ETH.
      */
     it('should run a chain job that detects the new addresses before querying', async () => {
       const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});

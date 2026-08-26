@@ -19,11 +19,11 @@ import {
 } from '@/modules/history/management/forms/event-field-schemas';
 
 /**
- * One fee of a swap.
+ * One fee of a swap, note included.
  *
- * Its note lives on the row rather than in a parallel `userNotes` array. The payload still sends a
- * flat array, but keeping the note next to the fee it belongs to is what removes the two watchers
- * that used to resize that array whenever a fee was added or removed.
+ * @remarks
+ * The note belongs on the row, not in a parallel array. The payload is still flattened on send,
+ * but a parallel array would have to be resized alongside every add and remove.
  */
 export interface SwapFeeState {
   amount: string;
@@ -144,7 +144,7 @@ export function swapStateFromEvents(events: SwapEvent[]): SwapFormState {
   };
 }
 
-/** The identifiers of a swap group, in the order the payload's `identifiers` expects them. */
+/** Collects a swap group's identifiers, in the order the payload's `identifiers` expects them. */
 export function swapIdentifiers(events: SwapEvent[]): number[] {
   const spend = events.find(item => item.eventSubtype === 'spend');
   const receive = events.find(item => item.eventSubtype === 'receive');
@@ -160,8 +160,11 @@ export function swapIdentifiers(events: SwapEvent[]): number[] {
 }
 
 /**
- * @param uniqueId - the caller supplies it because a new swap needs a generated one, which is not
- * something a pure transform can produce.
+ * Builds the API payload for a swap event from its form state.
+ *
+ * @param state - the validated form state
+ * @param uniqueId - supplied by the caller, because a new swap needs a generated one and a pure
+ * transform cannot produce it
  */
 export function toSwapPayload(state: SwapFormState, uniqueId: string): AddSwapEventPayload {
   const fees = state.hasFee ? state.fees : undefined;

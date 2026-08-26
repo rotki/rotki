@@ -34,7 +34,7 @@ interface HashLinkProps {
    * The `link` mode will only show the link if the location is a blockchain with a valid explorer link.
    * The `copy` mode will only show a copy button for the user to copy the `text` value.
    *
-   * @default default
+   * @defaultValue `'default'`
    */
   displayMode?: DisplayMode;
   /**
@@ -53,14 +53,15 @@ interface HashLinkProps {
    */
   size?: number | string;
   /**
-   * Determines the truncate length for the displayed text.
-   * To disable truncation, set the truncate length to `0`.
-   * @default 4
+   * Determines the truncate length for the displayed text. Set it to `0` to disable truncation.
+   *
+   * @defaultValue 4
    */
   truncateLength?: number;
   /**
-   * Determines the type of the explorer link that will be used if the `location` is a valid blockchain.
-   * @default address
+   * Determines the type of explorer link used when `location` is a valid blockchain.
+   *
+   * @defaultValue `'address'`
    */
   type?: keyof ExplorerUrls;
   noScramble?: boolean;

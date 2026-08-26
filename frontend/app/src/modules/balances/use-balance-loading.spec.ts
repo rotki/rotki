@@ -51,7 +51,7 @@ describe('useBalancesLoading', () => {
   });
 
   /**
-   * 🔴 Hydration has no activity, so the orchestrator reports it as idle. This is the funnel every
+   * Hydration has no activity, so the orchestrator reports it as idle. This is the funnel every
    * spinner reads; without the second source a chain being read from the DB renders as settled and
    * empty for the whole cached phase.
    */

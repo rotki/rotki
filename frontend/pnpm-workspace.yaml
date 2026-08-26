@@ -79,6 +79,8 @@ catalog:
   electron-window-state: 5.0.3
   es-toolkit: 1.50.0
   eslint: 10.8.0
+  eslint-plugin-jsdoc: 64.2.1
+  eslint-plugin-tsdoc: 0.5.2
   fake-indexeddb: 6.2.5
   flag-icons: 7.5.0
   flush-promises: 1.0.2

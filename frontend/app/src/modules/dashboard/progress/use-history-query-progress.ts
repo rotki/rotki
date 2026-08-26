@@ -143,7 +143,6 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
       return undefined;
     }
 
-    // Check for active transaction
     const activeTxStatus = txStatuses.find(isTransactionActive);
     if (activeTxStatus) {
       const { currentOperation, currentOperationData } = createTransactionProgress(activeTxStatus, t);
@@ -158,7 +157,6 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
       };
     }
 
-    // Check for active event
     const activeEventStatus = eventStatuses.find(status => !isEventFinished(status));
 
     if (activeEventStatus) {
@@ -174,7 +172,6 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
       };
     }
 
-    // No active operations
     const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
     return {
       currentOperation: null,

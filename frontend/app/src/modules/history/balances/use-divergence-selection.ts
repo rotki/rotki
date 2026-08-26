@@ -95,9 +95,6 @@ export function useDivergenceSelection(): UseDivergenceSelectionReturn {
       set(modelSelectedLocationLabel, options[0]?.locationLabel ?? '');
   }, { immediate: true });
 
-  // The asset dropdown is scoped to the selected chain, so a token picked for one chain (e.g. an
-  // Arbitrum asset) is invalid after switching chains. Clear it to avoid submitting a mismatch the
-  // backend rejects ("<asset> is not on <chain>").
   watch(modelSelectedChain, () => {
     set(modelSelectedAsset, undefined);
   });

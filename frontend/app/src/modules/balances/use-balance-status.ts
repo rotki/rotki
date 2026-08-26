@@ -18,7 +18,7 @@ interface UseBalanceStatusReturn {
  * puts those in the ledger — and it is also what records a hydration, which is not an activity, so
  * `everCompleted` covers both layers on its own.
  *
- * 🔴 Liveness does not. Hydration has no activity to be active, so `isInitialLoading` reads it
+ * Liveness does not. Hydration has no activity to be active, so `isInitialLoading` reads it
  * from the refresh-state store; without that a chain being read from the DB looks settled-and-empty
  * rather than loading.
  *

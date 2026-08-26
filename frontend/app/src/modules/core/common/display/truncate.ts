@@ -14,11 +14,11 @@ export function findAddressKnownPrefix(address: string): string {
 }
 
 /**
- * Truncates blockchain hashes (addresses / txs) retaining `truncLength+2` characters
- * from the beginning and `truncLength` characters from the end of the string.
- * @param address
- * @param [truncLength]
- * @returns truncated address
+ * Truncates a blockchain hash (address or transaction), keeping `truncLength + 2` characters from
+ * the start and `truncLength` from the end.
+ *
+ * @param address - the hash to truncate; a known prefix such as `0x` is kept on top of the budget
+ * @param truncLength - characters to keep from the end, defaulting to 4
  */
 export function truncateAddress(address: string, truncLength = 4): string {
   const knownPrefix = findAddressKnownPrefix(address);

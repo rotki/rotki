@@ -105,8 +105,11 @@ export function onlineHistoryStateFromGroup(entry: OnlineHistoryEvent, defaults:
 }
 
 /**
- * @param groupIdentifier - a new event needs one generated, which is not something a pure transform
- * can produce; an edit keeps the one it already has.
+ * Builds the API payload for an online history event from its form state.
+ *
+ * @param state - the validated form state
+ * @param groupIdentifier - supplied by the caller: a new event needs one generated, which a pure
+ * transform cannot produce, while an edit keeps the one it already has
  */
 export function toOnlineHistoryPayload(state: OnlineHistoryFormState, groupIdentifier: string): NewOnlineHistoryEventPayload {
   const amount = bigNumberify(state.amount, Zero);

@@ -25,10 +25,11 @@ interface UseAssetSelectInfoReturn {
 /**
  * How long queued identifiers are collected before a batch is sent.
  *
- * This coalesces the burst a list emits while it renders, so it only needs to outlast one render
- * pass. It used to be 1500ms, which is long enough for a user to type a search term and read an
- * empty table before the first request even leaves: an unresolved asset has no name or symbol to
- * match, so a cold cache filters everything out.
+ * @remarks
+ * This coalesces the burst a list emits while it renders, so it only has to outlast one render
+ * pass. Raising it much is worse than it looks: an unresolved asset has no name or symbol to match
+ * on, so until the batch returns a cold cache filters every row out, and the user reads an empty
+ * table while the first request has yet to leave.
  */
 const BATCH_DEBOUNCE_MS = 200;
 
@@ -130,10 +131,6 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
 
       const { assets, collections } = await retrieveAssetInfo(assetsToProcess);
 
-      // A round that retrieved nothing must not replace the ref. Every request failing is exactly
-      // when it would hold nothing new, and replacing it wakes every reader, each of which re-queues
-      // the identifiers it still cannot resolve, which fail again one debounce later. A backend
-      // returning errors would be polled for as long as the table stayed on screen.
       if (Object.keys(assets).length > 0)
         set(assetCache, Object.assign({}, get(assetCache), assets));
 

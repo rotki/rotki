@@ -124,7 +124,6 @@ describe('useDecodingStatusStore', () => {
 
     it('should not update sync progress when not syncing', () => {
       const store = useDecodingStatusStore();
-      // decodingSyncing defaults to false
       store.setUndecodedTransactionsStatus(createStatus('eth', 100, 50));
 
       expect(get(store.decodingSyncProgress)).toEqual({});
@@ -136,7 +135,6 @@ describe('useDecodingStatusStore', () => {
       store.setUndecodedTransactionsStatus(createStatus('eth', 100, 50));
       store.markDecodingCancelled('eth');
 
-      // Try to update the cancelled chain
       store.setUndecodedTransactionsStatus(createStatus('eth', 100, 80));
 
       const syncProgress = get(store.decodingSyncProgress);

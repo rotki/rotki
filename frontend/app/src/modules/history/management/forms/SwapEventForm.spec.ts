@@ -362,15 +362,12 @@ describe('forms/SwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    // Verify both fee note textareas are rendered
     expect(wrapper.find('[data-testid=fee-notes][data-index="1"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=fee-notes][data-index="2"]').exists()).toBe(true);
 
-    // Verify fee entries are loaded
     const feeAmountInputs = wrapper.findAll('[data-testid=fee-amount] input');
     expect(feeAmountInputs).toHaveLength(2);
 
-    // Edit the fee notes
     const feeNotes1 = wrapper.find('[data-testid=fee-notes][data-index="1"] textarea:not([aria-hidden="true"])');
     const feeNotes2 = wrapper.find('[data-testid=fee-notes][data-index="2"] textarea:not([aria-hidden="true"])');
     await feeNotes1.setValue('updated fee note 1');

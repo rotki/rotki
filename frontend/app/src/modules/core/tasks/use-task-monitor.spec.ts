@@ -79,7 +79,7 @@ describe('useTaskMonitor', () => {
     await monitor.monitor();
 
     expect(get(store.taskById)[2]).toBeUndefined();
-    // 🔴 `result` is asserted, not just `message`: `objectContaining` ignores the field, and
+    // `result` is asserted, not just `message`: `objectContaining` ignores the field, and
     // anything but `null` sends the handler down its success branch — see the end-to-end case in
     // `use-task-handler.spec.ts`.
     expect(mockHandleResult).toHaveBeenCalledWith(
@@ -108,11 +108,8 @@ describe('useTaskMonitor', () => {
       await vi.advanceTimersByTimeAsync(1000);
       await pending;
 
-      // Task should still be running (not removed on timeout)
       expect(get(store.taskById)[3]).toBeDefined();
-      // Handler should NOT be called for timeouts
       expect(mockHandleResult).not.toHaveBeenCalled();
-      // Timeout count should be incremented
       expect(store.getTimeoutCount(3)).toBe(1);
     }
     finally {
@@ -191,20 +188,14 @@ describe('useTaskMonitor', () => {
       resolveQuery = resolve;
     }));
 
-    // Start first monitor call (will block on queryTasks)
     const first = monitor.monitor();
-
-    // Attempt second call while first is running
     const second = monitor.monitor();
 
-    // Second should return immediately (no-op)
     await second;
 
-    // Now resolve the first
     resolveQuery?.({ pending: [], completed: [] });
     await first;
 
-    // queryTasks should only have been called once
     expect(mockQueryTasks).toHaveBeenCalledOnce();
   });
 });

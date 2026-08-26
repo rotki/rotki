@@ -103,10 +103,6 @@ const hasServerError = computed<boolean>(() => Object.keys(get(serverErrors)).le
 
 const isLoggedInError = useArraySome(() => errors, error => error.includes('is already logged in'));
 
-// Note for anyone porting another form: `form.valid` read off the api object does NOT unwrap in a
-// template, so `:disabled="!form.valid"` would gate on a truthy ref and never engage. Destructuring
-// it, as here, makes it a setup binding the compiler unwraps, so that trap does not apply. This
-// computed exists only because the gate is four terms wide.
 const submitDisabled = computed<boolean>(() =>
   !get(parses) || loading || get(conflictExist) || get(customBackendDisplay),
 );
@@ -126,17 +122,17 @@ function updateFocus() {
   });
 }
 
-// Pre-fills the form and remember toggles for a manual login. The saved-password
-// auto-unlock is NOT driven from here anymore — it is a single flow started by
-// `useAutoLogin` on backend connect (see use-auto-login.ts / startAuto), so this
-// component can never race that flow.
+/**
+ * Pre-fills the form and its remember toggles for a manual login.
+ *
+ * @remarks
+ * Fills only. The saved-password auto-unlock is `useAutoLogin`'s, started on backend connect, so
+ * nothing here may trigger it or the two flows race.
+ */
 function loadSettings(): void {
   loadRememberSettings();
   if (!state.username) {
     state.username = resolveStoredUsername();
-    // A server error is remembered against the value it was reported for, so that editing the field
-    // retires it. Filling the name from the saved profile is not such an edit, and would otherwise
-    // drop a rejection the screen is still showing in its alert.
     setServerErrors(get(serverErrors));
   }
 

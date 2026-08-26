@@ -21,7 +21,6 @@ const router = useRouter();
 const premium = usePremium();
 const { useApiKey } = useExternalApiKeys();
 
-// Use composables
 const {
   error,
   fetchNfts,
@@ -45,7 +44,6 @@ const {
 
 const { firstLimit, paginationData, visibleNfts } = useNftGalleryLayout(items);
 
-// Computed properties
 const noData = computed<boolean>(() =>
   get(visibleNfts).length === 0 && !(get(modelSelectedCollection) || get(modelSelectedAccounts).length > 0),
 );
@@ -53,17 +51,14 @@ const noData = computed<boolean>(() =>
 const openSeaKey = useApiKey('opensea');
 const hasOpenSeaKey = computed<boolean>(() => !!get(openSeaKey));
 
-// Methods
 function navigateToApiKeys(): void {
   router.push('/api-keys/external?service=opensea');
 }
 
-// Watchers
 watch([firstLimit, modelSelectedAccounts, modelSelectedCollection], () => {
   set(paginationData, { ...get(paginationData), page: 1 });
 });
 
-// Lifecycle
 onMounted(() => {
   if (get(hasOpenSeaKey)) {
     fetchPrices();

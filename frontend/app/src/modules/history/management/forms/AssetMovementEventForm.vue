@@ -50,9 +50,8 @@ const { form, save, seed } = useHistoryEventForm({
   schema: assetMovementSchema(),
   stateUpdated,
   toEditPayload: toAssetMovementEditPayload,
-  // A new movement needs an identifier of its own, which a pure transform cannot produce. An edit
-  // keeps whatever it already had, blank included: a movement whose extra data carries no reference
-  // must not be handed a fresh one on every save.
+  // A new movement is given an identifier here, a pure transform having no way to make one. An
+  // edit keeps whatever it had, blank included, or every save mints it a fresh reference.
   transform: state => toAssetMovementPayload(
     state,
     data.type === 'edit-group' ? state.uniqueId : state.uniqueId || generateUUID(),

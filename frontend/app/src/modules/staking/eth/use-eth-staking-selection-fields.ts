@@ -45,9 +45,6 @@ function useWithdrawalAddressOptions(): AccountFieldOptions {
 
   return {
     ...accounts,
-    // An address only the validators know has no account behind it, so the shared resolution finds
-    // no keywords for it. Without the fallback it would be offered in the list and still not match
-    // when typed, which is the same dead end from one step further along.
     resolveKeywords: (address: string): string | undefined =>
       accounts.resolveKeywords(address) ?? address.toLowerCase(),
     suggest: (): string[] => {
@@ -61,12 +58,11 @@ function useWithdrawalAddressOptions(): AccountFieldOptions {
 }
 
 /**
- * The pill-bar fields for who the staking view is showing: a validator, or the address that
+ * Builds the pill-bar fields for who the staking view is showing: a validator, or the address that
  * withdrew for it.
  *
- * These used to be a `RuiButtonGroup` toggle deciding which of two inputs was rendered. The toggle
- * existed only to say the two cannot both apply, which is what `excludes` says here, declared on
- * both sides as the bar requires.
+ * @remarks
+ * The two cannot both apply, which `excludes` states. The bar requires it declared on both sides.
  */
 export function useEthStakingSelectionFields(): ComputedRef<FieldDef[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -74,7 +70,7 @@ export function useEthStakingSelectionFields(): ComputedRef<FieldDef[]> {
   const { scrambleAddress, scrambleIdentifier } = useScramble();
   const withdrawalAddresses = useWithdrawalAddressOptions();
 
-  /** Index -> the validator it names, for the label and caption. */
+  /** Maps a validator index to the validator it names, for the label and caption. */
   const byIndex = computed<Map<string, { publicKey: string }>>(() => new Map(
     get(ethStakingValidators).map(validator => [validator.index.toString(), { publicKey: validator.publicKey }]),
   ));

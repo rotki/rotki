@@ -36,7 +36,7 @@ describe('data-issues transforms', () => {
   });
 
   describe('describeIssue', () => {
-    it('should describe a negative balance issue and expose the event identifier', () => {
+    it('should describe a negative balance issue, keeping the amount signed, and expose the event identifier', () => {
       const issue = createIssue({
         asset: 'ETH',
         kind: IssueKind.NEGATIVE_BALANCE,
@@ -53,7 +53,6 @@ describe('data-issues transforms', () => {
       expect(result.shortMessageKey).toBe('data_issues.description_short.negative_balance');
       expect(result.eventIdentifier).toBe(42);
       expect(result.asset).toBe('ETH');
-      // amount keeps its sign; the i18n string no longer prepends a literal "-".
       expect(result.amounts.amount?.toString()).toBe('-1');
       expect(result.amounts.before?.toString()).toBe('0');
     });

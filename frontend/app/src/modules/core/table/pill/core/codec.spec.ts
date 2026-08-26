@@ -210,6 +210,12 @@ describe('pill codec', () => {
       expect(stateFromMatches({ excludeIgnoredAssets: false }, {}, fields)).toStrictEqual([]);
     });
 
+    it('should drop a stored key naming a field the table does not have', () => {
+      const state = stateFromMatches({ gone: ['whatever'], protocols: ['aave'] }, { alsoGone: ['x'] }, fields);
+
+      expect(state).toStrictEqual([{ fieldKey: 'protocols', op: 'is', values: ['aave'] }]);
+    });
+
     it('should rebuild a param-bound field from params', () => {
       const state = stateFromMatches({}, { locationLabels: ['0xaaa', '0xbbb'] }, fields);
       expect(state).toStrictEqual([{ fieldKey: 'account', op: 'is', values: ['0xaaa', '0xbbb'] }]);

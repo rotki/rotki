@@ -6,7 +6,6 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { type EnhancedProviderDetail, getAllWalletProviders, type ProviderDetectionOptions } from './provider-detection';
 
-// Simplified provider preferences (removed manual source selection)
 interface ProviderPreferences {
   lastSelectedUuid?: string;
   autoSelectSingle: boolean;
@@ -21,7 +20,6 @@ interface ClearProviderOptions {
   forget?: boolean;
 }
 
-// Extended options for detection
 interface UnifiedDetectionOptions extends ProviderDetectionOptions {
   maxRetries?: number;
   retryDelay?: number;
@@ -36,69 +34,46 @@ const DETECTION_DEFAULTS: Required<UnifiedDetectionOptions> = {
 
 type OnProviderChangedCallback = (provider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined) => void;
 
-// Comprehensive return interface combining both systems
 interface UnifiedProvidersComposable {
-  // Core provider data
   availableProviders: Readonly<Ref<EnhancedProviderDetail[]>>;
   selectedProvider: Readonly<Ref<EnhancedProviderDetail | undefined>>;
   selectedProviderUuid: Readonly<Ref<string | undefined>>;
-
-  // Provider access
   activeProvider: ComputedRef<EIP1193Provider | undefined>;
   selectedProviderMetadata: ComputedRef<EIP6963ProviderInfo | undefined>;
-
-  // State flags
   isDetecting: Readonly<Ref<boolean>>;
   hasSelectedProvider: ComputedRef<boolean>;
-
-  // UI state
   showProviderSelection: Ref<boolean>;
-
-  // Actions
   detectProviders: (options?: UnifiedDetectionOptions) => Promise<EnhancedProviderDetail[]>;
   selectProvider: (uuid: string) => Promise<boolean>;
   clearProvider: (options?: ClearProviderOptions) => void;
   checkIfSelectedProvider: () => Promise<boolean>;
-
-  // Event system
   onProviderChanged: (callback: OnProviderChangedCallback) => () => void;
-
-  // Lifecycle
   initialize: () => void;
   cleanup: () => void;
 }
 
 function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
-  // Reactive state - using localStorage for consistency and persistence
   const availableProviders = ref<EnhancedProviderDetail[]>([]);
   const selectedProvider = ref<EnhancedProviderDetail>();
   const isDetecting = ref<boolean>(false);
   const detectionError = ref<string>();
-
-  // UI state
   const showProviderSelection = ref<boolean>(false);
 
-  // Simplified provider preferences - no manual source selection
+  /** Persisted, so a returning user does not have to pick their wallet again. */
   const preferences = useLocalStorage<ProviderPreferences>('rotki-provider-preferences', {
     autoSelectSingle: true,
   });
 
-  // Provider change listeners (from EIP6963 system)
   const providerChangeListeners = new Set<OnProviderChangedCallback>();
-
-  // Internal provider map for quick access (from EIP6963 system)
   const providerMap = new Map<string, EIP1193Provider>();
-
-  // Environment detection
   const isElectronMode = computed<boolean>(() => !!window.walletBridge);
 
-  // Computed properties
   const selectedProviderUuid = computed<string | undefined>(() => get(selectedProvider)?.info.uuid);
   const activeProvider = computed<EIP1193Provider | undefined>(() => get(selectedProvider)?.provider);
   const selectedProviderMetadata = computed<EIP6963ProviderInfo | undefined>(() => get(selectedProvider)?.info);
   const hasSelectedProvider = computed<boolean>(() => !!get(selectedProvider));
 
-  // Check if provider is selected (includes bridge check for Electron mode)
+  /** Under Electron the bridge owns the selection, so the local ref is not the answer. */
   const checkIfSelectedProvider = async (): Promise<boolean> => {
     if (get(isElectronMode)) {
       try {
@@ -118,7 +93,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     }
   };
 
-  // Helper to notify provider change listeners
   const notifyProviderChanged = (newProvider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined): void => {
     providerChangeListeners.forEach((callback) => {
       try {
@@ -175,7 +149,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     return breakdown;
   }
 
-  // Detect available providers with retry logic (combining both approaches)
+  /** Detection with retries, since an extension can announce itself after the page has loaded. */
   async function detectProviders(options: UnifiedDetectionOptions = {}): Promise<EnhancedProviderDetail[]> {
     // Spread rather than per-field defaults: the rule counts each defaulted field as a branch.
     const settings = { ...DETECTION_DEFAULTS, ...options };
@@ -197,7 +171,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
         countBySource(detectedProviders),
       );
 
-      // Auto-select based on preferences and detected source
       await handleAutoSelection();
 
       return detectedProviders;
@@ -213,7 +186,10 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     }
   }
 
-  // Handle automatic provider selection with smart source preference
+  /**
+   * Picks a provider without asking, in order: the only one there is, then the one used last if it
+   * is still around, then {@link handleSmartAutoSelection}.
+   */
   async function handleAutoSelection(): Promise<void> {
     const currentProviders = get(availableProviders);
     const prefs = get<ProviderPreferences>(preferences);
@@ -222,13 +198,11 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       return;
     }
 
-    // Auto-select single provider regardless of source
     if (currentProviders.length === 1) {
       await selectProvider(currentProviders[0].info.uuid);
       return;
     }
 
-    // Try to select previously used provider (if still available)
     if (prefs.lastSelectedUuid) {
       const previousProvider = currentProviders.find(p => p.info.uuid === prefs.lastSelectedUuid);
       if (previousProvider) {
@@ -238,13 +212,14 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       }
     }
 
-    // Auto-select based on environment and source priority
     await handleSmartAutoSelection(currentProviders);
   }
 
-  // Handle smart auto-selection based on environment and source priority
+  /**
+   * Bridge providers first under Electron, then eip6963, then legacy. Only ever picks when a tier
+   * holds exactly one candidate; anything ambiguous opens the picker instead.
+   */
   async function handleSmartAutoSelection(providers: EnhancedProviderDetail[]): Promise<void> {
-    // In Electron mode with walletBridge, prefer bridge providers
     if (get(isElectronMode)) {
       const bridgeProviders = providers.filter(p => p.source === 'bridge');
       if (bridgeProviders.length === 1) {
@@ -259,7 +234,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       }
     }
 
-    // Priority order: eip6963 -> legacy (excluding bridge which was handled above)
     const priorityOrder: Array<'eip6963' | 'legacy'> = ['eip6963', 'legacy'];
 
     for (const source of priorityOrder) {
@@ -274,9 +248,8 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     logger.debug('[UnifiedProviders] No single provider available for auto-selection');
   }
 
-  // Select a specific provider (combining both approaches)
+  /** An empty uuid clears the selection, so a picker can bind one function to both. */
   async function selectProvider(uuid: string): Promise<boolean> {
-    // Handle clearing provider selection
     if (uuid === '') {
       clearProvider();
       return true;
@@ -294,16 +267,13 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     const oldProvider = get(selectedProvider)?.provider;
     set(selectedProvider, provider);
 
-    // Update preferences (automatically persisted by useLocalStorage)
     set(preferences, {
       ...get<ProviderPreferences>(preferences),
       lastSelectedUuid: uuid,
     });
 
-    // Notify change listeners
     notifyProviderChanged(provider.provider, oldProvider);
 
-    // If this is a bridge provider, notify the bridge
     if (provider.source === 'bridge' && window.walletBridge?.selectProvider) {
       try {
         await window.walletBridge.selectProvider(uuid);
@@ -318,15 +288,15 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     return true;
   }
 
-  // Clear provider selection
+  /**
+   * Only a deliberate disconnect forgets the remembered choice. Session teardown (logout, user
+   * switch) clears the active selection and keeps it, or the next login has to pick again.
+   */
   function clearProvider({ forget = true }: ClearProviderOptions = {}): void {
     const previousProvider = get(selectedProvider);
 
     set(selectedProvider, undefined);
 
-    // Only a deliberate disconnect forgets the choice. Tearing the session down (logout,
-    // switching user) clears the active selection but must keep the remembered provider,
-    // otherwise the next login has to pick one again.
     if (forget) {
       set(preferences, {
         ...get<ProviderPreferences>(preferences),
@@ -334,7 +304,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       });
     }
 
-    // Notify change listeners
     notifyProviderChanged(undefined, previousProvider?.provider);
 
     if (previousProvider) {
@@ -342,26 +311,22 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     }
   }
 
-  // Event listener registration
+  /** @returns a function that removes the listener again. */
   const onProviderChanged = (callback: OnProviderChangedCallback): (() => void) => {
     providerChangeListeners.add(callback);
-    // Return cleanup function
     return () => {
       providerChangeListeners.delete(callback);
     };
   };
 
-  // Initialize the composable
   function initialize(): void {
     logger.info(`[UnifiedProviders] Initializing in ${get(isElectronMode) ? 'Electron' : 'Browser'} mode`);
 
-    // Auto-detect providers on initialization
     detectProviders().catch((error) => {
       logger.error('[UnifiedProviders] Initial provider detection failed:', error);
     });
   }
 
-  // Cleanup function
   function cleanup(): void {
     set(availableProviders, []);
     set(selectedProvider, undefined);
@@ -392,5 +357,5 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   };
 }
 
-// Export as shared composable to ensure single instance across app
+/** Shared, so every caller sees the same selection and the same listener set. */
 export const useUnifiedProviders = createSharedComposable(createUnifiedProvidersComposable);

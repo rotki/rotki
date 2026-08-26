@@ -54,12 +54,9 @@ describe('useHistoryEvents', () => {
   const route = useRoute();
 
   beforeEach(async (): Promise<void> => {
-    // Fresh pinia per test plus a reset of every shared piece of mutable collection. The vue-router
-    // mock route query is a module-level singleton mutated by useRouter().push, and the refs
-    // below are mutated by individual tests (protocols, accounts via onUpdateFilters). Without
-    // resetting them here, collection from one test leaks into whichever test runs next under
-    // shuffle and breaks the default sort / filter assertions. A fresh useRouter() has its own
-    // push mock, so this reset does not inflate any push-spy the tests assert on.
+    // The vue-router mock's route query is a module-level singleton, and the refs below are
+    // mutated by individual tests, so without resetting them state leaks into whichever test runs
+    // next under shuffle. A fresh `useRouter()` gets its own push mock, so no push-spy is inflated.
     setActivePinia(createPinia());
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);
@@ -269,11 +266,9 @@ describe('useHistoryEvents', () => {
         entryTypes: ['!evm event'],
       });
 
-      // Load-bearing, not ceremony: this is what makes the filter reach the URL.
-      // The route watcher applies url state asynchronously (it awaits
-      // restorePersistedFilter first), so without a user-attributed write the route
-      // query stays empty and that deferred applyUrlState clears the filter again
-      // before the fetch under assertion.
+      // Load-bearing: the route watcher applies url state asynchronously, so without a
+      // user-attributed write the query stays empty and the deferred `applyUrlState` clears the
+      // filter again before the fetch under assertion.
       markUserIntent();
       startPromise(refetch());
       expect(get(isLoading)).toBe(true);

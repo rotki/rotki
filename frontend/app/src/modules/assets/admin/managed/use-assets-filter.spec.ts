@@ -19,9 +19,7 @@ function setup(
 }
 
 describe('managedAssetStatusParams', () => {
-  // `AssetRequestPayload` declares both flags as booleans; they used to reach the request as the
-  // strings `'true'`/`'false'`.
-  it('should send the two flags to the request as booleans', () => {
+  it('should send the two flags to the request as booleans, not as the strings a pill carries', () => {
     const { params } = setup(IgnoredAssetHandlingType.EXCLUDE, true, false);
 
     expect(toValue(params.source.values)).toStrictEqual({

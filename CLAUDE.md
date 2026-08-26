@@ -260,13 +260,35 @@ cargo run -- --database ../data/global.db --port 4343
 - **`max-lines` caps `.ts` files at 400 lines** (error, from `@rotki/eslint-config`; specs, `.d.ts`,
   and scripts are exempt). The cap is binding: no non-spec `.ts` file in `app/src` currently exceeds
   it. A file at the ceiling needs to be split before it can grow, so plan the split rather than
-  shaving lines. **The rule does not apply to `.vue` files**, so nothing stops an SFC from growing
-  without limit. See the SFC size guidance below.
+  shaving lines. Several files sit within a few lines of the cap, so **check `wc -l` before adding to
+  one** — otherwise a single added comment line turns into a build error, and the tempting fix is to
+  delete documentation to buy the line back. Split instead; the seam is usually already named in the
+  file's own comments. **The rule does not apply to `.vue` files**, so nothing stops an SFC from
+  growing without limit. See the SFC size guidance below.
 - **`@rotki/composable-return-readonly`**: a composable returning a writable `Ref` must wrap it in
   `readonly()`. When the ref is intentionally writable because a consumer binds it with `v-model`,
   `readonly()` would break the binding, so **prefix the returned name with `model`** instead (for
   example `privacy` becomes `modelPrivacy`) and the rule skips it. Do not reach for
   `eslint-disable`; the existing suppressions are debt to convert, not precedent.
+
+#### Comments and TSDoc
+
+Syntax is linted (`tsdoc/syntax` plus four `jsdoc` rules, over `.ts` and `.vue`), so malformed tags,
+`{Type}` annotations, `@return`, and a `@param` naming a parameter that no longer exists all surface
+on their own. What lint cannot judge:
+
+- **A comment states the rule and the trap, not the history.** The reproduction trace, the measured
+  counts, and what the code replaced belong in the PR body — they are read once, at review, while a
+  comment is read every time the code is, and nothing fails when the narrative stops being true.
+- **Prefer enforcement over description.** If breaking the rule breaks something, write the test or
+  the `no-restricted-syntax` rule; a rule's `message` fires on the offending line, whereas a comment
+  sits in a file the offender may never open. Reach for a comment when neither fits.
+- **Tag a parameter only when its name and type do not already say it.** Nothing requires `@param`,
+  and `@param chain - the chain` is worse than nothing. Tag units (`seconds`, not milliseconds),
+  sentinels (`-1` means indeterminate), what an empty or absent value does, and what a parameter is
+  *for*. Never tag a `void` return.
+- **Shape**: summary line, then `@remarks` for the mechanism, then `@param name - description`, then
+  `@returns`. A `/** */` block holding a bare paragraph is a block comment, not TSDoc.
 
 #### Vue.js and TypeScript Conventions
 - Use VueUse utilities for reactive state management

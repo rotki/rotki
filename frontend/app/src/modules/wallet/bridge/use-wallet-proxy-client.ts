@@ -46,7 +46,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   };
 
   function handleBridgeNotification(notification: WalletBridgeNotification): void {
-    // Special handling for notifications
     if (notification.type === BRIDGE_NOTIFICATION_TYPES.CLOSE_TAB) {
       logger.info('Received close_tab notification, attempting to close browser tab');
       try {
@@ -90,7 +89,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
         return;
       }
 
-      // Handle RPC requests
       if (isWalletBridgeRequest(message)) {
         handleWalletBridgeRequest(message);
       }
@@ -198,12 +196,10 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
         set(ws, undefined);
         set(isConnected, false);
 
-        // Only retry if this wasn't an intentional disconnect and reconnection is not prevented
         if (!get(intentionalDisconnect) && !get(preventReconnect)) {
           scheduleRetry(retryCount);
         }
         else {
-          // Reset the flag for future connections
           set(intentionalDisconnect, false);
           set(isConnecting, false);
         }

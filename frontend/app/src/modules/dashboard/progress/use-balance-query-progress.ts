@@ -166,18 +166,14 @@ export const useBalanceQueryProgress = createSharedComposable((): UseBalanceQuer
    * What the counter counts: **one entry per chain**, never the run umbrella above them and never
    * the per-address detections beneath them.
    *
-   * 🔴 A run is an activity of the same kind as the chain jobs it contains, so it was counted as
-   * one of them: it inflated the denominator by one, and while it was the running item this read
-   * "Querying Run balances", because the chain name is derived from the id's first part and the
-   * umbrella's is the literal `run`.
+   * @remarks
+   * The run shares the chain jobs' kind, so counting it inflates the denominator by one and names
+   * the running item "Querying Run balances", the chain being read off the id's first part.
    *
-   * 🔴 Detections used to be counted here too, and the denominator *grew as the run progressed* —
-   * observed live climbing 35 → 53 → 62 → 65 → 73 — because a chain's addresses are only submitted
-   * once its own job starts. A total that moves while you watch it is the dishonest denominator
-   * this pipeline exists to remove, so the count is the run's scope, which is fixed up front.
-   *
-   * ⚠️ Detection is still *shown*: it names the current operation below, and every address keeps
-   * its own row in the task centre. It is the arithmetic it stays out of.
+   * Detections must stay out too: a chain's addresses are submitted only once its own job starts,
+   * so counting them makes the denominator climb while the user watches it. The count is the run's
+   * scope, which is fixed up front. Detection is still shown, in the operation text and as its own
+   * task-centre rows; it is the arithmetic it stays out of.
    */
   const chainSubjects = computed<Activity[]>(() =>
     get(activities).filter(activity =>
@@ -251,9 +247,6 @@ export const useBalanceQueryProgress = createSharedComposable((): UseBalanceQuer
       return undefined;
     }
 
-    // ⭐ A running detection names the operation, because it is the more specific thing happening:
-    // its chain's job is running too, but "detecting tokens for 0x… on Ethereum" says more than
-    // "querying Ethereum". The numbers beside it stay the chain count either way.
     const runningDetection = get(detections).find(activity => activity.status === ActivityStatus.RUNNING);
     if (runningDetection) {
       return createRunningItemProgress(toQueueItem(runningDetection), completed, total, progressValue, getChainName, t);

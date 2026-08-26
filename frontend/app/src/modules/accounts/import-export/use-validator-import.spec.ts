@@ -40,8 +40,6 @@ describe('useValidatorImport', () => {
     expect(mocks.save.mock.calls.map(([action]) => action.data.publicKey)).toStrictEqual(['0xaaa', '0xbbb']);
   });
 
-  // Adding a validator is a write and the backend rejects an overlapping one, so each save must
-  // finish before the next starts.
   it('should save them one at a time', async () => {
     let active = 0;
     let maxActive = 0;
@@ -78,8 +76,6 @@ describe('useValidatorImport', () => {
     expect(progress).toBe(2);
   });
 
-  // Duplicate keys used to be coalesced by the queue's identifier map, so one row was silently
-  // dropped. Every row in the file is now attempted.
   it('should attempt a duplicated public key rather than dropping it', async () => {
     const { useValidatorImport } = await importModule();
 

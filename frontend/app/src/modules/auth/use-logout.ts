@@ -43,7 +43,7 @@ export function useLogout(): UseLogoutReturn {
     api.cancelAllQueued();
     api.cancel();
 
-    // Reset scheduler state (backend resets scheduler separately)
+    // Only the frontend's own tracking; the backend resets its scheduler on its side.
     resetSchedulerState();
 
     // Notify electron to cleanup wallet bridge connections BEFORE disconnecting

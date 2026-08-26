@@ -174,12 +174,11 @@ describe('modules/amount-display/components/FiatDisplay', () => {
   });
 
   describe('format options', () => {
-    it('should display integer when format.integer is true', () => {
+    it('should round an integer format down, using the value rounding mode rather than the amount one', () => {
       wrapper = createWrapper({
         format: { integer: true },
         value: bigNumberify(128.205),
       });
-      // Default rounding mode rounds down
       expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('128');
     });
   });

@@ -13,11 +13,12 @@ export interface UseSessionReadyReturn {
 }
 
 /**
- * The shared post-unlock side-effects. Every unlock path (manual login, account
- * creation, auto-login/resume) funnels through `useUnlockFlowController`, which calls
- * this once the flow reaches `ready`. Centralizing them here removes the duplication
- * (and the ordering race) that previously lived across `use-account-management`, the
- * login page `watch(logged)`, and `use-auto-login`. Path-specific effects stay at the
+ * Runs the post-unlock side-effects shared by every unlock path.
+ *
+ * @remarks
+ * Manual login, account creation and auto-login all funnel through `useUnlockFlowController`,
+ * which calls this once the flow reaches `ready`. Add a shared effect here rather than at a call
+ * site, where it would run in a different order on each path; path-specific effects belong on the
  * controller's per-mode hooks.
  */
 export function useSessionReady(): UseSessionReadyReturn {
@@ -36,9 +37,6 @@ export function useSessionReady(): UseSessionReadyReturn {
     set(canRequestData, true);
     set(lastLogin, get(username));
     showGetPremiumButton();
-    // Load the supported chains before navigating: dashboard/accounts consumers read
-    // the chain list imperatively, so it must be populated before the destination mounts.
-    // Runs here (post-unlock) so the calls never fire on the login screen.
     await refreshSupportedChains();
     await fetchTransactionStatusSummary();
     await navigateToDashboard();

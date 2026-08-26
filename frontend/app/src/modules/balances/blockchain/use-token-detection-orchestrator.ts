@@ -43,9 +43,13 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   const { submitTask } = useNativeTask();
   const { activities } = useTaskOrchestrator();
 
-  // Liveness comes from the orchestrator: any non-terminal TOKEN_DETECTION activity whose id
-  // parts (`chain`, `address`) match. The deterministic id also dedups concurrent re-submits, so
-  // the old "skip already-detecting addresses" filter is no longer needed.
+  /**
+   * Whether detection is live for a chain, or for one address on it when `address` is given.
+   *
+   * @remarks
+   * Callers need not filter out addresses already detecting: the deterministic activity id dedups
+   * a concurrent re-submit.
+   */
   function isDetectingTokens(blockchain: string, address: string | null): boolean {
     return get(activities).some((activity) => {
       if (activity.kind !== ActivityKind.TOKEN_DETECTION || isTerminalStatus(activity.status))
@@ -58,19 +62,17 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   /**
    * One detection activity per address, resolving when they have all settled.
    *
-   * ⭐ Per-address rather than one activity for the chain, and that is deliberate: `ActivitySteps`
+   * Per-address rather than one activity for the chain, and that is deliberate: `ActivitySteps`
    * is `{ current, total }` and nothing else, so progress can say "3/9" but never *which* address;
    * and `cancel` targets an activity id, so per-account cancel needs per-account activities.
    * Folding them into the chain would delete both capabilities, not defer them.
    *
-   * 🔴 On the per-chain `detect:` family, never {@link BALANCES_LANE}. The chain job that awaits
+   * On the per-chain `detect:` family, never {@link BALANCES_LANE}. The chain job that awaits
    * this holds a balances slot for its whole body, so sharing that lane would deadlock it against
    * its own children.
    */
   const queueDetectionForChain = async (chain: string, addrs: string[], parent?: ActivityId): Promise<void> => {
     assert(supportsTransactions(chain));
-    // ⭐ Every detection path queues here, so `disabledChainQueries` is applied once rather than at
-    // each caller. Per *address*: an address rule must lose that address, not the whole chain.
     const detectable = addrs.filter(addr => !isAddressExcluded(chain, addr));
     if (detectable.length === 0)
       return;
@@ -90,14 +92,14 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   /**
    * Detection for one chain, as children of the chain job that awaits it.
    *
-   * ⚠️ No hydration afterwards, unlike {@link detectTokens}: the chain job's own network query is
+   * No hydration afterwards, unlike {@link detectTokens}: the chain job's own network query is
    * the next statement, and it reads the tokens this just found. Hydrating in between would be a
    * second read of the same rows.
    *
    * A chain with no addresses, or one that cannot hold tokens, is not an error — it simply has no
    * detection stage, and the chain job carries straight on to its query.
    *
-   * ⭐ `addrs` narrows the stage. An account addition knows exactly which addresses are new, and
+   * `addrs` narrows the stage. An account addition knows exactly which addresses are new, and
    * detecting the chain's other fifty would be work nobody asked for; every other caller wants the
    * whole chain and passes nothing.
    */
@@ -113,7 +115,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   };
 
   // Detection ends in a balance read, so the chains it touched are hydrated once it settles —
-  // §4's only coupling between the layers: work finishing triggers hydration for its subject.
+  // The only coupling between the layers: work finishing triggers hydration for its subject.
   const detectTokens = async (
     chain: string | string[],
     addrs: string[],

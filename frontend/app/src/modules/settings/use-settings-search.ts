@@ -71,17 +71,18 @@ function collectRows(): DerivedRow[] {
   return rows;
 }
 
-/**
- * Search rows derived from the registry and the catalog. Each `SEARCH_CATEGORIES` entry emits a header
- * row plus its member rows; categoryless rows sit directly on their tab. A row's breadcrumb is
- * `tab > [category unless flat] > [group] > title`. Anything the interface `getXTab` no longer owns
- * comes from here, so the two sources never overlap.
- */
 /** A row's optional group heading, as the zero or one text segment it contributes. */
 function rowGroup(row: DerivedRow, t: T): string[] {
   return row.group ? [t(row.group)] : [];
 }
 
+/**
+ * Derives every search row from the registry and the catalog.
+ *
+ * @remarks
+ * Each `SEARCH_CATEGORIES` entry emits a header row plus its member rows, and a categoryless row
+ * sits directly on its tab. A row's breadcrumb is `tab > [category unless flat] > [group] > title`.
+ */
 function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined, t: T): SettingsSearchEntry[] {
   const rows = collectRows();
   const placed = rows.filter((row): row is DerivedRow & { category: SettingsCategoryId } => row.category !== undefined);

@@ -19,14 +19,23 @@ const { category } = defineProps<{
 const fields = useBlockchainAccountFields(() => category);
 const pillLabels = usePillBarLabels();
 
-// Every pill in this bar is param-bound (paramKeys `addresses`, `chain`, `tags`).
-// Bridge the bar's param bag to the models backing them, so the bar drives the same sources the
-// standalone selectors used to. An absent param clears its model: removing the pill is how the
-// filter is turned off.
+/**
+ * Normalizes a param value to the list its model expects.
+ *
+ * @returns an empty list for an absent param, which is how removing a pill clears its filter.
+ */
 function toList(value: string | string[] | boolean | undefined): string[] {
   return value === undefined || typeof value === 'boolean' ? [] : arrayify(value);
 }
 
+/**
+ * The bar's param bag, bridged to the models behind each pill.
+ *
+ * @remarks
+ * Every pill here is param-bound (`addresses`, `chain`, `tags`), so the bar drives these models
+ * and nothing else does. Writing an absent param clears its model rather than leaving the previous
+ * value in place, since removing a pill is how the user turns that filter off.
+ */
 const pillParams = computed<Record<string, string | string[] | boolean>>({
   get(): Record<string, string | string[] | boolean> {
     const tags = get(visibleTags);
@@ -45,10 +54,14 @@ const pillParams = computed<Record<string, string | string[] | boolean>>({
   },
 });
 
-// A saved view is the bar's two models under a name, so it both reads from and writes to the same
-// pair the bar is bound to.
-// Every pill here is param-bound, so a view is its params alone. `matches` stays in the stored
-// shape because it is the bar's own serialized form, shared with the tables that do have matchers.
+/**
+ * A saved view: the bar's models under a name, read and written through the same pair.
+ *
+ * @remarks
+ * Every pill here is param-bound, so a view is its params alone and `matches` is always empty. The
+ * key is kept in the stored shape regardless, because that shape is shared with the tables that do
+ * have matchers.
+ */
 const pillState = computed<SavedViewState>(() => ({
   matches: {},
   params: get(pillParams),

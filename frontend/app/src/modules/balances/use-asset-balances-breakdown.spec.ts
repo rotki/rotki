@@ -142,7 +142,6 @@ describe('useAssetBalancesBreakdown', () => {
         value: bigNumberify(50),
       }]);
 
-      // Breakdown for liabilities
       expect(getAssetBreakdown('EUR')).toMatchObject([]);
 
       const ethBalances = [

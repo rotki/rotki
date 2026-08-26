@@ -1,5 +1,5 @@
 import type { AddressBookEntry, EthNames } from '@/modules/accounts/address-book/eth-names';
-import { createItemCacheStorage } from '@/modules/core/common/use-item-cache';
+import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 export const useAddressNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const ensNames = shallowRef<EthNames>({});

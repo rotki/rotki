@@ -18,8 +18,8 @@ interface UseTablePaginationReturn {
  *
  * Writes go through `commitPage`/`commitLimit`, which dispatch `page-set`/`limit-set`
  * events; the reducer decides the transition (including whether a change resets the
- * page) and the adapter writes `internalPagination` back. This composable no longer
- * mutates it directly.
+ * page) and the adapter writes `internalPagination` back. Nothing here mutates it
+ * directly.
  */
 export function useTablePagination<TItem>(
   itemsPerPage: MaybeRefOrGetter<number>,

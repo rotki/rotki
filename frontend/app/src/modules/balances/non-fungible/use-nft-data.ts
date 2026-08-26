@@ -102,7 +102,6 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     return calculatePercentage(value, get(totalValue) ?? Zero);
   }
 
-  // Columns configuration
   const cols = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
     if (dashboard) {
       const group = DashboardTableType.NFT;

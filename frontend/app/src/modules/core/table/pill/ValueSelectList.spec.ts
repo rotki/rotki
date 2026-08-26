@@ -176,8 +176,6 @@ describe('valueSelectList', () => {
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([[]]);
   });
-  // Escape used to be nobody's job here: the list left dismissal to the surrounding menu, which
-  // only closes while its own content has focus, so what Escape did depended on the editor.
   it('should emit close on escape', async () => {
     const wrapper = createWrapper([]);
 

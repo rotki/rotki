@@ -209,6 +209,13 @@ export function useAccountManage(): UseAccountManageReturn {
   const additionFallback = (count: number): string =>
     t('account_form.error.addition_failed', { count }, count);
 
+  /**
+   * Adds or edits an account.
+   *
+   * @returns whether the dialog should close. Nothing added with something failed keeps it open so
+   * the user can correct the input; a partial success closes it, because the failures have already
+   * been reported by the mechanism and the accounts that did land are real.
+   */
   async function saveAccount(state: AccountManage): Promise<boolean> {
     const edit = state.mode === 'edit';
     const isEth = state.chain === Blockchain.ETH;
@@ -227,10 +234,6 @@ export function useAccountManage(): UseAccountManageReturn {
         payload: state.data,
       }, { wait: true });
 
-      // Nothing added and something failed: keep the dialog open so the user can correct it. A
-      // partial success closes it — the failures were already reported by the mechanism, and the
-      // accounts that did land are real. Previously the count decided this: one address threw, and
-      // two or more closed the dialog as a success even when some of them had failed.
       if (summary.added.length === 0 && summary.failed.length > 0) {
         handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)));
         return false;

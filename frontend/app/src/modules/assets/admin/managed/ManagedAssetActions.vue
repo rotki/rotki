@@ -49,9 +49,6 @@ function handleMarkSpam(): void {
   emit('mark-spam');
 }
 
-// The ignored list is what the "only ignored" filter shows, and it is only fetched on demand, so
-// asking for it has to be what refreshes it. The radio group used to say so itself; now the pill
-// does, and the request follows from the value rather than from the control that set it.
 watch(() => ignoredHandling, (handling) => {
   if (handling === IgnoredAssetHandlingType.SHOW_ONLY)
     emit('refresh:ignored');

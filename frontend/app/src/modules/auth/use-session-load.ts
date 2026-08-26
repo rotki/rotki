@@ -50,10 +50,6 @@ export function useDataLoader(): UseDataLoaderReturn {
   const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');
 
-    // The ignored/whitelisted lists decide which assets are counted towards the totals, so
-    // they have to be in place before the balances land. Fetching them alongside the balances
-    // makes the net worth briefly include the ignored assets, until the lists arrive.
-    // https://github.com/rotki/rotki/issues/12764
     await Promise.allSettled([
       fetchIgnoredAssets(),
       fetchWhitelistedAssets(),
@@ -65,9 +61,6 @@ export function useDataLoader(): UseDataLoaderReturn {
       ]);
     }
     finally {
-      // The bound on the account gate. `fetchAccounts` normally opens it much earlier, the moment
-      // its read settles; this is the guarantee for the case where the read never happens at all,
-      // so a waiter cannot outlive the load that was supposed to satisfy it.
       releaseAccountLoad();
     }
     await seedFromHistoric();
@@ -88,11 +81,6 @@ export function useDataLoader(): UseDataLoaderReturn {
       markRestored();
     }
     else if (get(shouldFetchData)) {
-      // Armed here, synchronously, rather than inside the read. `refreshData` awaits the
-      // ignored/whitelisted lists and then the exchange rates before it ever reaches the accounts,
-      // and a consumer that snapshots the store during that stretch sees it empty. Navigating
-      // straight into history is fast enough to land there, which is why the sync could report
-      // complete over a scope of nothing.
       armAccountLoad();
       startPromise(refreshData());
     }

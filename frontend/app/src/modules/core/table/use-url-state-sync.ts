@@ -149,10 +149,7 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
     set(internalSorting, parseQueryHistory(routeQuery, defaultSorting(), fallbackColumn));
   };
 
-  /**
-   * Returns the parsed pagination and filter query params
-   * @returns {LocationQuery}
-   */
+  /** @returns the table's current pagination, sorting and filters as url query params. */
   const getQuery = (): LocationQuery => {
     const { limit, page } = get(internalPagination);
     const sorting = get(internalSorting);
@@ -172,6 +169,18 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
     };
   };
 
+  /**
+   * Writes the table's state into the url, when the user is what changed it.
+   *
+   * @remarks
+   * A route write is tagged so the route watcher recognises its own echo rather than
+   * re-deserializing state that is already correct. Only route writes echo, so `ref` mode is not
+   * tagged: the tag would sit there until some unrelated navigation misread itself as ours.
+   *
+   * The tag is cleared by hand when the push fails. A push aborted or redirected by a guard
+   * resolves with a `NavigationFailure` rather than throwing and fires no route change, so the tag
+   * would otherwise survive until a later genuine navigation consumed it and skipped its state.
+   */
   async function writeUrlState(): Promise<void> {
     if (!syncsUrl || get(pendingIntent) !== 'user')
       return;
@@ -181,17 +190,9 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
       return;
 
     if (urlState.mode === 'route') {
-      // Tag the write so the route watcher recognizes its own echo instead of
-      // re-deserializing state that is already correct. Only route writes produce
-      // an echo; tagging in `ref` mode would leave the tag set until some unrelated
-      // navigation misread itself as ours.
       set(pendingUrlSource, 'self');
       const failure = await router.push({ query: routeQuery });
 
-      // A push that is aborted or redirected by a guard resolves with a
-      // NavigationFailure instead of throwing, and fires no route change. The tag
-      // would then survive until some later, genuine navigation consumed it and
-      // wrongly skipped applying that route's state. Clear it ourselves.
       if (isNavigationFailure(failure))
         set(pendingUrlSource, undefined);
     }

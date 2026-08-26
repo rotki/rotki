@@ -8,17 +8,14 @@ interface CachedAssetResult {
 }
 
 export const useAssetsStore = defineStore('assets', () => {
-  // State
   const ignoredAssets = shallowRef<string[]>([]);
   const whitelistedAssets = shallowRef<string[]>([]);
   const lastRefreshedAssetIcon = ref<number>(0);
   const assetExistsCache = shallowRef<Map<string, CachedAssetResult>>(new Map());
   const pendingIconRequests = shallowRef<Map<string, Promise<boolean>>>(new Map());
 
-  // Composables
   const { assetImageUrl } = useAssetIconApi();
 
-  // Functions
   function isAssetIgnored(asset: string): boolean {
     return get(ignoredAssets).includes(asset);
   }
@@ -47,7 +44,6 @@ export const useAssetsStore = defineStore('assets', () => {
     return assetImageUrl(id, get(lastRefreshedAssetIcon));
   }
 
-  // Computed factories
   function useIsAssetIgnored(asset: MaybeRefOrGetter<string>): ComputedRef<boolean> {
     return computed<boolean>(() => isAssetIgnored(toValue(asset)));
   }
@@ -56,7 +52,6 @@ export const useAssetsStore = defineStore('assets', () => {
     return computed<boolean>(() => isAssetWhitelisted(toValue(asset)));
   }
 
-  // Watchers
   watch(lastRefreshedAssetIcon, () => {
     clearIconCache();
   });

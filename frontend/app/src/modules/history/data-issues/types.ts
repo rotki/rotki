@@ -1,10 +1,12 @@
 import type { BigNumber } from '@rotki/common';
 
 /**
- * Typed error domain for data-issue API calls, so the UI can branch on the
- * failure kind (friendly copy, refetch on conflict) instead of matching error
- * strings. Maps to the backend status codes: 404 -> not-found,
- * 409 -> conflict (invalid state transition), 400 -> validation, else network.
+ * Typed error domain for data-issue API calls, so the UI can branch on the failure kind (friendly
+ * copy, refetch on conflict) instead of matching error strings.
+ *
+ * @remarks
+ * Maps the backend status codes: `404` to not-found, `409` to conflict (an invalid state
+ * transition), `400` to validation, anything else to network.
  */
 export type DataIssueError =
   | { readonly type: 'not-found'; readonly message: string }

@@ -124,7 +124,6 @@ describe('dateValueEditor', () => {
     expect(boundProp(wrapper, 'date-to', 'partialTime')).toBe('end');
   });
 
-  // Inclusive second bounds, so the same second on both ends is a filter for that second.
   it('should let both bounds sit on the same second by default', () => {
     const filter: ActiveFilter = { date: { from: '1704067200', to: '1704153600' }, fieldKey: 'period', op: 'between', values: [] };
 
@@ -167,10 +166,8 @@ describe('dateValueEditor', () => {
     expect(wrapper.emitted('update')?.[0]).toStrictEqual([{ fieldKey: 'period', op: 'after', values: [] }]);
   });
 
-  // Opening a date pill used to leave the caret nowhere, since the menu is told not to focus its
-  // own content. Driven through the picker's `autofocus` prop rather than a ref: the picker moves
-  // the caret to the first segment from its own focus handler, and doing it from outside lands at
-  // the wrong point in its lifecycle, leaving the caret at the end of the value.
+  // Must go through the picker's `autofocus` prop, not a ref: it moves the caret from its own
+  // focus handler, so focusing from outside lands at the wrong point in its lifecycle.
   it('should focus the from bound on mount', async () => {
     const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] }, document.body);
     await nextTick();
@@ -188,16 +185,11 @@ describe('dateValueEditor', () => {
     wrapper.unmount();
   });
 
-  // The editor had no escape handler and leaned on the menu being dismissed, but the picker's
-  // calendar binds escape itself to close only the calendar, so the key never reached the editor.
-  // The picker binds escape inside its calendar to close it and hand focus back to the field, so
-  // emitting unconditionally collapsed both layers on one press. Innermost first.
-  //
-  // Both halves are asserted through a listener on the host: the editor renders inside `RuiMenu`,
-  // whose popover closes on escape whatever the editor emits (`onLeave` ignores `persistent`), so
-  // the key not leaving the editor is the part that actually keeps the pill open. The stub stands
-  // in for the picker here, which means these cover the editor's contract only — the real
-  // two-layer press is an e2e assertion.
+  // Escape closes innermost first: the picker binds it inside its calendar, so emitting
+  // unconditionally would collapse both layers on one press. Asserted through a host listener,
+  // because `RuiMenu`'s popover closes on escape whatever the editor emits — the key *not* leaving
+  // the editor is what keeps the pill open. The picker is stubbed, so this covers the editor's
+  // contract only; the real two-layer press is an e2e assertion.
   it('should keep escape inside the editor while the calendar is up', async () => {
     const { escaped, host } = hostWithEscapeListener();
     const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] }, host);

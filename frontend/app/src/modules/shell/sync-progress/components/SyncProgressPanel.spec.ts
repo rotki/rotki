@@ -98,7 +98,6 @@ describe('modules/sync-progress/components/SyncProgressPanel', () => {
 
       expect(wrapper.find('[data-testid="header"]').exists()).toBe(true);
 
-      // Trigger dismiss
       await wrapper.find('[data-testid="header"]').trigger('dismiss');
 
       expect(wrapper.find('[data-testid="header"]').exists()).toBe(false);
@@ -153,15 +152,12 @@ describe('modules/sync-progress/components/SyncProgressPanel', () => {
       set(mockPhase, SyncPhase.COMPLETE);
       wrapper = createWrapper();
 
-      // Dismiss the panel
       await wrapper.find('[data-testid="header"]').trigger('dismiss');
       expect(wrapper.find('[data-testid="header"]').exists()).toBe(false);
 
-      // Simulate new sync starting
       set(mockPhase, SyncPhase.SYNCING);
       await nextTick();
 
-      // Panel should be visible again
       expect(wrapper.find('[data-testid="header"]').exists()).toBe(true);
     });
   });

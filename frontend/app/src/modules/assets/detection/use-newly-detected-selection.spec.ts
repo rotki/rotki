@@ -65,7 +65,6 @@ describe('useNewlyDetectedSelection', () => {
     expect(get(modelSelected)).toStrictEqual([]);
   });
 
-  // A narrowing shows different rows, so a selection made against the old ones no longer stands.
   it('should clear the selection when the narrowing changes', async () => {
     const filters = ref<Filters>({});
     const { modelSelected, toggleSelection } = useNewlyDetectedSelection({ filters, found: 2, refetch });

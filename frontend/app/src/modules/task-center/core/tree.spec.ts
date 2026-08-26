@@ -146,12 +146,7 @@ describe('subtreeProgress', () => {
     return { ...base, percentage };
   }
 
-  /**
-   * The bug this exists for: a job that is a single running leaf has no settled leaves, so a tally
-   * of whole steps can only ever say `0 of 1`. The leaf's own percentage is the one number it has,
-   * and the header used to throw it away and render a ring pinned at 0 above a row showing 45%.
-   */
-  it('should give a leaf fractional credit for its own progress', () => {
+  it('should give a leaf fractional credit for its own progress, though its step tally stays 0 of 1', () => {
     const root = withPercentage(activity('prices', ActivityStatus.RUNNING), 45);
     const { children } = buildTree([root], byId);
 

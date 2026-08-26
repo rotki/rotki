@@ -18,17 +18,11 @@ export function nonEmptyOr<T>(value: string | undefined | null, fallback: T): st
   return value !== undefined && value !== null && value !== '' ? value : fallback;
 }
 
-/**
- * Takes an object and returns the same object without any null values
- * or empty array properties.
- * @param object - Any object to process
- * @param options - Configuration options
- * @param options.removeEmptyString - If true, empty string properties will be removed
- * @param options.alwaysPickKeys - Array of keys that will always be included in the returned value
- * @returns A new object with non-empty properties
- */
+/** Options for {@link nonEmptyProperties}. */
 interface NonEmptyPropertiesOptions<T> {
+  /** Also drop properties whose value is the empty string. Off by default. */
   removeEmptyString?: boolean;
+  /** Keys kept even when their value would otherwise be pruned. */
   alwaysPickKeys?: (keyof T)[];
 }
 
@@ -76,6 +70,16 @@ function isPrunable(value: unknown): value is object {
   return typeof value === 'object' && value !== null;
 }
 
+/**
+ * A copy of `object` with null values and empty arrays removed, recursively.
+ *
+ * @remarks
+ * A `BigNumber` is returned as it is rather than walked, since pruning its internals would destroy
+ * it.
+ *
+ * @param object - the object to prune
+ * @param options - see {@link NonEmptyPropertiesOptions}
+ */
 export function nonEmptyProperties<T extends object>(
   object: T,
   options: NonEmptyPropertiesOptions<T> = {},
@@ -113,9 +117,10 @@ export function size(bytes: number): string {
 }
 
 /**
- * Converts a string or number to rems
- * @param {number | string} value
- * @returns {string} - the converted value in rems
+ * Converts a length to rems.
+ *
+ * @param value - a bare number is taken as rems, a `px` value is divided by 16, and `rem`, `%`,
+ * `auto` and `undefined` pass through untouched
  */
 export function toRem(value?: number | string): string | undefined {
   if (isUndefined(value) || value === 'auto')
@@ -132,11 +137,7 @@ export function toRem(value?: number | string): string | undefined {
   return `${value}rem`;
 }
 
-/**
- * Returns a copy of the record without the key in it.
- * @param record The record
- * @param key The key to remove
- */
+/** Returns a copy of the record without the given key in it. */
 export function removeKey<K extends string | number | symbol, V>(record: Record<K, V>, key: K): Record<K, V> {
   const copy = { ...record };
   delete copy[key];

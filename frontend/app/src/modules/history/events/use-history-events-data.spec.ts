@@ -10,7 +10,6 @@ import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryE
 
 const mockItemsPerPage = ref<number>(10);
 
-// Mock external dependencies
 const mockFetchHistoryEvents = vi.fn();
 const mockIsAssetIgnored = vi.fn();
 const mockCancelByTag = vi.fn();
@@ -269,8 +268,8 @@ describe('use-history-events-data', () => {
   });
 
   describe('async event fetching and mapping', () => {
+    /** Settles the `watchImmediate` callback and the async `fetchEvents()` it starts. */
     async function waitForFetchEvents(): Promise<void> {
-      // Wait for the watchImmediate callback and its async fetchEvents() to resolve
       await nextTick();
       await vi.runAllTimersAsync();
       await nextTick();
@@ -454,7 +453,6 @@ describe('use-history-events-data', () => {
       const swapSpend = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 2 });
       const swapReceive = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 3 });
 
-      // API returns: approve + [swapSpend, swapReceive] as a subgroup
       const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
       mockFetchHistoryEvents.mockResolvedValue({ data: [approveEvent, swapSubgroup] });
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
@@ -472,15 +470,12 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      // completeEventsMapped should have 3 events (approve + 2 in subgroup)
       const complete = get(result.completeEventsMapped);
-      expect(complete.group1).toHaveLength(2); // [approveEvent, [swapSpend, swapReceive]]
+      expect(complete.group1).toEqual([approveEvent, [swapSpend, swapReceive]]);
 
-      // displayedEventsMapped should filter out SPAM_TOKEN from the subgroup
       const displayed = get(result.displayedEventsMapped);
-      expect(displayed.group1).toHaveLength(2); // [approveEvent, [swapSpend]]
+      expect(displayed.group1).toEqual([approveEvent, [swapSpend]]);
 
-      // The group should be detected as having hidden ignored assets
       expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(true);
     });
 
@@ -555,14 +550,13 @@ describe('use-history-events-data', () => {
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
 
-      // First call: slow, resolves after second call completes
-      let resolveFirst: ((value: { data: HistoryEventRow[] }) => void) | undefined;
-      const firstPromise = new Promise<{ data: HistoryEventRow[] }>((resolve) => {
-        resolveFirst = resolve;
+      let resolveStaleFetch: ((value: { data: HistoryEventRow[] }) => void) | undefined;
+      const staleFetch = new Promise<{ data: HistoryEventRow[] }>((resolve) => {
+        resolveStaleFetch = resolve;
       });
 
       mockFetchHistoryEvents
-        .mockReturnValueOnce(firstPromise)
+        .mockReturnValueOnce(staleFetch)
         .mockResolvedValueOnce({ data: [event2] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
@@ -576,21 +570,17 @@ describe('use-history-events-data', () => {
       const emit = vi.fn();
       const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
-      // Let the first (immediate) fetch start
       await nextTick();
 
-      // Trigger a second fetch by changing groups
       set(groups, createMockCollection([event2]));
       await nextTick();
       await vi.runAllTimersAsync();
       await nextTick();
 
-      // Now resolve the first (stale) promise
-      resolveFirst!({ data: [event1] });
+      resolveStaleFetch!({ data: [event1] });
       await vi.runAllTimersAsync();
       await nextTick();
 
-      // The events should contain data from the second (newer) fetch, not the stale first
       const rawEvents = get(result.rawEvents);
       expect(rawEvents).toHaveLength(1);
       expect(rawEvents[0]).toEqual(event2);
@@ -601,7 +591,6 @@ describe('use-history-events-data', () => {
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
 
-      // First call succeeds
       mockFetchHistoryEvents.mockResolvedValueOnce({ data: [event1] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
@@ -618,15 +607,12 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
       expect(get(result.rawEvents)).toHaveLength(1);
 
-      // Second call throws RequestCancelledError
       mockFetchHistoryEvents.mockRejectedValueOnce(new RequestCancelledError());
 
-      // Trigger a new fetch by changing groups
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
       set(groups, createMockCollection([event2]));
       await waitForFetchEvents();
 
-      // Previous data should be preserved (not cleared)
       expect(get(result.rawEvents)).toHaveLength(1);
       expect(get(result.rawEvents)[0]).toEqual(event1);
     });
@@ -652,11 +638,9 @@ describe('use-history-events-data', () => {
       const emit = vi.fn();
       const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
-      // After immediate watch fires, eventsLoading should be true
       await nextTick();
       expect(get(result.eventsLoading)).toBe(true);
 
-      // Resolve the fetch
       resolvePromise!({ data: [event1] });
       await vi.runAllTimersAsync();
       await nextTick();
@@ -695,25 +679,20 @@ describe('use-history-events-data', () => {
       const emit = vi.fn();
       const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
-      // Let first fetch start
       await nextTick();
       expect(get(result.eventsLoading)).toBe(true);
 
-      // Trigger second fetch
       set(groups, createMockCollection([event2]));
       await nextTick();
       await vi.runAllTimersAsync();
       await nextTick();
 
-      // Resolve the stale first promise
       resolveFirst!({ data: [event1] });
       await vi.runAllTimersAsync();
       await nextTick();
 
-      // eventsLoading should still be true because the second (current) fetch is pending
       expect(get(result.eventsLoading)).toBe(true);
 
-      // Resolve the second (current) promise
       resolveSecond!({ data: [event2] });
       await vi.runAllTimersAsync();
       await nextTick();
@@ -742,7 +721,6 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
       mockCancelByTag.mockClear();
 
-      // Simulate groups fetch starting (e.g. user changed page)
       set(groupLoading, true);
       await nextTick();
 
@@ -770,11 +748,9 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
       mockCancelByTag.mockClear();
 
-      // groupLoading goes false (groups fetch completed)
       set(groupLoading, false);
       await nextTick();
 
-      // cancelByTag should NOT be called when loading stops
       expect(mockCancelByTag).not.toHaveBeenCalled();
     });
 
@@ -798,7 +774,6 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
       expect(get(result.rawEvents)).toHaveLength(1);
 
-      // Set groups to empty
       set(groups, createMockCollection([]));
       await waitForFetchEvents();
 
@@ -868,7 +843,6 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
 
       const mapped = get(result.completeEventsMapped);
-      // Should have one entry which is an array (subgroup) containing both swap events
       expect(mapped.group1).toHaveLength(1);
       const subgroup = mapped.group1[0];
       expect(Array.isArray(subgroup)).toBe(true);
@@ -897,7 +871,6 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
 
       const mapped = get(result.completeEventsMapped);
-      // Single swap event should not be wrapped
       expect(mapped.group1).toHaveLength(1);
       expect(Array.isArray(mapped.group1[0])).toBe(false);
     });
@@ -924,7 +897,6 @@ describe('use-history-events-data', () => {
       await waitForFetchEvents();
 
       const mapped = get(result.completeEventsMapped);
-      // EVM events should remain as individual entries
       expect(mapped.group1).toHaveLength(2);
       expect(Array.isArray(mapped.group1[0])).toBe(false);
       expect(Array.isArray(mapped.group1[1])).toBe(false);
@@ -971,7 +943,6 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      // The displayed subgroup has 1 event (swapSpend), complete has 2
       const displayed = get(result.displayedEventsMapped);
       const displayedSubgroup = displayed.group1[0];
       assert(Array.isArray(displayedSubgroup), 'Expected displayedSubgroup to be an array');
@@ -1000,7 +971,6 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      // No ignored assets, so displayed matches complete
       const displayed = get(result.displayedEventsMapped);
       const displayedSubgroup = displayed.group1[0];
       assert(Array.isArray(displayedSubgroup), 'Expected displayedSubgroup to be an array');
@@ -1065,26 +1035,21 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      // BTC is ignored and hidden, so the group is flagged as having hidden ignored assets
       expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(true);
 
-      // The user reveals the ignored asset for this group (clicking the header eye)
       result.toggleShowIgnoredAssets('group1');
       await nextTick();
       expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
-      // While revealed, nothing is hidden anymore
       expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
 
-      // The user unignores BTC
       set(mockIgnoredAssets, []);
       await nextTick();
 
-      // The stale "showing" state must be cleared so the header indicator disappears
       expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(false);
       expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
     });
 
-    it('should keep showing-ignored-assets state while the asset is still ignored', async () => {
+    it('should keep showing-ignored-assets state when an unrelated asset is ignored', async () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
@@ -1111,7 +1076,6 @@ describe('use-history-events-data', () => {
       await nextTick();
       expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
 
-      // Ignoring an unrelated asset must not prune the still-valid showing state
       set(mockIgnoredAssets, ['BTC', 'DOGE']);
       await nextTick();
 
@@ -1141,16 +1105,13 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      // Revealing only changes what is displayed; it must never touch the ignore list
       result.toggleShowIgnoredAssets('group1');
       await nextTick();
       expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
 
-      // BTC is still ignored after revealing, and the group still has an ignored asset
       expect(get(mockIgnoredAssets)).toEqual(['BTC']);
       expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
 
-      // Hiding again leaves the ignore list untouched and re-hides the asset
       result.toggleShowIgnoredAssets('group1');
       await nextTick();
       expect(get(mockIgnoredAssets)).toEqual(['BTC']);

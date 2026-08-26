@@ -13,19 +13,14 @@ interface UseBalancesLoadingReturn {
 /**
  * The single definition of "balances are loading".
  *
- * ⚠️ Read liveness from here rather than calling `useIsActive(ActivityKind.BLOCKCHAIN_BALANCES)`
- * directly. Consumers spread across the app reading the orchestrator themselves is what makes the
- * source of that liveness impossible to change — and it has now changed: hydration is no longer an
- * activity, so a direct reader goes silently dark for the whole cached phase, showing an empty
- * dashboard that looks settled rather than loading.
+ * @remarks
+ * Read liveness from here, not from `useIsActive(BLOCKCHAIN_BALANCES)`. Hydration is not an
+ * activity, so the orchestrator alone reads as settled for the whole cached phase.
  */
 export function useBalancesLoading(): UseBalancesLoadingReturn {
   const { useIsActive } = useTaskCenter();
   const { isHydrating } = storeToRefs(useBalanceRefreshState());
 
-  // Two sources, because there are two layers. Work is the orchestrator's (which also covers the
-  // queued/pending window the task store could not see); hydration is not an activity at all, so
-  // its liveness comes off the refresh-state store.
   const loadingBlockchainBalances = logicOr(
     useIsActive(ActivityKind.BLOCKCHAIN_BALANCES),
     isHydrating,

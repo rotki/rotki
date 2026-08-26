@@ -76,7 +76,7 @@ export const CHAIN_SYNC_LANE = 'chain-sync';
 /**
  * Every transaction decode runs here, capped at 2.
  *
- * ⚠️ Do not lower this to 1. Concurrency belongs to the lane alone: a limiter wrapped around a call
+ * Do not lower this to 1. Concurrency belongs to the lane alone: a limiter wrapped around a call
  * that already submits here is captured by the inner cap and silently becomes dead, which is how
  * redecode throughput was once halved without anything reporting a change.
  */
@@ -91,13 +91,9 @@ export const ACCOUNT_SYNC_LANE_PREFIX = 'tx-sync:';
 /**
  * Family prefix for the per-chain token-detection lanes (`detect:<chain>`).
  *
- * 🔴🔴 Detection must NOT share {@link BALANCES_LANE} with the chain job that awaits it. The chain
- * job holds a balances slot for its whole body — detection, then the network query — so children
- * queued on the same lane could never get one: with a cap of 2, two chain jobs would sit waiting
- * on addresses that cannot start, and the refresh would hang until the tab was reloaded.
- *
- * A separate family also gives the shape §8 asks for directly: 2 addresses per chain, with the
- * balances cap deciding how many chains detect at once.
+ * Detection must NOT share {@link BALANCES_LANE} with the chain job that awaits it. The chain
+ * job holds a balances slot for its whole body, so children queued on the same lane could never get
+ * one and the refresh deadlocks until the tab is reloaded.
  */
 export const DETECT_LANE_PREFIX = 'detect:';
 
@@ -175,7 +171,7 @@ export interface ActivitySpec<T = unknown> {
   readonly lane?: Lane;
   /** Scheduling priority within the lane; defaults to {@link DEFAULT_PRIORITY}. */
   readonly priority?: Priority;
-  /** Must all be terminal before this activity becomes eligible to start. */
+  /** Must all be terminal for this activity to become eligible to start. */
   readonly deps?: readonly ActivityId[];
   /**
    * The activity this one is a part of. Lets the whole tree be read off the specs, so a producer
@@ -207,7 +203,7 @@ export interface ActivitySpec<T = unknown> {
   /**
    * Tear down side resources the producer set up for this activity (a poll interval, a
    * subscription). Run once when the activity settles — on completion, failure, cancel-while-running
-   * *and* cancel-while-queued (where `run` never executes) — so producers don't need a `try/finally`
+   * and* cancel-while-queued (where `run` never executes) — so producers don't need a `try/finally`
    * around `submitTask`. Re-armed on re-run.
    */
   readonly cleanup?: () => void;
@@ -216,7 +212,7 @@ export interface ActivitySpec<T = unknown> {
   /**
    * Run this work through the orchestrator but keep it out of the task-center render model. The
    * spine still schedules, tracks, cancels and cleans it up as usual; only the reactive
-   * projection drops it (see {@link ../../use-task-orchestrator}). For unlock-time work (login,
+   * projection drops it (see `use-task-orchestrator.ts`). For unlock-time work (login,
    * account creation) that must not leave a stale entry once the shell mounts.
    */
   readonly ephemeral?: boolean;
@@ -224,16 +220,13 @@ export interface ActivitySpec<T = unknown> {
    * This activity only *groups* other work and produces no data of its own, so it writes no
    * completion-ledger entry.
    *
-   * 🔴 `everCompleted` for a kind must mean "we have data", not "a run happened". A fan-out
-   * umbrella settles COMPLETE whenever its children settle — `allSettled`, deliberately, because a
-   * failure belongs to the subject that failed — so an umbrella sharing its children's kind writes
-   * a success even when **every** child FAILED. Concretely: backend unreachable at login, all 17
-   * chain jobs fail, umbrella completes, and the dashboard reads `hasCachedData` true and
-   * `isInitialLoading` false — a settled, empty portfolio instead of an error state.
+   * `everCompleted` for a kind must mean "we have data", not "a run happened". A fan-out umbrella
+   * settles COMPLETE whenever its children settle (`allSettled`, so a failure belongs to the subject
+   * that failed), so an umbrella sharing its children's kind writes a success even when **every**
+   * child FAILED — leaving the dashboard a settled, empty portfolio instead of an error state.
    *
-   * ⚠️ Opt-in, never blanket. `HISTORY_SYNC`'s umbrella *is* the subject for its kind and its
-   * ledger entry is load-bearing (`use-refresh-transactions.ts` reads `everCompleted` for
-   * `alreadyLoaded` / `everRefreshed`); silencing that one would make history re-sync every time.
+   * Opt-in, never blanket: `HISTORY_SYNC`'s umbrella *is* the subject for its kind and its ledger
+   * entry is load-bearing, so silencing that one would re-sync history every time.
    */
   readonly container?: boolean;
   /**
@@ -263,10 +256,8 @@ export type LaneFamilyCaps = Partial<Readonly<Record<LaneFamily, number>>>;
  * {@link LaneFamilyCaps}. Where a family cap bounds work *within* each lane, this bounds how many
  * lanes are live at all.
  *
- * Needed once a producer submits its whole tree up front rather than fanning out as it runs: with
- * every per-entity activity queued from the start, a per-lane cap alone would let every entity
- * progress at once — two accounts on each of ten chains is twenty concurrent requests. Capping
- * active lanes restores the nesting that submitting lazily used to provide, so the *shape* is
- * `active lanes × per-lane cap` rather than a flat total.
+ * Needed because producers submit their whole tree up front: with every per-entity activity queued
+ * from the start, a per-lane cap alone lets every entity progress at once (two accounts on each of
+ * ten chains is twenty concurrent requests). The shape is `active lanes × per-lane cap`.
  */
 export type LaneFamilyActiveCaps = Partial<Readonly<Record<LaneFamily, number>>>;

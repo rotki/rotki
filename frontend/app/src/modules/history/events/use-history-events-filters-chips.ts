@@ -91,7 +91,6 @@ export function useHistoryEventsFiltersChips(
     return t('customized_event_duplicates.chips.viewing_manual_review');
   });
 
-  // Track the current valid group IDs from the composable
   const currentValidGroupIds = computed<string[]>(() =>
     get(isAutoFixable) ? get(autoFixGroupIds) : get(manualReviewGroupIds),
   );

@@ -1,19 +1,18 @@
 <script setup lang="ts">
 /**
- * AssetValueDisplay - Display the fiat value of an asset amount.
+ * Displays the fiat value of an asset amount, in the user's currency.
  *
- * Calculates value as: amount × price, then displays in user's currency.
- * Alternatively, accepts a pre-calculated value to display directly.
- * Values are scrambled for privacy when enabled in settings.
+ * @remarks
+ * Computes `amount × price`, or renders `value` directly when the caller has already worked it out.
+ * A `timestamp` prices it historically rather than at today's rate. Values are scrambled for privacy
+ * when the setting is on.
  *
  * @example
+ * ```vue
  * <AssetValueDisplay asset="ETH" :amount="bigNumberify(2)" />
- *
- * @example
  * <AssetValueDisplay asset="ETH" :amount="balance" :timestamp="{ ms: eventTimeMs }" />
- *
- * @example
  * <AssetValueDisplay asset="ETH" :value="preCalculatedValue" />
+ * ```
  */
 import type { Timestamp } from '@/modules/assets/amount-display/types';
 import { type BigNumber, Zero } from '@rotki/common';
@@ -50,7 +49,6 @@ const {
   loading: loadingProp,
 } = defineProps<Props>();
 
-// Composables
 const { loading: calculationLoading, value: calculatedValue } = useAssetValue({
   amount: computed<BigNumber>(() => amount ?? Zero),
   asset: () => asset,
@@ -66,7 +64,6 @@ const { currency } = useAmountDisplaySettings();
 // Computed - currency symbol (always uses user's default)
 const displaySymbol = computed<string>(() => get(currency).unicodeSymbol);
 
-// Computed - value resolution
 const hasProvidedValue = computed<boolean>(() => providedValue !== undefined && providedValue.gt(0));
 
 const displayValue = computed<BigNumber>(() =>

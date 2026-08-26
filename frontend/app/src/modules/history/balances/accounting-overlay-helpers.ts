@@ -29,7 +29,13 @@ export function resolveStatus(bucketCount: number, processingRequired: boolean):
   return processingRequired ? PairOverlayStatus.PROCESSING : PairOverlayStatus.EMPTY;
 }
 
-/** Largest balance value whose timestamp is <= `tsSec` (step function); Zero before the first point. */
+/**
+ * Largest balance value whose timestamp does not exceed `tsSec`, as a step function.
+ *
+ * @param bucket - the prepared balance series, ordered by time
+ * @param tsSec - the timestamp to read at, in seconds
+ * @returns the value in force at `tsSec`, or `Zero` before the series' first point
+ */
 export function valueAt(bucket: PreparedBucket, tsSec: number): BigNumber {
   const { times, values } = bucket;
   if (times.length === 0 || tsSec < times[0])

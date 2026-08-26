@@ -4,17 +4,15 @@ import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/utils
 import { assetsTotal, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 /**
- * Rebuilds a snapshot after its balance rows change (add / edit / delete).
+ * Rebuilds a snapshot after its balance rows change, whether added, edited or deleted.
  *
- * The affected `location` subtotal is updated to `locationBalance.after` (a new
- * location row is appended when it doesn't exist yet), and the synthetic
- * `total` row is recomputed from the net of all balances. All values are USD.
+ * @remarks
+ * The affected location's subtotal becomes `locationBalance.after`, with a new location row appended
+ * when none exists yet, and the synthetic `total` row is recomputed from the net of all balances.
+ * All values are USD.
  *
- * @param params.snapshot the current snapshot (read for its location rows)
- * @param params.balancesSnapshot the new balance rows to store
- * @param params.location the location whose subtotal changed ('' to skip)
- * @param params.locationBalance the `{ before, after }` for that location
- * @param params.timestamp the snapshot timestamp (for a newly created row)
+ * `params.location` is the location whose subtotal changed, and an empty string skips that step.
+ * `params.timestamp` is used only when a new location row has to be created.
  */
 export function rebuildSnapshotAfterBalanceChange(params: {
   snapshot: Snapshot;

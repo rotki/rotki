@@ -148,9 +148,8 @@ describe('useTokenDetectionUi', () => {
       const info = useEthDetectedTokensInfo('eth', '0xaddr1');
 
       expect(get(info).timestamp).toBe(5000);
-      expect(get(info).total).toBe(2); // ETH + DAI (IGNORED_TOKEN filtered)
+      expect(get(info).tokens).toEqual(['ETH', 'DAI']);
 
-      // Update state and verify reactivity
       store.setState('eth', { '0xaddr1': { lastUpdateTimestamp: 6000, tokens: ['DAI', 'USDC'] } });
 
       expect(get(info).timestamp).toBe(6000);
@@ -213,7 +212,7 @@ describe('useTokenDetectionUi', () => {
   });
 
   /**
-   * ⭐ The orchestrator drops excluded addresses silently, so without this the button stays
+   * The orchestrator drops excluded addresses silently, so without this the button stays
    * enabled and pressing it does nothing at all — no row, no toast, no error.
    */
   describe('detectionDisabled', () => {

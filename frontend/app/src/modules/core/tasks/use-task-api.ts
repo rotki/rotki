@@ -61,23 +61,23 @@ export function useTaskApi(): UseTaskApiReturn {
   });
 
   /**
-   * Fetches a task result by ID with specialized error handling for task-specific status codes.
-   * Handles:
-   * - 404: TaskNotFoundError
-   * - 300 with empty result: IncompleteUpgradeError
-   * - 300 with conflict data: SyncConflictError
-   * - 400: ApiValidationError
-   * - 502: Error with backend unavailable message
+   * Fetches a task result by id, translating the task-specific status codes into errors.
+   *
+   * @remarks
+   * The chain-keyed camelCase exemption is declared here rather than on a request: login and
+   * account creation return the user's settings as a task result, and this is the one fetch every
+   * task result comes through, so there is no settings request to hang it on.
+   *
+   * @throws TaskNotFoundError on 404
+   * @throws IncompleteUpgradeError on 300 with an empty result
+   * @throws SyncConflictError on 300 carrying conflict data
+   * @throws ApiValidationError on 400
    */
   const queryTaskResult = async <T>(id: number): Promise<ActionResult<T>> => {
     const response = await ofetch.raw<ActionResult<TaskResultResponse<ActionResult<T>>>>(`/tasks/${id}`, {
       baseURL: api.baseURL,
       timeout: TASKS_TIMEOUT,
       ignoreResponseError: true,
-      // Declared here rather than on a request: login and account creation return the user's
-      // settings as a task result, and this is the one fetch every task result comes through, so
-      // there is no settings request to hang the exemption on. The named fields always carry a
-      // chain-keyed map, whichever task they arrive in.
       parseResponse: (text: string) => camelCaseTransformer(JSON.parse(text), CHAIN_KEYED_SETTINGS),
     });
 

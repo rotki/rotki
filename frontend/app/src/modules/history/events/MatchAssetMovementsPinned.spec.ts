@@ -8,9 +8,9 @@ import MatchAssetMovementsPinned from '@/modules/history/events/MatchAssetMoveme
 import { PinnedNames } from '@/modules/session/types';
 
 /**
- * The seam: every decision this panel used to make now lives in `usePinnedMatchPanel`, which has
- * its own spec. What is left here is wiring - which rows the panel searches, how a row names its
- * event, and that the content components are handed the panel's state and report their events back.
+ * The seam: the panel's decisions live in `usePinnedMatchPanel`, which has its own spec. Covered
+ * here is the wiring only — which rows the panel searches, how a row names its event, and that the
+ * content components receive the panel's state and report their events back.
  */
 
 const panel = {

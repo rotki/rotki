@@ -25,7 +25,6 @@ const { balances, loading = false, tableType, title } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Stores
 const { totalNetWorth } = useDashboardStores();
 const { prices } = storeToRefs(useBalancePricesStore());
 const { isTotalPending, isValuePending } = useValuePending();
@@ -58,7 +57,6 @@ function isPriceMissing(asset: string): boolean {
 
 const totalPending = computed<boolean>(() => isTotalPending(get(sorted)));
 
-// Watch search to reset pagination
 watch(modelSearch, () => setPage(1));
 </script>
 

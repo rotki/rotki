@@ -20,7 +20,6 @@ interface UseNftGalleryDataReturn {
 }
 
 export function useNftGalleryData(): UseNftGalleryDataReturn {
-  // State
   const prices = ref<Record<string, NftPrice>>({});
   const priceError = shallowRef<string>('');
   const total = shallowRef<number>(0);
@@ -29,11 +28,9 @@ export function useNftGalleryData(): UseNftGalleryDataReturn {
   const loading = shallowRef<boolean>(true);
   const perAccount = shallowRef<Nfts | null>(null);
 
-  // API composables
   const { fetchNfts: nftFetch } = useNfts();
   const { fetchNftsPrices } = useAssetPricesApi();
 
-  // Computed properties
   const nfts = computed<GalleryNft[]>(() => {
     const addresses: Nfts | null = get(perAccount);
     const value = get(prices);
@@ -60,7 +57,6 @@ export function useNftGalleryData(): UseNftGalleryDataReturn {
 
   const nftLimited = computed<boolean>(() => get(error).includes('limit'));
 
-  // Methods
   async function fetchNfts(ignoreCache = false): Promise<void> {
     set(loading, true);
     const { message, result } = await nftFetch(ignoreCache);

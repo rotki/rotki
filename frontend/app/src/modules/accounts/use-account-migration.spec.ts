@@ -100,7 +100,7 @@ describe('useAccountMigration', () => {
   });
 
   /**
-   * 🔴 `isEvm` gates *detection*, never the query. `tokenChains` is built from
+   * `isEvm` gates *detection*, never the query. `tokenChains` is built from
    * `evmAndEvmLikeTxChainsInfo`, so an evm-like chain reaches the loop with `isEvm` false; gating
    * the query on it too would leave a migrated zksync_lite address with no balances at all, because
    * the cache-only read cannot fetch what was never queried.
@@ -120,7 +120,7 @@ describe('useAccountMigration', () => {
   });
 
   /**
-   * 🔴 The job's `shouldQuery` reads the accounts store, so a job that starts before the accounts
+   * The job's `shouldQuery` reads the accounts store, so a job that starts before the accounts
    * land sees none, clears the chain and settles SKIPPED. Ordering, not concurrency.
    */
   it('should read the accounts before querying the chain', async () => {
@@ -131,5 +131,25 @@ describe('useAccountMigration', () => {
     await flushPromises();
     expect(h.fetchAccounts.mock.invocationCallOrder[0])
       .toBeLessThan(h.refreshBlockchainBalances.mock.invocationCallOrder[0]);
+  });
+
+  it('should wait for the accounts read to settle, not merely start it first', async () => {
+    let landed = (): void => {};
+    h.fetchAccounts.mockImplementation(async () => new Promise<void>((resolve) => {
+      landed = resolve;
+    }));
+
+    const { canRequestData } = storeToRefs(useSessionAuthStore());
+    set(canRequestData, true);
+    const { useAccountMigration } = await importModule();
+    useAccountMigration().setUpgradedAddresses([{ address: '0xabc', chain: 'eth' }]);
+    await flushPromises();
+
+    expect(h.refreshBlockchainBalances).not.toHaveBeenCalled();
+
+    landed();
+    await flushPromises();
+
+    expect(h.refreshBlockchainBalances).toHaveBeenCalledOnce();
   });
 });

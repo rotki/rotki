@@ -113,9 +113,7 @@ describe('ethStakingFilterBar', () => {
     expect(warnings.filter(message => message.includes('Maximum recursive updates'))).toEqual([]);
   });
 
-  // Hiding the status field has to take the status value with it: one left behind in the page model
-  // would go on filtering the view through a control the user can no longer see or undo.
-  it('should clear the status filter when a validator is picked', async () => {
+  it('should clear the status filter, not just hide its field, when a validator is picked', async () => {
     const { bar, filter, selection } = createHarness();
     await nextTick();
 

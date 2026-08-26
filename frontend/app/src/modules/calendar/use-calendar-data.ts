@@ -137,7 +137,6 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
     return now;
   }
 
-  // Watch for upcoming events
   watch([events, today], async ([events, today], [oldEvents, oldToday]) => {
     if (isEqual(events, oldEvents) && isEqual(today, oldToday))
       return;

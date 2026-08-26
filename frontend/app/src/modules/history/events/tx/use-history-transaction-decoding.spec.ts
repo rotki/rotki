@@ -118,8 +118,6 @@ describe('useHistoryTransactionDecoding', () => {
 
       const { redecodeTransactions } = useHistoryTransactionDecoding();
 
-      // A failure marks the child, never the parent: to an observer the flow ran to completion, and
-      // the chain that failed keeps its stale freshness so a later run retries just that one.
       await expect(redecodeTransactions(['ethereum', 'optimism'])).resolves.toBeUndefined();
       expect(mockNotifyError).toHaveBeenCalled();
     });
@@ -151,6 +149,22 @@ describe('useHistoryTransactionDecoding', () => {
 
       const [cached, forced] = mocks.submitTask.mock.calls.map(call => call[0].id);
       expect(cached).not.toBe(forced);
+    });
+
+    it.each([
+      ['complete without a backend call when there is nothing to decode', true, 0],
+      ['reach the backend when there is something to decode', false, 1],
+    ])('should %s', async (_label: string, skip: boolean, calls: number) => {
+      const runTask = vi.fn().mockResolvedValue(ok(true));
+      mocks.submitTask.mockImplementation(async (spec: {
+        run: (ctx: { report: () => void; runTask: unknown }) => Promise<unknown>;
+      }) => spec.run({ report: (): void => {}, runTask }));
+
+      const { decodeTransactionsTask } = useHistoryTransactionDecoding();
+      await decodeTransactionsTask('ethereum', false, { skipWhen: () => skip });
+
+      expect(runTask).toHaveBeenCalledTimes(calls);
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
     it('should mark decoding cancelled on a cancellation', async () => {

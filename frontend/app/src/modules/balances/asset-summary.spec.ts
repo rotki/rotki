@@ -48,7 +48,6 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(result[0].perProtocol).toBeDefined();
     const addressProtocol = result[0].perProtocol!.find(p => p.protocol === 'address')!;
     expect(addressProtocol).toBeDefined();
-    // Assert that address protocol has chains property
     expect(addressProtocol.chains).toBeDefined();
     expect(addressProtocol.chains!.eth).toBeDefined();
     expect(addressProtocol.chains!.eth.amount.toString()).toBe('1');
@@ -156,7 +155,6 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(result[0].perProtocol).toBeDefined();
     const addressProtocol = result[0].perProtocol!.find(p => p.protocol === 'address')!;
     expect(addressProtocol).toBeDefined();
-    // Assert that address protocol has chains property
     expect(addressProtocol.chains).toBeDefined();
     expect(addressProtocol.chains!.eth).toBeDefined();
     expect(addressProtocol.chains!.eth.amount.toString()).toBe('1');

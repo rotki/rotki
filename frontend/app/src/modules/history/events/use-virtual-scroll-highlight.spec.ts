@@ -591,7 +591,7 @@ describe('use-virtual-scroll-highlight', () => {
       set(pagination, { page: 2, total: 100, limit: 10 });
       await nextTick();
 
-      // scrollTo should not have been called with 0 (pagination scroll suppressed)
+      // Zero is the pagination scroll, which a highlight navigation must suppress.
       expect(scrollToSpy).not.toHaveBeenCalledWith(0);
     });
   });

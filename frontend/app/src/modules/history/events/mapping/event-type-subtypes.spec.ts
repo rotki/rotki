@@ -16,7 +16,6 @@ describe('subtypesForTypes', () => {
       .toStrictEqual(['fee', 'return wrapped', 'airdrop']);
   });
 
-  // No type picked narrows nothing, so every subtype is still on offer.
   it('should offer every known subtype when no type is picked', () => {
     expect(subtypesForTypes(mapping, [])).toStrictEqual(['airdrop', 'return wrapped', 'fee']);
   });
