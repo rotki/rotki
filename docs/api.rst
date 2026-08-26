@@ -6859,7 +6859,7 @@ Match exchange asset movements with onchain events
 
 .. http:put:: /api/(version)/history/events/match/asset_movements
 
-   Matches exchange asset movement events with corresponding events, or mark the asset movement as having no corresponding event.
+   Matches exchange asset movement events with corresponding events, resolves an asset movement as moving to/from an untracked address, or mark the asset movement as having no corresponding event. Resolving as external turns a withdrawal into a payment (spend/payment) and a deposit into income (receive/payment), so the whole amount is accounted instead of only the movement's fee. The event stops being an asset movement and becomes a plain history event keeping its identifier, group and location, and the original direction is recorded in the event extra data. The group's fee is rewritten alongside it as a plain spend/fee, so the group does not end up half asset movement and half history event; both rules carry the same treatment, so the fee is accounted as before. Unlinking restores the original asset movement and its fee.
 
    .. note::
       This endpoint is only available for premium users
@@ -6879,6 +6879,7 @@ Match exchange asset movements with onchain events
 
    :reqjson int asset_movement: DB identifier of the asset movement to match
    :reqjson list[int][optional] matched_events: List of DB identifiers of events to match with the asset movement. The asset movement is marked as having no match if this parameter is omitted or an empty list.
+   :reqjson bool[optional] external: When true (and matched_events is empty) the asset movement is resolved as moving to/from an untracked address: a withdrawal becomes a payment (spend/payment) and a deposit becomes income (receive/payment), and the group's fee becomes a plain spend/fee. False by default.
 
    **Example Response**:
 

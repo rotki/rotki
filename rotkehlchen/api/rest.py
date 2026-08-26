@@ -190,6 +190,7 @@ from rotkehlchen.tasks.events import (
     get_already_matched_event_ids,
     get_unmatched_asset_movements,
     process_asset_movements,
+    resolve_asset_movement_external,
     should_exclude_possible_match,
     update_asset_movement_matched_event,
 )
@@ -4334,11 +4335,38 @@ class RestAPI:
             self,
             asset_movement_identifier: int,
             matched_event_identifiers: list[int],
+            external: bool = False,
     ) -> Response:
-        """Match an exchange asset movement to onchain event(s), or mark the movement as having
-        no match if no matched_event_identifiers are specified.
+        """Match an exchange asset movement to onchain event(s), resolve it as moving to/from
+        an untracked address, or mark the movement as having no match if no
+        matched_event_identifiers are specified.
+
+        Resolving as external turns a withdrawal into a payment and a deposit into income,
+        so the whole amount is accounted instead of only the movement's fee.
         """
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         if len(matched_event_identifiers) == 0:
+            if external:
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                    events = events_db.get_history_events_internal(
+                        cursor=cursor,
+                        filter_query=HistoryEventFilterQuery.make(
+                            identifiers=[asset_movement_identifier],
+                        ),
+                    )
+
+                if len(events) != 1:
+                    return api_response(wrap_in_fail_result(
+                        message=f'No event found in the DB for identifier {asset_movement_identifier}',  # noqa: E501
+                    ), HTTPStatus.BAD_REQUEST)
+
+                if not resolve_asset_movement_external(events_db=events_db, event=events[0]):
+                    return api_response(wrap_in_fail_result(
+                        message=f'Event with identifier {asset_movement_identifier} is not an asset movement deposit or withdrawal',  # noqa: E501
+                    ), HTTPStatus.BAD_REQUEST)
+
+                return api_response(OK_RESULT)
+
             # No matched event specified. Mark as having no match so this movement will be ignored.
             with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(
@@ -4348,7 +4376,6 @@ class RestAPI:
                 )
             return api_response(OK_RESULT)
 
-        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         asset_movement, matched_events, fee_event = None, [], None
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             for event in events_db.get_history_events_internal(
@@ -4523,7 +4550,8 @@ class RestAPI:
         in which case there is an entry for both.
 
         For matches created by this app, events are restored from backups saved prior to matching,
-        including event type/subtype, notes, and counterparty.
+        including event type/subtype, notes, and counterparty. Also clears an external
+        resolution or no-match marker if the movement only had that.
         """
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             linked_ids = defaultdict(list)
@@ -4545,6 +4573,28 @@ class RestAPI:
                         'asset movement or its match for any matched pairs in the DB.'
                     )), HTTPStatus.BAD_REQUEST)
 
+                # Restore the original movement if it was resolved as external. The whole
+                # group is restored since resolving rewrites the movement's fee alongside
+                # it; events with no backup are skipped, so a merely ignored movement (which
+                # was never rewritten) is unaffected.
+                group_event_ids = [x[0] for x in write_cursor.execute(
+                    'SELECT identifier FROM history_events WHERE group_identifier='
+                    '(SELECT group_identifier FROM history_events WHERE identifier=?)',
+                    (identifier,),
+                )]
+                DBHistoryEvents.maybe_restore_history_events_from_backup(
+                    write_cursor=write_cursor,
+                    identifiers=group_event_ids,
+                )
+                write_cursor.executemany(
+                    'DELETE FROM history_events_mappings '
+                    'WHERE parent_identifier=? AND name=? AND value=?',
+                    [(
+                        event_id,
+                        HISTORY_MAPPING_KEY_STATE,
+                        HistoryMappingState.MATCHED.serialize_for_db(),
+                    ) for event_id in group_event_ids],
+                )
                 return api_response(OK_RESULT)
 
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:

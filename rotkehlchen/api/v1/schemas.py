@@ -5365,6 +5365,19 @@ class GetUnmatchedAssetMovementsSchema(Schema):
 class MatchAssetMovementsSchema(Schema):
     asset_movement = fields.Integer(required=True)
     matched_events = fields.List(fields.Integer(required=True), required=False, load_default=list)
+    external = fields.Boolean(required=False, load_default=False)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['external'] and len(data['matched_events']) != 0:
+            raise ValidationError(
+                message='external cannot be combined with matched_events',
+                field_name='external',
+            )
 
 
 class FindPossibleMatchesSchema(Schema):

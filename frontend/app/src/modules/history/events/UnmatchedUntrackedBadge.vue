@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// Marks a bridge leg whose counterpart address rotki does not track, so no counterpart event
-// can ever be decoded for it. The wording arrives from the row - see use-unmatched-bridge-rows.
 defineProps<{
   label: string;
   tooltip: string;
@@ -14,19 +12,17 @@ defineProps<{
     tooltip-class="max-w-80"
   >
     <template #activator>
-      <RuiChip
-        size="sm"
-        color="warning"
-        class="!py-0"
+      <span
+        class="inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-caption bg-rui-warning/10 text-rui-warning"
+        data-testid="unmatched-untracked-badge"
       >
-        <span class="flex items-center gap-1">
-          <RuiIcon
-            size="14"
-            name="lu-triangle-alert"
-          />
-          {{ label }}
-        </span>
-      </RuiChip>
+        <RuiIcon
+          class="shrink-0"
+          size="14"
+          name="lu-triangle-alert"
+        />
+        {{ label }}
+      </span>
     </template>
     {{ tooltip }}
   </RuiTooltip>

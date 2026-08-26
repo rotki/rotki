@@ -11,7 +11,7 @@ interface AssetMovementMatchSuggestions {
 interface UseAssetMovementMatchingApiReturn {
   getUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<string[]>;
   getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string) => Promise<AssetMovementMatchSuggestions>;
-  matchAssetMovements: (assetMovement: number, matchedEvents?: number[]) => Promise<boolean>;
+  matchAssetMovements: (assetMovement: number, matchedEvents?: number[], external?: boolean) => Promise<boolean>;
   unlinkAssetMovement: (identifier: number) => Promise<boolean>;
   triggerAssetMovementMatching: () => Promise<PendingTask>;
 }
@@ -32,9 +32,24 @@ export function useAssetMovementMatchingApi(): UseAssetMovementMatchingApiReturn
       tolerance,
     });
 
-  const matchAssetMovements = async (assetMovement: number, matchedEvents?: number[]): Promise<boolean> =>
+  /**
+   * Resolves an asset movement, either by linking it to events or by declaring it unmatchable.
+   *
+   * @remarks
+   * Without matched events the movement is marked as having no match, unless `external` is set,
+   * which resolves it as moving to or from an untracked address instead: a withdrawal becomes a
+   * payment and a deposit becomes income.
+   *
+   * @param assetMovement - identifier of the movement's own event
+   * @param matchedEvents - identifiers of the events to link; an empty or absent list resolves the
+   * movement without a counterpart
+   * @param external - resolve the movement as external rather than as having no match
+   * @returns whether the backend accepted the resolution
+   */
+  const matchAssetMovements = async (assetMovement: number, matchedEvents?: number[], external = false): Promise<boolean> =>
     api.put<boolean>('/history/events/match/asset_movements', {
       assetMovement,
+      ...(external && { external }),
       ...(matchedEvents && matchedEvents.length > 0 && { matchedEvents }),
     });
 

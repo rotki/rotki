@@ -37,6 +37,7 @@ interface UseUnmatchedAssetMovementsReturn {
   autoMatchMovement: (linkedMovement: LinkedMovementMatch) => Promise<boolean>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
+  resolveExternal: (assetMovementId: number) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
   triggerAssetMovementAutoMatching: () => Promise<void>;
 }
@@ -162,6 +163,32 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     }
   };
 
+  /**
+   * Resolves a movement as moving to or from an untracked address.
+   *
+   * @remarks
+   * Reports failure through the shared error dialog, but stays silent on success: the caller
+   * surfaces the outcome with an undo affordance instead.
+   *
+   * @param assetMovementId - identifier of the movement's own event
+   */
+  const resolveExternal = async (assetMovementId: number): Promise<ActionStatus> => {
+    try {
+      const success = await matchAssetMovementsApi(assetMovementId, undefined, true);
+
+      if (success)
+        signalEventsModified();
+
+      return { message: '', success };
+    }
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logger.error('Failed to resolve asset movement as external:', error);
+      showErrorMessage(t('actions.asset_movement_matching.error.title'), t('actions.asset_movement_matching.error.description', { error: message }));
+      return { message, success: false };
+    }
+  };
+
   const refreshUnmatchedAssetMovements = async (skipIgnored = false): Promise<void> => {
     await fetchUnmatchedAssetMovements();
     if (!skipIgnored) {
@@ -223,6 +250,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     loading,
     matchAssetMovement,
     refreshUnmatchedAssetMovements,
+    resolveExternal,
     triggerAssetMovementAutoMatching,
     unmatchedCount,
     unmatchedMovements,

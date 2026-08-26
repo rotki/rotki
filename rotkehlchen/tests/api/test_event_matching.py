@@ -21,6 +21,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
+    AssetMovementTransferSubtype,
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
@@ -448,6 +449,187 @@ def test_mark_asset_movement_no_match(rotkehlchen_api_server: APIServer) -> None
             'SELECT left_event_id, right_event_id FROM history_event_links WHERE link_type=?',
             (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
         ).fetchall() == [(asset_movement.identifier, matched_event_id)]
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize(('movement_subtype', 'expected_type', 'expected_direction', 'expected_notes'), [  # noqa: E501
+    (
+        HistoryEventSubType.SPEND,
+        HistoryEventType.SPEND,
+        'withdrawal',
+        'Send 0.1 ETH from Kraken to an untracked address',
+    ), (
+        HistoryEventSubType.RECEIVE,
+        HistoryEventType.RECEIVE,
+        'deposit',
+        'Receive 0.1 ETH in Kraken from an untracked address',
+    ),
+])
+def test_resolve_asset_movement_as_external(
+        rotkehlchen_api_server: APIServer,
+        movement_subtype: AssetMovementTransferSubtype,
+        expected_type: HistoryEventType,
+        expected_direction: str,
+        expected_notes: str,
+) -> None:
+    """Resolving an asset movement as external turns a withdrawal into a payment
+    (SPEND/PAYMENT) and a deposit into income (RECEIVE/PAYMENT) so the whole amount is
+    accounted instead of only the fee. The movement stops being an asset movement, keeps
+    its extra data, gets stamped with the resolution and its original direction and is
+    ignored; the group's fee is rewritten alongside it as a plain spend fee, and unlink
+    restores both.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[(movement := AssetMovement(
+                identifier=1,
+                location=Location.KRAKEN,
+                event_subtype=movement_subtype,
+                timestamp=(timestamp := TimestampMS(1510000000000)),
+                asset=A_ETH,
+                amount=FVal('0.1'),
+                unique_id='1',
+                location_label='Kraken 1',
+                extra_data=AssetMovementExtraData(address=(address := make_evm_address())),
+            )), (fee_event := AssetMovement(
+                identifier=2,
+                group_identifier=movement.group_identifier,
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.FEE,
+                timestamp=timestamp,
+                asset=A_ETH,
+                amount=FVal('0.001'),
+                location_label='Kraken 1',
+            ))],
+        )
+
+    assert_simple_ok_response(requests.put(
+        url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+        json={'asset_movement': 1, 'matched_events': [], 'external': True},
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT event_id FROM history_event_link_ignores WHERE link_type=?',
+            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
+        ).fetchall() == [(1,)]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings '
+            'WHERE parent_identifier=? AND name=? AND value=?',
+            (1, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.MATCHED.serialize_for_db()),
+        ).fetchone()[0] == 1
+        events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                order_by_rules=[('history_events_identifier', True)],
+            ),
+        )
+
+    assert events == [HistoryEvent(
+        identifier=1,
+        group_identifier=movement.group_identifier,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.KRAKEN,
+        location_label='Kraken 1',
+        asset=A_ETH,
+        amount=FVal('0.1'),
+        notes=expected_notes,
+        event_type=expected_type,
+        event_subtype=HistoryEventSubType.PAYMENT,
+        extra_data={
+            'address': address,
+            'matched_asset_movement': {
+                'resolution': 'external',
+                'direction': expected_direction,
+            },
+        },
+    ), HistoryEvent(  # the fee is rewritten alongside it, so the group stays one kind of event
+        identifier=2,
+        group_identifier=movement.group_identifier,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.KRAKEN,
+        location_label='Kraken 1',
+        asset=A_ETH,
+        amount=FVal('0.001'),
+        notes=f'Pay 0.001 ETH as Kraken {expected_direction} fee',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+    )]
+
+    # the movement is no longer listed as unmatched
+    movements, _ = get_unmatched_asset_movements(database=rotki.data.db)
+    assert len(movements) == 0
+
+    # unlinking restores the original movement and clears the ignore marker
+    assert_simple_ok_response(requests.delete(
+        url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+        json={'identifier': 1},
+    ))
+    _check_all_unlinked(dbevents=dbevents, original_events=[movement, fee_event])
+    movements, _ = get_unmatched_asset_movements(database=rotki.data.db)
+    assert len(movements) == 1
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_resolve_asset_movement_as_external_errors(rotkehlchen_api_server: APIServer) -> None:
+    """Only an asset movement deposit or withdrawal can be resolved as external, and the
+    resolution cannot be combined with a match.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[AssetMovement(
+                identifier=1,
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.FEE,
+                timestamp=TimestampMS(1510000000000),
+                asset=A_ETH,
+                amount=FVal('0.001'),
+                unique_id='1',
+            ), HistoryEvent(
+                identifier=2,
+                group_identifier='xyz',
+                sequence_index=0,
+                location=Location.EXTERNAL,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                timestamp=TimestampMS(1510000000001),
+                asset=A_ETH,
+                amount=FVal('0.1'),
+            )],
+        )
+
+    for identifier in (1, 2):  # a fee event and a plain history event are both rejected
+        assert_error_response(
+            response=requests.put(
+                url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+                json={'asset_movement': identifier, 'external': True},
+            ),
+            contained_in_msg=f'Event with identifier {identifier} is not an asset movement deposit or withdrawal',  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={'asset_movement': 42, 'external': True},
+        ),
+        contained_in_msg='No event found in the DB for identifier 42',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={'asset_movement': 1, 'matched_events': [2], 'external': True},
+        ),
+        contained_in_msg='external cannot be combined with matched_events',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

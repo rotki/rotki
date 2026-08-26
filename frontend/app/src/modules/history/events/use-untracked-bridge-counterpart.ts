@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useTrackedAddresses } from '@/modules/history/events/use-tracked-addresses';
 
 interface UseUntrackedBridgeCounterpartReturn {
   isCounterpartUntracked: (transaction: UnmatchedBridgeTransaction) => boolean;
@@ -55,20 +55,14 @@ export function canCreateBridgeCounterpart(transaction: UnmatchedBridgeTransacti
  * considered tracked, so the guidance only appears when a match is truly impossible.
  */
 export const useUntrackedBridgeCounterpart = createSharedComposable((): UseUntrackedBridgeCounterpartReturn => {
-  const { addresses } = useAccountAddresses();
-
-  const trackedAddresses = computed<Set<string>>(() => {
-    const tracked = new Set<string>();
-    for (const chainAddresses of Object.values(get(addresses))) {
-      for (const address of chainAddresses)
-        tracked.add(address.toLowerCase());
-    }
-    return tracked;
-  });
+  const { accountsRead, isAddressTracked } = useTrackedAddresses();
 
   function isCounterpartUntracked(transaction: UnmatchedBridgeTransaction): boolean {
+    if (!get(accountsRead))
+      return false;
+
     const address = getBridgeCounterpartAddress(transaction);
-    return address !== undefined && !get(trackedAddresses).has(address.toLowerCase());
+    return address !== undefined && !isAddressTracked(address);
   }
 
   return {

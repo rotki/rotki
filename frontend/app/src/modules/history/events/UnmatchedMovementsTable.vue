@@ -7,8 +7,10 @@ import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
+import UnmatchedUntrackedBadge from '@/modules/history/events/UnmatchedUntrackedBadge.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 // The dialog presentation of unmatched movements. Layout only - see UnmatchedMovementsList.
 const selected = defineModel<string[]>('selected', { required: true });
@@ -115,9 +117,31 @@ function getRowClass(row: UnmatchedMovementRow): string {
         </div>
       </template>
       <template #item.eventSubtype="{ row }">
-        <BadgeDisplay>
-          {{ row.typeLabel }}
-        </BadgeDisplay>
+        <div class="flex flex-col items-start gap-1">
+          <BadgeDisplay>
+            {{ row.typeLabel }}
+          </BadgeDisplay>
+          <template v-if="row.untrackedDestination">
+            <UnmatchedUntrackedBadge
+              :label="row.untrackedLabel"
+              :tooltip="row.untrackedTooltip"
+            />
+            <HashLink
+              v-if="row.destinationAddress"
+              class="[&_span]:!text-caption"
+              :text="row.destinationAddress"
+            />
+          </template>
+          <RuiChip
+            v-if="row.resolvedAsExternal"
+            size="sm"
+            color="info"
+            class="!py-0"
+            data-testid="unmatched-row-resolved"
+          >
+            {{ row.resolvedLabel }}
+          </RuiChip>
+        </div>
       </template>
       <template #item.location="{ row }">
         <LocationDisplay

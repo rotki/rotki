@@ -4034,10 +4034,11 @@ class MatchAssetMovementsResource(BaseMethodView):
     @require_loggedin_user()
     @require_premium_user(active_check=False)
     @use_kwargs(put_schema, location='json')
-    def put(self, asset_movement: int, matched_events: list[int]) -> Response:
+    def put(self, asset_movement: int, matched_events: list[int], external: bool) -> Response:
         return self.rest_api.match_asset_movements(
             asset_movement_identifier=asset_movement,
             matched_event_identifiers=matched_events,
+            external=external,
         )
 
     @require_loggedin_user()
