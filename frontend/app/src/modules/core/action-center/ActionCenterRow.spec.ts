@@ -46,7 +46,6 @@ describe('modules/core/action-center/ActionCenterRow', () => {
 
     expect(wrapper.find('[data-testid=actions-center-row-action]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=actions-center-row-locked]').text()).toContain('action_center.locked');
-    // the tier hint replaces the description, which no longer describes anything actionable
     expect(wrapper.text()).toContain('action_center.locked_hint::Basic');
     expect(wrapper.text()).not.toContain('description');
   });

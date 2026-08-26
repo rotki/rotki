@@ -1,6 +1,7 @@
 import type { TxQueryStatusData } from '@/modules/history/use-tx-query-status-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { AddressStatus, AddressStep } from './types';
 import { useChainProgress } from './use-chain-progress';
 
@@ -32,6 +33,11 @@ describe('useChainProgress', () => {
     status,
     subtype: 'bitcoin',
   });
+
+  function setDisabled(value: Record<string, string[]>): void {
+    const store = useSettingsRepo();
+    store.updateGeneral({ ...store.general, disabledChainQueries: value });
+  }
 
   beforeEach(() => {
     const pinia = createPinia();
@@ -154,11 +160,7 @@ describe('useChainProgress', () => {
   });
 
   describe('failed addresses', () => {
-    it('should keep a chain whose every address failed', () => {
-      // The regression this guards: a failed sync used to REMOVE its query-status entry, and the
-      // chain list is derived from those entries, so a chain that failed outright vanished from
-      // the panel along with its own denominator. A run with three failed gnosis addresses read
-      // "11/11 chains complete", all green.
+    it('should keep a chain whose every address failed, rather than dropping it from the list', () => {
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.FAILED),
         key2: createEvmStatusData('0x222', 'gnosis', TransactionsQueryStatus.FAILED),
@@ -184,6 +186,35 @@ describe('useChainProgress', () => {
       const chains = get(useChainProgress(queryStatus));
 
       expect(chains[0].progress).toBe(100);
+    });
+  });
+
+  describe('disabled chain queries', () => {
+    it('should drop an excluded address from its chain instead of padding the total', () => {
+      setDisabled({ eth: ['0x111'] });
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      });
+
+      const chains = get(useChainProgress(queryStatus));
+
+      expect(chains).toHaveLength(1);
+      expect(chains[0].addresses.map(a => a.address)).toStrictEqual(['0x222']);
+      expect(chains[0].total).toBe(1);
+      expect(chains[0].progress).toBe(100);
+    });
+
+    it('should leave no row at all for a chain switched off entirely', () => {
+      setDisabled({ gnosis: [] });
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      });
+
+      const chains = get(useChainProgress(queryStatus));
+
+      expect(chains.map(c => c.chain)).toStrictEqual(['eth']);
     });
   });
 
@@ -521,7 +552,6 @@ describe('useChainProgress', () => {
 
       expect(get(result)[0].addresses[0].status).toBe(AddressStatus.QUERYING);
 
-      // Update status
       set(queryStatus, {
         key1: createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
       });

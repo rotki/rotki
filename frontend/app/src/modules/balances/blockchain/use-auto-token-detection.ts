@@ -4,12 +4,12 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
 
 interface UseAutoTokenDetectionReturn {
   /**
-   * Run `pass`, telling it whether this login is due a detection sweep, and own the cooldown
+   * Runs `pass`, telling it whether this login is due a detection sweep, and owns the cooldown
    * bookkeeping around it.
    *
-   * ⭐ It no longer runs detection itself. Detection is a stage *inside* each chain job now, so
-   * what belongs here is only the question "is a sweep due?" and the record that one happened —
-   * `pass` decides what detecting actually means.
+   * @remarks
+   * Detection is a stage inside each chain job, so nothing here detects anything: this answers
+   * "is a sweep due?" and records that one happened, and `pass` decides what detecting means.
    */
   withDetection: <T>(pass: (detect: boolean) => Promise<T>) => Promise<T>;
   skipReason: () => string | null;

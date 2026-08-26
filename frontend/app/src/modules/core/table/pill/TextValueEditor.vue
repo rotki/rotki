@@ -52,13 +52,8 @@ const invalid = computed<boolean>(() => {
   return token.length > 0 && field.validate !== undefined && !field.validate(token);
 });
 
-// A value already among the committed tokens is a no-op rather than a silent one: say so instead
-// of swallowing the enter press.
-//
-// Multi-value fields only. A single-value field's input IS its committed value, so once the
-// debounce below has banked what was typed, the field would be flagged as a duplicate of itself:
-// the notes filter said "Already added" about the text sitting in its own box, and refused to
-// commit any edit of it.
+// Multi-value fields only: a single-value field's input *is* its committed value, so it would be
+// flagged as a duplicate of itself.
 const duplicate = computed<boolean>(() => {
   const token = get(input).trim();
   return field.multiple && token.length > 0 && filter.values.includes(token);

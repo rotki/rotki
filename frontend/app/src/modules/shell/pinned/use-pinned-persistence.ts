@@ -92,13 +92,7 @@ export function usePinnedPersistence(): void {
     set(persistedWidth, width);
   });
 
-  // Names + active id change only when the array is replaced by reference (the store
-  // never mutates it in place), so a shallow watch is enough and avoids deep-traversing
-  // panel props such as the report card's report object.
   watch([pinnedPanels, activePinnedId], ([panels, active]) => {
-    // Logging out resets every pinia store, which empties the rail. Writing that emptied state
-    // through would destroy the very tabs we are meant to restore on the next sign-in, so only
-    // a logged-in user's own changes are saved.
     if (!get(logged))
       return;
 

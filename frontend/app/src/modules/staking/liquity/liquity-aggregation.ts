@@ -22,6 +22,7 @@ type BalanceEntry = Record<string, AssetBalance>;
 /**
  * Every entry for the given addresses, own balances and proxies alike.
  *
+ * @param source - the balances to select from, keyed by address
  * @param selectedAddresses - an empty list means every address, as an absent account filter does
  */
 function selectEntries<T extends BalanceEntry>(
@@ -73,6 +74,8 @@ export function aggregateEntries<T extends BalanceEntry>(
 /**
  * The proxies each selected address holds a position through, across staking and pools.
  *
+ * @param staking - the staking positions to walk
+ * @param pools - the stability-pool positions to walk
  * @param selectedAddresses - only these count; with no account filter there is no owner to
  * attribute a proxy to, so nothing is reported
  * @returns the proxies by owner, or `null` when there are none

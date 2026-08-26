@@ -44,11 +44,9 @@ describe('useDatabase', () => {
     scope = effectScope();
     vi.resetModules();
 
-    // Create fresh refs for each test
     mockUserIdentifier = ref<string>();
     mockDataDirectory = ref<string>();
 
-    // Mock dependencies
     vi.doMock('@/modules/auth/use-logged-user-identifier', () => ({
       useLoggedUserIdentifier: vi.fn(() => mockUserIdentifier),
     }));
@@ -59,7 +57,6 @@ describe('useDatabase', () => {
       })),
     }));
 
-    // Mock storeToRefs to return dataDirectory ref directly
     vi.doMock('pinia', async () => {
       const actual = await vi.importActual('pinia');
       return {
@@ -76,7 +73,6 @@ describe('useDatabase', () => {
     // before we delete the databases; otherwise Dexie force-closes it and warns.
     scope.stop();
 
-    // Clean up all test databases
     const allDatabases = await Dexie.getDatabaseNames();
     for (const dbName of allDatabases) {
       if (dbName.startsWith('rotki.data.') || dbName.endsWith('.data')) {
@@ -84,12 +80,12 @@ describe('useDatabase', () => {
           await Dexie.delete(dbName);
         }
         catch {
-          // Ignore
+          // A leftover database another test still holds open cannot be deleted, and the next test
+          // opens its own by name regardless, so failing here would fail a passing test.
         }
       }
     }
 
-    // Clean up localStorage
     localStorage.removeItem(localStorageKey);
 
     vi.clearAllMocks();
@@ -123,7 +119,6 @@ describe('useDatabase', () => {
       const { useDatabase } = await import('./use-database');
       const { isReady } = scope.run(() => useDatabase())!;
 
-      // Wait for watch to execute
       await nextTick();
       await waitUntilReady(isReady);
 
@@ -156,7 +151,6 @@ describe('useDatabase', () => {
 
       expect(get(isReady)).toBe(true);
 
-      // Both tables should exist and be empty
       expect(await db().missingMappings.count()).toBe(0);
       expect(await db().newlyDetectedTokens.count()).toBe(0);
     });
@@ -164,7 +158,6 @@ describe('useDatabase', () => {
 
   describe('migration from old {username}.data database', () => {
     it('should handle non-existent old database gracefully', async () => {
-      // No old database created - test that migration handles this case
       set(mockUserIdentifier, testUsername);
       set(mockDataDirectory, testDataDirectory);
 
@@ -177,13 +170,13 @@ describe('useDatabase', () => {
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
 
-      // Verify no old database exists
       const allDatabases = await Dexie.getDatabaseNames();
       expect(allDatabases).not.toContain(`${testUsername}.data`);
     });
 
     it('should migrate missing mappings from old database', async () => {
-      // Step 1: Create old database with data BEFORE initializing useDatabase
+      // The old database has to exist before `useDatabase` initialises, or there is nothing to
+      // migrate from.
       const oldDb = createOldUserDb(testUsername);
       await oldDb.open();
 
@@ -195,7 +188,6 @@ describe('useDatabase', () => {
       expect(await oldDb.missingMappings.count()).toBe(2);
       oldDb.close();
 
-      // Step 2: Initialize useDatabase - this should trigger migration
       set(mockUserIdentifier, testUsername);
       set(mockDataDirectory, testDataDirectory);
 
@@ -207,18 +199,15 @@ describe('useDatabase', () => {
 
       expect(get(isReady)).toBe(true);
 
-      // Step 3: Verify data was migrated
       const migratedMappings = await db().missingMappings.toArray();
       expect(migratedMappings).toHaveLength(2);
       expect(migratedMappings.map(m => m.identifier).sort()).toEqual(['asset-1', 'asset-2']);
 
-      // Step 4: Verify old database was deleted
       const allDatabases = await Dexie.getDatabaseNames();
       expect(allDatabases).not.toContain(`${testUsername}.data`);
     });
 
     it('should handle empty old database gracefully', async () => {
-      // Create empty old database
       const oldDb = createOldUserDb(testUsername);
       await oldDb.open();
       oldDb.close();
@@ -239,14 +228,12 @@ describe('useDatabase', () => {
 
   describe('migration from localStorage for newly detected tokens', () => {
     it('should migrate tokens from localStorage', async () => {
-      // Step 1: Set up localStorage with token data
       const oldTokens = [
         { tokenIdentifier: 'eip155:1/erc20:0xabc', tokenKind: NewDetectedTokenKind.EVM },
         { tokenIdentifier: 'solana:mainnet/spl:xyz', tokenKind: NewDetectedTokenKind.SOLANA },
       ];
       localStorage.setItem(localStorageKey, JSON.stringify(oldTokens));
 
-      // Step 2: Initialize useDatabase - this should trigger migration
       set(mockUserIdentifier, testUsername);
       set(mockDataDirectory, testDataDirectory);
 
@@ -258,23 +245,18 @@ describe('useDatabase', () => {
 
       expect(get(isReady)).toBe(true);
 
-      // Step 3: Verify tokens were migrated
       const migratedTokens = await db().newlyDetectedTokens.toArray();
       expect(migratedTokens).toHaveLength(2);
       expect(migratedTokens.map(t => t.tokenIdentifier).sort()).toEqual([
         'eip155:1/erc20:0xabc',
         'solana:mainnet/spl:xyz',
       ]);
-
-      // All tokens should have detectedAt set
       expect(migratedTokens.every(t => typeof t.detectedAt === 'number')).toBe(true);
 
-      // Step 4: Verify localStorage was cleaned up
       expect(localStorage.getItem(localStorageKey)).toBeNull();
     });
 
     it('should handle missing localStorage gracefully', async () => {
-      // Ensure no localStorage data
       localStorage.removeItem(localStorageKey);
 
       set(mockUserIdentifier, testUsername);
@@ -291,7 +273,6 @@ describe('useDatabase', () => {
     });
 
     it('should handle invalid localStorage data gracefully', async () => {
-      // Set up invalid JSON
       localStorage.setItem(localStorageKey, 'not-valid-json{');
 
       set(mockUserIdentifier, testUsername);
@@ -303,20 +284,15 @@ describe('useDatabase', () => {
       await nextTick();
       await waitUntilReady(isReady);
 
-      // Should still be ready (migration failure is caught)
       expect(get(isReady)).toBe(true);
       expect(await db().newlyDetectedTokens.count()).toBe(0);
-
-      // localStorage should be cleaned up even on error
       expect(localStorage.getItem(localStorageKey)).toBeNull();
     });
   });
 
   describe('combined migrations', () => {
     it('should handle clean start with no migration sources', async () => {
-      // Neither old database nor localStorage exists - this is normal for new users
       localStorage.removeItem(localStorageKey);
-      // Ensure no old database exists (none created in this test)
 
       set(mockUserIdentifier, testUsername);
       set(mockDataDirectory, testDataDirectory);
@@ -333,7 +309,6 @@ describe('useDatabase', () => {
     });
 
     it('should migrate only old database when localStorage is missing', async () => {
-      // Set up old IndexedDB only
       const oldDb = createOldUserDb(testUsername);
       await oldDb.open();
       await oldDb.missingMappings.add({
@@ -344,7 +319,6 @@ describe('useDatabase', () => {
       });
       oldDb.close();
 
-      // Ensure no localStorage
       localStorage.removeItem(localStorageKey);
 
       set(mockUserIdentifier, testUsername);
@@ -362,8 +336,6 @@ describe('useDatabase', () => {
     });
 
     it('should migrate only localStorage when old database is missing', async () => {
-      // No old database created
-      // Set up localStorage only
       const oldTokens = [
         { tokenIdentifier: 'eip155:1/erc20:0xonlylocal', tokenKind: NewDetectedTokenKind.EVM },
       ];
@@ -382,12 +354,10 @@ describe('useDatabase', () => {
       expect(await db().missingMappings.count()).toBe(0);
       expect(await db().newlyDetectedTokens.count()).toBe(1);
 
-      // Verify localStorage was cleaned up
       expect(localStorage.getItem(localStorageKey)).toBeNull();
     });
 
     it('should migrate both old database and localStorage in single initialization', async () => {
-      // Set up old IndexedDB
       const oldDb = createOldUserDb(testUsername);
       await oldDb.open();
       const testMapping: Omit<MissingMapping, 'id'> = {
@@ -399,13 +369,11 @@ describe('useDatabase', () => {
       await oldDb.missingMappings.add(testMapping);
       oldDb.close();
 
-      // Set up localStorage
       const oldTokens = [
         { tokenIdentifier: 'eip155:1/erc20:0xmigrated', tokenKind: NewDetectedTokenKind.EVM },
       ];
       localStorage.setItem(localStorageKey, JSON.stringify(oldTokens));
 
-      // Initialize useDatabase
       set(mockUserIdentifier, testUsername);
       set(mockDataDirectory, testDataDirectory);
 
@@ -417,7 +385,6 @@ describe('useDatabase', () => {
 
       expect(get(isReady)).toBe(true);
 
-      // Verify both migrations completed
       expect(await db().missingMappings.count()).toBe(1);
       expect(await db().newlyDetectedTokens.count()).toBe(1);
 
@@ -435,7 +402,8 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      // Don't destructure db - we need to access the getter each time to get updated value
+      // Held whole rather than destructured: `db` is a getter, and a destructured copy would keep
+      // answering with the first user's database.
       const database = scope.run(() => useDatabase())!;
 
       await nextTick();
@@ -444,25 +412,21 @@ describe('useDatabase', () => {
       expect(get(database.isReady)).toBe(true);
       const firstDbName = database.db.name;
 
-      // Add some data
       await database.db().newlyDetectedTokens.add({
         tokenIdentifier: 'test-token',
         tokenKind: NewDetectedTokenKind.EVM,
         detectedAt: Date.now(),
       });
 
-      // Change user
       set(mockUserIdentifier, 'differentuser');
 
       await nextTick();
       await waitUntilReady(database.isReady);
 
       expect(get(database.isReady)).toBe(true);
-      // Access database.db to re-evaluate the getter
       expect(database.db().name).not.toBe(firstDbName);
       expect(database.db().name).toContain('differentuser');
 
-      // New database should be empty (different user's data)
       expect(await database.db().newlyDetectedTokens.count()).toBe(0);
     });
 
@@ -478,7 +442,6 @@ describe('useDatabase', () => {
 
       expect(get(isReady)).toBe(true);
 
-      // Clear user
       set(mockUserIdentifier, undefined);
 
       await nextTick();
@@ -494,7 +457,8 @@ describe('useDatabase', () => {
       set(mockDataDirectory, '/path/one');
 
       const { useDatabase } = await import('./use-database');
-      // Don't destructure db - we need to access the getter each time to get updated value
+      // Held whole rather than destructured: `db` is a getter, and a destructured copy would keep
+      // answering with the first user's database.
       const database = scope.run(() => useDatabase())!;
 
       await nextTick();
@@ -503,14 +467,12 @@ describe('useDatabase', () => {
       expect(get(database.isReady)).toBe(true);
       const firstDbName = database.db.name;
 
-      // Change data directory
       set(mockDataDirectory, '/path/two');
 
       await nextTick();
       await waitUntilReady(database.isReady);
 
       expect(get(database.isReady)).toBe(true);
-      // Access database.db to re-evaluate the getter
       expect(database.db().name).not.toBe(firstDbName);
     });
   });

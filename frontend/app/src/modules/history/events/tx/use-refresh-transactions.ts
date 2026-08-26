@@ -82,18 +82,12 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       return;
     }
 
-    // ⚠️ Seeded from `accounts`, the same set `syncTransactionsByChains` queries — not from
-    // `decodableAccounts`, which drops bitcoin by definition and so kept every bitcoin chain out of
-    // the sync panel while its addresses were being queried.
     initializeQueryStatus(
       targets.accounts.map(account => ({ ...account, subtype: getTransactionTypeFromChain(account.chain) })),
       { extend: continuation },
     );
 
     if (continuation) {
-      // ⚠️ Re-arm, do not reset. The decode section is gated by a single flag that the previous
-      // wave's `finally` turned off, so skipping this entirely would drop every decode message this
-      // wave produces and leave the section reading complete over the previous wave's rows.
       resumeDecodingSyncProgress();
       return;
     }
@@ -123,6 +117,23 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       initializeExchangeEventsQueryStatus(targets.usedExchanges, { extend: continuation });
   }
 
+  /**
+   * Dispatches every half of a refresh — chains, exchanges and online queries — and reduces them to
+   * the umbrella's single verdict.
+   *
+   * @remarks
+   * Chains and exchanges dispatch as a batch rather than per declared child, because each owns a
+   * fan-out shape the declaration cannot express: chains group accounts onto per-chain lanes then
+   * hand off to a decode, exchanges run one location's accounts in sequence. Driving those per child
+   * silently discards both. The declaration still names every child with the same id constructors
+   * the producers submit under, so the tree and progress stay accurate.
+   *
+   * @returns the **account half's** verdict alone. Nothing else may vote: fold all three kinds
+   * together and a protocol query that happened to succeed records the completion over a run where
+   * every chain failed. Nor may it require every kind to succeed — an online source failing is
+   * ordinary, a missing key or an unauthenticated integration, and failing the umbrella on that
+   * re-syncs history forever. The entry answers one question, "has the account history loaded".
+   */
   async function executeOperations(
     targets: RefreshTargets,
     disableEvmEvents: boolean,
@@ -135,10 +146,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     seedExchangeProgress(targets, wave);
 
-    // The shape of the refresh comes off the declaration rather than being rebuilt here, so what a
-    // test asserts about `historySyncFlow` is what actually runs. Everything is a child of the
-    // umbrella — exchanges and online queries used to be submitted without a parent, which left
-    // them outside the tree and outside the umbrella's derived progress.
     const children = historySyncFlow.children({
       accounts: targets.accounts,
       exchanges: targets.queryExchanges ? targets.usedExchanges : [],
@@ -147,14 +154,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     const exchanges = children.flatMap(child => child.payload.type === 'exchange' ? [child.payload.exchange] : []);
 
-    // ⚠️ Two of the three kinds are dispatched as a batch rather than per declared child, because
-    // each owns a fan-out *shape* the declaration cannot express: chains group their accounts onto
-    // per-chain lanes and hand off to a decode, and exchanges run one location's accounts in
-    // sequence with two locations at a time. Driving those per child would silently discard both.
-    // The declaration still names every child, and names them with the same id constructors the
-    // producers submit under, so the tree and the umbrella's progress stay accurate.
-    // Tagged by whether the work is the *account* half, because only that half votes on the
-    // umbrella's freshness — see the return below.
     const asyncOperations: { accounts: boolean; work: Promise<Result<void, TaskError>[]> }[] = [
       ...(targets.accounts.length > 0
         ? [{ accounts: true, work: syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress, umbrella) }]
@@ -165,8 +164,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         : []),
     ];
 
-    // Collected, not discarded: the umbrella settles on these, and a run whose every child failed
-    // must not write the completion that `alreadyLoaded` reads.
     const accountOutcomes: Result<void, TaskError>[] = [];
     const otherOutcomes: Result<void, TaskError>[] = [];
 
@@ -177,28 +174,12 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       }
       catch (error: unknown) {
         logger.error(error);
-        // The thrown value rides along as `cause`; the operation itself is what failed, and each
-        // producer has already logged its own detail.
         sink.push(err(TaskFailed({ cause: error, message: 'a refresh operation threw' })));
       }
     }
 
-    // One read, not two. This was queued twice under two identifiers on a cap-1 queue — the second
-    // through a `fetchUndecodedTransactionsStatus` alias that only ever called this — so the cap
-    // serialised them into the same backend read twice, the second slipping past the in-flight
-    // guard precisely because the first had finished. Not awaited: the refresh is over and the
-    // count is a display concern. Re-entry is the activity's own to dedup.
     startPromise(fetchUndecodedTransactionsBreakdown());
 
-    // 🔴 The accounts decide whenever they are in scope, and nothing else may vote. Combining all
-    // three kinds together let a protocol query that happened to succeed record the completion over
-    // a run where *every* chain failed — the same silent short-circuit, reached by a narrower road.
-    // Found in the app, not by the unit suite, which failed all three kinds together.
-    //
-    // ⚠️ Not "every kind must succeed" either: an online source failing is ordinary (a missing key,
-    // an unauthenticated integration), and letting that fail the umbrella would make history re-sync
-    // on every single refresh forever. Those failures have their own rows and warnings; this entry
-    // answers one question, "has the account history loaded", so the account half owns it.
     return accountOutcomes.length > 0
       ? combineOutcomes(accountOutcomes)
       : combineOutcomes(otherOutcomes);
@@ -207,22 +188,16 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   /**
    * Pick up whatever was added while this refresh was running.
    *
-   * There is no pending set any more: an account added mid-refresh has never been attempted, and
-   * "never attempted" is exactly what the completion ledger answers. So the drain is the same
-   * novelty question asked once more, after the umbrella settles.
+   * An account added mid-refresh has never been attempted, which is what the completion ledger
+   * answers, so the drain is the same novelty question asked again once the umbrella settles.
    *
-   * ⚠️ Passes the novel items as an explicit payload rather than re-entering as a full refresh.
-   * A full refresh escalates any novelty into `getAllAccounts`, so draining that way would re-sync
-   * every account instead of the handful that arrived late.
-   *
-   * ⚠️ The delay is not cosmetic: `submitTask` resolves a tick before the record settles, so an
-   * immediate re-entry would read the umbrella as still active and take the early return, dropping
-   * the drain entirely.
-   *
-   * ⚠️ The drained run does not drain again. Asking the ledger is a *derived* question, unlike the
-   * old pending set which emptied as it was consumed — so without a bound, any account that never
-   * gets a `TX_SYNC` activity would read as novel forever and re-trigger a refresh every 100ms.
-   * One wave per run; a later arrival waits for the next refresh.
+   * Three things it must keep doing:
+   * - Pass the novel items as an explicit payload. A full refresh escalates novelty into
+   *   `getAllAccounts` and would re-sync every account instead of the few that arrived late.
+   * - Keep the delay. `submitTask` resolves a tick before the record settles, so immediate re-entry
+   *   reads the umbrella as active and takes the early return, dropping the drain.
+   * - Drain once per run. The ledger is a *derived* question, so an account that never gets a
+   *   `TX_SYNC` activity reads as novel forever and would re-trigger every 100ms.
    */
   function drainPending(params: RefreshTransactionsParams): void {
     const { chains = [] } = params;
@@ -246,14 +221,24 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     }, 100);
   }
 
+  /**
+   * One wave of a refresh, as a single HISTORY_SYNC umbrella parenting every chain, exchange and
+   * decode it fans out into.
+   *
+   * @remarks
+   * The umbrella's liveness is the re-entrancy guard and its freshness answers "has history ever
+   * loaded", which is why it takes its outcome from the children rather than returning a foregone
+   * `ok`.
+   *
+   * An unconditional success lets an all-failed first sync record "history has loaded", and every
+   * later refresh then short-circuits on it. For the same reason it cannot be a `container`: the
+   * ledger entry is needed, it just has to be true. A run that targeted nothing settles SKIPPED,
+   * which stops a refresh fired before any account loaded from claiming the whole history.
+   */
   async function refreshOnce(params: RefreshTransactionsParams, wave: RefreshWave): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
     const fullRefresh = Object.keys(payload).length === 0;
 
-    // The scope below is a snapshot of the account store, and the store is filled one chain at a
-    // time. Taking it mid-read drops whatever has not arrived, and the sync then reports complete
-    // over a scope that never covered those chains. Guarded rather than awaited unconditionally, so
-    // the common idle path keeps its current ordering.
     const accountRead = accountsPending();
     if (accountRead)
       await accountRead;
@@ -270,10 +255,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (shouldNotRefresh({ alreadyLoaded: status.everCompleted && !userInitiated, novelty }))
       return;
 
-    // Outside the activity on purpose: `submitTask` dedups by id, so a second caller would be handed
-    // the in-flight promise and this would never run. Nothing needs recording here — whatever this
-    // caller brought is still unattempted when the running umbrella settles, and `drainPending`
-    // asks the ledger for exactly that.
+    // Must stay outside the activity: `submitTask` dedups by id, so moving it in hands the second
+    // caller the in-flight promise and the check never runs.
     if (status.active)
       return;
 
@@ -287,22 +270,12 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     const umbrellaId = makeActivityId(ActivityKind.HISTORY_SYNC);
 
-    // One umbrella for the whole refresh: its liveness is the re-entrancy guard above, its freshness
-    // answers "has history ever loaded", and every chain, exchange and decode runs as its child.
     await submitTask({
       id: umbrellaId,
       kind: ActivityKind.HISTORY_SYNC,
       lane: UMBRELLA_LANE,
       rerunnable: false,
       staleAfter: HISTORY_STALE_AFTER,
-      // 🔴 The outcome is the children's, not a foregone `ok`. This umbrella *is* the subject for
-      // its kind — `alreadyLoaded` below reads its `everCompleted` — so returning success
-      // unconditionally meant an all-failed first sync (backend unreachable at login, every chain
-      // fails) still wrote "history has loaded", and every later non-user-initiated refresh
-      // short-circuited on it: history silently never synced again for the session. It cannot be a
-      // `container` for the same reason — the entry is needed, it just has to be true. A run that
-      // targeted nothing settles SKIPPED for the same reason, which is what stops a refresh fired
-      // before any account has loaded from claiming the whole history.
       run: async (): Promise<Result<void, TaskError>> => {
         initializeRefresh(targets, wave);
 

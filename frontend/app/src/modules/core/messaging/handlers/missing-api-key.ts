@@ -89,6 +89,13 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     return actions;
   }
 
+  /**
+   * Builds the notification for a missing key, grouped per service.
+   *
+   * @remarks
+   * The group has to carry the service: without one these stack unbounded for the callers with no
+   * once-per-session guard, and with a shared one two services collapse into a single entry.
+   */
   return createNotificationHandler<MissingApiKey>((data) => {
     const { service } = data;
     const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
@@ -142,9 +149,6 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       action: actions,
       category,
       display: !isBeaconchain,
-      // Per service, so repeated warnings for the same service collapse into one entry while two
-      // different services stay separate. Without a group these stack up unbounded, which the
-      // callers with no once-per-session guard (gnosis pay, monerium) hit on every request.
       group: `${NotificationGroup.MISSING_API_KEY}:${service}`,
       i18nParam: {
         choice: 0,

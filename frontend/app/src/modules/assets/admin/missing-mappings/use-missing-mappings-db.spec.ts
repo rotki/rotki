@@ -22,19 +22,14 @@ describe('useMissingMappingsDB', () => {
     await scope.run(async () => {
       const { db, isReady } = useDatabase();
 
-      // Set up user identifier
       const user = useLoggedUserIdentifier();
       set(user, TEST_USER);
 
-      // Set up data directory
       const mainStore = useMainStore();
       const { dataDirectory } = storeToRefs(mainStore);
       set(dataDirectory, TEST_DATA_DIR);
 
-      // Wait for database to become ready
       await until(isReady).toBe(true);
-
-      // Clear the table before each test
       await db().missingMappings.clear();
     });
   });

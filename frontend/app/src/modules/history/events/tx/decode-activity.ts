@@ -16,16 +16,13 @@ function asScope(members: readonly (string | number)[]): string {
 /**
  * The identity of one chain's decode.
  *
- * Shared rather than rebuilt at each site: a flow declaration names its children before any of them
- * exists, and the mechanism submits them later. A divergence between the two would not fail loudly
- * — the children would simply never be gated by the parent that claims them, and the flow would
- * report on work that is not the work running.
+ * Shared, never rebuilt at each site: a flow names its children before they exist and the
+ * mechanism submits them later, and a divergence does not fail loudly — the children are simply
+ * never gated by the parent claiming them.
  *
- * ⚠️ `ignoreCache` is part of the identity for the same reason it is below. A refresh declares its
- * per-chain decode up front with `deps` on every account sync, so `tx_decoding:<chain>` sat PENDING
- * with `ignoreCache: false` for the whole sync window; keyed by chain alone, pressing "Redecode all
- * transactions" during that window was handed the pending run's promise. The forced decode never
- * reached the backend, and the REDECODE umbrella still settled COMPLETE.
+ * `ignoreCache` is part of the identity. A refresh leaves `tx_decoding:<chain>` PENDING with
+ * `ignoreCache: false` for the whole sync window, so keyed by chain alone a forced "Redecode all"
+ * during that window joins the pending run, never reaches the backend, and still settles COMPLETE.
  */
 export function decodeActivityId(chain: string, ignoreCache = false): ActivityId {
   return makeActivityId(ActivityKind.TX_DECODING, chain, ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED);
@@ -34,7 +31,7 @@ export function decodeActivityId(chain: string, ignoreCache = false): ActivityId
 /**
  * The identity of one chain's decode within a *targeted* request.
  *
- * ⚠️ The tx refs are part of the identity, not decoration. This was
+ * The tx refs are part of the identity, not decoration. This was
  * `TX_DECODING:<chain>:PULL` — scoped by chain alone — while the activity is `rerunnable: false`
  * and its payload is the request. Two different tx sets on one chain therefore deduped onto each
  * other and the second caller was handed the first run's promise, so its transactions were never
@@ -45,11 +42,11 @@ export function targetedDecodeActivityId(chain: string, txRefs: readonly string[
 }
 
 /**
- * The identity of a block-event decode.
+ * Builds the activity id identifying a block-event decode.
  *
- * ⚠️ Block events are ethereum-only, which previously justified a bare singleton id — but "only one
- * chain" is not "only one request". The block numbers are the request, so they belong in the id for
- * the same reason as above.
+ * @remarks
+ * The block numbers are the request, so they belong in the id even though block events are
+ * ethereum-only: one chain is not one request.
  */
 export function blockDecodeActivityId(blockNumbers: readonly number[]): ActivityId {
   return makeActivityId(ActivityKind.ETH_BLOCK_DECODING, asScope(blockNumbers));

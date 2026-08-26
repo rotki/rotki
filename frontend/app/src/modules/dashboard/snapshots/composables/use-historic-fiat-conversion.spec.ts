@@ -63,6 +63,20 @@ describe('modules/dashboard/snapshots/composables/use-historic-fiat-conversion',
     expect(get(rateReady)).toBe(false);
   });
 
+  it('should start the lookup without anything reading the rate', async () => {
+    setCurrency('EUR');
+    getHistoricPrice.mockReturnValue(bigNumberify(0.85));
+    const ts = ref<number>(timestamp);
+    useHistoricFiatConversion(() => get(ts));
+
+    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestamp);
+
+    set(ts, timestamp + 86_400);
+    await nextTick();
+
+    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestamp + 86_400);
+  });
+
   it('should accept a getter for the timestamp', () => {
     setCurrency('EUR');
     getHistoricPrice.mockReturnValue(bigNumberify(0.9));

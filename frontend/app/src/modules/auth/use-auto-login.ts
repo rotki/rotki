@@ -43,9 +43,6 @@ export function createAutoLogin(): UseAutoLoginReturn {
     if (!isConnected)
       return;
 
-    // Flag the auto-unlock immediately — before resetSessionBackend and before the flow
-    // starts — so the connection loader covers the whole attempt and the login form never
-    // flashes empty (with a disabled button and no spinner) in the gap.
     set(autolog, true);
 
     await resetSessionBackend();
@@ -58,9 +55,6 @@ export function createAutoLogin(): UseAutoLoginReturn {
 
     await controller.startAuto();
 
-    // On success the flow is `ready` and navigation to the dashboard is under way (onReady still
-    // has an async settings write + nav to run) — keep the loader up until the route changes so
-    // the form doesn't reappear. Only drop it when startAuto fell back to the idle login form.
     if (get(controller.state).kind !== UnlockPhase.ready)
       set(autolog, false);
   }, { immediate: true });

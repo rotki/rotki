@@ -43,9 +43,11 @@ export function getBridgeExtraData(extraData: unknown): BridgeExtraData | undefi
 }
 
 /**
- * Extracts the original direction of a bridge leg that was resolved as external.
- * The resolution turns the event into a plain spend/receive, so the direction
- * can no longer be derived from the event type itself.
+ * Reads back the original direction of a bridge leg that was resolved as external.
+ *
+ * @remarks
+ * Resolution turns the event into a plain spend/receive, so the direction has to come from this
+ * stamp rather than from the event type.
  */
 export function getResolvedBridgeDirection(extraData: unknown): 'deposit' | 'withdrawal' | undefined {
   const parsed = BridgeEventExtraData.safeParse(extraData);

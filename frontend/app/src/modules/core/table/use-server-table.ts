@@ -29,7 +29,8 @@ interface TableSortOptions<TItem extends NonNullable<unknown>> {
   default?: DataTableSortData<TItem>;
   /**
    * Column used when neither the state nor `default` names one.
-   * Defaults to `timestamp`, which every table used to be hardcoded to.
+   *
+   * @defaultValue `timestamp`
    */
   fallbackColumn?: string;
 }
@@ -108,10 +109,7 @@ export function useServerTable<
   const {
     fetch: requestData,
     fields,
-    // An empty bag is the starting state of every table, including one that never filters (a dialog
-    // listing rows). Neither an empty object nor undefined is provably the `TFilter` the caller
-    // declared, so the hole is stated once here rather than at every read.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- an empty bag starts every table, and is not provably the caller's TFilter
     filters = ref({}) as Ref<TFilter>,
     params = [],
     persist,
@@ -173,10 +171,7 @@ export function useServerTable<
     const merged = mergeParams(params, 'request', get(filters) ?? {});
     const transformed = transformFilters(merged, get(behaviourKeys));
 
-    // The one assertion left here, and the boundary it belongs to: what a table sends is its
-    // filter bag plus whatever its param sources contribute, which only the caller's own payload
-    // type describes. Assembling it from typed parts is what would retire this.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- only the caller's payload type describes its filter bag plus its param sources
     return {
       ...transformed,
       limit,

@@ -33,13 +33,11 @@ interface UseHistoryEventsOperationsOptions {
 }
 
 interface UseHistoryEventsOperationsReturn {
-  // State
   modelShowRedecodeConfirmation: Ref<boolean>;
   redecodePayload: Readonly<Ref<PullEventPayload | undefined>>;
   hasCustomEvents: Readonly<Ref<boolean>>;
   showIndexerOptions: Readonly<Ref<boolean>>;
 
-  // Functions
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   confirmUnlink: (payload: HistoryEventUnlinkPayload) => void;

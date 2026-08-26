@@ -70,9 +70,6 @@ describe('pillMenu', () => {
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ key: 'location' });
   });
-  // The list scrolls past its height (history has 15 fields) and the arrow keys live on the search
-  // box, so nothing else can pull the highlighted row back into view: it used to walk off the
-  // bottom while the list stayed put, leaving the user arrowing through rows they could not see.
   it('should bring the highlighted row into view as the arrows move it', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();

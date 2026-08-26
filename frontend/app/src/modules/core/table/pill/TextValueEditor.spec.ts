@@ -86,8 +86,6 @@ describe('textValueEditor', () => {
     expect(wrapper.emitted('close')).toBeUndefined();
   });
 
-  // Closing commits rather than cancels: a value typed and then dismissed by clicking away would
-  // otherwise be lost to the pending debounce, the same way enter used to lose it.
   it('should commit a pending single value when the editor closes', async () => {
     const wrapper = createWrapper(notesField, { fieldKey: 'notesSubstring', op: 'is', values: [] });
 

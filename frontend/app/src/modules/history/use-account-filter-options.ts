@@ -7,9 +7,9 @@ import { useScramble } from '@/modules/settings/use-scramble';
 interface UseAccountFilterOptionsReturn {
   /** Checklist options for the account pill: one per tracked address, deduped across chains. */
   options: ComputedRef<SelectOption[]>;
-  /** Address -> the primary label on the collapsed pill (tracked/ENS name, else the address). */
+  /** Maps an address to the primary label on the collapsed pill: tracked/ENS name, else the address. */
   resolveLabel: (address: string) => string;
-  /** Address -> the muted secondary text on the pill (the address, only when a name is shown). */
+  /** Maps an address to the muted secondary text on the pill, present only when a name is shown. */
   resolveCaption: (address: string) => string | undefined;
 }
 
@@ -40,8 +40,6 @@ export function useAccountFilterOptions(): UseAccountFilterOptionsReturn {
   }
 
   function resolveCaption(address: string): string | undefined {
-    // The address is shown muted next to a name; when there is no name the label is the
-    // address itself, so a caption would just duplicate it.
     return get(nameByAddress).get(address) ? shortAddress(address) : undefined;
   }
 
@@ -53,9 +51,6 @@ export function useAccountFilterOptions(): UseAccountFilterOptionsReturn {
         continue;
       const name = getAccountName(item);
       const shown = shortAddress(address);
-      // Name primary, address muted underneath (matches the account selector). No name -> the
-      // address becomes the label so the row is never blank. While the name is still resolving
-      // the row shows a skeleton instead of flashing the address first.
       byAddress.set(address, {
         caption: name ? shown : undefined,
         keywords: `${address} ${name ?? ''} ${getTags(item).join(' ')}`.toLowerCase(),

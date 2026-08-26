@@ -9,9 +9,10 @@ import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types'
 /**
  * Tag the cache-only read carries so logging out can cancel whatever is still in flight.
  *
- * 🔴 It used to be a backend task, so `orchestrator.reset()` settled it as part of ending the
- * session. A plain GET has no such owner: without this its response lands after logout and
- * `processBalanceResult` writes one user's balances into the next user's store.
+ * @remarks
+ * A plain GET has no owner to settle it the way the orchestrator settles a backend task, so
+ * without this its response lands after logout and `processBalanceResult` writes one user's
+ * balances into the next user's store.
  */
 export const BALANCE_HYDRATION_TAG = 'balance-hydration';
 

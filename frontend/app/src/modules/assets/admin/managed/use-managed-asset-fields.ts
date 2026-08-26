@@ -11,10 +11,12 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 
 /**
- * Assembles the pill-bar fields for the managed assets table: the ones it sends in its filter bag
- * plus the three filters that used to live in the status dropdown beside the bar — owned only,
- * whitelisted only, and how ignored assets are handled — each now a param-bound pill, so every
- * filter this table has is in one place.
+ * Assembles the pill-bar fields for the managed assets table.
+ *
+ * @remarks
+ * The fields it sends in its filter bag, plus three param-bound pills: owned only, whitelisted
+ * only, and how ignored assets are handled. Assembled here so every filter this table has is
+ * declared in one place.
  */
 export function useManagedAssetFields(
   assetTypes: MaybeRefOrGetter<string[]>,

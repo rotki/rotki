@@ -40,6 +40,20 @@ function setupMockRoute(name: string = '/history/events/', query: Record<string,
   useRouterMock.mockReturnValue({ currentRoute: mockRoute, push: mockRouterPush, replace: mockRouterReplace });
 }
 
+/**
+ * Drives one refetch of the pagination system the consumer waits on.
+ *
+ * @remarks
+ * A deferred push does not happen when the position is known, it happens when the refetch that
+ * position belongs to has settled. Nothing pushes until `loading` has gone true and back to false.
+ */
+async function runPaginationLoadCycle(loading: Ref<boolean>): Promise<void> {
+  set(loading, true);
+  await flushPromises();
+  set(loading, false);
+  await flushPromises();
+}
+
 describe('use-history-event-navigation-consumer', () => {
   let scope: EffectScope;
 
@@ -290,9 +304,9 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should discard stale request after API returns', async () => {
-      let resolveFirst: (value: number) => void;
+      let resolveSupersededRequest: (value: number) => void;
       const firstPromise = new Promise<number>((resolve) => {
-        resolveFirst = resolve;
+        resolveSupersededRequest = resolve;
       });
       mockGetHistoryEventGroupPosition.mockReturnValueOnce(firstPromise);
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(0);
@@ -305,20 +319,15 @@ describe('use-history-event-navigation-consumer', () => {
         return useHistoryEventNavigation();
       })!;
 
-      // First request (will be slow)
       composable.requestNavigation({ targetGroupIdentifier: 'group-slow' });
       await nextTick();
 
-      // Second request supersedes the first
       composable.requestNavigation({ targetGroupIdentifier: 'group-fast' });
       await flushPromises();
 
-      // Now resolve the first request
-      resolveFirst!(5);
+      resolveSupersededRequest!(5);
       await flushPromises();
 
-      // The router.push from the first request should have been skipped
-      // Only the second request's navigation should have completed
       const pushCalls = mockRouterPush.mock.calls.filter(
         (call: any[]) => call[0].force === true,
       );
@@ -343,7 +352,6 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should try fallback when position is -1', async () => {
-      // First call returns -1 (not found), second call returns position 5
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(-1);
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(5);
 
@@ -366,12 +374,10 @@ describe('use-history-event-navigation-consumer', () => {
 
       await flushPromises();
 
-      // Should have tried both groups
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(2);
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-primary', undefined);
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-fallback', undefined);
 
-      // Should navigate to the fallback
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
         name: '/history/events/',
@@ -404,7 +410,6 @@ describe('use-history-event-navigation-consumer', () => {
 
       await flushPromises();
 
-      // Should clear highlights from route
       expect(mockRouterReplace).toHaveBeenCalled();
     });
 
@@ -426,7 +431,6 @@ describe('use-history-event-navigation-consumer', () => {
       });
       await flushPromises();
 
-      // Should NOT notify when preserveFilters is true
       expect(mockNotify).not.toHaveBeenCalled();
       expect(get(composable.isNavigating)).toBe(false);
     });
@@ -454,13 +458,8 @@ describe('use-history-event-navigation-consumer', () => {
         });
       });
 
-      // Simulate pagination system loading cycle
-      set(loading, true);
-      await flushPromises();
-      set(loading, false);
-      await flushPromises();
+      await runPaginationLoadCycle(loading);
 
-      // Should merge page + highlights into existing route while preserving filter params
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
         name: '/history/events/',
@@ -555,11 +554,7 @@ describe('use-history-event-navigation-consumer', () => {
       // The push is deferred until the pagination refetch settles.
       expect(mockRouterPush).not.toHaveBeenCalled();
 
-      // Simulate the pagination system loading cycle.
-      set(loading, true);
-      await flushPromises();
-      set(loading, false);
-      await flushPromises();
+      await runPaginationLoadCycle(loading);
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,

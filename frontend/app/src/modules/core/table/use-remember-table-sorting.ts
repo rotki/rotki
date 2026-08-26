@@ -72,9 +72,8 @@ export function useRememberTableSorting<T>(
       }
     }
 
-    // The watcher is intentionally placed inside onBeforeMount to prevent it from triggering
-    // when the component first loads. If placed outside, it would immediately react to the
-    // initial sort value and save it to storage, overriding any previously saved sorting preference.
+    // Must stay inside onBeforeMount: outside, it fires on the initial sort value and overwrites
+    // the saved preference before the user has touched anything.
     watch(sort, (sort) => {
       if (get(persistTableSorting)) {
         set(rawData, { ...get<TableSorting<T>>(rawData), [id]: sort });

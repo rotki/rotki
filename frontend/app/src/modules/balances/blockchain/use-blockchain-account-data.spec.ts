@@ -83,7 +83,6 @@ describe('useBlockchainAccountData', () => {
       );
       updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, totals, btcBalances));
 
-      // Test getBlockchainAccounts functionality
       expect(getBlockchainAccounts(Blockchain.BTC)).toMatchObject([{
         amount: bigNumberify(10),
         chain: Blockchain.BTC,
@@ -114,7 +113,6 @@ describe('useBlockchainAccountData', () => {
         value: bigNumberify(10),
       }]);
 
-      // Test fetchAccounts functionality
       const knownGroups = await fetchAccounts({ limit: 10, offset: 0 });
 
       const chain = Blockchain.BTC.toString();
@@ -218,7 +216,6 @@ describe('useBlockchainAccountData', () => {
 
       const result = getBlockchainAccounts(Blockchain.BTC);
 
-      // Should filter out xpub accounts
       expect(result).toEqual([]);
     });
   });
@@ -228,7 +225,6 @@ describe('useBlockchainAccountData', () => {
       const { getAccountDetails } = useBlockchainAccountData();
       const { balances } = storeToRefs(useBalancesStore());
 
-      // Setup test balance data directly in the store
       set(balances, {
         [Blockchain.ETH]: {
           '0x123': {

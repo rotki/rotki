@@ -10,7 +10,7 @@ import en from '@/locales/en.json';
  * choice is that nothing enumerates them at runtime, which is exactly what this recovers: the glob
  * finds each `*.flow.ts` at test time, so a flow cannot be missed by forgetting to register it.
  *
- * ⚠️ Three flows were missed from a hand-built inventory precisely because they lived outside the
+ * Three flows were missed from a hand-built inventory precisely because they lived outside the
  * module being read. This is the guard against repeating that.
  */
 const modules = import.meta.glob<Record<string, unknown>>('@/modules/**/*.flow.ts', { eager: true });

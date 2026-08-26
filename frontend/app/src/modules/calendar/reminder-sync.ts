@@ -23,17 +23,6 @@ export interface ReminderPlan {
   updated: ReminderUpdate[];
 }
 
-/**
- * Works out what a set of edited rows means for the stored reminders.
- *
- * Reminders used to be written one at a time as each row was left, which meant a new event and an
- * existing one took different paths and a row could reach the server before the user pressed save.
- * The rows are now ordinary form state in both cases, and this turns the final state into the calls
- * that reconcile it, so the dialog persists once and only on save.
- *
- * An event has no use for two reminders at the same interval, so a new row that duplicates one
- * being kept is dropped rather than sent.
- */
 /** A draft still backed by a stored reminder, paired with the reminder it edits. */
 function pairWithStored(
   drafts: readonly ReminderDraft[],

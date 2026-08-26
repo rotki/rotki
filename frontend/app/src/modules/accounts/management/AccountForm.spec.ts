@@ -184,24 +184,20 @@ describe('modules/accounts/management/AccountForm', () => {
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
 
-    it('should never leave the chain and the account type disagreeing', async () => {
+    it('should never leave the chain and the account type disagreeing, in any emitted state', async () => {
       wrapper = createWrapper(createNewBlockchainAccount());
 
       await choose(Blockchain.ETH2);
 
-      // Every emitted state, not only the last: the field used to be written onto the previous
-      // kind and corrected a beat later, so the pairing held at rest and not in between.
       const states = wrapper.emitted<[AccountManageState]>('update:modelValue') ?? [];
       expect(states.length).toBeGreaterThan(0);
       for (const [state] of states)
         expect(state.type === 'validator').toBe(state.chain === Blockchain.ETH2);
     });
 
-    it('should not report an edit the form never made', () => {
+    it('should not report an edit on mount, since opening on a chain is not choosing one', () => {
       wrapper = createWrapper(createNewBlockchainAccount());
 
-      // Opening on a chain is not choosing one. The rebuild used to run on mount as well, so the
-      // form answered a question nobody had asked yet.
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
   });

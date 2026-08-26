@@ -6,9 +6,7 @@ type SetupContextAttrs = SetupContext['attrs'];
 type SetupContextAttrsKeys = (keyof SetupContextAttrs)[];
 
 /**
- * Generates and returns the array of root allowed attributes
- * @param {SetupContextAttrs} data
- * @returns {SetupContextAttrsKeys}
+ * The attribute names that belong on the root element: every `data-*` key in the fallthrough attrs.
  */
 function getRootKeys(data: SetupContextAttrs): SetupContextAttrsKeys {
   return Object.keys(data).filter(key =>
@@ -17,20 +15,20 @@ function getRootKeys(data: SetupContextAttrs): SetupContextAttrsKeys {
 }
 
 /**
- * Picks only required attributes for root element
- * @param {SetupContextAttrs} data
- * @param {SetupContextAttrsKeys} include
- * @returns {Pick<SetupContextAttrs, any>}
+ * Picks the attributes that belong on a component's root element.
+ *
+ * @param data - the component's fallthrough attrs
+ * @param include - names to keep alongside the `data-*` ones; defaults to `class` alone
  */
 export function getRootAttrs(data: SetupContextAttrs, include: SetupContextAttrsKeys = ['class']): Pick<SetupContextAttrs, typeof include[number]> {
   return pick(data, [...getRootKeys(data), ...include]);
 }
 
 /**
- * Omits root attributes from component's attributes
- * @param {SetupContextAttrs} data
- * @param {SetupContextAttrsKeys} exclude
- * @returns {Omit<SetupContextAttrs, any>}
+ * The complement of {@link getRootAttrs}: everything meant for an inner element.
+ *
+ * @param data - the component's fallthrough attrs
+ * @param exclude - names to drop alongside the `data-*` ones; defaults to `class` alone
  */
 export function getNonRootAttrs(data: SetupContextAttrs, exclude: SetupContextAttrsKeys = ['class']): Omit<SetupContextAttrs, typeof exclude[number]> {
   return omit(data, [...getRootKeys(data), ...exclude]);

@@ -265,10 +265,14 @@ export function useHistoryEventsFilters(
     set(action, verbKey);
   }
 
+  /**
+   * Applies a change to the selected accounts.
+   *
+   * @remarks
+   * The intent has to be marked by hand: `locationLabels` feeds both a request and a url source,
+   * so the table cannot recognise this as an interaction and the new labels never reach the URL.
+   */
   function onLocationLabelsChanged(labels: string[]): void {
-    // locationLabels feeds both a request source and a url source, so the table
-    // cannot see this as an interaction on its own. Attribute it explicitly or the
-    // new labels never reach the URL.
     markUserIntent();
     set(locationLabels, labels);
   }

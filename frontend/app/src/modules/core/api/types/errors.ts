@@ -5,8 +5,11 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 /**
  * Converts a stringified JSON returned from the API to JSON.
  *
+ * @remarks
  * Use {@link ApiValidationError} in the catch clause instead.
- * @param message a stringified json message
+ *
+ * @param message - a stringified JSON message
+ * @returns the parsed object, or `undefined` when the message is not JSON
  */
 function deserializeApiErrorMessage(message: string): Record<string, string[]> | undefined {
   try {

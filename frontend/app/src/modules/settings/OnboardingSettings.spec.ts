@@ -30,13 +30,8 @@ vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> 
     isPackaged: true,
     openDirectory: openDirectoryMock,
     restartBackend: vi.fn(),
-    // Restarting the backend reconnects, and `getInfo` reports the directory it
-    // finds to the main process.
     setDataDirectory: vi.fn(),
     setLogLevel: setLogLevelMock,
-    // `config(false)` is what the config FILE pins (and disables in the UI);
-    // `config(true)` is the defaults. Returning the same object for both pinned
-    // the log directory and left that field permanently disabled.
     config: vi.fn().mockImplementation(async (defaults: boolean): Promise<Partial<BackendOptions>> =>
       defaults ? { logDirectory: '/Users/home/rotki/logs' } : {}),
   })),
@@ -222,21 +217,18 @@ describe('onboarding-settings', () => {
       await flushPromises();
       await nextTick();
 
-      // When only loglevel changes, applyUserOptions should be called instead of saveOptions
       expect(applyUserOptions).toHaveBeenCalledWith({
         loglevel: 'warning',
       }, true);
-      // Verify that saveOptions was NOT called for loglevel-only changes
       expect(saveOptions).not.toHaveBeenCalledWith({
         loglevel: 'warning',
       });
     });
 
-    it('should update the frontend logger level when only loglevel changes (regression #12079)', async () => {
+    it('should set the level on the frontend logger, Electron and colibri when only loglevel changes', async () => {
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'warning' });
       await nextTick();
 
-      // Only care about calls triggered by the save action, not onMounted.
       setLevelMock.mockClear();
       setLogLevelMock.mockClear();
 
@@ -244,10 +236,6 @@ describe('onboarding-settings', () => {
       await flushPromises();
       await nextTick();
 
-      // Without these the dropdown change silently has no effect in production:
-      // the backend log level updates via REST, but both the frontend consola
-      // logger and the Electron LogService keep filtering at their original
-      // level so logs appear unchanged until a full restart.
       expect(setLevelMock).toHaveBeenCalledWith('warning');
       expect(setLogLevelMock).toHaveBeenCalledWith('warning');
       expect(updateColibriConfigurationMock).toHaveBeenCalledWith('warning');
@@ -298,18 +286,12 @@ describe('onboarding-settings', () => {
       expect(logLevelInput.value).toBe('critical');
       expect(wrapper.find('[data-testid=onboarding-setting-submit]').attributes()).toHaveProperty('disabled');
 
-      // Switching to debug should re-enable save because it now differs from
-      // the backend-reported prod default.
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'debug' });
       await nextTick();
       expect(wrapper.find('[data-testid=onboarding-setting-submit]').attributes()).not.toHaveProperty('disabled');
     });
 
-    it('should adopt the backend-reported loglevel once configuration lands (regression #12079)', async () => {
-      // Before config resolves the dropdown should still be unset (or the
-      // fallback), but the critical thing is that once the backend responds,
-      // the displayed level and the diff-baseline used by the save button
-      // both reflect the backend value.
+    it('should adopt the backend loglevel, as both the displayed value and the save baseline', async () => {
       resolveBackendSettings({
         loglevel: { value: 'debug', isDefault: true },
         maxSizeInMbAllLogs: { value: 300, isDefault: true },
@@ -322,12 +304,10 @@ describe('onboarding-settings', () => {
       const logLevelInput = wrapper.find<HTMLInputElement>('.loglevel-input .input').element;
       expect(logLevelInput.value).toBe('debug');
 
-      // User picks the value the backend already reports → no diff → save disabled.
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'debug' });
       await nextTick();
       expect(wrapper.find('[data-testid=onboarding-setting-submit]').attributes()).toHaveProperty('disabled');
 
-      // User picks something different → diff → save enabled.
       await wrapper.find('.loglevel-input .input').trigger('input', { value: 'warning' });
       await nextTick();
       expect(wrapper.find('[data-testid=onboarding-setting-submit]').attributes()).not.toHaveProperty('disabled');
@@ -369,7 +349,6 @@ describe('onboarding-settings', () => {
 
       await nextTick();
 
-      // reset button
       await wrapper.find('[data-testid=reset-max-log-size] button').trigger('click');
       await nextTick();
 
@@ -390,8 +369,6 @@ describe('onboarding-settings', () => {
 
       await wrapper.find('[data-testid=onboarding-setting-submit]').trigger('click');
 
-      // After resetting to defaults, the new code now explicitly passes the default values
-      // since they differ from the previously saved custom values
       expect(saveOptions).toBeCalledWith({
         maxSizeInMbAllLogs: 300,
         maxLogfilesNum: 3,
@@ -400,12 +377,6 @@ describe('onboarding-settings', () => {
     });
   });
 
-  /**
-   * Characterization of the vuelidate rules, so the zod port has something to
-   * match. Expectations are derived from the validator implementations, not
-   * from a run: `numeric` is `/^\d*(\.\d+)?$/`, and both `numeric` and
-   * `minValue` no-op on an empty value, while `required` trims first.
-   */
   describe('numeric field validation', () => {
     const fields = [
       ['max log size', 'max-log-size-input'],
@@ -424,8 +395,6 @@ describe('onboarding-settings', () => {
       await wrapper.find(`[data-testid=${field}] input`).setValue('');
       await nextTick();
 
-      // `numeric` and `minValue` both short-circuit on an empty value, so
-      // `required` is the only rule that fires.
       expect(errorOf(field)).toBe(NON_EMPTY_MESSAGE);
       expect(saveDisabled()).toBe(true);
     });
@@ -434,20 +403,11 @@ describe('onboarding-settings', () => {
       await wrapper.find(`[data-testid=${field}] input`).setValue('-1');
       await nextTick();
 
-      // `numeric` rejects the sign before `minValue` is reached, and `and`
-      // short-circuits, so the pair reports one message. Note this row does NOT
-      // pin the lower bound: `numeric`'s regex accepts no sign at all, so
-      // `minValue(0)` can never fail on its own and either rule alone rejects
-      // `-1`. The row below is what pins the digits-only half.
       expect(errorOf(field)).toBe(MIN_MESSAGE);
       expect(saveDisabled()).toBe(true);
     });
 
     it.each(fields)('should reject exponent notation for %s', async (_name, field): Promise<void> => {
-      // The discriminating input: `1e5` is a valid value for a `type="number"`
-      // input and is >= 0, so a non-negative check alone would accept it, but
-      // `numeric`'s `/^\d*(\.\d+)?$/` has no exponent and rejects it. Without
-      // this row a port that only checked the lower bound would stay green.
       await wrapper.find(`[data-testid=${field}] input`).setValue('1e5');
       await nextTick();
 
@@ -464,8 +424,6 @@ describe('onboarding-settings', () => {
     });
 
     it('should accept a decimal and truncate it on save', async (): Promise<void> => {
-      // `numeric` allows a fractional part, but `parseValue` uses parseInt, so
-      // the value that reaches the backend is truncated rather than rejected.
       await wrapper.find('[data-testid=max-log-size-input] input').setValue('1.5');
       await nextTick();
 
@@ -481,7 +439,6 @@ describe('onboarding-settings', () => {
       await nextTick();
       expect(saveDisabled()).toBe(false);
 
-      // A valid change elsewhere must not unlock save past an invalid field.
       await wrapper.find('[data-testid=max-log-size-input] input').setValue('-1');
       await nextTick();
       expect(saveDisabled()).toBe(true);
@@ -500,10 +457,6 @@ describe('onboarding-settings', () => {
     });
   });
 
-  // `RuiTextField` splits its fallthrough: plain attributes land on the root
-  // element (so `data-testid` selects the field) but listeners land on the inner
-  // `<input>`. A click has to be triggered on `[data-testid=x] input`; dispatching
-  // it on the root calls nothing.
   describe('directory selection', () => {
     it('should write the chosen data directory back into the field', async (): Promise<void> => {
       openDirectoryMock.mockResolvedValue('/Users/home/rotki/picked_data');

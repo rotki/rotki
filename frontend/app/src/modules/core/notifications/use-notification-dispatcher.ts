@@ -27,12 +27,6 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   ];
 
   function notify(payload: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
-    // Silent mode is applied here, before the strategies, because this is the one entry point every
-    // notification passes through. Denying the display up front rather than filtering the popup
-    // queue matters: a stored notification keeps `display: true` until it is actually shown, so
-    // filtering downstream would leave a backlog that all pops at once when silent mode is
-    // switched off. Nothing is lost either way - the notification is still created, still updates
-    // its group, and still reaches the notification area with its actions.
     const incoming = get(silent) ? { ...payload, display: false } : payload;
 
     const context: NotificationStrategyContext = {

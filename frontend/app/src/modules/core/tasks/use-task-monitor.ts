@@ -15,9 +15,9 @@ const MAX_BACKOFF_MS = 8000;
 type ErrorHandler = (task: Task, message?: string) => ActionResult<unknown>;
 
 /**
- * The payload for a task the backend no longer knows about.
+ * The payload for a task the backend has forgotten.
  *
- * 🔴 `result` must stay `null`. `use-task-handler` branches on `result !== null` *before* it looks
+ * `result` must stay `null`. `use-task-handler` branches on `result !== null` *before* it looks
  * at `message`, so an empty object here resolved the producer's promise as `ok({})` — a task the
  * backend has forgotten was reported as a success carrying nothing, and the message below (the
  * only thing saying anything went wrong) was discarded. `null` reaches the `message` branch, which
@@ -99,8 +99,8 @@ function useTaskMonitorInternal(): {
    * To avoid certain race conditions where the backend manages to answer before the frontend
    * registers the task, we are keeping a map of unknown tasks along with the time first seen.
    *
-   * @param ids The array of the unknown task ids
-   * @returns The array of the unknown ids that are past the threshold.
+   * @param ids - the unknown task ids seen in this poll
+   * @returns those that have been unknown for longer than the threshold
    */
   function checkUnknownTasksPastThreshold(ids: number[]): number[] {
     const tasks = { ...get(store.unknownTasks) };

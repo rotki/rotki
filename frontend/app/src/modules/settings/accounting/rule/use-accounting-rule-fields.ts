@@ -8,18 +8,15 @@ import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-hi
 import { toAccountingRuleFields } from '@/modules/settings/accounting/rule/accounting-rule-fields';
 
 /**
- * The pill-bar fields for the accounting rules table.
+ * Builds the pill-bar fields for the accounting rules table.
  *
- * Reads the table's filter bag because the subtype field narrows by the picked event types, which
- * is why the caller owns the bag rather than leaving it to `useServerTable`. Read-only: the bar
- * prunes what a narrowing no longer admits, through the field's own `admits`.
+ * @remarks
+ * Takes the filter bag read-only, because the subtype field narrows by the picked event types.
+ * That is why the caller owns the bag rather than leaving it to `useServerTable`.
  */
 export function useAccountingRuleFields(filters: MaybeRefOrGetter<Filters>): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
-  // Protocol resolution is the same for every table filtering on one, so it comes from one place
-  // rather than being restated here.
   const shared = useSharedFieldResolvers();
-  // The same mappings the table names its rows with, so a pill and the rows it filters read alike.
   const {
     getHistoryEventSubTypeName,
     getHistoryEventTypeName,

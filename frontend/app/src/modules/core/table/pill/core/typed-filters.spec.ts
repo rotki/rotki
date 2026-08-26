@@ -140,8 +140,6 @@ describe('parseDateQuery', () => {
   });
 });
 
-// The half-written counterpart of the parsers: what the bar offers guidance for. A query that
-// parses to nothing used to produce an empty popover, which reads as "this cannot be typed into".
 describe('looksLikeDateQuery', () => {
   it('should claim an operator word with nothing after it yet', () => {
     expect(looksLikeDateQuery('after')).toBe(true);

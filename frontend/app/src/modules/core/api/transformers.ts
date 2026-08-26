@@ -78,12 +78,6 @@ export function noRootCamelCaseTransformer<T>(data: T, skipKeys?: string[]): T {
 }
 
 /**
- * Transforms query parameters for URL serialization:
- * - Converts keys to snake_case
- * - Joins arrays with commas (e.g., ['USD', 'EUR'] -> 'USD,EUR')
- * - Removes null/undefined values
- */
-/**
  * A query string carries scalars, so arrays are joined and objects stringified. Anything else has no
  * query representation and is reported as undefined so the caller drops the key.
  */
@@ -104,6 +98,16 @@ function toQueryValue(
   return undefined;
 }
 
+/**
+ * Transforms query parameters for URL serialization.
+ *
+ * @remarks
+ * Keys become snake_case, arrays are joined with commas so `['USD', 'EUR']` becomes `USD,EUR`, and
+ * null or undefined values are dropped rather than serialized.
+ *
+ * @param data - the parameters to serialize
+ * @param skipKeys - keys whose *nested* contents are left un-transformed
+ */
 export function queryTransformer(data: Record<string, unknown>, skipKeys?: string[]): Record<string, string | number | boolean> {
   const result: Record<string, string | number | boolean> = {};
 

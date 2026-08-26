@@ -56,7 +56,6 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
     useIsActive: vi.fn((kind: string) => computed<boolean>(() =>
       kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing))),
     useWorkStatus: vi.fn((kind: string) => computed(() => {
-      // Online events (block production) vs the staking performance activity.
       const active = kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing);
       return {
         active,

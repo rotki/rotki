@@ -41,6 +41,17 @@ export function useAccountImport(): UseAccountImportReturn {
   const { loadingBlockchainBalances: blockchainLoading } = useBalancesLoading();
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
 
+  /**
+   * Imports parsed CSV rows as blockchain accounts, creating any tags they reference.
+   *
+   * @remarks
+   * Resolves when every account has been added, and notifies the user itself. A failing row does
+   * not abort the import or reject this, so resolving means the import finished, not that every
+   * row succeeded; rows naming an existing account are skipped.
+   *
+   * Validators go last, once the account additions have settled, because both write blockchain
+   * balances and the later write would be lost to a refresh already in flight.
+   */
   async function handleAccountRestore(rows: CSVRow[]): Promise<void> {
     const tags: string[] = [];
     const validators: CSVRow[] = [];
@@ -95,11 +106,6 @@ export function useAccountImport(): UseAccountImportReturn {
 
     await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
 
-    // One umbrella for the whole import, and no limiter of its own: every row's addition already
-    // submits onto `accounts-add:<chain>`, capped at 2 per chain with 2 chains live, so a second
-    // mechanism here would be the trap documented on `DECODE_LANE` one layer up.
-    //
-    // ⚠️ This is a deliberate behaviour change: rows used to run strictly one at a time.
     const additions = [
       ...evmAccounts.map(payload => [EVM_PSEUDO_CHAIN, payload] as const),
       ...accounts.map(([chain, _id, account]) => [chain, account] as const),
@@ -108,19 +114,12 @@ export function useAccountImport(): UseAccountImportReturn {
     await runImportBatch(
       additions,
       async ([chain, account], parent) => {
-        // Both kinds of row take the same call with the same contract. The EVM loop previously had
-        // no `try/catch` while the chain one did, so a failed EVM row aborted the whole import and
-        // a failed chain row did not — accidental, not chosen. Neither throws now.
         await addAccounts(chain, account, { parent, wait: true });
-        // Counted after the row lands, not before. The batch starts every row's callback in the
-        // same tick, so incrementing first drove the bar to 100% before a single account had been
-        // submitted and left it parked there while the lanes drained.
         increment();
       },
     );
 
     if (validators.length > 0) {
-      // Wait until accounts refreshed
       if (evmAccounts.length > 0 || accounts.length > 0) {
         await until(blockchainLoading).toBe(true);
         await until(doneLoading).toBe(true);

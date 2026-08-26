@@ -39,11 +39,14 @@ interface UseInteropReturn {
   installUpdate: () => Promise<boolean | Error>;
   notifyUserLogout: () => void;
   /**
-   * Electron attaches a path property to {@see File}. In normal DOM inside a browser this property does not exist.
-   * The method will return the path if we are in app session and the property exists or it will return undefined.
-   * It can be used to check if we will upload, or path the file.
+   * The filesystem path Electron attaches to a `File`.
    *
-   * @param file The file we want to get the path.
+   * @remarks
+   * A browser's DOM has no such property, so this doubles as the check for whether a file can be
+   * referenced by path or has to be uploaded.
+   *
+   * @param file - the file to read the path of
+   * @returns the path in an Electron session, `undefined` anywhere else
    */
   getPath: (file: File) => string | undefined;
   setSelectedTheme: (selectedTheme: Theme) => Promise<void>;
@@ -102,11 +105,14 @@ const interop: UseInteropReturn = {
   },
 
   /**
-   * Electron attaches a path property to {@see File}. In normal DOM inside a browser this property does not exist.
-   * The method will return the path if we are in app session and the property exists or it will return undefined.
-   * It can be used to check if we will upload, or path the file.
+   * The filesystem path Electron attaches to a `File`.
    *
-   * @param file The file we want to get the path.
+   * @remarks
+   * A browser's DOM has no such property, so this doubles as the check for whether a file can be
+   * referenced by path or has to be uploaded.
+   *
+   * @param file - the file to read the path of
+   * @returns the path in an Electron session, `undefined` anywhere else
    */
   getPath: (file: File): string | undefined => {
     if (!isAppSession())

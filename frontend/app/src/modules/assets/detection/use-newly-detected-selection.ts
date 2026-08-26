@@ -24,11 +24,11 @@ interface UseNewlyDetectedSelectionReturn {
 }
 
 /**
- * Which newly detected tokens are picked, and the two things that can be done to them.
+ * Tracks which newly detected tokens are picked, and exposes the two operations on them.
  *
- * Selecting everything means everything the table is *showing*, so it asks for the identifiers of
- * the kind the pill narrowed to rather than of every kind. For the same reason a narrowing clears
- * the selection: it was made against rows that are no longer on screen.
+ * @remarks
+ * Both operations delete or mark as spam, so neither may reach a row the user cannot see: select-all
+ * takes only the narrowed kind, and a change to the narrowing clears the selection outright.
  */
 export function useNewlyDetectedSelection(
   options: UseNewlyDetectedSelectionOptions,

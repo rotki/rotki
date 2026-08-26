@@ -4,10 +4,12 @@ import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { type PinnedName, PinnedNames } from '@/modules/session/types';
 
 /**
- * Registry entry for a pinnable panel. Central mapping from a `PinnedName` to the
- * component rendered in the pinned rail plus the metadata the multi-slot tab strip
- * needs (label + icon). Replaces the per-host if-chain that used to live in
- * `PinnedSidebar.vue`; keep it the single source of truth for the pinned mechanism.
+ * Registry entry for a pinnable panel: the component the rail renders, plus the label and icon the
+ * tab strip needs.
+ *
+ * @remarks
+ * The single source of truth for the pinned mechanism. Add a panel here rather than branching on
+ * `PinnedName` in a host component.
  */
 export interface PinnedPanelDef {
   /** Lazily-loaded host component (`*Pinned.vue`) rendered when this panel is active. */

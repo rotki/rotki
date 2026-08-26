@@ -57,7 +57,6 @@ export function useManualBalanceData(): UseManualBalanceDataReturn {
   const manualBalanceByLocation = computed<LocationBalance[]>(() => {
     const balances = get(manualBalances);
 
-    // Aggregate all balances per location
     const aggregateManualBalancesByLocation: BalanceByLocation = balances.reduce(
       (result: BalanceByLocation, manualBalance: LocationBalance) => {
         if (result[manualBalance.location]) {

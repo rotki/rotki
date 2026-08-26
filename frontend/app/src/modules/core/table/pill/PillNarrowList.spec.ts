@@ -112,11 +112,9 @@ describe('pillNarrowList', () => {
     expect(chip.attributes('type')).toBe('button');
   });
 
-  // Being a `button` is what the tag says, not what the user can do: nothing in the popover is ever
-  // focused (the caret stays in the bar's input) and the popover is teleported, so Tab never
-  // arrives here and a chip was mouse-only. It is reachable because the highlight runs on past the
-  // last row into the footer, which means the chip has to carry the id the input points its
-  // `aria-activedescendant` at, and be a `menuitem` like the rows in the same `role="menu"`.
+  // A chip is only keyboard-reachable because the highlight runs past the last row into the footer:
+  // nothing in the teleported popover is focusable and Tab never arrives. So the chip has to carry
+  // the id `aria-activedescendant` points at, and be a `menuitem` like the rows around it.
   it('should highlight the example the index past the last row names', () => {
     const wrapper = mount(PillNarrowList, {
       props: { examples: ['after 15/01/2024', '>100'], highlighted: suggestions.length + 1, suggestions },

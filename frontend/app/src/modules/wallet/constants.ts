@@ -102,12 +102,11 @@ export function getWalletErrorMessage(error: unknown): string {
 const GAS_PRICE_BUFFER_PERCENTAGE = 10n;
 
 /**
- * Utility functions
- */
-
-/**
- * Format wei (18 decimals) to a decimal string using pure bigint arithmetic.
- * Replaces ethers `formatUnits` to avoid importing ethers in this constants file.
+ * Formats wei (18 decimals) as a decimal string, using bigint arithmetic only.
+ *
+ * @remarks
+ * Hand-rolled rather than ethers' `formatUnits` so that importing this constants file does not
+ * pull ethers in with it.
  */
 function formatWei(value: bigint): string {
   const DIVISOR = 10n ** 18n;
@@ -120,7 +119,14 @@ function formatWei(value: bigint): string {
 }
 
 /**
- * Calculate gas fee estimation based on fee data and balance
+ * The gas fee to show, and the most that can be sent once it is paid.
+ *
+ * @remarks
+ * The fee carries {@link GAS_PRICE_BUFFER_PERCENTAGE} on top of the estimate, because gas price
+ * can rise between quoting it here and the transaction being sent, and a max that leaves no room
+ * for that produces a send the user cannot afford.
+ *
+ * @returns zeroes when the balance does not cover the gas, since there is nothing sendable.
  */
 export function calculateGasFee(gasPrice: bigint, balance: bigint): GasFeeEstimation {
   let maxAmount = '0';
@@ -129,7 +135,6 @@ export function calculateGasFee(gasPrice: bigint, balance: bigint): GasFeeEstima
   const gasCost = gasPrice * DEFAULT_GAS_LIMIT;
 
   if (balance > gasCost) {
-    // Add buffer for gas price fluctuations
     const buffer = gasCost * GAS_PRICE_BUFFER_PERCENTAGE / 100n;
     const diff = gasCost + buffer;
 

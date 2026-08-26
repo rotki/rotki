@@ -64,24 +64,14 @@ export function toDataIssueFields(
       searchAsset: resolution.searchAsset,
     }, resolvers),
     {
-      // Picked, not written: the accounts an issue can name are exactly the location labels the
-      // user's history has, which is the same list history's account pill picks from. The endpoint
-      // takes one label, so the pill stays single-valued.
-      //
-      // The account is deliberately NOT the shared address kind: it carries a `locationLabel`,
-      // which is an address on a chain but an exchange account *name* everywhere else, and the
-      // table draws that name with its location icon and explicitly leaves it unscrambled
-      // (`HistoryEventAccount`). Scrambling it would mangle a name the app never scrambles, and a
-      // blockie beside it would claim it is an address. Its option list knows which of the two a
-      // value is, so it resolves per value (`resolveDisplay`): a blockie for an address, the
-      // exchange's own logo for an account held there, which is what the table draws too.
+      // Not the shared address kind: a `locationLabel` is an address on a chain but an exchange
+      // account *name* elsewhere, so `resolveDisplay` decides per value.
       ...toMatchFieldDef({
         key: DataIssuesFilterKeys.ACCOUNT,
         label: (): string => t('data_issues.filter.account'),
         multiple: false,
-        // Any non-empty label, as the matcher had it. Not checked against the option list: that
-        // list is fetched when the bar is first built, so a value restored from the URL can arrive
-        // before it.
+        // Not checked against the option list: it is fetched as the bar is built, so a value
+        // restored from the URL can arrive first.
         validate: (value: string): boolean => value.length > 0,
       }),
       ...resolution.account,

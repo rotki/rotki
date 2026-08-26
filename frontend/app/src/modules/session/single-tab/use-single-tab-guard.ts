@@ -28,10 +28,6 @@ export function useSingleTabGuard(): void {
   }, { immediate: true });
 
   watch(isActiveTab, (isActive) => {
-    // A newer tab took over: pause this one (stop the websocket + all pollers) without a
-    // backend logout. Only meaningful while logged in — a claim heard on the login screen
-    // is a no-op. `immediate` covers a takeover that lands during the login->app remount,
-    // when this watcher would otherwise miss the already-false value.
     if (!isActive && get(logged))
       stop();
   }, { immediate: true });

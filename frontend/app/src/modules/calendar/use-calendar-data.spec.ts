@@ -22,7 +22,6 @@ interface ServerTableOptions {
 
 let captured: ServerTableOptions = {};
 
-/** Reads the values of the first source contributing to the given destination. */
 /**
  * Looks a source up by a key it is expected to carry, not by destination alone:
  * there is more than one `request` source, so destination is ambiguous.

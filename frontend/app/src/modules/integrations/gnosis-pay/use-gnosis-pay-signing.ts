@@ -29,7 +29,7 @@ interface UseGnosisPaySigningOptions {
   clearError: () => void;
   /** Comes from the wallet store via `useGnosisPayWallet`. Undefined means no wallet is connected and sign-in aborts immediately. */
   connectedAddress: Ref<string | undefined>;
-  /** Read, never written. Only used to detect the `INVALID_ADDRESS` warning that must be preserved across a sign-in attempt. */
+  /** Read, never written: detects only the `INVALID_ADDRESS` warning, which must survive a sign-in attempt. */
   errorType: Ref<GnosisPayError | null>;
   /** Awaited once the backend confirms the signature. The auth card uses it to reload the API key and re-check the safe migration. */
   onSignInComplete?: () => MaybePromise<void>;
@@ -135,7 +135,6 @@ Issued At: ${issuedAt}`;
         return;
       }
 
-      // Fetch nonce with async task
       let nonce = '';
       const nonceOutcome = await submitTask({
         id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.NONCE),
@@ -160,7 +159,6 @@ Issued At: ${issuedAt}`;
       const client = getWalletClient();
       const signature = await signMessage(client, address, message);
 
-      // Verify signature with async task
       let verified = false;
       const verifyOutcome = await submitTask({
         id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),

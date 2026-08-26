@@ -46,7 +46,6 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Use composables
 const { createColumns, initializeTableSorting } = useAccountTableConfig<T>();
 const {
   anyExpansion,
@@ -68,10 +67,8 @@ const { confirmDelete, edit } = useAccountOperations<T>({
   onRefresh: () => emit('refresh'),
 });
 
-// Create columns
 const cols = computed(() => createColumns(group, get(anyExpansion)));
 
-// Initialize table sorting
 initializeTableSorting(sort, cols);
 
 defineExpose({

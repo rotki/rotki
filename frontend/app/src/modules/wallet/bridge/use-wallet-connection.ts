@@ -26,7 +26,6 @@ export function useWalletConnection(): UseWalletConnectionReturn {
   const connectionError = ref<string>();
   const isConnecting = shallowRef<boolean>(false);
 
-  // Provider management
   let currentProvider: EIP1193Provider | undefined;
   let accountsChangedListener: ((accounts: string[]) => void) | undefined;
   let chainChangedListener: ((chainId: string) => void) | undefined;
@@ -65,12 +64,19 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     set(connectedChainId, parseInt(chainId, 16));
   };
 
+  /**
+   * Subscribes to the provider, then reads its current state once.
+   *
+   * @remarks
+   * Subscribing alone leaves the app blank until the wallet next changes something, so the first
+   * read has to be made rather than waited for. It throws when the wallet is not connected yet,
+   * which is the ordinary case and not worth reporting.
+   */
   const setupProviderListeners = async (provider: EIP1193Provider): Promise<void> => {
     if (!provider.on) {
       return;
     }
 
-    // Store listener references for cleanup
     accountsChangedListener = handleAccountsChanged;
     chainChangedListener = handleChainChanged;
 
@@ -78,16 +84,13 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     provider.on('chainChanged', chainChangedListener);
     logger.info('Set up event listeners for provider');
 
-    // Immediately query the provider for current state to avoid timing issues
     try {
-      // Get current accounts
       const accounts = await provider.request<string[]>({ method: 'eth_accounts' });
       if (accounts && accounts.length > 0) {
         setConnectedAddress(accounts[0]);
         logger.debug('Retrieved current account from provider:', accounts[0]);
       }
 
-      // Get current chain ID
       const chainId = await provider.request<string>({ method: 'eth_chainId' });
       if (chainId) {
         set(connectedChainId, parseInt(chainId, 16));
@@ -96,7 +99,6 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     }
     catch (error) {
       logger.debug('Failed to query provider state during setup:', error);
-      // This is expected if the wallet is not connected yet
     }
   };
 
@@ -120,12 +122,10 @@ export function useWalletConnection(): UseWalletConnectionReturn {
         throw new Error('No wallet provider found. Please select a wallet provider first.');
       }
 
-      // Request account access
       const accounts = await provider.request<string[]>({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
         setConnectedAddress(accounts[0]);
 
-        // Get chain ID after connecting
         const chainId = await provider.request<string>({ method: 'eth_chainId' });
         set(connectedChainId, parseInt(chainId, 16));
 
@@ -145,21 +145,22 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     }
   };
 
+  /**
+   * Both disconnect paths are optional in EIP-1193, so each is attempted and each failure is
+   * logged rather than raised: a wallet supporting neither is a wallet the user has still
+   * disconnected from, as far as this app is concerned.
+   */
   const disconnectFromProvider = async (provider?: EIP1193Provider): Promise<void> => {
     if (provider) {
-      // Some wallets support disconnect method
       if (provider.disconnect) {
         try {
           await provider.disconnect();
         }
         catch (error) {
-          // Some wallets don't support disconnect, which is fine
           logger.debug('Wallet disconnect method not supported or failed:', error);
         }
       }
 
-      // For wallets that don't support disconnect, we can request permissions revocation
-      // This is not universally supported but works for some wallets
       try {
         await provider.request({
           method: 'wallet_revokePermissions',
@@ -167,23 +168,19 @@ export function useWalletConnection(): UseWalletConnectionReturn {
         });
       }
       catch (error) {
-        // This method is not supported by all wallets
         logger.debug('wallet_revokePermissions not supported:', error);
       }
     }
 
-    // Clear the connected state
     clearConnectionState();
     logger.info('Wallet disconnected');
   };
 
   const setupProvider = async (provider: EIP1193Provider): Promise<void> => {
-    // Clean up old provider listeners
     if (currentProvider && currentProvider !== provider) {
       cleanupProviderListeners();
     }
 
-    // Set up new provider
     currentProvider = provider;
     await setupProviderListeners(provider);
   };

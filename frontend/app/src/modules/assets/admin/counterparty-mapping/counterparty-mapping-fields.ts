@@ -28,9 +28,6 @@ export function toCounterpartyMappingFields(
         label: (): string => t('common.counterparty'),
         multiple: false,
         suggest: counterparties,
-        // Checked against the same list it offers, which is every counterparty minus the exchanges
-        // — not only the ones that have a mapping, so a counterparty with none is offered and
-        // empties the table. What this rejects is a counterparty the url invented.
         validate: (value: string): boolean => counterparties().includes(value),
       }),
       SharedFieldKinds.PROTOCOL,

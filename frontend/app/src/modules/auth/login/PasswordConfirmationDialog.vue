@@ -63,7 +63,6 @@ watchImmediate(display, async (isDisplayed) => {
   if (isDisplayed) {
     form.reset();
     showServerError();
-    // Fetch stored password when dialog opens
     if (username)
       set(storedPassword, await getPassword(username));
   }

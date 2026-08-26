@@ -39,11 +39,6 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
         return ok({ conflicts: result.conflicts, kind: UpdateOutcomeKind.conflicts });
       return err({ kind: UnlockErrorKind.updateFailed, message: 'the asset update did not complete' });
     },
-    // Throttled to the first login per calendar day (or after a rotki app-version change):
-    // asset updates ship on a days-to-weeks cadence, so checking on every login is wasteful.
-    // Honours both skip mechanisms — the per-run `skip_update` flag (set from the URL in
-    // main.ts, used by e2e) and the per-version `rotki_skip_asset_db_version`. Only
-    // `loginSteps` reaches this — create/resume override `checkUpdate` to always `none`.
     checkUpdate: async (): Promise<Result<Option<UpdateChanges>, UnlockError>> => {
       if (sessionStorage.getItem('skip_update'))
         return ok(none);
@@ -65,14 +60,6 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
       // goes through `/_control`, and the plain web build reports `unavailable`
       // because no control endpoint is served there.
       const result = await restartBackend();
-      // A refused restart has to stop the flow. The update is already written to
-      // the global database, so carrying on would unlock a backend still holding
-      // the assets it was supposed to reload, and report success for it.
-      // `unavailable` is not that: nothing could restart, which is how this
-      // runtime has always behaved, so the unlock continues.
-      // `restartFailed` rather than `updateFailed`: the update itself succeeded, and
-      // the flow controller already renders a localized message for this kind. The
-      // supervisor's own reason is logged where the restart was attempted.
       if (result.status === BackendRestartStatus.failed)
         return err({ kind: UnlockErrorKind.restartFailed });
 

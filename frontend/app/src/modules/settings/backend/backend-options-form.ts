@@ -114,10 +114,9 @@ export interface BackendNumericMessages {
 
 /**
  * Digits with an optional fractional part, and no sign. This is vuelidate's
- * `numeric`, kept verbatim: it is the rule that actually rejects a bad value,
- * because a signed value never reaches the `minValue(0)` it was paired with.
- * Loosening it to a plain "is a number, and >= 0" would accept exponent
- * notation, which `parseValue` then truncates to its mantissa.
+ * `numeric` is kept verbatim: it is the rule that actually rejects a bad value, because a signed
+ * value never reaches the `minValue(0)` it was paired with. Loosening it to a plain "is a number and
+ * not negative" would accept exponent notation, which `parseValue` then truncates to its mantissa.
  */
 const DIGITS = /^\d*(?:\.\d+)?$/;
 

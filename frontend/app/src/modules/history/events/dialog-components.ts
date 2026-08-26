@@ -4,12 +4,14 @@ import { RuiProgress } from '@rotki/ui-library/components';
 /**
  * The dialogs the events page can open, each loaded only once it is asked for. Named exports rather
  * than inline async components in the container, because a spec can only stub what has a name.
+ *
+ * @packageDocumentation
  */
 
 /**
  * Shown in a dialog's place while its chunk is still loading.
  *
- * ⚠️ `RuiProgress` must be imported, not named: the Rui resolver only auto-imports into `.vue`, so
+ * `RuiProgress` must be imported, not named: the Rui resolver only auto-imports into `.vue`, so
  * `h('RuiProgress')` here builds a literal `<ruiprogress>` and the placeholder renders empty.
  */
 function DialogLoadingComponent(): ReturnType<typeof h> {

@@ -12,14 +12,14 @@ interface UseTradeNetworkMatchReturn {
 /**
  * Keeps the selected chain and the chain the wallet is on in agreement.
  *
- * The wallet reports whatever chain it happens to sit on, which is not limited
- * to the chains rotki supports, so every path here has to cope with a chain id
- * that resolves to nothing. Resolving it to ethereum instead, as this used to,
- * made an unsupported chain look like mainnet: no warning appeared and the
- * selection silently followed the wallet onto the wrong chain.
+ * @remarks
+ * The wallet reports whatever chain it sits on, which is not limited to the chains rotki supports,
+ * so every path here has to cope with a chain id that resolves to nothing. Do not fall back to
+ * ethereum: that makes an unsupported chain look like mainnet, so no warning appears and the
+ * selection follows the wallet onto the wrong chain.
  *
- * @param selectedChain the chain the send form is targeting, updated in place
- * when the wallet moves to a chain rotki does support.
+ * @param selectedChain - the chain the send form is targeting, updated in place when the wallet
+ * moves to a chain rotki does support.
  */
 export function useTradeNetworkMatch(selectedChain: Ref<string>): UseTradeNetworkMatchReturn {
   const { getChainFromChainId, getChainIdFromChain } = useWalletHelper();
@@ -40,10 +40,6 @@ export function useTradeNetworkMatch(selectedChain: Ref<string>): UseTradeNetwor
 
   function switchToSelectedChain(): void {
     const chainId = getChainIdFromChain(get(selectedChain));
-    // Unreachable by construction: the selection only ever holds a chain from
-    // `supportedChainsForConnectedAccount`, and every entry there was built by
-    // pairing a chain *with* its numeric id. Log rather than return quietly, so
-    // a broken invariant surfaces instead of becoming a button that does nothing.
     if (chainId === undefined) {
       logger.error(`no chain id for ${get(selectedChain)}, cannot switch network`);
       return;

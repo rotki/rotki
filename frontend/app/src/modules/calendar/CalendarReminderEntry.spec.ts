@@ -46,8 +46,6 @@ describe('calendarReminderEntry', () => {
     expect(unitOptions()).toEqual(['minutes', 'hours', 'days', 'weeks']);
   });
 
-  // The row no longer decides whether a value is worth reporting: it reports what was typed, and
-  // the list it belongs to validates. An out-of-range entry used to be swallowed here.
   it.each([
     ['99999'],
     [''],

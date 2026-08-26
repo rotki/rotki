@@ -21,6 +21,8 @@ import {
  * reuse the existing location-delta and total-rebuild helpers; location edits
  * touch only the affected location row (the stored `total` row is independent —
  * see `findSumMismatch`). All values are USD.
+ *
+ * @packageDocumentation
  */
 
 /** A positive add/delete portion, or an edit's signed per-location USD delta. */
@@ -295,7 +297,7 @@ export function cloneSnapshot(snapshot: Snapshot): Snapshot {
   };
 }
 
-/** Serialises a snapshot into the API payload (BigNumber -> fixed string). */
+/** Serialises a snapshot into the API payload, rendering each `BigNumber` as a fixed string. */
 export function toSnapshotPayload(snapshot: Snapshot): SnapshotPayload {
   return {
     balancesSnapshot: snapshot.balancesSnapshot.map(item => ({

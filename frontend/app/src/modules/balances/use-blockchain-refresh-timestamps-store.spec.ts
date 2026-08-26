@@ -51,7 +51,7 @@ describe('useBlockchainRefreshTimestampsStore', () => {
   });
 
   /**
-   * ⭐ A data refresh from the DB and a network query write the same chain and are allowed to
+   * A data refresh from the DB and a network query write the same chain and are allowed to
    * overlap, so they can land out of order. Merging blindly let whichever landed *last* win, which
    * rolls a chain back to stale balances. Keeping the newest is what makes the ordering irrelevant.
    */
@@ -76,7 +76,7 @@ describe('useBlockchainRefreshTimestampsStore', () => {
     });
 
     /**
-     * ⚠️ The backend omits `last_refresh_ts` for a chain it has never queried. Treating that as
+     * The backend omits `last_refresh_ts` for a chain it has never queried. Treating that as
      * stale would mean a chain that has never been refreshed could never receive its first
      * balances.
      */

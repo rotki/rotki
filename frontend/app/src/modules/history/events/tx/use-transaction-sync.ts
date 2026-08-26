@@ -54,17 +54,14 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   /**
    * A failed query leaves its address claiming to be querying unless something says otherwise.
    *
-   * A skipped task is not a failure: it never ran, so a chain with no API key reports "skipped" and
-   * must keep its own status. For a genuine failure, nothing else moves the address on: the backend
-   * emits `QUERYING_TRANSACTIONS_FINISHED` only on the success path, and evmlike chains send no
-   * websocket messages at all. Network failing after retries is an ordinary outcome, not an
-   * exception, so the status entry has to say so.
+   * A skipped task is not a failure — it never ran, so a chain with no API key keeps its own
+   * status. For a genuine failure nothing else moves the address on: the backend emits
+   * `QUERYING_TRANSACTIONS_FINISHED` only on the success path and evmlike chains send no websocket
+   * messages at all.
    *
-   * Marked rather than removed. Removing it also removed the address from the sync panel, whose
-   * chain list is derived from these entries, so a chain whose every address failed vanished along
-   * with its own denominator and a run with three failed gnosis addresses read "11/11 chains
-   * complete". `type` rides along so a synthesized entry carries the right subtype; defaulting to
-   * evm would wrongly describe an evmlike or bitcoin address.
+   * Marked rather than removed: the panel's chain list is derived from these entries, so removing
+   * one makes a fully-failed chain vanish with its denominator. `type` rides along so a synthesized
+   * entry carries the right subtype instead of defaulting to evm.
    */
   const recordQueryFailure = (
     error: TaskError,
@@ -158,11 +155,16 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * per-account syncs and the decode that follows them all exist before any of it runs, so the
    * task center shows the shape of a refresh rather than discovering it.
    *
-   * Concurrency is still the scheduler's, and still nested: the chain sits on
-   * {@link CHAIN_SYNC_LANE} (2 at a time), its accounts on the chain's own lane (2 each, and only
-   * 2 chains' lanes live at once), and the decode on {@link DECODE_LANE} (1 across all chains).
-   * The accounts cannot start before this activity does — the orchestrator gates a child on its
-   * parent — so declaring them early does not start them early.
+   * Concurrency stays the scheduler's and stays nested: the chain on {@link CHAIN_SYNC_LANE} (2 at a
+   * time), its accounts on the chain's own lane (2 each, 2 chains' lanes live at once), the decode on
+   * {@link DECODE_LANE} (1 across all chains). A child cannot start before its parent, so declaring
+   * the subtree early does not start it early.
+   *
+   * The chain activity is submitted *before* its children, so the parent gate applies to them —
+   * but its `run` needs their promises, which exist only once they are submitted. Hence the deferred
+   * `subtree` promise rather than an array that would still be empty when `run` first executes. The
+   * two halves arrive separately because only the accounts decide the chain's verdict; the decode is
+   * follow-on work with its own kind and row.
    */
   const syncAndReDecodeEvents = async (
     chain: string,
@@ -172,13 +174,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     const { accounts, trackProgress = true, type } = params;
     const chainId = chainSyncActivityId(chain);
 
-    // The chain activity is submitted before its children so the parent gate applies to them, but
-    // its `run` needs their promises — which only exist once they are submitted. It waits on this
-    // rather than on an array that would still be empty when the run body first executes.
-    //
-    // The two halves are handed over separately because only one of them decides the chain's
-    // verdict: the accounts are what a TX_SYNC activity is *about*, while the decode is follow-on
-    // work carrying its own kind and its own row.
     let declared!: (work: ChainSubtree) => void;
     const subtree = new Promise<ChainSubtree>((resolve) => {
       declared = resolve;

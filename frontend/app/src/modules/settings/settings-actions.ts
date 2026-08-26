@@ -9,8 +9,8 @@ import { getRegistryEntry } from '@/modules/settings/settings-registry';
  * password), an info display (db versions, latest/historic prices) or a categoryless section (accounting
  * rules, rpc nodes, modules). Keyed like the registry so a template single-sources its scroll-target id
  * through `anchorId(key)` and the search deriver reads it the same way it reads registry `search` blocks.
- * A `category` row nests under that category's header (breadcrumb tab > category > row); a `tab` row sits
- * directly on its tab. Pure info rows omit `anchor` (they have no on-page scroll target).
+ * A `category` row nests under that category's header, giving a tab/category/row breadcrumb, while a
+ * `tab` row sits directly on its tab. Pure info rows omit `anchor`, having no scroll target.
  */
 export interface ActionEntry {
   readonly anchor?: SettingsHighlightId;

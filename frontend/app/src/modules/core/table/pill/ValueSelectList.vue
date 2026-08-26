@@ -110,12 +110,9 @@ function toggle(value: string): void {
   }
 }
 
-// Last position the pointer was actually at.
-//
-// Any scroll slides rows under a cursor that never moved, and the browser reports that as a
-// mousemove at unchanged coordinates. Taking it at face value breaks both ways of moving through
-// this list: the arrow keys cannot advance past one row, because the row arriving under the pointer
-// hands the highlight straight back, and a wheel scroll drags the highlight along with it.
+// A scroll slides rows under a stationary cursor and the browser reports a mousemove at
+// unchanged coordinates. Trusting it pins the arrow keys to one row and drags the highlight along
+// with any wheel scroll, so the last real position has to be tracked.
 let lastX = Number.NaN;
 let lastY = Number.NaN;
 
@@ -128,18 +125,23 @@ function onPointerMove(event: MouseEvent, index: number): void {
   set(highlighted, index);
 }
 
+/**
+ * Drives the list from the keyboard: dismiss, move the highlight, commit a row.
+ *
+ * @remarks
+ * Escape is handled here rather than left to the surrounding menu, and before anything else. The
+ * menu can only dismiss itself while its own content holds focus, and this list is what holds it;
+ * an empty list has to be dismissable too, so the check cannot sit behind the row count.
+ *
+ * A composing IME is left alone. Mid-word, Enter confirms the candidate and the arrows walk the
+ * candidate list, so acting on them commits a row and closes the list under the user.
+ */
 function onKeydown(event: KeyboardEvent): void {
-  // Escape comes first, and is handled here rather than left to the surrounding menu: dismissal by
-  // the menu only works while its own content holds focus, and this list is what holds it. An
-  // empty list has to be dismissable too, so this cannot sit behind the row check.
   if (event.key === 'Escape') {
     emit('close');
     return;
   }
 
-  // While an IME is composing, Enter confirms the candidate and the arrows walk the candidate
-  // list. Acting on them would commit a row and close the list mid-word. Same guard as the send
-  // form's token picker, the app's other virtualized picker.
   if (event.isComposing)
     return;
 

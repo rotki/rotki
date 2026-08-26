@@ -96,7 +96,6 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
   // Subscript notation is suppressed when a fixed precision is requested, so columns stay aligned.
   const subscriptEnabled = computed<boolean>(() => get(fixedDecimals) === undefined && get(subscriptDecimals));
 
-  // Use valueRoundingMode for 'value' (default), amountRoundingMode for 'amount'
   const roundingMode = computed(() => (toValue(rounding) === 'amount' ? get(amountRoundingMode) : get(valueRoundingMode)));
 
   const renderedValue = computed<string>(() => {

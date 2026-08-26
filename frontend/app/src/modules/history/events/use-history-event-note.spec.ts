@@ -1,6 +1,7 @@
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
@@ -33,6 +34,25 @@ describe('useHistoryEventNotes', () => {
     setActivePinia(createCustomPinia());
     ({ formatNotes } = useHistoryEventNote());
     store = useSettingsRepo();
+  });
+
+  it('should degrade to plain text, rather than throw, when a word processor fails', () => {
+    const exploding = 'eip155:1/erc20:0x0000000000000000000000000000000000000BAD';
+    const { getAssetField } = useAssetInfoRetrieval();
+    const original = vi.mocked(getAssetField).getMockImplementation();
+    vi.mocked(getAssetField).mockImplementation((identifier?: string, ...rest) => {
+      if (identifier === exploding)
+        throw new Error('processor exploded');
+      return original?.(identifier, ...rest) ?? '';
+    });
+
+    try {
+      const formatted = get(formatNotes({ notes: `Swapped for ${exploding} today` }));
+      expect(formatted.length).toBeGreaterThan(0);
+    }
+    finally {
+      vi.mocked(getAssetField).mockImplementation(original!);
+    }
   });
 
   it('should parse normal text', () => {
@@ -70,11 +90,7 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  // An ENS registration note carries a date, and `parseFloat` reports 9 for `09/09/2026` because
-  // it stops at the first slash. Since bignumber.js 11 handing that whole string to BigNumber
-  // throws, and the throw escaped this computed mid-render: Vue abandoned the patch with vnodes
-  // left unmounted, every later patch died on them, and a history group rendered its header with
-  // none of its events.
+  // The date-in-a-note case; see `note-processors.spec.ts` for why a throw here is not contained.
   it('should leave a date-like word as plain text when an amount is present', () => {
     const notes = 'Register yabir.eth until 09/09/2026';
 

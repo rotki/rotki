@@ -221,7 +221,6 @@ describe('useWebsocketConnection', () => {
 
       const result = await connect();
       expect(result).toBe(true);
-      // Should not have created a new WebSocket
       expect(latestMockWs).toBeNull();
     });
   });

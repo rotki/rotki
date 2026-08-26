@@ -133,14 +133,11 @@ describe('syntaxExamples', () => {
     ]);
   });
 
-  // Advertising a syntax for a field that is not there sends the user typing something the bar
-  // will refuse; a field whose pill is already set is no longer among those passed in.
   it('should offer nothing for the types not on offer', () => {
     expect(syntaxExamples([protocol], hints)).toStrictEqual([]);
     expect(syntaxExamples([period], hints)).toStrictEqual(['after 15/01/2024', '15/01/2024 - 20/01/2024']);
   });
 
-  // A field that cannot read what is typed must not advertise a syntax it would then refuse.
   it('should ignore a field of a typed-into type that reads nothing typed', () => {
     const bare = field({ key: 'bare', label: 'Bare', valueType: FilterValueTypes.DATE });
     expect(syntaxExamples([bare], hints)).toStrictEqual([]);
@@ -356,8 +353,6 @@ describe('searchFieldsAndValues account keywords', () => {
       expect(searchFieldsAndValues('uniswap', [amount])).toStrictEqual([]);
     });
 
-    // A query heading for a filter it does not yet spell used to return an empty popover, which
-    // reads as "this field cannot be typed into" at exactly the moment the user is trying.
     it('should offer the field with its example for a half-written value', () => {
       expect(searchFieldsAndValues('after', [period], undefined, undefined, hints)).toStrictEqual([
         { field: period, kind: 'field', label: 'Period' },
@@ -392,11 +387,10 @@ describe('searchFieldsAndValues account keywords', () => {
       ]);
     });
 
-    // The keyword blob is a bag of whole words, not a string to be searched inside: `in` sits in
-    // `since` and `an` in `range`, so a substring test hands back Period and Amount for a
-    // two-letter query and buries the real value matches under them. The fixture blobs above share
-    // no stem with the shipped ones, which is exactly why they never caught this — these are the
-    // strings the app actually passes in.
+    // The keyword blob is a bag of whole words, not a string to search inside: `in` sits in `since`
+    // and `an` in `range`, so a substring test returns Period and Amount for a two-letter query and
+    // buries the real matches. Uses the shipped strings, not the fixtures above, which share no
+    // stem with them and so never caught this.
     it('should not match a keyword on a fragment of one', () => {
       const shipped = {
         keywords: {

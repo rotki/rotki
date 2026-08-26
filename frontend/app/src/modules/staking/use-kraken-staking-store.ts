@@ -41,10 +41,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   /**
    * The date bounds of the query, as the filter bar reads and writes them.
    *
-   * They are part of `pagination` rather than state of their own: they are query fields like any
-   * other, and every read sends the whole object. Holding them anywhere else means a read can be
-   * issued with a snapshot of the date taken before the user changed it, which is how the table
-   * ends up showing rows the filter no longer describes.
+   * @remarks
+   * A view onto `pagination`, not state of its own. Every read sends the whole object, so bounds
+   * held anywhere else can be read from a snapshot taken before the user changed them.
    */
   const dateFilter = computed<KrakenStakingDateFilter>({
     get() {
@@ -54,8 +53,6 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     set({ fromTimestamp, toTimestamp }) {
       set(pagination, {
         ...omit(get(pagination), ['fromTimestamp', 'toTimestamp']),
-        // An absent bound is left off entirely rather than sent as `undefined`, which is what the
-        // query built by hand used to do.
         ...(fromTimestamp === undefined ? {} : { fromTimestamp }),
         ...(toTimestamp === undefined ? {} : { toTimestamp }),
       });

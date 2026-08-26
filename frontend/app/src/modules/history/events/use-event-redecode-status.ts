@@ -23,18 +23,15 @@ interface DecodeTarget {
 /**
  * Whether the re-decode of *this* group row is in flight.
  *
- * The row does not track its own pending state: a targeted re-decode is submitted under an activity
- * id that is deterministic from the request, so the row can rebuild that id from the event it
- * already holds and read the orchestrator. Nothing has to be threaded down from the view, and the
- * indicator cannot drift out of sync with the work.
+ * The row tracks no pending state of its own: the activity id is deterministic from the request, so
+ * the row rebuilds it from the event it already holds and reads the orchestrator.
  *
- * ⚠️ The id is built by {@link targetedDecodeActivityId}/{@link blockDecodeActivityId} and taken
- * apart again by {@link activityParts}, rather than by restating the parts here. A divergence
- * between the two would not fail loudly — the row would simply never light up.
+ * Build the id with {@link targetedDecodeActivityId}/{@link blockDecodeActivityId} and take it
+ * apart with {@link activityParts}; never restate the parts here. A divergence would not fail
+ * loudly, the row would simply never light up.
  *
- * Scoped to a single-row re-decode, which is what it is for. A bulk re-decode is submitted as one
- * activity over the whole comma-joined set, so its id is not any single row's, and the page-level
- * progress covers it.
+ * Single-row only. A bulk re-decode is one activity over the whole set, so its id is no single
+ * row's, and page-level progress covers it.
  */
 export function useEventRedecodeStatus(
   event: MaybeRefOrGetter<HistoryEventEntry>,

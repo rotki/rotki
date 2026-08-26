@@ -76,10 +76,7 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
     },
   );
 
-  /**
-   * Hits the api to fetch data based on pagination/filter changes
-   * @returns {Promise<void>}
-   */
+  /** Hits the api for the current pagination and filter state, cancelling any request in flight. */
   const refetch = async (): Promise<void> => {
     if (cancelTag)
       api.cancelByTag(cancelTag);

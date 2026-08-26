@@ -11,9 +11,11 @@ export const Defaults = {
   ASSET_MOVEMENT_AMOUNT_TOLERANCE: '0.000001',
   ASSET_MOVEMENT_TIME_RANGE: 3600,
   BALANCE_SAVE_FREQUENCY: 24,
-  // bridge relayer/bonder fees are larger than exchange withdrawal dust, so the bridge
-  // matching defaults are looser than the asset movement ones. Kept in sync with
-  // DEFAULT_BRIDGE_MATCH_AMOUNT_TOLERANCE/DEFAULT_BRIDGE_MATCH_TIME_RANGE in the backend.
+  /**
+   * Looser than the asset-movement tolerances above, relayer and bonder fees being larger than
+   * exchange withdrawal dust. Mirrors `DEFAULT_BRIDGE_MATCH_AMOUNT_TOLERANCE` and
+   * `DEFAULT_BRIDGE_MATCH_TIME_RANGE` in the backend; change both together.
+   */
   BRIDGE_MATCH_AMOUNT_TOLERANCE: '0.01',
   BRIDGE_MATCH_TIME_RANGE: 4 * 3600,
   BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user

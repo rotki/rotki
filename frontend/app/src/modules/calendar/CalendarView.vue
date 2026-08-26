@@ -17,10 +17,8 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-// State
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 
-// Use composables
 const {
   dateFormat,
   eventsWithDate,

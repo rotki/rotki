@@ -88,12 +88,7 @@ describe('pendingTaskNode', () => {
     expect(createWrapper().text()).toContain('pending_task.steps::1, 2');
   });
 
-  /**
-   * ⭐ The control is back now that `orchestrator.cancel` cascades. It was withheld while
-   * cancelling a parent settled its row and stopped nothing — the handle aborts a backend task id
-   * an umbrella never has.
-   */
-  it('should offer a cancel control on a parent', async () => {
+  it('should offer a cancel control on a parent, whose cancel cascades to the subtree', async () => {
     const wrapper = createWrapper();
     const control = wrapper.find('[data-testid=cancel-activity]');
     expect(control.exists()).toBe(true);

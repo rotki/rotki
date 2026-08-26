@@ -158,7 +158,6 @@ describe('binance-pairs-selector', () => {
 
       const newEmits = wrapper.emitted('update:selection')!;
       expect(newEmits.length).toBeGreaterThan(initialEmitCount);
-      // Only BTCUSDT should be added as it's the only valid pair
       expect(newEmits.at(-1)).toEqual([['BTCUSDT']]);
     });
 
@@ -168,19 +167,16 @@ describe('binance-pairs-selector', () => {
 
       const input = wrapper.find('.input-value');
 
-      // First paste
       await triggerPaste(input, 'BTCUSDT, ETHUSDT');
 
       const emitsAfterFirst = wrapper.emitted('update:selection')!;
       const selectionAfterFirst = emitsAfterFirst.at(-1)![0];
       expect(selectionAfterFirst).toEqual(['BTCUSDT', 'ETHUSDT']);
 
-      // Second paste with same pairs
       await triggerPaste(input, 'BTCUSDT, ETHUSDT');
 
       const emitsAfterSecond = wrapper.emitted('update:selection')!;
       const selectionAfterSecond = emitsAfterSecond.at(-1)![0];
-      // Selection should still have only 2 items (no duplicates)
       expect(selectionAfterSecond).toEqual(['BTCUSDT', 'ETHUSDT']);
     });
 
@@ -190,10 +186,7 @@ describe('binance-pairs-selector', () => {
 
       const input = wrapper.find('.input-value');
 
-      // First paste
       await triggerPaste(input, 'BTCUSDT');
-
-      // Second paste with same pair - should still show success
       await triggerPaste(input, 'BTCUSDT');
 
       const alert = wrapper.find('[data-testid="alert"]');

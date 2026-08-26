@@ -152,6 +152,20 @@ function getLastPushedQuery(): Record<string, unknown> {
   return calls.at(-1)![0].query;
 }
 
+/** A programmatic navigation, as a notification action or a deep link would make it. */
+async function navigateTo(query: Record<string, unknown>): Promise<void> {
+  await mockRouter.push({ query });
+  await nextTick();
+  await flushPromises();
+}
+
+/** The user editing the filter bar, as distinct from a value arriving by navigation. */
+async function userSetsFilter<T extends object>(filter: Ref<T>, next: T): Promise<void> {
+  set(filter, next);
+  await nextTick();
+  await flushPromises();
+}
+
 function setupRouterMocks(): void {
   mockRoute = ref<{ query: Record<string, unknown> }>({ query: {} });
   mockRouter = {
@@ -320,10 +334,7 @@ describe('filter-persistence', () => {
       await flushPromises();
       savePersistedFilterSpy.mockClear();
 
-      // Simulate programmatic navigation (e.g., notification action)
-      await mockRouter.push({ query: { txRefs: ['0xabc', '0xdef'] } });
-      await nextTick();
-      await flushPromises();
+      await navigateTo({ txRefs: ['0xabc', '0xdef'] });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
       const savedQuery = getLastSavedQuery();
@@ -342,10 +353,7 @@ describe('filter-persistence', () => {
       await flushPromises();
       savePersistedFilterSpy.mockClear();
 
-      // User manually sets txRefs via filter UI (no prior navigation with txRefs)
-      set(filter, { txRefs: ['0x123'] });
-      await nextTick();
-      await flushPromises();
+      await userSetsFilter(filter, { txRefs: ['0x123'] });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
       const savedQuery = getLastSavedQuery();
@@ -363,21 +371,13 @@ describe('filter-persistence', () => {
       await nextTick();
       await flushPromises();
 
-      // Navigate with txRefs
-      await mockRouter.push({ query: { txRefs: ['0xabc'] } });
-      await nextTick();
-      await flushPromises();
+      await navigateTo({ txRefs: ['0xabc'] });
       savePersistedFilterSpy.mockClear();
 
-      // User changes txRefs to a different value
-      set(filter, { txRefs: ['0xnew'] });
-      await nextTick();
-      await flushPromises();
+      await userSetsFilter(filter, { txRefs: ['0xnew'] });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
-      const savedQuery = getLastSavedQuery();
-      // Value changed from navigation value, so it should be persisted
-      expect(savedQuery).toHaveProperty('txRefs');
+      expect(getLastSavedQuery()).toHaveProperty('txRefs');
     });
 
     it('should strip transient key when value still matches navigation value', async () => {
@@ -391,20 +391,13 @@ describe('filter-persistence', () => {
       await nextTick();
       await flushPromises();
 
-      // Navigate with txRefs
-      await mockRouter.push({ query: { txRefs: ['0xabc'] } });
-      await nextTick();
-      await flushPromises();
+      await navigateTo({ txRefs: ['0xabc'] });
       savePersistedFilterSpy.mockClear();
 
-      // User changes a different filter, but txRefs stays the same
-      set(filter, { txRefs: ['0xabc'], asset: 'ETH' });
-      await nextTick();
-      await flushPromises();
+      await userSetsFilter(filter, { txRefs: ['0xabc'], asset: 'ETH' });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
       const savedQuery = getLastSavedQuery();
-      // txRefs unchanged from navigation, so it is still stripped
       expect(savedQuery).not.toHaveProperty('txRefs');
       expect(savedQuery).toHaveProperty('asset');
     });
@@ -420,20 +413,13 @@ describe('filter-persistence', () => {
       await nextTick();
       await flushPromises();
 
-      // Navigate without txRefs
-      await mockRouter.push({ query: { asset: 'ETH' } });
-      await nextTick();
-      await flushPromises();
+      await navigateTo({ asset: 'ETH' });
       savePersistedFilterSpy.mockClear();
 
-      // User adds txRefs manually
-      set(filter, { asset: 'ETH', txRefs: ['0x123'] });
-      await nextTick();
-      await flushPromises();
+      await userSetsFilter(filter, { asset: 'ETH', txRefs: ['0x123'] });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
       const savedQuery = getLastSavedQuery();
-      // No transient values captured from navigation, so txRefs should persist
       expect(savedQuery).toHaveProperty('txRefs');
     });
 
@@ -470,16 +456,10 @@ describe('filter-persistence', () => {
       await nextTick();
       await flushPromises();
 
-      // Navigate with transient keys
-      await mockRouter.push({ query: { txRefs: ['0xabc'], tempFilter: 'initial' } });
-      await nextTick();
-      await flushPromises();
+      await navigateTo({ txRefs: ['0xabc'], tempFilter: 'initial' });
       savePersistedFilterSpy.mockClear();
 
-      // User modifies both transient keys to new values
-      set(filter, { txRefs: ['0xnew'], tempFilter: 'changed' });
-      await nextTick();
-      await flushPromises();
+      await userSetsFilter(filter, { txRefs: ['0xnew'], tempFilter: 'changed' });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
       const savedQuery = getLastSavedQuery();
@@ -505,10 +485,7 @@ describe('filter-persistence', () => {
       await flushPromises();
       savePersistedFilterSpy.mockClear();
 
-      // Programmatic navigation with both exclude and transient keys
-      await mockRouter.push({ query: { txRefs: ['0xabc'], groupIdentifiers: 'group-1' } });
-      await nextTick();
-      await flushPromises();
+      await navigateTo({ txRefs: ['0xabc'], groupIdentifiers: 'group-1' });
 
       expect(savePersistedFilterSpy).toHaveBeenCalled();
       const savedQuery = getLastSavedQuery();
@@ -533,8 +510,7 @@ describe('filter-persistence', () => {
       await flushPromises();
       savePersistedFilterSpy.mockClear();
 
-      // User manually adds txRefs (no prior navigation with txRefs)
-      set(filter, { txRefs: ['0x123'] });
+      await userSetsFilter(filter, { txRefs: ['0x123'] });
       await nextTick();
       await flushPromises();
 
@@ -630,18 +606,15 @@ describe('filter-persistence', () => {
       await nextTick();
       await flushPromises();
 
-      // Navigate with txRefs
       await mockRouter.push({ query: { txRefs: ['0xabc'] } });
       await nextTick();
       await flushPromises();
 
-      // Navigate to empty query (resets transient tracking)
       await mockRouter.push({ query: {} });
       await nextTick();
       await flushPromises();
       savePersistedFilterSpy.mockClear();
 
-      // User now sets txRefs, which should persist since tracking was reset
       set(filter, { txRefs: ['0x123'] });
       await nextTick();
       await flushPromises();
@@ -668,7 +641,6 @@ describe('filter-persistence', () => {
     });
 
     it('should not restore persisted filter when route query has values', async () => {
-      // Set route query before creating the composable
       await mockRouter.push({ query: { asset: 'ETH' } });
       await nextTick();
 
@@ -753,7 +725,6 @@ describe('filter-persistence', () => {
       await flushPromises();
       savePersistedFilterSpy.mockClear();
 
-      // Navigate without any transient keys
       await mockRouter.push({ query: { asset: 'BTC' } });
       await nextTick();
       await flushPromises();
@@ -805,7 +776,6 @@ describe('request.debounce', () => {
     await flushPromises();
     requestFn.mockClear();
 
-    // Rapid filter changes within the debounce window
     set(filter, { asset: 'ETH' });
     await nextTick();
     set(filter, { asset: 'BTC' });
@@ -813,14 +783,11 @@ describe('request.debounce', () => {
     set(filter, { asset: 'USDT' });
     await nextTick();
 
-    // Before debounce fires, no fetch should have been made
     expect(requestFn).not.toHaveBeenCalled();
 
-    // Advance past the debounce window
     await vi.advanceTimersByTimeAsync(250);
     await flushPromises();
 
-    // Only one fetch should have been made (the final value)
     expect(requestFn).toHaveBeenCalledTimes(1);
   });
 
@@ -846,7 +813,6 @@ describe('request.debounce', () => {
     await nextTick();
     await flushPromises();
 
-    // Should fetch immediately without waiting for debounce
     expect(requestFn).toHaveBeenCalledTimes(1);
   });
 });
@@ -933,9 +899,6 @@ describe('request.cancelTag', () => {
 
     await nextTick();
     await flushPromises();
-
-    // Should not throw and collection should remain at default (empty collection)
-    // The test passes if no unhandled error is thrown
   });
 
   it('should still fetch when url-only and request-only sources change together', async () => {
@@ -977,11 +940,9 @@ describe('request.cancelTag', () => {
     await flushPromises();
     requestFn.mockClear();
 
-    // Simulate account filter change, which triggers both the request-only source
-    // (which feeds into requestPayload) and the url-only source (which pushes the URL).
-    // Without the self-write guard, the route push would re-apply url state, which
-    // re-sets filters/pagination, causing requestPayload to recompute and overwrite
-    // watchDebounced's old value, making it skip the fetch.
+    // An account filter change drives both the request-only and the url-only source. Without the
+    // self-write guard the route push re-applies url state, which recomputes `requestPayload` and
+    // overwrites the debounced old value, so the fetch is skipped.
     set(locationLabels, ['0x1aEa862845522cFF463D11B9371EedEa73e458bE']);
     await nextTick();
     await flushPromises();
@@ -1033,7 +994,6 @@ describe('request.cancelTag', () => {
     await flushPromises();
     requestFn.mockClear();
 
-    // Clear the account filter
     set(locationLabels, []);
     await nextTick();
     await flushPromises();
@@ -1097,18 +1057,14 @@ describe('request.cancelTag', () => {
     set(filter, { asset: 'ETH' });
     await nextTick();
 
-    // Before debounce, cancel should not have been called yet
     expect(cancelByTagSpy).not.toHaveBeenCalled();
 
-    // Advance past debounce
     await vi.advanceTimersByTimeAsync(250);
     await flushPromises();
 
-    // Cancel should be called before the fetch
     expect(cancelByTagSpy).toHaveBeenCalledWith('debounced-cancel-tag');
     expect(requestFn).toHaveBeenCalledTimes(1);
 
-    // Verify cancel was called before fetch (cancel call index < request call index)
     const cancelOrder = cancelByTagSpy.mock.invocationCallOrder[0];
     const fetchOrder = requestFn.mock.invocationCallOrder[0];
     expect(cancelOrder).toBeLessThan(fetchOrder);

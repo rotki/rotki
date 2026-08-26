@@ -176,10 +176,6 @@ function openEdit(item: EditableBalance): void {
   set(editIndex, item.index);
   resetSplit();
 
-  // Snapshots store USD. The asset-price form re-derives the display value from
-  // the historic asset->USD price, so pre-fill the raw USD value (no FX). This
-  // is also the form's fallback when the historic price fetch fails, where a
-  // main-currency-converted value would be persisted as USD and corrupt it.
   set(formModel, {
     ...item,
     amount: item.amount.toFixed(),

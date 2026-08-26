@@ -472,8 +472,6 @@ describe('pillFilterBar', () => {
 
     expect(wrapper.findComponent(PillNarrowList).props('suggestions')[0]).toMatchObject({ kind: 'filter' });
   });
-  // Picking a field and then thinking better of it used to leave an empty pill: it filters
-  // nothing, shows nothing, and the only way out was to find its remove button.
   it('should drop a pill whose editor closed without a value', async () => {
     const wrapper = createWrapper();
     wrapper.findComponent(PillMenu).vm.$emit('select', protocol);

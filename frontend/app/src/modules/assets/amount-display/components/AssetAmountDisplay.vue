@@ -1,22 +1,16 @@
 <script setup lang="ts">
 /**
- * AssetAmountDisplay - Display a raw asset amount with its symbol.
+ * Displays a raw asset amount with its symbol, as in `1.5 ETH`.
  *
- * Shows the amount of an asset (e.g., "1.5 ETH"). NOT a fiat value.
- * Values are scrambled for privacy when enabled in settings.
- * If asset is not provided, displays just the raw value without a symbol.
+ * @remarks
+ * Not a fiat value: for that, reach for `AssetValueDisplay`. Values are scrambled for privacy
+ * when the setting is on, and omitting `asset` renders the amount with no symbol.
  *
  * @example
+ * ```vue
  * <AssetAmountDisplay asset="ETH" :amount="bigNumberify(1.5)" />
- *
- * @example
- * <AssetAmountDisplay asset="BTC" :amount="balance" />
- *
- * @example
  * <AssetAmountDisplay asset="ETH" :amount="balance" no-collection-parent />
- *
- * @example
- * <AssetAmountDisplay :asset="optionalAsset" :amount="balance" />
+ * ```
  */
 import type { BigNumber } from '@rotki/common';
 import { useScrambledValue } from '@/modules/assets/amount-display';
@@ -46,7 +40,6 @@ defineOptions({
 
 const { amount, asset = '', decimals, noCollectionParent, noScramble } = defineProps<Props>();
 
-// Composables
 const { useAssetInfo } = useAssetInfoRetrieval();
 const resolutionOptions = computed(() => ({ collectionParent: !noCollectionParent }));
 const info = useAssetInfo(() => asset, resolutionOptions);

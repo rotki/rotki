@@ -127,12 +127,13 @@ export class RotkiApi {
     this.abortController = new AbortController();
   }
 
+  /**
+   * Reacts to a 401 by cancelling every in-flight request and routing to login.
+   *
+   * Only when a session is active. Logged out a 401 is expected and must stay local to its
+   * caller, since tearing down in-flight requests here aborts a login in progress.
+   */
   private handleAuthFailure(): void {
-    // A 401 only means "the session ended" when there *is* an active session. While
-    // logged out (e.g. on the login screen, where a deployment may gate background
-    // calls) a 401 is expected and must stay local to its caller — tearing down all
-    // in-flight requests here would abort an in-progress login/account creation. When
-    // logged in, a 401 is a real session loss, so cancel everything and route to login.
     if (this.isSessionActive && !this.isSessionActive())
       return;
 

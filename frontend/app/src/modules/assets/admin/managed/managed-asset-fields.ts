@@ -108,9 +108,6 @@ export function toManagedAssetFields(
       key: AssetFilterKeys.ADDRESS,
       label: (): string => t('assets.filter_field_labels.address'),
       multiple: false,
-      // An address typed into the bar is shown truncated: a contract address is forty-two
-      // characters and would swamp the pill. Unlike an account address it is not an identity, so it
-      // is not scrambled — the table shows the same address in full beside it.
       resolveLabel: (value: string): string => truncateAddress(value, 4),
     }),
   ];

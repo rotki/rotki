@@ -9,6 +9,12 @@ import { MAX_PARALLEL_ASSET_BATCHES } from '@/modules/assets/use-asset-select-in
 // some tests may exhibit behavior influenced by previous test runs.
 // The composable is designed to share cached data efficiently in production.
 
+/** Comfortably past the composable's 200ms batch debounce, so a queued batch has been sent. */
+const PAST_DEBOUNCE_MS = 300;
+
+/** Several debounce intervals, long enough for a retry loop to show itself if one exists. */
+const SEVERAL_DEBOUNCES_MS = 3000;
+
 describe('useAssetSelectInfo', () => {
   let scope: EffectScope;
 
@@ -16,7 +22,6 @@ describe('useAssetSelectInfo', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
-    // Set up Pinia for the tests
     setActivePinia(createPinia());
     scope = effectScope();
   });
@@ -77,7 +82,7 @@ describe('useAssetSelectInfo', () => {
   });
 
   describe('reactive behavior', () => {
-    it('should handle reactive identifier changes', async () => {
+    it('should keep returning defaults as the identifier moves between undefined and empty', async () => {
       const { useAssetSelectInfo } = await import('@/modules/assets/use-asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
@@ -86,25 +91,19 @@ describe('useAssetSelectInfo', () => {
       const symbolResult = assetSelectInfo.useAssetField(identifier, 'symbol');
       const infoResult = assetSelectInfo.useAssetInfo(identifier);
 
-      // Initially all return default values for undefined
-      expect(get(nameResult)).toBe('');
-      expect(get(symbolResult)).toBe('');
-      expect(get(infoResult)).toBeNull();
+      const expectDefaults = (): void => {
+        expect(get(nameResult)).toBe('');
+        expect(get(symbolResult)).toBe('');
+        expect(get(infoResult)).toBeNull();
+      };
 
-      // Change to empty string
+      expectDefaults();
+
       set(identifier, '');
+      expectDefaults();
 
-      // Should still return default values
-      expect(get(nameResult)).toBe('');
-      expect(get(symbolResult)).toBe('');
-      expect(get(infoResult)).toBeNull();
-
-      // Change back to undefined
       set(identifier, undefined);
-
-      expect(get(nameResult)).toBe('');
-      expect(get(symbolResult)).toBe('');
-      expect(get(infoResult)).toBeNull();
+      expectDefaults();
     });
   });
 
@@ -115,7 +114,6 @@ describe('useAssetSelectInfo', () => {
 
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      // Mock the API to return undefined
       const mockAssetMapping = vi.fn().mockResolvedValue(undefined);
       vi.mocked(useAssetInfoApi).mockReturnValue({
         assetMapping: mockAssetMapping,
@@ -126,14 +124,11 @@ describe('useAssetSelectInfo', () => {
       const undefinedId = `UNDEFINED_TEST_${Date.now()}`;
       const result = assetSelectInfo.useAssetInfo(undefinedId);
 
-      // Initially null
       expect(get(result)).toBeNull();
 
-      // Process the debounced request
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       await flushPromises();
 
-      // Should still be null after processing
       expect(get(result)).toBeNull();
     });
   });
@@ -159,7 +154,7 @@ describe('useAssetSelectInfo', () => {
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
       assetSelectInfo.prefetchAssetInfo(['PREFETCH_ONE', 'PREFETCH_TWO']);
 
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       await flushPromises();
 
       expect(assetMapping).toHaveBeenCalledTimes(1);
@@ -195,7 +190,7 @@ describe('useAssetSelectInfo', () => {
 
       // Every batch is started before any of them is allowed to resolve, so the peak is the number
       // of batches only if they were sent together.
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       expect(peakInFlight).toBe(3);
 
       releases.forEach(release => release());
@@ -230,7 +225,7 @@ describe('useAssetSelectInfo', () => {
       // 20 batches worth, far past the cap.
       assetSelectInfo.prefetchAssetInfo(Array.from({ length: 1000 }, (_, index) => `CAPPED_${index}`));
 
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       expect(peakInFlight).toBeLessThanOrEqual(MAX_PARALLEL_ASSET_BATCHES);
       expect(peakInFlight).toBe(MAX_PARALLEL_ASSET_BATCHES);
 
@@ -254,7 +249,7 @@ describe('useAssetSelectInfo', () => {
       const info = scope.run(() => assetSelectInfo.useAssetInfo('FAILING_ONE'))!;
       expect(get(info)).toBeNull();
 
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       await flushPromises();
       const afterFirstAttempt = assetMapping.mock.calls.length;
       expect(afterFirstAttempt).toBe(1);
@@ -263,7 +258,7 @@ describe('useAssetSelectInfo', () => {
       // same identifiers, which fails again, at the debounce interval, for as long as the table is
       // on screen.
       get(info);
-      await vi.advanceTimersByTimeAsync(3000);
+      await vi.advanceTimersByTimeAsync(SEVERAL_DEBOUNCES_MS);
       await flushPromises();
       expect(assetMapping).toHaveBeenCalledTimes(afterFirstAttempt);
     });
@@ -284,11 +279,11 @@ describe('useAssetSelectInfo', () => {
 
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
       assetSelectInfo.prefetchAssetInfo(['CACHED_ONE']);
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       await flushPromises();
 
       assetSelectInfo.prefetchAssetInfo(['CACHED_ONE']);
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       await flushPromises();
 
       expect(assetMapping).toHaveBeenCalledTimes(1);

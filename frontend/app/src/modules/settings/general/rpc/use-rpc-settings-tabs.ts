@@ -124,9 +124,6 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
       set(selectedKey, key);
   }
 
-  // Route → state: react to the tab query, including when the user
-  // navigates back to the page with a different ?tab=. immediate: true
-  // covers the initial mount case.
   watch(() => get(route).query.tab, (tab) => {
     if (typeof tab !== 'string' || !tab)
       return;

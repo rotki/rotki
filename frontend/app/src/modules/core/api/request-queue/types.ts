@@ -1,6 +1,5 @@
 import type { FetchOptions } from 'ofetch';
 
-/** FetchOptions without the 'priority' field to avoid conflict with our queue priority */
 /**
  * Options the queue carries but never reads: they are handed back to the fetch function untouched.
  * `retry` is excluded from ofetch's shape because the caller's own retry contract travels under that
@@ -24,9 +23,10 @@ export interface QueueState {
 }
 
 interface DedupeSubscriber {
-  // The queue holds requests whose result types are unrelated, which TypeScript cannot express.
-  // `any` in the parameter position is what makes a QueuedRequest<T> storable next to the others;
-  // with `unknown` every caller has to assert the request back into the queue's element type.
+  /**
+   * `any` rather than `unknown`, deliberately: the queue holds requests whose result types are
+   * unrelated, and `unknown` here makes every caller assert its request back into the element type.
+   */
   resolve: (value: any) => void;
   reject: (error: unknown) => void;
 }

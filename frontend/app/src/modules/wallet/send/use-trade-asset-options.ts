@@ -48,9 +48,10 @@ function shortenAddress(identifier: string): string {
  * Builds the option list the send form's token dialog shows: the owned assets narrowed to a chain,
  * matched against the search box, and ordered for reading.
  *
- * Symbol and name are resolved here, once per asset, rather than in each row. The dialog used to
- * mount two `useAssetField` computeds per row on top of the resolution `AssetDetails` does its own,
- * which is a cost paid for every option whether or not it is on screen.
+ * @remarks
+ * Symbol and name are resolved here, once per asset, rather than per row: a row that mounts its
+ * own `useAssetField` pays that cost for every option, on screen or not, on top of the resolution
+ * `AssetDetails` already does.
  */
 export function useTradeAssetOptions(
   assets: MaybeRefOrGetter<TradableAsset[]>,
@@ -118,9 +119,6 @@ export function useTradeAssetOptions(
     // GoAsk" are indistinguishable, and only rows visible together need telling apart.
     const counts = new Map<string, number>();
     for (const option of narrowed) {
-      // Unresolved assets all carry an empty symbol. Counting those together would flag every one
-      // of them as a collision on first open, printing an address beside a blank symbol on every
-      // row until the names arrive and they all disappear again.
       if (option.symbol)
         counts.set(option.symbol, (counts.get(option.symbol) ?? 0) + 1);
     }

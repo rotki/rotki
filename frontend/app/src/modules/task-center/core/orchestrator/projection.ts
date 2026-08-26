@@ -5,6 +5,8 @@ import { type Activity, type ActivityId, type ActivityKind, ActivitySourceType, 
  * The status projection: how live records and the completion ledger collapse into a
  * {@link WorkStatus}. Pure and orchestrator-agnostic — it reads only the two maps it is handed,
  * which keeps the orchestrator module focused on lifecycle and scheduling.
+ *
+ * @packageDocumentation
  */
 
 /**
@@ -135,20 +137,23 @@ export function childProgress(records: ReadonlyMap<ActivityId, ProgressRecord>):
   return byParent;
 }
 
+/**
+ * How far along one activity is, for the bar.
+ *
+ * @remarks
+ * Any terminal status reads 100, failed and skipped included: no further progress is coming, so
+ * excluding them stalls a bar at 3/5 whenever two chains fail. Freshness is the separate axis, and
+ * only COMPLETE writes `lastSuccessAt`, so a failed activity stays stale and is retried on its own.
+ *
+ * `children` wins over `steps`: an activity carrying both is a parent that also reported, and the
+ * subtree is the more honest answer.
+ *
+ * @returns 0-100, or {@link INDETERMINATE} when nothing about the activity can be quantified
+ */
 function percentageOf(status: ActivityStatus, steps: ActivitySteps | undefined, children?: ActivitySteps): number {
-  // Skipped and failed both count as done for the bar. To an observer a failure is *completed
-  // with a failure status*, not work still in flight: no further progress is coming, so a bar
-  // that excluded it would stall at 3/5 whenever two chains failed — the same argument that
-  // already applied to disabled chains.
-  // Freshness is the other axis — `settleTerminal` writes `lastSuccessAt` on COMPLETE only, so a
-  // failed activity stays stale and a later run retries it while leaving its siblings alone.
   if (status === Status.COMPLETE || status === Status.SKIPPED || status === Status.FAILED)
     return 100;
 
-  // An umbrella does no work of its own, so it has no steps to report — its progress *is* how
-  // many of its children have finished. This is what "1/11 chains" used to fake by hand.
-  // Children win over own steps: an activity that has both is a parent that also reported, and
-  // the subtree is the more honest answer.
   if (children)
     return percentageFromSteps(children.current, children.total);
 
@@ -182,7 +187,7 @@ export interface RenderableRecord {
 /**
  * A live record as the {@link Activity} every surface renders.
  *
- * ⚠️ `cancellable` is a projection, not a spec field: a PENDING activity can always be dropped from
+ * `cancellable` is a projection, not a spec field: a PENDING activity can always be dropped from
  * the queue, while a RUNNING one needs a handle to interrupt the work it started.
  */
 export function projectActivity(record: RenderableRecord, childSteps?: ActivitySteps): Activity {

@@ -5,7 +5,7 @@ import { toCustomAssetFields } from '@/modules/assets/admin/custom/custom-asset-
 /**
  * The pill-bar fields for the custom assets table.
  *
- * @param types the custom asset types the user has created, which the type pill offers and
+ * @param types - the custom asset types the user has created, which the type pill offers and
  * validates against.
  */
 export function useCustomAssetFields(types: MaybeRefOrGetter<string[]>): FieldDef[] {

@@ -27,9 +27,9 @@ type Translate = (key: string) => string;
  */
 export interface HistoryFieldResolvers extends SharedFieldResolvers {
   readonly t: Translate;
-  /** Raw event type (e.g. `informational`) -> its display name. */
+  /** Maps a raw event type such as `informational` to its display name. */
   readonly resolveEventTypeName: (value: string) => string;
-  /** Raw event subtype (e.g. `receive_wrapped`) -> its display name. */
+  /** Maps a raw event subtype such as `receive_wrapped` to its display name. */
   readonly resolveEventSubTypeName: (value: string) => string;
 }
 
@@ -101,9 +101,8 @@ function boundsFields(resolvers: HistoryFieldResolvers, options: HistoryEventFie
     : [toPeriodField(
         (): string => t('transactions.filter_field_labels.period'),
         {
-          // The one table here whose timestamp column is milliseconds: the backend scales both
-          // bounds by 1000 (`HistoryBaseEntryFilterQuery`), so an equal pair asks for the single
-          // millisecond `X000` and drops every other event in the second the user picked.
+          // Timestamps here are milliseconds and the backend scales both bounds by 1000, so an
+          // equal pair asks for the single millisecond `X000` rather than the second.
           allowEqual: false,
           lowerKey: HistoryEventFilterKeys.START,
           upperKey: HistoryEventFilterKeys.END,
@@ -214,9 +213,8 @@ function classificationFields(
 
   if (included.evmOrOnline && !disabled.eventSubtypes) {
     fields.push(toMatchFieldDef({
-      // The backend reads types and subtypes as a cross product, so a subtype the selected types do
-      // not admit matches nothing. The bar narrows what can be added, drops what stops being
-      // admitted, and refuses it if typed — all three off the one mapping lookup.
+      // Types and subtypes are a cross product on the backend, so a subtype the selected types do
+      // not admit matches nothing at all.
       admits: values => options.subtypesFor(values[HistoryEventFilterKeys.EVENT_TYPE] ?? []),
       excludes: EXCLUDES_ACTION,
       key: HistoryEventFilterKeys.EVENT_SUBTYPE,
@@ -302,11 +300,6 @@ export function toHistoryEventFields(
   ];
 }
 
-/**
- * The history account filter (tracked-address `locationLabels`) as a param-bound pill field. It
- * lives outside `toHistoryEventFields` because it is an external filter, not a matcher, and is
- * only offered when the view is not already pinned to an external account set.
- */
 /**
  * The history event state markers (matched / customized / imported / profit adjustment /
  * synthetic) as a param-bound pill field. Like the account field it is an external filter rather

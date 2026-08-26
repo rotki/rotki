@@ -82,7 +82,7 @@ describe('useActivityBatch', () => {
     expect(seen).toStrictEqual(['b', 'c']);
   });
 
-  // ⚠️ `await runActivityBatch(...)` resolves when the umbrella's own promise settles, which is a
+  // `await runActivityBatch(...)` resolves when the umbrella's own promise settles, which is a
   // tick before the orchestrator records the activity terminal. Asserting straight after the await
   // reads it as still active — the same settle lag the task centre shows in the panel.
   it('should settle the umbrella activity itself', async () => {

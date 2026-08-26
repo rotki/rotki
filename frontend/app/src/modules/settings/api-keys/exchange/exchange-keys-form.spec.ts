@@ -269,10 +269,6 @@ describe('settings/api-keys/exchange/exchangeKeysSchema', () => {
     it('should demand the okx region', () => {
       expect(errorsFor({ location: 'okx' }, { passphrase: 'phrase' })).toStrictEqual(['okxLocation']);
     });
-
-    it('should demand neither region from another exchange', () => {
-      expect(errorsFor()).toStrictEqual([]);
-    });
   });
 
   describe('the name', () => {

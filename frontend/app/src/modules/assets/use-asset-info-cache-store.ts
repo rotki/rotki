@@ -1,5 +1,5 @@
 import type { AssetCollection, AssetInfo } from '@rotki/common';
-import { createItemCacheStorage } from '@/modules/core/common/use-item-cache';
+import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 /**
  * Pure-state store for the asset-info cache. Holds only the persistent storage

@@ -40,8 +40,8 @@ function describeNegativeBalance(issue: DataIssue): IssueDescription | undefined
   const payload = parsed.data;
   return {
     amounts: {
-      // Signed value: the i18n string no longer prepends a literal "-", so
-      // ValueDisplay renders the sign (avoids awkward output like "-< 0.001").
+      // Kept signed so ValueDisplay renders the sign. Do not prepend "-" in the i18n string too,
+      // which produces "-< 0.001".
       amount: payload.inMemoryNegativeAmount,
       before: payload.derivedBalanceBeforeEvent,
     },

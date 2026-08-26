@@ -68,10 +68,11 @@ export function pillValueCaption(field: FieldDef, filter: ActiveFilter): string 
 }
 
 /**
- * One line describing a whole stored filter set, for a saved view's row: every field it holds with
- * its value summary. Read from the transported form, since that is what a view stores, so the
- * fields decide what a view means exactly as they do for the live bar. A filter naming a field the
- * table no longer has is dropped by the decoder, so a stale view degrades to what still applies.
+ * Describes a whole stored filter set in one line, for a saved view's row.
+ *
+ * @remarks
+ * Read from the transported form, since that is what a view stores, so the fields decide what a
+ * view means exactly as they do for the live bar.
  */
 export function pillStateSummary(
   matches: MatchedKeywordWithBehaviour<string>,
@@ -96,8 +97,11 @@ export function pillStateSummary(
 }
 
 /**
- * A compact, presentation-only summary of a filter's value(s), shown on the pill. Display
- * resolution (e.g. asset identifier -> symbol) is layered on by the bar; this is the raw form.
+ * A compact, presentation-only summary of a filter's values, shown on the pill.
+ *
+ * @remarks
+ * This is the raw form. Resolving an identifier to something displayable, an asset to its symbol
+ * say, is layered on by the bar.
  */
 export function pillValueSummary(field: FieldDef, filter: ActiveFilter): string {
   switch (field.valueType) {

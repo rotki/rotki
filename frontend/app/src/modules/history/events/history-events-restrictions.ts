@@ -9,13 +9,11 @@ type HistoryEventsPeriod =
  * What a view has already decided for the user, stated once.
  *
  * Every consumer reads the same bag: the pill bar drops a field the view has pinned, the request
- * sources fold it into the payload, and the events fetch narrows to the chains it names. These
- * used to be a dozen sibling props threaded separately through three layers, which meant a new
- * restriction had to be added in each of them and could silently reach only some.
+ * sources fold it into the payload, and the events fetch narrows to the chains it names. One bag
+ * rather than sibling props, so a new restriction cannot reach only some of the three layers.
  *
- * An absent key means unrestricted. Restricting to nothing is not expressible, and would not be
- * meaningful: an empty array reads as "no restriction on this axis", the same as omitting it.
- * `externalAccounts` is the one exception, for the reason given on it.
+ * An absent key means unrestricted, and an empty array reads the same — restricting to nothing is
+ * not expressible. `externalAccounts` is the one exception, for the reason given on it.
  */
 export interface HistoryEventsRestrictions {
   entryTypes?: HistoryEventEntryType[];

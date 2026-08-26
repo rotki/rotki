@@ -23,7 +23,8 @@ interface UseLocationLabelsReturn {
  * Resolves the option list, tracked-account metadata (tags, custom label) and the search filter for
  * an EVM location-label picker. Kept UI-free so the matching logic can be tested on its own.
  *
- * @param options optional explicit option list; falls back to the tracked history location labels.
+ * @param options - an explicit option list; falls back to the tracked history location labels when
+ * absent
  */
 export function useLocationLabels(options: MaybeRefOrGetter<LocationLabel[] | undefined>): UseLocationLabelsReturn {
   const { locationLabels: storeLocationLabels } = storeToRefs(useHistoryStore());

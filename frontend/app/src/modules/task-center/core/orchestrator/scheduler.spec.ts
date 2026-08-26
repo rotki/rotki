@@ -247,10 +247,6 @@ describe('createScheduler', () => {
       expect(scheduler.isRunning('new-1')).toBe(true);
     });
 
-    /**
-     * The abandoned run may still settle later. Its `finally` deletes a job the map no longer holds
-     * and pumps, and neither may disturb the session that replaced it.
-     */
     it('should ignore an abandoned run settling after the clear', async () => {
       const scheduler = createScheduler({ decode: 2 });
       const old = controllableJob('old-1', 'decode');

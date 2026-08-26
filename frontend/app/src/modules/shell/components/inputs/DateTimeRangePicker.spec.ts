@@ -99,11 +99,6 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
     });
 
     it('should update end before start (regression: stale max-date error)', async (): Promise<void> => {
-      // Regression for the bug where clicking a quick-option right after
-      // switching to Custom (from a past year/quarter) left the start
-      // picker latched on the old max-date error ("Date cannot be after
-      // 6/30/2024" or similar). The fix sets `end` first so the max-date
-      // constraint on start widens before start is written.
       const now = dayjs('2026-04-23T14:58:00');
       vi.setSystemTime(now.toDate());
 
@@ -165,12 +160,9 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
 
       for (const { index } of cases) {
         await buttons[index].trigger('click');
-        // `applyQuickOption` writes `start` in a `nextTick` microtask, not a
-        // real timer. Flush that microtask directly instead of advancing the
-        // fake clock: `advanceTimersToNextTimerAsync` would jump the clock to
-        // whatever unrelated global timer happens to be pending (e.g. a
-        // module-level singleton's interval started on first mount), which
-        // drifts `dayjs()` and makes the preset math order-dependent.
+        // `nextTick`, not `advanceTimersToNextTimerAsync`: `start` is written in a microtask, and
+        // advancing the clock would jump it to some unrelated pending timer, drifting `dayjs()` and
+        // making the preset math order-dependent.
         await nextTick();
       }
 

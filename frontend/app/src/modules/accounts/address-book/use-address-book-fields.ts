@@ -10,7 +10,7 @@ import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use
 
 /**
  * The pill-bar fields for the address book table: its name and address, plus the chain and the
- * strict-chain toggle that used to sit in controls of their own beside the bar.
+ * strict-chain toggle.
  */
 export function useAddressBookFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });

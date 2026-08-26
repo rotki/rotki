@@ -2,9 +2,22 @@ import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 
+/** Opens the queue's database and closes the handle, so a delete after this strands the module. */
+async function openSigilDb(): Promise<void> {
+  const openReq = indexedDB.open('sigil', 1);
+  await new Promise<void>((resolve) => {
+    openReq.onupgradeneeded = (): void => {
+      openReq.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
+    };
+    openReq.onsuccess = (): void => {
+      openReq.result.close();
+      resolve();
+    };
+  });
+}
+
 describe('use-sigil-queue', () => {
   beforeEach(() => {
-    // Fresh IndexedDB for each test
     // eslint-disable-next-line no-global-assign
     indexedDB = new IDBFactory();
     vi.resetModules();
@@ -68,26 +81,13 @@ describe('use-sigil-queue', () => {
       });
     });
 
-    it('should handle IndexedDB failures gracefully', async () => {
+    it('should discard an event, rather than throw, when the database is gone', async () => {
       const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
 
-      // Close and break the DB
-      const openReq = indexedDB.open('sigil', 1);
-      await new Promise<void>((resolve) => {
-        openReq.onupgradeneeded = (): void => {
-          openReq.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
-        };
-        openReq.onsuccess = (): void => {
-          openReq.result.close();
-          resolve();
-        };
-      });
-
-      // Delete the database to invalidate cached reference
+      await openSigilDb();
       indexedDB.deleteDatabase('sigil');
 
-      // Should not throw, just log and discard
-      await enqueue({ url: '/test', timestamp: Date.now() });
+      await expect(enqueue({ url: '/test', timestamp: Date.now() })).resolves.not.toThrow();
     });
   });
 

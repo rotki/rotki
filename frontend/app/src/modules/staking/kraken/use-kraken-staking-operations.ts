@@ -67,9 +67,6 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       if (shouldSkip(refresh))
         return;
 
-      // A read still in flight was started for an older filter. Left alone it can land after this
-      // one and overwrite it, leaving the table showing rows the pills no longer describe, so it
-      // is cancelled rather than raced.
       api.cancelPendingEventReads();
 
       const firstLoad = !get(loadedOnce);
@@ -92,9 +89,6 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
         });
       }
 
-      // Fetch the (possibly updated) events from the backend. It reads the pagination as it stands
-      // now, not as it stood when this call started, so a filter changed while the refresh ran is
-      // the one that gets queried.
       await fetchEventsFromApi();
       set(loadedOnce, true);
       set(loading, isRefreshRunning());

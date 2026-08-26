@@ -12,20 +12,19 @@ import { type DataIssue, DataIssue as DataIssueSchema, DataIssuesCollectionRespo
 
 const BASE = '/data_issues';
 
-// Keep 200 and 400 as "valid" statuses so a 400 still unwraps through the shared
-// wrapper into an ApiValidationError that carries the backend's structured
-// validation payload. 409 is deliberately excluded so it surfaces as a FetchError
-// with `status` (the wrapper would otherwise swallow it into a plain, status-less
-// Error), letting toDataIssueError tell a conflict apart from a network failure.
 const VALID_STATUSES = { validStatuses: [HTTPStatus.OK, HTTPStatus.BAD_REQUEST] } as const;
 
 /**
  * Classifies a thrown API error into the typed {@link DataIssueError} domain.
  *
- * With {@link VALID_STATUSES}, a 400 arrives as an {@link ApiValidationError}
- * (wrapping the backend validation data) and every other rejected status as a
- * {@link FetchError} with `status`: 404 -> not-found, 409 (invalid state
- * transition) -> conflict, 400 -> validation, anything else -> network.
+ * @remarks
+ * With {@link VALID_STATUSES}, a `400` arrives as an {@link ApiValidationError} wrapping the backend
+ * validation data, and every other rejected status as a {@link FetchError} carrying `status`. Those
+ * map as `404` to not-found, `409` to conflict (an invalid state transition), `400` to validation,
+ * and anything else to network.
+ *
+ * @param cause - the value thrown by the failed request
+ * @returns the typed error the UI branches on
  */
 function toDataIssueError(cause: unknown): DataIssueError {
   const message = getErrorMessage(cause);

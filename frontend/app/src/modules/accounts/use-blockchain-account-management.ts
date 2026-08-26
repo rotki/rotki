@@ -26,11 +26,9 @@ interface UseBlockchainAccountManagementReturn {
 }
 
 export function useBlockchainAccountManagement(): UseBlockchainAccountManagementReturn {
-  // Use services for complex logic
   const accountAdditionService = useAccountAdditionService();
   const { detectEvmAccounts, fetchAccounts, refreshAccounts } = useAccountOperations();
 
-  // Keep essential stores and composables
   const { getChainName } = useSupportedChains();
   const { useWorkStatusPrefix } = useTaskCenter();
   const addRunning = useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD);
@@ -83,12 +81,15 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
   };
 
   /**
-   * The single addition entry point. `chain` may be {@link EVM_PSEUDO_CHAIN} for "every EVM chain",
-   * which is a chain value rather than a second function: the count of addresses no longer selects
-   * a different mechanism, a different error contract or a different completion shape.
+   * The single addition entry point, whatever the address count.
    *
-   * Returns what happened instead of throwing, so the caller decides how to present it — a form can
-   * keep its dialog open, a bulk import can just tally.
+   * @remarks
+   * `chain` may be {@link EVM_PSEUDO_CHAIN} for "every EVM chain", which is a chain value rather
+   * than a second function, so one mechanism, error contract and completion shape covers every
+   * case.
+   *
+   * @returns what happened rather than throwing, so the caller decides how to present it: a form
+   * can hold its dialog open, a bulk import can tally.
    */
   const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption): Promise<AdditionSummary> => {
     const { filteredPayload, isXpub, modules } = resolveAdditionPayload(chain, payload);

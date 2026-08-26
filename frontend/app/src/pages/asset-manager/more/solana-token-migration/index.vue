@@ -85,11 +85,9 @@ function handleMergeSuggestion({ sourceAsset, targetAsset }: { sourceAsset: stri
   );
 }
 
-function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; targetIdentifier: string }) {
-  // Remove the source identifier from the migration list since it was successfully merged
+function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; targetIdentifier: string }): void {
   removeIdentifier(sourceIdentifier);
 
-  // Clear the merge dialog state
   set(mergeSourceIdentifier, undefined);
   set(mergeTargetIdentifier, undefined);
 }

@@ -9,7 +9,7 @@ export interface ActivityOutcome {
   readonly color: OutcomeColor;
   readonly key: MessageKey;
   /**
-   * ⚠️ Named here rather than in the template, so the plugin's source scan cannot see it — every
+   * Named here rather than in the template, so the plugin's source scan cannot see it — every
    * icon below has to be listed in `vite.config.ts` `ruiIconsPlugin.include` or it silently
    * renders as nothing.
    */
@@ -28,18 +28,15 @@ export interface ActivityOutcome {
 /**
  * How a status reads on a row.
  *
- * Every status has an entry, RUNNING included. A running row only shows the percentage ring when
- * there is a percentage to show, and most rows have none — the orchestrator reports `-1` unless a
- * producer counted steps. The slot used to fall back to a spinner, which said nothing the ticking
- * elapsed time did not already say and added one more spinning thing to a screen that has plenty.
+ * Every status has an entry, RUNNING included: a running row shows the percentage ring only when
+ * there is a percentage, and the orchestrator reports `-1` unless a producer counted steps.
  *
- * The settled statuses are states the reader has to be told about — including the two the progress
- * rollup deliberately counts as done (`projection.ts` `percentageOf`), which is exactly why they
- * need saying. A subtree at 100% with two failed chains is otherwise indistinguishable from a
- * clean one.
+ * The settled statuses all need saying, including the two the progress rollup counts as done
+ * (`projection.ts` `percentageOf`) — a subtree at 100% with two failed chains is otherwise
+ * indistinguishable from a clean one.
  *
- * Kept out of the component so the mapping can be asserted without mounting anything, and out of
- * `core/` because it names i18n keys — `msg.$t` is what makes the key-usage lint count them.
+ * Kept out of the component so the mapping is assertable without mounting, and out of `core/`
+ * because `msg.$t` is what makes the key-usage lint count these keys.
  */
 const OUTCOME: Record<ActivityStatus, ActivityOutcome> = {
   [Status.CANCELLED]: {

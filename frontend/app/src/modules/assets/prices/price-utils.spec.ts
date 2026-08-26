@@ -224,17 +224,19 @@ describe('utils/prices', () => {
 
   describe('performance characteristics', () => {
     it('should handle large datasets efficiently', () => {
-      // Create test data using utilities
+      const ASSET_COUNT = 1000;
+      const PROTOCOLS_PER_ASSET = 5;
+      const MAX_DURATION_MS = 100;
+
       const assetsData: Record<string, ProtocolBalances> = {};
       const pricesData: Record<string, { value: number; oracle?: string }> = {};
 
-      // Create 1000 assets with 5 protocols each
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < ASSET_COUNT; i++) {
         const asset = `ASSET_${i}`;
         assetsData[asset] = {};
         pricesData[asset] = { oracle: 'test', value: 100 + i };
 
-        for (let j = 0; j < 5; j++)
+        for (let j = 0; j < PROTOCOLS_PER_ASSET; j++)
           assetsData[asset][`protocol_${j}`] = createTestBalance(10, 0);
       }
 
@@ -247,8 +249,8 @@ describe('utils/prices', () => {
       const result = updateBalancesPrices(largeBalances, largePrices);
       const endTime = performance.now();
 
-      expect(endTime - startTime).toBeLessThan(100); // Should complete in less than 100ms
-      expect(Object.keys(result)).toHaveLength(1000);
+      expect(endTime - startTime).toBeLessThan(MAX_DURATION_MS);
+      expect(Object.keys(result)).toHaveLength(ASSET_COUNT);
       expect(result.ASSET_0.protocol_0.value).toEqual(bigNumberify(1000));
     });
   });

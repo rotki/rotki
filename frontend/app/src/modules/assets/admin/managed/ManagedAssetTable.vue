@@ -50,7 +50,6 @@ const { t } = useI18n({ useScope: 'global' });
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-// Use composables
 const {
   isAssetWhitelisted,
   loadingIgnore,

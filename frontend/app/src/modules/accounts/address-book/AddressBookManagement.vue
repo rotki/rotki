@@ -61,16 +61,12 @@ const {
   urlState: { mode: 'route' },
 });
 
-// The chain and strict-chain pills are param-bound, so the bar's param bag is bridged to the refs
-// backing them — the same refs the standalone selector and checkbox used to write, and the ones the
-// request/url param source reads. An absent param clears its ref: removing the pill is how the
-// filter is turned off.
-function add() {
+function add(): void {
   set(editableItem, null);
   set(openDialog, true);
 }
 
-function edit(item: AddressBookEntry) {
+function edit(item: AddressBookEntry): void {
   set(editableItem, {
     ...item,
     location: get(location),

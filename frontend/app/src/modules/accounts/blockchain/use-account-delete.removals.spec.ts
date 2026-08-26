@@ -281,7 +281,7 @@ describe('useAccountDelete against the real removal wiring', () => {
   });
 
   // The reported symptom: the row survives the delete although the backend has dropped the account.
-  // The periodic balance tick walks every chain (`use-balance-fetching.ts:120`), and a walk that was
+  // The periodic balance tick (`autoRefresh`) walks every chain, and a walk that was
   // already in flight answers with a pre-delete snapshot. `updateAccounts` replaces the chain
   // wholesale, so the deleted account comes back, and the delete path has no re-read to correct it.
   it('should not let a chain read that started before the delete resurrect the account', async () => {

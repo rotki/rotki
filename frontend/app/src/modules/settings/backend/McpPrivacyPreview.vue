@@ -62,10 +62,15 @@ const commonRows: PreviewRow[] = [
   { field: 'counterparty', swap: plain('uniswap-v3') },
 ];
 
+/**
+ * Builds the rows whose shape the chosen privacy mode decides.
+ *
+ * @remarks
+ * Raw is the only mode where an identifier keeps its own column name. Everywhere else the value
+ * moves to `<column>_hash` and the original column is dropped, with one exception: under balanced,
+ * a venue-name label also stays readable under `location_label`.
+ */
 const modeRows = computed<PreviewRow[]>(() => {
-  // Raw is the only mode where an identifier keeps its own column name; everywhere else the value
-  // moves to `<column>_hash` and the original column is dropped, except the one balanced case where
-  // a venue-name label also stays readable under `location_label`.
   if (mode === PrivacyMode.RAW) {
     return [
       { deposit: plain('kraken'), field: 'location_label', swap: plain('0x9C5083…5dAC5') },

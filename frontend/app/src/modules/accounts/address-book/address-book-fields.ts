@@ -10,7 +10,7 @@ type Translate = (key: string) => string;
 
 /**
  * The chain an entry is for, as a param-bound pill. It rides the `blockchain` param rather than a
- * matcher, which is what lets the bar absorb the chain selector that used to sit beside it.
+ * matcher, which is what lets the bar hold it at all.
  *
  * Single-valued: the backend takes one chain, and the entry either names that chain or names none.
  */

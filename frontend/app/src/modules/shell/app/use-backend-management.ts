@@ -70,9 +70,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const restartBackendWithOptions = async (options: Partial<BackendOptions>, forceRestart = false): Promise<void> => {
     setConnected(false);
     await interop.restartBackend(options, forceRestart);
-    // Re-enable connections in case a prior process termination disabled them
-    // (e.g. on Windows, taskkill exits the core process with a non-zero code, which
-    // is reported as a TERMINATED startup error and disables connection attempts).
     set(connectionEnabled, true);
     setWsConnectionEnabled(true);
     connect();
@@ -145,12 +142,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       return { status: BackendRestartStatus.restarted };
     }
 
-    // Docker: no Electron to ask, but starling exposes the same `restart` over
-    // `/_control` once a session cookie is configured (#2807). Until this
-    // existed the call simply returned, so every flow that needs a bounced
-    // backend — the asset-update unlock step, AssetUpdate, RestoreAssetDbButton
-    // — silently did nothing in a container. `available` is false where there is
-    // no control endpoint, which keeps the old no-op for the plain web build.
     if (!await controlProbe())
       return { status: BackendRestartStatus.unavailable };
 
@@ -195,11 +186,8 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     if (!!url && !sessionOnly) {
       await backendChanged(url);
     }
-    // Boot only *starts* a backend where the app owns one. In docker the tree is
-    // already up before the page loads, so restarting here would bounce it on
-    // every reload — and before login the control endpoint would refuse anyway,
-    // stranding the user short of the login screen. Explicit restart flows call
-    // `restartBackend` directly; boot is not one of them.
+    // `isPackaged` only: boot starts a backend where the app owns one. In docker the tree is
+    // already up, so restarting here bounces it on every page load.
     else if (interop.isPackaged) {
       await restartBackend();
     }

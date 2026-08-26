@@ -11,7 +11,6 @@ export function updateBalancesPrices(
   balances: AssetProtocolBalances,
   prices: AssetPrices,
 ): AssetProtocolBalances {
-  // Early return for empty objects
   const balanceKeys = Object.keys(balances);
   if (balanceKeys.length === 0)
     return {};
@@ -52,7 +51,6 @@ export function updateExchangeBalancesPrices(
   balances: AssetBalances,
   prices: AssetPrices,
 ): AssetBalances {
-  // Early return for empty objects
   const balanceKeys = Object.keys(balances);
   if (balanceKeys.length === 0)
     return {};
@@ -80,7 +78,6 @@ export function updateBlockchainAssetBalances(
   balances: Record<string, BlockchainAssetBalances>,
   prices: AssetPrices,
 ): Record<string, BlockchainAssetBalances> {
-  // Early return for empty objects
   const chainKeys = Object.keys(balances);
   if (chainKeys.length === 0)
     return {};

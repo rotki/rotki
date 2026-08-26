@@ -27,13 +27,12 @@ export const HTTPStatus = {
   TOO_MANY_REQUESTS: 429,
   FAILED_DEPENDENCY: 424,
 
-  // 5xx Server Error
   INTERNAL_SERVER_ERROR: 500,
   BAD_GATEWAY: 502,
   SERVICE_UNAVAILABLE: 503,
   GATEWAY_TIMEOUT: 504,
   INSUFFICIENT_STORAGE: 507,
 
-  // Custom status codes used by rotki backend
+  /** Not an HTTP status code: rotki's backend returns 542 when a database upgrade fails. */
   DB_UPGRADE_ERROR: 542,
 } as const;

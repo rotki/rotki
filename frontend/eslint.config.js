@@ -2,6 +2,8 @@ import path from 'node:path';
 
 import rotki from '@rotki/eslint-config';
 import { translationKeys } from '@rotki/ui-library';
+import jsdoc from 'eslint-plugin-jsdoc';
+import tsdoc from 'eslint-plugin-tsdoc';
 
 import { backendMappingKeys } from './app/backend-strings.generated.js';
 import { premiumComponentKeys } from './app/premium-keys.generated.js';
@@ -13,6 +15,76 @@ import 'jsonc-eslint-parser';
 import 'yaml-eslint-parser';
 
 const src = path.join('app', 'src');
+
+/**
+ * Flags a run of `//` lines sitting inside a block rather than above a declaration.
+ *
+ * @remarks
+ * A paragraph in the middle of a function body is where behaviour goes to hide: it is invisible to
+ * anyone reading the signature, it cannot be surfaced by tooling, and nothing fails when it stops
+ * being true. The same words on the enclosing function's TSDoc reach every caller.
+ *
+ * Only runs are reported, since a single line is usually a local aside rather than a contract. A
+ * run introducing a nested declaration is left alone, that being TSDoc written with the wrong
+ * delimiter rather than a stray paragraph.
+ */
+const noMidBodyCommentBlock = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'disallow multi-line comment blocks inside a function body' },
+    messages: {
+      midBody: 'Move this {{count}}-line comment onto the enclosing function as TSDoc, or cut it to one line.',
+    },
+    schema: [{
+      type: 'object',
+      properties: { minLines: { type: 'integer', minimum: 2 } },
+      additionalProperties: false,
+    }],
+  },
+  create(context) {
+    const { sourceCode } = context;
+    const minLines = context.options[0]?.minLines ?? 3;
+
+    return {
+      'Program:exit': () => {
+        const comments = sourceCode.getAllComments().filter(comment => comment.type === 'Line');
+        let run = [];
+
+        const flush = () => {
+          const [first] = run;
+          if (run.length < minLines || !first)
+            return;
+
+          // Indented, so inside a block. A run at column 0 is module-level prose.
+          if (first.loc.start.column === 0)
+            return;
+
+          // A run introducing the declaration beneath it is misdelimited TSDoc, not stray prose.
+          const next = sourceCode.getTokenAfter(run.at(-1), { includeComments: false });
+          if (next && ['function', 'const', 'let', 'async', 'class', 'interface', 'type'].includes(next.value))
+            return;
+
+          context.report({ data: { count: run.length }, loc: first.loc, messageId: 'midBody' });
+        };
+
+        for (const comment of comments) {
+          const previous = run.at(-1);
+          const contiguous = previous
+            && comment.loc.start.line === previous.loc.end.line + 1
+            && comment.loc.start.column === previous.loc.start.column;
+
+          if (!contiguous) {
+            flush();
+            run = [];
+          }
+          if (!comment.value.trim().startsWith('eslint-'))
+            run.push(comment);
+        }
+        flush();
+      },
+    };
+  },
+};
 
 // Keys referenced only through dynamic/computed lookups the static scanner cannot see, so they must
 // not be reported as unused. `translationKeys()` covers the keys the ui-library resolves internally.
@@ -244,6 +316,48 @@ export default rotki({
       message: 'Query on `data-testid`. `data-cy` is a Cypress-era leftover.',
       selector: 'TemplateElement[value.raw=/data-cy/]',
     }],
+  },
+}, {
+  // A `/** */` block is only TSDoc if it parses as TSDoc. Unvalidated, the blocks here had drifted
+  // into JSDoc: `@param {Type}` duplicating the TypeScript type, and `@return` for `@returns`.
+  //
+  // Nothing here *requires* a tag. Params are typed and named already, so a tag is worth writing
+  // only when it says what the signature cannot; these rules police the tags that do exist.
+  files: ['app/src/**/*.ts', 'app/src/**/*.vue', 'common/src/**/*.ts'],
+  plugins: {
+    jsdoc,
+    local: { rules: { 'no-mid-body-comment-block': noMidBodyCommentBlock } },
+    tsdoc,
+  },
+  // Errors, not warnings: the tree is at zero, so anything these report is newly introduced.
+  rules: {
+    // A renamed parameter leaves its tag behind, still describing the old name. Nothing else notices.
+    'jsdoc/check-alignment': 'error',
+    'jsdoc/check-param-names': ['error', { checkDestructured: false }],
+    // A modifier tag carrying prose is prose nothing will read.
+    'jsdoc/empty-tags': 'error',
+    'jsdoc/escape-inline-tags': 'error',
+    // A doc whose words only restate the identifier is the shape this audit exists to remove.
+    'jsdoc/informative-docs': 'error',
+    // `/* @param */` with one asterisk is not a doc block, and nothing else reads it as one.
+    'jsdoc/no-bad-blocks': 'error',
+    // Tags with nothing above them: the block documents its parts and not the thing itself.
+    'jsdoc/no-blank-block-descriptions': 'error',
+    'jsdoc/no-blank-blocks': 'error',
+    'jsdoc/no-multi-asterisks': 'error',
+    // `{Type}` duplicates the TypeScript signature and drifts from it silently.
+    'jsdoc/no-types': 'error',
+    'jsdoc/require-asterisk-prefix': 'error',
+    // `@param name - description`, which is what TSDoc parses and what this repo writes.
+    'jsdoc/require-hyphen-before-param-description': 'error',
+    // A bare `@param name` restates the signature. Tag it only to say what the signature cannot.
+    'jsdoc/require-param-description': 'error',
+    'jsdoc/require-returns-check': 'error',
+    'jsdoc/require-returns-description': 'error',
+    // Behaviour buried mid-body reaches nobody reading the signature. A warning rather than an
+    // error only because the tree still holds ~290 of them; it becomes an error at zero.
+    'local/no-mid-body-comment-block': 'warn',
+    'tsdoc/syntax': 'error',
   },
 }, {
   files: ['**/locales/**/*.json'],

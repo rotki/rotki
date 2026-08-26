@@ -15,8 +15,7 @@ interface UseTableSortingReturn<TItem extends NonNullable<unknown>> {
 /**
  * Owns the sorting state of a server table. Writing the `sort` model dispatches a
  * `sort-set` event through `commitSort`; the reducer decides the transition and the
- * adapter writes `internalSorting` back, so this composable no longer mutates it
- * directly.
+ * adapter writes `internalSorting` back, so nothing here mutates it directly.
  */
 export function useTableSorting<TItem extends NonNullable<unknown>>(
   defaultSortBy: DataTableSortData<TItem> | undefined,

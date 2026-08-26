@@ -36,9 +36,9 @@ export const zeroValueChoices: string[] = [ZeroValueFilter.ALL, ZeroValueFilter.
  * What the bar currently narrows to, read out of the bag once so the row predicate does not have to
  * unwrap five values per row.
  *
- * Spam and ignored rows are hidden unless a pill says otherwise, and zero-value rows are hidden
- * unless one does, which is why all three read as departures from a default rather than as plain
- * values: an absent pill has to mean the same thing the unticked checkbox used to.
+ * @remarks
+ * Spam, ignored and zero-value rows are all hidden unless a pill says otherwise, so all three read
+ * as departures from a default: an absent pill has to mean "hide", not "unset".
  */
 export interface SnapshotFilterState {
   readonly category?: SnapshotCategory;

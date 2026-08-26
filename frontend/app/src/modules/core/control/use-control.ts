@@ -25,20 +25,13 @@ interface UseControlReturn {
   /** Whether any control operation can be attempted at all. */
   readonly available: Readonly<Ref<boolean>>;
   /**
-   * Whether this runtime accepts a restart that carries backend options — a data
-   * directory, a log level, a log-rotation size.
+   * Whether this runtime accepts a restart carrying backend options: data directory, log level,
+   * log-rotation size. Desktop only, since `sanitize_restart_options` rejects them on every
+   * transport but stdio.
    *
-   * Desktop only, and not an arbitrary restriction: `sanitize_restart_options`
-   * rejects options on every transport but stdio, because in a container those
-   * are fixed mounts and boot-time config.
-   *
-   * Auto-start is deliberately not in this set. It used to be, as an option
-   * riding along on a restart, which is why it was desktop-only; it now has its
-   * own `setServiceAutostart` method that every control surface accepts, so it is
-   * driven through {@link setServiceAutostart} rather than gated on this.
-   *
-   * Consumers use it to hide controls that could not work, rather than offering
-   * them and reporting a refusal.
+   * @remarks
+   * Auto-start is not one of these. It has its own {@link setServiceAutostart}, which every
+   * control surface accepts, so do not gate that toggle on this flag.
    */
   readonly supportsOptions: boolean;
   /** Resolve availability once per session. Safe to call repeatedly. */
@@ -93,15 +86,24 @@ export class ControlError extends Error {
 /** Translates a transport-level failure, which carries no message of its own. */
 type Translate = (key: MessageKey) => string;
 
+/**
+ * Calls one JSON-RPC method on the `/_control` endpoint.
+ *
+ * @remarks
+ * Uses `fetch` rather than the REST client, deliberately: `/_control` is not the rotki API. It sits
+ * outside the `/api/1` prefix, speaks JSON-RPC instead of the result/message envelope, and must not
+ * pass through the client's snake_case body rewriting or its session and task interceptors.
+ *
+ * A transport refusal carries only a status, so the user-facing message is written here rather than
+ * relayed. Never use the HTTP reason phrase: it is untranslated and says nothing useful.
+ *
+ * @throws ControlError on a transport refusal, carrying an already-translated message
+ */
 async function postRpc(
   t: Translate,
   method: StarlingMethod,
   params?: Record<string, unknown>,
 ): Promise<unknown> {
-  // Deliberately `fetch` rather than the REST client: `/_control` is not the
-  // rotki API. It sits outside the `/api/1` prefix, speaks JSON-RPC instead of
-  // the result/message envelope, and must not pass through the REST client's
-  // snake_case body rewriting or its session/task interceptors.
   const response = await fetch(CONTROL_ENDPOINT, {
     body: JSON.stringify({ id: 1, jsonrpc: '2.0', method, ...(params ? { params } : {}) }),
     credentials: 'same-origin',
@@ -109,12 +111,8 @@ async function postRpc(
     method: 'POST',
   });
 
-  if (!response.ok) {
-    // A transport-level refusal carries no body, only a status, so the message
-    // shown to the user has to be written here rather than relayed. The HTTP
-    // reason phrase is never used: it is untranslated and says nothing useful.
+  if (!response.ok)
     throw new ControlError(response.status, t(transportErrorKey(response.status)));
-  }
 
   const parsed = ControlRpcResponse.parse(await response.json());
   // The supervisor's own message: relayed as-is, the way backend errors are
@@ -211,13 +209,18 @@ export function useControl(): UseControlReturn {
     return (await serviceInfo(service)).state;
   };
 
+  /**
+   * Sets whether a service starts with the tree.
+   *
+   * @remarks
+   * The desktop keeps this in Electron's own app settings, where it rides along in the next start's
+   * options. Sending the RPC there as well would put the same value in two places with nothing
+   * keeping them in step.
+   */
   const setServiceAutostart = async (service: StarlingService, autostart: boolean): Promise<void> => {
     if (!await probe())
       return;
 
-    // The desktop keeps the preference in Electron's own app settings, where it
-    // rides along in the next start's options. Sending the RPC there would put
-    // the same value in two places with nothing keeping them in step.
     if (isPackaged) {
       await setMcpAutoStart(autostart);
       return;
@@ -226,14 +229,18 @@ export function useControl(): UseControlReturn {
     await postRpc(t, StarlingMethod.SET_SERVICE_AUTOSTART, { autostart, service });
   };
 
+  /**
+   * Restarts the backend, optionally changing the log level.
+   *
+   * @remarks
+   * The desktop keeps its own path: its restart carries the user's whole option set, data and log
+   * directories included, which only the stdio transport accepts. Do not flatten the two.
+   */
   const restart = async (loglevel?: LogLevel): Promise<void> => {
     if (!await probe())
       return;
 
     if (isPackaged) {
-      // The desktop restart carries the user's whole option set (data directory,
-      // log directory, log level), which only the stdio transport accepts; leave
-      // it on its own path rather than flattening it here.
       await restartBackend(loglevel ? { loglevel } : {}, true);
       return;
     }

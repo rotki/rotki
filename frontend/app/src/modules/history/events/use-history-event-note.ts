@@ -204,11 +204,6 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
           return result;
       }
       catch (error: unknown) {
-        // ⚠️ Notes are arbitrary text and this runs inside a computed, so a processor that throws
-        // on one odd word takes down far more than that word: the throw escapes mid-render, Vue
-        // abandons the patch with vnodes left unmounted, and every later patch then dies on them
-        // (`Cannot read properties of null (reading 'emitsOptions')`), which is what left a
-        // history group rendering its header with none of its events. Degrade to plain text.
         logger.error(`note word processor failed for "${word}"`, error);
       }
     }
@@ -263,7 +258,6 @@ export function useHistoryEventNote(): UseHistoryEventNoteReturn {
 
     const counterpartyVal = toValue(counterparty);
 
-    // Scramble IBAN for monerium
     if (get(scrambleData) && counterpartyVal === 'monerium')
       notesVal = findAndScrambleIBAN(notesVal);
 

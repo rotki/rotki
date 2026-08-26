@@ -34,8 +34,7 @@ export function getDomain(str: string): string {
 interface ExternalUrl { external: string; route: RouteLocationRaw }
 
 /**
- * Returns the registration url of a specified Etherscan registration link, and the page to fill it
- * @returns {{external: string, route: RouteLocationRaw} | undefined}
+ * @returns where to register for an Etherscan key, and the settings page the key is filled in on.
  */
 function getEtherScanRegisterUrl(): ExternalUrl | undefined {
   return {
@@ -88,9 +87,9 @@ function getBeaconchainRegisterUrl(): ExternalUrl {
 }
 
 /**
- * Returns the registration url of a specified service and a path to the local page
- * @param {string} service
- * @returns {undefined | {external: string, route: RouteLocationRaw}}
+ * The registration URL of an external service, paired with the local page that explains it.
+ *
+ * @returns `undefined` for a service that needs no registration
  */
 export function getServiceRegisterUrl(service: string): ExternalUrl | undefined {
   switch (service) {

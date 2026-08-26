@@ -19,10 +19,6 @@ describe('collapsedPendingTasks', () => {
     expect(createWrapper({ count: 1 }).text()).toContain('collapsed_pending_tasks.title::1');
   });
 
-  /**
-   * Producers declare their subtree up front, so the denominator exists from the first tick. The
-   * header used to render an indeterminate spinner beside that number and throw it away.
-   */
   it('should show the tally and a determinate ring when the work is quantifiable', () => {
     const wrapper = createWrapper();
 

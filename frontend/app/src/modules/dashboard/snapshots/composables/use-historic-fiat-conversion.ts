@@ -9,23 +9,22 @@ interface UseHistoricFiatConversionReturn {
   isUsd: ComputedRef<boolean>;
   /** Whether the historic rate lookup is still in progress. */
   loading: ComputedRef<boolean>;
-  /** The USD -> display-currency rate at the given timestamp (One when USD). */
+  /** The USD to display-currency rate at the given timestamp; `One` when the display currency is USD. */
   rate: ComputedRef<BigNumber>;
   /** Whether `rate` is usable (USD, or a positive resolved historic rate). */
   rateReady: ComputedRef<boolean>;
 }
 
 /**
- * Resolves the historic USD -> display-currency rate at a snapshot's
- * timestamp (#12277). Snapshots are stored in USD; displaying or editing them
- * in the user's fiat must use the rate that applied *at the snapshot's time*,
- * not today's exchange rate.
+ * Resolves the historic USD to display-currency rate at a snapshot's timestamp.
  *
- * Backed by the lazy historic-price cache: accessing the rate triggers the
- * fetch and `loading` reflects the pending state so callers can guard inputs.
+ * @remarks
+ * Snapshots are stored in USD, so displaying or editing one in another fiat must use the rate that
+ * applied *at the snapshot's time*, not today's. Backed by the lazy historic-price cache: reading
+ * the rate triggers the fetch, and `loading` reflects the pending state so callers can guard inputs.
  *
- * @param timestamp the snapshot timestamp in SECONDS (the historic-price cache
- *   key unit) — plain value, ref or getter. Do not pass milliseconds.
+ * @param timestamp - the snapshot timestamp in **seconds**, the historic-price cache's key unit;
+ * accepts a plain value, a ref or a getter. Never milliseconds.
  */
 export function useHistoricFiatConversion(timestamp: MaybeRefOrGetter<number>): UseHistoricFiatConversionReturn {
   const currencySymbol = useSetting('currencySymbol');
@@ -49,11 +48,6 @@ export function useHistoricFiatConversion(timestamp: MaybeRefOrGetter<number>): 
 
   const rateReady = computed<boolean>(() => get(isUsd) || get(rate).isPositive());
 
-  // Eagerly kick the lazy historic-rate fetch on mount and whenever the
-  // timestamp changes. `resolve()` marks the key pending synchronously, so this
-  // makes `loading` true before the first paint — without it, consumers briefly
-  // render a not-yet-fetched rate as "no rate" (the #12277 dead-end) during
-  // navigation, before the fetch registers as pending.
   watchImmediate([(): number => toValue(timestamp), isUsd], () => {
     if (!get(isUsd))
       getHistoricPrice(CURRENCY_USD, toValue(timestamp));

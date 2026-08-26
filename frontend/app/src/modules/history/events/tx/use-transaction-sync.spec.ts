@@ -170,9 +170,7 @@ describe('useTransactionSync', () => {
       expect(outcome.ok).toBe(true);
     });
 
-    it('should fail when every account failed', async () => {
-      // 🔴 The children never reject — each handles its own error and returns — so the chain used to
-      // return `ok` unconditionally and report a whole failed chain as synced.
+    it('should fail when every account failed, even though no child rejects', async () => {
       runChainBody(err(TaskFailed({ message: 'boom' })), err(TaskFailed({ message: 'boom' })));
       const { syncAndReDecodeEvents } = useTransactionSync();
 

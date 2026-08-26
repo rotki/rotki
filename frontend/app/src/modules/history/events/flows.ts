@@ -4,18 +4,17 @@ import type { ActivityId, ActivityKind } from '@/modules/task-center/core/types'
 /**
  * What a user-triggerable history flow *is*, as data.
  *
- * A flow is the thing a user asked for ("re-decode everything"), as opposed to the mechanism that
- * carries it out (N per-chain decodes). Declaring it makes four things fall out at once: it is an
- * **activity**, so re-entry dedups by id from every surface — including callers in other modules
- * that button-state guarding can never reach; it is the **parent** of the mechanism activities, so
- * the shape of the work is visible before any of it runs; it is **data**, so its shape can be
- * asserted in a test without mounting anything; and it carries its own **documentation**.
+ * A flow is what a user asked for ("re-decode everything"), as opposed to the mechanism carrying it
+ * out (N per-chain decodes). Declared as data it is an **activity** (so re-entry dedups by id from
+ * every surface, including callers button-state guarding cannot reach), the **parent** of its
+ * mechanism activities, and assertable in a test without mounting.
  *
- * Declarations live beside their producers as `*.flow.ts` — co-located rather than in a registry,
- * to avoid a dependency hub that would breach the per-file import cap and pull every producer into
- * anything importing it. Enumerability comes at test time instead, from
- * `import.meta.glob('@/modules/**\/*.flow.ts')`, so a flow cannot be forgotten by failing to
- * register it.
+ * Declarations live beside their producers as `*.flow.ts`, never in a registry — a hub would
+ * breach the per-file import cap and pull every producer into anything importing it. Enumerability
+ * comes at test time from `import.meta.glob('@/modules/**\/*.flow.ts')`, so a flow cannot be
+ * forgotten by failing to register it.
+ *
+ * @packageDocumentation
  */
 /**
  * One mechanism activity a flow will submit, named before it exists.
@@ -27,7 +26,7 @@ import type { ActivityId, ActivityKind } from '@/modules/task-center/core/types'
  */
 export interface FlowChild<Payload = void> {
   /**
-   * ⚠️ Must be the id the producer submits under. Build both from one shared constructor rather
+   * Must be the id the producer submits under. Build both from one shared constructor rather
    * than composing it here as well: a child whose declared id does not match its submitted one is
    * not gated by its parent, and nothing reports that.
    */
@@ -43,7 +42,7 @@ export interface HistoryFlow<Scope = void, ChildPayload = void> {
   /**
    * Stable identity — what makes re-entry a no-op rather than a second run.
    *
-   * ⚠️ The identity must encode the flow's **scope**, not just its name. A scoped run sharing the
+   * The identity must encode the flow's **scope**, not just its name. A scoped run sharing the
    * id of an unscoped one is not merely mislabelled: `submitTask` dedups it against the broader run
    * in flight and hands back that promise, so the caller silently gets work it did not ask for.
    * Omitting the scope asks for the flow's widest form, which is also its canonical id.
@@ -64,18 +63,15 @@ export interface HistoryFlow<Scope = void, ChildPayload = void> {
   /**
    * The mechanism activities this flow is made of, derived from its **resolved** scope.
    *
-   * Resolved, not requested: what "everything" means is runtime state (which chains are decodable,
-   * which exchanges are connected), and a declaration that reached for it would stop being data.
-   * The producer resolves, then declares — so the whole shape exists in one synchronous pass,
-   * before any of it runs, and a test can assert it without mounting anything or faking a backend.
+   * Resolved, not requested: what "everything" means is runtime state, and a declaration reaching
+   * for it would stop being data. The producer resolves first, so the whole shape exists in one
+   * synchronous pass before any of it runs.
    *
-   * Heterogeneous by design: a refresh's children are per-chain syncs, exchange queries, online
-   * event queries and decodes, not one repeated kind. Conditionality belongs in the resolution that
-   * produces the scope, never in a child that may or may not turn out to exist.
+   * Heterogeneous by design — a refresh's children are per-chain syncs, exchange queries, online
+   * queries and decodes. Conditionality belongs in the resolution producing the scope, never in a
+   * child that may or may not turn out to exist.
    *
-   * Required, not optional: a flow that declined to say what it is made of would leave the producer
-   * as the only description of the work, which is the thing this exists to stop. A flow that really
-   * has no mechanisms under it returns an empty list and says so.
+   * Required: a flow with no mechanisms under it returns an empty list and says so.
    */
   readonly children: (scope: Scope) => readonly FlowChild<ChildPayload>[];
 }

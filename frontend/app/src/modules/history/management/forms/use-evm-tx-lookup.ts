@@ -66,7 +66,6 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
     && !toValue(relatedAddress),
   );
 
-  // Monotonic id used to discard results from superseded in-flight lookups.
   let currentRequestId = 0;
 
   function readPayload(): EvmTransactionLookupPayload | null {
@@ -83,12 +82,10 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
   function writeError(field: string, message: string): void {
     const current = get(errorMessages);
     const existing = current[field] ?? [];
-    // Only write when there's a real message; preserve other keys.
     if (message) {
       set(errorMessages, { ...current, [field]: [message] });
     }
     else if (existing.length > 0) {
-      // Clear only when we previously set something there.
       set(errorMessages, { ...current, [field]: [] });
     }
   }

@@ -36,7 +36,6 @@ export const useBalanceFetching = createSharedComposable(() => {
       ? `${t('actions.balances.all_balances.task.description')} ${t('actions.balances.all_balances.task.ignore_errors_note')}`
       : t('actions.balances.all_balances.task.description');
 
-    // Singleton all-balances snapshot query; liveness is read off the orchestrator.
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.ALL_BALANCES),
       kind: ActivityKind.ALL_BALANCES,
@@ -58,9 +57,9 @@ export const useBalanceFetching = createSharedComposable(() => {
   };
 
   /**
-   * ⭐ `fetchAccounts`, not `refreshAccounts`. Passing no chain made the latter an accounts read and
-   * nothing else — both halves of its balance decision need one — so the name promised work it
-   * never did here. Each chain's hydration still happens inside the walk, as its accounts land.
+   * Reads what is already stored: exchange rates, then manual balances, the account walk and the
+   * connected exchanges together. `fetchAccounts` hydrates each chain from cache as its accounts
+   * land, so nothing here goes to a node.
    */
   const fetchCached = async (): Promise<void> => {
     await fetchExchangeRates();
@@ -68,31 +67,19 @@ export const useBalanceFetching = createSharedComposable(() => {
   };
 
   /**
-   * ⭐ A refresh never snapshots. It used to end in `fetchBalances()` with an empty payload —
-   * `GET /balances` reads the shared in-memory balances and persists on the backend's own
-   * schedule, so a refresh was implicitly asking for a snapshot while its own per-chain queries
-   * were still clearing and repopulating chains. That is how a 0-value row could reach the user's
-   * net-worth history, and it forced the whole refresh to be ordered around it.
+   * Re-queries every chain from its nodes, detecting tokens first when detection is due.
    *
-   * Nothing is lost by dropping it: the backend takes automatic snapshots itself
-   * (`tasks/manager.py::_maybe_update_snapshot_balances`, which checks `balance_save_frequency`,
-   * runs `maybe_detect_new_tokens` first and passes `requested_save_data=True`). Explicit user
-   * snapshots go through {@link fetchBalances} from `forceSave`, which is unchanged.
-   *
-   * ⚠️ The result of that call was discarded anyway (`mapResult(…, () => {})`) — it was only ever
-   * made for the backend side effect, never for data this app reads.
+   * @remarks
+   * Nothing here may ask for a snapshot: `GET /balances` can persist one, and the per-chain queries
+   * are still clearing and repopulating chains, so it would record a 0-value row in the user's
+   * net-worth history. A scheduled snapshot has to wait until every chain is terminal. Explicit
+   * user snapshots go through {@link fetchBalances}.
    */
   const refreshFromChain = async (): Promise<void> => withDetection(async (detect) => {
     logger.debug(detect
       ? 'refreshFromChain: detect-then-query, every chain'
       : `refreshFromChain: query only (${autoDetectSkipReason() ?? 'unknown'}), every chain`);
 
-    // ⭐ One call for every chain, detecting or not. This used to split into "fire detection for
-    // the EVM chains and separately refresh the non-EVM ones", because detection ended in its own
-    // balance read and refreshing an EVM chain as well would have queried it twice. With detection
-    // a stage *inside* the chain job that reads its result, a chain is one job either way and the
-    // split has nothing left to express — a chain that cannot hold tokens simply has no detect
-    // stage.
     await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, { detect });
   });
 
@@ -102,17 +89,12 @@ export const useBalanceFetching = createSharedComposable(() => {
   };
 
   /**
-   * §6's periodic flow: every chain, entering at the job, no detection.
+   * The periodic tick: every chain, entering at the chain job, without detection.
    *
-   * 🔴 The tick never asked a chain anything. It passed `{ periodic: true }` to `refreshAccounts`,
-   * whose no-chain branch is a *cached* read — the DB, not the network — so "Automatic balance
-   * refresh" re-read balances the backend had already written on its own schedule and never
-   * triggered a query itself. The `periodic` refresh mode, the one that settles SKIPPED on a busy
-   * chain rather than joining it, had no caller that could reach it at all.
-   *
-   * ⚠️ This does now cost network calls on a timer, which is why it belongs behind a setting the
-   * user turns on: `refreshPeriod` defaults to `-1` and the scheduler only starts when it is
-   * positive. A chain still mid-refresh is skipped rather than queued, so ticks cannot pile up.
+   * @remarks
+   * This costs network calls on a timer, which is why it sits behind a setting the user turns on.
+   * `refreshPeriod` defaults to `-1` and the scheduler only starts while it is positive. A chain
+   * still mid-refresh is skipped rather than queued, so ticks cannot pile up.
    */
   const autoRefresh = async (): Promise<void> => {
     await Promise.allSettled([

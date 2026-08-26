@@ -25,16 +25,18 @@ const { entryType, disabled = false, label, errorMessages, required = false, hin
   required?: boolean;
   hint?: string;
 }>();
-// Synthetic group used to pin frequently picked verbs to the top. Recent rows
-// reuse a real row but carry a distinct key/group so the picker doesn't collide
-// with the canonical row that also lives in its taxonomy group.
+/**
+ * Synthetic group and key prefix for the recently picked rows.
+ *
+ * @remarks
+ * A recent row reuses a real row's data, so it needs its own group and key to avoid colliding with
+ * the canonical row in its taxonomy group.
+ */
 const RECENT_GROUP_ID = '__recent__';
 const RECENT_KEY_PREFIX = 'recent:';
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Shown only in dev builds so developers can see the raw event type/subtype
-// combinations behind each user-facing action label.
 const isDevelopment = checkIfDevelopment();
 
 const search = ref<string>('');
@@ -175,11 +177,6 @@ function subtitleFor(row: EventActionRow): string {
 }
 
 function onUpdate(verbKey: string | undefined): void {
-  // The picker is required and has no clear affordance, so we only react to
-  // genuine row selections. RuiCategoryPicker never emits implicit clears, so
-  // the old Backspace/resync guard is no longer needed. The defensive watcher
-  // above still clears the model when the current value is no longer mappable
-  // to a row (e.g. after an entry-type switch).
   if (!verbKey)
     return;
 

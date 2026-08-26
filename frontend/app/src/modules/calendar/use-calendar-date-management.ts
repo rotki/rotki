@@ -21,12 +21,10 @@ export function useCalendarDateManagement(
     set(modelSelectedDate, day);
   }
 
-  // Watch selected date to update visible date
   watch(modelSelectedDate, (selected) => {
     set(modelVisibleDate, selected);
   });
 
-  // Watch selected date and events to update selected date events
   watch([modelSelectedDate, eventsWithDate], ([modelSelectedDate, eventsWithDate]) => {
     const selectedDateFormatted = modelSelectedDate.format(dateFormat);
     const events = eventsWithDate.filter(item => item.date === selectedDateFormatted);

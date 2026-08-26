@@ -83,7 +83,7 @@ export const useNotificationCooldown = createSharedComposable((): UseNotificatio
    * Resolved on first use rather than up front, so that notifications from groups with no
    * schedule never pull the settings stores into contexts that do not otherwise need them.
    *
-   * ⚠️ Both of these must stay callable outside a component `setup`: a display is recorded from
+   * Both of these must stay callable outside a component `setup`: a display is recorded from
    * the notification store, which is not a component. That rules out `useSettingsOperations`,
    * whose notification surface resolves `useI18n` (and would close a cycle back onto this file).
    */

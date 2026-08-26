@@ -135,10 +135,6 @@ describe('useBalanceHydration', () => {
     expect(h.updatePrices).toHaveBeenCalledWith(prices);
   });
 
-  /**
-   * ⭐ Dedup by subject. Two callers racing the same chain share one read — the guarantee
-   * `submitTask`'s id dedup used to provide before hydration stopped being an activity.
-   */
   it('should share one read between callers racing the same chain', async () => {
     addAccount(Blockchain.ETH);
     let release = (): void => {};
@@ -162,7 +158,7 @@ describe('useBalanceHydration', () => {
   });
 
   /**
-   * 🔴 `allWithConcurrency` short-circuits on the first `err`: in-flight factories finish and no
+   * `allWithConcurrency` short-circuits on the first `err`: in-flight factories finish and no
    * new ones start. A chain whose read throws would take every chain that had not started with it,
    * silently. The factories are infallible for exactly this.
    */
@@ -190,7 +186,7 @@ describe('useBalanceHydration', () => {
     );
   });
 
-  /** §1: hydration's failure policy is to retry, silently. */
+  /** Hydration's failure policy is to retry, silently. */
   it('should retry an actionable failure', async () => {
     addAccount(Blockchain.ETH);
     h.queryBlockchainBalances
@@ -204,7 +200,7 @@ describe('useBalanceHydration', () => {
   });
 
   /**
-   * 🔴 `retry` takes no predicate, so without the actionable check a logout mid-walk would retry
+   * `retry` takes no predicate, so without the actionable check a logout mid-walk would retry
    * every chain twice more against a session that is gone.
    */
   it('should not retry a cancelled read', async () => {
@@ -218,10 +214,45 @@ describe('useBalanceHydration', () => {
   });
 
   /**
-   * 🔴 Hydration is not an activity, so the orchestrator cannot report it. Every spinner that used
+   * Hydration is not an activity, so the orchestrator cannot report it. Every spinner that used
    * to read `useIsActive(BLOCKCHAIN_BALANCES)` for the cached phase reads this instead; if it were
    * never set the whole phase would render as settled-and-empty.
    */
+  it('should let a read abandoned by reset settle without touching the next session', async () => {
+    addAccount(Blockchain.ETH);
+    const releases: (() => void)[] = [];
+    h.queryBlockchainBalances.mockImplementation(async () => {
+      await new Promise<void>((resolve) => {
+        releases.push(resolve);
+      });
+      return EMPTY_BALANCES;
+    });
+
+    const { useBalanceHydration } = await importModule();
+    const { useBalanceRefreshState } = await import('./use-balance-refresh-state');
+    const refreshState = useBalanceRefreshState();
+    const hydration = useBalanceHydration();
+
+    const abandoned = hydration.hydrate({ blockchain: Blockchain.ETH });
+    await flushPromises();
+
+    hydration.reset();
+    const current = hydration.hydrate({ blockchain: Blockchain.ETH });
+    await flushPromises();
+
+    releases[0]();
+    await abandoned;
+    await flushPromises();
+
+    // The abandoned read settling must not clear the new session's liveness, nor evict its entry
+    // from the dedup map - a third caller joining would then start a second concurrent GET.
+    expect(get(refreshState.hydratingChains).has(Blockchain.ETH)).toBe(true);
+    expect(h.queryBlockchainBalances).toHaveBeenCalledTimes(2);
+
+    releases[1]?.();
+    await current;
+  });
+
   it('should report liveness while a chain is being read', async () => {
     addAccount(Blockchain.ETH);
     let release = (): void => {};

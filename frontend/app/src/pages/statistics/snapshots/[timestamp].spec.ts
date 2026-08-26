@@ -7,14 +7,17 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, type ComputedRef, type Ref, ref } from 'vue';
+import { computed, type ComputedRef, nextTick, type Ref, ref } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import SnapshotEditorToolbar from '@/modules/dashboard/snapshots/components/SnapshotEditorToolbar.vue';
 import SnapshotSummary from '@/modules/dashboard/snapshots/components/SnapshotSummary.vue';
+import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 import SnapshotDetailPage from '@/pages/statistics/snapshots/[timestamp].vue';
 
 const TIMESTAMP = 1_600_000_000;
+const NEXT_TIMESTAMP = 1_600_086_400;
 
 function createSnapshot(): Snapshot {
   return {
@@ -31,14 +34,24 @@ function createSnapshot(): Snapshot {
 const fetchSnapshot = vi.fn(async (): Promise<Snapshot> => createSnapshot());
 const persist = vi.fn(async (_timestamp: number, _snapshot: Snapshot): Promise<boolean> => true);
 const remove = vi.fn(async (): Promise<boolean> => true);
+const refreshNetValue = vi.fn(async (): Promise<void> => {});
 const pushMock = vi.fn();
 
-vi.mock('vue-router', () => ({
-  onBeforeRouteLeave: vi.fn(),
-  useRoute: (): ComputedRef<{ params: { timestamp: string } }> =>
-    computed(() => ({ params: { timestamp: String(TIMESTAMP) } })),
-  useRouter: (): { push: typeof pushMock } => ({ push: pushMock }),
-}));
+const route = vi.hoisted(() => ({ setTimestamp: (_value: number): void => {} }));
+
+vi.mock('vue-router', async () => {
+  const { computed, ref } = await import('vue');
+  const current = ref<number>(1_600_000_000);
+  route.setTimestamp = (value: number): void => {
+    current.value = value;
+  };
+  return {
+    onBeforeRouteLeave: vi.fn(),
+    useRoute: (): ComputedRef<{ params: { timestamp: string } }> =>
+      computed(() => ({ params: { timestamp: String(current.value) } })),
+    useRouter: (): { push: typeof pushMock } => ({ push: pushMock }),
+  };
+});
 
 vi.mock('@/modules/dashboard/snapshots/use-snapshot-store', () => ({
   useSnapshotStore: (): {
@@ -50,7 +63,10 @@ vi.mock('@/modules/dashboard/snapshots/use-snapshot-store', () => ({
 }));
 
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-list', () => ({
-  useSnapshotList: (): { rows: ComputedRef<SnapshotListRow[]> } => ({ rows: computed(() => []) }),
+  useSnapshotList: (): { refresh: typeof refreshNetValue; rows: ComputedRef<SnapshotListRow[]> } => ({
+    refresh: refreshNetValue,
+    rows: computed(() => []),
+  }),
 }));
 
 vi.mock('@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion', () => ({
@@ -93,9 +109,14 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
 
   beforeEach(() => {
     setActivePinia(createPinia());
+    route.setTimestamp(TIMESTAMP);
     fetchSnapshot.mockClear();
+    fetchSnapshot.mockImplementation(async (): Promise<Snapshot> => createSnapshot());
     persist.mockClear();
+    persist.mockImplementation(async (): Promise<boolean> => true);
     remove.mockClear();
+    remove.mockImplementation(async (): Promise<boolean> => true);
+    refreshNetValue.mockClear();
     pushMock.mockClear();
   });
 
@@ -139,5 +160,70 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
 
     expect(persist).toHaveBeenCalledTimes(1);
     expect(persist.mock.calls[0][0]).toBe(TIMESTAMP);
+  });
+
+  it('should re-pull the net-value series after a successful save', async () => {
+    wrapper = mountPage();
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotEditorToolbar).vm.$emit('save');
+    await flushPromises();
+
+    expect(refreshNetValue).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not touch the net-value series when the save is rejected', async () => {
+    persist.mockResolvedValue(false);
+    wrapper = mountPage();
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotEditorToolbar).vm.$emit('save');
+    await flushPromises();
+
+    expect(refreshNetValue).not.toHaveBeenCalled();
+  });
+
+  it('should re-pull the net-value series before leaving a deleted snapshot', async () => {
+    wrapper = mountPage();
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotEditorToolbar).vm.$emit('delete');
+    await flushPromises();
+    // The delete goes through a confirmation dialog, so run the confirmed branch.
+    await useConfirmStore().confirm();
+    await flushPromises();
+
+    expect(remove).toHaveBeenCalledWith(TIMESTAMP);
+    expect(refreshNetValue).toHaveBeenCalledTimes(1);
+    expect(pushMock).toHaveBeenCalledWith('/statistics/snapshots');
+    expect(refreshNetValue.mock.invocationCallOrder[0]).toBeLessThan(pushMock.mock.invocationCallOrder[0]);
+  });
+
+  it('should keep the loaded snapshot on screen while navigating to another one', async () => {
+    wrapper = mountPage();
+    await flushPromises();
+    expect(wrapper.findComponent(ProgressScreen).exists()).toBe(false);
+
+    let resolveNext: (snapshot: Snapshot) => void = () => {};
+    fetchSnapshot.mockImplementation(async (): Promise<Snapshot> => new Promise((resolve) => {
+      resolveNext = resolve;
+    }));
+
+    route.setTimestamp(NEXT_TIMESTAMP);
+    await nextTick();
+    await nextTick();
+
+    expect(fetchSnapshot).toHaveBeenLastCalledWith(NEXT_TIMESTAMP);
+    expect(wrapper.findComponent(ProgressScreen).exists()).toBe(false);
+    expect(wrapper.findComponent(SnapshotSummary).exists()).toBe(true);
+
+    resolveNext(createSnapshot());
+    await flushPromises();
   });
 });

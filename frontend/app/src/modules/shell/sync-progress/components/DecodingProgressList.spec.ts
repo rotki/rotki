@@ -2,7 +2,7 @@ import type { DecodingProgress } from '../types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setupSyncProgressMocks } from '../test-utils';
+import { isCompact, setupSyncProgressMocks } from '../test-utils';
 import DecodingProgressList from './DecodingProgressList.vue';
 
 setupSyncProgressMocks();
@@ -136,10 +136,8 @@ describe('modules/sync-progress/components/DecodingProgressList', () => {
       const completedItem = wrapper.findAll('[data-testid="decoding-item"]').find(
         item => item.attributes('data-chain') === 'optimism',
       );
-      // In-progress items are not compact
-      expect(inProgressItem?.attributes('data-compact')).toBe('false');
-      // Completed items are rendered in compact mode
-      expect(completedItem?.attributes('data-compact')).toBe('true');
+      expect(isCompact(inProgressItem)).toBe(false);
+      expect(isCompact(completedItem)).toBe(true);
     });
   });
 

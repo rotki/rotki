@@ -14,7 +14,7 @@ const display = defineModel<boolean>({ default: false, required: true });
 const { balance, timestamp = 0 } = defineProps<{
   /** The snapshot's net worth, denominated in USD (converted for display here). */
   balance: BigNumber;
-  /** The snapshot timestamp in seconds, used for the historic USD->fiat rate. */
+  /** The snapshot timestamp in seconds, used for the historic USD-to-fiat rate. */
   timestamp?: number;
 }>();
 

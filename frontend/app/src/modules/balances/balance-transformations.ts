@@ -223,9 +223,6 @@ export function aggregateSourceBalances(
 }
 
 /**
- * Gets sorted protocol balances
- */
-/**
  * Creates an asset balance from aggregated protocol balances
  */
 export function createAssetBalanceFromAggregated(
@@ -242,9 +239,6 @@ export function createAssetBalanceFromAggregated(
   };
 }
 
-/**
- * Processes collection grouping
- */
 /** A collection's own asset may hold no balance, so it is added to the group to act as its header. */
 function addCollectionMainAsset(
   groupId: string,
@@ -278,12 +272,10 @@ export function processCollectionGrouping(
   const grouped: Record<string, IntermediateGroupRepresentation[]> = {};
   const collectionCache = new Map<string, string | undefined>();
 
-  // Group assets by collection
   for (const [asset, protocolBalances] of Object.entries(aggregatedBalances)) {
     const collectionId = getCollectionId(asset);
     const groupId = collectionId ? `collection-${collectionId}` : asset;
 
-    // Cache main asset lookup to avoid repeated calls
     let mainAsset: string | undefined;
     if (collectionId) {
       if (!collectionCache.has(collectionId)) {

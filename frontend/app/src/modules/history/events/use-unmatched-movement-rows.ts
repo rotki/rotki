@@ -25,9 +25,8 @@ function externalResolution(entry: HistoryEventEntry): { direction?: string | nu
  * Which way the funds moved.
  *
  * @remarks
- * An asset movement says so in its subtype. One resolved as external is no longer an asset movement
- * at all and kept the same subtype for either direction (`payment`), so its direction is read from
- * the stamp the backend wrote for exactly this purpose rather than inferred from its event type.
+ * An asset movement says so in its subtype, but one resolved as external carries `payment` for
+ * either direction, so its direction comes from the backend's stamp instead.
  *
  * @param entry - the movement's own event, resolved or not
  * @returns `deposit` when the funds arrived on the exchange, `withdrawal` when they left it

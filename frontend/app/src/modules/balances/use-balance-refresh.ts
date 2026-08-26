@@ -13,7 +13,7 @@ export const useBalanceRefresh = createSharedComposable(() => {
   const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
 
   /**
-   * ⭐ Everything reaching this composable came from a user pressing something — the refresh
+   * Everything reaching this composable came from a user pressing something — the refresh
    * buttons, the accounts page, the dashboard tiles. So it refreshes in `user` mode, which
    * supersedes a background run rather than joining it: a user asking for fresh data must not
    * silently receive the periodic tick's result and its parameters.

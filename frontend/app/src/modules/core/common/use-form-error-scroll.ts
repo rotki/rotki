@@ -13,9 +13,13 @@ export function useFormErrorScroll(): {
 
   /**
    * Scrolls to the first form field that has a validation error.
-   * If the error field is inside a collapsed accordion, it will expand the accordion first.
    *
-   * @param container - Optional container element to search within
+   * @remarks
+   * An error inside a collapsed accordion is opened first, and the scroll waits a tick for that:
+   * a collapsed element has no position to scroll to, so scrolling in the same tick as the click
+   * lands somewhere else on the page.
+   *
+   * @param container - where to search; the whole document when omitted
    */
   async function scrollToFirstError(container?: HTMLElement | undefined): Promise<void> {
     const searchContainer = container ?? document;
@@ -24,20 +28,16 @@ export function useFormErrorScroll(): {
     if (!errorElement)
       return;
 
-    // Check if the error element is inside an accordion that needs to be expanded
     const accordion = errorElement.closest<HTMLElement>('[data-accordion]');
 
     if (accordion && !isAccordionOpen(accordion)) {
-      // Find the accordion trigger and click it to expand
       const accordionTrigger = accordion.querySelector<HTMLElement>('[data-accordion-trigger]');
       if (accordionTrigger) {
         accordionTrigger.click();
-        // Wait for the accordion to expand
         await nextTick();
       }
     }
 
-    // Scroll the error element into view
     errorElement.scrollIntoView({
       behavior: 'smooth',
       block: 'center',

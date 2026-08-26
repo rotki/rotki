@@ -51,13 +51,6 @@ function sharedFieldDecoration(kind: SharedFieldKind, resolvers: SharedFieldReso
     case SharedFieldKinds.PROTOCOL:
       return { display: DisplayKinds.COUNTERPARTY, resolveLabel: resolvers.resolveProtocolName };
     case SharedFieldKinds.ADDRESS:
-      // Typed, not picked: there is no list of every address, and the value is shortened and
-      // scrambled for display so a filtered address is no more revealing than the same address
-      // anywhere else in the app.
-      //
-      // Validated here rather than per table: an address is sent as an address, and the backend
-      // answers anything it cannot place with a 400. Committing happens on enter AND on closing the
-      // editor, so without this a half-typed address is applied the moment the user clicks away.
       return {
         display: DisplayKinds.ADDRESS,
         freeText: true,
@@ -66,18 +59,15 @@ function sharedFieldDecoration(kind: SharedFieldKind, resolvers: SharedFieldReso
       };
     case SharedFieldKinds.TX_HASH:
       // No `display`: a transaction is not an identity with a face, so an avatar would be noise.
-      // Still shortened, because a raw hash does not fit on a pill.
       return { freeText: true, resolveLabel: resolvers.resolveHex };
     case SharedFieldKinds.TOKEN:
-      // A machine token that is already spaced words on the wire (`evm event`), so it only needs
-      // its casing fixed, acronyms included.
       return { resolveLabel: resolvers.resolveTokenName };
   }
 }
 
 /**
  * Applies the shared presentation for whichever of a table's keys is a shared kind, and leaves the
- * rest alone. The table passes its own key -> kind map and decorates everything else itself.
+ * rest alone. The table passes a map from its own keys to kinds, and decorates the rest itself.
  */
 export function decorateSharedField(
   field: FieldDef,

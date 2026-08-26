@@ -841,7 +841,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴🔴 The chain-job shape, against the real scheduler. A parent that *awaits its own children*
+     * The chain-job shape, against the real scheduler. A parent that *awaits its own children*
      * holds its lane slot for the whole body, so the children must not need a slot on that lane —
      * with a cap of 2, two such parents would wait forever on work that can never start.
      *
@@ -894,7 +894,7 @@ describe('createTaskOrchestrator', () => {
         expect(children.size).toBe(4);
       });
 
-      // 🔴 The assertion that fails if detection shares the balances lane: with both slots held by
+      // The assertion that fails if detection shares the balances lane: with both slots held by
       // the parents, every child would still be PENDING here and nothing could ever settle them.
       for (const child of children.values()) {
         expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
@@ -919,7 +919,7 @@ describe('createTaskOrchestrator', () => {
 
   describe('container activities', () => {
     /**
-     * 🔴🔴 A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
+     * A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
      * purpose, because a failure belongs to the subject that failed. Sharing its children's kind
      * then wrote a *success* to the completion ledger even when every child FAILED, and
      * `statusOf(kind)` aggregates by kind: the dashboard read "loaded" after a total failure.
@@ -975,7 +975,7 @@ describe('createTaskOrchestrator', () => {
     }
 
     /**
-     * 🔴 The bug this package exists for. Every native spec carries a cancel handle, so cancelling
+     * The bug this package exists for. Every native spec carries a cancel handle, so cancelling
      * a parent always "succeeded" — but the handle only aborts that activity's own backend task,
      * which an umbrella never has. The row settled CANCELLED and vanished while the whole subtree
      * carried on working.
@@ -1008,7 +1008,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴 `eligible` only refused a child whose parent was still PENDING, so a queued child of a
+     * `eligible` only refused a child whose parent was still PENDING, so a queued child of a
      * cancelled parent started the moment a lane freed up — the cancel bought nothing.
      */
     it('should not start a queued child after its parent is cancelled', async () => {
@@ -1024,7 +1024,7 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.PENDING);
 
       orchestrator.cancel(parent.spec.id);
-      // Freeing the only lane is what used to let the orphaned child through.
+      // Frees the only lane, which is what would let an orphaned child through.
       blocker.settle(ok(undefined));
       await flush();
 
@@ -1032,7 +1032,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴🔴 The wedge `eligible` alone would create. A child submitted after its parent ended can
+     * The wedge `eligible` alone would create. A child submitted after its parent ended can
      * never become eligible, so leaving it PENDING would hold its caller's await open for the life
      * of the process. It has to be *settled*, not merely refused.
      */
@@ -1051,7 +1051,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * ⭐ The reason no new cancel handle is needed anywhere: a parent whose body awaits its
+     * The reason no new cancel handle is needed anywhere: a parent whose body awaits its
      * children resolves on its own once they settle, and `cancelRequested` maps that outcome to
      * CANCELLED however the body chose to return.
      */
@@ -1092,7 +1092,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴🔴 The case an `eligible` guard could not have handled. `cancel` never runs here, so a
+     * The case an `eligible` guard could not have handled. `cancel` never runs here, so a
      * cascade hung off cancellation would leave these children queued — and refusing them in
      * `eligible` instead would wedge them PENDING for the life of the process, since nothing would
      * ever settle them. Hanging the walk off the settle is what makes one rule cover both.
@@ -1187,7 +1187,6 @@ describe('createTaskOrchestrator', () => {
       orchestrator.submit(second.spec);
       await flush();
 
-      // The superseded run finishes successfully, but it is no longer the record for this id.
       first.settle(ok(undefined));
       await flush();
 

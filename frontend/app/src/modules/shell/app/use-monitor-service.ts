@@ -45,9 +45,6 @@ function useMonitorServiceInternal(): UseMonitorServiceInternalReturn {
   };
 
   const start = function (restarting = false): void {
-    // Re-arm websocket reconnection: a prior stop() (logout, kicked session, failed
-    // resume) disabled it to kill the reconnect loop, so a fresh login must re-enable
-    // it before connecting, otherwise connect() short-circuits and the socket never opens.
     setConnectionEnabled(true);
     startPromise(connectWebSocket(restarting));
     startTaskMonitoring(restarting);
@@ -57,9 +54,6 @@ function useMonitorServiceInternal(): UseMonitorServiceInternalReturn {
   };
 
   const stop = (): void => {
-    // Disable reconnection, not just close the socket: a bare close leaves the 2s
-    // reconnect loop running, which then hammers the gated /ws with 403s once the
-    // session is gone. Disabling stops the loop until the next authenticated start().
     setConnectionEnabled(false);
     disconnect();
     for (const scheduler of schedulers)

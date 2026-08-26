@@ -12,7 +12,6 @@ import { useHistoryStore } from '@/modules/history/use-history-store';
 const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
 
 interface UseUnifiedProgressReturn {
-  // Balance query progress
   balanceProgress: Ref<BalanceQueryProgress | undefined>;
   dismissalThresholdMs: Readonly<Ref<number, number>>;
   hasTxAccounts: ComputedRef<boolean>;
@@ -58,7 +57,6 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     lastUsedVersion: null,
   });
 
-  // Use existing composables
   const { progress: historyProgress } = useHistoryQueryProgress();
 
   const {
@@ -74,7 +72,6 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   const { refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
   const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
 
-  // Additional stores and composables
   const historyStore = useHistoryStore();
   const { transactionStatusSummary } = storeToRefs(historyStore);
   const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);

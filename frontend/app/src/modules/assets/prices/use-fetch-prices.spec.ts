@@ -42,8 +42,8 @@ vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
       const real = actual.useNativeTask();
       return {
         ...real,
-        // Generic in its own right: `Parameters`/`ReturnType` collapse `submitTask`'s type
-        // parameter to its default, which no longer matches the generic signature.
+        // Written out as a generic rather than derived: `Parameters`/`ReturnType` would collapse
+        // `submitTask`'s type parameter to its default, which does not satisfy the signature.
         submitTask: async <T = void>(spec: NativeActivitySpec<T>): Promise<TaskOutcome<T>> => {
           submitTaskSpy(spec);
           return real.submitTask(spec);

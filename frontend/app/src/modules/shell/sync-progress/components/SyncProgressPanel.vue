@@ -46,7 +46,6 @@ onClickOutside(
   { ignore: [detailsRef] },
 );
 
-// Close on Escape key
 onKeyStroke('Escape', () => {
   if (get(expanded))
     collapse();

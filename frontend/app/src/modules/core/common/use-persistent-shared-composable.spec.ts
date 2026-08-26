@@ -173,7 +173,7 @@ describe('createPersistentSharedComposable', () => {
     scope3.stop();
   });
 
-  it('does not go below zero on extra releaseBusy calls', () => {
+  it('should still dispose cleanly, and rebuild afterwards, when releaseBusy is called too often', () => {
     let guard: BusyGuard | undefined;
     const useShared = createPersistentSharedComposable((g: BusyGuard) => {
       guard = g;
@@ -186,10 +186,8 @@ describe('createPersistentSharedComposable', () => {
     guard!.releaseBusy();
     guard!.releaseBusy();
 
-    // Should still dispose cleanly
     scope1.stop();
 
-    // Fresh instance after disposal
     const scope2 = effectScope();
     let fresh: ReturnType<typeof useShared> | undefined;
     scope2.run(() => {

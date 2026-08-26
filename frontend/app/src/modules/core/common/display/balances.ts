@@ -34,11 +34,7 @@ export function sum(balances: { value: BigNumber }[]): BigNumber {
   return bigNumberSum(balances.map(account => account.value));
 }
 
-/**
- * getSortItems only knows how to order these three: it compares the asset by symbol and the other
- * two as BigNumbers. A row type may declare further columns, and sorting on one of those used to be
- * asserted into this set, which then subtracted two non-numbers.
- */
+/** The only columns `getSortItems` can order: asset by symbol, the other two as BigNumbers. */
 const SORTABLE_ASSET_COLUMNS = ['amount', 'asset', 'value'] as const satisfies readonly (keyof AssetBalance)[];
 
 export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, getAssetInfo: PlainAssetInfoReturn): T[] {

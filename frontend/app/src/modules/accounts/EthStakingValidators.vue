@@ -24,7 +24,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Use composables
 const {
   cols,
   ethStakingValidators,

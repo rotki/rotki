@@ -9,11 +9,12 @@ export * from './case';
 export * from './hyperliquid';
 
 /**
+ * Upper-cases the first character, leaving the rest of the string untouched.
  *
- * @param {string} string - String to convert
- * @return {string} - String converted to sentence case
  * @example
+ * ```ts
  * toSentenceCase('this is a sentence'); // This is a sentence
+ * ```
  */
 export function toSentenceCase(string: string): string {
   if (!string)
@@ -23,13 +24,14 @@ export function toSentenceCase(string: string): string {
 }
 
 /**
+ * Reduces a string to a comparable token: lower-cased, with everything but letters and digits
+ * stripped. Used for keyword matching, where spacing and punctuation must not affect a hit.
  *
- * @param {string} string - String to convert
- * @return {string} - String converted to text token, mostly used to matching keyword
  * @example
+ * ```ts
  * getTextToken('this is a sentence'); // thisisasentence
+ * ```
  */
-
 export function getTextToken(string: string): string {
   if (!string)
     return '';
@@ -38,11 +40,12 @@ export function getTextToken(string: string): string {
 }
 
 /**
+ * Converts a string to snake_case, splitting on both capitals and whitespace.
  *
- * @param {string} string - String to convert
- * @return {string} - String converted to snake case
  * @example
+ * ```ts
  * toSnakeCase('this is a sentence'); // this_is_a_sentence
+ * ```
  */
 export function toSnakeCase(string: string): string {
   if (!string)
@@ -56,27 +59,28 @@ export function toSnakeCase(string: string): string {
 }
 
 /**
+ * Upper-cases the first letter of every word, keeping apostrophes inside a word intact.
  *
- * @param {string} string - String to convert
- * @return {string} - String converted to capital case
  * @example
+ * ```ts
  * toCapitalCase('this is a sentence'); // This Is A Sentence
+ * ```
  */
 export function toCapitalCase(string: string): string {
   return string.replace(/\p{L}+('\p{L}+)?/gu, txt => txt.charAt(0).toUpperCase() + txt.slice(1));
 }
 
 /**
+ * Turns an identifier into display text by replacing underscores with spaces.
  *
- * @param {string} value - String to convert
- * @param {'capitalize' | 'sentence' | 'uppercase' | 'lowercase'} transform
- * @return {string} - String converted to human-readable case
+ * @param value - the identifier to convert
+ * @param transform - the casing to apply afterwards; omitted, the existing casing is left as it is
  * @example
- * toHumanReadable('POLYGON_POS', 'sentence'); // Polygon Pos
- * @example
- * toHumanReadable('POLYGON_POS'); // POLYGON POS
- * @example
+ * ```ts
+ * toHumanReadable('POLYGON_POS', 'sentence');  // Polygon Pos
+ * toHumanReadable('POLYGON_POS');              // POLYGON POS
  * toHumanReadable('polygon_pos', 'uppercase'); // POLYGON POS
+ * ```
  */
 export function toHumanReadable(
   value: string,
@@ -101,12 +105,11 @@ export function toHumanReadable(
 }
 
 /**
- * Returns the plural of an English word.
+ * Returns the plural of an English word, by rule rather than by dictionary.
  *
- * @export
- * @param {string} word
- * @param {number} [amount]
- * @returns {string}
+ * @param word - the singular form
+ * @param amount - when exactly `1`, the word is returned unchanged; any other value, or none,
+ * pluralises
  */
 export function pluralize(word: string, amount?: number): string {
   if (amount !== undefined && amount === 1)

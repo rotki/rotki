@@ -102,8 +102,6 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationSplit', () => {
     expect(isValid(wrapper)).toBe(false);
   });
 
-  // The totals run through every row on each keystroke, so a row holding something bignumber.js
-  // cannot parse used to take the whole dialog down mid-render. It counts as nothing allocated.
   it.each(['-', '1.2.3', '0,5'])('should read a row of %s as nothing allocated', async (typed) => {
     const wrapper = mountSplit(100);
     const locations = wrapper.findAll('.loc');

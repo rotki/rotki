@@ -84,14 +84,19 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
 
   let sessionReadyHandled = false;
 
+  /**
+   * Records the session's opening chronicle entries, once per session.
+   *
+   * @remarks
+   * The user is resolved here rather than in `activate()`, so an empty read means unset and never
+   * not-loaded-yet. The unlock flow happens to land the settings before it flips `logged`, which
+   * makes the two equivalent today; do not depend on that.
+   */
   async function onSessionReady(): Promise<void> {
     if (sessionReadyHandled)
       return;
     sessionReadyHandled = true;
 
-    // Here rather than in activate() to keep the dependency explicit: an empty read must mean
-    // unset, never not-loaded-yet. The unlock flow happens to land the settings before it flips
-    // `logged`, so today both are equivalent; this does not rely on that staying true.
     await resolveUser();
 
     chronicle('session_config', collectSessionConfig());

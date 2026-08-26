@@ -57,8 +57,7 @@ describe('disabled-chain-queries-settings', () => {
   beforeEach(async (): Promise<void> => {
     setSettingsMock.mockClear();
     wrapper = createWrapper();
-    // The supported chains are no longer fetched from a `connected` watcher; the
-    // unlock flow loads them post-login. Populate them explicitly for the component.
+    // Loaded by the unlock flow in the app, so the component needs them populated explicitly here.
     await useSupportedChains().refreshSupportedChains();
     await flushPromises();
     await nextTick();

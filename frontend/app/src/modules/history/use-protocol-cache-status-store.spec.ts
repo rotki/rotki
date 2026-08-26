@@ -41,9 +41,7 @@ describe('useProtocolCacheStatusStore', () => {
       store.setProtocolCacheStatus(createStatus('optimism', 'aave', 300, 50));
 
       const status = get(store.protocolCacheUpdateStatus);
-      // Old entry should have processed = total
       expect(status['eth#uniswap'].processed).toBe(200);
-      // New entry should keep its values
       expect(status['optimism#aave'].processed).toBe(50);
     });
 

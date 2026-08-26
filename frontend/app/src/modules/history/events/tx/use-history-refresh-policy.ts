@@ -71,7 +71,7 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
    * when a refresh *started*, not when it succeeded. So this asks the completion ledger whether the
    * activity ever settled — in any outcome — rather than whether it ever succeeded.
    *
-   * ⚠️ Keying this on `everCompleted` instead would leave a failed or cancelled sync novel forever,
+   * Keying this on `everCompleted` instead would leave a failed or cancelled sync novel forever,
    * and `resolveForFullRefresh` escalates any novelty into a full re-sync of every account.
    */
   function neverAttempted(kind: ActivityKind, ...parts: string[]): boolean {
@@ -104,12 +104,13 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   }
 
   /**
-   * ⚠️ `!everRefreshed` is a scope condition, not a duplicate of the entry guard. Novelty is "never
-   * attempted", so an account whose sync *failed* is no longer novel — which meant a first load
-   * where every account failed resolved to an empty account set on every later background refresh,
-   * and history only recovered if the user pressed refresh. Reaching here at all already means
-   * history has never loaded (`shouldNotRefresh` returns before this once it has), so the honest
-   * scope for that case is the full first load.
+   * Resolves the accounts and exchanges a full refresh should cover.
+   *
+   * @remarks
+   * `!everRefreshed` widens the scope and is not a duplicate of the entry guard: novelty means
+   * "never attempted", so an account whose sync *failed* is not novel. Without it, a first load
+   * where every account failed leaves every later background refresh with an empty account set,
+   * and only a manual refresh recovers. Reaching here already means history has never loaded.
    */
   function resolveForFullRefresh(novelty: NoveltyDetection, chains: string[], opts: { userInitiated: boolean; everRefreshed: boolean }): { accounts: ChainAddress[]; exchanges: Exchange[] } {
     const wantsAllAccounts = novelty.newAccounts.length > 0 || opts.userInitiated || !opts.everRefreshed;

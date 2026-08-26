@@ -88,7 +88,7 @@ describe('useAccountLoadState', () => {
     expect(pending()).toBeUndefined();
   });
 
-  // 🔴 The deadlock case. A resumed session restores balances without re-reading accounts, so the
+  // The deadlock case. A resumed session restores balances without re-reading accounts, so the
   // read the gate was armed for never happens. Without the release the waiter hangs forever.
   it('should release an armed waiter when no read ever happens', async () => {
     const { useAccountLoadState } = await importModule();

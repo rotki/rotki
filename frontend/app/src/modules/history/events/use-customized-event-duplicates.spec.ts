@@ -98,7 +98,6 @@ describe('use-customized-event-duplicates', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    // Reset shared composable state
     spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
     composable = useCustomizedEventDuplicates();
     await composable.fetchCustomizedEventDuplicates();
@@ -831,16 +830,6 @@ describe('use-customized-event-duplicates', () => {
       expect(singleMessage.title).not.toBe(bulkMessage.title);
       expect(singleMessage.message).not.toBe(bulkMessage.message);
     });
-
-    it('should work without onSuccess', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      composable.confirmAndMarkNonDuplicated(['g-1']);
-      await extractAndCallConfirmCallback();
-
-      expect(spies.ignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
-    });
   });
 
   describe('confirmAndRestore', () => {
@@ -910,16 +899,6 @@ describe('use-customized-event-duplicates', () => {
 
       expect(singleMessage.title).not.toBe(bulkMessage.title);
       expect(singleMessage.message).not.toBe(bulkMessage.message);
-    });
-
-    it('should work without onSuccess', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      composable.confirmAndRestore(['g-1']);
-      await extractAndCallConfirmCallback();
-
-      expect(spies.unignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
   });
 });

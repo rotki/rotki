@@ -57,15 +57,20 @@ function apply(view: SavedView): void {
   emit('apply', view);
 }
 
+/**
+ * Saves the current filter state as a named view.
+ *
+ * @remarks
+ * On success focus returns to the list, which now holds the new view and is where the arrow keys
+ * and Escape are handled. Leaving it on the save button strands the keyboard on a control with
+ * nothing left to do.
+ */
 async function save(): Promise<void> {
   set(saving, true);
   const status = await addView(get(name), state);
   set(saving, false);
   if (status.success) {
     reset();
-    // Focus goes back to the list, which now holds the new view: it is where the arrow keys and
-    // Escape are handled, and leaving focus on the save button strands the keyboard on a control
-    // that has nothing left to do.
     get(list)?.focus();
     return;
   }
@@ -123,11 +128,8 @@ watch(open, (isOpen: boolean): void => {
   startPromise(ensureConverted());
 });
 
-// The list scrolls past its height once a few views are stored, so the highlighted row has to be
-// brought back into view as the arrow keys move it, the same as every other list in the bar.
-// Scrolled from the key handler rather than from a watcher on the highlight: hovering also moves
-// the highlight, and scrolling then pulls the list out from under the cursor, which lands a
-// different row under it and moves the highlight again.
+// Called from the key handler, never a watcher on the highlight: hovering moves the highlight
+// too, and scrolling then pulls the list out from under the cursor and moves it again.
 function scrollToHighlighted(): void {
   get(rows)?.[get(highlighted)]?.scrollIntoView({ block: 'nearest' });
 }

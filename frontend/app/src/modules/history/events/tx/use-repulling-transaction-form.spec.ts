@@ -135,7 +135,6 @@ describe('useRepullingTransactionForm', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
 
-    // Reset mocks to default values
     set(mockAccountsPerChain, {
       eth2: [createMockAccount('0x1234567890123456789012345678901234567890', 'eth2')],
       eth: [

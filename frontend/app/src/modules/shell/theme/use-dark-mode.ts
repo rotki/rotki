@@ -40,7 +40,6 @@ export const useDarkMode = createSharedComposable(() => {
     setThemeConfig({ ...conf, [variant]: variantConf });
   };
 
-  // Use default theme if not premium
   const usedDarkTheme = computed(() => (get(premium) ? get(darkTheme) : DARK_COLORS));
   const usedLightTheme = computed(() => (get(premium) ? get(lightTheme) : LIGHT_COLORS));
 

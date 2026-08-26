@@ -1,5 +1,6 @@
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Raw, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
+import { type CacheFetch, createItemCacheStorage, type ItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 import { logger } from '@/modules/core/common/logging/logging';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
@@ -13,51 +14,17 @@ const WARN_THROTTLE = 5000;
 /** How long (ms) a failed batch's keys are held back before a retry, to avoid hammering a down backend. */
 const FAILURE_BACKOFF = 5000;
 
-interface CacheEntry<T> {
-  key: string;
-  item: T;
-}
-
-/**
- * The persistent storage of an item cache (values + bookkeeping), decoupled from
- * the cache logic so it can live in a Pinia store and survive composable teardown.
- */
-export interface ItemCacheStorage<T> {
-  /** Resolved values keyed by identifier. */
-  cache: Ref<Record<string, T | null>>;
-  /** Per-key expiry timestamps backing the LRU + staleness checks. */
-  recent: Map<string, number>;
-  /** Identifiers that could not be resolved, with their expiry timestamps. */
-  unknown: Map<string, number>;
-}
-
-/**
- * Creates a fresh {@link ItemCacheStorage} container. `markRaw` keeps it usable
- * as plain Pinia state (no reactive proxy unwrapping the ref or wrapping the maps).
- */
-export function createItemCacheStorage<T>(): Raw<ItemCacheStorage<T>> {
-  // The markRaw brand stops Pinia deeply unwrapping `cache` (Ref) into a plain value.
-  return markRaw<ItemCacheStorage<T>>({
-    cache: shallowRef<Record<string, T | null>>({}),
-    recent: new Map<string, number>(),
-    unknown: new Map<string, number>(),
-  });
-}
-
-/** A batch-fetch resolving many keys at once, yielding {@link CacheEntry} items via a lazy iterator. */
-type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<CacheEntry<T>>>;
-
 interface CacheOptions<T = unknown> {
-  /** Debounce interval (ms) before a queued batch is fetched. @default 800 */
+  /** Debounce interval in ms before a queued batch is fetched. Defaults to 800. */
   debounceInMs?: number;
-  /** Time-to-live (ms) for cached entries before they become stale. @default 600_000 (10 min) */
+  /** Time-to-live in ms before a cached entry goes stale. Defaults to ten minutes. */
   expiry?: number;
-  /** Soft cap: the intended working set. Grows freely below it; at/above it an insert reclaims expired entries. @default 500 */
+  /** Soft cap: below it the cache grows freely, at or above it an insert reclaims expired entries. Defaults to 500. */
   size?: number;
   /**
-   * Hard cap: the resilient ceiling. Grows to here to fit a large but bounded working set; only when
-   * full of *live* entries does an insert force-evict + warn. Size by value weight — light values in the
-   * thousands, heavy ones (images, long strings) in the hundreds. Clamped up to `size`. @default 5000
+   * Hard cap: the cache grows to here to fit a large but bounded working set, and only when full of
+   * live* entries does an insert force-evict and warn. Size it by value weight, light values in the
+   * thousands and heavy ones such as images in the hundreds. Clamped up to `size`. Defaults to 5000.
    */
   maxSize?: number;
   /** Identifier used in the hard-cap warning so the offending cache is named in logs (e.g. `'historic-price'`). */
@@ -99,16 +66,17 @@ interface ItemCacheReturn<T> {
 /**
  * Creates a debounced, reactive item cache backed by a batch-fetch function.
  *
- * Keys requested via `resolve`/`queueIdentifier` are batched and fetched after a debounce; failures
- * and misses are tracked in `unknown` to avoid repeated lookups.
+ * @remarks
+ * Keys requested through `resolve`/`queueIdentifier` are batched behind a debounce; misses and
+ * failures land in `unknown` so they are not looked up again.
  *
- * Resilient capacity: grows freely below the soft cap (`size`); above it an insert reclaims *expired*
- * entries first — and since a read refreshes a key's expiry, "expired" means nothing on screen has
- * read it for `expiry` ms, so the set tracks what is in use. Only when full of *live* entries at the
- * hard cap (`maxSize`) does it force-evict the oldest and emit a throttled warning (an unbounded read).
+ * Eviction reclaims *expired* entries first, and a read refreshes a key's expiry, so "expired" means
+ * nothing on screen has read it for `expiry` ms. Only a cache full of *live* entries at `maxSize`
+ * force-evicts the oldest and warns. Each key carries its own version signal, so resolving A never
+ * re-runs a computed that reads only B.
  *
- * Fine-grained reactivity: each key has its own version signal — a read subscribes to just its key and
- * a write bumps just that key, so resolving A never re-runs a computed that reads only B.
+ * @param fetch - resolves a whole batch of keys at once; see {@link CacheFetch}
+ * @param options - see {@link CacheOptions}
  */
 export function createItemCache<T>(
   fetch: CacheFetch<T>,

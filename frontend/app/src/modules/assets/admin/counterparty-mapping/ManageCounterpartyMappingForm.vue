@@ -31,9 +31,12 @@ const form = useModelForm<CounterpartyMapping>({
 });
 
 /**
- * The input clears to `undefined`, which used to be written back as `null` into a field the payload
- * types as a string. Nothing downstream ever saw it, because save is gated on a rule a cleared field
- * fails either way, so it empties instead of lying about its type.
+ * The counterparty input's model, which empties the field rather than nulling it.
+ *
+ * @remarks
+ * The input clears to `undefined`, but the payload types this field as a string, so a cleared
+ * input writes `''`. Save is gated on a rule a cleared field fails either way, so nothing
+ * downstream sees the empty string; writing `null` would put a value of the wrong type in state.
  */
 const counterpartyModel = computed<string | undefined>({
   get: () => form.state.counterparty,

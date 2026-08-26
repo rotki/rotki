@@ -43,7 +43,7 @@ interface FilterSuggestion {
 
 export type NarrowSuggestion = FieldSuggestion | ValueSuggestion | FilterSuggestion;
 
-/** Previously used values per field key, offered to fields that have no option list. */
+/** The values already filtered by, per field, offered to fields that have no option list. */
 export type RecentValues = (field: FieldDef) => string[];
 
 /**
@@ -183,9 +183,9 @@ function fieldRow(field: FieldDef, label: string): FieldSuggestion {
  *
  * Pure: options and their display labels come off the `FieldDef`, never from a store.
  *
- * @param query what the user typed; blank yields nothing (the bar shows no popover)
- * @param fields the fields still available (callers pass the ones without an active filter)
- * @param limits caps on how many suggestions come back
+ * @param query - what the user typed; blank yields nothing, so the bar shows no popover
+ * @param fields - the fields still available; callers pass the ones without an active filter
+ * @param limits - caps on how many suggestions come back
  * @returns suggestions, best match first
  */
 interface Ranked {
@@ -268,7 +268,7 @@ function listMatches(field: FieldDef, needle: string, perField: number): Ranked[
 }
 
 /**
- * Matches among the values this field was previously filtered by.
+ * Matches among the values this field has already been filtered by.
  *
  * Matched on the stored value but shown through the field's resolver, like every other value row.
  * The two differ for exactly the fields this list serves: an address resolves to a shortened and,
@@ -330,12 +330,12 @@ function rankField(field: FieldDef, context: RankContext): Ranked[] {
  *
  * Pure: options, display labels and remembered values all arrive as parameters, never from a store.
  *
- * @param query what the user typed; blank yields nothing (the bar shows no popover)
- * @param fields the fields still available (callers pass the ones without an active filter)
- * @param operatorLabels already-translated operator labels, for the rows read out of the query
- * @param limits caps on how many suggestions come back
- * @param recentValues previously used values per field, for the fields that have no option list
- * @param hints per-value-type keywords and syntax examples for the fields that are typed into
+ * @param query - what the user typed; blank yields nothing, so the bar shows no popover
+ * @param fields - the fields still available; callers pass the ones without an active filter
+ * @param operatorLabels - already-translated operator labels, for the rows read out of the query
+ * @param limits - caps on how many suggestions come back
+ * @param recentValues - values already filtered by, per field, for those with no option list
+ * @param hints - per-value-type keywords and syntax examples for the fields that are typed into
  * @returns suggestions, best match first
  */
 export function searchFieldsAndValues(

@@ -104,11 +104,6 @@ export function useManualBalances(): UseManualBalancesReturn {
     title: string,
     apiCall: () => Promise<{ taskId: number }>,
   ): Promise<ActionStatus<ValidationErrors | string>> {
-    // A save supersedes an in-flight list refresh, which would otherwise clobber the new data.
-    // Cancelling by activity (not by task type) settles the FETCH activity terminal right away:
-    // the backend routinely refuses the abort, and the old `cancelTaskByTaskType` left nothing to
-    // settle the native activity, so its `active` status — and every spinner reading it — stayed
-    // stuck until the monitor reaped the task ~30s later.
     cancelActivity(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
 
     const outcome = await submitTask({

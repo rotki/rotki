@@ -46,9 +46,6 @@ export function useGnosisPayAuthState(): UseGnosisPayAuthStateReturn {
     if (!type)
       return true;
 
-    // Non-closeable errors:
-    // 1. No registered accounts
-    // 2. Connected wallet address is not valid
     return type !== GnosisPayError.NO_REGISTERED_ACCOUNTS
       && type !== GnosisPayError.INVALID_ADDRESS;
   });

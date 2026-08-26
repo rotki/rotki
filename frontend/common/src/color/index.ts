@@ -28,11 +28,14 @@ function randomInt(min: number, max: number): number {
 }
 
 /**
+ * Converts one r/g/b channel to its two-digit uppercase hex pair.
  *
- * @param {number} value - Value of r/g/b point, 0-255 scale
- * @return {string} - The value converted to hex
+ * @param value - the channel value on a 0-255 scale; rounded, and padded to two digits
  * @example
+ * ```ts
  * toHex(255); // FF
+ * toHex(0);   // 00
+ * ```
  */
 function toHex(value: number): string {
   return Math.round(value).toString(16).padStart(2, '0').toUpperCase();

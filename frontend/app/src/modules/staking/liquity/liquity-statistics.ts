@@ -54,8 +54,10 @@ function repriceGains(gains: AssetBalance[], priceOf: PriceLookup): AssetBalance
 /**
  * The statistics for the chosen view.
  *
- * @param view - `historical` returns the recorded figures untouched; `current` re-values every gain
- * and both LUSD totals at today's prices
+ * @param statistic - the recorded figures to reprice
+ * @param view - `historical` returns them untouched; `current` re-values every gain and both LUSD
+ * totals at today's prices
+ * @param priceOf - resolves an asset's current price
  * @param lusdPrice - already resolved, since the stability pool totals are denominated in LUSD
  */
 export function repriceStatistic(

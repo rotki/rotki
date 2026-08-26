@@ -334,7 +334,6 @@ describe('forms/SolanaEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    // Change a field to make the form dirty
     await wrapper.find('[data-testid=amount] input').setValue('200');
 
     editHistoryEventMock.mockResolvedValueOnce({

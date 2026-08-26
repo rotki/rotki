@@ -99,14 +99,14 @@ describe('use-history-event-navigation', () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
-  it('should not navigate when on a sub-path of history events', async () => {
-    setupMockRoute('/history/events/');
+  it('should navigate from a sub-path, since the guard matches the route name exactly', async () => {
+    setupMockRoute('/history/events/transactions');
     const { useHistoryEventNavigation } = await importFresh();
     const { requestNavigation } = scope.run(() => useHistoryEventNavigation())!;
 
     requestNavigation({ targetGroupIdentifier: 'group-1' });
 
-    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({ name: '/history/events/' });
   });
 
   it('should set and clear highlight targets', async () => {
@@ -158,7 +158,6 @@ describe('use-history-event-navigation', () => {
     });
 
     it('should try candidates in priority order (green > yellow > red)', async () => {
-      // Green found at position 5
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(5);
 
       const { useHistoryEventNavigation } = await importFresh();

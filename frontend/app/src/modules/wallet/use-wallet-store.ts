@@ -35,7 +35,6 @@ interface DisconnectOptions {
   forgetProvider?: boolean;
 }
 
-// Lazy backend types
 type WalletConnectInstance = ReturnType<typeof import('./use-wallet-connect').useWalletConnect>;
 
 type InjectedWalletInstance = ReturnType<typeof import('./bridge/use-injected-wallet').useInjectedWallet>;
@@ -61,7 +60,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const unifiedProviders = useUnifiedProviders();
   const { isPackaged } = useInterop();
 
-  // Transaction management
   const transactionManager = useTransactionManager();
   const { recentTransactions, reset: resetTransactions, updateTransactionStatus } = transactionManager;
 
@@ -74,7 +72,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   let walletConnectInstance: WalletConnectInstance | undefined;
   let injectedWalletInstance: InjectedWalletInstance | undefined;
 
-  // Computed properties
   const isWalletConnect = computed<boolean>(() => get(walletMode) === WALLET_MODES.WALLET_CONNECT);
 
   // Sync centralized state with active wallet composable
@@ -122,11 +119,9 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     if (!injectedWalletInstance) {
       const { useInjectedWallet } = await import('./bridge/use-injected-wallet');
       injectedWalletInstance = useInjectedWallet();
-      // Mirror isConnecting into local ref
       watch(injectedWalletInstance.isConnecting, (v) => {
         set(isConnecting, v);
       });
-      // Set up state sync watcher (moved from eager watcher)
       watch(
         [
           injectedWalletInstance.connected,
@@ -161,7 +156,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const connect = async (): Promise<void> => {
     if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       try {
-        // Setup bridge if in packaged mode
         if (get(isPackaged)) {
           await walletProxy.setupProxy();
         }
@@ -204,7 +198,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     logger.debug('Resetting wallet state');
     set(preparing, false);
     set(waitingForWalletConfirmation, false);
-    // Clear centralized connection state
     set(connected, false);
     set(connectedAddress, undefined);
     set(connectedChainId, undefined);
@@ -373,15 +366,14 @@ export const useWalletStore = defineStore(STORE_ID, () => {
 });
 
 /**
- * Disconnects the wallet only when the store already exists.
+ * Disconnects the wallet, but only when the store already exists.
  *
- * A session that never opened the wallet has nothing to disconnect, and calling
- * `useWalletStore()` would build the whole wallet graph (bridge proxy, providers, transaction
- * manager) just to tear it down. The auth flows use this so the login screen no longer
- * instantiates the store.
+ * @remarks
+ * Call this from the auth flows rather than `useWalletStore().disconnect()`, which would build the
+ * whole wallet graph (bridge proxy, providers, transaction manager) just to tear it down, on a
+ * session that may never have opened the wallet at all.
  *
- * The remembered provider is kept: logging out is not the user saying they no longer want
- * that wallet.
+ * The remembered provider is kept: logging out is not the user disowning that wallet.
  */
 export async function disconnectWalletIfActive(): Promise<void> {
   const pinia = getActivePinia();

@@ -88,10 +88,11 @@ export function useScramble(): UseScrambleReturn {
       multiplier += 1;
 
     /**
-     * Deterministic offset using prime-based factors to ensure all date
-     * components (day, month, year, hour, minute, second) are scrambled.
-     * Past dates stay in the past, future dates stay in the future.
-     * Pure offset preserves ordering: if A < B then scramble(A) < scramble(B).
+     * Deterministic offset built from prime factors, so every date component is scrambled: day,
+     * month, year, hour, minute and second. Past dates stay past and future dates stay future.
+     *
+     * A pure offset also preserves ordering, so a date that sorted before another still does after
+     * scrambling.
      */
     const offsetSeconds = multiplier * 13 * 86400
       + multiplier * 7 * 3600

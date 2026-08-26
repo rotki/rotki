@@ -13,20 +13,16 @@ export interface UseHistoryMatchedMovementItemProps {
 }
 
 export interface UseHistoryMatchedMovementItemReturn {
-  // Events
   primaryEvent: ComputedRef<HistoryEventEntry>;
   secondaryEvent: ComputedRef<HistoryEventEntry | undefined>;
-  // State
   hasMissingRule: ComputedRef<boolean>;
   chain: ComputedRef<Blockchain>;
   canUnlink: ComputedRef<boolean>;
-  // Selection
   showCheckbox: ComputedRef<boolean>;
   isCheckboxDisabled: ComputedRef<boolean>;
   movementEventIds: ComputedRef<number[]>;
   isSelected: ComputedRef<boolean>;
   toggleSelected: () => void;
-  // Notes
   compactNotes: ComputedRef<string | undefined>;
   eventTypeLabel: ComputedRef<string>;
 }
@@ -88,13 +84,11 @@ export function useHistoryMatchedMovementItem(
     return get(selection.isSelectAllMatching);
   });
 
-  // All event IDs in this movement for selection
   const movementEventIds = computed<number[]>(() => get(events).map(e => e.identifier));
 
   const isSelected = computed<boolean>(() => {
     if (!selection)
       return false;
-    // A movement is selected if all its events are selected
     return get(movementEventIds).every(id => selection.isEventSelected(id));
   });
 
@@ -102,7 +96,6 @@ export function useHistoryMatchedMovementItem(
     selection?.actions.toggleSwap(get(movementEventIds));
   }
 
-  // Check if this movement can be unlinked
   const canUnlink = computed<boolean>(() => {
     const ev = get(primaryEvent);
     return !!ev.actualGroupIdentifier;
@@ -134,8 +127,6 @@ export function useHistoryMatchedMovementItem(
     const addressLabel = resolveEventLabel(secondary);
 
     const isDeposit = primary.eventSubtype === 'receive';
-    // For deposits: to = exchange, from = address
-    // For withdrawals: from = exchange, to = address
     const toLabel = isDeposit ? exchangeLabel : addressLabel;
     const fromLabel = isDeposit ? addressLabel : exchangeLabel;
 

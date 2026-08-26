@@ -103,7 +103,6 @@ export function useNarrowSuggestions(
     const typed = toValue(query).trim();
     if (!typed)
       return fieldSuggestions(available);
-    // An asset field that already has a pill is no longer offered, and neither are its assets.
     const offersAssets = available.some(field => field.searchAsset);
     return [
       ...searchFieldsAndValues(toValue(query), available, get(operatorLabels), undefined, recentFor, get(syntaxHints)),

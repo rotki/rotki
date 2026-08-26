@@ -19,16 +19,12 @@ function removeChain(chains: Ref<Set<string>>, chain: string): void {
 }
 
 /**
- * Which chains have balance work in flight, split by the two layers that produce it.
+ * Which chains have balance work in flight: `refreshingChains` for the network query,
+ * `hydratingChains` for the read from the user's own database.
  *
- * ⭐ `refreshingChains` is the *network* query — the work a user watches, cancels and retries.
- * `hydratingChains` is the data refresh from the user's own database. They are tracked apart
- * because they mean different things to the UI: a refresh spinner on a row belongs to the former,
- * while "there is nothing to show yet" belongs to both.
- *
- * ⭐ Hydration's liveness lives here rather than in the orchestrator because hydration is not an
- * activity: it has no task-centre row, no cancel and no progress. This store is what every spinner
- * that used to read `useIsActive(BLOCKCHAIN_BALANCES)` for the cached phase now reads instead.
+ * @remarks
+ * Kept apart because a row's refresh spinner belongs to the first, while "nothing to show yet"
+ * belongs to both. Read them through `useBalancesLoading` rather than from here.
  */
 export const useBalanceRefreshState = defineStore('balances/refresh-state', () => {
   const refreshingChains = ref<Set<string>>(new Set());

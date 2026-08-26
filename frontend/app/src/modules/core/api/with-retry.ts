@@ -6,13 +6,15 @@ import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
 export interface RetryOptions {
   /**
    * Maximum number of retry attempts after the initial request fails.
-   * @default DEFAULT_MAX_RETRIES (2)
+   *
+   * @defaultValue {@link DEFAULT_MAX_RETRIES}
    */
   readonly maxRetries?: number;
   /**
-   * Base delay in milliseconds between retries. The actual delay is multiplied
-   * by the retry attempt number (exponential backoff).
-   * @default DEFAULT_RETRY_DELAY (20000ms)
+   * Base delay in milliseconds between retries, multiplied by the attempt number for exponential
+   * backoff.
+   *
+   * @defaultValue {@link DEFAULT_RETRY_DELAY}
    */
   readonly retryDelay?: number;
 }
@@ -28,12 +30,15 @@ export function isTimeoutError(error: unknown): boolean {
 }
 
 /**
- * Executes a given asynchronous function with retry logic in case of timeout errors.
+ * Runs an async function, retrying it on timeout.
  *
- * @template T The generic return type of the original request.
- * @param requestFn - The asynchronous function to be executed, typically representing a network request or similar operation.
- * @param options - Optional configuration for retry behavior, including maximum retry attempts and delay between retries.
- * @returns A promise that resolves to the result of the given asynchronous function or rejects with an error if retries are exceeded or a non-timeout error occurs.
+ * @remarks
+ * Only a timeout or abort is retried, as {@link isTimeoutError} judges it. Any other rejection
+ * propagates on the first attempt.
+ *
+ * @param requestFn - the operation to run, typically a network request
+ * @param options - see {@link RetryOptions}
+ * @returns the operation's result, or a rejection once the retries are exhausted
  */
 export async function withRetry<T>(requestFn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const {

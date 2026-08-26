@@ -7,6 +7,8 @@ import { GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances
  * the chosen exchange and whether the form is adding or editing. Keeping those decisions here means
  * they are answerable without mounting anything, and that the rules and the template read from one
  * description rather than from a dozen inline `computed`s.
+ *
+ * @packageDocumentation
  */
 
 /** Exchanges that need more than the usual key and secret, or that render an extra section. */
@@ -112,7 +114,7 @@ export interface ExchangeKeysFormState {
  * The editable fields, taken out of the entry the dialog owns. The entry carries more than this —
  * the location and the mode — which the form reads but never writes.
  *
- * 🔴 It has to answer the same for the same entry: `useMappedModelForm` compares what this returns
+ * It has to answer the same for the same entry: `useMappedModelForm` compares what this returns
  * against the state it already holds to decide whether an outside edit is news, so a value invented
  * here would report every pass as a change and the two directions would never settle.
  */

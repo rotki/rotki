@@ -47,10 +47,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const refreshState = useBalanceRefreshState();
 
   const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): void => {
-    // 🔴 Drop a payload older than what this chain already holds. A data refresh from the DB and a
-    // network query are allowed to overlap by design, so the two can land out of order; without
-    // this the slower one wins and rolls the chain back to stale balances. Discarding by age is
-    // what makes the overlap harmless — and what lets the work stop being serialised to avoid it.
     if (isStale(blockchain, parsedBalances.lastRefreshTs?.[blockchain]))
       return;
 
@@ -82,28 +78,37 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   /**
    * Whether this chain has anything worth querying.
    *
-   * ⭐ eth2 is the exception, and it is one the backend already makes. Its "accounts" are
+   * eth2 is the exception, and it is one the backend already makes. Its "accounts" are
    * validators, produced by a backend task rather than an accounts read, so `hasAccounts` reads
    * false until that task lands — and a balance pass that overtakes it would skip the chain
-   * entirely. `aggregator.py:727` exempts `ETHEREUM_BEACONCHAIN` from the same account check and
-   * routes it to `query_eth2_balances`, so the frontend gate disagreeing with it only ever loses
-   * balances the backend would have returned.
+   * entirely. The backend's `ChainsAggregator.query_balances` exempts `ETHEREUM_BEACONCHAIN` from
+   * the same account check and routes it to `query_eth2_balances`, so a frontend gate that
+   * disagrees only ever loses balances the backend would have returned.
    *
    * Gated on the module being active, which is the backend's own other precondition — with eth2
    * off there is nothing to query and the exemption must not apply.
    *
-   * ⚠️ STOPGAP. The real shape is an edge from the validator fetch to the eth2 balance query, once
+   * STOPGAP. The real shape is an edge from the validator fetch to the eth2 balance query, once
    * the refresh is a declared graph rather than a `Promise.all`. See the balances redesign plan.
    */
   const shouldQuery = (blockchain: string): boolean =>
     blockchain === Blockchain.ETH2 ? isEth2Enabled() : hasAccounts(blockchain);
 
+  /**
+   * Empties a chain's balances, for a chain that is known to have no accounts.
+   *
+   * @remarks
+   * A chain whose accounts have not been read yet is left alone. Callers arrive through
+   * `!hasAccounts(chain)`, which cannot tell "fetched, genuinely empty" from "not fetched yet" —
+   * both read false — so acting on unknown *erases* balances whenever a refresh races the account
+   * walk. An unknown chain keeps what it has until its accounts land.
+   *
+   * The completion is recorded here because a chain with no accounts submits no activity, so
+   * nothing else would ever settle it and it would read as perpetually unloaded. That is only safe
+   * below the guard above: recording completions while the account set is still unknown marks the
+   * app "ever loaded" with no balances.
+   */
   const clearChainBalances = (blockchain: string): void => {
-    // 🔴 A chain whose accounts have not been read yet is left alone. Every caller arrives here
-    // through `!hasAccounts(chain)`, and that cannot tell "fetched, genuinely empty" from "not
-    // fetched yet" — both read false. So clearing on unknown *erases* a chain's balances whenever
-    // a refresh races the account walk, rather than merely skipping it. Only a known-empty chain
-    // is cleared; an unknown one keeps whatever it has until its accounts land.
     if (!accountsKnown(blockchain))
       return;
 
@@ -114,24 +119,17 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         liabilities: {},
       },
     });
-    // No accounts means no activity was submitted, so nothing would otherwise record that this
-    // chain is settled. Without it an empty chain reads as perpetually unloaded.
-    //
-    // Safe here because the early return above has already established the account set is known: a
-    // refresh racing the accounts fetch used to see every chain as empty, and recording completions
-    // there marked the whole app "ever loaded" with no balances — dropping the initial-loading
-    // state while the real data was still coming.
     markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
   };
 
   /**
    * Whether this chain is worth asking about at all.
    *
-   * 🔴🔴 SKIPPED with a reason, never `ok`. A chain with nothing to query is a real outcome the
+   * SKIPPED with a reason, never `ok`. A chain with nothing to query is a real outcome the
    * user can be told about ("no accounts on this chain"), and reporting it as success recorded a
-   * completion for work that never ran. §5 is the other half of the argument: the chain stays in
-   * its run's denominator instead of vanishing from it, so "11 of 17" counts every chain in scope
-   * rather than only the ones that happened to have accounts.
+   * completion for work that never ran. It also keeps the chain in its run's denominator instead
+   * of vanishing from it, so "11 of 17" counts every chain in scope rather than only the ones that
+   * happened to have accounts.
    */
   const skipUnlessQueryable = (blockchain: string): Result<void, TaskError> | undefined => {
     if (shouldQuery(blockchain))
@@ -156,10 +154,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (isErr(result)) {
       if (isActionable(result.error)) {
         logger.error(result.error.message);
-        // ⭐ `notify` is off for the hydration read. A data refresh from the DB retries silently —
-        // it is plumbing, not something the user asked for and can act on — and a notification per
-        // attempt would make one failing chain raise three toasts. The log stays either way, so a
-        // chain that never hydrates is still diagnosable.
         if (notify) {
           notifyError(
             t('actions.balances.blockchain.error.title'),
@@ -169,9 +163,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
           );
         }
       }
-      // Forget any earlier success for this chain, so a failed query reads as "no data" rather
-      // than leaving the last good load standing. Runs before the activity settles, so the FAILED
-      // record it writes has no sticky `lastSuccessAt` to inherit.
       invalidate(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
     }
     else {
@@ -193,7 +184,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (skipped)
       return skipped;
 
-    // ⚠️ `runTask` types the payload but does not validate it — the schema is only applied here.
+    // `runTask` types the payload but does not validate it — the schema is only applied here.
     return settleChain(
       blockchain,
       mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),

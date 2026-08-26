@@ -29,33 +29,30 @@ const EXAMPLE_END_TIMESTAMP = new Date(2024, 0, 20).getTime() / 1000;
  *
  * Per value type, not per table: `>100` reads the same everywhere, so no table restates it. The
  * pure narrowing core takes these as a parameter, the same way it takes the operator labels.
+ *
+ * @remarks
+ * The examples themselves stay literal and untranslated. `after`, `before` and `to` are the words
+ * the parser knows, so a translated example is one the user copies and the bar then refuses.
+ *
+ * Each shape gets its own chip — upper bound, lower bound, span — and `before` earns one even
+ * though `after` already shows the form. Which words the parser accepts is not guessable (`since`
+ * and `until` work, `from` and `to` do not), and a chip for one direction alone reads as though
+ * that is the only direction the bar supports.
  */
 export function usePillSyntaxHints(): ComputedRef<SyntaxHints> {
   const { t } = useI18n({ useScope: 'global' });
   const dateInputFormat = useSetting('dateInputFormat');
 
-  // In the user's own format: an example reading `01/15/2024` to someone who writes dates
-  // day-first teaches the wrong order, and the order is the whole thing the example is for.
   const exampleDate = computed<string>(() => convertFromTimestamp(EXAMPLE_TIMESTAMP, get(dateInputFormat)));
   const exampleEndDate = computed<string>(() => convertFromTimestamp(EXAMPLE_END_TIMESTAMP, get(dateInputFormat)));
 
   return computed<SyntaxHints>(() => ({
-    // Literal, and deliberately not translated: `after` and `to` are the words the parser knows,
-    // so a translated example would be one the user copies and the bar then refuses. The operator
-    // forms lead, because the bare date alone never showed that an operator was possible at all.
     examples: {
-      // `before` earns its own chip even though `after` shows the shape: which words the parser
-      // knows is not guessable (`since` and `until` work, `from` and `to` do not), and its only
-      // other route was reading it off a bare date's result rows — which are *translated*, while
-      // the parser only knows the English words, so that route does not survive a locale change.
       [FilterValueTypes.DATE]: [
         `after ${get(exampleDate)}`,
         `before ${get(exampleDate)}`,
         `${get(exampleDate)} - ${get(exampleEndDate)}`,
       ],
-      // One per shape, the same as the dates above: an upper bound, a lower bound, a span. Nothing
-      // else on screen distinguishes them, and a chip for only one direction reads as though that
-      // is the direction the bar supports.
       [FilterValueTypes.RANGE]: ['>100', '<10', '10 - 50'],
     },
     keywords: {

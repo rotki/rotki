@@ -3,11 +3,7 @@ import { activityOutcome } from './activity-outcome';
 import { ActivityStatus } from './core/types';
 
 describe('activityOutcome', () => {
-  /**
-   * A running row without a percentage used to fall back to a spinner. The elapsed counter beside
-   * it already ticks, so the spin carried no information the row was not already showing.
-   */
-  it('should give a running activity a label of its own', () => {
+  it('should give a running activity a label of its own, rather than a spinner', () => {
     expect(activityOutcome(ActivityStatus.RUNNING).color).toBe('primary');
   });
 

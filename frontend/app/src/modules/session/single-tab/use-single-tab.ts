@@ -85,9 +85,6 @@ function createSingleTab(): UseSingleTabReturn {
           set(active, false);
         }
         else if (data.type === 'release' && !get(active)) {
-          // The active tab is leaving. Queue a takeover after a short random delay so that,
-          // with several paused tabs, the first to fire claims (which reaches the others and
-          // cancels their timers) instead of all reloading at once.
           scheduleReclaim();
         }
       };
@@ -106,9 +103,6 @@ function createSingleTab(): UseSingleTabReturn {
   function reclaim(): void {
     if (!supported)
       return;
-    // Claim first (so the other tab pauses), then a full reload re-resumes the session and
-    // re-fetches through the normal unlock flow — the reclaimed tab never carries stale state
-    // or tasks stranded by the takeover (the backend serves a single frontend at a time).
     reloading = true;
     claim();
     window.location.reload();
@@ -132,9 +126,6 @@ function createSingleTab(): UseSingleTabReturn {
   }
 
   if (supported) {
-    // Closing or reloading the active tab hands the session to a surviving tab, so a lone tab
-    // is not stranded behind the "active in another tab" overlay. Skipped for our own reclaim
-    // reload, which already re-establishes ownership after booting.
     window.addEventListener('pagehide', () => {
       if (!reloading)
         broadcastRelease();

@@ -39,6 +39,14 @@ interface UseAddressesNamesApiReturn {
 const ENS_REVERSE_TIMEOUT = 10_000;
 
 export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
+  /**
+   * Reverse-resolves ENS names, synchronously or as a backend task.
+   *
+   * @remarks
+   * Only the synchronous read is deduped, bounded and deprioritised: it is the one a re-render
+   * repeats. With `asyncQuery` it runs as a backend task instead, which is a user's explicit
+   * refresh and returns a task id rather than the names.
+   */
   const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => api.post<T>(
     '/names/ens/reverse',
     {
@@ -47,9 +55,6 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
       ignoreCache: asyncQuery,
     },
     {
-      // Only the synchronous read is bounded and shared. The task variant is user-initiated
-      // (an explicit refresh), returns a task id rather than the names, and is not what a
-      // re-render repeats.
       dedupe: !asyncQuery,
       priority: asyncQuery ? undefined : RequestPriority.LOW,
       timeout: asyncQuery ? undefined : ENS_REVERSE_TIMEOUT,

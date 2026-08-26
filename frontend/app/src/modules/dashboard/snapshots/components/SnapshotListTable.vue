@@ -30,6 +30,14 @@ const { t } = useI18n({ useScope: 'global' });
 
 const currencySymbol = useSetting('currencySymbol');
 
+/**
+ * Builds the snapshot table columns.
+ *
+ * @remarks
+ * The value column sorts on the stored USD value, not on what it displays: the fiat value is
+ * resolved lazily per visible cell, so it is never available for the full set. Any column added
+ * here that renders a lazily resolved value has the same limit.
+ */
 const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
   {
     key: 'timestamp',
@@ -38,9 +46,6 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
   },
   {
     align: 'end',
-    // Sorting is by the stored USD value: the display fiat value is resolved
-    // lazily per visible cell, so it is not available to sort the full set. USD
-    // order is a faithful approximation (historic FX varies only mildly day-to-day).
     key: 'usdValue',
     label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,

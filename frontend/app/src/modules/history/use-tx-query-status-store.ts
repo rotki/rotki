@@ -59,15 +59,14 @@ function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQ
 /**
  * Whether an address will report no further progress.
  *
- * ⚠️ The single source of truth: the sync panel and the dashboard indicator both read this. Separate
- * copies of the rule are how the panel came to call a bitcoin address complete while the indicator
- * still counted it as querying.
+ * The single source of truth — the sync panel and the dashboard indicator both read this. A second
+ * copy of the rule is how the panel once called a bitcoin address complete while the indicator still
+ * counted it as querying.
  *
- * Bitcoin decodes inline rather than through the separate decoding section, so it can end on either
- * finish message: the backend sends `QUERYING_TRANSACTIONS_FINISHED` on both the empty and the
- * decoding path, and only reaches `DECODING_TRANSACTIONS_FINISHED` on the latter. Accepting both
- * settles the empty path, at the cost of a bitcoin address reading complete for the moment between
- * the two on the decoding path.
+ * Bitcoin decodes inline, so it can end on either finish message: the backend sends
+ * `QUERYING_TRANSACTIONS_FINISHED` on both the empty and the decoding path and reaches
+ * `DECODING_TRANSACTIONS_FINISHED` only on the latter. Accepting both settles the empty path, at the
+ * cost of reading complete for the moment between the two.
  */
 export function isTxQueryStatusFinished(item: TxQueryStatusData): boolean {
   // Failed and cancelled are both terminal: no further progress is coming for that address, so a
@@ -101,14 +100,12 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   /**
    * Seed the panel with the addresses a sync is about to query.
    *
-   * ⚠️ `extend` keeps what an earlier wave of the *same* sync already produced. A history refresh
-   * can run in more than one wave: accounts that were not yet loaded when the umbrella opened are
-   * drained into a follow-up run, and each wave carries only its own accounts. Replacing the map on
-   * the second wave dropped every address the first had finished, so the bar's denominator fell
-   * mid-sync (6/7 -> 3/3) with nothing to say a new wave had begun.
+   * `extend` keeps what an earlier wave of the *same* sync produced. A refresh runs in waves (late
+   * accounts are drained into a follow-up run, each wave carrying only its own), so replacing the map
+   * drops every address the previous wave finished and the denominator falls mid-sync.
    *
-   * ⚠️ An address already present is left alone. Re-seeding it as `ACCOUNT_CHANGE` would walk a
-   * finished chain's progress backwards, which is the same lie in the other direction.
+   * An address already present is left alone. Re-seeding it as `ACCOUNT_CHANGE` walks a finished
+   * chain's progress backwards, the same lie in the other direction.
    */
   const initializeQueryStatus = (data: SeededAccount[], { extend = false }: { extend?: boolean } = {}): void => {
     if (!extend)
@@ -129,8 +126,6 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
         status: TransactionsQueryStatus.ACCOUNT_CHANGE,
       };
 
-      // ⚠️ The subtype comes from the caller rather than being assumed. Seeding everything as `evm`
-      // gave bitcoin rows a synthetic period, hence a progress bar for a range nobody queried.
       status[key] = item.subtype === 'bitcoin'
         ? { ...base, subtype: item.subtype }
         : { ...base, originalPeriodEnd: now, period: [0, now], subtype: item.subtype };
@@ -204,11 +199,6 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     const chain = account.chain.toLowerCase();
     const key = createKey({ address: account.address, chain });
 
-    // Don't overwrite an entry that has already reached a terminal state. The caller runs its
-    // `finished` tail unconditionally, so without this a query that failed reports success: the
-    // address renders as a green "Complete", its chain's `failed` count stays 0 and no warning is
-    // raised. Evmlike is the one case where nothing else corrects that, since these chains send no
-    // websocket messages of their own.
     const current = status[key]?.status;
     if (current === TransactionsQueryStatus.CANCELLED || current === TransactionsQueryStatus.FAILED)
       return;
@@ -253,17 +243,14 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   /**
    * Record that an address's query failed.
    *
-   * Marked, not removed. Removing it did stop the address claiming to be querying forever, but the
-   * chain list is derived from these entries, so a chain whose every address failed disappeared
-   * from the sync panel entirely, taking its own denominator with it and leaving the run reading
-   * "11/11 chains complete" while three addresses had in fact failed.
+   * Marked, not removed. The chain list is derived from these entries, so removing a failure makes
+   * a chain whose every address failed vanish from the panel along with its denominator, leaving the
+   * run reading "11/11 chains complete".
    *
-   * The entry is created when it is missing rather than dropped on the floor. A per-address query
-   * always announces itself first (`with_tx_status_messaging` sends STARTED before the call), so
-   * normally one exists. It does not when the task failed before reaching any address (erroring
-   * during setup or chain-level work), or when the run's messages never landed, e.g. the socket
-   * dropped mid-run. Returning early in those cases leaves the chain absent from the panel, which
-   * is the exact state this whole fix exists to prevent.
+   * A missing entry is created, not dropped. A per-address query normally announces itself first
+   * (`with_tx_status_messaging` sends STARTED), but not when the task failed before reaching any
+   * address or when the run's messages never landed. Returning early there hides the chain, which is
+   * the state this exists to prevent.
    */
   const markAddressFailed = (account: ChainAddress, subtype: FailedSubtype = 'evm'): void => {
     const key = createKey(account);

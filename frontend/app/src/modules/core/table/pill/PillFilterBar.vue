@@ -104,9 +104,19 @@ function hasEditor(field: FieldDef): boolean {
 }
 
 /**
- * Closing an editor that was never filled in drops its pill: picking a field and then thinking
- * better of it used to leave an empty pill behind, which filters nothing, says nothing, and can
- * only be got rid of by finding its remove button.
+ * Opens or closes a field's editor, dropping the pill when it closes with nothing in it.
+ *
+ * @remarks
+ * An empty pill filters nothing, says nothing, and can only be got rid of by finding its remove
+ * button, so picking a field and then thinking better of it must leave nothing behind.
+ *
+ * The close path waits a tick before deciding anything. A debounced editor commits what it holds
+ * as it unmounts, on the render this call triggers, so reading the filter any earlier sees it as
+ * it was before the last keystroke and throws away a half-typed range.
+ *
+ * A value is remembered on close, never on each update: a free-text editor commits through that
+ * same debounce, so remembering every one stores `swap`, `swap on`, … as separate values and
+ * rewrites the whole settings blob for each.
  */
 function setEditorOpen(field: FieldDef, open: boolean): void {
   set(openEditorKey, open ? field.key : undefined);
@@ -114,9 +124,6 @@ function setEditorOpen(field: FieldDef, open: boolean): void {
   if (open)
     return;
 
-  // Deferred by a tick: an editor that debounces commits what it holds as it unmounts, which
-  // happens on the render this call triggers. Deciding anything before that read the filter as it
-  // was *before* the last thing typed, so dismissing a half-typed range threw the value away.
   nextTick(() => {
     const filter = get(model.state).find(entry => entry.fieldKey === field.key);
     if (!filter) {
@@ -129,9 +136,6 @@ function setEditorOpen(field: FieldDef, open: boolean): void {
       return;
     }
 
-    // Remembered on close rather than on every update: a free-text editor commits through a
-    // debounce, so remembering each one stored `swap`, `swap on`, … as separate values and wrote
-    // the whole settings blob for each. Closing means the value is finished.
     remember(field, filter.values);
     focusBar();
   });
@@ -243,13 +247,9 @@ function applyExample(example: string): void {
   get(narrowInput)?.focus();
 }
 
-// The caret never leaves the input, so the highlighted row has to be named rather than focused.
-// `RuiMenu` gives its popover `role="menu"`, which is why the rows are menuitems and this input
-// says `aria-haspopup="menu"`: a combobox may only own a listbox, tree, grid or dialog, so calling
-// it one while pointing at a menu would be a promise the markup does not keep.
-// The rows and the footer chips form one navigable sequence, chips last. Nothing in the popover is
-// ever focused and Tab cannot reach it (it is teleported, and `disable-auto-focus` keeps the caret
-// here), so arrowing on past the last row is the only way a chip is reachable without a mouse.
+// Rows and footer chips are one navigable sequence, chips last: nothing in the teleported
+// popover can be focused or Tabbed to, so arrowing past the last row is the only way to reach a chip
+// without a mouse.
 const navigableCount = computed<number>(() => get(suggestions).length + get(syntaxExamples).length);
 
 const activeSuggestionId = computed<string | undefined>(() => {
@@ -314,21 +314,22 @@ function onNarrowKeydown(event: KeyboardEvent): void {
   }
 }
 
-// Clicking the bar's empty space should land the caret in the input, the way a text field with a
-// generous hit area behaves. Anything interactive handles its own click instead: a pill opens its
-// editor, a button acts.
-//
-// Testing `target !== currentTarget` is not enough — most of the bar's dead space belongs to the
-// wrapper around the input rather than to the bar itself, so clicking the middle did nothing.
+/**
+ * Makes a click anywhere on the bar behave like a click on its input.
+ *
+ * @remarks
+ * Checking `target !== currentTarget` is not enough: most of the bar's dead space belongs to the
+ * wrapper around the input rather than the bar itself, so the middle would do nothing.
+ *
+ * The suggestions are opened as well as focused. The input is the menu's activator, so clicking it
+ * opens them; the dead space is not, so without this the two halves of one bar behave differently
+ * depending on how far along it the user happens to click.
+ */
 function focusInput(event: MouseEvent): void {
   const { target } = event;
   if (disabled || (target instanceof Element && target.closest('button, a, input, [data-testid=filter-pill]')))
     return;
 
-  // Opened as well as focused. The input is the menu's activator, so clicking the input itself
-  // opens the suggestions — but the bar's dead space is not the activator, so clicking there only
-  // moved the caret. The two halves of the same bar behaved differently depending on how far along
-  // it you happened to click.
   get(narrowInput)?.focus();
   set(narrowOpen, true);
 }

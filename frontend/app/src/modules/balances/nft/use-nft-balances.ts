@@ -82,8 +82,6 @@ export function useNftBalances(): NftBalancesReturn {
       title: t('task_center.group.nft_balances'),
     });
 
-    // Previously this threw and the caller reset the status; the orchestrator now owns the
-    // terminal state, so surfacing the error is all that is left to do.
     onActionableError(outcome, (error) => {
       logger.error(error.message);
       notifyError(

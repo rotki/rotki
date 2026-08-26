@@ -27,8 +27,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const mergeTool = ref<boolean>(false);
 
-// The three filters the status dropdown used to hold, each its own ref so each is one declaration
-// feeding the request, the url and the bar's own bag alike.
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>(IgnoredAssetHandlingType.EXCLUDE);
 const onlyShowOwned = ref<boolean>(false);
 const onlyShowWhitelisted = ref<boolean>(false);

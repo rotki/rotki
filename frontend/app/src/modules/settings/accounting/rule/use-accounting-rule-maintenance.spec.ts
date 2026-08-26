@@ -70,7 +70,6 @@ describe('useAccountingRuleMaintenance', () => {
     expect(deleteAccountingRule).toHaveBeenCalledWith(7);
   });
 
-  // Deleting the row and then not reloading would leave a rule on screen that no longer exists.
   it('should not reload when the backend reports the rule was not deleted', async () => {
     deleteAccountingRule.mockResolvedValue(false);
     const { confirmDelete, refetch } = createMaintenance();

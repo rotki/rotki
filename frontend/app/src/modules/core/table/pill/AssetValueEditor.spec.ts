@@ -99,14 +99,10 @@ describe('assetValueEditor', () => {
     expect(props.pinned).toBe(1);
   });
 
-  // Picking an asset and then swapping it for another must not leave the first one behind: on a
-  // single-select field it is no longer the filter, and a list that grows with every asset tried
-  // is just clutter over the search results.
   it('should drop an asset that was selected and then deselected', async () => {
     set(visibleAssets, [asset(USDC, 'USDC')]);
     const wrapper = createWrapper([USDC]);
 
-    // Selecting caches USDC's info, which is what could otherwise keep it in the list.
     wrapper.findComponent(ValueSelectList).vm.$emit('update:modelValue', [USDC]);
     await nextTick();
 

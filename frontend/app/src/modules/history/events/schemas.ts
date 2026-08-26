@@ -357,7 +357,7 @@ const HistoryEventMeta = z.object({
   states: z.array(HistoryEventStateEnum).optional(),
 });
 
-type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
+export type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
 
 const HistoryEventEntryWithMeta = z.object({
   entry: HistoryEvent,

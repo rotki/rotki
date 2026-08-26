@@ -1,10 +1,6 @@
-// Barrel for the composables consumed by HistoryEventsView.vue. The view sits
-// at the eslint max-dependencies cap, and re-exporting here lets us add new
-// feature imports to the view without suppressions. It is not a blessed public
-// API — callers other than HistoryEventsView should keep importing from the
-// individual files. Longer term, the view's composables should be consolidated
-// into a single facade so this barrel (and HistoryEventsView's import sprawl)
-// can go away.
+// Barrel for HistoryEventsView.vue alone, which sits at the max-dependencies cap. Not a public
+// API: every other caller imports from the individual files. It should be retired by consolidating
+// the view's composables behind one facade.
 export { useHistoryEventFields } from './use-history-event-fields';
 
 export { useHistoryEventNavigationConsumer } from './use-history-event-navigation-consumer';

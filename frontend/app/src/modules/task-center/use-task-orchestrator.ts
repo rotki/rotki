@@ -64,14 +64,22 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
       [SESSION_LANE]: 2,
       [UMBRELLA_LANE]: 16,
     },
-    // Two accounts per chain, not two across every chain; one query per exchange location; two
-    // addresses added at once per chain, replacing `addMultipleAccounts`'s own limiter. Removals
-    // take 1 per chain and 1 active lane, which is the fully serial shape they always had.
+    /**
+     * Caps how many jobs run at once inside one lane of a family, never across the family.
+     *
+     * @remarks
+     * Two accounts per chain, one query per exchange location, one removal per chain. Read a value
+     * as "per chain" or "per location", not as a budget the whole family shares.
+     */
     laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 1 },
-    // ...and only two chains' lanes live at once. The accounts of every chain are declared up
-    // front now, so without this the per-chain cap alone would let all of them progress together.
-    // Detection's active cap matches the balances cap: a chain only detects inside its own chain
-    // job, and only two of those run at once, so a third would be a lane nothing can fill.
+    /**
+     * Caps how many lanes of a family are live at once, which {@link laneFamilies} does not do.
+     *
+     * @remarks
+     * Every chain's accounts are declared up front, so the per-lane cap alone would let all chains
+     * progress together. Detection's entry must not exceed the balances cap: a chain only detects
+     * inside its own chain job, so a further active detect lane is one nothing can fill.
+     */
     laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
   });
   const activities = shallowRef<Activity[]>([]);
@@ -80,9 +88,6 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
   const version = shallowRef<number>(0);
 
   orchestrator.onChange(() => {
-    // Ephemeral activities (pre-login unlock work) are tracked by the orchestrator but never
-    // projected into the render model — they must not surface in the task center. Everything
-    // else (scheduling, cancel, status queries) still sees them via the complete `snapshot()`.
     set(activities, orchestrator.snapshot().filter(activity => !activity.ephemeral));
     set(version, get(version) + 1);
   });

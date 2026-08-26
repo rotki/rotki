@@ -27,9 +27,9 @@ export interface ManagedAssetStatus {
 }
 
 /**
- * The three filters the status dropdown used to hold. They are params rather than part of the
- * filter bag above: two are booleans, which the bag has no form for, and the handling has a default
- * the backend needs stated even when no pill says it.
+ * Owned-only, whitelisted-only and ignored-handling. They are params rather than part of the filter
+ * bag above: two are booleans, which the bag has no form for, and the handling has a default the
+ * backend needs stated even when no pill says it.
  *
  * A url is anyone's to write, and the handling reaches both the request and the ignored pill's
  * label, so an unrecognised one falls back to the default rather than being sent on.

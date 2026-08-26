@@ -4,24 +4,15 @@ import { type ActivityKind, type ActivityPart, ActivityKind as Kind, ActivityPar
 /**
  * Descriptions for activities whose kind alone does not say what they are doing.
  *
- * Mirrors `core/kinds.ts`'s group-title table, with two differences that are deliberate:
+ * @remarks
+ * Mirrors `core/kinds.ts`'s group-title table, but lives outside `core/` (it needs `msg.$t` as a
+ * value, and the pure core must stay free of i18n at runtime) and is keyed by **kind then part**,
+ * since `EXPORT` belongs to four kinds and one wording cannot serve them all.
  *
- * 1. It lives outside `core/`, because it needs `msg.$t` as a *value* and `@/message-key` imports
- *    the i18n singleton. The pure core must keep its no-i18n-at-runtime property.
- * 2. It is keyed by **kind then part**, not by part alone. A description is a function of both:
- *    `EXPORT` belongs to four kinds, and "Exporting user assets" cannot serve accounting rules.
- *
- * Every activity gets a short description saying what it is doing — a bare value ("Ethereum",
- * "EUR") tells the reader nothing the row does not already show. Values belong *inside* the
- * sentence as named params ("Querying the {chain} network"), never appended to it.
- *
- * A description must not repeat its group title: under "Blockchain balances", "Querying balances
- * for Ethereum" says "balances" twice, while "Querying the Ethereum network" adds the verb and the
- * target. Keep them succinct and verb-first.
- *
- * Producers whose text is already a full sentence built elsewhere (e.g. the oracle cache's
- * "Creating cache entry from {fromAsset} to {toAsset} on {source}") pass that string straight
- * through rather than duplicating it here.
+ * Writing one: verb-first, succinct, and a full sentence — a bare value ("Ethereum") says nothing
+ * the row does not already show. Values go *inside* the sentence as named params, never appended:
+ * `Querying the {chain} network`. Do not repeat the group title. A producer whose text is already
+ * built elsewhere passes it straight through instead of duplicating it here.
  */
 const ACTIVITY_LABEL: Partial<Record<ActivityKind, Partial<Record<ActivityPart, MessageKey>>>> = {
   [Kind.ACCOUNTING_RULES]: {
@@ -76,7 +67,7 @@ const ACTIVITY_LABEL: Partial<Record<ActivityKind, Partial<Record<ActivityPart, 
  * `ActivitySpec.subtitle` already expects for "no subtitle".
  *
  * Parameters are named and placed *inside* the sentence by the message itself
- * ("Retrieving token details for {address} ({chain})"), never appended by this helper — translators
+ * (`Retrieving token details for {address} ({chain})`), never appended by this helper — translators
  * decide where a value belongs, and never see a punctuation-only string.
  */
 export function activityLabel(

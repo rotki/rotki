@@ -1,13 +1,17 @@
 import type { Interop } from '@shared/ipc';
 
-interface WalletBridgeApi {
-  // Connection management
+interface Eip6963ProviderDetectionApi {
+  getAvailableProviders: () => Promise<EIP6963ProviderDetail[]>;
+  selectProvider: (uuid: string) => Promise<boolean>;
+  getSelectedProvider: () => Promise<EIP6963ProviderDetail | null>;
+}
+
+interface WalletBridgeApi extends Eip6963ProviderDetectionApi {
   isEnabled: () => boolean;
   isConnected: () => boolean;
   enable: () => Promise<void>;
   disable: () => Promise<void>;
 
-  // Bridge server management
   openWalletBridge: () => Promise<void>;
   isWalletBridgeClientConnected: () => Promise<boolean>;
   isWalletBridgeClientReady: () => Promise<boolean>;
@@ -15,17 +19,10 @@ interface WalletBridgeApi {
   isWalletBridgeWebSocketListening: () => Promise<boolean>;
   walletBridgeStopServers: () => Promise<void>;
 
-  // RPC requests
   request: (request: RpcRequest) => Promise<any>;
 
-  // Event management
   addEventListener: (eventName: string, callback: (data: any) => void) => void;
   removeEventListener: (eventName: string) => void;
-
-  // EIP-6963 Provider Detection
-  getAvailableProviders: () => Promise<EIP6963ProviderDetail[]>;
-  selectProvider: (uuid: string) => Promise<boolean>;
-  getSelectedProvider: () => Promise<EIP6963ProviderDetail | null>;
 }
 
 interface Request {
@@ -71,7 +68,6 @@ export interface EIP6963AnnounceProviderEvent {
   detail: EIP6963ProviderDetail;
 }
 
-// EIP-1193 Provider Events
 export interface EIP1193ProviderEvents {
   connect: [{ chainId: string }];
   disconnect: [{ code: number; message: string }];

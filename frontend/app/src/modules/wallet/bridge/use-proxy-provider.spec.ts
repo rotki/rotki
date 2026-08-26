@@ -153,4 +153,35 @@ describe('useProxyProvider', () => {
 
     expect(bridge.removeEventListener).toHaveBeenCalledWith('accountsChanged');
   });
+
+  it('should detach every bridge forwarder when the owning scope is disposed', () => {
+    const scope = effectScope();
+    scope.run(() => {
+      const provider = useProxyProvider()!;
+      provider.on!('accountsChanged', vi.fn());
+      provider.on!('chainChanged', vi.fn());
+    });
+
+    expect(bridge.removeEventListener).not.toHaveBeenCalled();
+
+    scope.stop();
+
+    expect(bridge.removeEventListener).toHaveBeenCalledWith('accountsChanged');
+    expect(bridge.removeEventListener).toHaveBeenCalledWith('chainChanged');
+    expect(bridge.removeEventListener).toHaveBeenCalledTimes(2);
+  });
+
+  it('should leave a dead provider unreachable, so a later bridge emission hits nothing', () => {
+    const scope = effectScope();
+    const handler = vi.fn();
+    scope.run(() => {
+      useProxyProvider()!.on!('accountsChanged', handler);
+    });
+
+    const forward = bridge.addEventListener.mock.calls[0][1];
+    scope.stop();
+    forward(['0x1']);
+
+    expect(handler).not.toHaveBeenCalled();
+  });
 });

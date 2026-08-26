@@ -76,7 +76,6 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
 
   const { allEvmChains, supportedChains } = storeToRefs(useSupportedChainsStore());
 
-  // Derived filtered views
   const evmChainsData = computed<EvmChainInfo[]>(() =>
     get(supportedChains).filter(isEvmChain),
   );
@@ -142,7 +141,6 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     return map;
   });
 
-  // Type check functions
   const isEvm = (chain: string): boolean => get(evmChainSet).has(chain);
 
   const supportsTransactions = (chain: string): boolean => get(txEvmChainSet).has(chain);
@@ -177,29 +175,31 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
   const getEvmChainId = (name: string): number | undefined =>
     get(allEvmChains).find(x => x.name === name)?.id;
 
-  // Chain matching and name resolution
-
   /**
-   * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
-   * @return {Blockchain} - Blockchain id found
+   * Resolves a chain identifier to its {@link Blockchain}.
+   *
+   * @param location - a chain id or an evmChainName
+   * @returns the matching chain, or `undefined` when nothing matches; prefer this over
+   * {@link getChain}, which substitutes Ethereum instead
    * @example
+   * ```ts
    * matchChain('zksync_lite'); // Blockchain.ZKSYNC_LITE
-   * matchChain('ethereum'); // Blockchain.ETH
+   * matchChain('ethereum');    // Blockchain.ETH
+   * ```
    */
   const matchChain = (location: string): Blockchain | undefined =>
     get(chainTokenLookup).get(getTextToken(toSnakeCase(location)));
 
   /**
-   * Retrieves the blockchain chain based on the specified location.
+   * {@link matchChain} with a fallback instead of `undefined`.
    *
-   * This function attempts to match a given location to a specific blockchain
-   * chain using the `matchChain` function.
-   * If no match is found, the provided default value is returned.
-   * The default value defaults to `Blockchain.ETH` if not explicitly specified.
+   * @remarks
+   * The default answers Ethereum for anything unrecognised, which silently files an unknown
+   * chain's data under ETH. Reach for {@link matchChain} wherever "no match" needs handling.
    *
-   * @param {string} location - The location used to determine the blockchain chain.
-   * @param {Blockchain} [defaultValue=Blockchain.ETH] - The blockchain chain to return if no match is found.
-   * @returns {Blockchain} The blockchain chain corresponding to the specified location or the default value.
+   * @param location - a chain id or an evmChainName
+   * @param defaultValue - returned when nothing matches
+   * @defaultValue `Blockchain.ETH`
    */
   const getChain = (
     location: string,
@@ -207,11 +207,14 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
   ): Blockchain => matchChain(location) ?? defaultValue;
 
   /**
-   * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
-   * @return {string} - Readable chain name
+   * The human-readable display name for a chain.
+   *
+   * @param location - a chain id or an evmChainName
    * @example
+   * ```ts
    * getChainName('zksync_lite'); // ZKSync Lite
-   * getChainName('ethereum'); // Ethereum
+   * getChainName('ethereum');    // Ethereum
+   * ```
    */
   const useChainName = (location: MaybeRefOrGetter<string | undefined>): ComputedRef<string> =>
     computed(() => {
@@ -246,7 +249,6 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     return getPublicProtocolImagePath(image);
   };
 
-  // Derived display data
   const txChainsToLocation = computed<string[]>(() =>
     get(evmAndEvmLikeTxChainsInfo).map((item) => {
       if (isEvmChain(item))

@@ -223,11 +223,6 @@ describe('useBackendManagement', () => {
 
   describe('docker control', () => {
     it('should not restart the backend while merely setting up at boot', async () => {
-      // Regression: with the electron-only guard removed from restartBackend,
-      // setupBackend's boot path started issuing a real /_control restart, so
-      // docker bounced its whole backend tree on every page load - and before
-      // login the endpoint refuses, which stranded the user short of the login
-      // screen because setupBackend rejected before reaching connect().
       packaged = false;
 
       const { useBackendManagement } = await importModule();

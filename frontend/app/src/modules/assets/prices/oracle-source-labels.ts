@@ -3,13 +3,12 @@
  * pill that filters to it: a filter has to read the same as the rows it produces, and these are
  * brand names rather than anything a casing rule could derive from the id.
  *
- * 🔴 These are the backend's `HistoricalPriceOracle` members, NOT the `PriceOracle` list the
- * settings use. Only an oracle that can be a `price_history.source_type` belongs here: the two
- * lists overlap but are not the same, and the ones this used to borrow from `PriceOracle`
- * (`blockchain`, `fiat`) made the endpoint answer
- * `source_type blockchain is not stored in price_history`.
+ * These are the backend's `HistoricalPriceOracle` members, NOT the `PriceOracle` list the settings
+ * use. The two overlap but are not the same, and only an oracle that can be a
+ * `price_history.source_type` belongs here — borrowing `blockchain` or `fiat` from `PriceOracle`
+ * makes the endpoint answer `source_type blockchain is not stored in price_history`.
  *
- * The keys are the wire values, which the backend derives from the enum member name — hence
+ * The keys are wire values, which the backend derives from the enum member name — hence
  * `manual current` with a space rather than the `manualcurrent` the settings enum uses.
  */
 const sourceLabels: Record<string, string> = {
@@ -25,7 +24,7 @@ const sourceLabels: Record<string, string> = {
   'xratescom': 'x-rates.com',
 };
 
-/** An oracle id -> its display name, falling back to the id for one we have no name for. */
+/** Maps an oracle id to its display name, falling back to the id when there is no name for it. */
 export function getOracleSourceLabel(source: string): string {
   return sourceLabels[source] ?? source;
 }

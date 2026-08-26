@@ -34,9 +34,8 @@ const filteredChains = computed<ChainInfo[]>(() => {
   const query = getTextToken(get(search));
   return get(decodableTxChainsInfo).filter(chain =>
     getTextToken(chain.name).includes(query)
-    // Only EVM chains carry an `evmChainName` to match on; the rest match by name alone.
-    // Narrowed with `in` rather than on `type`, because the fallback chain variant types `type` as
-    // a plain string and so is not excluded by comparing it to 'evm'.
+    // Narrowed with `in` rather than on `type`: the fallback chain variant types `type` as a plain
+    // string, so comparing it to 'evm' excludes nothing.
     || ('evmChainName' in chain && getTextToken(chain.evmChainName).includes(query)),
   );
 });

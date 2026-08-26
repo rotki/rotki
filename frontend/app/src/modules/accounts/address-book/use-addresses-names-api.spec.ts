@@ -511,7 +511,7 @@ describe('composables/api/blockchain/addresses-names', () => {
      * repeatedly asks for the same address over and over. The request queue allows six requests in
      * flight; a slow backend once parked all six on identical lookups and every other request in
      * the app stopped, including the DELETE behind a user's confirmed delete
-     * (`history-events.spec.ts:334`, CI only). Identical lookups must therefore share one request.
+     * (seen in the history-events e2e spec, CI only). Identical lookups must share one request.
      */
     it('should share one request between identical concurrent lookups', async () => {
       let started = 0;

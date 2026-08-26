@@ -97,10 +97,6 @@ const initialOptions = computed<Partial<BackendOptions>>(() => resolveInitialBac
 ));
 
 async function loaded() {
-  // Wait for the backend configuration before snapshotting initial values,
-  // otherwise the loglevel fallback chain resolves to defaultLogLevel
-  // (CRITICAL in prod) and the dropdown displays that stale value even
-  // after the real backend level arrives. See regression #12079.
   if (!get(configuration)) {
     await loadConfiguration();
   }

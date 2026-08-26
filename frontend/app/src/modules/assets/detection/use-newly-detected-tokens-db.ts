@@ -157,8 +157,15 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
     }
   }
 
+  /**
+   * Expires stale tokens and trims the table back to its configured maximum.
+   *
+   * @remarks
+   * Concurrent calls are dropped rather than queued: several settings watchers and a timer all
+   * reach here, and two passes deleting from the same table would race over what the other has
+   * already removed. A dropped call is harmless, since the next tick prunes what this one skipped.
+   */
   async function prune(): Promise<void> {
-    // Prevent concurrent prune operations
     if (get(isPruning)) {
       logger.debug('Prune already in progress, skipping');
       return;
@@ -267,7 +274,6 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
     }
   });
 
-  // Prune when settings change
   watch([newlyDetectedTokensMaxCount, newlyDetectedTokensTtlDays], async ([newMaxCount, newTtl], [oldMaxCount, oldTtl]) => {
     if (newMaxCount === oldMaxCount && newTtl === oldTtl) {
       return;

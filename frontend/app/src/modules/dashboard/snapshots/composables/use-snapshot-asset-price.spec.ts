@@ -118,6 +118,19 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-asset-price', () 
     expect(get(usdValue)).toBe('1000');
   });
 
+  it('should not rewrite the stored USD value from the asset USD price in a non-USD currency', async () => {
+    setCurrency('EUR');
+    const { api, usdValue } = await setup();
+    expect(get(usdValue)).toBe('3000');
+
+    set(api.modelAssetToUsdPrice, '1000');
+    await nextTick();
+
+    // Only the fiat value drives the stored USD value here, so editing the asset's USD price
+    // leaves it alone (1.5 * 1000 = 1500 would be the unguarded result).
+    expect(get(usdValue)).toBe('3000');
+  });
+
   it('should apply the same direct-rate logic for any non-USD currency (GBP-pegged)', async () => {
     setCurrency('GBP');
     // GBP-pegged asset: oracle $1.25 / £1.00 (ratio 0.8), forex USD->GBP = 1.0.

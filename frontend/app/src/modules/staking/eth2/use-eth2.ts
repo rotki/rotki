@@ -58,10 +58,6 @@ export function useEth2Staking(): UseEth2StakingReturn {
       id: makeActivityId(ActivityKind.STAKING, ActivityPart.PERFORMANCE),
       kind: ActivityKind.STAKING,
       rerunnable: true,
-      // Adding a validator changes whose performance this is. Replaces the `resetStatus` on
-      // STAKING_ETH2 / STAKING_ETH2_STATS that `addEth2Validator` used to call: without it the
-      // `everCompleted && !userInitiated` guard below short-circuits, and the table keeps
-      // excluding the new validator until the user refreshes by hand.
       staleAfter: [{ kind: ActivityKind.STAKING, parts: [ActivityPart.ADD] }],
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<EthStakingPerformanceResponse>(

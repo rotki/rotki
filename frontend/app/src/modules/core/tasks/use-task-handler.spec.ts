@@ -213,7 +213,6 @@ describe('useTaskHandler', () => {
 
       expect(get(store.taskById)[20]).toBeDefined();
 
-      // Clean up the pending promise
       handler.handleResult({ result: '', message: '' }, 20);
       await promise;
     });
