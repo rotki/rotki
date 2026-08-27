@@ -152,7 +152,7 @@ def test_asset_updates_consistency_with_packaged_db(
         # - `apply_pending_compatible_updates` runs during create_globaldb() and pulls all compatible asset updates up to v32, then v36, v40, and finally v41 (max compatible)  # noqa: E501
         # - At this point we are sure that compatible asset updates up until 40 are applied
         assert old_globaldb_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '40'  # noqa: E501
-        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '41'  # noqa: E501
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '42'  # noqa: E501
 
         assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='last_data_migration'").fetchone()[0] == str(LAST_GLOBALDB_DATA_MIGRATION)  # noqa: E501
 
