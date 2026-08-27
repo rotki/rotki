@@ -986,7 +986,30 @@ Per-DB locations:
 
 Always keep the fresh-create schema (`schema.py`) in sync with the upgrade so newly created DBs match the upgraded state.
 
-**Global DB only — extra hazard:** the global DB also ships as a packaged file (`rotkehlchen/data/global.db`) in the `rotki/data` submodule, which is only regenerated/bumped per release. Bumping `GLOBAL_DB_VERSION` ahead of that packaged DB makes its version (e.g. 17) mismatch the code (e.g. 18), which breaks `soft_reset_assets_list`/`hard_reset_assets_list` (version-equality guard) and the packaged-DB consistency tests — exactly the kind of "tests fail on develop" caused by an unmerged data-repo change. This is the strongest reason to fold into the unreleased upgrade rather than create a premature new version.
+**Global DB only — extra hazard:** the global DB also ships as a packaged file (`rotkehlchen/data/global.db`), tracked directly in this repo (it is not a submodule) and only regenerated/bumped per release. Bumping `GLOBAL_DB_VERSION` ahead of that packaged DB makes its version (e.g. 17) mismatch the code (e.g. 18), which breaks `soft_reset_assets_list`/`hard_reset_assets_list` (version-equality guard) and the packaged-DB consistency tests — exactly the kind of "tests fail on develop" caused by an unmerged data-repo change. This is the strongest reason to fold into the unreleased upgrade rather than create a premature new version.
+
+**Repackaging the global DB after an assets update.** Asset definitions are not DB upgrades. They
+live in the separate `rotki/assets` repo as `updates/<N>/updates.sql`, and are fetched at runtime
+from the branch matching `GITHUB_BASE_REF` (`master` in production). The packaged `global.db`
+records the version it was built at in its `assets_version` setting, so the moment a new assets
+update lands on a branch, `test_asset_updates_consistency_with_packaged_db` starts failing against
+that branch — it replays every remote update onto an old DB and compares every asset field,
+`coingecko` and `cryptocompare` included, against the packaged one. Repackaging is three steps, not
+one:
+
+1. Regenerate the file:
+   `python -m tools.assets_database.main --start-db-path rotkehlchen/data/global.db --target-version <N> --assets-branch <branch> --update-mode assets --target-directory <dir>`
+   Prefer `--update-mode assets`. `remote`/`all` also runs `populate_location_mappings`, which is
+   hardcoded to the **data** repo's `develop` branch, so on a bugfixes repackage it pulls in
+   unrelated develop content.
+2. Bump the packaged `assets_version` assertion in `rotkehlchen/tests/unit/globaldb/test_globaldb_consistency.py`.
+3. Bump `globaldb_assets_version` in `rotkehlchen/tests/api/test_database.py`.
+
+Verify by diffing a `.dump` of the old and new packaged DB: the only changes should be
+`assets_version` plus exactly what the update touches. Known issue: the tool's final `clean_folder`
+step can die with `database is locked` on `PRAGMA journal_mode=DELETE` after the update has already
+applied; finish by hand with `wal_checkpoint(TRUNCATE)`, `journal_mode=DELETE`, then move the file
+out of the `global/` subdirectory.
 
 ## Rotki Backend Style Preferences (strict)
 
