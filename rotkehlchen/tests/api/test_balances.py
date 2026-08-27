@@ -1,9 +1,10 @@
 import random
+import threading
 import time
 from collections import defaultdict
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -56,6 +57,7 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
+    create_test_coinbase,
     try_get_first_exchange,
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
@@ -75,9 +77,13 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.balances import BlockchainBalancesUpdate
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
     from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
+
+# how long a source waits at the barrier before deciding the others are not coming
+CONCURRENT_QUERY_TIMEOUT: Final = 15
 
 
 def assert_all_balances(
@@ -176,7 +182,11 @@ def assert_all_balances(
 # Use real current price querying in this test since it's very extensive
 # and we can make sure that we can query current prices properly in the real app
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
-@pytest.mark.vcr
+# the balance sources are queried in parallel, so whether a source finds an asset's price
+# already in the cache or asks the oracle for it again is a race. The cassette holds every
+# request that can come out of it and playback repeats are allowed for the ones that can
+# be made twice.
+@pytest.mark.vcr(allow_playback_repeats=True)
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
@@ -566,6 +576,48 @@ def test_query_all_balances_warms_price_cache(rotkehlchen_api_server: APIServer)
 
     assert price_mock.call_count != 0
     assert set(price_mock.call_args_list[0].args[0]) == {A_ETH, A_LUSD}
+
+
+def test_query_all_balances_queries_sources_concurrently(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test that query_balances queries all the exchanges and the chains in parallel.
+
+    Every source blocks on a shared barrier, so a serial query can never get past the first
+    source and the barrier breaks instead of the test hanging.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    for exchange_name in ('coinbase1', 'coinbase2'):
+        rotki.exchange_manager.connected_exchanges[Location.COINBASE].append(create_test_coinbase(
+            database=rotki.data.db,
+            msg_aggregator=rotki.msg_aggregator,
+            name=exchange_name,
+        ))
+
+    assert len(exchanges := list(rotki.exchange_manager.iterate_exchanges())) == 2
+    barrier = threading.Barrier(parties=len(exchanges) + 1, timeout=CONCURRENT_QUERY_TIMEOUT)
+
+    def blocking_exchange_query(**kwargs: Any) -> tuple[dict, str]:
+        barrier.wait()
+        return {}, ''
+
+    def blocking_chain_query(**kwargs: Any) -> BlockchainBalancesUpdate:
+        barrier.wait()
+        return rotki.chains_aggregator.get_balances_update(chain=None)
+
+    with ExitStack() as stack:
+        for exchange in exchanges:
+            stack.enter_context(patch.object(
+                exchange,
+                'query_balances',
+                side_effect=blocking_exchange_query,
+            ))
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator,
+            'query_balances',
+            side_effect=blocking_chain_query,
+        ))
+        rotki.query_balances(requested_save_data=False)
 
 
 def test_protocol_balances_all_chains(rotkehlchen_api_server: APIServer) -> None:

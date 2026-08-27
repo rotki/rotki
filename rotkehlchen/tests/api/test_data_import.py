@@ -54,14 +54,6 @@ if TYPE_CHECKING:
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
-@pytest.fixture(name='historical_price_oracles_order')
-def fixture_historical_price_oracles_order(
-        cryptocompare_historical_price_oracles_order: tuple,
-) -> tuple:
-    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
-    return cryptocompare_historical_price_oracles_order
-
-
 mocked_prices = {
     'BTC': {
         'USD': {
@@ -501,6 +493,7 @@ def test_data_import_custom_format(rotkehlchen_api_server: APIServer, file_uploa
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
+@pytest.mark.freeze_time('2026-08-27 12:00:00 GMT')  # pin coingecko's 1 year history window
 def test_data_import_binance_history(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,

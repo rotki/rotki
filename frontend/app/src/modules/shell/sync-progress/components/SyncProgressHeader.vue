@@ -38,7 +38,7 @@ const showSpinner = computed<boolean>(() => get(isSyncing) && get(overallProgres
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
-    return get(hasWarnings) ? 'lu-circle-alert' : 'lu-circle-check';
+    return (get(hasCancelled) || get(hasWarnings)) ? 'lu-circle-alert' : 'lu-circle-check';
   return 'lu-loader-circle';
 });
 
@@ -48,10 +48,17 @@ const statusColor = computed<string>(() => {
   return 'text-rui-primary';
 });
 
+// A cancel is the user's own doing, so it is the more informative thing to say when it
+// coincides with warnings — hence it wins over `complete_with_warnings` rather than
+// earning a third combined string.
 const title = computed<string>(() => {
-  if (get(isComplete))
-    return get(hasWarnings) ? t('sync_progress.complete_with_warnings') : t('sync_progress.complete');
-  return t('sync_progress.title');
+  if (!get(isComplete))
+    return t('sync_progress.title');
+
+  if (get(hasCancelled))
+    return t('sync_progress.complete_cancelled');
+
+  return get(hasWarnings) ? t('sync_progress.complete_with_warnings') : t('sync_progress.complete');
 });
 
 const decodingTotal = computed<number>(() => get(decoding).length);

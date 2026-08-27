@@ -1,6 +1,9 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { msg } from '@/message-key';
 import PendingTask from '@/modules/core/notifications/PendingTask.vue';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import {
   type Activity,
   ActivityKind,
@@ -38,6 +41,12 @@ function createWrapper(props: Partial<InstanceType<typeof PendingTask>['$props']
 }
 
 describe('pendingTask', () => {
+  const ADDRESS = '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1';
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   it('should show the title and subtitle at the top level', () => {
     const text = createWrapper({ activity: activity({ subtitle: 'Ethereum' }) }).text();
 
@@ -178,6 +187,48 @@ describe('pendingTask', () => {
     await wrapper.find('button').trigger('click');
 
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+  });
+
+  it('should scramble an address in the subtitle while privacy mode is on', () => {
+    // The panel is one of the few places a real address is rendered from a task's own payload, and
+    // it never learned about `scrambleData` — the setting that exists so a screen can be shared.
+    useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
+
+    const text = createWrapper({
+      activity: activity({
+        subtitle: { key: msg.$t('task_center.activity.tx_sync.address'), params: { address: ADDRESS, chain: 'Ethereum' } },
+      }),
+    }).text();
+
+    expect(text).not.toContain(ADDRESS);
+  });
+
+  it('should leave the address alone while privacy mode is off', () => {
+    useSettingsRepo().updateFrontend({ scrambleData: false });
+
+    const text = createWrapper({
+      activity: activity({
+        subtitle: { key: msg.$t('task_center.activity.tx_sync.address'), params: { address: ADDRESS, chain: 'Ethereum' } },
+      }),
+    }).text();
+
+    expect(text).toContain(ADDRESS);
+  });
+
+  it('should scramble every address when a batch joins several into one param', () => {
+    // `use-account-addition-batch` joins the added addresses into a single param, so scrambling
+    // only a whole-string match would leak all of them.
+    const second = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
+    useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
+
+    const text = createWrapper({
+      activity: activity({
+        subtitle: { key: msg.$t('task_center.activity.accounts.add'), params: { address: `${ADDRESS},\n${second}` } },
+      }),
+    }).text();
+
+    expect(text).not.toContain(ADDRESS);
+    expect(text).not.toContain(second);
   });
 
   it('should render no cancel control when the caller withholds it', () => {

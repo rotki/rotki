@@ -18,6 +18,7 @@ const {
   mockHasCancelled,
   mockHasCancelledDecoding,
   mockHasCancelledProtocolCache,
+  mockHasWarnings,
   mockOverallProgress,
   mockPhase,
   mockProtocolCache,
@@ -32,6 +33,7 @@ const {
     mockHasCancelled: ref<boolean>(false),
     mockHasCancelledDecoding: ref<boolean>(false),
     mockHasCancelledProtocolCache: ref<boolean>(false),
+    mockHasWarnings: ref<boolean>(false),
     mockOverallProgress: ref<number>(0),
     mockPhase: ref<SyncPhase>('idle'),
     mockProtocolCache: ref<ProtocolCacheProgress[]>([]),
@@ -48,6 +50,7 @@ vi.mock('../use-sync-progress', () => ({
     hasCancelled: mockHasCancelled,
     hasCancelledDecoding: mockHasCancelledDecoding,
     hasCancelledProtocolCache: mockHasCancelledProtocolCache,
+    hasWarnings: mockHasWarnings,
     overallProgress: mockOverallProgress,
     phase: mockPhase,
     protocolCache: mockProtocolCache,
@@ -97,6 +100,7 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
     set(mockHasCancelled, false);
     set(mockHasCancelledDecoding, false);
     set(mockHasCancelledProtocolCache, false);
+    set(mockHasWarnings, false);
   }
 
   beforeEach(() => {
@@ -122,6 +126,26 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
       wrapper = createWrapper();
 
       expect(wrapper.text()).toContain('sync_progress.complete');
+      // `sync_progress.complete` is a prefix of both other keys, so a bare `toContain`
+      // cannot tell them apart. Rule the other two out explicitly.
+      expect(wrapper.text()).not.toContain('sync_progress.complete_cancelled');
+      expect(wrapper.text()).not.toContain('sync_progress.complete_with_warnings');
+    });
+
+    it('should say the sync was cancelled when the user cancelled it', () => {
+      set(mockPhase, SyncPhase.COMPLETE);
+      set(mockHasCancelled, true);
+      wrapper = createWrapper();
+
+      expect(wrapper.text()).toContain('sync_progress.complete_cancelled');
+    });
+
+    it('should still show the warnings title when nothing was cancelled', () => {
+      set(mockPhase, SyncPhase.COMPLETE);
+      set(mockHasWarnings, true);
+      wrapper = createWrapper();
+
+      expect(wrapper.text()).toContain('sync_progress.complete_with_warnings');
     });
   });
 
@@ -142,15 +166,16 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
       expect(icons.some(icon => icon.text() === 'lu-circle-check')).toBe(true);
     });
 
-    it('should show warning color when complete with cancelled items', () => {
+    it('should show the alert icon in warning colour when complete with cancelled items', () => {
       set(mockPhase, SyncPhase.COMPLETE);
       set(mockHasCancelled, true);
       wrapper = createWrapper();
 
       const icons = wrapper.findAll('[data-testid="icon"]');
-      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
-      expect(checkIcon).toBeDefined();
-      expect(checkIcon?.classes()).toContain('text-rui-warning');
+      expect(icons.some(icon => icon.text() === 'lu-circle-check')).toBe(false);
+      const alertIcon = icons.find(icon => icon.text() === 'lu-circle-alert');
+      expect(alertIcon).toBeDefined();
+      expect(alertIcon?.classes()).toContain('text-rui-warning');
     });
 
     it('should show success icon when complete without cancelled items', () => {

@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
 import { assembleActivityModel } from '@/modules/task-center/core/model';
@@ -59,6 +60,7 @@ const umbrellaId = makeActivityId(ActivityKind.HISTORY_SYNC);
 
 describe('pendingTasks', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     set(activities, []);
     confirmCancel.mockClear();
   });

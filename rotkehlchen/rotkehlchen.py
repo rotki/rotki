@@ -58,7 +58,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
-from rotkehlchen.concurrency import DEFAULT_CANCEL_GRACE_SECONDS, Task, wait
+from rotkehlchen.concurrency import DEFAULT_CANCEL_GRACE_SECONDS, Task, result_of, spawn, wait
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -1217,8 +1217,25 @@ class Rotkehlchen:
 
         balances: dict[str, dict[Asset, Balance]] = {}
         problem_free = True
-        for exchange in self.exchange_manager.iterate_exchanges():
-            exchange_balances, error_msg = exchange.query_balances(ignore_cache=ignore_cache)
+        # Query every exchange and all the chains concurrently. Each exchange talks to its own
+        # remote and is guarded by its own per-instance lock, and the chain query already fans
+        # out internally, so the total wait becomes the slowest single source instead of the
+        # sum of all of them.
+        exchange_tasks = [
+            (exchange, spawn(exchange.query_balances, ignore_cache=ignore_cache))
+            for exchange in self.exchange_manager.iterate_exchanges()
+        ]
+        blockchain_task = spawn(
+            self.chains_aggregator.query_balances,
+            blockchain=None,
+            ignore_cache=ignore_cache,
+        )
+        wait([task for _, task in exchange_tasks] + [blockchain_task])
+
+        exchange_balances: dict[AssetWithOracles, Balance] | None
+        for exchange, task in exchange_tasks:
+            # result_of reraises whatever the query died with, as the serial call used to
+            exchange_balances, error_msg = result_of(task)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
@@ -1238,10 +1255,8 @@ class Rotkehlchen:
 
         liabilities: dict[Asset, Balance]
         try:
-            blockchain_result = self.chains_aggregator.query_balances(
-                blockchain=None,
-                ignore_cache=ignore_cache,
-            )  # copies below since if cache is used we end up modifying the balance sheet object
+            # copies below since if cache is used we end up modifying the balance sheet object
+            blockchain_result = result_of(blockchain_task)
 
             blockchain_assets: dict[Asset, Balance] = {}
             for asset, asset_balances in blockchain_result.totals.assets.items():

@@ -1787,10 +1787,10 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "排除",
-    "ignore_tooltip": "从损益报告中排除选定的操作",
-    "unignore": "包含",
-    "unignore_tooltip": "在损益报告中包含选定的操作"
+    "ignore": "忽略",
+    "ignore_tooltip": "忽略选定的资产",
+    "unignore": "取消忽略",
+    "unignore_tooltip": "取消忽略选定的资产"
   },
   "import_data": {
     "binance": {

@@ -762,7 +762,8 @@
             "success": "Skipped events exported to CSV successfully"
           },
           "title": "CSV Export"
-        }
+        },
+        "unavailable": "{queryType} is not available"
       },
       "warning": {
         "missing_api_key": {
@@ -4206,10 +4207,10 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "Exclude",
-    "ignore_tooltip": "Excluded the selected actions from the profit/loss report",
-    "unignore": "Include",
-    "unignore_tooltip": "Included the selected actions in the profit/loss report"
+    "ignore": "Ignore",
+    "ignore_tooltip": "Ignore the selected assets",
+    "unignore": "Unignore",
+    "unignore_tooltip": "Stop ignoring the selected assets"
   },
   "import_data": {
     "binance": {
@@ -5927,6 +5928,7 @@
   "sync_progress": {
     "chains_label": "chain | chains",
     "complete": "Sync Complete",
+    "complete_cancelled": "Sync Cancelled",
     "complete_with_warnings": "Sync Complete with warnings",
     "completed_chains": "{count} chain complete | {count} chains complete",
     "completed_decoding": "{count} chain decoded | {count} chains decoded",
@@ -5938,6 +5940,10 @@
     "events": "Events",
     "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready.",
     "explanation_etherscan_hint": "A personal (free) Etherscan API key speeds this up significantly.",
+    "finished_chains": "{count} chain finished | {count} chains finished",
+    "finished_decoding": "{count} chain decoding finished | {count} chains decoding finished",
+    "finished_locations": "{count} location finished | {count} locations finished",
+    "finished_protocol_cache": "{count} protocol finished | {count} protocols finished",
     "locations_label": "location | locations",
     "period": {
       "beginning": "Beginning"

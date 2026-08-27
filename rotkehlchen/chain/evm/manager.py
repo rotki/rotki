@@ -7,6 +7,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.constants import PROXY_BALANCE_PROTOCOL_TEMPLATE
+from rotkehlchen.chain.ethereum.interfaces.balances import ACTIVITY_ENTRY_TYPES
 from rotkehlchen.chain.evm.active_management.manager import ActiveManager
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
@@ -18,11 +19,12 @@ from rotkehlchen.chain.manager import (
     ChainWithEoA,
 )
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, Price, Timestamp
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, Location, Price, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -218,11 +220,25 @@ class EvmManager(
         Legacy Curve gauges in ethereum, Convex and Velodrome.
         """
         queried_addresses = list(addresses)
+        # Read the chain's counterparties once and hand them to every protocol. Each protocol
+        # otherwise opens with its own `counterparty = X` query before it can find out it has
+        # nothing to do, which on ethereum is 18 scans of the events table per refresh for a
+        # user who may hold none of these positions. Read here rather than per protocol so the
+        # window in which a concurrent decode could add the first event of a protocol - and so
+        # have it skipped until the next refresh - is as small as it already was.
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            chain_counterparties = DBHistoryEvents.get_counterparties_at_location(
+                cursor=cursor,
+                location=Location.from_chain_id(self.node_inquirer.chain_id),
+                entry_types=ACTIVITY_ENTRY_TYPES,
+            )
+
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[self.node_inquirer.chain_id]:
             protocol_with_balance: ProtocolWithBalance = protocol(
                 evm_inquirer=self.node_inquirer,  # type: ignore  # mypy can't match all possibilities here
                 tx_decoder=self.transactions_decoder,  # type: ignore  # mypy can't match all possibilities here
             )
+            protocol_with_balance.chain_counterparties = chain_counterparties
             try:
                 protocol_balances = protocol_with_balance.query_balances(
                     addresses=queried_addresses,
