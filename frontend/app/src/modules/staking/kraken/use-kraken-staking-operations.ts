@@ -62,6 +62,16 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
     set(rawEvents, await api.fetchKrakenStakingEvents(get(pagination)));
   }
 
+  /**
+   * Loads the events, refreshing the backend cache first where that is due.
+   *
+   * @remarks
+   * Every call cancels the reads before it, so `loading` belongs to the newest one alone. A read
+   * that finds itself cancelled therefore leaves the flag as it is: clearing it would hide the
+   * spinner while the read that superseded it is still running.
+   *
+   * @param refresh - whether the user asked for this, rather than it being the page's first load
+   */
   async function fetchEvents(refresh = false): Promise<void> {
     try {
       if (shouldSkip(refresh))
@@ -76,8 +86,6 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       if (firstLoad)
         await fetchEventsFromApi();
 
-      // A running refresh is already doing this work, so the first load rides it out and takes the
-      // read below rather than stacking a second one on the same task.
       if ((refresh || firstLoad) && !isRefreshRunning()) {
         const outcome = await refreshEvents();
         onActionableError(outcome, (error) => {
@@ -94,8 +102,6 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       set(loading, isRefreshRunning());
     }
     catch (error: unknown) {
-      // A cancelled read was superseded by a newer one, which owns `loading` from here on:
-      // clearing it would hide the spinner while that newer read is still running.
       if (isRequestCancellation(error))
         return;
 

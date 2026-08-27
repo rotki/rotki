@@ -23,7 +23,6 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   };
 }
 
-// `VueWrapper` without type arguments: a generic SFC has no `InstanceType`.
 function mountRow(item: ActionItem): VueWrapper {
   return mount(ActionCenterRow, { props: { item } });
 }

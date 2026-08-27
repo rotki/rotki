@@ -71,8 +71,6 @@ describe('useTargetedRedecode', () => {
         kind: ActivityKind.REDECODE,
         resets: true,
       });
-      // The child is gated by the umbrella, so the request reads as one named flow rather than a
-      // bare decode with nothing saying what was asked for.
       expect(child).toMatchObject({
         id: blockDecodeActivityId([1, 2]),
         kind: ActivityKind.ETH_BLOCK_DECODING,
@@ -81,10 +79,7 @@ describe('useTargetedRedecode', () => {
       });
     });
 
-    it('should keep two different block requests apart', async () => {
-      // The regression this guards: the id was a bare `ETH_BLOCK_DECODING` singleton, so a second
-      // request for different blocks deduped onto the first and was handed its promise — its blocks
-      // were never decoded.
+    it('should key the block decode id by its block set so a request for different blocks cannot dedup onto an in-flight one, order-insensitively', async () => {
       expect(blockDecodeActivityId([1, 2])).not.toBe(blockDecodeActivityId([99]));
       expect(blockDecodeActivityId([2, 1])).toBe(blockDecodeActivityId([1, 2]));
     });
@@ -152,6 +147,18 @@ describe('useTargetedRedecode', () => {
       expect(subtitle.params).toMatchObject({ count: 3 });
       expect(subtitle.plural).toBe(3);
     });
+
+    it('should settle the umbrella when a child fails, rather than surface the first failure', async () => {
+      mocks.submitTask.mockImplementation(async (spec: { kind: ActivityKind; run: () => Promise<unknown> }) => {
+        if (spec.kind === ActivityKind.REDECODE)
+          return spec.run();
+        throw new Error('child failed');
+      });
+
+      const { redecodeTargeted } = useTargetedRedecode();
+
+      await expect(redecodeTargeted({ blockNumbers: [1, 2] })).resolves.toBeUndefined();
+    });
   });
 
   describe('pullAndDecodeTransactionsRaw', () => {
@@ -165,7 +172,6 @@ describe('useTargetedRedecode', () => {
     });
 
     it('should throw when the backend reports nothing decoded', async () => {
-      // run executes but the backend returns false → no decode happened
       mocks.runTaskResult.mockResolvedValue(ok(false));
       mocks.submitTask.mockImplementation(runSpecWith(mocks.runTaskResult));
 

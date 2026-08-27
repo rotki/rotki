@@ -28,9 +28,6 @@ const emit = defineEmits<{
   resolve: [issue: DataIssue];
 }>();
 
-// The description is clamped to two lines; only show the full-text tooltip when it
-// actually overflows. Re-checked on resize and on content changes (the amounts and
-// resolved asset symbol arrive asynchronously and can change the height).
 const descriptionRef = useTemplateRef<HTMLElement>('descriptionRef');
 const descriptionTruncated = ref<boolean>(false);
 

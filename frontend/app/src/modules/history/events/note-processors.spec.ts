@@ -16,12 +16,9 @@ function createContext(word: string, overrides: Partial<WordProcessorContext> = 
   };
 }
 
+const AMOUNTS_MATCHING_A_NUMERIC_PREFIX = [bigNumberify(9), bigNumberify(15)];
+
 describe('note word processors', () => {
-  // Asserts on the processors directly rather than through `processWord`, whose catch would hide a
-  // throw. `09/09/2026` is the real case, from an ENS registration note: `parseFloat` stops at the
-  // first slash and reports 9, so a `parseFloat` guard waves the whole string through to BigNumber,
-  // which since v11 throws rather than yielding NaN — and that throw escapes the `formatNotes`
-  // computed mid-render, leaving Vue with unmounted vnodes that kill every later patch.
   it.each([
     '09/09/2026',
     '1/2/2027',
@@ -37,9 +34,6 @@ describe('note word processors', () => {
       expect(() => processor(createContext(word))).not.toThrow();
   });
 
-  // Dates and times sit next to amounts in real notes ("Lock expires at 09/09/2026 15:04:56 CEST").
-  // A numeric-prefix test reads 9 and 15 out of those, so they must be rejected on shape, not just
-  // survive the parse.
   it.each([
     '09/09/2026',
     '1/2/2027',
@@ -48,7 +42,7 @@ describe('note word processors', () => {
     '12:30',
   ])('should not treat the date or time "%s" as an amount', (word) => {
     const results = WORD_PROCESSORS
-      .map(processor => processor(createContext(word, { amountArr: [bigNumberify(9), bigNumberify(15)] })))
+      .map(processor => processor(createContext(word, { amountArr: AMOUNTS_MATCHING_A_NUMERIC_PREFIX })))
       .filter(Boolean);
 
     expect(results).toHaveLength(0);

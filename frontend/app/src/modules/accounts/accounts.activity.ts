@@ -14,6 +14,15 @@ import { ActivityKind, ActivityPart, type ActivityText } from '@/modules/task-ce
 export const EVM_PSEUDO_CHAIN = 'EVM';
 
 /**
+ * The account form's word for "every EVM chain at once".
+ *
+ * @remarks
+ * The form's own vocabulary, not the mechanism's: a payload built from it carries
+ * {@link EVM_PSEUDO_CHAIN} instead, which is what the id, the lane and the umbrella agree on.
+ */
+export const ALL_EVM_CHAINS = 'all';
+
+/**
  * What an account operation acts on. A union rather than loose strings because the identity of the
  * work differs per variant: an address is identified by itself, an xpub only by the pair of the key
  * and its derivation path. Keying an xpub by the key alone deduped two genuinely different
@@ -125,8 +134,6 @@ export const accountRemoveActivity = defineActivity<AccountSubject, readonly [st
 export const accountAgnosticRemoveActivity = defineActivity<{ category: string; address: string }, readonly [ActivityPart, string, string]>({
   key: subject => [ActivityPart.CATEGORY, subject.category, subject.address],
   kind: ActivityKind.ACCOUNTS,
-  // Same family as the chain-scoped removal: the family caps one active lane, so an agnostic
-  // removal and a per-chain one still take turns rather than racing each other.
   lane: subject => familyLane(ACCOUNTS_REMOVE_LANE_PREFIX, subject.category),
   part: ActivityPart.REMOVE,
 });

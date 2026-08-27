@@ -13,9 +13,10 @@ import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vu
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 
-// The body of a single issue's detail view, shared by its two containers: a right-hand drawer on
-// the full data-issues page, and a bottom sheet inside the pinned rail panel. It owns no open
-// state - it emits `close` and each container decides what that means.
+/**
+ * One issue's detail body, shared by both of its containers: the drawer on the data-issues page and
+ * the bottom sheet in the pinned rail. Owns no open state, emitting `close` for each to interpret.
+ */
 const { issue, busy = false } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;

@@ -28,6 +28,17 @@ export function useSessionSettings(): UseSessionSettingsReturn {
   const { checkDefaultThemeVersion } = useThemeMigration();
   const { checkForSuggestions } = useSettingsSuggestions();
 
+  /**
+   * Applies a freshly loaded user's settings to the session.
+   *
+   * @remarks
+   * Merging the frontend blob into the repo runs the registry's post-persist effects, which
+   * includes reconfiguring the global BigNumber format from the separators.
+   *
+   * The suggestion check is awaited before the privacy reset below it: both go through the same
+   * read-modify-write of the settings blob, so overlapping them can lose the applied-suggestions
+   * version.
+   */
   const initialize = async (
     {
       accounting,
@@ -43,14 +54,10 @@ export function useSessionSettings(): UseSessionSettingsReturn {
         ? timeframeSetting
         : lastKnownTimeframe;
 
-      // Merging the frontend blob into the repo runs the registry's post-persist effects, which
-      // includes reconfiguring the global BigNumber format from the separators.
       updateFrontendSettings(frontendSettings);
       setConnectedExchanges(exchanges);
       updateSessionSettings({ timeframe });
       checkDefaultThemeVersion();
-      // Awaited before the privacy reset below: both go through the same read-modify-write of
-      // the settings blob, so overlapping them can lose the applied-suggestions version.
       await checkForSuggestions(frontendSettings, general, newAccount);
 
       if (!persistPrivacySettings) {

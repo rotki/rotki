@@ -92,10 +92,7 @@ describe('useAssetLocationsData', () => {
     expect(get(visibleAssetLocations).map(l => l.address)).toEqual(['0x1']);
   });
 
-  // The row and the filter both carry the raw id. Comparing display names instead compared two
-  // different formatters — `Polygon PoS` against `Polygon_pos` — so every location whose id has an
-  // underscore matched nothing and emptied the table.
-  it('should filter by a location whose id is more than one word', () => {
+  it('should filter by a location whose id is more than one word, matching on the raw id rather than a display name', () => {
     spies.getAssetBreakdown.mockReturnValue([
       breakdown({ address: '0x1', location: 'polygon_pos' }),
       breakdown({ address: '0x2', location: 'ethereum' }),

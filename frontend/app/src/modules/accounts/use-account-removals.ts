@@ -106,7 +106,6 @@ export function useAccountRemovals(): UseAccountRemovalsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    // The xpub removal keeps its own message: it names the xpub, not a chain or a count.
     if (isErr(outcome) && isActionable(outcome.error)) {
       logger.error(outcome.error.message);
       notifyError(t('actions.balances.xpub_removal.error.title'), t('actions.balances.xpub_removal.error.description', {

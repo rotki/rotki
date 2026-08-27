@@ -58,8 +58,7 @@ const mockHistoryTransactionAccounts = {
   ),
 };
 
-// Novelty now comes from the completion ledger, so the spec states which per-account work has been
-// attempted instead of relying on a side effect of the first refresh.
+/** Per-account and per-exchange work keys the faked completion ledger reports as already attempted. */
 const attempted = new Set<string>();
 
 vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
@@ -70,9 +69,6 @@ vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
       const real = actual.useNativeTask();
       return {
         ...real,
-        // The umbrella's own status comes from the real orchestrator, so the re-entrancy guard and
-        // the "has history ever loaded" check are exercised for real rather than pinned to a
-        // constant. Only the per-account/per-exchange ledger novelty detection reads is faked.
         statusOf: vi.fn((kind: string, ...parts: string[]) => {
           if (kind === actual.ActivityKind.HISTORY_SYNC)
             return real.statusOf(actual.ActivityKind.HISTORY_SYNC, ...parts);
@@ -232,8 +228,6 @@ describe('useRefreshTransactions', () => {
     setActivePinia(pinia);
     scope = effectScope();
 
-    // The orchestrator is a shared singleton, so its completion ledger would otherwise leak the
-    // umbrella's `everCompleted` from one test into the next.
     useTaskOrchestrator().reset();
 
     vi.clearAllMocks();
@@ -252,10 +246,7 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('basic refresh flow', () => {
-    // The account store fills one chain at a time. Scoping the sync off a snapshot taken mid-read
-    // drops whatever has not arrived, and the sync then reports complete over chains it never
-    // covered. Waiting for the read is what makes the scope whole.
-    it('should wait for a running account read before taking its scope', async () => {
+    it('should wait for a running account read before taking its scope, so a scope snapshotted mid-read cannot report complete over chains it never covered', async () => {
       const { useAccountLoadState } = await import('@/modules/accounts/use-account-load-state');
       let finishRead = (): void => {};
       const read = new Promise<void>((resolve) => {
@@ -419,9 +410,6 @@ describe('useRefreshTransactions', () => {
     it('should sync an account added while a refresh was running', async () => {
       vi.useFakeTimers();
 
-      // An account the in-flight refresh does not cover. It becomes tracked mid-refresh, which is
-      // what makes it novel: the drain asks the completion ledger which tracked accounts have never
-      // been attempted, rather than keeping a set of deferred keys.
       const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
 
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -436,8 +424,6 @@ describe('useRefreshTransactions', () => {
       await firstRefresh;
 
       await vi.advanceTimersByTimeAsync(150);
-      // The drain re-enters asynchronously; without settling it here the tail of that refresh lands
-      // in the next test and looks like a spurious drain there.
       await settleRefresh();
 
       // Twice: the first refresh over every account, then the drain over the late arrival alone.
@@ -447,7 +433,7 @@ describe('useRefreshTransactions', () => {
       vi.useRealTimers();
     });
 
-    it('should extend the progress panel on the drained wave instead of replacing it', async () => {
+    it('should extend the progress panel on the drained wave instead of replacing it, because a reseed drops every address the first wave finished and the denominator falls mid-sync', async () => {
       vi.useFakeTimers();
 
       const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
@@ -462,9 +448,6 @@ describe('useRefreshTransactions', () => {
       await vi.advanceTimersByTimeAsync(150);
       await settleRefresh();
 
-      // The drained wave carries only the late arrival, so it must extend the panel rather than
-      // reseed it: a fresh panel drops every address the first wave finished and the denominator
-      // falls mid-sync with nothing signalling that a second wave began.
       const [initial, drained] = mockTxQueryStatusStore.initializeQueryStatus.mock.calls;
       expect(initial).toEqual([
         [
@@ -481,7 +464,7 @@ describe('useRefreshTransactions', () => {
       vi.useRealTimers();
     });
 
-    it('should reopen the decoding progress gate on the drained wave', async () => {
+    it('should reopen the decoding progress gate on the drained wave, since the first wave turns it off and the drained one would otherwise decode invisibly behind a panel reading complete', async () => {
       vi.useFakeTimers();
 
       const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
@@ -496,9 +479,6 @@ describe('useRefreshTransactions', () => {
       await vi.advanceTimersByTimeAsync(150);
       await settleRefresh();
 
-      // `decodingSyncing` is the only gate on both decode-progress writers, and the first wave's
-      // `finally` turns it off. Without re-arming it the drained wave decodes invisibly: the panel
-      // keeps the first wave's finished rows and reads complete while work is still running.
       expect(mockDecodingStatusStore.resumeDecodingSyncProgress).toHaveBeenCalledTimes(1);
       expect(mockDecodingStatusStore.resetDecodingSyncProgress).toHaveBeenCalledTimes(1);
 
@@ -612,15 +592,13 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('error handling', () => {
-    it('should settle the umbrella when an operation throws', async () => {
+    it('should settle the umbrella but record no completion when an operation throws', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
       await settleRefresh();
 
-      // A throw is contained inside `run`, so nothing is left in flight to block the next refresh —
-      // but it is still the account half failing, so no completion is recorded.
       expect(historySyncStatus().active).toBe(false);
       expect(historySyncStatus().everCompleted).toBe(false);
     });
@@ -636,9 +614,7 @@ describe('useRefreshTransactions', () => {
       expect(historySyncStatus().active).toBe(false);
     });
 
-    it('should not record a completion when the sync was cancelled', async () => {
-      // Cancelling is not loading. If a stopped sync wrote the completion, `alreadyLoaded` would
-      // suppress the next background refresh and the data the user interrupted would never arrive.
+    it('should not record a completion when the sync was cancelled, so alreadyLoaded cannot suppress the next background refresh of the data the user interrupted', async () => {
       mockTransactionSync.syncTransactionsByChains.mockResolvedValue([err(Cancelled({ message: 'stopped' }))]);
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
@@ -649,9 +625,7 @@ describe('useRefreshTransactions', () => {
       expect(historySyncStatus().active).toBe(false);
     });
 
-    it('should not let a successful online query mask a total chain failure', async () => {
-      // The umbrella's freshness gates the *account* scope, so chains failing wholesale must fail
-      // it whatever else succeeded — otherwise `alreadyLoaded` short-circuits the background re-sync.
+    it('should not let a successful online query mask a total chain failure, because the umbrella gates the account scope and alreadyLoaded would short-circuit the background re-sync', async () => {
       failEverything();
       mockRefreshHandlers.queryOnlineEvent.mockResolvedValue(ok(undefined));
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -662,14 +636,12 @@ describe('useRefreshTransactions', () => {
       expect(historySyncStatus().everCompleted).toBe(false);
     });
 
-    it('should still sync every account on a background refresh after an all-failed first sync', async () => {
+    it('should still sync every account on a background refresh after an all-failed first sync, recovering by scope rather than by novelty now that every account counts as attempted', async () => {
       failEverything();
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       await refreshTransactions();
       await settleRefresh();
 
-      // Every account has now been *attempted*, so none is novel — which is why the failed first
-      // load has to be recovered by scope, not by novelty.
       markAttempted();
       succeedEverything();
       mockTransactionSync.syncTransactionsByChains.mockClear();
@@ -750,8 +722,7 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('query status management', () => {
-    // Seeded from the same set that gets synced, subtype included.
-    it('should initialize query status for every synced account, bitcoin included', async () => {
+    it('should initialize query status from the same set that gets synced, bitcoin included', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
@@ -863,11 +834,9 @@ describe('useRefreshTransactions', () => {
       expect(callOrder.indexOf('onHistoryStarted')).toBeLessThan(callOrder.indexOf('syncTransactionsByChains'));
     });
 
-    it('should stop decoding sync progress only after the sync work has finished', async () => {
+    it('should stop decoding sync progress only after the sync work has finished, so an early stop cannot drop the progress updates decoding pushes over the websocket', async () => {
       const callOrder: string[] = [];
 
-      // The umbrella awaits its children, so an early `stopDecodingSyncProgress()` cannot drop the
-      // WS progress updates decoding pushes.
       mockTransactionSync.syncTransactionsByChains.mockImplementation(async (): SyncOutcomes => {
         callOrder.push('syncTransactionsByChains');
         return [ok(undefined)];
@@ -919,8 +888,6 @@ describe('useRefreshTransactions', () => {
     it('should not schedule a drain when nothing is left unattempted', async () => {
       vi.useFakeTimers();
 
-      // State the precondition rather than relying on this refresh to establish it: every account
-      // and exchange has been attempted, so the ledger has nothing novel left to report.
       markAttempted();
 
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
@@ -968,9 +935,7 @@ describe('useRefreshTransactions', () => {
       expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
     });
 
-    it('should refresh every account when nothing is novel but history never loaded', async () => {
-      // The distinguishing case: attempted but never completed is what an all-failed or cancelled
-      // first sync leaves behind, and novelty alone reads it as "nothing to do".
+    it('should refresh every account when nothing is novel but history never loaded, the attempted-but-never-completed state an all-failed or cancelled first sync leaves behind', async () => {
       markAttempted();
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
@@ -993,8 +958,7 @@ describe('useRefreshTransactions', () => {
       expect(mockUndecodedTransactionsStatus.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
     });
 
-    it('should read the breakdown twice for decodable accounts, not three times', async () => {
-      // Once before the operations and once after them, never a third.
+    it('should read the breakdown once before the operations and once after, never a third time', async () => {
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();

@@ -48,13 +48,20 @@ function createIssue(definition: ActionItemDefinition<HistoryIssueTarget, Histor
 /**
  * Single source for the history "actions center": aggregates every issue type
  * that needs the user's attention into one ordered, uniform list of rows.
+ *
+ * @remarks
+ * The order is not cosmetic. "No tracked accounts" comes first because every other count below it
+ * is legitimately zero while it is raised, so a user tracking nothing would otherwise be told there
+ * is nothing to do. Locked and ignored-only rows sit last: their counts are real information, but
+ * neither asks for anything right now.
+ *
+ * A row whose unmatched count reaches zero switches to showing what was *ignored*, since the dialog
+ * behind it is the only place an ignored item can be restored from.
  */
 export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { processing } = useHistoryEventsStatus();
-  // Listing unmatched movements/bridges is free, but every action behind them
-  // (find matches, match, ignore, mark external, unlink) is premium-only.
   const { allowed: matchingAllowed, minimumTier: matchingTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
   const {
@@ -83,20 +90,21 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   } = useCustomizedEventDuplicates();
 
   const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
-  // The inbox is served only in accounting-update builds, so its row (and the four
-  // requests behind its count) exist only there.
   const dataIssuesEnabled = isAccountingUpdateEnabled();
   const { actionableCount: dataIssuesCount, refreshSummary } = useDataIssuesSummary();
   const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
   const { loading: trackedEntitiesLoading, tracksNothing } = useTrackedEntities();
 
-  // With nothing left unmatched the row switches to what was ignored, so those
-  // items stay reachable (the dialog is the only place they can be restored from).
   const movementsIgnoredOnly = computed<boolean>(() => get(unmatchedMovementsCount) === 0 && get(ignoredMovementsCount) > 0);
   const bridgesIgnoredOnly = computed<boolean>(() => get(unmatchedBridgesCount) === 0 && get(ignoredBridgesCount) > 0);
 
-  // Boolean, unlike every other row: there is one thing to do, and the badge counts
-  // categories rather than items, so it slots in as a count of one.
+  /**
+   * The "nothing is tracked" row, whose count is a boolean unlike every other row's.
+   *
+   * @remarks
+   * There is one thing to do here, not N of them, and the badge counts categories rather than
+   * items, so it slots in as a count of one.
+   */
   const trackedAccounts = computed<HistoryEventIssue>(() => createIssue({
     actionLabel: t('transactions.alerts.issues.no_tracked_accounts.action'),
     count: get(tracksNothing) ? 1 : 0,
@@ -105,15 +113,11 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
     id: HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
     loading: get(trackedEntitiesLoading),
     severity: ActionSeverity.WARNING,
-    // /accounts/ redirects to the evm tab, the only place an account can be added;
-    // /balances/blockchain/ only lists balances and offers no way to add one.
     target: { kind: 'route', to: { name: '/accounts/' } },
     title: t('transactions.alerts.issues.no_tracked_accounts.title'),
   }));
 
   const issues = computed<HistoryEventIssue[]>(() => [
-    // First, because every other count below is legitimately zero when this one is raised:
-    // a user tracking nothing would otherwise be told there is nothing to do.
     get(trackedAccounts),
     createIssue({
       actionLabel: get(movementsIgnoredOnly) ? t('transactions.alerts.review_ignored') : t('transactions.alerts.issues.unmatched_movements.action'),

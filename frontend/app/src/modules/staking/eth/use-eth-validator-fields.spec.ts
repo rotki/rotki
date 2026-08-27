@@ -19,8 +19,6 @@ function fieldOf(key: string): FieldDef | undefined {
 }
 
 describe('useEthValidatorFields', () => {
-  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
-  // here rather than against a second hand-written declaration.
   describe('route query', () => {
     it('should coerce single route values into arrays', () => {
       expect(routeSchemaFromFields(fields()).parse({ index: '5', publicKey: '0xabc', status: 'active' }))
@@ -53,8 +51,6 @@ describe('useEthValidatorFields', () => {
     expect(fieldOf('status')?.resolveLabel?.('consolidated')).toBe('Consolidated');
   });
 
-  // Both are written, since neither has a list worth offering: an index is a number the user knows
-  // and a public key is pasted.
   it('should apply an index only when it is one', () => {
     const index = fieldOf('index');
 
@@ -71,9 +67,7 @@ describe('useEthValidatorFields', () => {
     expect(publicKey?.validate?.(`0x${'a'.repeat(40)}`)).toBe(false);
   });
 
-  // None of these keys is declared as behaviour-carrying, so the request has no form for an
-  // exclusion and the pill must not offer one.
-  it('should offer no exclusion on any field', () => {
+  it('should offer no exclusion on any field, which the request has no form for', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);
       expect(field.operators).not.toContain('is_not');

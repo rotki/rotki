@@ -8,7 +8,6 @@ import { type Activity, ActivityKind, ActivitySourceType, ActivityStatus, makeAc
 const mockAddRunning = ref<boolean>(false);
 const mockRemoveRunning = ref<boolean>(false);
 
-// Balance fetching is read off the live orchestrator activities now, not the task store.
 const mockActivities = ref<Activity[]>([]);
 
 vi.mock('@/modules/task-center/use-task-orchestrator', () => ({

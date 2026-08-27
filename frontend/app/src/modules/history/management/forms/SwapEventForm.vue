@@ -16,6 +16,7 @@ import {
   toSwapPayload,
 } from '@/modules/history/management/forms/swap-event-form';
 import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
+import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -51,17 +52,7 @@ watchImmediate(() => data, (data) => {
   seed(swapStateFromEvents(data.eventsInGroup), swapIdentifiers(data.eventsInGroup));
 });
 
-watch(() => state.hasFee, (hasFee) => {
-  if (!hasFee) {
-    state.fees = [];
-    return;
-  }
-
-  // Seeding an existing group sets the flag and the rows together, so only an empty list wants a
-  // blank row; replacing it unconditionally would discard what was just loaded.
-  if (state.fees.length === 0)
-    state.fees.push(emptySwapFee());
-});
+useFeeRows(() => state.hasFee, () => state.fees, emptySwapFee);
 
 defineExpose({
   errorCount: form.errorCount,

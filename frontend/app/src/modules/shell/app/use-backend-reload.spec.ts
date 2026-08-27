@@ -69,8 +69,6 @@ describe('useBackendReload', () => {
 
     expect(notify).toHaveBeenCalled();
     expect(logout).not.toHaveBeenCalled();
-    // Still reconnected: the backend refused the restart rather than going away, so
-    // leaving the app disconnected would break something that is working.
     expect(connect).toHaveBeenCalled();
     expect(result.status).toBe(BackendRestartStatus.failed);
   });

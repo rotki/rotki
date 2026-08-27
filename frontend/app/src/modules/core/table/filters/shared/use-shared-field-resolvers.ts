@@ -67,7 +67,13 @@ export function useSharedFieldResolvers(): SharedFieldResolvers {
 
   const resolveHex = (value: string): string => truncateAddress(scrambleAddress(value), 4);
 
-  // Sentence-casing alone lowercases acronyms into `Evm event` / `Eth withdrawal event`.
+  /**
+   * Renders a snake-cased identifier as a display label.
+   *
+   * @remarks
+   * Sentence casing on its own lowercases acronyms, giving `Evm event` and `Eth withdrawal event`,
+   * so the acronyms are restored afterwards.
+   */
   const resolveTokenName = (value: string): string => capitalizeAcronyms(toHumanReadable(value, 'sentence'));
 
   return {

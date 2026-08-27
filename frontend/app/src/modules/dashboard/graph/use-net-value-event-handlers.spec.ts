@@ -278,12 +278,10 @@ describe('useNetValueEventHandlers', () => {
     const { setupChartEventHandlers, unmount } = setupHarness();
     setupChartEventHandlers();
 
-    // first click arms the single-click timer
     containerHandlers.get('click')?.({});
     fake.zrHandlers.get('dblclick')?.(undefined);
 
     expect(fake.chart.dispatchAction).toHaveBeenCalledWith({ end: 100, start: 0, type: 'dataZoom' });
-    // timer was cleared, so advancing does not fire onHover
     vi.advanceTimersByTime(500);
     expect(onHover).not.toHaveBeenCalled();
     unmount();

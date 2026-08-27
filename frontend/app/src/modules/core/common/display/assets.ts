@@ -359,6 +359,9 @@ export function assetTokensExactlyMatch(tokens: AssetSearchTokens | undefined, k
  * Ignored assets are filtered out, matching every other asset input. Leaving them in makes one
  * field behave two ways: an asset offered while typing would be missing from the checklist the
  * pill opens.
+ *
+ * Call this once and hold the result. The suggester owns the debounce timer, so rebuilding it
+ * per keystroke hands each one a fresh timer that cancels nothing.
  */
 export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, location?: string): (keyword: string) => Promise<AssetsWithId> {
   let pending: AbortController | null = null;

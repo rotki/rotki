@@ -1,25 +1,10 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { LoginCredentials } from '@/modules/auth/login';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, describe, expect, it } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, ref, type VNode } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import CreateAccountCredentials from '@/modules/auth/create-account/credentials/CreateAccountCredentials.vue';
 import '@test/i18n';
-
-/**
- * Guards the step's Continue button, with the REAL form mounted underneath.
- *
- * `CreateAccountCredentialsForm.spec.ts` pins the rules and the `valid` model the form writes; this
- * one pins the other half of that contract - the wizard step actually gating on it. Two regressions
- * live in the gap between them and neither spec alone can see either:
- *
- * - the form stops writing `valid` (the zod swap has no `watchImmediate(v$, ...)` to port), so
- *   Continue never enables and the account wizard dead-locks at this step;
- * - the step binds something truthy-but-not-a-boolean, which is what `form.valid` not unwrapping in
- *   a template produces, so Continue is enabled no matter what the user typed.
- */
-
-/** The stubs declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -108,7 +93,6 @@ describe('createAccountCredentials', () => {
   }
 
   async function edit(testId: string, value: string | boolean): Promise<void> {
-    // `findComponent(string)` alone types the wrapper as `WrapperLike`, which has no `vm`.
     const field = wrapper.findComponent<StubInstance>(`[data-testid=${testId}]`);
     assert(field.exists(), `no field with test id ${testId} is rendered`);
     field.vm.$emit('update:modelValue', value);

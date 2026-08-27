@@ -238,7 +238,7 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
       }));
     });
 
-    it('should surface the 4902 when it has no definition for the chain', async () => {
+    it('should surface the 4902 when it has no definition for the chain, the dynamic chain list naming chains the viem table lacks', async () => {
       const request = vi.fn()
         .mockImplementationOnce(async () => ['0xabc']) // eth_requestAccounts
         .mockImplementationOnce(async () => '0x1') // eth_chainId
@@ -246,7 +246,6 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
         .mockImplementation(async () => undefined);
       const provider = makeProvider({ request });
       selectProvider(provider);
-      // The chain list is dynamic, so it can name a chain the viem table lacks.
       getWalletNetwork.mockReturnValue(undefined);
       const wallet = useInjectedWallet();
       await wallet.connectToSelectedProvider();

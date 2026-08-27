@@ -9,9 +9,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ConnectionFailureMessage from './ConnectionFailureMessage.vue';
 import '@test/i18n';
 
-// `available` is read through VueUse's `get`, which unwraps a plain value just
-// as happily as a ref — so it stays a boolean here. A `ref` cannot be built in
-// `vi.hoisted`: the auto-import is not resolved yet when the factory runs.
 const { control, interop, mocks, saveOptions } = vi.hoisted(() => ({
   control: {
     probe: vi.fn(async () => false),
@@ -80,9 +77,7 @@ describe('connectionFailureMessage', () => {
     expect(hasDebugButton(wrapper)).toBe(false);
   });
 
-  // Docker without a session key serves no `/_control`, so the probe says no and
-  // the button must stay hidden even though this is not the plain web build.
-  it('should hide the debug retry when the control endpoint is absent', async () => {
+  it('should hide the debug retry when the control endpoint is absent, whatever the build', async () => {
     control.probe.mockResolvedValue(false);
     mocks.available = false;
 

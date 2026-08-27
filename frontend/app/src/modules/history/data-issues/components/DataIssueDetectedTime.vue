@@ -5,8 +5,6 @@ const { timestamp } = defineProps<{
   timestamp: number;
 }>();
 
-// rotki timestamps are in seconds; useTimeAgo expects milliseconds. The exact
-// date stays available on hover so the relative label never hides the real time.
 const timeAgo = useTimeAgo(() => timestamp * 1000);
 </script>
 

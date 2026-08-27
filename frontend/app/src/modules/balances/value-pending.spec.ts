@@ -2,11 +2,6 @@ import { One } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { isRowValuePending, isTotalValuePending } from '@/modules/balances/value-pending';
 
-/**
- * The seam: a row's value is only as known as the prices behind it, and a group's is only as known
- * as its worst member. Everything else about a balance can be complete while this is not.
- */
-
 const pending = (asset: string): boolean => asset.startsWith('PENDING');
 
 describe('isRowValuePending', () => {

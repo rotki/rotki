@@ -3,6 +3,7 @@ import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution 
 import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import AssetConflictDialog from '@/modules/shell/app/AssetConflictDialog.vue';
 import AssetUpdateMessage from '@/modules/shell/app/AssetUpdateMessage.vue';
 import AssetUpdateStatus from '@/modules/shell/app/AssetUpdateStatus.vue';
@@ -20,17 +21,15 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 
-// A specific remote version the user permanently skipped (shared with the check step).
-const skipped = useLocalStorage<number>('rotki_skip_asset_db_version', 0);
+const skipped = useLocalStorage<number>(SKIPPED_ASSET_VERSION_KEY, 0);
 
-// Editable copy the asset-update prompt v-models; seeded when the flow suspends on the prompt.
-const versions = ref<AssetVersionUpdate>({ changes: 0, local: 0, remote: 0, upToVersion: 0 });
+const promptedVersions = ref<AssetVersionUpdate>({ changes: 0, local: 0, remote: 0, upToVersion: 0 });
 
 const phase = computed<string>(() => state.kind);
 
 const conflicts = computed<AssetUpdateConflictResult[]>(() => (state.kind === UnlockPhase.conflicts ? state.conflicts : []));
 
-// In-flight phases with no dedicated UI fall back to the indeterminate spinner.
+/** In-flight phases with no dedicated UI of their own, which fall back to the indeterminate spinner. */
 const busy = computed<boolean>(() => {
   const kind = phase.value;
   return kind === UnlockPhase.authenticating
@@ -41,7 +40,6 @@ const busy = computed<boolean>(() => {
     || kind === UnlockPhase.ready;
 });
 
-// A label for the busy spinner where a phase warrants one (restart / unlock).
 const busyMessage = computed<string>(() => {
   if (phase.value === UnlockPhase.restarting)
     return t('unlock_flow.status.restarting');
@@ -52,23 +50,23 @@ const busyMessage = computed<string>(() => {
 
 function dismiss(skip: boolean): void {
   if (skip)
-    set(skipped, get(versions).remote);
+    set(skipped, get(promptedVersions).remote);
   emit('skip');
 }
 
 watch(() => state, (current) => {
   if (current.kind === UnlockPhase.updatePrompt)
-    set(versions, { ...current.changes });
+    set(promptedVersions, { ...current.changes });
 }, { immediate: true });
 </script>
 
 <template>
   <AssetUpdateMessage
     v-if="phase === UnlockPhase.updatePrompt"
-    v-model:versions="versions"
+    v-model:versions="promptedVersions"
     class="max-w-[27.5rem] mx-auto"
     headless
-    @confirm="emit('confirm', versions.upToVersion)"
+    @confirm="emit('confirm', promptedVersions.upToVersion)"
     @dismiss="dismiss($event)"
   />
   <AssetConflictDialog
@@ -81,7 +79,7 @@ watch(() => state, (current) => {
     v-else-if="phase === UnlockPhase.applyingUpdate"
     class="max-w-[32rem] mx-auto"
     status="applying"
-    :remote-version="versions.upToVersion"
+    :remote-version="promptedVersions.upToVersion"
   />
   <AssetUpdateStatus
     v-else-if="phase === UnlockPhase.checkingUpdate"

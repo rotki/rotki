@@ -42,9 +42,14 @@ export function useDataIssueDetailActions(
     set(modelDrawerOpen, true);
   }
 
-  // Dismiss hides the issue and stops auto-remediation, so confirm first. The
-  // prompt is shown here (the single choke point) rather than per call site, so
-  // the drawer, panel cards and table quick actions all get it for free.
+  /**
+   * Prompts for confirmation, then hides the issue and stops its auto-remediation.
+   *
+   * @remarks
+   * The prompt lives at this choke point rather than at each call site, so the drawer, the panel
+   * cards and the table's quick action all inherit it. The returned promise settles once the
+   * prompt has been raised, not once the dismissal has gone through.
+   */
   async function onDismiss(id: number): Promise<void> {
     show(
       {

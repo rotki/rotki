@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFormErrorScroll } from '@/modules/core/common/use-form-error-scroll';
 
 describe('useFormErrorScroll', () => {
@@ -7,11 +7,6 @@ describe('useFormErrorScroll', () => {
   beforeEach(() => {
     scrollIntoView = vi.fn<(arg?: boolean | ScrollIntoViewOptions) => void>();
     Element.prototype.scrollIntoView = scrollIntoView;
-    document.body.innerHTML = '';
-  });
-
-  afterEach(() => {
-    document.body.innerHTML = '';
   });
 
   it('should do nothing when there is no error element', async () => {

@@ -148,8 +148,10 @@ const blockie = computed<string | undefined>(() => {
   return address ? getBlockie(address) : undefined;
 });
 
-// Without it the tooltip's `[{symbol}] {name}` renders as a bare `[]`; the address block below
-// still carries the useful part.
+/**
+ * Gates the tooltip's `[{symbol}] {name}` line, which without any asset text renders as a bare `[]`.
+ * The address block below it still carries the useful part.
+ */
 const hasTooltipText = hasAssetText;
 
 const tooltip = computed(() => {

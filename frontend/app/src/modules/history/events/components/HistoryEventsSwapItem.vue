@@ -78,8 +78,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
   counterparty: get(counterparty),
 }));
 
-// A combined bridge row represents both legs, so show a neutral label instead
-// of the primary (out) leg's directional one.
+/** Neutral for a bridge, whose row stands for both legs rather than the out leg's direction. */
 const typeLabel = computed<string | undefined>(() =>
   get(isBridge) ? t('history_events_list_swap.bridge_label') : undefined,
 );

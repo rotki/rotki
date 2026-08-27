@@ -16,8 +16,6 @@ class AsyncUtilityError extends Error {
   }
 }
 
-// The code lives on each subclass rather than travelling through the constructor, so `options` can be
-// forwarded to `super()` untouched and a native `cause` survives.
 class TimeoutError extends AsyncUtilityError {
   readonly code = 'TIMEOUT';
 

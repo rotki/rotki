@@ -4,13 +4,8 @@ import { useAssets } from '@/modules/assets/use-assets';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { SKIP_ASSET_UPDATE_KEY, SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
-
-/** Key holding the remote version the user chose to skip, so the prompt stays away across restarts. */
-const SKIPPED_VERSION_KEY = 'rotki_skip_asset_db_version';
-
-/** Session key set by the app to suppress the check entirely for this run. */
-const SKIP_UPDATE_KEY = 'skip_update';
 
 interface UseAssetUpdateOptions {
   /**
@@ -86,7 +81,7 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
     upToVersion: 0,
   });
 
-  const skipped = useLocalStorage(SKIPPED_VERSION_KEY, 0);
+  const skipped = useLocalStorage(SKIPPED_ASSET_VERSION_KEY, 0);
 
   const { t } = useI18n({ useScope: 'global' });
   const { applyUpdates, checkForUpdate } = useAssets();
@@ -203,7 +198,7 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
   }
 
   onMounted(async () => {
-    if (sessionStorage.getItem(SKIP_UPDATE_KEY)) {
+    if (sessionStorage.getItem(SKIP_ASSET_UPDATE_KEY)) {
       onSkip();
       return;
     }

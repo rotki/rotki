@@ -17,12 +17,9 @@ describe('useSilentNotifications', () => {
     mockUpdateFrontendSetting.mockReset().mockResolvedValue({ success: true });
   });
 
-  it('should be constructible without an active pinia', () => {
+  it('should be constructible without an active pinia, since the dispatcher is built wherever notifications are used', () => {
     setActivePinia(undefined);
 
-    // The notification dispatcher builds this, and the dispatcher itself is built wherever
-    // notifications are used, including contexts that never set a pinia up. Resolving the settings
-    // stores eagerly makes those throw "no active Pinia" without a notification ever being sent.
     expect(() => useSilentNotifications()).not.toThrow();
   });
 
@@ -39,13 +36,11 @@ describe('useSilentNotifications', () => {
     expect(get(silent)).toBe(true);
   });
 
-  it('should follow the setting when it changes underneath', () => {
+  it('should follow the setting when it changes underneath, as another tab or a login reload does', () => {
     const { silent } = useSilentNotifications();
 
     useSettingsRepo().updateFrontend({ silentNotifications: true });
 
-    // Read through a getter ref, so a change made elsewhere (another tab of the same account,
-    // a settings reload on login) is picked up without re-creating the composable.
     expect(get(silent)).toBe(true);
   });
 

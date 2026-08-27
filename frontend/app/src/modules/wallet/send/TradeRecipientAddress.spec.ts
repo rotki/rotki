@@ -4,13 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick } from 'vue';
 import TradeRecipientAddress from '@/modules/wallet/send/TradeRecipientAddress.vue';
 
-/**
- * The seam: this component is wiring plus the two shapes the field takes. With a recipient it shows
- * that address and a way to clear it; without one it shows the search input, the suggestions and
- * the address book. Everything it does with an address goes through the composable, which
- * `use-trade-recipient-address.spec.ts` covers.
- */
-
 const ALICE = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 
 const recipientApi = {
@@ -40,7 +33,6 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
   useWalletStore: (): { connected: typeof connected } => ({ connected }),
 }));
 
-// RuiMenu renders its content in a popper; stub it so the suggestions are in the tree.
 const RuiMenuStub = defineComponent({
   name: 'RuiMenu',
   props: { modelValue: { default: false, type: Boolean } },
@@ -55,7 +47,6 @@ const RuiDialogStub = defineComponent({
   template: '<div v-if="modelValue"><slot /></div>',
 });
 
-// The real display resolves names through pinia; here only what it is handed matters.
 const addressDisplayStub = defineComponent({
   name: 'TradeAddressDisplay',
   props: {

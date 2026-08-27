@@ -75,6 +75,13 @@ function effectsOf(flags: { persist?: boolean; pushUrl?: boolean; fetch?: boolea
   return list;
 }
 
+/**
+ * Applies a filter change, returning to page 1 when the filter actually moved.
+ *
+ * @remarks
+ * The page reset is a state transition, not an intent: it does not attribute a change to the user
+ * and so cannot earn a URL write on its own.
+ */
 function reduceFilterSet<TFilter, TItem extends NonNullable<unknown>>(
   state: TableState<TFilter, TItem>,
   event: Extract<TableEvent<TFilter, TItem>, { type: 'filter-set' }>,
@@ -114,23 +121,33 @@ function reducePageSet<TFilter, TItem extends NonNullable<unknown>>(
   };
 }
 
+/**
+ * Applies a page-size change, keeping the current page.
+ *
+ * @remarks
+ * Loading more rows does not reset the page: the offset moving is what makes it fetch. Always a
+ * `user` change, since only an interaction sets the page size.
+ */
 function reduceLimitSet<TFilter, TItem extends NonNullable<unknown>>(
   state: TableState<TFilter, TItem>,
   event: Extract<TableEvent<TFilter, TItem>, { type: 'limit-set' }>,
 ): ReduceResult<TFilter, TItem> {
   const changed = event.limit !== state.limit;
-  // A limit change loads more items; it does not reset the page (the offset moving is
-  // what makes it fetch). The pagination model is only set by interaction.
   return {
     effects: changed ? effectsOf({ fetch: true, persist: true, pushUrl: true }) : [],
     state: { ...state, limit: event.limit, pendingIntent: 'user' },
   };
 }
 
-// A bound param source's value changed. 'both'/'request' reach the payload, so they
-// reset the page (the 8b parity fix: request too, not only both). 'both'/'url' reach the
-// URL, so they attribute user intent. 'request' never reaches the URL, so it resets the
-// page WITHOUT earning a write that would clobber route-driven filter state.
+/**
+ * Folds a bound param's new value in, according to which sinks that param feeds.
+ *
+ * @remarks
+ * Reaching the request payload (`both`, `request`) resets the page, because the rows under the
+ * old offset are no longer the same rows. Reaching the URL (`both`, `url`) attributes the change
+ * to the user, which is what earns it a pushed history entry. `request` therefore resets without
+ * earning a write, so a param the URL never carried cannot clobber route-driven filter state.
+ */
 function reduceParamChanged<TFilter, TItem extends NonNullable<unknown>>(
   state: TableState<TFilter, TItem>,
   event: Extract<TableEvent<TFilter, TItem>, { type: 'param-changed' }>,
@@ -155,12 +172,18 @@ function reduceParamChanged<TFilter, TItem extends NonNullable<unknown>>(
   return { effects: [], state };
 }
 
+/**
+ * Adopts the state a navigation carries, wholesale.
+ *
+ * @remarks
+ * A navigation is authoritative: it *sets* the intent to `route` or `restore` rather than raising
+ * it, which is the one path that can lower a stale `user` intent left behind by an earlier change.
+ */
 function reduceRouteApplied<TFilter, TItem extends NonNullable<unknown>>(
   state: TableState<TFilter, TItem>,
   event: Extract<TableEvent<TFilter, TItem>, { type: 'route-applied' }>,
 ): ReduceResult<TFilter, TItem> {
-  // The echo of our own write: skip re-applying state we already hold. Replaces the
-  // `selfPush` re-entrancy guard.
+  // The echo of our own write: skip re-applying state we already hold.
   if (event.source === 'self')
     return { effects: [], state };
 
@@ -168,8 +191,6 @@ function reduceRouteApplied<TFilter, TItem extends NonNullable<unknown>>(
     || !isEqual(state.sorting, event.sorting)
     || state.page !== event.page
     || state.limit !== event.limit;
-  // A navigation is authoritative: it SETS the intent (route/restore), it does not raise
-  // it, so a real navigation can lower a stale 'user'.
   return {
     effects: changed ? effectsOf({ fetch: true, persist: true }) : [],
     state: {
@@ -183,9 +204,12 @@ function reduceRouteApplied<TFilter, TItem extends NonNullable<unknown>>(
 }
 
 /**
- * The pure sync reducer. Dispatches to one handler per event; each maps to a row of the
- * transition table in `Server Table Composable Decomposition.md` (Stage 3 design spec),
- * which also carries the sign-off rationale.
+ * Folds one table event into the next state, plus the effects that state change earns.
+ *
+ * @remarks
+ * Pure and synchronous: the effects are returned as data for the caller to run, so nothing here
+ * fetches, persists, or touches the router. Every branch is total over the event union, which is
+ * what lets the function return without a default case.
  */
 export function reduce<TFilter, TItem extends NonNullable<unknown>>(
   state: TableState<TFilter, TItem>,
@@ -205,7 +229,6 @@ export function reduce<TFilter, TItem extends NonNullable<unknown>>(
     case 'route-applied':
       return reduceRouteApplied(state, event);
     case 'url-committed':
-      // A real push was attempted; the write "consumes" the pending intent.
       return { effects: [], state: { ...state, pendingIntent: 'programmatic' } };
   }
 }

@@ -60,8 +60,13 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
   const router = useRouter();
   const { getChainName, txEvmChains } = useSupportedChains();
 
-  // Key-based selection (chain id or custom tab id) — survives the tab list
-  // being populated asynchronously (txEvmChains may load after mount).
+  /**
+   * The selected tab, held as its key rather than its position.
+   *
+   * @remarks
+   * A key is either a chain id or a custom tab id. `txEvmChains` may load after mount, so a position
+   * would point at a different tab once the list grows.
+   */
   const selectedKey = ref<string>(Blockchain.ETH);
 
   const evmChainTabs = useArrayMap(txEvmChains, (chain): RpcSettingTab => {
@@ -112,8 +117,13 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
     return get(rpcSettingTabs).find(tab => tabKey(tab) === key);
   });
 
-  // Single-value endpoints (BTC Mempool, KSM, DOT, Beacon) carry a `setting` key
-  // and only ever store one URL — the "Add node" button doesn't apply.
+  /**
+   * Whether this tab's chain can hold more than one node.
+   *
+   * @remarks
+   * A tab carrying a `setting` key is a single-value endpoint (BTC Mempool, KSM, DOT, Beacon) that
+   * stores one url, so there is nothing for an "Add node" button to add.
+   */
   const canAddNode = computed<boolean>(() => {
     const tab = get(activeTab);
     return !!tab && !tab.setting;

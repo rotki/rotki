@@ -122,8 +122,6 @@ const DIGITS = /^\d*(?:\.\d+)?$/;
 
 function backendNumericField(messages: BackendNumericMessages): ZodType<string> {
   return z.string().superRefine((value, ctx) => {
-    // Both issues can fire at once, in this order, for a whitespace-only value:
-    // it is not digits, and it is empty once trimmed.
     if (!DIGITS.test(value))
       ctx.addIssue({ code: 'custom', message: messages.min });
 

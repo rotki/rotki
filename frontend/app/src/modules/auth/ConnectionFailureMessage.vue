@@ -51,8 +51,6 @@ const toDefault = (): void => connect();
 const terminate = (): Promise<void> => interop.closeApp();
 
 onBeforeMount(() => {
-  // This screen is reachable before login, so the probe is the only way to know
-  // whether a restart is on offer at all.
   startPromise(probe());
 });
 </script>

@@ -1,3 +1,4 @@
+import { neverSettles } from '@test/utils/never-settles';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { delay, waitForCondition, withTimeout } from './async-utilities';
 
@@ -111,14 +112,14 @@ describe('withTimeout', () => {
   });
 
   it('should reject with a timeout error naming the operation when the timeout wins', async () => {
-    const promise = withTimeout(new Promise(() => {}), 1000, 'ping');
+    const promise = withTimeout(neverSettles(), 1000, 'ping');
     const assertion = expect(promise).rejects.toThrow('Timeout waiting for ping (1000ms)');
     await vi.advanceTimersByTimeAsync(1000);
     await assertion;
   });
 
   it('should tag the timeout rejection with the TIMEOUT code', async () => {
-    const promise = withTimeout(new Promise(() => {}), 500, 'ping');
+    const promise = withTimeout(neverSettles(), 500, 'ping');
     const assertion = expect(promise).rejects.toMatchObject({ code: 'TIMEOUT', name: 'TimeoutError' });
     await vi.advanceTimersByTimeAsync(500);
     await assertion;
@@ -144,7 +145,7 @@ describe('async utility errors', () => {
   it('should report the timeout code and operation together', async () => {
     vi.useFakeTimers();
     try {
-      const promise = withTimeout(new Promise(() => {}), 100, 'refresh');
+      const promise = withTimeout(neverSettles(), 100, 'refresh');
       const assertion = expect(promise).rejects.toMatchObject({
         code: 'TIMEOUT',
         message: 'Timeout waiting for refresh (100ms)',

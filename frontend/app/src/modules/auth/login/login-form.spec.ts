@@ -68,8 +68,7 @@ describe('the backend url rule', () => {
     expect(urlMessages(url)).toStrictEqual([]);
   });
 
-  // The panel being shut takes the whole field out of play, however bad what it holds is.
-  it('should say nothing at all while the panel is closed', () => {
+  it('should say nothing at all while the panel is closed, however bad the field holds', () => {
     expect(urlMessages('not a url', false)).toStrictEqual([]);
     expect(urlMessages('', false)).toStrictEqual([]);
   });
@@ -101,7 +100,6 @@ describe('classifyLoginErrors', () => {
     });
   });
 
-  // Anything else belongs to no field; the screen shows it whole in its own alert instead.
   it.each([
     ['Something else went wrong'],
     ['user john does not exist'],
@@ -114,7 +112,6 @@ describe('classifyLoginErrors', () => {
     expect(classifyLoginErrors([])).toStrictEqual({});
   });
 
-  // Only the first of a kind is shown, which is what the two lookups it replaced did.
   it('should keep the first message of each kind', () => {
     expect(classifyLoginErrors(['User a is gone', 'User b is gone'])).toStrictEqual({
       username: ['User a is gone'],

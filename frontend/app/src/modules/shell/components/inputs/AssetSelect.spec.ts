@@ -107,8 +107,6 @@ describe('assetSelect', () => {
     set(visibleAssets, []);
   });
 
-  // Every field of the bag has to reach the search. It is one prop now, so a misspelled key
-  // fails silently at runtime rather than at the call site the way five props did.
   it('should pass every field of the source bag to the search', () => {
     const source: AssetSearchSource = {
       chain: 'eth',

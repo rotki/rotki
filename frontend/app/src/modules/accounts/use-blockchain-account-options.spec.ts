@@ -61,9 +61,7 @@ describe('useBlockchainAccountOptions', () => {
     expect(resolveCaption(address)).toBeUndefined();
   });
 
-  // A bitcoin xpub is the account's own value, and an unlabelled one names itself, which would
-  // otherwise render as the xpub twice: once as the label and once as its caption.
-  it('should show an unlabelled xpub as its shortened value alone', () => {
+  it('should show an unlabelled xpub as its shortened value alone, rather than render it twice as both label and caption', () => {
     const xpub = 'xpub68V4ZQQ62mea7ZUKn2urQuIpsGtRSfRkACCWo4KKR8dQ';
     accounts.value = [{ chains: ['btc'], data: { type: 'xpub', xpub } }];
 
@@ -82,9 +80,7 @@ describe('useBlockchainAccountOptions', () => {
     expect(resolveCaption(xpub)).toBe('xpub68V4...R8dQ');
   });
 
-  // Alias names can be switched off, and a non-EVM account rarely has one, so the label the
-  // account was tracked under has to be honoured or the row reads as a bare address.
-  it('should fall back to the label a non-evm account was tracked under', () => {
+  it('should fall back to the label a non-evm account was tracked under, which rarely has an alias name to resolve', () => {
     const address = '13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB';
     accounts.value = [{ chains: ['polkadot'], data: { address, type: 'address' }, label: 'Staking' }];
 

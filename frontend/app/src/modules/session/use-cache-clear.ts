@@ -31,9 +31,14 @@ export function useCacheClear<T>(
 
   const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text ?? '';
 
-  // Drops the success message a few seconds after a purge. useTimeoutFn ties the timer to the
-  // composable's scope, so a pending reset cannot write to `status` once the owner is gone, and a
-  // second purge restarts the window instead of stacking timers.
+  /**
+   * Drops the success message a few seconds after a purge.
+   *
+   * @remarks
+   * `useTimeoutFn` ties the timer to this composable's scope, so a pending reset cannot write to
+   * `status` once the owner is gone, and a second purge restarts the window rather than stacking
+   * a second timer on top of the first.
+   */
   const { start: scheduleStatusReset } = useTimeoutFn(() => {
     set(status, null);
   }, 5000, { immediate: false });

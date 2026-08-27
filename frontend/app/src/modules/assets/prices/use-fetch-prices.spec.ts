@@ -30,8 +30,6 @@ vi.mock('@/modules/core/notifications/use-notifications', async importOriginal =
   useNotifications: vi.fn(() => ({ notifyError })),
 }));
 
-// The activity is what the task center renders, so the empty-run guard has to be asserted on
-// submitTask itself: a run that queries nothing must not register one.
 vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/modules/task-center/use-native-task')>();
 
@@ -42,8 +40,6 @@ vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
       const real = actual.useNativeTask();
       return {
         ...real,
-        // Written out as a generic rather than derived: `Parameters`/`ReturnType` would collapse
-        // `submitTask`'s type parameter to its default, which does not satisfy the signature.
         submitTask: async <T = void>(spec: NativeActivitySpec<T>): Promise<TaskOutcome<T>> => {
           submitTaskSpy(spec);
           return real.submitTask(spec);
@@ -106,16 +102,13 @@ describe('useFetchPrices', () => {
 
     await fetcher.fetchPrices({ ignoreCache: false, selectedAssets: [...manyAssets('A', 100), ...manyAssets('B', 50)] });
 
-    // The first batch failed, so the second is never queried (short-circuit).
     expect(usePriceApi().queryPrices).toHaveBeenCalledTimes(1);
     expect(notifyError).toHaveBeenCalledOnce();
   });
 
-  it('should not submit an activity when no assets are selected', async () => {
+  it('should not submit an activity when no assets are selected, so a concurrent refresh cannot inherit its "0 assets" subtitle', async () => {
     await fetcher.fetchPrices({ ignoreCache: false, selectedAssets: [] });
 
-    // With no assets there are no batches, so the activity would do nothing but still occupy the
-    // task center - and a concurrent real refresh would inherit its "0 assets" subtitle.
     expect(submitTaskSpy).not.toHaveBeenCalled();
     expect(usePriceApi().queryPrices).not.toHaveBeenCalled();
   });
@@ -128,14 +121,11 @@ describe('useFetchPrices', () => {
     expect(submitTaskSpy).toHaveBeenCalledOnce();
   });
 
-  it('should label the activity with the real asset count', async () => {
+  it('should label the activity from the selection, not from what the batching consumed', async () => {
     runTaskMock.mockResolvedValue(ok(priceResponse({ A0: [1, 0] })));
 
     await fetcher.fetchPrices({ ignoreCache: false, selectedAssets: manyAssets('A', 150) });
 
-    // The count must come from the selection, not from anything the batching consumed: the old
-    // splicing `chunkArray` emptied its input, so the task center claimed "Fetching prices for
-    // 0 assets" while fetching 150.
     expect(submitTaskSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         subtitle: expect.objectContaining({ params: { count: 150 }, plural: 150 }),

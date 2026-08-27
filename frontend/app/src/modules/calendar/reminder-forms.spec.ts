@@ -76,8 +76,7 @@ describe('reminderRowsSchema', () => {
     expect(messagesFor([{ amount: '0', unit: ReminderUnit.HOURS }])).toEqual(['too_small']);
   });
 
-  // The ceiling moves with the unit, so the same number is fine in hours and too large in weeks.
-  it('should reject an amount above the ceiling for its unit', () => {
+  it('should reject an amount above the ceiling for its unit, which moves with the unit', () => {
     expect(messagesFor([{ amount: '5', unit: ReminderUnit.WEEKS }])).toEqual(['max_4_weeks']);
     expect(parse([{ amount: '5', unit: ReminderUnit.HOURS }]).success).toBe(true);
   });
@@ -86,8 +85,7 @@ describe('reminderRowsSchema', () => {
     expect(messagesFor([{ amount: '', unit: ReminderUnit.HOURS }])).toHaveLength(1);
   });
 
-  // Rows are addressed by index, which is what lets each one show its own message.
-  it('should key a message to the row it came from', () => {
+  it('should key a message to the row it came from, rows being addressed by index', () => {
     const result = parse([
       { amount: '2', unit: ReminderUnit.HOURS },
       { amount: '99999', unit: ReminderUnit.WEEKS },

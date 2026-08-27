@@ -15,8 +15,6 @@ describe('composables/api/balances/price', () => {
     vi.clearAllMocks();
   });
 
-  // Restored here rather than at the end of each test: a failing assertion throws past an inline
-  // restore, and the leaked spy then fails unrelated tests further down the file.
   afterEach(() => {
     vi.restoreAllMocks();
   });

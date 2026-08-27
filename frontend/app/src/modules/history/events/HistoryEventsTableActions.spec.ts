@@ -7,12 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
 
-/**
- * The seam: the selection toolbar - which action each button reports, and the states in which
- * an action is refused. The bridge between the pill bar and the page's filter models lives in
- * `use-history-events-pill-bar`, which has its own spec.
- */
-
 const pillBar = {
   applyView: vi.fn(),
   modelPillParams: ref<Record<string, unknown>>({}),

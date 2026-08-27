@@ -8,11 +8,6 @@ import { ApiValidationError } from '@/modules/core/api/types/errors';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import '@test/i18n';
 
-/**
- * The dialog owns the save: it decides whether a rename is really a rename, which failures belong
- * on a field and which become a message, and when the caller is told an exchange was added. None of
- * that was covered, and the form's `validate()` contract is about to change under it.
- */
 const { setMessage, setupExchange, validate } = vi.hoisted(() => ({
   setMessage: vi.fn(),
   setupExchange: vi.fn(),
@@ -27,7 +22,6 @@ vi.mock('@/modules/core/common/use-message-store', () => ({
   useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
-// Stubbed down to the seam the dialog uses: the exposed `validate` and the two models it writes.
 vi.mock('@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue', async () => {
   const { defineComponent, h } = await import('vue');
   return {

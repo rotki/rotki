@@ -2,6 +2,7 @@ import type { BackendOptions } from '@shared/ipc';
 import type { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -510,7 +511,7 @@ describe('onboarding-settings', () => {
       ['data', 'user-data-directory-input'],
       ['logs', 'user-log-directory-input'],
     ])('should ignore a second %s-directory click while the picker is open', async (_name, field): Promise<void> => {
-      openDirectoryMock.mockReturnValue(new Promise<string | undefined>(() => {}));
+      openDirectoryMock.mockReturnValue(neverSettles<string | undefined>());
       const input = wrapper.find(`[data-testid=${field}] input`);
 
       await input.trigger('click');

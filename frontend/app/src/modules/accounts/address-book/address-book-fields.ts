@@ -58,11 +58,7 @@ export function toAddressBookFields(
   t: Translate,
 ): FieldDef[] {
   return [
-    // A substring search over names the user wrote, which is what the backend does with it
-    // (`name_substring`).
     toNameField(AddressBookFilterKeys.NAME, (): string => t('address_book.filter_field_labels.name')),
-    // The address kind carries the shortening, the scrambling and the validation, so an incomplete
-    // address is neither offered nor applied.
     decorateSharedField(
       toMatchFieldDef({
         key: AddressBookFilterKeys.ADDRESS,

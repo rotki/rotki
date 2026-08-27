@@ -11,10 +11,7 @@ describe('targetedRedecodeFlow', () => {
     expect(reversed).toBe(targetedRedecodeFlow.id({ blocks: [1, 2], byChain: [ethereum] }));
   });
 
-  it('should keep different requests apart', () => {
-    // The regression this guards: the mechanism ids were scoped by chain alone (and the block one
-    // was a bare singleton), so two different requests deduped onto each other and the second
-    // caller was handed the first run's promise.
+  it('should keep different requests apart, so neither dedups onto the other run', () => {
     const twoRefs = targetedRedecodeFlow.id({ blocks: [], byChain: [ethereum] });
     const oneRef = targetedRedecodeFlow.id({ blocks: [], byChain: [{ chain: 'ethereum', txRefs: ['0xa'] }] });
     expect(twoRefs).not.toBe(oneRef);
@@ -29,9 +26,7 @@ describe('targetedRedecodeFlow', () => {
     expect(onEthereum).not.toBe(onOptimism);
   });
 
-  it('should read the request as one part rather than shredding it', () => {
-    // Comma-joined for the same reason the chain sweep does it: `activityParts` must recover the
-    // set as a single member, not as one part per transaction.
+  it('should read the whole request back as one activity part, not one part per transaction', () => {
     const parts = activityParts(targetedRedecodeFlow.id({ blocks: [], byChain: [ethereum] }));
     expect(parts).toHaveLength(2);
     expect(parts[1]).toBe('ethereum/0xa,ethereum/0xb');
@@ -58,9 +53,7 @@ describe('targetedRedecodeFlow', () => {
     expect(children[0].kind).toBe(ActivityKind.TX_DECODING);
   });
 
-  it('should declare children whose ids match what the mechanism submits', () => {
-    // A declared id drifting from the submitted one would not fail loudly — the children would just
-    // stop being gated by the parent that claims them.
+  it('should declare children whose ids match what the mechanism submits, since a drift silently ungates them from their parent', () => {
     const [child] = targetedRedecodeFlow.children({ blocks: [], byChain: [ethereum] });
     expect(child.id).toBe(targetedDecodeActivityId('ethereum', ['0xb', '0xa']));
   });

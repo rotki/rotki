@@ -128,7 +128,13 @@ export function toRangeFieldDef(spec: BoundsFieldSpec): FieldDef {
   };
 }
 
-/** Collapses two period matchers (start/end) into one `date` field. */
+/**
+ * Collapses two period matchers (start/end) into one `date` field.
+ *
+ * @remarks `matchesTyped` and `parseTyped` are both gated on `parseBound`: a field that cannot read
+ * a written date must not offer the syntax for one either, or its hint points at something it then
+ * refuses.
+ */
 export function toDateFieldDef(spec: DateFieldSpec): FieldDef {
   const { parseBound } = spec;
   return {
@@ -143,8 +149,6 @@ export function toDateFieldDef(spec: DateFieldSpec): FieldDef {
     label: spec.label,
     multiple: false,
     operators: operatorsOf(FilterValueTypes.DATE, spec.operators),
-    // Both gated on the parser: a field that cannot read a written date must not offer the syntax
-    // for one either, or its hint would point at something it then refuses.
     ...(parseBound
       ? {
           matchesTyped: looksLikeDateQuery,

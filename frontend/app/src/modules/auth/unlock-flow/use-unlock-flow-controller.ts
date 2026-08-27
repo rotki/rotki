@@ -153,8 +153,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   }
 
   watch(flow.state, (current) => {
-    // The backend connection drops while it restarts, so the connection screen needs the shared
-    // status to show a restart message rather than a lost-connection one.
     set(restarting, current.kind === UnlockPhase.restarting);
     if (current.kind === UnlockPhase.error && current.error.kind === UnlockErrorKind.unknown && current.error.message)
       logger.error(`unlock failed: ${current.error.message}`);

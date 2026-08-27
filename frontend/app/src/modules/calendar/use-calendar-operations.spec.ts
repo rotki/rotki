@@ -56,9 +56,8 @@ describe('useCalendarOperations', () => {
       expect(form.identifier).toBe(0);
       expect(form.name).toBe('');
       expect(form.autoDelete).toBe(true);
-      // start of the same calendar day in local time
-      const expected = seedDate.set('hours', 0).set('minutes', 0).set('seconds', 0).unix();
-      expect(form.timestamp).toBe(expected);
+      const startOfTheSameLocalDay = seedDate.set('hours', 0).set('minutes', 0).set('seconds', 0).unix();
+      expect(form.timestamp).toBe(startOfTheSameLocalDay);
     });
 
     it('should fall back to selectedDate when no date is supplied', () => {

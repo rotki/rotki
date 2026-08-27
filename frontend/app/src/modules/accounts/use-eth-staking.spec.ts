@@ -26,8 +26,6 @@ const h = vi.hoisted(() => {
   };
 });
 
-// `runSpecWith` is a real import, so the stub cannot be built inside `vi.hoisted` (that runs
-// before imports are initialised) — wire it up here instead.
 h.submitTask.mockImplementation(runSpecWith(h.runTask));
 
 vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({

@@ -29,6 +29,14 @@ export class RotkiDB extends Dexie {
 }
 
 interface UseDatabaseReturn {
+  /**
+   * The live database, throwing until one is initialized.
+   *
+   * @remarks
+   * Call it through the object rather than destructuring it. Login and logout replace the
+   * instance, and only the accessor reads the current one: a destructured copy keeps answering
+   * with whichever database was live when it was taken.
+   */
   readonly db: () => RotkiDB;
   readonly isReady: Ref<boolean>;
 }
@@ -143,11 +151,18 @@ export const useDatabase = createSharedComposable((): UseDatabaseReturn => {
     }
   }, { immediate: true });
 
-  // Close the open connection when the shared composable is disposed, so it does
-  // not linger and force Dexie to auto-close it on a later deleteDatabase.
-  onScopeDispose(() => {
+  /**
+   * Releases the connection with the composable that owns it.
+   *
+   * @remarks
+   * A connection left open lingers past its owner, and Dexie then auto-closes it partway through a
+   * later `deleteDatabase`.
+   */
+  function closeConnection(): void {
     get(dbInstance)?.close();
-  });
+  }
+
+  onScopeDispose(closeConnection);
 
   return {
     db(): RotkiDB {

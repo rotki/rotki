@@ -29,8 +29,13 @@ function createItem(overrides: Partial<ActionItem> = {}): ActionItem {
   };
 }
 
-// The scanned flag is module state shared by every consumer of a center, so each
-// test loads a fresh copy instead of inheriting whether a previous one scanned.
+/**
+ * Imports the composable into a fresh module registry.
+ *
+ * @remarks
+ * Whether a center has scanned is module-level state shared by every consumer, so a plain top-level
+ * import would let one test's scan decide the next test's starting point.
+ */
 async function loadComposable(): Promise<typeof UseActionCenter> {
   vi.resetModules();
   const module = await import('@/modules/core/action-center/use-action-center');
@@ -64,8 +69,7 @@ describe('modules/core/action-center/useActionCenter', () => {
     expect(get(activeItems).map(item => item.id)).toEqual(['active']);
     expect(get(lockedItems).map(item => item.id)).toEqual(['locked']);
     expect(get(reviewItems).map(item => item.id)).toEqual(['review']);
-    // a count that is still being read is not "nothing to do", but it reads as cleared
-    // until it lands rather than raising a row nobody can trust
+    // A loading item counts as cleared until its count lands, rather than raising an untrustworthy row.
     expect(get(clearedItems).map(item => item.id)).toEqual(['cleared', 'counting']);
     expect(get(categoryCount)).toBe(1);
     expect(get(hasItems)).toBe(true);

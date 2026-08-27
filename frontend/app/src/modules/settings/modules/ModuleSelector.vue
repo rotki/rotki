@@ -127,8 +127,6 @@ async function applyBulk(next: Module[]): Promise<void> {
   if (changed.length === 0)
     return;
 
-  // Folded to a Result here, not inside `run`: the scheduler calls `run` on a later tick, so a
-  // rejection would have no handler attached at the moment it happens.
   const written = update(next).then(
     (): Result<void, TaskError> => ok(undefined),
     (error: unknown): Result<void, TaskError> => err(TaskFailed({ cause: error, message: getErrorMessage(error) })),

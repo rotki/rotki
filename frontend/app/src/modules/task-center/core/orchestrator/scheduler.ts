@@ -56,8 +56,13 @@ export function createScheduler(
    * lane ran 3 jobs at a cap of 2) and whichever job finished first deleted the *other* one's slot.
    */
   const running = new Map<ScheduledJob, Lane>();
-  // Longest first, so a more specific family wins over a broader one. Declared caps are partial,
-  // so the entries are narrowed to the ones actually set rather than asserted.
+  /**
+   * Orders a family cap record longest prefix first, so a more specific family wins over a broader.
+   *
+   * @remarks
+   * The record is partial, so unset entries are filtered out and what remains is narrowed by a
+   * type guard rather than asserted.
+   */
   const declared = (entries: LaneFamilyCaps): [LaneFamily, number][] =>
     Object.entries(entries)
       .filter((entry): entry is [LaneFamily, number] => entry[1] !== undefined)
@@ -105,8 +110,7 @@ export function createScheduler(
 
   function start(job: ScheduledJob): void {
     running.set(job, job.lane);
-    // run() never rejects (orchestrator contract); when it settles, free the slot and pump.
-    // The trailing catch keeps the fire-and-forget chain from floating.
+    // `run()` never rejects; the trailing catch only keeps the fire-and-forget chain from floating.
     job.run()
       .finally(() => {
         running.delete(job);

@@ -1,7 +1,6 @@
-import type { VueWrapper } from '@vue/test-utils';
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAssetDetail } from './use-asset-detail';
 
@@ -82,12 +81,8 @@ function balance(asset: string): AssetBalanceWithPrice {
 }
 
 describe('pages/assets/useAssetDetail', () => {
-  const mounted: VueWrapper[] = [];
-
   function setup(identifier = PARENT): ReturnType<typeof useAssetDetail> {
-    const { result, wrapper } = withSetup(() => useAssetDetail(() => identifier));
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useAssetDetail(() => identifier)).result;
   }
 
   beforeEach(() => {
@@ -95,11 +90,6 @@ describe('pages/assets/useAssetDetail', () => {
     assetInfo.current = null;
     balances.current = [];
     routeQuery.current = {};
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   describe('the collectionParent query', () => {

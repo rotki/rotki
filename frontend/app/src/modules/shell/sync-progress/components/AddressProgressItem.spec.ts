@@ -68,7 +68,6 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
       const address = createAddress(AddressStatus.COMPLETE);
       wrapper = createWrapper(address);
 
-      // Check translation key is used (sync_progress.status.complete)
       expect(wrapper.text()).toContain('sync_progress.status.complete');
       expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-check');
     });
@@ -150,8 +149,6 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
   });
 
   describe('period progress', () => {
-    // Gated on the period alone, so any chain that sends one gets a bar without the component
-    // having to know which chain it is. Bitcoin reaches this path too.
     it('should show progress bar when address has period progress', () => {
       const address = createAddress(AddressStatus.QUERYING, {
         period: [0, 500],
@@ -172,9 +169,6 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
       expect(wrapper.find('[data-testid="progress"]').exists()).toBe(false);
     });
 
-    // What the STARTED message looks like once the store parks the cursor at the range start. Read
-    // raw it would be `[from, to]`, rendering the target end on both sides of the arrow as though
-    // the whole range had already been covered.
     it('should render the range as "Beginning" while the cursor sits at the start', () => {
       const address = createAddress(AddressStatus.QUERYING, {
         period: [100, 100],

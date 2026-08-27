@@ -32,12 +32,10 @@ vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
   useTaskOrchestrator: (): object => ({ reset }),
 }));
 
-// Mocked rather than left real: it reaches `useTaskHandler`, which needs an active pinia.
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: (): object => ({ reset: resetNativeTasks }),
 }));
 
-// Same reason: hydration reaches the balance stores.
 vi.mock('@/modules/balances/use-balance-hydration', () => ({
   useBalanceHydration: (): object => ({ reset: resetHydration }),
 }));

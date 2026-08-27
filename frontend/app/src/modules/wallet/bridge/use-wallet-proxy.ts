@@ -146,8 +146,7 @@ function _useWalletProxy(): UseWalletProxyReturn {
   function cleanupResources(): void {
     logger.debug('Cleaning up bridge resources...');
     stopConnectionHealthCheck();
-    // Only cleanup setup resources if setup is not currently in progress
-    // to avoid aborting an ongoing setup process
+    // Aborting mid-setup would kill the setup that is still running, so leave its resources alone.
     if (!activeResources.isSetupInProgress) {
       cleanupActiveResources();
     }
@@ -156,7 +155,13 @@ function _useWalletProxy(): UseWalletProxyReturn {
     }
   }
 
-  // Wait for servers to be listening before opening webpage
+  /**
+   * Resolves once both the HTTP and the WebSocket endpoint of the bridge accept connections.
+   *
+   * @remarks
+   * Either one alone is not enough: the page is served over HTTP but the client talks over the
+   * socket, so polling stops only when both answer. Rejects on timeout or on abort.
+   */
   const waitForServersListening = async (
     timeoutMs: number = PROXY_CONFIG.SERVER_TIMEOUT,
     signal?: AbortSignal,
@@ -200,7 +205,14 @@ function _useWalletProxy(): UseWalletProxyReturn {
     }
   }
 
-  // Start bridge servers and establish connection
+  /**
+   * Opens the bridge page in the default browser and waits out the three handshake stages.
+   *
+   * @remarks
+   * The servers are started by the page itself, so nothing is listening until the browser has
+   * loaded it. The stages must be awaited in order: listening, then client connected, then client
+   * ready for API calls. Any failure is rethrown as one setup error.
+   */
   const startProxyServers = async (signal?: AbortSignal): Promise<void> => {
     logger.debug('Starting bridge servers...');
 

@@ -39,7 +39,12 @@ export function getExchangeByLocationBalances(
 }
 
 /**
- * Hook for getting location breakdown
+ * Every asset held at one location, on-chain and manual alike.
+ *
+ * @remarks
+ * A location identifier may be a chain alias, such as `ethereum` standing for `eth`, which is what
+ * `matchChain` resolves. Where it resolves, the location is treated as that specific chain, so the
+ * blockchain balances scoped to it surface alongside any manual balance tagged with the same label.
  */
 export function useLocationBreakdown(
   location: MaybeRefOrGetter<string>,
@@ -57,10 +62,6 @@ export function useLocationBreakdown(
   return computed<AssetBalanceWithPrice[]>(() => {
     const selectedLocation = toValue(location);
     const isBlockchainLocation = selectedLocation === TRADE_LOCATION_BLOCKCHAIN;
-    // A location identifier may be a chain alias (e.g. 'ethereum' → 'eth').
-    // When it is, treat the location as that specific chain so blockchain
-    // balances scoped to that chain are surfaced (plus any manual balances
-    // tagged with the same location label).
     const chain = isBlockchainLocation ? undefined : matchChain(selectedLocation);
 
     let blockchainSource: AssetProtocolBalances = {};

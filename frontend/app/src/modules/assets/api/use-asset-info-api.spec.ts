@@ -161,8 +161,6 @@ describe('composables/api/assets/info', () => {
         nftHandling: 'include',
       });
 
-      // The wire form is what both colibri and the python api read, so the snake_case value is
-      // part of the contract rather than a formatting detail.
       expect(capturedBody).toEqual({
         value: 'test',
         evm_chain: 'ethereum',

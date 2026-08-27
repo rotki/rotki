@@ -21,8 +21,6 @@ export interface TagFieldOption {
  * instead of falling back to plain text.
  */
 export function toTagsField(t: Translate, tags: () => TagFieldOption[]): FieldDef {
-  // Computed rather than rebuilt per call: `resolveSwatch` is called once per candidate value on
-  // every keystroke while the bar narrows, and a rebuild there is a full pass over every tag.
   const byName = computed<Map<string, TagFieldOption>>(
     () => new Map(tags().map(tag => [tag.name, tag])),
   );

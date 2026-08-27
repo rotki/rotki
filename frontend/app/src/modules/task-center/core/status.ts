@@ -1,7 +1,23 @@
-import { type ActivityStatus, ActivityStatus as Status } from './types';
+import { type ActivityStatus, ActivityStatus as Status, type WorkStatus } from './types';
 
 /** Sentinel percentage for work whose completion cannot be quantified. */
 export const INDETERMINATE = -1;
+
+/**
+ * Whether a guarded fetch should skip this run.
+ *
+ * @remarks
+ * The standing gate for "load once, then only on request": already loaded and nobody asked, or a
+ * run is in flight. A user-initiated refresh passes the freshness half but still waits behind an
+ * active run, so a double click cannot start two.
+ *
+ * @param status - the kind's projected status, from `statusOf`
+ * @param userInitiated - whether the user asked for this refresh, rather than a lifecycle hook
+ * @returns whether to return early instead of fetching
+ */
+export function shouldSkipFetch(status: WorkStatus, userInitiated: boolean): boolean {
+  return (status.everCompleted && !userInitiated) || status.active;
+}
 
 /**
  * Precedence for deduplicating activities that share an id (the same work surfaced by two

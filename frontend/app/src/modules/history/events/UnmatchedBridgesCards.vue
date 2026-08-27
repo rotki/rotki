@@ -9,9 +9,6 @@ import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
-// Pinned widths cannot hold five columns plus an action row without clipping, so the same
-// rows are presented as cards. This component only lays out - what a row says and what it
-// may do arrives already decided, as `rows` and `specFor`.
 const selected = defineModel<string[]>('selected', { required: true });
 
 const { rows, highlightedGroupIdentifier } = defineProps<{

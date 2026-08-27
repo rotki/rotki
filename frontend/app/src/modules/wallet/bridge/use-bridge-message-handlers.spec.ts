@@ -204,7 +204,6 @@ describe('modules/wallet/bridge/use-bridge-message-handlers', () => {
       // one listener per wallet event type
       expect(newProvider.on).toHaveBeenCalledTimes(4);
 
-      // fire the accountsChanged listener and check it is forwarded
       const call = newProvider.on.mock.calls.find(([type]) => type === WALLET_EVENT_TYPES.ACCOUNTS_CHANGED);
       const listener = call?.[1];
       listener(['0xabc']);

@@ -71,8 +71,6 @@ const form = useForm<UnderlyingToken, UnderlyingToken>({
   }),
 });
 
-// Destructured, because a ref reached through `form.` in the template is not unwrapped and would
-// read as permanently truthy.
 const { valid } = form;
 
 function deleteToken(address: string): void {

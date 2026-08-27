@@ -15,7 +15,8 @@ export function calculateTotalProfitLoss(item: Report): ProfitLossOverviewItem {
   };
 }
 
-// TODO: Figure out in the future, how to avoid hardcode
+const TRANSACTION_EVENT_TYPE = 'transaction event'; // TODO: read this from the backend instead
+
 export function isTransactionEvent(item: ProfitLossEvent): boolean {
-  return item.type === 'transaction event';
+  return item.type === TRANSACTION_EVENT_TYPE;
 }

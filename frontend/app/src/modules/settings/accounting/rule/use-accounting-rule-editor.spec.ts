@@ -91,8 +91,6 @@ describe('useAccountingRuleEditor', () => {
       expect(replace).toHaveBeenCalledWith({ query: {} });
     });
 
-    // Neither rule exists yet, so there is nothing to look up — but both are writable, so the
-    // dialog still has to ask which one is meant.
     it('should ask which rule to add when the add link names an event', async () => {
       query = { 'add-rule': 'true', 'eventId': '42' };
       const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
@@ -133,9 +131,7 @@ describe('useAccountingRuleEditor', () => {
       expect(replace).toHaveBeenCalledWith({ query: {} });
     });
 
-    // An event can be governed by a general rule and by one written for it alone; the dialog
-    // reports which of the two exist so the user can pick.
-    it('should offer both rules when the edit link names an event', async () => {
+    it('should offer both the general rule and the event\'s own when the edit link names an event', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventSubtype': 'fee', 'eventType': 'spend' };
       getAccountingRule.mockResolvedValue(buildRule({ identifier: 1 }));
       getAccountingRules.mockResolvedValue({ data: [buildRule({ eventIds: [42], identifier: 2 })] });
@@ -197,9 +193,7 @@ describe('useAccountingRuleEditor', () => {
       expect(get(modelEditMode)).toBe(true);
     });
 
-    // The rule it names does not exist, so there is nothing to open; the dialog still closes and
-    // the query is still consumed rather than leaving the page stuck on a link it cannot honour.
-    it('should close without opening a form when the chosen rule is missing', async () => {
+    it('should close and consume the query without opening a form when the chosen rule is missing', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
       const { actionDialog, applyRouteIntent, handleRuleAction, modelRule } = useAccountingRuleEditor();
       await applyRouteIntent();

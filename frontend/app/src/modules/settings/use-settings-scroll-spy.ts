@@ -120,8 +120,6 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
 
   const throttledCheckVisibility = useThrottleFn(checkVisibility, 100);
 
-  // The throttled wrapper returns a promise even though checkVisibility is synchronous, so the result
-  // is handed to startPromise rather than left floating in a void listener.
   function onViewportChange(): void {
     startPromise(throttledCheckVisibility());
   }

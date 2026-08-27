@@ -113,9 +113,9 @@ describe('useNotificationsStore', () => {
     store.add(batch);
     expect(get(data)).toHaveLength(200);
 
-    // trimmedCopy returns 199 items (room for one new entry) and sets overflow
+    const withRoomForOneMore = 199;
     const copy = store.trimmedCopy();
-    expect(copy).toHaveLength(199);
+    expect(copy).toHaveLength(withRoomForOneMore);
     expect(get(messageOverflow)).toBe(true);
   });
 

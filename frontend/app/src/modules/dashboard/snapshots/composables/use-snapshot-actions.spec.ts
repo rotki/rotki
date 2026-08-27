@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
-// Hoisted so the vi.mock factories can reference them even when a dependency
-// (e.g. logging via use-electron-interop) is resolved during eager module init.
 const { fetchBalances, fetchNetValue, getPath, importBalancesSnapshot, logout, setMessage, uploadBalancesSnapshot } = vi.hoisted(() => ({
   fetchBalances: vi.fn(),
   fetchNetValue: vi.fn(),

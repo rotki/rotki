@@ -20,9 +20,6 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   })),
 }));
 
-// Mocked outright rather than spread over `...actual`: importActual evaluates the real
-// notifications graph, which costs ~1.2s to import.
-// `getErrorMessage` is a pure helper re-exported from a light module, so take it from there.
 vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
     '@/modules/core/common/logging/error-handling',
@@ -331,9 +328,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       );
     });
 
-    // Cancelling produces neither an addition nor a failure. Returning true there closed the dialog
-    // and emitted `complete` for an account that was never added.
-    it('should not report a fully cancelled addition as saved', async () => {
+    it('should not report a fully cancelled addition as saved, which would close the dialog and emit complete for an account never added', async () => {
       mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [] });
 
       const { modelErrorMessages, save } = useAccountManage();

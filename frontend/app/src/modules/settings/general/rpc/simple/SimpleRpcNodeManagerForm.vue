@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { SETTING_FIELD, type SettingFieldState, textSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 
 /**
@@ -31,7 +31,7 @@ const schema = computed<ZodType>(() => textSettingSchema({
 const form = useForm<SettingFieldState, SettingFieldState>({
   initial: (): SettingFieldState => ({ value: get(modelValue) }),
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): SettingFieldState => ({ value: state.value }),
 });
 

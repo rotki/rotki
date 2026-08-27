@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -17,9 +17,6 @@ vi.mock('@/modules/assets/use-assets', () => ({
 }));
 
 const MergeDialog = (await import('@/modules/assets/admin/MergeDialog.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -143,12 +140,10 @@ describe('mergeDialog', () => {
     expect(submitDisabled()).toBe(true);
   });
 
-  it('should report the source message while typing, before the field is left', async () => {
+  it('should report the source message while typing, since a disabled submit button can never be clicked to blur the field', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    // No blur: the submit button is gated on validity, and a disabled button cannot be clicked to
-    // blur the field, so waiting for blur would leave the user with no message at all.
     field('merge-source').vm.$emit('update:modelValue', '');
     await vi.advanceTimersToNextTimerAsync();
 

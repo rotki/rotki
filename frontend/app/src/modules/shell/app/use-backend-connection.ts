@@ -95,9 +95,13 @@ export function useBackendConnection(): UseBackendConnectionReturn {
     if (intervalId)
       clearInterval(intervalId);
 
+    /**
+     * Points both backends at one origin, so a custom url the user typed carries colibri with it
+     * rather than leaving it aimed at the previous backend.
+     *
+     * @param payload - the url the user set, if any; otherwise the interop or default one is used
+     */
     const updateApi = (payload?: Nullable<string>): void => {
-      // One origin covers both backends, so a custom url the user typed carries
-      // colibri with it instead of leaving it pointed at the previous backend.
       const interopUrl = typeof window !== 'undefined' ? window.interop?.apiUrl() : undefined;
       let backendUrl = defaultApiUrl;
       if (payload)

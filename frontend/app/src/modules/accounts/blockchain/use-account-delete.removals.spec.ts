@@ -10,13 +10,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 
-/**
- * The wiring `use-account-delete.spec.ts` cannot see: there `useAccountRemovals` is mocked away, so
- * the real submission path — activity id, orchestrator, backend outcome — never runs, and the
- * branch a single-chain group takes (`toPayload` returns `type: 'account'`) is not covered at all.
- * That is the branch behind "deleting the only EVM account leaves the row in the table".
- */
-
 const mocks = vi.hoisted(() => ({
   cancelTaskById: vi.fn(async (): Promise<boolean> => true),
   deleteEth2Validators: vi.fn(),
@@ -37,7 +30,6 @@ vi.mock('@/modules/accounts/api/use-blockchain-accounts-api', () => ({
   })),
 }));
 
-// The handler backs the runner the facade binds to each activity; the orchestrator stays real.
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   useTaskHandler: (): Record<string, unknown> => ({
     cancelTaskById: mocks.cancelTaskById,
@@ -73,7 +65,6 @@ const account: BlockchainAccount<AddressData> = {
   nativeAsset: 'ETH',
 };
 
-/** The row the EVM accounts table renders for an address tracked on one chain only. */
 function singleChainGroup(): BlockchainAccountGroupWithBalance<AddressData> {
   return {
     category: 'evm',
@@ -84,11 +75,17 @@ function singleChainGroup(): BlockchainAccountGroupWithBalance<AddressData> {
   };
 }
 
-/**
- * Omitting `allChains` makes the group "showing all its chains", which deletes agnostically in one
- * call; naming more chains than are shown makes it delete chain by chain.
- */
-function multiChainGroup(chains: string[], allChains?: string[]): BlockchainAccountGroupWithBalance<AddressData> {
+function groupShowingAllChains(chains: string[]): BlockchainAccountGroupWithBalance<AddressData> {
+  return {
+    category: 'evm',
+    chains,
+    data: { address: ADDRESS, type: 'address' },
+    type: 'group',
+    value: bigNumberify(0),
+  };
+}
+
+function groupShowingSomeChains(chains: string[], allChains: string[]): BlockchainAccountGroupWithBalance<AddressData> {
   return {
     allChains,
     category: 'evm',
@@ -109,7 +106,6 @@ function xpubGroup(): BlockchainAccountGroupWithBalance<XpubData> {
   };
 }
 
-/** What the backend task reports back for this removal. The API call itself always goes out. */
 function backendReports(outcome: Result<unknown, TaskError>): void {
   mocks.runTask.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<unknown, TaskError>> => {
     await task();
@@ -117,11 +113,6 @@ function backendReports(outcome: Result<unknown, TaskError>): void {
   });
 }
 
-/**
- * Fails only the named chains. The verdict is derived from each task's own API call rather than
- * from a shared variable, so the chain-by-chain removals — which are submitted together — cannot
- * read each other's outcome.
- */
 function backendFails(chains: string[]): void {
   mocks.runTask.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<unknown, TaskError>> => {
     try {
@@ -146,19 +137,10 @@ function accountOn(chain: string): BlockchainAccount<AddressData> {
 interface Harness {
   accounts: ReturnType<typeof import('@/modules/accounts/use-blockchain-accounts-store')['useBlockchainAccountsStore']>;
   confirmRemoval: (row: BlockchainAccountGroupWithBalance<AddressData> | BlockchainAccountGroupWithBalance<XpubData>) => Promise<void>;
-  /** The chain read the periodic balance tick performs, `use-balance-fetching.ts` one level up. */
   fetchChain: (chain: string) => Promise<void>;
 }
 
-/**
- * `useNativeTask` is a `createSharedComposable`, so every test needs its own module graph, or the
- * orchestrator (and its in-flight map) leaks between them and the second submit of an id is deduped
- * onto the first test's promise.
- */
 async function setup(): Promise<Harness> {
-  vi.resetModules();
-  setActivePinia(createPinia());
-
   const { useAccountDelete } = await import('@/modules/accounts/blockchain/use-account-delete');
   const { useAccountFetching } = await import('@/modules/accounts/use-account-fetching');
   const { useBlockchainAccountsStore } = await import('@/modules/accounts/use-blockchain-accounts-store');
@@ -181,6 +163,8 @@ async function setup(): Promise<Harness> {
 
 describe('useAccountDelete against the real removal wiring', () => {
   beforeEach(() => {
+    vi.resetModules();
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     backendReports(ok(undefined));
   });
@@ -194,9 +178,6 @@ describe('useAccountDelete against the real removal wiring', () => {
     expect(accounts.accounts).toStrictEqual({ eth: [] });
   });
 
-  // The removals return `Promise<void>` and swallow their `Result` after notifying, so the caller
-  // cannot tell a failed delete from a successful one and drops the row either way. The account
-  // still exists on the backend, and nothing on this path ever re-reads to put it back.
   it('should keep the account when the backend removal fails', async () => {
     const { accounts, confirmRemoval } = await setup();
     backendReports(err(TaskFailed({ message: 'boom' })));
@@ -222,8 +203,7 @@ describe('useAccountDelete against the real removal wiring', () => {
     mocks.removeAgnosticBlockchainAccount.mockRejectedValue(new Error('boom'));
     backendFails([]);
 
-    // no `allChains`, so the group shows every chain it has and deletes in one agnostic call
-    await confirmRemoval(multiChainGroup(['eth', 'optimism']));
+    await confirmRemoval(groupShowingAllChains(['eth', 'optimism']));
 
     expect(mocks.removeAgnosticBlockchainAccount).toHaveBeenCalledOnce();
     expect(accounts.accounts).toStrictEqual({ eth: [account], optimism: [accountOn('optimism')] });
@@ -234,7 +214,7 @@ describe('useAccountDelete against the real removal wiring', () => {
     accounts.updateAccounts('optimism', [accountOn('optimism')]);
     backendFails(['eth', 'optimism']);
 
-    await confirmRemoval(multiChainGroup(['eth', 'optimism'], ['eth', 'optimism', 'base']));
+    await confirmRemoval(groupShowingSomeChains(['eth', 'optimism'], ['eth', 'optimism', 'base']));
 
     expect(accounts.accounts).toStrictEqual({ eth: [account], optimism: [accountOn('optimism')] });
   });
@@ -244,9 +224,8 @@ describe('useAccountDelete against the real removal wiring', () => {
     accounts.updateAccounts('optimism', [accountOn('optimism')]);
     backendFails(['optimism']);
 
-    await confirmRemoval(multiChainGroup(['eth', 'optimism'], ['eth', 'optimism', 'base']));
+    await confirmRemoval(groupShowingSomeChains(['eth', 'optimism'], ['eth', 'optimism', 'base']));
 
-    // eth went through, optimism did not: dropping both would lose a row the backend still has
     expect(accounts.accounts).toStrictEqual({ eth: [], optimism: [accountOn('optimism')] });
   });
 
@@ -280,20 +259,15 @@ describe('useAccountDelete against the real removal wiring', () => {
     expect(accounts.accounts.btc).toStrictEqual([xpubAccount]);
   });
 
-  // The reported symptom: the row survives the delete although the backend has dropped the account.
-  // The periodic balance tick (`autoRefresh`) walks every chain, and a walk that was
-  // already in flight answers with a pre-delete snapshot. `updateAccounts` replaces the chain
-  // wholesale, so the deleted account comes back, and the delete path has no re-read to correct it.
   it('should not let a chain read that started before the delete resurrect the account', async () => {
     const { accounts, confirmRemoval, fetchChain } = await setup();
 
-    let answer: () => void = () => {};
-    const inFlight = new Promise<void>((resolve) => {
-      answer = resolve;
+    let deliverStaleRead: () => void = () => {};
+    const staleReadDelivered = new Promise<void>((resolve) => {
+      deliverStaleRead = resolve;
     });
-    // The response the backend produced *before* the delete, delivered after it.
     mocks.queryAccounts.mockImplementation(async (): Promise<unknown[]> => {
-      await inFlight;
+      await staleReadDelivered;
       return [{ address: ADDRESS, label: null, tags: null }];
     });
 
@@ -301,7 +275,7 @@ describe('useAccountDelete against the real removal wiring', () => {
     await confirmRemoval(singleChainGroup());
     expect(accounts.accounts.eth).toHaveLength(0);
 
-    answer();
+    deliverStaleRead();
     await periodicRead;
 
     expect(accounts.accounts.eth).toHaveLength(0);

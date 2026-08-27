@@ -14,8 +14,14 @@ function option(identifier: string, chain = 'eth'): TradeAssetOption {
   };
 }
 
-// `isComposing` is set explicitly: createMock proxies unknown properties to auto-stubs, which are
-// truthy, so leaving it out makes every key look like it arrived mid-IME-composition.
+/**
+ * Builds a keyboard event for one key, with composition explicitly off.
+ *
+ * @remarks
+ * `isComposing: false` has to be stated. `createMock` answers any property it was not given with
+ * an auto-stub, which is truthy, so omitting it makes every key look like it arrived mid-IME
+ * composition and the handler under test returns before doing anything.
+ */
 function key(name: string): KeyboardEvent {
   return createMock<KeyboardEvent>({ isComposing: false, key: name, preventDefault: vi.fn() });
 }
@@ -123,9 +129,6 @@ describe('useTradeAssetNavigation', () => {
   });
 
   it('should match the highlighted row on chain as well as identifier', () => {
-    // A native token id is shared across chains: ETH is native to ethereum, optimism and base
-    // alike, so matching on the identifier alone lands on the wrong row and enter would commit a
-    // different network than the one shown.
     const { highlight, highlighted } = useTradeAssetNavigation(
       [option('ETH', 'eth'), option('USDC', 'eth'), option('ETH', 'base')],
       { onClose, onSelect, scrollTo },
@@ -181,8 +184,6 @@ describe('useTradeAssetNavigation', () => {
     onKeydown(key('ArrowDown'));
     expect(get(highlighted)).toBe(1);
 
-    // Arrow keys scrolled the list, so a different row arrived under a cursor that never moved.
-    // The browser reports that as a mousemove at the same coordinates.
     onPointerMove(move(10, 10), 2);
 
     expect(get(highlighted)).toBe(1);
@@ -195,9 +196,6 @@ describe('useTradeAssetNavigation', () => {
     );
     onPointerMove(move(10, 10), 0);
 
-    // The cursor never moves, so each keyboard step scrolls a row that is NOT the one being
-    // highlighted under it. Hovering the same row the key just moved to would agree with the
-    // buggy behaviour and the test could not fail.
     for (const slidUnderCursor of [2, 3, 4]) {
       onKeydown(key('ArrowDown'));
       onPointerMove(move(10, 10), slidUnderCursor);
@@ -223,8 +221,6 @@ describe('useTradeAssetNavigation', () => {
     const items = [option('A'), option('B')];
     const { highlighted, onKeydown } = useTradeAssetNavigation(items, { onClose, onSelect, scrollTo });
 
-    // Confirming a candidate sends Enter, and the candidate list is walked with the arrows. Acting
-    // on either would commit a row and close the dialog mid-word.
     onKeydown(createMock<KeyboardEvent>({ isComposing: true, key: 'ArrowDown', preventDefault: vi.fn() }));
     onKeydown(createMock<KeyboardEvent>({ isComposing: true, key: 'Enter', preventDefault: vi.fn() }));
 

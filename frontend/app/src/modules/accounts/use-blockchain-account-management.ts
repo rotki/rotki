@@ -99,7 +99,6 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
     const onComplete = async (params: AccountAdditionParams): Promise<void> =>
       accountAdditionService.completeAccountAddition(params, refreshAccounts, fetchAccounts);
 
-    // The `in` check rather than `isXpub`, so `payload` narrows to the xpub variant here.
     const addition = accountAdditionService.addAccounts(
       chain,
       'xpub' in payload ? payload : filteredPayload,
@@ -108,8 +107,6 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
       options?.parent ? { parent: options.parent } : undefined,
     );
 
-    // Only an explicit wait blocks the caller; otherwise the additions run in the background and
-    // there is nothing to report back yet.
     if (!options?.wait) {
       startPromise(addition);
       return NOTHING_ADDED;

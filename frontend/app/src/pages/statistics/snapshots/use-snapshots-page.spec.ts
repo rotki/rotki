@@ -1,10 +1,9 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { ComputedRef, Ref } from 'vue';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotsPage } from './use-snapshots-page';
 
 const ITEMS_PER_PAGE = 10;
@@ -100,14 +99,8 @@ function row(timestamp: number, usdValue: number): SnapshotListRow {
 }
 
 describe('pages/statistics/snapshots/useSnapshotsPage', () => {
-  // The composable installs a watcher that writes the URL, so a leftover harness would keep
-  // replacing the query during a later test.
-  const mounted: VueWrapper[] = [];
-
   function setup(): ReturnType<typeof useSnapshotsPage> {
-    const { result, wrapper } = withSetup(() => useSnapshotsPage());
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useSnapshotsPage()).result;
   }
 
   beforeEach(() => {
@@ -117,11 +110,6 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
     routeQuery.current = {};
     rowsState.current = [];
     deleteSnapshot.mockResolvedValue(true);
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   describe('restoring the view-state from the URL', () => {

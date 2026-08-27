@@ -77,7 +77,6 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
     const to = get(currencySymbol);
     const fromVal = toValue(from);
 
-    // No conversion needed if currencies match or no source specified
     if (!fromVal || to === fromVal) {
       return currentValue;
     }

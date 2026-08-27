@@ -306,7 +306,6 @@ async function handleControlEndpoint(req: IncomingMessage, res: ServerResponse):
     return true;
   }
 
-  // Save current cassette: POST /save
   if (req.url === '/save' && req.method === 'POST') {
     if (dirty) {
       saveCassette();
@@ -373,7 +372,6 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   await handleJsonRpc(req, res);
 }
 
-// Save cassette on shutdown
 function shutdown(): void {
   if (dirty) {
     saveCassette();

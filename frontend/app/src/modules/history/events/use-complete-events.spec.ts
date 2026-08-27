@@ -148,9 +148,7 @@ describe('useCompleteEvents', () => {
 
       const { getCompleteEventsForItem } = useCompleteEvents(completeEventsMapped);
 
-      // When asking for swapIn, should return only the swap subgroup
       expect(getCompleteEventsForItem('group1', swapIn)).toEqual([swapIn, swapOut]);
-      // When asking for swapOut, should return the same swap subgroup
       expect(getCompleteEventsForItem('group1', swapOut)).toEqual([swapIn, swapOut]);
     });
 

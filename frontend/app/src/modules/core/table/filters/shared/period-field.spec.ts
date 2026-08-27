@@ -34,8 +34,7 @@ describe('toPeriodField', () => {
     expect(field.parseTyped?.('unparsable')).toStrictEqual([]);
   });
 
-  // Inclusive second bounds, so an equal pair is a filter for exactly that second.
-  it('should let the two bounds name the same second by default', () => {
+  it('should let the two bounds name the same second by default, the bounds being inclusive', () => {
     expect(toPeriodField('common.period', bounds, resolvers).allowEqualBounds).toBe(true);
   });
 

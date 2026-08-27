@@ -101,9 +101,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
     expect(get(selected)).toHaveLength(12);
   });
 
-  it('should select everything on the first click even when the checkbox reports otherwise', async () => {
-    // RuiCheckbox's native input starts out `checked`, so the first click emits `false` over
-    // an empty selection. Acting on that payload made select-all a no-op until clicked twice.
+  it('should select everything on the first click even when the checkbox emits false, which RuiCheckbox does over an empty selection because its native input starts out checked', async () => {
     const wrapper = mountList(createItems(12));
 
     await wrapper.findComponent({ name: 'RuiCheckbox' }).vm.$emit('update:modelValue', false);

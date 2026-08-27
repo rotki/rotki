@@ -9,8 +9,6 @@ function messagesFor(url: string): string[] {
 }
 
 describe('settings/explorers/explorer-url-schema', () => {
-  // The acceptance of the vuelidate rules this schema replaces, measured input by input. Each
-  // rejected row names the single rule it trips, so a dropped rule cannot hide behind the other one.
   it.each([
     ['https://example.com/address/', []],
     ['https://example.com', []],

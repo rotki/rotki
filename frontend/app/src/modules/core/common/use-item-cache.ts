@@ -93,10 +93,7 @@ export function createItemCache<T>(
   const hardSize = Math.max(softSize, maxSize); // hard cap can never sit below the soft cap
   // Injected storage outlives this factory (e.g. a Pinia store); else in-scope.
   const { cache, recent, unknown } = storage ?? createItemCacheStorage<T>();
-  // Fine-grained reactivity: each key gets its own version signal (read subscribes
-  // to just its key, write bumps just that key). `values` is the stable record
-  // behind `cache` (never reassigned — `reset` clears in place) so reads skip the
-  // coarse ref; `cache` is still triggered on structural change for enumeration.
+  // The stable record behind `cache`: never reassigned, so reads skip the coarse ref.
   const values = get(cache);
   const versions = new Map<string, Ref<number>>();
   // Transient in-flight state — intentionally factory-local, reset on re-init.
@@ -144,16 +141,19 @@ export function createItemCache<T>(
     );
   };
 
-  // Makes room for one more entry: no-op below the soft cap; at/above it drops
-  // expired (off-screen) entries first, and only force-evicts + warns when still
-  // full of live entries at the hard cap.
+  /**
+   * Makes room for one more entry.
+   *
+   * @remarks
+   * A no-op below the soft cap. At or above it, expired (off-screen) entries go first, and only a
+   * cache still full of live entries at the hard cap force-evicts the oldest and warns.
+   */
   const evictToFit = (): void => {
     if (recent.size < softSize)
       return;
 
     const now = Date.now();
-    // `recent` is ordered by expiry ascending (every write is delete-then-set
-    // with a monotonic `now + expiry`), so the first non-expired entry ends the sweep.
+    // `recent` is expiry-ascending, so the first non-expired entry ends the sweep.
     for (const [key, expiryTs] of recent) {
       if (expiryTs > now)
         break;
@@ -253,8 +253,7 @@ export function createItemCache<T>(
     }
     catch (error) {
       logger.error(error);
-      // Transient failure: back the keys off briefly so a down backend is not
-      // retried on every debounce tick while the consuming view stays mounted.
+      // Back the keys off so a down backend is not retried on every debounce tick.
       const retryAt = Date.now() + FAILURE_BACKOFF;
       for (const key of keys) markUnknown(key, retryAt);
     }
@@ -315,8 +314,7 @@ export function createItemCache<T>(
   };
 
   const refresh = (key: string): void => {
-    // delete-before-set keeps the key at the most-recent end and preserves the
-    // expiry-ascending ordering that the eviction sweep relies on.
+    // delete-before-set preserves the expiry-ascending order the eviction sweep relies on.
     recent.delete(key);
     recent.set(key, Date.now() + expiry);
     if (unknown.has(key))
@@ -325,9 +323,14 @@ export function createItemCache<T>(
     queueIdentifier(key);
   };
 
-  // Tracks `key` so a caller that early-returns on pending before reading the
-  // value (e.g. `getHistoricPrice`) still re-runs when pending flips — otherwise
-  // it would subscribe to nothing. Outside an effect, `track` is a no-op.
+  /**
+   * Reports whether `identifier` is currently being fetched.
+   *
+   * @remarks
+   * Subscribes the calling effect to the key as well, so a caller that early-returns on pending
+   * before it reads the value still re-runs when pending flips instead of subscribing to nothing.
+   * Outside a reactive effect the subscription is a no-op.
+   */
   const getIsPending = (identifier: string): boolean => {
     track(identifier);
     return pendingKeys.has(identifier);

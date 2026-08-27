@@ -1,4 +1,5 @@
 import type { DatabaseInfo, UserDbBackup } from '@/modules/session/backup';
+import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
@@ -129,7 +130,7 @@ describe('modules/settings/data-security/backups/useDatabaseBackups', () => {
     });
 
     it('should be empty until the info has loaded', async () => {
-      info.mockReturnValue(new Promise(() => {}));
+      info.mockReturnValue(neverSettles());
 
       let captured: ReturnType<typeof useDatabaseBackups> | undefined;
       const Host = defineComponent({
@@ -176,7 +177,7 @@ describe('modules/settings/data-security/backups/useDatabaseBackups', () => {
     });
 
     it('should still delete the file when nothing has loaded yet', async () => {
-      info.mockReturnValue(new Promise(() => {}));
+      info.mockReturnValue(neverSettles());
       let captured: ReturnType<typeof useDatabaseBackups> | undefined;
       const Host = defineComponent({
         setup(): () => ReturnType<typeof h> {

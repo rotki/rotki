@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { ProfitLossEvent } from '@/modules/reports/report-types';
 import { bigNumberify, Zero } from '@rotki/common';
@@ -29,9 +29,6 @@ vi.mock('@/modules/core/common/use-message-store', () => ({
 
 const ReportProfitLossEventAction = (await import('@/modules/reports/ReportProfitLossEventAction.vue')).default;
 
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
-
 function inputStub(name: string): Record<string, unknown> {
   return {
     emits: ['update:modelValue', 'blur'],
@@ -40,6 +37,8 @@ function inputStub(name: string): Record<string, unknown> {
     template: '<div />',
   };
 }
+
+const HISTORIC_PRICE_NO_OTHER_FIELD_HOLDS = '1234.5';
 
 describe('reportProfitLossEventAction', () => {
   let wrapper: VueWrapper<InstanceType<typeof ReportProfitLossEventAction>>;
@@ -60,8 +59,7 @@ describe('reportProfitLossEventAction', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // A value nothing else in the fixture holds, so a write-back that never happens is visible.
-    getHistoricPrice.mockResolvedValue(bigNumberify('1234.5'));
+    getHistoricPrice.mockResolvedValue(bigNumberify(HISTORIC_PRICE_NO_OTHER_FIELD_HOLDS));
     addHistoricalPrice.mockResolvedValue(true);
     vi.useFakeTimers();
   });
@@ -133,7 +131,7 @@ describe('reportProfitLossEventAction', () => {
       timestamp: 1700000000,
       toAsset: 'USD',
     });
-    expect(field().props('modelValue')).toBe('1234.5');
+    expect(field().props('modelValue')).toBe(HISTORIC_PRICE_NO_OTHER_FIELD_HOLDS);
   });
 
   it('should seed zero when no historic price is known', async () => {

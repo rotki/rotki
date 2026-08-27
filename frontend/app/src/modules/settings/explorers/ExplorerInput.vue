@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { EXPLORER_URL_FIELD, explorerUrlSchema, type ExplorerUrlState } from '@/modules/settings/explorers/explorer-url-schema';
 
 defineOptions({
@@ -24,7 +24,7 @@ const schema = computed<ZodType>(() => explorerUrlSchema({
 const form = useForm<ExplorerUrlState, ExplorerUrlState>({
   initial: (): ExplorerUrlState => ({ url: get(url) }),
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): ExplorerUrlState => ({ url: state.url }),
 });
 

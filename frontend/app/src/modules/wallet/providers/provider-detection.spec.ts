@@ -65,8 +65,10 @@ describe('provider-detection', () => {
     it('should fall back to a legacy provider when none announce', async () => {
       stubWindow('ethereum', { isRotkiBridge: false, request: vi.fn() });
       const promise = getAllWalletProviders({ timeout: 200 });
-      await vi.advanceTimersByTimeAsync(200); // outer eip6963 detection resolves empty
-      await vi.advanceTimersByTimeAsync(100); // nested detection inside legacy check
+      const outerEip6963Detection = 200;
+      const nestedDetectionInLegacyCheck = 100;
+      await vi.advanceTimersByTimeAsync(outerEip6963Detection);
+      await vi.advanceTimersByTimeAsync(nestedDetectionInLegacyCheck);
 
       const result = await promise;
       expect(result).toHaveLength(1);

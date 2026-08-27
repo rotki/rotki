@@ -66,8 +66,6 @@ const {
 });
 
 function addEvent(): void {
-  // `canAddEvent` already hides the action for a group-editable event; this narrows the
-  // row to the shape the event carries.
   if (isGroupEditableHistoryEvent(event))
     return;
 

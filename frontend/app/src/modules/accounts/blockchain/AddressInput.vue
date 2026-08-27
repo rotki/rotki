@@ -11,7 +11,7 @@ import {
 import WalletAddressesImport from '@/modules/accounts/blockchain/WalletAddressesImport.vue';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';
 import { toServerErrors } from '@/modules/core/form/server-errors';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 
 const addresses = defineModel<string[]>('addresses', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -39,8 +39,7 @@ const schema = computed<ZodType>(() => addressEntrySchema(
 const { errors: fieldErrors, setServerErrors, state, touch, validate } = useForm<AddressFormState, AddressFormState>({
   initial: (): AddressFormState => ({ address: '', userAddresses: '' }),
   schema,
-  // The addresses are handed to the parent as they are entered; there is nothing to submit here.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): AddressFormState => ({ ...state }),
 });
 
@@ -112,12 +111,19 @@ function setAddress(addresses: string[]): void {
   }
 }
 
-// The backend reports one flat `address` key for both, so its message is shown against whichever
-// field is on screen rather than being keyed to the one the state happens to call it.
-watchImmediate(errorMessages, (value) => {
+/**
+ * Shows the backend's address error against both the single and the multiple field.
+ *
+ * @remarks
+ * The backend reports one flat `address` key whichever mode the form is in, so the message is put
+ * on both rather than keyed to the one the state happens to call it. Only one is ever on screen.
+ */
+function mirrorAddressErrorAcrossModes(value: ValidationErrors): void {
   const messages = toServerErrors(value).address ?? [];
   setServerErrors({ address: messages, userAddresses: messages });
-}, { deep: true });
+}
+
+watchImmediate(errorMessages, mirrorAddressErrorAcrossModes, { deep: true });
 
 watch(entries, addresses => updateAddresses(addresses));
 

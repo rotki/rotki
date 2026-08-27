@@ -12,9 +12,7 @@ function setup(chainValue?: string, strictValue = false): {
 }
 
 describe('addressBookChainParams', () => {
-  // The bug this pair had: both keys were written to the url and neither was ever read back, so a
-  // shared link opened the table unfiltered and then rewrote the link to say so.
-  it('should restore both keys from the url', () => {
+  it('should restore both keys from the url, so a shared link opens the table filtered as it was written', () => {
     const { chain, params, strict } = setup();
 
     params.source.fromQuery?.({ blockchain: 'eth', strictBlockchain: 'true' });
@@ -38,9 +36,7 @@ describe('addressBookChainParams', () => {
     expect(toValue(params.source.values)).toStrictEqual({ blockchain: 'eth', strictBlockchain: true });
   });
 
-  // No chain picked is `undefined` rather than an empty string: that is what the table reads as
-  // "every chain", and the request must not carry a blank one.
-  it('should leave an unpicked chain undefined', () => {
+  it('should leave an unpicked chain undefined rather than blank, which is what the table reads as every chain', () => {
     const { params } = setup();
 
     expect(toValue(params.source.values)).toStrictEqual({

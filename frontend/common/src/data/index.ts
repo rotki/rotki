@@ -100,7 +100,14 @@ export const AssetInfoWithId = z.object({
 
 export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;
 
-// note: make sure that the identifier is checksummed
+/**
+ * Symbols the app may be handed in place of a full asset identifier.
+ *
+ * @remarks
+ * Every EVM address here must be checksummed, exactly as `to_checksum_address` produces it. A
+ * lowercase one is not merely untidy: the backend rejects the identifier it forms, and the failure
+ * surfaces far from this map.
+ */
 const assetSymbolToIdentifierMap: Record<string, string> = {
   ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3',
   DAI: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',

@@ -99,11 +99,19 @@ function dateDraft(op: ActiveFilter['op'], from?: string, to?: string): TypedFil
 }
 
 /**
- * The filters a numeric field can offer for what was typed.
+ * Reads the filters a numeric field can offer for what was typed.
  *
+ * @remarks
  * A bare number is ambiguous on purpose and yields both directions: `100` cannot say whether the
  * user means at least or at most, and guessing one would be wrong half the time. An explicit
  * comparison or a span says it outright and yields exactly one.
+ *
+ * The worded forms are tried after the symbols and before the span: a span always leads with its
+ * lower bound, so a query opening with a word cannot be one.
+ *
+ * A span written the wrong way round is normalized rather than rejected. It is still clear about
+ * which two bounds are meant, and the editor refuses a max below its min, so leaving it reversed
+ * would offer a filter that cannot be applied.
  */
 export function parseRangeQuery(query: string): TypedFilterDraft[] {
   const typed = query.trim();
@@ -116,8 +124,6 @@ export function parseRangeQuery(query: string): TypedFilterDraft[] {
       : [rangeDraft(FilterOps.GT, amount)];
   }
 
-  // After the symbols and before the span: a span always leads with its lower bound, so a query
-  // opening with a word cannot be one.
   const worded = RANGE_WORD.exec(typed);
   if (worded) {
     const [, marker, amount] = worded;
@@ -129,8 +135,6 @@ export function parseRangeQuery(query: string): TypedFilterDraft[] {
   const span = SPAN.exec(typed);
   if (span) {
     const [, first, second] = span;
-    // Written the wrong way round is still clear about which two bounds are meant, and the editor
-    // rejects a max below its min, so a reversed span would otherwise offer a filter it refuses.
     const ascending = Number(first) <= Number(second);
     return [rangeDraft(FilterOps.BETWEEN, ascending ? first : second, ascending ? second : first)];
   }
@@ -170,14 +174,22 @@ export function parseDateQuery(query: string, parse: ParseTimestamp): TypedFilte
 }
 
 /**
- * Whether the query is on its way to a date filter, whether or not it is one yet.
+ * Reports whether the query is on its way to a date filter, whether or not it is one yet.
  *
+ * @remarks
  * The counterpart of {@link parseDateQuery} for what has been typed *so far*. A half-written date
  * parses to nothing, and showing nothing for it reads as "this field cannot be typed into" rather
  * than "keep going". A field that says yes here is offered with its syntax example instead.
  *
  * Wider than the parser on purpose, and narrower than "any text": it must not claim a bare number,
  * which belongs to the amount fields.
+ *
+ * A bare marker is ambiguous between a date and an amount, so both fields claim it and the user
+ * sees the two syntaxes side by side, which is exactly the ambiguity they are in.
+ *
+ * A half-written span needs no case of its own: whatever follows the first date is swallowed by
+ * {@link DATE_STARTED}, and matching a trailing separator on its own would claim every word ending
+ * in `to` or `-`.
  */
 export function looksLikeDateQuery(query: string): boolean {
   const typed = query.trim();
@@ -185,14 +197,9 @@ export function looksLikeDateQuery(query: string): boolean {
     return false;
   if (DATE_WORD_STARTED.test(typed))
     return true;
-  // A bare marker is ambiguous between a date and an amount, so both fields claim it and the user
-  // sees the two syntaxes side by side, which is exactly the ambiguity they are in.
   if (BARE_MARKER.test(typed))
     return true;
 
-  // A half-written span needs no case of its own: whatever follows the first date is swallowed by
-  // `DATE_STARTED`, and matching a trailing separator on its own would claim every word ending in
-  // `to` or `-`.
   const prefixed = DATE_COMPARISON.exec(typed);
   return DATE_STARTED.test((prefixed ? prefixed[2] : typed).trim());
 }

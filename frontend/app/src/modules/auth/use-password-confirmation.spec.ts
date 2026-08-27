@@ -14,8 +14,6 @@ const mockInterop = vi.hoisted(() => ({
   premiumUserLoggedIn: vi.fn(),
 }));
 
-// The overrides object is read on every property access, so the tests can keep
-// flipping `mockInterop.isPackaged` between cases.
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>(mockInterop)),
 }));

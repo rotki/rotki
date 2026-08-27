@@ -135,14 +135,11 @@ describe('modules/accounts/blockchain/AddressInput', () => {
     expect(shownValue()).toBe(ADDRESS);
   });
 
-  it('should leave an entered address behind when the entry mode changes', async () => {
+  it('should leave an entered address behind when the entry mode changes, so the field on screen and what would be saved disagree until the list is edited', async () => {
     wrapper = createWrapper();
     await type(ADDRESS);
     await useMultiple();
 
-    // The list starts empty on the way in, while the address that was already entered stays in the
-    // payload the parent holds: the field on screen and what would be saved disagree until the
-    // list is edited.
     expect(shownValue()).toBe('');
     expect(lastAddresses()).toEqual([ADDRESS]);
     expect(await wrapper.vm.validate()).toBe(false);
@@ -150,8 +147,6 @@ describe('modules/accounts/blockchain/AddressInput', () => {
 
   it('should show the address error the backend reports against the single field', async () => {
     const errorMessages: ValidationErrors = { address: ['Account already exists'] };
-    // Seeded with no address: writing one clears the errors the parent is holding, which is what
-    // an edit is supposed to do, so an address and a stale error cannot coexist here.
     wrapper = createWrapper({ errorMessages });
     await nextTick();
 

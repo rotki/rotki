@@ -19,12 +19,11 @@ import type {
 } from '@/modules/balances/types/blockchain-balances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, Zero } from '@rotki/common';
-import { camelCase, omit } from 'es-toolkit';
+import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
+import { isFilterEnabled, sortBy, sortKeyOf } from '@/modules/accounts/account-common';
 import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
-import { objectKeys } from '@/modules/core/common/data/array';
 import { assetSum, balanceSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { sum } from '@/modules/core/common/display/balances';
@@ -44,6 +43,14 @@ export function isAccountWithBalanceValidator(
   return 'publicKey' in account.data;
 }
 
+/**
+ * Reports whether an account satisfies every filter that is currently active.
+ *
+ * @remarks
+ * An unset filter contributes `undefined` rather than `false`, so an account passes trivially when
+ * nothing is filtered. Addresses inside the address filter are alternatives rather than joint
+ * requirements, because an account carries exactly one address.
+ */
 function filterAccount<T extends BlockchainAccountBalance>(
   account: T,
   filters: { tags?: string[]; addresses?: string[]; chain?: string[]; category?: string },
@@ -56,10 +63,6 @@ function filterAccount<T extends BlockchainAccountBalance>(
     tags: tagFilter,
   } = filters;
 
-  // undefined means "this filter is not active", which is different from "active and did not match":
-  // an account passes only when every active filter matches, and passes trivially when none are.
-  // The addresses within one filter are the exception: they are alternatives, since an account has
-  // exactly one address and requiring all of them would match nothing.
   function matchesAddress(): boolean | undefined {
     if (!addressFilter?.length)
       return undefined;
@@ -162,7 +165,6 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
    * exclusion path, and null when no member survives and the group should be dropped.
    */
   function refineGroup<T extends BlockchainAccountBalance>(account: T): T | null | undefined {
-    // The group check stays here so `account` narrows to the group variant for `data` and `chains`.
     if (account.type !== 'group' || !hasGroupSensitiveFilter())
       return undefined;
 
@@ -170,9 +172,9 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     if (!groupAccounts)
       return undefined;
 
-    // The address applies to the group itself, so it is deliberately dropped here.
+    const addressAppliesToTheGroupNotItsMembers = undefined;
     const matchesWithoutChains = groupAccounts.filter(item => filterAccount(item, {
-      addresses: undefined,
+      addresses: addressAppliesToTheGroupNotItsMembers,
       tags,
     }));
 
@@ -221,10 +223,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     ? filtered
     : filtered.sort((a, b) => {
         for (const [i, attr] of orderByAttributes.entries()) {
-          // The payload types the attributes as camelCase keys, but the table sends snake_case,
-          // so the converted name is matched against the row's own keys before indexing with it.
-          const converted = camelCase(attr);
-          const key = objectKeys(a).find(candidate => candidate === converted);
+          const key = sortKeyOf(a, attr);
           if (!key)
             continue;
 
@@ -319,7 +318,6 @@ function* iterateAssets(
   key: keyof EthBalance,
   filters: GeneratorFilters,
 ): Generator<[string, Balance]> {
-  // Spread rather than per-field defaults, each of which the complexity rule counts as a branch.
   const { chains, resolveIdentifier, skipIdentifier } = { ...GENERATOR_FILTER_DEFAULTS, ...filters };
 
   for (const chain of Object.keys(balances)) {

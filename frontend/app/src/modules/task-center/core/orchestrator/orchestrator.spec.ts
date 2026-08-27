@@ -97,11 +97,7 @@ describe('createTaskOrchestrator', () => {
 
     const activity = byId(orchestrator, id);
     expect(activity?.status).toBe(Status.FAILED);
-    // To an observer a failure is completed *with a failure status*: no further progress is coming,
-    // so a bar that excluded it would stall whenever a chain failed.
     expect(activity?.percentage).toBe(100);
-    // Freshness is the other axis — it stays stale so a later run retries this one and leaves the
-    // siblings that succeeded alone.
     expect(orchestrator.statusOf(Kind.OTHER, 'f2').everCompleted).toBe(false);
   });
 
@@ -132,8 +128,6 @@ describe('createTaskOrchestrator', () => {
     skipped.settle({ error: Skipped({ message: 'disabled in settings' }), ok: false });
     await flush();
 
-    // Without this the row renders a bare "Failed"/"Skipped" chip. A skip raises no notification
-    // either, so dropping it here drops the reason everywhere.
     expect(byId(orchestrator, failedId)?.reason).toBe('network unreachable after retries');
     expect(byId(orchestrator, skippedId)?.reason).toBe('disabled in settings');
   });
@@ -163,8 +157,6 @@ describe('createTaskOrchestrator', () => {
     await flush();
     expect(byId(orchestrator, id)?.reason).toBe('network unreachable after retries');
 
-    // `rerun` reuses the record, so a reason left behind would caption the new run — and survive it
-    // to caption a success.
     orchestrator.rerun(id);
     expect(byId(orchestrator, id)?.reason).toBeUndefined();
   });
@@ -418,8 +410,6 @@ describe('createTaskOrchestrator', () => {
     const parent = controllable('umbrella');
     const parentId = orchestrator.submit(parent.spec);
 
-    // An umbrella reports no steps of its own, so until it declares a subtree there is nothing to
-    // quantify it by.
     expect(byId(orchestrator, parentId)?.percentage).toBe(INDETERMINATE);
 
     const children = ['c1', 'c2', 'c3', 'c4'].map((name) => {
@@ -598,7 +588,6 @@ describe('createTaskOrchestrator', () => {
 
     it('should aggregate over a part prefix without matching siblings or a partial name', async () => {
       const orchestrator = createTaskOrchestrator();
-      // Two per-request historic fetches plus an unrelated PRICES sibling under another part.
       const btc = controllable('btc', { id: makeActivityId(Kind.PRICES, 'historic', 'BTC', 'USD', 1), kind: Kind.PRICES });
       const eth = controllable('eth', { id: makeActivityId(Kind.PRICES, 'historic', 'ETH', 'USD', 1), kind: Kind.PRICES });
       const rates = controllable('rates', { id: makeActivityId(Kind.PRICES, 'exchange-rates'), kind: Kind.PRICES });
@@ -633,7 +622,6 @@ describe('createTaskOrchestrator', () => {
       orchestrator.submit(other.spec);
       await flush();
 
-      // `prices:historic` must not match `prices:historical-daily`.
       expect(orchestrator.statusOfPrefix(Kind.PRICES, 'historic')).toMatchObject({ active: false, running: false });
       expect(orchestrator.statusOfPrefix(Kind.PRICES, 'historical-daily')).toMatchObject({ active: true, running: true });
     });
@@ -813,8 +801,6 @@ describe('createTaskOrchestrator', () => {
 
   describe('parent gating', () => {
     it('should hold a child until its parent starts', async () => {
-      // The parent's lane is full, so it cannot start — and neither may its child, even though the
-      // child's own lane is free. Without this a pre-submitted tree runs bottom-up.
       const orchestrator = createTaskOrchestrator({ caps: { 'chain-sync': 1 } });
       const first = controllable('first', { id: makeActivityId(Kind.TX_SYNC, 'eth'), kind: Kind.TX_SYNC, lane: 'chain-sync' });
       const parent = controllable('second', { id: makeActivityId(Kind.TX_SYNC, 'gnosis'), kind: Kind.TX_SYNC, lane: 'chain-sync' });
@@ -850,8 +836,8 @@ describe('createTaskOrchestrator', () => {
      * producer spec stubs `submitTask` to run inline, where lanes do not exist.
      */
     it('should let a parent awaiting children hold its lane without deadlocking them', async () => {
-      // Two balances slots, both taken by the chain jobs; the detect family has room of its own.
-      const orchestrator = createTaskOrchestrator({ caps: { balances: 2 }, defaultCap: 4 });
+      const bothBalancesSlotsGoToTheChainJobs = 2;
+      const orchestrator = createTaskOrchestrator({ caps: { balances: bothBalancesSlotsGoToTheChainJobs }, defaultCap: 4 });
       const children = new Map<ActivityId, Controllable>();
 
       /** Resolves when that activity reaches a terminal status — the parent's real await. */
@@ -894,8 +880,6 @@ describe('createTaskOrchestrator', () => {
         expect(children.size).toBe(4);
       });
 
-      // The assertion that fails if detection shares the balances lane: with both slots held by
-      // the parents, every child would still be PENDING here and nothing could ever settle them.
       for (const child of children.values()) {
         expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
         child.settle(ok(undefined));

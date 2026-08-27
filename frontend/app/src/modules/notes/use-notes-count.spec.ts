@@ -13,8 +13,14 @@ vi.mock('@/modules/notes/use-note-location', () => ({
   useNoteLocation: vi.fn().mockImplementation(() => location),
 }));
 
-// `useNotesCount` is a sharedComposable. Each test re-imports it with a fresh
-// `location` ref so the previous instance's watchers don't leak.
+/**
+ * Imports `useNotesCount` bound to a newly built `location` ref.
+ *
+ * @remarks
+ * It is a shared composable, so its watchers outlive the test that created them. Resetting the
+ * module and rebuilding `location` have to happen together: keeping the old ref would leave the
+ * previous instance watching it and reacting to this test's mutations.
+ */
 async function freshUseNotesCount(initial: string): Promise<typeof import('@/modules/notes/use-notes-count').useNotesCount> {
   location = ref<string>(initial);
   vi.resetModules();

@@ -17,8 +17,6 @@ const justUpdated = ref<boolean>(false);
 
 const { appVersion } = storeToRefs(useMainStore());
 
-// Historical-balance processing runs as a native orchestrator activity; its progress/percentage
-// are pushed onto the activity by the websocket handler, so we read them straight off it.
 const { useActivity, useWorkStatus } = useTaskCenter();
 const historicalBalanceActivity = useActivity(ActivityKind.HISTORICAL_BALANCES);
 const historicalBalanceStatus = useWorkStatus(ActivityKind.HISTORICAL_BALANCES);

@@ -83,8 +83,13 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
     laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
   });
   const activities = shallowRef<Activity[]>([]);
-  // Bumped on every orchestrator change so `useWorkStatus` computeds re-read the (non-reactive)
-  // records + ledger. Ledger writes always co-occur with an emit, so this captures freshness too.
+  /**
+   * The reactivity handle for the orchestrator's non-reactive records and ledger.
+   *
+   * @remarks
+   * Bumped on every change, which is what makes a `useWorkStatus` computed re-read them. A ledger
+   * write always co-occurs with an emit, so this captures freshness as well as liveness.
+   */
   const version = shallowRef<number>(0);
 
   orchestrator.onChange(() => {

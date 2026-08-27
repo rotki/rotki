@@ -13,6 +13,17 @@ interface UseHistoricFiatConversionReturn {
   rate: ComputedRef<BigNumber>;
   /** Whether `rate` is usable (USD, or a positive resolved historic rate). */
   rateReady: ComputedRef<boolean>;
+  /**
+   * Whether editing is a dead end, because a non-USD value has no historic rate to be stored back
+   * as USD with. An editor gates its save on this, since a value stored without the rate silently
+   * stops tracking (#12277).
+   */
+  rateMissing: ComputedRef<boolean>;
+  /**
+   * {@link rateMissing}, held back until the lookup settles, so the dead-end message does not flash
+   * while the historic rate is still being fetched. Message on this; gate the save on `rateMissing`.
+   */
+  showRateMissing: ComputedRef<boolean>;
 }
 
 /**
@@ -48,6 +59,10 @@ export function useHistoricFiatConversion(timestamp: MaybeRefOrGetter<number>): 
 
   const rateReady = computed<boolean>(() => get(isUsd) || get(rate).isPositive());
 
+  const rateMissing = computed<boolean>(() => !get(isUsd) && !get(rateReady));
+
+  const showRateMissing = computed<boolean>(() => get(rateMissing) && !get(loading));
+
   watchImmediate([(): number => toValue(timestamp), isUsd], () => {
     if (!get(isUsd))
       getHistoricPrice(CURRENCY_USD, toValue(timestamp));
@@ -57,6 +72,8 @@ export function useHistoricFiatConversion(timestamp: MaybeRefOrGetter<number>): 
     isUsd,
     loading,
     rate,
+    rateMissing,
     rateReady,
+    showRateMissing,
   };
 }

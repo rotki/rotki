@@ -101,14 +101,26 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
     sources.some(source => source.loading !== undefined && toValue(source.loading)),
   );
 
-  // Until the first scan lands the counts are all zero, which is indistinguishable
-  // from "nothing to do", so anything reading them has to know they are pending.
+  /**
+   * Reports whether the counts are still incomplete.
+   *
+   * @remarks
+   * Covers the pre-scan state as well as an in-flight read: before the first scan every count is
+   * zero, which reads exactly like "nothing to do", so a consumer must gate on this rather than
+   * on the counts alone.
+   */
   const checking = computed<boolean>(() =>
     !get(scanned) || (busy !== undefined && toValue(busy)) || get(refreshing),
   );
 
-  // allSettled, not all: every source reports its own failure, and one rejecting
-  // must not pin the whole center to "checking" for the rest of the session.
+  /**
+   * Re-reads every source, then marks this center scanned whatever the outcome.
+   *
+   * @remarks
+   * Rejections are absorbed rather than propagated: each source already reports its own failure,
+   * and letting one escape would leave `scanned` false and pin the center to `checking` for the
+   * rest of the session.
+   */
   const refreshAll = async (): Promise<void> => {
     await Promise.allSettled(sources.map(async source => source.refresh()));
     set(scanned, true);

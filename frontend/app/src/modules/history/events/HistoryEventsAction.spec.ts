@@ -7,12 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';
 
-/**
- * The seam: which actions the menu offers for a row, and what each one emits. Working out what
- * applies to a row - the transaction behind it, the event a re-decode runs on, what a delete
- * removes - belongs to `use-history-event-action-menu`, which has its own spec.
- */
-
 const evmEvent = createMock<HistoryEventEntry>({
   entryType: HistoryEventEntryType.EVM_EVENT,
   identifier: 1,

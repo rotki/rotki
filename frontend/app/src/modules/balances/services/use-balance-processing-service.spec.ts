@@ -69,8 +69,6 @@ function deferred<T>(): Deferred<T> {
 const pendingTasks = new Map<number, Deferred<Result<unknown, TaskError>>>();
 let nextTaskId = 1;
 
-// The service takes its runner from the activity that called it, so the spec passes this one in
-// rather than faking the handler module.
 const runTask = vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId: number }>) => {
   const { taskId } = await taskFn();
   const d = deferred<Result<unknown, TaskError>>();
@@ -115,9 +113,6 @@ describe('useBalanceProcessingService', () => {
    * in. Without it the slower one wins and rolls the chain back to stale balances.
    */
   describe('stale payloads', () => {
-    // A chain of its own, not ETH. The orchestrator is a `createSharedComposable`, so its
-    // completion ledger survives `setActivePinia` and leaks between tests — marking ETH complete
-    // here makes a later test see `hasCachedData` already true.
     const CHAIN = 'gnosis';
 
     async function resolveCachedFetch(payload: BlockchainBalances): Promise<void> {
@@ -174,7 +169,6 @@ describe('useBalanceProcessingService', () => {
       expect(service.shouldQuery(Blockchain.ETH2)).toBe(true);
     });
 
-    // The backend's other precondition: with the module off there is nothing to query.
     it('should not query eth2 when the module is disabled', () => {
       mockIsEth2Enabled.mockReturnValue(false);
       const service = useBalanceProcessingService();
@@ -228,8 +222,6 @@ describe('useBalanceProcessingService', () => {
     it('should not erase balances for a chain whose accounts are not loaded yet', () => {
       const service = useBalanceProcessingService();
       const { updateBalances } = useBalancesStore();
-      // The spy comes from the module mock factory, so unlike the pinia stores (recreated in
-      // `beforeEach`) it carries the calls every earlier test in this file made through it.
       vi.mocked(updateBalances).mockClear();
 
       // `zksync_lite` was never written by the accounts fetch — unknown, not empty.
@@ -282,7 +274,6 @@ describe('useBalanceProcessingService', () => {
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
     );
 
-    // Only the refresh registers a backend task. The cached GET is a direct request.
     await vi.waitFor(() => {
       expect(pendingTasks.size).toBe(1);
     });

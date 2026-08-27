@@ -1,12 +1,9 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import { EvmTokenKind, type UnderlyingToken } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
 import '@test/i18n';
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 const ADDRESS = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 const OTHER_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
@@ -63,6 +60,11 @@ describe('underlyingTokenManager', () => {
 
   function addDisabled(): unknown {
     return wrapper.findComponent<StubInstance>('[data-testid=underlying-token-add]').props('disabled');
+  }
+
+  async function typeWithoutBlurring(testId: string, value: string): Promise<void> {
+    field(testId).vm.$emit('update:modelValue', value);
+    await vi.advanceTimersToNextTimerAsync();
   }
 
   async function edit(testId: string, value: string): Promise<void> {
@@ -136,7 +138,6 @@ describe('underlyingTokenManager', () => {
 
     await edit('underlying-token-weight', '');
 
-    // The range and numeric rules skip an empty value, so only the missing-value rule fires.
     expect(messages('underlying-token-weight')).toEqual(['underlying_token_manager.validation.non_empty']);
   });
 
@@ -144,10 +145,7 @@ describe('underlyingTokenManager', () => {
     wrapper = createWrapper();
     await edit('underlying-token-address', ADDRESS);
 
-    // No blur: the add button is gated on validity, and a disabled button cannot be clicked to
-    // blur the field, so waiting for blur would leave the user with no message at all.
-    field('underlying-token-weight').vm.$emit('update:modelValue', '150');
-    await vi.advanceTimersToNextTimerAsync();
+    await typeWithoutBlurring('underlying-token-weight', '150');
 
     expect(messages('underlying-token-weight')).toEqual(['underlying_token_manager.validation.out_of_range']);
   });
@@ -252,11 +250,7 @@ describe('underlyingTokenManager', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    // The staging row is empty, so this component's own form is invalid for as long as it is
-    // mounted. Under vuelidate that mattered: a child registered itself into whatever collector was
-    // above it, and this one made every parent form invalid, which is what the test below the
-    // rewrite guarded against. A zod form is local and reaches a parent only through something the
-    // child hands it, and this one hands out nothing at all.
+    expect(addDisabled()).toBe(true);
     expect('validate' in wrapper.vm).toBe(false);
     expect(wrapper.emitted('update:valid')).toBeUndefined();
   });

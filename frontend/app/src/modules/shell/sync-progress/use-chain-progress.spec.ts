@@ -176,8 +176,6 @@ describe('useChainProgress', () => {
     });
 
     it('should count a failed address as done so the chain can settle', () => {
-      // Same argument `percentageOf` makes for activities: no further progress is coming, so a bar
-      // that excluded failures would stall short of the end and never settle.
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.FAILED),
         key2: createEvmStatusData('0x222', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
@@ -342,10 +340,6 @@ describe('useChainProgress', () => {
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      // effectiveStart = 200, current = 600, originalPeriodEnd = 1000
-      // totalRange = 1000 - 200 = 800
-      // progressRange = 600 - 200 = 400
-      // progress = (400 / 800) * 100 = 50
       expect(chains[0].addresses[0].periodProgress).toBe(50);
     });
 
@@ -385,24 +379,25 @@ describe('useChainProgress', () => {
       expect(chains[0].addresses[0].periodProgress).toBe(100);
     });
 
-    it('should ensure progress is at least 0', () => {
+    it('should report 0 rather than a negative progress when the cursor sits behind the period start', () => {
+      const periodStart = 500;
+      const cursorBehindTheStart = 100;
+      const periodEnd = 1000;
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createEvmStatusData(
           '0x123',
           'eth',
           TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          [500, 100],
-          1000,
-          500,
+          [periodStart, cursorBehindTheStart],
+          periodEnd,
+          periodStart,
         ),
       });
 
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      // effectiveStart = 500, current = 100, originalPeriodEnd = 1000
-      // progressRange = 100 - 500 = -400 (negative)
-      // Should be capped at 0
+      expect(cursorBehindTheStart - periodStart).toBeLessThan(0);
       expect(chains[0].addresses[0].periodProgress).toBe(0);
     });
   });
@@ -418,7 +413,6 @@ describe('useChainProgress', () => {
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      // eth has in-progress (QUERYING), should be first
       expect(chains[0].chain).toBe('eth');
     });
 
@@ -439,9 +433,6 @@ describe('useChainProgress', () => {
   });
 
   describe('period handling', () => {
-    // The store parks the cursor at the range start on STARTED, so the bar must read 0 there and
-    // climb from the later cursors. Read raw, STARTED compares the target end against itself and
-    // reports 100 before anything has been queried.
     it('should report evm progress from the cursor, starting at zero', () => {
       const cases: [period: [number, number], expected: number][] = [
         [[0, 0], 0],
@@ -459,9 +450,7 @@ describe('useChainProgress', () => {
       }
     });
 
-    // The progress bar is driven by the period alone, so an entry that carries none must produce
-    // neither a period nor a progress value rather than defaulting to one.
-    it('should leave period and progress unset for an entry without a period', () => {
+    it('should leave period and progress unset for an entry without a period, rather than defaulting them', () => {
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createBitcoinStatusData('bc1q...', 'btc', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       });
@@ -536,7 +525,7 @@ describe('useChainProgress', () => {
 
       const ethChain = chains.find(c => c.chain === 'eth');
       expect(ethChain?.pending).toBe(1);
-      expect(ethChain?.inProgress).toBe(2); // QUERYING + DECODING
+      expect(ethChain?.inProgress).toBe(2);
       expect(ethChain?.completed).toBe(1);
       expect(ethChain?.total).toBe(4);
     });

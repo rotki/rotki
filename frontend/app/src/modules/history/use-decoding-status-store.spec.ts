@@ -2,9 +2,6 @@ import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/type
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDecodingStatusStore } from './use-decoding-status-store';
 
-// Stands in for the real resolver, which indexes every chain under its id, its name and its
-// evmChainName. Without it `matchChain` finds nothing and the store's lowercase fallback would
-// carry these tests, proving none of the canonicalisation.
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
     matchChain: (location: string): string | undefined => ({
@@ -52,7 +49,6 @@ describe('useDecodingStatusStore', () => {
       store.setUndecodedTransactionsStatus(createStatus('ethereum', 100, 50));
       store.setUndecodedTransactionsStatus(createStatus('eth', 100, 80));
 
-      // Two entries would mean two rows in the sync panel and double weight in the progress bar.
       const status = get(store.undecodedTransactionsStatus);
       expect(Object.keys(status)).toHaveLength(1);
       expect(status.eth.processed).toBe(80);
@@ -63,8 +59,6 @@ describe('useDecodingStatusStore', () => {
       store.resetDecodingSyncProgress();
       store.setUndecodedTransactionsStatus(createStatus('ethereum', 100, 50));
 
-      // `markDecodingCancelled` is called with the frontend's own chain id. Keyed raw, it looked up
-      // 'eth' against an entry stored as 'ethereum' and the cancellation was silently dropped.
       store.markDecodingCancelled('eth');
 
       expect(get(store.decodingSyncProgress).eth.cancelled).toBe(true);

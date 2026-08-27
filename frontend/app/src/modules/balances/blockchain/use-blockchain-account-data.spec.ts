@@ -9,7 +9,6 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainAccountData } from './use-blockchain-account-data';
 import '@test/i18n';
 
-// Test data factory functions for better maintainability
 function createTestBalance(amount: number, value: number): Balance {
   return {
     amount: bigNumberify(amount),
@@ -76,7 +75,6 @@ describe('useBlockchainAccountData', () => {
       const { updateBalances } = useBalancesStore();
       const { getBlockchainAccounts } = useBlockchainAccountData();
 
-      // Convert and store BTC accounts and balances
       updateAccounts(
         Blockchain.BTC,
         convertBtcAccounts(chain => chain.toUpperCase(), Blockchain.BTC, accounts),
@@ -191,7 +189,6 @@ describe('useBlockchainAccountData', () => {
 
       const result = getBlockchainAccounts(Blockchain.BTC);
 
-      // Should contain the derived address, not the xpub itself
       expect(result).toHaveLength(1);
       const firstElement = result[0];
       expect(getAccountAddress(firstElement)).toBe('xpub-derived-addr-1');
@@ -202,7 +199,6 @@ describe('useBlockchainAccountData', () => {
       const { updateAccounts } = useBlockchainAccountsStore();
       const { getBlockchainAccounts } = useBlockchainAccountData();
 
-      // Manually create accounts with xpub type to test filtering
       const mockAccounts: BlockchainAccount[] = [{
         chain: Blockchain.BTC,
         data: { type: 'xpub', xpub: 'xpub123' },

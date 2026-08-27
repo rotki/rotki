@@ -2,10 +2,15 @@ import type { BigNumber, CommonQueryStatusData, FailedHistoricalAssetPriceRespon
 import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
 import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
+/**
+ * Holds historic asset prices by asset and timestamp, along with the query status the progress
+ * indicators read and the record of which historical lookups came back without a price.
+ *
+ * @remarks
+ * State only. `useHistoricPriceCache` owns the fetching, batching and eviction, and binds to the
+ * {@link ItemCacheStorage} kept here rather than holding one of its own.
+ */
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
-  // App-lifetime cache storage for historic prices; the fetch/debounce/LRU logic
-  // lives in useHistoricPriceCache, which binds to this so the cache survives
-  // navigation (composable teardown) instead of being wiped at zero subscribers.
   const historicStorage = createItemCacheStorage<BigNumber>();
   const statsPriceQueryStatus = shallowRef<Record<string, StatsPriceQueryData>>({});
   const historicalPriceStatus = shallowRef<CommonQueryStatusData>();

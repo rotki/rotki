@@ -197,7 +197,6 @@ watch(route, async (route) => {
     await router.replace({ query: {} });
   }
   else if (query.location && query.name) {
-    // Find the exchange to edit based on location and name from query params
     const exchangeToEdit = get(rows).find(
       ex => ex.location === query.location && ex.name === query.name,
     );

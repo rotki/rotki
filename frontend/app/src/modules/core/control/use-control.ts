@@ -12,6 +12,27 @@ import {
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 /**
+ * Talking to the starling supervisor, over whichever transport this runtime has.
+ *
+ * @remarks
+ * Four properties of the protocol shape most of the code here:
+ *
+ * A refusal arrives as JSON-RPC, meaning HTTP 200 with an `error` in the body. Checking the status
+ * alone reports a restart that never happened as done, so the body is always parsed. The
+ * supervisor's own message is relayed untranslated, the way backend errors are everywhere else.
+ *
+ * A transport-level refusal has no body at all, so its status is mapped to a translated message
+ * instead. The HTTP reason phrase would otherwise be the only thing to show, and it is neither
+ * translated nor meaningful to a user. A 404 among those is not a failure but an answer; see
+ * {@link ControlCapabilities}.
+ *
+ * Availability is cached only when it succeeds. A failure may well be the transient outage that
+ * brought the user to the connection-failure screen in the first place, so it is retried.
+ *
+ * @packageDocumentation
+ */
+
+/**
  * The one way the app drives the supervisor, whichever runtime it is in.
  *
  * Both transports end at the same control RPC; they differ only in the tunnel.
@@ -115,8 +136,6 @@ async function postRpc(
     throw new ControlError(response.status, t(transportErrorKey(response.status)));
 
   const parsed = ControlRpcResponse.parse(await response.json());
-  // The supervisor's own message: relayed as-is, the way backend errors are
-  // everywhere else in the app.
   if (parsed.error)
     throw new ControlError(parsed.error.code, parsed.error.message);
 
@@ -138,10 +157,15 @@ function transportErrorKey(status: number): MessageKey {
   return msg.$t('control.errors.failed');
 }
 
+/**
+ * Reads one service out of a supervisor status report.
+ *
+ * @remarks
+ * A service the supervisor does not manage reports no autostart preference, and `false` is the
+ * honest answer for one: nothing is going to start it.
+ */
 function serviceInfoOf(status: ControlStatus, service: StarlingService): ControlServiceInfo {
   const found = status.services.find((entry: ControlServiceStatus) => entry.name === service);
-  // A service the supervisor does not manage has no preference to report, and
-  // `false` is the honest answer: nothing is going to start it.
   return { autostart: found?.autostart ?? false, state: found?.state ?? StarlingServiceStatus.UNAVAILABLE };
 }
 
@@ -168,13 +192,9 @@ export function useControl(): UseControlReturn {
 
     try {
       const response = await fetch(CONTROL_ENDPOINT, { credentials: 'same-origin' });
-      // A 404 is the honest answer from a deployment with no session cookie
-      // configured, not an error to report.
       set(available, response.ok && ControlCapabilities.safeParse(await response.json()).success);
     }
     catch {
-      // Offline, or nothing serving. Not cached: it may well be the transient
-      // outage that brought the user to the connection-failure screen.
       set(available, false);
     }
     return get(available);
@@ -185,8 +205,6 @@ export function useControl(): UseControlReturn {
       return { autostart: false, state: StarlingServiceStatus.UNAVAILABLE };
 
     if (isPackaged) {
-      // The desktop's preference is an Electron app setting, not a supervisor
-      // one, so it comes back from the same IPC call that reports the state.
       const status = await getMcpServerStatus();
       return { autostart: status.autoStart, state: status.state };
     }

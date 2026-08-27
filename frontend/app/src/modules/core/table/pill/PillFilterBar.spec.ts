@@ -12,7 +12,6 @@ import PillNarrowList from '@/modules/core/table/pill/PillNarrowList.vue';
 import PillValueEditor from '@/modules/core/table/pill/PillValueEditor.vue';
 import RangeValueEditor from '@/modules/core/table/pill/RangeValueEditor.vue';
 
-// Remembering a value writes a frontend setting; the write itself is the observable act.
 interface RecentEntry { count: number; value: string }
 
 interface FrontendPatch { recentFilterValues: Record<string, RecentEntry[]> }
@@ -23,8 +22,6 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): { updateFrontendSetting: typeof updateFrontendSetting } => ({ updateFrontendSetting }),
 }));
 
-// RuiMenu lazily teleports its content; stub it to render both slots inline so the
-// activator (pill/button) and the content (editor/menu) are always in the tree.
 const RuiMenuStub = defineComponent({
   name: 'RuiMenu',
   props: { disabled: { default: false, type: Boolean }, modelValue: { default: false, type: Boolean } },
@@ -54,8 +51,6 @@ const account: FieldDef = {
   valueType: 'enum',
 };
 
-// Two fields that write the same wire keys, as history's action and event type do: only one of
-// them may be active at a time.
 const action: FieldDef = {
   allowExclusion: false,
   binding: { kind: 'param', paramKey: 'action', to: 'url' },
@@ -68,8 +63,6 @@ const action: FieldDef = {
   valueType: 'enum',
 };
 
-// A collapsed range: its two bounds live under their own wire keys, which is the form a saved
-// view stores and the one place a stored filter can come back as something else.
 const amount: FieldDef = {
   allowExclusion: false,
   binding: { kind: 'filter' },
@@ -83,11 +76,8 @@ const amount: FieldDef = {
 
 const fields = [protocol, account];
 
-// What a range field carries in the real adapter: it reads a typed amount into whole filters.
 const typedAmount: FieldDef = {
   ...amount,
-  // Set alongside `parseTyped`, the way the adapter builds a real range field: it is what gates
-  // the footer's syntax examples, so a fixture with only the parser advertises nothing to type.
   matchesTyped: (query: string): boolean => /^[\d<>]/.test(query),
   parseTyped: (query: string) => (/^>\d+$/.test(query)
     ? [{ op: 'gt' as const, range: { min: query.slice(1) }, values: [] }]
@@ -110,19 +100,18 @@ function createWrapper(
   params: Record<string, string | string[] | boolean> = {},
   slots: Record<string, string> = {},
   fieldSet: FieldDef[] = fields,
-  // Focus only lands anywhere in jsdom when the tree is actually in the document.
   options: { attachTo?: HTMLElement } = {},
 ): VueWrapper<InstanceType<typeof PillFilterBar>> {
-  return mount(PillFilterBar, {
+  const wrapper = mount(PillFilterBar, {
     ...options,
     global: {
-      // The bar remembers committed free-text values through the settings repo.
       plugins: [createCustomPinia()],
       stubs: { AssetValueEditor: true, RuiAutoComplete: true, RuiMenu: RuiMenuStub },
     },
     props: { fields: fieldSet, labels, matches, params },
     slots,
   });
+  return wrapper;
 }
 
 function lastEmit(wrapper: VueWrapper, event: string): unknown {
@@ -131,8 +120,6 @@ function lastEmit(wrapper: VueWrapper, event: string): unknown {
 }
 
 describe('pillFilterBar', () => {
-  // A modifier constrains how the active filters apply, so with nothing filtered it is a control
-  // that does nothing. The bar stays generic: it only knows such controls may exist.
   it('should not render the modifiers slot while nothing is filtered', () => {
     const wrapper = createWrapper({}, {}, { modifiers: '<div data-testid="modifier" />' });
     expect(wrapper.find('[data-testid=modifier]').exists()).toBe(false);
@@ -143,8 +130,6 @@ describe('pillFilterBar', () => {
     expect(wrapper.find('[data-testid=modifier]').exists()).toBe(true);
   });
 
-  // Saved views are the opposite case: what a view is for is filling an empty bar, so unlike a
-  // modifier it has to be there when nothing is filtered.
   it('should always render the views slot', () => {
     const empty = createWrapper({}, {}, { views: '<div data-testid="views" />' });
     expect(empty.find('[data-testid=views]').exists()).toBe(true);
@@ -153,8 +138,6 @@ describe('pillFilterBar', () => {
     expect(filtered.find('[data-testid=views]').exists()).toBe(true);
   });
 
-  // Both write the same request keys, so offering the other one after the first is applied would
-  // let two pills fight over them.
   it('should not offer a field excluded by an active filter', async () => {
     const wrapper = createWrapper({}, { action: 'pay_fee' }, {}, [protocol, account, action]);
     await nextTick();
@@ -197,8 +180,7 @@ describe('pillFilterBar', () => {
     const wrapper = createWrapper({ protocols: ['aave'] });
     wrapper.findComponent(PillMenu).vm.$emit('select', account);
     await nextTick();
-    await nextTick(); // addField opens the editor on the next tick, once the pill exists
-    // exactly one pill menu (the newly added account field) is open
+    await nextTick();
     const open = wrapper.findAllComponents(RuiMenuStub).filter(menu => menu.props('modelValue') === true);
     expect(open).toHaveLength(1);
   });
@@ -217,12 +199,8 @@ describe('pillFilterBar', () => {
     expect(lastEmit(wrapper, 'update:params')).toStrictEqual({ locationLabels: ['0xaaa', '0xbbb'] });
   });
 
-  // What a saved view stores is whatever the bar emitted, so the claim under test is that handing
-  // that back rebuilds the same pills. A range is the case worth pinning: it is the only field
-  // whose value is split across two wire keys, so a view is where it would quietly come back as
-  // half a filter or as the wrong operator.
   describe('applying a stored filter set', () => {
-    it('should rebuild a range pill from the matches it emitted', async () => {
+    it('should keep only the surviving bound of a gt range and rebuild the pill from it', async () => {
       const saved = createWrapper({ minAmount: '5', maxAmount: '50' }, {}, {}, [protocol, amount]);
       saved.findComponent(RangeValueEditor).vm.$emit('update', {
         fieldKey: 'amount',
@@ -232,8 +210,6 @@ describe('pillFilterBar', () => {
       });
       await nextTick();
 
-      // A `gt` filter drops the upper bound, and the operator is read back from the bound that
-      // survived: storing both would put "greater than 5 - 50" on the restored pill.
       const stored = { minAmount: '10' };
       expect(lastEmit(saved, 'update:matches')).toStrictEqual(stored);
 
@@ -246,7 +222,6 @@ describe('pillFilterBar', () => {
       const wrapper = createWrapper({ protocols: ['aave'] }, { locationLabels: ['0xaaa'] });
       expect(wrapper.findAllComponents(FilterPill)).toHaveLength(2);
 
-      // Applying a view writes both models at once, which is what the history table does with it.
       await wrapper.setProps({ matches: { protocols: ['curve'] }, params: {} });
 
       const pills = wrapper.findAllComponents(FilterPill);
@@ -324,12 +299,10 @@ describe('pillFilterBar', () => {
       await type(wrapper, 'acc');
       wrapper.findComponent(PillNarrowList).vm.$emit('select', { field: account, kind: 'field', label: 'Account' });
       await nextTick();
-      await nextTick(); // the editor opens a tick later, once the pill exists
+      await nextTick();
 
-      // Menus render as [pill editor, narrowing popover, add menu]: only the editor may be open,
-      // never the popover that was picked from.
-      const open = wrapper.findAllComponents(RuiMenuStub).map(menu => menu.props('modelValue'));
-      expect(open).toStrictEqual([true, false, false]);
+      const [pillEditor, narrowPopover, addMenu] = wrapper.findAllComponents(RuiMenuStub).map(menu => menu.props('modelValue'));
+      expect({ addMenu, narrowPopover, pillEditor }).toStrictEqual({ addMenu: false, narrowPopover: false, pillEditor: true });
     });
 
     it('should keep the popover open when a value suggestion applies directly', async () => {
@@ -342,7 +315,7 @@ describe('pillFilterBar', () => {
       expect(open).toHaveLength(1);
     });
 
-    it('should apply the highlighted suggestion on enter', async () => {
+    it('should apply the suggestion one ArrowDown past the field row on enter', async () => {
       const wrapper = createWrapper();
       const input = wrapper.get('[data-testid=pill-narrow-input]');
       await input.setValue('a');
@@ -350,7 +323,6 @@ describe('pillFilterBar', () => {
       await input.trigger('keydown', { key: 'Enter' });
       await nextTick();
 
-      // ArrowDown moves off the Account field onto the first protocol value.
       expect(lastEmit(wrapper, 'update:matches')).toStrictEqual({ protocols: ['aave'] });
     });
 
@@ -380,8 +352,7 @@ describe('pillFilterBar', () => {
       await input.trigger('keydown', { key: 'Escape' });
 
       expect(wrapper.get<HTMLInputElement>('[data-testid=pill-narrow-input]').element.value).toBe('');
-      // Back to the blank-query list, not an empty state.
-      expect(wrapper.findComponent(PillNarrowList).props('suggestions')).toHaveLength(2);
+      expect(wrapper.findComponent(PillNarrowList).props('suggestions')).toHaveLength(fields.length);
     });
   });
 
@@ -392,8 +363,6 @@ describe('pillFilterBar', () => {
     expect(lastEmit(wrapper, 'update:params')).toStrictEqual({});
   });
 
-  // A written amount or date is offered as a whole filter rather than as a value, so applying it
-  // goes through the draft the field produced instead of building one from a value string.
   it('should apply a filter read out of the typed query', async () => {
     const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
     await wrapper.get('[data-testid=pill-narrow-input]').setValue('>100');
@@ -408,8 +377,6 @@ describe('pillFilterBar', () => {
     expect(lastEmit(wrapper, 'update:matches')).toStrictEqual({ minAmount: '100' });
   });
 
-  // The footer teaches by demonstration: its example goes into the input, and the row it produces
-  // shows up above it. Applying it outright would add a pill for an amount nobody asked for.
   it('should put a clicked syntax example in the input without filtering', async () => {
     const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
 
@@ -420,9 +387,6 @@ describe('pillFilterBar', () => {
     expect(wrapper.emitted('update:matches')).toBeUndefined();
   });
 
-  // The chip is a `button`, but nothing in the popover is ever focused and it is teleported out of
-  // the input's tab order, so Tab never arrives and the mouse was the only way in. The highlight
-  // therefore runs on past the last row into the footer, and Enter there does what a click does.
   it('should reach a syntax example by arrowing past the last row', async () => {
     const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
     const input = wrapper.get('[data-testid=pill-narrow-input]');
@@ -433,12 +397,14 @@ describe('pillFilterBar', () => {
     const examples = list.props('examples') ?? [];
     assert(examples.length > 0, 'the footer must offer an example to arrow onto');
 
-    // Down off the end of the rows lands on the first chip and names it to the screen reader.
     for (let step = 0; step < rows; step++)
       await input.trigger('keydown', { key: 'ArrowDown' });
 
     expect(list.props('highlighted')).toBe(rows);
-    expect(input.attributes('aria-activedescendant')).toBe('pill-narrow-example-0');
+
+    const active = input.attributes('aria-activedescendant');
+    assert(active, 'the input must name the highlighted element');
+    expect(wrapper.find(`#${active}`).text()).toBe(examples[0]);
 
     await input.trigger('keydown', { key: 'Enter' });
 
@@ -446,8 +412,6 @@ describe('pillFilterBar', () => {
     expect(wrapper.emitted('update:matches')).toBeUndefined();
   });
 
-  // Wrapping is what makes the footer escapable without a mouse: one Up from the top row is the
-  // last chip, and one Down from it is the first row again.
   it('should wrap between the rows and the footer', async () => {
     const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
     const input = wrapper.get('[data-testid=pill-narrow-input]');
@@ -463,7 +427,6 @@ describe('pillFilterBar', () => {
     expect(list.props('highlighted')).toBe(0);
   });
 
-  // The example is only a starting point, so the rows it produces have to be there to pick from.
   it('should offer the filter a clicked example reads as', async () => {
     const wrapper = createWrapper({}, {}, {}, [protocol, typedAmount]);
 
@@ -472,6 +435,7 @@ describe('pillFilterBar', () => {
 
     expect(wrapper.findComponent(PillNarrowList).props('suggestions')[0]).toMatchObject({ kind: 'filter' });
   });
+
   it('should drop a pill whose editor closed without a value', async () => {
     const wrapper = createWrapper();
     wrapper.findComponent(PillMenu).vm.$emit('select', protocol);
@@ -480,15 +444,12 @@ describe('pillFilterBar', () => {
     expect(wrapper.findAllComponents(FilterPill)).toHaveLength(1);
 
     wrapper.findComponent(PillValueEditor).vm.$emit('close');
-    // Two ticks: the decision waits for the render on which a debounced editor commits.
     await nextTick();
     await nextTick();
 
     expect(wrapper.findAllComponents(FilterPill)).toHaveLength(0);
   });
 
-  // The pill and its editor are gone, so focus would otherwise fall to the document body and the
-  // next keystroke would go nowhere. The bar is where the user still is.
   it('should put the caret back in the input after dropping a pill', async () => {
     const wrapper = createWrapper({ protocols: ['aave'] }, {}, {}, fields, { attachTo: document.body });
 
@@ -497,7 +458,6 @@ describe('pillFilterBar', () => {
     await nextTick();
 
     expect(document.activeElement).toBe(wrapper.get('[data-testid=pill-narrow-input]').element);
-    wrapper.unmount();
   });
 
   it('should keep a pill whose editor closed with a value', async () => {
@@ -509,9 +469,6 @@ describe('pillFilterBar', () => {
     expect(wrapper.findAllComponents(FilterPill)).toHaveLength(1);
   });
 
-  // The pill survives, so nothing was dropped and the drop path's focus restore never runs. The
-  // editor that held focus has still unmounted, and `RuiMenu` will not hand focus back because
-  // `disable-auto-focus` governs both directions and the bar needs it for the open one.
   it('should put the caret back in the input after an editor closes with its value kept', async () => {
     const wrapper = createWrapper({ protocols: ['aave'] }, {}, {}, fields, { attachTo: document.body });
 
@@ -521,11 +478,8 @@ describe('pillFilterBar', () => {
 
     expect(wrapper.findAllComponents(FilterPill)).toHaveLength(1);
     expect(document.activeElement).toBe(wrapper.get('[data-testid=pill-narrow-input]').element);
-    wrapper.unmount();
   });
 
-  // `Clear all` is rendered only while filters exist, so pressing it removes the very button that
-  // holds focus.
   it('should put the caret back in the input after clearing every filter', async () => {
     const wrapper = createWrapper({ protocols: ['aave'] }, {}, {}, fields, { attachTo: document.body });
 
@@ -535,15 +489,12 @@ describe('pillFilterBar', () => {
 
     expect(wrapper.findAllComponents(FilterPill)).toHaveLength(0);
     expect(document.activeElement).toBe(wrapper.get('[data-testid=pill-narrow-input]').element);
-    wrapper.unmount();
   });
-  // The debounced editors commit what they hold when they unmount, which happens a render after
-  // the pill is removed: without the guard the pill came straight back.
+
   it('should not let a closing editor resurrect the pill that was just removed', async () => {
     const wrapper = createWrapper({ protocols: ['aave'] });
 
     wrapper.findComponent(FilterPill).vm.$emit('remove');
-    // Exactly what an editor's `onBeforeUnmount` does, in the same tick as the removal.
     wrapper.findComponent(PillValueEditor).vm.$emit('update', {
       fieldKey: 'protocols',
       op: 'is',
@@ -555,8 +506,6 @@ describe('pillFilterBar', () => {
     expect(lastEmit(wrapper, 'update:matches')).toStrictEqual({});
   });
 
-  // A free-text editor commits through a debounce, so remembering on every update stored `swap`,
-  // `swap on`, … as separate values, each one writing the whole settings blob.
   it('should remember a free-text value once, when its editor closes', async () => {
     const notes: FieldDef = {
       allowExclusion: false,

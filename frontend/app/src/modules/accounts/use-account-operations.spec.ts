@@ -1,4 +1,5 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -118,7 +119,7 @@ describe('useAccountOperations', () => {
       h.chainIds = ['eth', 'btc', 'eth2'];
       h.fetch.mockImplementation(async (chain: string) => {
         if (chain === 'eth2')
-          return new Promise<void>(() => {});
+          return neverSettles<void>();
 
         return undefined;
       });

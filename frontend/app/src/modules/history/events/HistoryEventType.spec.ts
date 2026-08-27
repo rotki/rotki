@@ -84,11 +84,11 @@ describe('history/events/HistoryEventType', () => {
 
   function createWrapper(
     event: HistoryEventEntry,
-    matchedMovement?: boolean,
+    linkedLeg?: boolean,
   ): VueWrapper<InstanceType<typeof HistoryEventType>> {
     return mount(HistoryEventType, {
       global: { plugins: [pinia], stubs },
-      props: { event, matchedMovement },
+      props: { event, linkedLeg },
     });
   }
 

@@ -123,8 +123,6 @@ export function useSnapshotActions(): UseSnapshotActionsReturn {
   });
 
   return {
-    // model* refs are bound via v-model by the import dialog's file pickers,
-    // so they stay writable (the `model` prefix exempts them from readonly()).
     forceSave,
     forceSaving: readonly(forceSaving),
     importing: readonly(importing),

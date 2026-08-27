@@ -60,8 +60,6 @@ export function balanceSnapshotSchema(rules: BalanceSnapshotRules): ZodType {
     timestamp: z.number(),
     usdValue: z.string(),
   }).superRefine((state, ctx) => {
-    // Required whenever the selector is shown: every balance must be attributed so the location
-    // subtotals reconcile with the net worth. In split mode the split drives attribution instead.
     if (!hideLocation && state.location.trim() === '')
       ctx.addIssue({ code: 'custom', message: messages.location, path: ['location'] });
 

@@ -178,8 +178,6 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     set(accounts, knownAccounts);
     set(balances, knownBalances);
 
-    // A chain read already in flight is carrying a pre-delete snapshot; marking the chain makes
-    // it drop its write instead of replacing the chain wholesale and resurrecting the account.
     chains.forEach(chain => invalidateChain(chain));
   };
 
@@ -200,21 +198,17 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       removeAccounts({ addresses: [address], chains });
     }
     else {
-      // Submitted together, serialized by the removal lane rather than by a limiter here: one
-      // per chain and one active chain at a time is the shape this call always had, now declared
-      // once where the activity is, as the warning on `DECODE_LANE` requires.
       const outcomes = await Promise.all(chains.map(
         async chain => [chain, await removeAccount({ accounts: [address], chain })] as const,
       ));
 
-      // A partial failure keeps the chains it could not delete, rather than dropping the whole row.
-      const removed = outcomes.filter(([, outcome]) => !isErr(outcome)).map(([chain]) => chain);
-      if (removed.length === 0)
+      const goneFromTheBackend = outcomes.filter(([, outcome]) => !isErr(outcome)).map(([chain]) => chain);
+      if (goneFromTheBackend.length === 0)
         return;
 
       removeAccounts({
         addresses: [address],
-        chains: removed,
+        chains: goneFromTheBackend,
       });
     }
   }
@@ -225,8 +219,8 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       chain,
     });
 
-    // A failed or cancelled removal leaves the account on the backend, so the row has to stay.
-    if (isErr(outcome))
+    const stillOnTheBackend = isErr(outcome);
+    if (stillOnTheBackend)
       return;
 
     removeAccounts({

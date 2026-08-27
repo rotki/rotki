@@ -48,8 +48,7 @@ describe('settings/hide-small-balances-form', () => {
       });
     });
 
-    // Absence is how the setting expresses "do not hide", so the key has to go rather than be zeroed.
-    it('should drop only this source when hiding is off', () => {
+    it('should drop only this source when hiding is off, absence being how that is expressed', () => {
       const thresholds = toThresholds(
         { applyToAllBalances: false, hide: false, hideBelow: '5' },
         BalanceSource.BLOCKCHAIN,

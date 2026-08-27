@@ -5,7 +5,6 @@ import { ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import { type Filters, SnapshotBalanceFilterKeys, SnapshotCategories } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 import { type IndexedBalanceSnapshot, useSnapshotBalanceRows } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-rows';
 
-// Drive spam/ignored from per-test lists rather than resolving real asset info.
 let spamIds: string[] = [];
 let ignoredIds: string[] = [];
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', () => ({
@@ -15,7 +14,6 @@ vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', 
   }),
 }));
 
-// The haystack reads symbol/name off the asset info; the identifier is enough to match on here.
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   useAssetInfoRetrieval: (): { getAssetField: (id: string, field: string) => string } => ({
     getAssetField: (id: string): string => id,
@@ -60,8 +58,6 @@ describe('useSnapshotBalanceRows', () => {
     ignoredIds = [];
   });
 
-  // Spam, ignored and zero-value rows are hidden unless a pill says otherwise, so an empty bag has
-  // to mean what the three ticked checkboxes this replaces meant.
   it('should hide spam, ignored and zero-value rows when no pill is set', () => {
     ignoredIds = ['DAI'];
     expect(identifiersFor({})).toStrictEqual(['ETH', '_nft_0xabc_1']);
@@ -88,8 +84,7 @@ describe('useSnapshotBalanceRows', () => {
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.CATEGORY]: SnapshotCategories.LIABILITY })).toStrictEqual(['DAI']);
   });
 
-  // An nft is an asset by category, so the two have to be told apart by the identifier.
-  it('should tell nfts apart from plain assets', () => {
+  it('should tell nfts apart from plain assets by the identifier, sharing a category with them', () => {
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.CATEGORY]: SnapshotCategories.NFT })).toStrictEqual(['_nft_0xabc_1']);
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.CATEGORY]: SnapshotCategories.ASSET })).toStrictEqual(['ETH']);
   });
@@ -98,8 +93,7 @@ describe('useSnapshotBalanceRows', () => {
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.SEARCH]: 'eth' })).toStrictEqual(['ETH']);
   });
 
-  // A value the bar cannot have produced, which a hand-written url can.
-  it('should ignore a category it does not know', () => {
+  it('should ignore a category it does not know, which only a hand-written url can carry', () => {
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.CATEGORY]: 'nonsense' })).toHaveLength(3);
   });
 
@@ -110,8 +104,7 @@ describe('useSnapshotBalanceRows', () => {
     expect(get(hiddenCount)).toBe(3);
   });
 
-  // While isolating, the point is what is shown, not what is hidden, and the pill already says so.
-  it('should suppress the hidden count while isolating zero-value rows', () => {
+  it('should suppress the hidden count while isolating zero-value rows, the pill already saying so', () => {
     const { hiddenCount } = useSnapshotBalanceRows(rows, {
       [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ONLY,
     });

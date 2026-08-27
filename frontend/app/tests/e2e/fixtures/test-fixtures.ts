@@ -142,12 +142,10 @@ export async function createLoggedInContext(
 
   suiteHadFailure = false;
 
-  // Create shared browser context and page
   const recordVideoDir = videoRecordingDir();
   const sharedContext = await browser.newContext(recordVideoDir ? { recordVideo: { dir: recordVideoDir } } : {});
   const sharedPage = await sharedContext.newPage();
 
-  // Start coverage collection if enabled
   if (isCoverageEnabled()) {
     await startCoverage(sharedPage);
   }
@@ -210,10 +208,8 @@ export async function cleanupContext(ctx: SharedTestContext | undefined): Promis
 
   const { sharedContext, sharedPage } = ctx;
 
-  // Save mock RPC cassette if in record mode
   await saveMockRpcCassette();
 
-  // Stop coverage collection if enabled
   if (isCoverageEnabled() && sharedPage) {
     await stopCoverage(sharedPage);
   }

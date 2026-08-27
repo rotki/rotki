@@ -9,6 +9,7 @@ import { getOr, map as mapResult, type Result } from 'plainfp/result';
 import { HistoricPrices } from '@/modules/assets/prices/price-types';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
+import { SECONDS_PER_HOUR } from '@/modules/core/common/constraints';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
@@ -34,6 +35,12 @@ interface UseHistoricPriceCacheReturn {
 
 /**
  * Monotonic batch counter behind the activity id of each batched historic-price fetch.
+ *
+ * @remarks
+ * `createItemCache` debounces keys into batches and can have several in flight at once, so each
+ * needs an id of its own: a shared one would let `submitTask` dedup two different key sets onto
+ * one promise and resolve a batch with the other's prices.
+ *
  * Module-scoped on purpose: the composable is shared and can be disposed/re-created while a batch
  * is still in flight, and a per-instance counter would restart and collide with that batch's id.
  */
@@ -67,16 +74,9 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
       2,
     );
 
-    // One native PRICES activity per *batch*. `createItemCache` debounces keys into batches and
-    // can have several in flight at once, so the id carries a monotonic sequence: a shared id
-    // would let `submitTask` dedup two different key sets onto one promise and resolve a batch
-    // with the other's prices. It sits under the `prices:historic` prefix so the currency-change
-    // and premium cancels reach it alongside the per-lookup activities.
     const outcome = await submitTask<HistoricPrices>({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, ActivityPart.BATCH, ++batchSequence),
       kind: ActivityKind.PRICES,
-      // The result is consumed by the cache through the closure below; a re-run from the task
-      // center would refetch with nothing left to write it into.
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<HistoricPrices, TaskError>> => mapResult(
         await runTask<HistoricPrices>(
@@ -139,40 +139,52 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
     return computed<BigNumber>(() => getHistoricPrice(fromAsset, timestamp));
   }
 
+  /**
+   * Drops the cached prices an edited item invalidates, itself and its neighbours within the hour.
+   *
+   * @remarks
+   * A price is cached against the exact timestamp it was asked for, but callers ask for whatever
+   * timestamp their event carries. Editing one price therefore has to clear the near-misses too,
+   * or a lookup a few minutes either side keeps answering with the old figure.
+   */
   function resetHistoricalPricesData(items: { fromAsset: string; timestamp: number }[]): void {
-    const oneHourInMs = 60 * 60;
     const keysToBeDeleted = new Set<string>();
     const cacheKeys = Object.keys(get(cache));
     const unknownKeys = unknown.keys();
 
-    items.forEach((item) => {
-      const targetTime = item.timestamp;
-      const fromAsset = item.fromAsset;
-      const lowerBound = targetTime - oneHourInMs;
-      const upperBound = targetTime + oneHourInMs;
+    const isWithinAnHour = (cacheKey: string, fromAsset: string, targetTime: number): boolean => {
+      const [cacheAsset, cacheTimestamp] = cacheKey.split('#');
+      const cacheTime = parseInt(cacheTimestamp, 10);
 
-      // Do deletion for (timestamp - 1 hour) and (timestamp + 1 hour)
-      [...cacheKeys, ...unknownKeys].forEach((cacheKey) => {
-        const [cacheAsset, cacheTimestamp] = cacheKey.split('#');
-        const cacheTime = parseInt(cacheTimestamp, 10);
+      return cacheAsset === fromAsset && Math.abs(cacheTime - targetTime) <= SECONDS_PER_HOUR;
+    };
 
-        if (cacheAsset === fromAsset && cacheTime >= lowerBound && cacheTime <= upperBound)
-          keysToBeDeleted.add(cacheKey);
-      });
+    items.forEach(({ fromAsset, timestamp }) => {
+      [...cacheKeys, ...unknownKeys]
+        .filter(cacheKey => isWithinAnHour(cacheKey, fromAsset, timestamp))
+        .forEach(cacheKey => keysToBeDeleted.add(cacheKey));
     });
 
     deleteCacheKeys([...keysToBeDeleted]);
   }
 
-  watch(currencySymbol, () => {
-    // Prices are quoted in the old currency, so drop everything in flight. Every producer gives
-    // each query (or batch) its own id, so cancelling by activity prefix covers all of them.
+  /**
+   * Drops every cached and in-flight historic price after a currency change.
+   *
+   * @remarks
+   * Everything already fetched or still in flight is quoted in the old currency, so none of it
+   * can be reused. Cancelling by prefix rather than by id is what reaches all of it: each query
+   * and each batch carries an id of its own.
+   */
+  function discardPricesInOldCurrency(): void {
     cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
     cancelByPrefix(ActivityKind.PRICES, ActivityPart.DAILY);
     set(failedDailyPrices, {});
     set(resolvedFailedDailyPrices, {});
     reset();
-  });
+  }
+
+  watch(currencySymbol, discardPricesInOldCurrency);
 
   return {
     cache,

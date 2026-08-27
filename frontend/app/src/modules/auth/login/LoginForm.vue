@@ -16,7 +16,7 @@ import { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const {
@@ -91,8 +91,7 @@ const {
 } = useForm<LoginFormState, LoginFormState>({
   initial: (): LoginFormState => ({ customBackendUrl: '', password: '', username: '' }),
   schema,
-  // The screen above owns the attempt; this form only reports the credentials through its emit.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (current): LoginFormState => ({ ...current }),
 });
 
@@ -155,20 +154,29 @@ function abortLogin() {
 }
 
 watch(() => [state.username, state.password], ([username, password], [oldUsername, oldPassword]) => {
-  // touched should not be emitted when restoring from local storage
-  if (!oldUsername && username === get(storedUsername))
+  const restoredFromLocalStorage = !oldUsername && username === get(storedUsername);
+  if (restoredFromLocalStorage)
     return;
 
   if (username !== oldUsername || password !== oldPassword)
     touched();
 });
 
-// The url is owned by the backend panel's composable; the form carries a copy so it can be validated
-// alongside the credentials. Touch is deliberately not part of the immediate run: an untouched empty
-// url must stay silent until the user has actually been in the field.
-watchImmediate(customBackendUrl, (url) => {
+/**
+ * Copies the url the backend panel's composable owns into the form state, so it is validated
+ * alongside the credentials.
+ *
+ * @remarks
+ * Touch is deliberately left out of this: an untouched empty url has to stay silent until the user
+ * has actually been in the field.
+ *
+ * @param url - the url the panel currently holds
+ */
+function mirrorBackendUrl(url: string): void {
   state.customBackendUrl = url;
-});
+}
+
+watchImmediate(customBackendUrl, mirrorBackendUrl);
 
 watch(customBackendUrl, () => {
   touch('customBackendUrl');

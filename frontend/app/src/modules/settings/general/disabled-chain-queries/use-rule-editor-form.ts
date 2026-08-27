@@ -98,8 +98,6 @@ function filterAddressOption(item: AddressOption, query: string): boolean {
 export function useRuleEditorForm(options: UseRuleEditorFormOptions): UseRuleEditorFormReturn {
   const { accounts, chains, editing, resolveName } = options;
 
-  // These refs are the form model, bound via v-model from the dialog template.
-  // The `model` prefix marks them as writable by the consumer.
   const modelKind = shallowRef<RuleKind>('chain');
   const modelChainId = shallowRef<string>();
   const modelAddress = shallowRef<string>();

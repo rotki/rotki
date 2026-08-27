@@ -151,7 +151,7 @@ install), so the CI column names the step rather than a whole job:
 
 | Command | 16-core workstation, warm cache | CI (`ubuntu-latest`, 4 cores) |
 |---------|---------------------------------|-----------------------------------------------|
-| `pnpm run lint` | 54s (multithreaded; 159s before `--concurrency=4`) | ESLint step: 110-154s (208-226s before `--concurrency=4`) |
+| `pnpm run lint` | 54s at `--concurrency=4`; 159s single-threaded | ESLint step: 110-154s at `--concurrency=4`; 208-226s single-threaded |
 | `pnpm run typecheck` | 56s | Typecheck step: 59-86s |
 | `pnpm run build` | | Build step (`build:app`): 12-17s |
 | `pnpm run test:unit` (full) | 114s | "Frontend unit tests / vitest" job: 483-519s |
@@ -277,18 +277,39 @@ Syntax is linted (`tsdoc/syntax` plus four `jsdoc` rules, over `.ts` and `.vue`)
 `{Type}` annotations, `@return`, and a `@param` naming a parameter that no longer exists all surface
 on their own. What lint cannot judge:
 
+- **A `//` that explains code is a defect in the code.** If a line needs prose to be understood, the
+  code lacks clarity or intent. Give the value a name, extract and document a function, or let a test
+  state the behaviour. A `//` is the last resort, not the first tool, and should be rare.
+- **Ranked outcomes for a fact worth keeping**, best first:
+  1. **Enforce it** — a lint rule, a type, a guard in the shared test setup. It then fires on the
+     offending line, whereas a comment sits in a file the offender may never open.
+  2. **Encode it** — a named constant, a named boolean, a predicate, an extracted function, or a
+     sharper assertion. The name is read every time; a comment beside it is read once.
+  3. **Document it** on the enclosing declaration as TSDoc.
+  4. **Fold it into the `it()` title**, for a spec.
+  5. **Delete it.**
+
+  "Shorten it to one line" is not on the list. Trimming a comment to clear a lint threshold changes
+  nothing about why it was there.
+- **Name the fact, not an inference.** `const isWebBuild = !directory` re-derives by a second route
+  something an existing flag already states; use that flag. Two paths to one fact drift apart.
+- **A comment stranded mid-function has no declaration to attach to**, which is the tell that the
+  block wants extracting. This is sharpest in a watcher: if the body needs explaining, lift it into a
+  named, documented function and pass that to `watch`.
 - **A comment states the rule and the trap, not the history.** The reproduction trace, the measured
   counts, and what the code replaced belong in the PR body — they are read once, at review, while a
   comment is read every time the code is, and nothing fails when the narrative stops being true.
-- **Prefer enforcement over description.** If breaking the rule breaks something, write the test or
-  the `no-restricted-syntax` rule; a rule's `message` fires on the offending line, whereas a comment
-  sits in a file the offender may never open. Reach for a comment when neither fits.
 - **Tag a parameter only when its name and type do not already say it.** Nothing requires `@param`,
   and `@param chain - the chain` is worse than nothing. Tag units (`seconds`, not milliseconds),
   sentinels (`-1` means indeterminate), what an empty or absent value does, and what a parameter is
   *for*. Never tag a `void` return.
+- **`@param` is all or nothing.** `jsdoc/check-param-names` errors on a partial list, so tagging one
+  parameter of three fails lint. Tag every parameter or none; when only one needs a word, say it in
+  prose inside `@remarks`.
 - **Shape**: summary line, then `@remarks` for the mechanism, then `@param name - description`, then
   `@returns`. A `/** */` block holding a bare paragraph is a block comment, not TSDoc.
+- **Duplicated comments belong on the thing they describe.** The same note at five call sites is one
+  fact missing from the shared helper's TSDoc.
 
 #### Vue.js and TypeScript Conventions
 - Use VueUse utilities for reactive state management
@@ -571,18 +592,21 @@ obstacle to the extraction that should have happened first. `accounts/management
 is the standing example of the cost, with 317 script lines now held in place by a spec.
 
 **Name the seam, then test only that.** Before writing assertions, decide what this component
-promises its parent, and put it in a comment at the top of the spec. In practice the seam is some
-combination of:
+promises its parent. In practice the seam is some combination of:
 - what it **renders** for a given set of props (`data-testid` queries, not classes or child
   internals),
 - what it **emits**, and with what payload (`wrapper.emitted('update:modelValue')`),
 - what it **calls** on an injected composable or store, and
 - what it **disables or enables**, which for a form is usually the real validity contract.
 
-`modules/auth/login/LoginForm.spec.ts` is a good model: it states the seam in a header comment,
-types its mocks off the real composables (`ReturnType<typeof useSavedProfiles>`) so a drift in a
-dependency fails the typecheck instead of silently passing a test, and explains which binding the
-tests exist to catch.
+**The seam belongs in the `describe` and `it` titles, not in a header comment.** A spec that opens
+with a paragraph explaining its own contract has put the contract somewhere nothing checks: the
+titles are what a failure prints and what a reader scans. If a promise is worth stating, it is worth
+a test named after it.
+
+`modules/auth/login/LoginForm.spec.ts` is a good model: it types its mocks off the real composables
+(`ReturnType<typeof useSavedProfiles>`) so a drift in a dependency fails the typecheck instead of
+silently passing a test, and names which binding each test exists to catch.
 
 **Do not assert implementation detail.** No reaching into `wrapper.vm` for internal refs, no
 asserting the class list of a child component. Those tests break on every refactor and catch nothing.
@@ -592,10 +616,16 @@ because v8 counts template lines, so it moves the coverage number while proving 
 assertion is that the component rendered, either write a real assertion or skip the file. Pure
 presentational wrappers with no logic are legitimately not worth testing.
 
-**Unmount what you mount.** A spec that leaves wrappers alive leaks reactive instances. Where the
-module under test holds a shared module-level `ref`, leaked components keep reacting to it and their
-effects run during *later* tests, surfacing as calls on a mock the failing test never touched. Track
-the wrappers and unmount them in `afterEach`; ~148 specs already do.
+**Teardown is automatic; do not hand-roll it.** Every wrapper `mount` and `shallowMount` create is
+unmounted after each test by the shared setup. A spec needs no `afterEach` of its own for this, and
+adding one buys nothing.
+
+A leaked wrapper keeps reacting to module-level state, so its effects run during a *later* test and
+surface as calls on a mock that test never touched. That failure names the wrong test, which is why
+it is enforced in one place instead of left to each spec to remember.
+
+Anything you mount by other means, such as a manual `createApp` or a component a helper mounts
+without returning it, is still yours to clean up.
 
 **Mocking notes.**
 - A component rendered inside `RuiDialog` (or any teleporting overlay) is not inside the wrapper.

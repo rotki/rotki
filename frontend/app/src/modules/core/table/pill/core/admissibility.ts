@@ -1,5 +1,16 @@
 import type { FieldDef, FilterState } from '@/modules/core/table/pill/core/types';
 
+/**
+ * Reports whether a field's option list has yet to load, rather than admitting nothing.
+ *
+ * @remarks
+ * The option lists are store-backed, so an empty `admits` result is "not known yet" and must leave
+ * the user's picks alone.
+ */
+function optionsNotLoadedYet(allowed: readonly string[]): boolean {
+  return allowed.length === 0;
+}
+
 /** Every active filter's values, keyed by field, as a field's `admits` reads them. */
 function valuesByField(state: FilterState): Record<string, readonly string[]> {
   return Object.fromEntries(state.map(filter => [filter.fieldKey, filter.values]));
@@ -28,9 +39,7 @@ export function pruneInadmissible(state: FilterState, fields: readonly FieldDef[
       return [filter];
 
     const allowed = admits(values);
-    // An empty list is "not known yet", not "nothing is allowed": the option lists are store-backed
-    // and a mapping that has not loaded must not wipe what the user picked.
-    if (allowed.length === 0)
+    if (optionsNotLoadedYet(allowed))
       return [filter];
 
     const kept = filter.values.filter(value => allowed.includes(value));

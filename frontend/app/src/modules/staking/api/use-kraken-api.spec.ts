@@ -99,8 +99,6 @@ describe('composables/api/staking/kraken', () => {
       expect(result.entriesFound).toBe(10);
       expect(result.entriesTotal).toBe(50);
       expect(result.received).toHaveLength(2);
-      // The endpoint sends `value`; a length check alone passed while the schema defaulted a
-      // missing one to zero, which is how the fixture kept the pre-1.42 `usd_value` name.
       expect(result.received[0].value.toString()).toBe('3000');
       expect(result.totalValue).toBeInstanceOf(BigNumber);
       expect(result.totalValue.toString()).toBe('3500');

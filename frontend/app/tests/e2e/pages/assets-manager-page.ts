@@ -210,7 +210,6 @@ export class AssetsManagerPage {
   }
 
   async addAnEvmAsset(address: string, uniqueId: string): Promise<void> {
-    // Open the add asset dialog
     await this.showAddAssetModal();
 
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
@@ -231,15 +230,12 @@ export class AssetsManagerPage {
     await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
     await menuContent.locator('button[type="button"]').first().click();
 
-    // Select a token type
     await tokenInput.click();
     await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
     await menuContent.locator('button[type="button"]').first().click();
 
-    // Enter address
     await addressInput.fill(address);
 
-    // Enter name with unique ID
     await nameInput.clear();
     await nameInput.fill(`ASSET NAME ${uniqueId}`);
 
@@ -261,13 +257,11 @@ export class AssetsManagerPage {
     await this.page.locator('button', { hasText: 'Refresh' }).first().click();
     await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
 
-    // Search the asset
     await this.searchAssetByAddress(address);
     await expect(this.page.locator('[data-testid=managed-assets-table] [data-testid=list-title]')).toContainText(symbol);
   }
 
   async addOtherAsset(uniqueId: string): Promise<void> {
-    // Open the add asset dialog
     await this.showAddAssetModal();
 
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
@@ -297,7 +291,6 @@ export class AssetsManagerPage {
     await this.page.locator('button', { hasText: 'Refresh' }).first().click();
     await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
 
-    // Search the asset
     await this.searchAsset(symbol);
     await expect(this.page.locator('[data-testid=managed-assets-table] [data-testid=list-title]')).toContainText(symbol);
   }

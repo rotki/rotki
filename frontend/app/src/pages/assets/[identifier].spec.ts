@@ -32,8 +32,6 @@ const detailState = vi.hoisted((): DetailState => ({
   premium: false,
 }));
 
-// `@/modules/premium/premium` reaches the real router through `main.ts`, which blows up under
-// vitest. The component itself is stubbed below; this only keeps the import graph out.
 vi.mock('@/modules/premium/premium', async () => {
   const { defineComponent } = await import('vue');
   return {

@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { neverSettles } from '@test/utils/never-settles';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -64,7 +65,7 @@ describe('account-balances', () => {
     orchestrator.submit({
       id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH),
       kind: ActivityKind.BLOCKCHAIN_BALANCES,
-      run: async (): Promise<never> => new Promise(() => {}),
+      run: async (): Promise<never> => neverSettles(),
       title: 'eth',
     });
 

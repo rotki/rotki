@@ -157,8 +157,6 @@ describe('useEventPriceConversion', () => {
     await flushPromises();
     expect(get(result.modelAssetToFiatPrice)).toBe('2500');
 
-    // A form that resets after a save clears its asset; the price of the previous one must not
-    // stay on screen.
     set(asset, undefined);
     await flushPromises();
 

@@ -11,7 +11,7 @@ import HistoryEventTypeLocationBadge from '@/modules/history/events/HistoryEvent
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
-const { event, groupLocationLabel, icon, label, highlight, hideStateChips, matchedMovement } = defineProps<{
+const { event, groupLocationLabel, icon, label, highlight, hideStateChips, linkedLeg } = defineProps<{
   event: HistoryEventEntry;
   groupLocationLabel?: string;
   icon?: RuiIcons;
@@ -21,7 +21,7 @@ const { event, groupLocationLabel, icon, label, highlight, hideStateChips, match
   highlight?: boolean;
   hideStateChips?: boolean;
   /** Set when the event is rendered inside an expanded linked (matched) movement. */
-  matchedMovement?: boolean;
+  linkedLeg?: boolean;
 }>();
 
 const { getEventTypeData } = useHistoryEventMappings();
@@ -44,30 +44,41 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(event.location));
 
 const hasCounterpartyBadge = computed<boolean>(() => !!get(counterparty) || !!get(address));
 
-// The exchange-side leg of a linked movement: the asset movement at the exchange location.
 const isExchangeMovementLeg = computed<boolean>(() =>
-  !!matchedMovement
+  !!linkedLeg
   && get(isExchangeLocation)
   && event.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
 );
 
 // The on-chain leg of a linked movement: the transfer that happened on a blockchain.
-const isOnChainLeg = computed<boolean>(() => !!matchedMovement && !get(isExchangeLocation));
+const isOnChainLeg = computed<boolean>(() => !!linkedLeg && !get(isExchangeLocation));
 
-// The legs of a linked subgroup come from different transactions (on different chains
-// for bridges), so surface each leg's own transaction hash as an explorer link.
+/**
+ * Resolves the transaction hash to link from this leg of a linked movement.
+ *
+ * @remarks
+ * The legs of a linked subgroup come from different transactions (on different chains for
+ * bridges), so each leg surfaces its own hash as an explorer link.
+ */
 const legTxRef = computed<string | undefined>(() => {
-  if (!matchedMovement || !('txRef' in event) || !event.txRef)
+  if (!linkedLeg || !('txRef' in event) || !event.txRef)
     return undefined;
   return event.txRef;
 });
 
-// Surface a location icon on each leg: the exchange icon on the exchange-side asset movement,
-// and the chain icon on the on-chain leg.
+/**
+ * Whether to show a location icon: the exchange icon on the exchange-side asset movement, and the
+ * chain icon on the on-chain leg.
+ */
 const showLocationBadge = computed<boolean>(() => get(isExchangeMovementLeg) || get(isOnChainLeg));
 
-// The on-chain leg carries a synthetic counterparty pointing at the exchange. Suppress it so
-// the chain icon shows on that leg instead.
+/**
+ * Whether to show the counterparty badge.
+ *
+ * @remarks
+ * The on-chain leg carries a synthetic counterparty pointing at the exchange, so it is suppressed
+ * there and the chain icon shows on that leg instead.
+ */
 const showCounterpartyBadge = computed<boolean>(() =>
   get(hasCounterpartyBadge) && !get(isOnChainLeg),
 );

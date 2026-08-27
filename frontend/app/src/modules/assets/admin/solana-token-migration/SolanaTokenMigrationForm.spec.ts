@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,18 +14,15 @@ const SolanaTokenMigrationForm = (
   await import('@/modules/assets/admin/solana-token-migration/SolanaTokenMigrationForm.vue')
 ).default;
 
-/** Real mint addresses, since the address rule runs the base58 check on them. */
-const VALID_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const OTHER_ADDRESS = 'So11111111111111111111111111111111111111112';
+const VALID_BASE58_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const OTHER_BASE58_MINT = 'So11111111111111111111111111111111111111112';
+const MOUNT_SETTLE_MS = 600;
 
 interface MigrationData {
   address: string;
   decimals: number | null;
   tokenKind: string;
 }
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -40,7 +37,7 @@ describe('solanaTokenMigrationForm', () => {
   let wrapper: VueWrapper<InstanceType<typeof SolanaTokenMigrationForm>>;
 
   const baseModel = (): MigrationData => ({
-    address: VALID_ADDRESS,
+    address: VALID_BASE58_MINT,
     decimals: 6,
     tokenKind: 'spl-token',
   });
@@ -71,7 +68,6 @@ describe('solanaTokenMigrationForm', () => {
     });
   }
 
-  /** The test ids sit on the wrapping cell, which is what the e2e page object addresses too. */
   function field(testId: string): VueWrapper<StubInstance> {
     return wrapper.find(`[data-testid=${testId}]`).findComponent<StubInstance>('*');
   }
@@ -107,7 +103,6 @@ describe('solanaTokenMigrationForm', () => {
     wrapper = createWrapper({ ...baseModel(), decimals: 0 });
     await vi.advanceTimersToNextTimerAsync();
 
-    // Zero is a value like any other here, which is what vuelidate's required reported too.
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
@@ -138,8 +133,6 @@ describe('solanaTokenMigrationForm', () => {
     expect(messages('token-kind-select')).toEqual([]);
   });
 
-  // The three messages below replace vuelidate's untranslated "Value is required", which is what
-  // every one of these rules reported before the swap.
   it('should report each missing value under its own message', async () => {
     wrapper = createWrapper({ address: '', decimals: null, tokenKind: '' });
     await vi.advanceTimersToNextTimerAsync();
@@ -158,8 +151,6 @@ describe('solanaTokenMigrationForm', () => {
     ]);
   });
 
-  // Before the swap the base58 rule was a bare function, which vuelidate defaults to an empty
-  // message, so a malformed address turned the field red and said nothing.
   it('should say what is wrong with a malformed address', async () => {
     wrapper = createWrapper({ ...baseModel(), address: 'not-a-solana-address' });
     await vi.advanceTimersToNextTimerAsync();
@@ -197,9 +188,9 @@ describe('solanaTokenMigrationForm', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    await edit('address-input', OTHER_ADDRESS);
+    await edit('address-input', OTHER_BASE58_MINT);
 
-    expect(lastModel().address).toBe(OTHER_ADDRESS);
+    expect(lastModel().address).toBe(OTHER_BASE58_MINT);
   });
 
   it('should drop a server error for the field being typed into', async () => {
@@ -210,7 +201,7 @@ describe('solanaTokenMigrationForm', () => {
     wrapper = createWrapper(baseModel(), { errorMessages });
     await vi.advanceTimersToNextTimerAsync();
 
-    await edit('address-input', OTHER_ADDRESS);
+    await edit('address-input', OTHER_BASE58_MINT);
 
     const updates = wrapper.emitted<[ValidationErrors]>('update:errorMessages');
     assert(updates);
@@ -219,10 +210,9 @@ describe('solanaTokenMigrationForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await vi.advanceTimersByTimeAsync(MOUNT_SETTLE_MS);
 
-    await edit('address-input', OTHER_ADDRESS);
+    await edit('address-input', OTHER_BASE58_MINT);
 
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toEqual([true]);
   });

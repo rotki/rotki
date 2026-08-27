@@ -30,8 +30,6 @@ const hasInProgress = computed<boolean>(() => get(inProgressDecoding).length > 0
 const completedCount = computed<number>(() => get(completedDecoding).length);
 const hasCompleted = computed<boolean>(() => !!get(completedCount));
 
-// Cancelled decoding lands in this group as well, and "decoded" would be a claim about work that
-// did not happen.
 const completedLabel = computed<string>(() => {
   const count = get(completedCount);
   return get(hasCancelledItems)

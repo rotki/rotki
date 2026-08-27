@@ -252,7 +252,6 @@ describe('forms/SwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    // Edit the fee amount in SimpleFeeEntry (existing fee from data)
     const feeAmountInputs = wrapper.findAll('[data-testid=fee-amount] input');
     expect(feeAmountInputs.length).toBeGreaterThan(0);
     await feeAmountInputs[0].setValue('2');
@@ -398,8 +397,6 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should keep the seeded fees when the dialog is pointed at a group that has them', async () => {
-    // The dialog reuses the form by swapping `data`, so enabling the fee through seeding must not
-    // trip the has-fee watcher into replacing the rows that were just loaded.
     wrapper = createWrapper({
       props: { data: { eventsInGroup: data.eventsInGroup.slice(0, 2), type: 'edit-group' } },
     });
@@ -408,7 +405,6 @@ describe('forms/SwapEventForm', () => {
     await wrapper.setProps({ data });
     await vi.advanceTimersToNextTimerAsync();
 
-    // A blank value here means the watcher replaced the loaded row with an empty one.
     const feeAmount = wrapper.findAll<HTMLInputElement>('[data-testid=fee-amount] input');
     expect(feeAmount).toHaveLength(1);
     expect(feeAmount[0].element.value).toBe('1');
@@ -436,7 +432,6 @@ describe('forms/SwapEventForm', () => {
     await spendAssetField.setValue('ETH');
     await receiveAmountField.setValue('0.05');
     await receiveAssetField.setValue('BTC');
-    // Note: uniqueId field is left empty
 
     await vi.advanceTimersToNextTimerAsync();
 

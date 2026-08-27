@@ -4,11 +4,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MAX_PARALLEL_ASSET_BATCHES } from '@/modules/assets/use-asset-select-info';
 
-// Note: This test suite tests the useAssetSelectInfo composable which uses createSharedComposable.
-// Due to the shared nature of the composable (state persists across all instances),
-// some tests may exhibit behavior influenced by previous test runs.
-// The composable is designed to share cached data efficiently in production.
-
 /** Comfortably past the composable's 200ms batch debounce, so a queued batch has been sent. */
 const PAST_DEBOUNCE_MS = 300;
 
@@ -19,6 +14,7 @@ describe('useAssetSelectInfo', () => {
   let scope: EffectScope;
 
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
     vi.useFakeTimers();
 
@@ -188,8 +184,6 @@ describe('useAssetSelectInfo', () => {
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
       assetSelectInfo.prefetchAssetInfo(Array.from({ length: 120 }, (_, index) => `PARALLEL_${index}`));
 
-      // Every batch is started before any of them is allowed to resolve, so the peak is the number
-      // of batches only if they were sent together.
       await vi.advanceTimersByTimeAsync(PAST_DEBOUNCE_MS);
       expect(peakInFlight).toBe(3);
 
@@ -245,7 +239,6 @@ describe('useAssetSelectInfo', () => {
       });
 
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
-      // A computed standing in for the table: it re-reads whenever the cache ref is replaced.
       const info = scope.run(() => assetSelectInfo.useAssetInfo('FAILING_ONE'))!;
       expect(get(info)).toBeNull();
 
@@ -254,9 +247,6 @@ describe('useAssetSelectInfo', () => {
       const afterFirstAttempt = assetMapping.mock.calls.length;
       expect(afterFirstAttempt).toBe(1);
 
-      // A failed batch must not replace the cache ref: that wakes every reader, which re-queues the
-      // same identifiers, which fails again, at the debounce interval, for as long as the table is
-      // on screen.
       get(info);
       await vi.advanceTimersByTimeAsync(SEVERAL_DEBOUNCES_MS);
       await flushPromises();

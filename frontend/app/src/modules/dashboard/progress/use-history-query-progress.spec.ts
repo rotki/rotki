@@ -86,9 +86,7 @@ describe('useHistoryQueryProgress', () => {
     expect(value?.percentage).toBe(50);
   });
 
-  // The backend skips the decode messages when the query came back empty, so requiring them kept
-  // this indicator spinning over addresses the sync panel already showed as complete.
-  it('should treat bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED', () => {
+  it('should treat bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED, since an empty query skips the decode messages', () => {
     setTxStatuses({
       a: bitcoinTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
       b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
@@ -135,8 +133,6 @@ describe('useHistoryQueryProgress', () => {
   });
 
   it('should count failed transactions as finished and skip them as active', () => {
-    // A failed address is done, not still querying. Counting it active pinned the indicator on
-    // "Query failed" and kept it short of 100% for the rest of the session.
     setTxStatuses({
       a: evmTx(TransactionsQueryStatus.FAILED, '0x1'),
       b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x2'),

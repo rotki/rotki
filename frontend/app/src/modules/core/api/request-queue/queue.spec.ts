@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { neverSettles } from '@test/utils/never-settles';
 import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 import { QueueOverflowError, RequestCancelledError } from './errors';
 import { type QueueFetchFn, RequestQueue } from './queue';
@@ -8,6 +9,8 @@ const ACTIVE_SLOTS = 2;
 const QUEUE_SLOTS = 5;
 const OVERLOAD_THRESHOLD = 3;
 const CAPACITY = ACTIVE_SLOTS + QUEUE_SLOTS;
+const RATE_LIMIT_WINDOW_MS = 1000;
+const PAST_THE_RATE_LIMIT_WINDOW_MS = RATE_LIMIT_WINDOW_MS + 100;
 
 /** How often the queue sweeps for entries that have waited past their `maxQueueTime`. */
 const TIMEOUT_SWEEP_INTERVAL_MS = 5000;
@@ -167,7 +170,7 @@ describe('requestQueue', () => {
         if (url === '/flaky' && started.filter(u => u === '/flaky').length === 1)
           throw new TypeError('network down');
 
-        return new Promise(() => {}); // holds the slot once it does run
+        return neverSettles();
       });
 
       startPromise(retrying.enqueue('/flaky').catch(() => {}));
@@ -196,7 +199,7 @@ describe('requestQueue', () => {
       const started: string[] = [];
       mockFetch.mockImplementation(async (url: string) => {
         started.push(url);
-        return new Promise(() => {}); // never settles, like the hanging lookups
+        return neverSettles();
       });
 
       const capped = new RequestQueue(mockFetchWrapper, {
@@ -224,7 +227,7 @@ describe('requestQueue', () => {
       const started: string[] = [];
       mockFetch.mockImplementation(async (url: string) => {
         started.push(url);
-        return new Promise(() => {});
+        return neverSettles();
       });
 
       const capped = new RequestQueue(mockFetchWrapper, {
@@ -309,7 +312,7 @@ describe('requestQueue', () => {
 
   describe('cancellation', () => {
     it('should cancel requests by tag', async () => {
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       const promise = queue.enqueue('/test', { tags: ['my-tag'] });
 
@@ -321,7 +324,7 @@ describe('requestQueue', () => {
     });
 
     it('should cancel all requests', async () => {
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       const promises = [
         queue.enqueue('/test1'),
@@ -337,13 +340,12 @@ describe('requestQueue', () => {
       }
     });
 
-    // Blocked on the queue exposing a request id; an empty body would report green instead.
-    it.todo('should cancel specific request by id');
+    it.todo('should cancel specific request by id, once the queue exposes one');
   });
 
   describe('overflow handling', () => {
     it('should reject when queue is full with reject strategy', async () => {
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       for (let i = 0; i < CAPACITY; i++) {
         startPromise(queue.enqueue(`/test${i}`));
@@ -355,7 +357,7 @@ describe('requestQueue', () => {
     });
 
     it('should update isOverloaded state', async () => {
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       expect(queue.state.isOverloaded).toBe(false);
 
@@ -387,8 +389,7 @@ describe('requestQueue', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(3);
 
-      // Past the one-second window, so the rate limit has recovered.
-      await vi.advanceTimersByTimeAsync(1100);
+      await vi.advanceTimersByTimeAsync(PAST_THE_RATE_LIMIT_WINDOW_MS);
 
       expect(mockFetch).toHaveBeenCalledTimes(5);
 
@@ -400,7 +401,7 @@ describe('requestQueue', () => {
 
   describe('getMetrics', () => {
     it('should return current queue metrics', async () => {
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       startPromise(queue.enqueue('/test1'));
       startPromise(queue.enqueue('/test2'));
@@ -419,12 +420,10 @@ describe('requestQueue', () => {
   });
 
   describe('deduplication with circular references', () => {
-    it('should handle circular references in body gracefully', async () => {
+    it('should handle circular references in body gracefully, deduping them onto one request via safeStringify shared fallback', async () => {
       const circularObj: Record<string, unknown> = { name: 'test' };
       circularObj.self = circularObj;
 
-      // `safeStringify` answers the same fallback string for anything it cannot serialise, which
-      // is what makes two circular bodies dedupe onto one request.
       const promise1 = queue.enqueue('/test', { dedupe: true, body: circularObj });
       const promise2 = queue.enqueue('/test', { dedupe: true, body: circularObj });
 
@@ -472,7 +471,7 @@ describe('requestQueue', () => {
         maxQueueTime: MAX_QUEUE_TIME_MS,
       });
 
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       startPromise(timeoutQueue.enqueue('/blocking'));
 
@@ -523,7 +522,7 @@ describe('requestQueue', () => {
 
   describe('destroy', () => {
     it('should abort all pending requests without rejecting', async () => {
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       startPromise(queue.enqueue('/test1'));
       startPromise(queue.enqueue('/test2'));
@@ -560,12 +559,11 @@ describe('requestQueue', () => {
         overflowStrategy: 'dropLowest',
       });
 
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       startPromise(dropQueue.enqueue('/active'));
       await vi.advanceTimersByTimeAsync(10);
 
-      // The handler is attached before the drop, or the rejection lands unhandled.
       let dropError: Error | undefined;
       const lowPromise = dropQueue.enqueue('/low', { priority: RequestPriority.LOW })
         .catch((error: Error) => {

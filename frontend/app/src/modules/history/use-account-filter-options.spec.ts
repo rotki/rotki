@@ -2,7 +2,6 @@ import type { LocationLabel } from '@/modules/core/common/location';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountFilterOptions } from '@/modules/history/use-account-filter-options';
 
-// Two chains, one address, so the dedupe has something to fold.
 const NAMED = '0xAbC1230000000000000000000000000000009876';
 const UNNAMED = '0xDeF4560000000000000000000000000000001234';
 const NAMED_SHORT = '0xAbC1...9876';

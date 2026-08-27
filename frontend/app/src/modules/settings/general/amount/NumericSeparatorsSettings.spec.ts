@@ -128,9 +128,7 @@ describe('numericSeparatorsSettings', () => {
     expect(messages(wrapper, 0)).toContain('general_settings.thousand_separator.validation.cannot_be_the_same');
   });
 
-  // Regression: a rejected value stays in the field it was typed into. If that draft is what the
-  // other field is compared against, the pair can be walked into two identical separators.
-  it('should not persist identical separators through a rejected draft', async () => {
+  it('should not persist identical separators through a rejected draft left in the field', async () => {
     const wrapper = createWrapper();
     await input(wrapper, 0, '.');
     expect(writeManyMock).not.toHaveBeenCalled();
@@ -139,9 +137,7 @@ describe('numericSeparatorsSettings', () => {
     expect(get(thousandSource)).not.toBe(get(decimalSource));
   });
 
-  // Two separate writes would each snapshot the whole settings blob before their request and merge
-  // only their own key, so the second would carry the other separator's pre-edit value.
-  it('should persist both separators in a single patch', async () => {
+  it('should persist both separators in a single patch, so neither carries the other\'s pre-edit value', async () => {
     const wrapper = createWrapper();
     await input(wrapper, 0, '.');
     await input(wrapper, 1, ',');

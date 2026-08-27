@@ -89,8 +89,12 @@ async function apiConfigureSubstrateRpcMock(
 }
 
 /**
- * Configures the backend to use the mock RPC server for the specified blockchain.
- * Removes all existing default nodes and adds the mock server as the only node.
+ * Points one blockchain at the mock RPC server, as its only node.
+ *
+ * @remarks
+ * Every default node is removed first, so nothing can fall back to a live one. Reach for this in any
+ * test whose flow makes an on-chain lookup, such as the ERC20 token-detail call behind the add-asset
+ * dialog: public nodes rate-limit under a test run and stall the dialog until it times out.
  */
 export async function apiConfigureRpcMock(
   request: APIRequestContext,
@@ -103,7 +107,6 @@ export async function apiConfigureRpcMock(
 
   const nodesUrl = `${backendUrl}/api/1/blockchains/${blockchain}/nodes`;
 
-  // Get all existing nodes
   const getResponse = await request.get(nodesUrl, { failOnStatusCode: false });
   if (!getResponse.ok())
     return;
@@ -111,7 +114,6 @@ export async function apiConfigureRpcMock(
   const body = await getResponse.json();
   const nodes: RpcNode[] = body.result ?? [];
 
-  // Delete all existing nodes
   for (const node of nodes) {
     if (node.identifier) {
       await request.delete(nodesUrl, {

@@ -101,9 +101,7 @@ describe('rangeValueEditor', () => {
     ]);
   });
 
-  // Closing commits rather than cancels, so a range typed and then dismissed by clicking away is
-  // not lost to the pending debounce.
-  it('should commit a pending range when the editor closes', async () => {
+  it('should commit a pending range when the editor closes, rather than losing what was typed to the pending debounce', async () => {
     const wrapper = createWrapper({ fieldKey: 'amount', op: 'between', values: [] });
 
     await wrapper.find('[data-testid=range-min] input').setValue('100');

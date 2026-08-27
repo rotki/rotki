@@ -217,23 +217,19 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     const timedOut = Symbol('timed-out');
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<typeof timedOut>((resolve) => {
-      // Cleared in the finally block below, so it never outlives this call.
-      // eslint-disable-next-line @rotki/composable-require-cleanup
+      // eslint-disable-next-line @rotki/composable-require-cleanup -- cleared in the finally block below, so it never outlives this call
       timer = setTimeout(resolve, ERC20_DETAILS_TIMEOUT_MS, timedOut);
     });
 
-    let details: ERC20Token = {};
-    const task: Promise<TaskOutcome> = submitTask({
+    const task: Promise<TaskOutcome<ERC20Token>> = submitTask<ERC20Token>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address),
       kind: ActivityKind.ASSETS,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+      run: async ({ runTask }): Promise<Result<ERC20Token, TaskError>> => mapResult(
         await runTask<ERC20Token>(
           async () => erc20details(payload),
         ),
-        (result) => {
-          details = result;
-        },
+        result => result,
       ),
       subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.ERC20, { address: payload.address, chain: payload.evmChain }),
       title: t('task_center.group.assets'),
@@ -242,8 +238,6 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     try {
       const outcome = await Promise.race([task, timeout]);
 
-      // The lookup can stall when no RPC node answers (e.g. rate limiting). Bail out
-      // instead of leaving the caller awaiting indefinitely, and cancel the backend task.
       if (outcome === timedOut) {
         cancelActivity(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address);
         notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.timeout'));
@@ -251,7 +245,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       }
 
       if (!isErr(outcome)) {
-        return details;
+        return outcome.value;
       }
       else if (isActionable(outcome.error)) {
         notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {

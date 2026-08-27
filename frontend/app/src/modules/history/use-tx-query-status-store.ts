@@ -69,8 +69,6 @@ function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQ
  * cost of reading complete for the moment between the two.
  */
 export function isTxQueryStatusFinished(item: TxQueryStatusData): boolean {
-  // Failed and cancelled are both terminal: no further progress is coming for that address, so a
-  // run holding one must still be able to settle.
   if (item.status === TransactionsQueryStatus.CANCELLED || item.status === TransactionsQueryStatus.FAILED)
     return true;
 
@@ -275,7 +273,6 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
 
     set(queryStatus, {
       ...get(queryStatus),
-      // Bitcoin entries carry no period; every other subtype does.
       [key]: subtype === 'bitcoin'
         ? { ...base, subtype }
         : { ...base, originalPeriodEnd: now, period, subtype },

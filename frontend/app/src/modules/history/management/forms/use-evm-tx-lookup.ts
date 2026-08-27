@@ -36,9 +36,13 @@ interface UseEvmTxAutoFillReturn {
   reset: () => void;
 }
 
-// Backend wraps the inner exception inside this prefix; matching it lets us
-// render a clean translated message instead of e.g.
-// `Unable to find transaction 0x… at gnosis: Transaction 0x… was not found on gnosis`.
+/**
+ * The prefix the backend wraps its inner exception in when a transaction cannot be found.
+ *
+ * @remarks
+ * Matched so the user is shown a clean translated message rather than the doubled-up original,
+ * which reads `Unable to find transaction 0x… at gnosis: Transaction 0x… was not found on gnosis`.
+ */
 const NOT_FOUND_PREFIX = 'Unable to find transaction';
 
 export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFillReturn {
@@ -126,8 +130,6 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
 
   async function performLookup(payload: EvmTransactionLookupPayload): Promise<void> {
     const requestId = ++currentRequestId;
-    // Supersede any in-flight lookup so the backend stops working on a stale hash. Each
-    // invocation carries its own `requestId` in the activity id, so this cancels by prefix.
     cancelByPrefix(ActivityKind.HISTORY_EVENTS, ActivityPart.LOOKUP);
 
     set(loading, true);
@@ -136,13 +138,9 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
     writeError(errorFields.relatedAddress, '');
 
     const outcome = await submitTask<EvmTransactionLookupResult>({
-      // `requestId` keeps every invocation a distinct activity so a superseding lookup never dedups
-      // onto an in-flight one.
       id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.LOOKUP, requestId, payload.txHash),
       kind: ActivityKind.HISTORY_EVENTS,
       rerunnable: false,
-      // The api call can throw an ApiValidationError synchronously; catch it here so its cause rides
-      // on the tagged error instead of being flattened to a generic failure by the submission bridge.
       run: async ({ runTask }): Promise<Result<EvmTransactionLookupResult, TaskError>> => {
         try {
           return mapResult(

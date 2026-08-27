@@ -60,8 +60,13 @@ onMounted(async () => {
   await refetch();
 });
 
-// A new mapping starts from whatever the bar is narrowed to, so adding one while filtered to a
-// counterparty does not make the user pick it again.
+/**
+ * Opens the mapping dialog on a new mapping, seeded from the filter bar.
+ *
+ * @remarks
+ * The counterparty and its symbol default to whatever the bar is narrowed to, so adding a mapping
+ * while filtered does not make the user pick the same values again; `payload` overrides them.
+ */
 function add(payload?: Partial<CounterpartyMapping>) {
   set(modelValue, {
     asset: '',

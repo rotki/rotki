@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { PremiumSetup } from '@/modules/auth/login';
 import { premiumSetupSchema } from '@/modules/auth/create-account/premium/premium-setup-form';
+import { syncStepValidity } from '@/modules/auth/create-account/step-validity';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 
 const form = defineModel<PremiumSetup>('form', { required: true });
@@ -24,9 +25,7 @@ const { errors, state, touch, valid: parses } = useModelForm<PremiumSetup>({
   schema,
 });
 
-// Immediate, so the step above starts with a real answer. A plain watch would leave `valid` at
-// whatever the wizard defaulted it to, and Continue would gate on a stale value.
-syncRefs(parses, valid);
+syncStepValidity(parses, valid);
 </script>
 
 <template>

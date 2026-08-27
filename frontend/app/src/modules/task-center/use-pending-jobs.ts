@@ -57,9 +57,14 @@ export function usePendingJobs(): UsePendingJobsReturn {
     { current: 0, total: 0 },
   ));
 
-  // Weighted by leaves, so a one-leaf job does not count for as much as an eleven-chain refresh.
-  // A job nobody can quantify keeps its leaves in the denominator and contributes nothing, which is
-  // the same rule `subtreeProgress` applies inside one subtree — unknown work reads as unfinished.
+  /**
+   * Overall progress across every pending job.
+   *
+   * @remarks
+   * Weighted by leaves, so a one-leaf job does not count for as much as an eleven-chain refresh. A
+   * job nobody can quantify keeps its leaves in the denominator and contributes nothing, which is
+   * the rule `subtreeProgress` applies within one subtree: unknown work reads as unfinished.
+   */
   const percentage = computed<number>(() => {
     const list = get(jobs);
     const total = get(steps).total;

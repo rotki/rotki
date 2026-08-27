@@ -102,11 +102,9 @@ describe('modules/history/events/PotentialMatchesTable', () => {
       expect(get(selected)).toEqual([]);
     });
 
-    it.each(layouts)('should ask for the event in history from the %s layout', async (_name, layout) => {
+    it.each(layouts)('should ask for the event in history from the %s layout, when the button element itself is clicked rather than the tooltip that is its component root', async (_name, layout) => {
       const wrapper = mountLayout(layout, [createRow(7)]);
 
-      // the button's own element, not the component root: that root is the tooltip wrapping it,
-      // and a click there never reaches the handler below it
       await wrapper.findComponent({ name: 'ShowInEventsButton' }).find('button').trigger('click');
 
       expect(wrapper.emitted('show-in-events')).toEqual([[{ groupIdentifier: 'group-7', identifier: 7 }]]);

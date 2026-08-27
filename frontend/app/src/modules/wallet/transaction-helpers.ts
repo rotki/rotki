@@ -95,7 +95,6 @@ export function handleTransactionError(error: unknown, handlers: ErrorHandlers):
   setPreparing(false);
   setWaitingForWalletConfirmation(false);
 
-  // If it's a transaction error with a hash, update its status
   if (error && typeof error === 'object' && 'transaction' in error
     && error.transaction && typeof error.transaction === 'object'
     && 'hash' in error.transaction && error.transaction.hash

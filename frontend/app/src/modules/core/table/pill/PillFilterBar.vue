@@ -7,6 +7,7 @@ import { useNarrowSuggestions } from '@/modules/core/table/pill/composables/use-
 import { useRecentFilterValues } from '@/modules/core/table/pill/composables/use-recent-filter-values';
 import { hasWritableValue } from '@/modules/core/table/pill/core/codec';
 import { resolveEditor } from '@/modules/core/table/pill/core/field-adapter';
+import { narrowActiveId } from '@/modules/core/table/pill/core/narrow-ids';
 import { defaultOp } from '@/modules/core/table/pill/core/operators';
 import FilterPill from '@/modules/core/table/pill/FilterPill.vue';
 import PillMenu from '@/modules/core/table/pill/PillMenu.vue';
@@ -46,17 +47,14 @@ defineSlots<{
 const model = useFilterState(() => fields);
 const { remember } = useRecentFilterValues();
 const addMenuOpen = ref<boolean>(false);
-// Which pill's value editor is open. Selecting a field opens its editor straight away,
-// so the flow is field -> value without a second click to find the new pill.
+/** Key of the pill whose value editor is open, at most one at a time. */
 const openEditorKey = ref<string>();
-// The bar's inline input: typing narrows across every field at once, instead of making the
-// user pick a field first. The popover it drives is the only place these results show.
+/** The inline narrow input, which searches across every field at once rather than one picked field. */
 const query = ref<string>('');
 const narrowOpen = ref<boolean>(false);
 const highlighted = ref<number>(0);
 const narrowInput = useTemplateRef<HTMLInputElement>('narrowInput');
-// Set while the open editor has something of its own teleported outside its popover (the date
-// picker's calendar), which would otherwise read as a click away and shut the editor.
+/** Set while the open editor teleports something outside its popover, which would read as a click away. */
 const editorPersistent = ref<boolean>(false);
 
 const fieldByKey = computed<Map<string, FieldDef>>(() => new Map(fields.map(field => [field.key, field])));
@@ -86,8 +84,7 @@ watch([model.matches, model.params], ([nextMatches, nextParams]) => {
   set(params, nextParams);
 });
 
-// The highlight restarts when the query changes, NOT when the suggestions do: asset results
-// arrive after their search, and must not move the row the user is about to press enter on.
+// Keyed on the query, not the suggestions: late asset results must not move the row Enter is aimed at.
 watch(query, () => set(highlighted, 0));
 
 /**
@@ -170,8 +167,7 @@ function dropFilter(field: FieldDef): void {
 
 function addField(field: FieldDef): void {
   set(addMenuOpen, false);
-  // A boolean field carries no values (it's on once added). Others start at their default
-  // operator and open their editor straight away so the field pick flows into a value entry.
+  // A boolean field is on once added, so only fields with an editor get one opened for them.
   model.addFilter({ fieldKey: field.key, op: defaultOp(field), values: [] });
   if (hasEditor(field))
     nextTick(() => set(openEditorKey, field.key));
@@ -183,8 +179,13 @@ function updateFilter(filter: ActiveFilter): void {
   model.addFilter(filter); // replaces the filter for this field
 }
 
-// Dropping a pill has to forget that its editor was open, or re-adding the same field later
-// leaves `openEditorKey` already set to it: nothing changes, and the editor never opens.
+/**
+ * Drops a field's pill, clearing the open-editor key first when that pill owned it.
+ *
+ * @remarks
+ * `openEditorKey` is set by `addField` on the next tick, so a stale key left pointing at this field
+ * would make re-adding it a no-op change and its editor would never reopen.
+ */
 function removeFilter(field: FieldDef): void {
   if (get(openEditorKey) === field.key)
     set(openEditorKey, undefined);
@@ -247,18 +248,14 @@ function applyExample(example: string): void {
   get(narrowInput)?.focus();
 }
 
-// Rows and footer chips are one navigable sequence, chips last: nothing in the teleported
-// popover can be focused or Tabbed to, so arrowing past the last row is the only way to reach a chip
-// without a mouse.
+// Rows and footer chips form one arrow-navigable sequence, chips last: the teleported popover takes no Tab.
 const navigableCount = computed<number>(() => get(suggestions).length + get(syntaxExamples).length);
 
 const activeSuggestionId = computed<string | undefined>(() => {
   if (!get(narrowOpen) || get(navigableCount) === 0)
     return undefined;
 
-  const index = get(highlighted);
-  const rows = get(suggestions).length;
-  return index < rows ? `pill-narrow-row-${index}` : `pill-narrow-example-${index - rows}`;
+  return narrowActiveId(get(highlighted), get(suggestions).length);
 });
 
 function moveHighlight(step: number): void {
@@ -270,8 +267,7 @@ function moveHighlight(step: number): void {
 /** What Enter does to whatever the highlight is on, row or footer chip. */
 function applyHighlighted(items: NarrowSuggestion[]): void {
   const index = get(highlighted);
-  // Past the last row is a footer chip: it writes its example into the input rather than applying
-  // anything, the same as clicking it does.
+  // Past the last row is a footer chip, which only writes its example into the input.
   const example = get(syntaxExamples)[index - items.length];
   if (example !== undefined) {
     applyExample(example);

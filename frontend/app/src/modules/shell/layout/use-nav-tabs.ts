@@ -16,13 +16,14 @@ function tabContent(router: ReturnType<typeof useRouter>, t: ReturnType<typeof u
  * `nav` meta, so tab bars for sub-page grids need no separate route/label list to maintain. Use this
  * when the tab set is a specific subset or needs an explicit order; prefer `useChildNavTabs` when the
  * bar is simply every child of a parent.
+ *
+ * A name carrying no `nav` meta is skipped rather than thrown on, so one misconfigured route cannot
+ * take the whole tab bar down.
  */
 export function useNavTabs(names: MaybeRefOrGetter<RouteName[]>): ComputedRef<TabContent[]> {
   const router = useRouter();
   const { t } = useI18n({ useScope: 'global' });
 
-  // A name without nav meta is skipped rather than throwing, so one misconfigured route cannot break
-  // the whole tab bar.
   return computed<TabContent[]>(() => toValue(names)
     .map((name) => {
       const nav = router.getRoutes().find(route => route.name === name)?.meta.nav;

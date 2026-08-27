@@ -48,9 +48,14 @@ const emptyForm: () => AddressBookPayload = () => ({
 const { addAddressBook, updateAddressBook } = useAddressBookOperations();
 const { setMessage } = useMessageStore();
 
-// Spelled out per operation rather than interpolated. An inline template literal in `t()` makes the
-// unused-key rule treat its static prefix as used, so `address_book.actions.*` was exempt as a
-// whole - including the delete, fetch and tooltip keys, which this lookup never touches.
+/**
+ * The message keys for a failed save, one entry per operation.
+ *
+ * @remarks
+ * Spelled out rather than interpolated. An inline template literal in `t()` makes the unused-key
+ * lint rule treat its static prefix as used, which would exempt all of `address_book.actions.*`,
+ * including the delete, fetch and tooltip keys this lookup never touches.
+ */
 const SAVE_ERROR_KEYS: Record<'add' | 'edit', { description: MessageKey; title: MessageKey }> = {
   add: {
     description: msg.$t('address_book.actions.add.error.description'),

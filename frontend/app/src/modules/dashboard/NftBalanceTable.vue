@@ -10,8 +10,10 @@ import PercentageDisplay from '@/modules/shell/components/display/PercentageDisp
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
-// The section renders nothing when there are no nfts, so attributes cannot be inherited automatically. They are
-// forwarded explicitly below instead, which also keeps vue from warning about the comment root.
+/**
+ * Attributes are forwarded explicitly in the template below, since with no nfts this section renders
+ * a comment root, which vue cannot inherit onto and warns about.
+ */
 defineOptions({ inheritAttrs: false });
 
 const nonFungibleRoute: RouteLocationRaw = { name: '/balances/non-fungible/' };

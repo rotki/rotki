@@ -45,8 +45,6 @@ export function toManagedAssetFields(
   options: ManagedAssetFieldOptions,
 ): FieldDef[] {
   return [
-    // The backend takes identifiers as a list (`DelimitedOrNormalList` -> `IN (...)`), and the URL
-    // has always carried several, so the field offers several rather than only the first.
     toMatchFieldDef({
       freeText: true,
       hint: (): string => t('assets.filter.identifier_hint'),
@@ -89,8 +87,6 @@ export function toManagedAssetFields(
       ...toNameField(AssetFilterKeys.NAME, (): string => t('assets.filter_field_labels.name')),
       hint: (): string => t('assets.filter.name_hint'),
     },
-    // The values are evm chain *names* (`ethereum`, `polygon_pos`) rather than chain ids, which both
-    // the shared name resolver and the chain icon accept.
     decorateSharedField(
       toMatchFieldDef({
         excludes: EXCLUDES_ASSET_TYPE,

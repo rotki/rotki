@@ -1,13 +1,12 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
+import { settleFormDebounce } from '@test/utils/form-timing';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, type VNode } from 'vue';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import '@test/i18n';
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 const textFieldStub = {
   emits: ['update:modelValue', 'blur'],
@@ -234,8 +233,7 @@ describe('premiumDeviceForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleFormDebounce();
 
     await edit('workstation');
 
@@ -244,7 +242,7 @@ describe('premiumDeviceForm', () => {
 
   it('should not flag stateUpdated before anything is edited', async () => {
     wrapper = createWrapper();
-    await vi.advanceTimersByTimeAsync(600);
+    await settleFormDebounce();
 
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).not.toEqual([true]);
   });

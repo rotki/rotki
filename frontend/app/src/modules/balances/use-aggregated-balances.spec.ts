@@ -588,9 +588,6 @@ describe('useAggregatedBalances', () => {
     });
 
     it('should include blockchain balances when the location identifier is a chain alias', () => {
-      // Simulate `matchChain('ethereum') === 'eth'`. The same call is what
-      // `useSupportedChains` exposes for real chain identifiers, but in tests
-      // `supportedChains` is empty, so we wire it explicitly.
       matchChainMock.mockImplementation(location => (location === 'ethereum' ? 'eth' : undefined));
 
       const { manualBalances } = storeToRefs(useBalancesStore());

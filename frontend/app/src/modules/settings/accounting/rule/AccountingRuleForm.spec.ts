@@ -7,11 +7,6 @@ import { type ComponentPublicInstance, defineComponent, h, type VNode } from 'vu
 import AccountingRuleForm from '@/modules/settings/accounting/rule/AccountingRuleForm.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
 
-/**
- * The two inputs that own the validated fields are heavy (they query counterparties and the
- * type/subtype mappings), so they are replaced by stubs that expose exactly the contract this form
- * relies on: the models it writes, the `error-messages` it feeds them, and the `disabled` flag.
- */
 const HistoryEventTypeFormStub = defineComponent({
   emits: ['update:eventType', 'update:eventSubtype', 'touch'],
   name: 'HistoryEventTypeForm',

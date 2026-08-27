@@ -66,8 +66,6 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
       if (result === true)
         return ok(address);
 
-      // Translated, because this message is user-facing: `errorOf` hands it back and the account
-      // form renders `error.message` in its dialog.
       return result.length > 0
         ? ok(result[0])
         : err(TaskFailed({ message: t('actions.balances.blockchain_accounts_add.error.nothing_added', { address }) }));
@@ -78,7 +76,6 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
     { address, label, tags }: AccountPayload,
     options?: AdditionOptions,
   ): Promise<Result<EvmAccountsResult, TaskError>> => {
-    // The pseudo-chain, not a real one: this asks for every EVM chain at once.
     const subject: AccountSubject = { chain: EVM_PSEUDO_CHAIN, target: { address, kind: 'address' } };
     const outcome = await submitTask<EvmAccountsResult>({
       id: accountAddActivity.id(subject),
@@ -96,7 +93,6 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    // As in `addAccount`: `{}` conflated a cancelled/failed add with an empty result.
     return outcome;
   };
 

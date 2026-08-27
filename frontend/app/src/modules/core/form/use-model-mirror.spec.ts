@@ -22,8 +22,7 @@ function toState(rule: Rule): RuleState {
     linked: Boolean(rule.linkedSetting),
     linkedSetting: rule.linkedSetting ?? '',
     name: rule.name,
-    // A new array every call on purpose: the mirroring has to notice it holds the same values
-    // rather than that it is the same reference.
+    // A new array every call, so the mirroring has to compare values rather than references.
     tags: [...(rule.tags ?? [])],
   };
 }

@@ -4,8 +4,6 @@ import { HISTORY_ISSUE_IDS, type useHistoryEventIssues as UseHistoryEventIssues 
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
 import { PinnedNames } from '@/modules/session/types';
 
-// Declared at module scope (not `vi.hoisted`): the mock factories below only
-// dereference `state` from inside their inner arrows, which run once the tests do.
 const state = {
   autoFixCount: ref(0),
   autoFixGroupIds: ref<string[]>([]),
@@ -113,8 +111,14 @@ vi.mock('@/modules/history/events/tx/use-undecoded-transactions-count', () => ({
   }),
 }));
 
-// `scanned` is module state shared by the trigger and the panel, so each test
-// loads a fresh copy instead of inheriting whether a previous one scanned.
+/**
+ * Imports the composable under test with its module state discarded.
+ *
+ * @remarks
+ * `scanned` lives on the module, shared by the trigger and the panel, so a test that reuses the
+ * import inherits whether an earlier one had already scanned and its pre-scan assertions pass
+ * for the wrong reason.
+ */
 async function loadComposable(): Promise<typeof UseHistoryEventIssues> {
   vi.resetModules();
   const module = await import('@/modules/history/events/actions-center/use-history-event-issues');
@@ -132,8 +136,6 @@ describe('useHistoryEventIssues', () => {
     set(state.autoMatchLoading, false);
     set(state.bridgeAutoMatchLoading, false);
     set(state.dataIssuesCount, 0);
-    // The inbox row only exists in accounting-update builds, and vitest inherits the
-    // flag from vite.config.ts, so pin it off by default rather than per environment.
     vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
     set(state.internalConflictsCount, 0);
     set(state.manualReviewCount, 0);

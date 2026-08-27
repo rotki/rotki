@@ -65,8 +65,7 @@ const triggerLabel = computed<string>(() => label ?? t('history_event_action.pic
 
 const trimmedSearch = computed<string>(() => get(search).trim());
 
-// Map the persisted recent verb keys back onto live rows (dropping any that the
-// current entry type filtered out), tagging them for the synthetic group.
+// Persisted recent keys mapped back onto live rows, dropping any the entry type filtered out.
 const recentRows = computed<EventActionRow[]>(() => {
   const byKey = new Map(get(rows).map(row => [row.verbKey, row]));
   const result: EventActionRow[] = [];
@@ -80,8 +79,7 @@ const recentRows = computed<EventActionRow[]>(() => {
   return result;
 });
 
-// Recents only make sense while browsing; once a query is typed they'd just
-// duplicate the filtered results, so they're dropped.
+// Recents are dropped once a query is typed, where they would duplicate the filtered results.
 const displayRows = computed<EventActionRow[]>(() => {
   const base = [...get(rows)];
   if (get(trimmedSearch) || get(recentRows).length === 0)
@@ -120,15 +118,18 @@ function getGroupConfig(groupId: string): GroupHeaderConfig {
   return { classes: 'text-rui-text-secondary', icon: group.icon, label: group.label };
 }
 
-// RuiCategoryPicker uses the category string for both grouping and the header it
-// prints in the detail pane, so category-of must return the human label rather
-// than the raw group id (otherwise the detail header shows e.g. `__recent__`).
+/**
+ * Reports the human label the picker groups `row` under and titles its detail pane with.
+ *
+ * @remarks
+ * RuiCategoryPicker uses one category string for both, so handing it the raw group id would print
+ * `__recent__` as a heading.
+ */
 function categoryLabelOf(row: EventActionRow): string {
   return getGroupConfig(row.groupId).label || row.groupId;
 }
 
-// Reverse lookup so the rail slot can recover each group's icon/classes/testId
-// from the label RuiCategoryPicker hands back.
+// Reverse lookup: the rail slot only gets the label back, and needs the rest of the config.
 const categoryConfigByLabel = computed<Map<string, GroupHeaderConfig>>(() => {
   const map = new Map<string, GroupHeaderConfig>();
   const recent = getGroupConfig(RECENT_GROUP_ID);
@@ -154,9 +155,7 @@ function subtitleFor(row: EventActionRow): string {
   if (!first)
     return '';
 
-  // Recent rows carry a prefixed key; resolve to the canonical verb key so the
-  // description lookup still hits. Prefer the curated one-liner when present,
-  // otherwise fall back to the derived type · subtype summary below.
+  // Recent rows carry a prefixed key; the description lookup only hits on the canonical one.
   const realKey = row.verbKey.startsWith(RECENT_KEY_PREFIX) ? row.verbKey.slice(RECENT_KEY_PREFIX.length) : row.verbKey;
   const description = describe(realKey);
   if (description)
@@ -180,8 +179,7 @@ function onUpdate(verbKey: string | undefined): void {
   if (!verbKey)
     return;
 
-  // A pick from the synthetic recent group carries the prefixed key; resolve it
-  // back to the canonical verb before touching the model or the recents store.
+  // A pick from the recent group carries the prefixed key; the model and the store want the verb.
   const realKey = verbKey.startsWith(RECENT_KEY_PREFIX) ? verbKey.slice(RECENT_KEY_PREFIX.length) : verbKey;
 
   const row = get(rows).find(r => r.verbKey === realKey);

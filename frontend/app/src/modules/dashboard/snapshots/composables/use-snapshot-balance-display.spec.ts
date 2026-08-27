@@ -38,9 +38,7 @@ describe('useSnapshotBalanceDisplay', () => {
     expect(get(data).map(item => item.index)).toStrictEqual([0, 1, 2, 3]);
   });
 
-  // The category column has to tell an nft apart from a plain asset, which the wire category does
-  // not: both are `asset`.
-  it('should mark an nft row in its category label', () => {
+  it('should mark an nft row in its category label, which the wire category does not', () => {
     const { data } = useSnapshotBalanceDisplay(createSnapshot());
     const [eth, , nft] = get(data);
 
@@ -54,8 +52,6 @@ describe('useSnapshotBalanceDisplay', () => {
     expect(get(warningsByIndex).has(2)).toBe(true);
   });
 
-  // Zero-value rows are overwhelmingly valueless spam tokens, so flagging each one floods the
-  // table; the summary surfaces their count instead.
   it('should not flag zero-value rows', () => {
     const { warningsByIndex } = useSnapshotBalanceDisplay(createSnapshot());
 
@@ -76,8 +72,7 @@ describe('useSnapshotBalanceDisplay', () => {
     expect(sharePercent(dai)).toBe('-17.65');
   });
 
-  // The ratio is meaningless against a net worth that is not positive, so it is not shown at all.
-  it('should give no share when net worth is not positive', () => {
+  it('should give no share when net worth is not positive, the ratio being meaningless against it', () => {
     const snapshot = createSnapshot();
     snapshot.locationDataSnapshot = [{ location: 'total', timestamp: TS, usdValue: bigNumberify(0) }];
     const { data, sharePercent } = useSnapshotBalanceDisplay(snapshot);

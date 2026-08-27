@@ -45,7 +45,6 @@ const resolutionOptions = computed(() => ({ collectionParent: !noCollectionParen
 const info = useAssetInfo(() => asset, resolutionOptions);
 const { scrambledValue } = useScrambledValue({ value: () => amount, noScramble: () => noScramble });
 
-// Computed - returns empty string if no asset provided
 const assetSymbol = computed<string>(() => {
   if (!asset)
     return '';

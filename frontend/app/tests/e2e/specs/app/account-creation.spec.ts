@@ -20,26 +20,21 @@ test.describe('accounts', () => {
       test.beforeAll(async ({ browser }) => {
         username = generateUsername();
 
-        // Create shared browser context and page with the specific viewport
         sharedContext = await browser.newContext({
           viewport: { width: viewport.width, height: viewport.height },
         });
         sharedPage = await sharedContext.newPage();
 
-        // Start coverage collection if enabled
         if (isCoverageEnabled()) {
           await startCoverage(sharedPage);
         }
 
-        // Create a manual request context for API calls
         apiContext = await request.newContext();
 
-        // Initialize app once for all tests in this viewport group
         app = new RotkiApp(sharedPage, apiContext);
       });
 
       test.afterAll(async () => {
-        // Stop coverage collection if enabled
         if (isCoverageEnabled() && sharedPage) {
           await stopCoverage(sharedPage);
         }

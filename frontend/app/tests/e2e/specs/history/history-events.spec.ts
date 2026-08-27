@@ -558,7 +558,6 @@ test.describe.serial('history event filter persistence', () => {
       expect(url).toContain('eventSubtypes=none');
     }).toPass({ timeout: 5000 });
 
-    // Navigate to dashboard
     await RotkiApp.navigateTo(ctx.sharedPage, 'dashboard');
     await expect(async () => {
       expect(ctx.sharedPage.url()).toContain('/dashboard');

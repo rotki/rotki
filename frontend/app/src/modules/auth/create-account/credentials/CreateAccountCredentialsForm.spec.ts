@@ -1,21 +1,10 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { LoginCredentials } from '@/modules/auth/login';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, describe, expect, it } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, ref, type VNode } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import CreateAccountCredentialsForm from '@/modules/auth/create-account/credentials/CreateAccountCredentialsForm.vue';
 import '@test/i18n';
-
-/**
- * Characterization of the vuelidate rules, written before the zod migration.
- *
- * The seam is the four models the wizard binds - `form`, `passwordConfirm`, `userPrompted` and the
- * `valid` flag that gates Continue - plus the `error-messages` each field receives. The form exposes
- * no `validate()`, so `valid` is the whole contract: the wizard's step dead-locks if it stops being
- * written, and every e2e spec that creates an account rides on this form.
- */
-
-/** The stubs declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -39,9 +28,7 @@ interface State {
 
 interface Harness {
   wrapper: VueWrapper;
-  /** The credentials as the wizard holds them, after every write the form has made. */
   credentials: () => LoginCredentials;
-  /** The flag that gates the wizard's Continue button. */
   valid: () => boolean;
 }
 
@@ -72,8 +59,8 @@ describe('createAccountCredentialsForm', () => {
     const form = ref<LoginCredentials>(initial.credentials);
     const passwordConfirm = ref<string>(initial.passwordConfirm);
     const userPrompted = ref<boolean>(initial.userPrompted);
-    // `valid` starts true so a test asserting it turns false cannot pass on the initial value alone.
     const valid = ref<boolean>(true);
+    expect(get(valid)).toBe(true);
 
     const parent = defineComponent({
       setup(): () => VNode {
@@ -124,6 +111,14 @@ describe('createAccountCredentialsForm', () => {
     field(testId).vm.$emit('update:modelValue', value);
     await nextTick();
   }
+
+  it('should expose no validate() of its own, leaving the emitted valid flag as the whole contract', () => {
+    harness = createHarness();
+    const form = harness.wrapper.findComponent(CreateAccountCredentialsForm);
+
+    expect(form.exists()).toBe(true);
+    expect(form.vm).not.toHaveProperty('validate');
+  });
 
   it('should report valid when every field is filled and the prompt is checked', async () => {
     harness = createHarness();
@@ -187,8 +182,7 @@ describe('createAccountCredentialsForm', () => {
       expect(messages(USERNAME)).toStrictEqual([]);
     });
 
-    // Vuelidate reports every failing rule, so an emptied username fails the regex as well.
-    it('should report both of its messages when cleared', async () => {
+    it('should report the regex message alongside the non-empty one when cleared', async () => {
       harness = createHarness();
       await edit(USERNAME, '');
 
@@ -217,8 +211,6 @@ describe('createAccountCredentialsForm', () => {
       ]);
     });
 
-    // The rule reads the password off the form model, so editing the password has to move the
-    // confirmation's verdict too. This is the cross-field pair the zod schema must reproduce.
     it('should clear the mismatch when the password is edited to match', async () => {
       harness = createHarness();
       await edit(PASSWORD_REPEAT, 'different');
@@ -230,12 +222,7 @@ describe('createAccountCredentialsForm', () => {
       expect(harness.valid()).toBe(true);
     });
 
-    // Characterizing, NOT endorsing. `$errors` is `$dirty ? $silentErrors : []`, and editing the
-    // password does not make the *confirmation* field dirty. So Continue goes dead with no message
-    // anywhere on screen, and the user has to touch the confirmation to find out why.
-    // Pinned as-is so the migration reproduces it deliberately rather than changing it by accident;
-    // flipping it is a one-line decision once the swap lands.
-    it('should turn valid off with no message when the password is edited away from the confirmation', async () => {
+    it('should turn valid off with no message when the password is edited away from the confirmation (characterized, not endorsed)', async () => {
       harness = createHarness();
       await edit(PASSWORD, 'changed');
 
@@ -247,8 +234,6 @@ describe('createAccountCredentialsForm', () => {
     it('should surface the mismatch as soon as the confirmation itself is touched', async () => {
       harness = createHarness();
       await edit(PASSWORD, 'changed');
-      // Re-emitting the value it already holds would not make it dirty, so the user has to actually
-      // change something for the message to appear.
       await edit(PASSWORD_REPEAT, 'chang');
 
       expect(messages(PASSWORD_REPEAT)).toStrictEqual([

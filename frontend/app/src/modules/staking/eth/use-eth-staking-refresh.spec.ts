@@ -4,8 +4,7 @@ import { useEthStakingRefresh } from '@/modules/staking/eth/use-eth-staking-refr
 const mockFetchEthStakingValidators = vi.fn();
 const mockHydrate = vi.fn();
 const mockRefreshBlockchainBalances = vi.fn();
-// `everCompleted === false` means "first load"; drives the isFirstLoad gate in the SUT.
-const mockFirstLoad = ref<boolean>(false);
+const mockEverCompleted = ref<boolean>(false);
 const { mockLoggerLog } = vi.hoisted(() => ({ mockLoggerLog: vi.fn() }));
 
 const mockUsername = ref<string>('test-user');
@@ -59,7 +58,7 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
       const active = kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing);
       return {
         active,
-        everCompleted: !get(mockFirstLoad),
+        everCompleted: !get(mockEverCompleted),
         pending: false,
         running: active,
       };
@@ -101,7 +100,7 @@ describe('useEthStakingRefresh', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    set(mockFirstLoad, false);
+    set(mockEverCompleted, false);
     set(mockUsername, 'test-user');
     set(mockStakingValidatorsLimits, undefined);
     set(mockPerformanceRefreshing, false);
@@ -123,7 +122,7 @@ describe('useEthStakingRefresh', () => {
     });
 
     it('should force a balance refresh on first load even when not user initiated', async () => {
-      set(mockFirstLoad, true);
+      set(mockEverCompleted, true);
 
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh(false);

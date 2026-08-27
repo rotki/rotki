@@ -58,9 +58,6 @@ const { t } = useI18n({ useScope: 'global' });
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { getAddressName } = useAddressNameResolution();
 
-// Every field is read with `??` rather than by spreading the bag over a defaults object: a caller
-// forwarding its own optional value passes a present key holding `undefined`, which a spread takes
-// as the value and the default would be lost.
 const chains = computed<string[]>(() => source?.chains ?? []);
 
 const usableAddresses = computed<string[]>(() => source?.usableAddresses ?? []);
@@ -171,8 +168,15 @@ function filter(item: BlockchainAccount, queryText: string) {
     : false;
 }
 
-// The model stays an array so callers keep their shape, but the selector is single-select:
-// RuiAutoComplete derives multi-select from an array model value and `internalValue` never is one.
+/**
+ * Replaces the whole selection with `nextValue`, or empties it when nothing is picked.
+ *
+ * @remarks
+ * The model stays a one-element array so callers keep their shape while the selector behaves as
+ * single-select: RuiAutoComplete infers multi-select from an array model value, and the
+ * `internalValue` bound to it is never one. The `address` and `key` fields are derived for display
+ * and are stripped back off on the way out.
+ */
 function input(nextValue?: AccountWithExtra): void {
   set(modelValue, nextValue ? [omit(nextValue, ['address', 'key'])] : []);
 }

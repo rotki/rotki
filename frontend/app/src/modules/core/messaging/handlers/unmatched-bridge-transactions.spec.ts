@@ -12,9 +12,14 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ removeMatching }),
 }));
 
-// Not `createMock<Router>`: the typed router makes `currentRoute` a union of one
-// route type per named route, and a deep-partial override of it exceeds TypeScript's
-// instantiation depth. The handler only reads the route name.
+/**
+ * Stands in for the router with the two members the handler touches.
+ *
+ * @remarks
+ * `createMock<Router>` is not usable here: the typed router makes `currentRoute` a union of one
+ * route type per named route, and deep-partialling that union exceeds TypeScript's instantiation
+ * depth.
+ */
 interface RouterMock extends Pick<Router, 'currentRoute'> {
   push: Mock<Router['push']>;
 }

@@ -132,7 +132,7 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   const fetchStaking = createFetch({
     errorDescription: (message: string) => t('actions.defi.liquity_staking.error.description', { message }),
     errorTitle: () => t('actions.defi.liquity_staking.error.title'),
-    part: ActivityPart.STAKING,
+    part: ActivityPart.STAKE,
     premiumOnly: true,
     query: async () => fetchLiquityStaking(),
     store: (result) => {

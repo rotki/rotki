@@ -167,8 +167,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     }
     else {
       processBalanceResult(blockchain, result.value);
-      // The activity's own completion would say the same, but only for the id it ran under; the
-      // service is what knows the chain has data, whichever of the two ids fetched it.
       markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
     }
 
@@ -210,8 +208,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       result = ok(await queryBlockchainBalances(payload, threshold));
     }
     catch (error: unknown) {
-      // A cancellation is expected — logout tags and cancels this read — so it must stay
-      // non-actionable, which is what keeps hydration from retrying it against a dead session.
       result = err(isRequestCancellation(error)
         ? Cancelled({ message: t('actions.balances.blockchain.cancelled') })
         : TaskFailed({ cause: error, message: getErrorMessage(error) }));

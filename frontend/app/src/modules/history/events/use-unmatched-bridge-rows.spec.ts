@@ -3,14 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNMATCHED_ACTIONS, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import { type UnmatchedBridgeRow, useUnmatchedBridgeRows } from '@/modules/history/events/use-unmatched-bridge-rows';
 
-/**
- * The seam: the row model decides what a leg is called and what may be done to it, and every
- * word it picks depends on the leg's direction. A deposit leaves the tracked side (a payment
- * out), a withdrawal arrives on it (income in), which is also what the backend writes when
- * either is resolved as external. Anything here that reads the same for both directions
- * describes half the rows wrongly.
- */
-
 const { spies } = vi.hoisted(() => ({
   spies: {
     isCounterpartUntracked: vi.fn<() => boolean>(() => false),

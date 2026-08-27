@@ -42,8 +42,6 @@ describe('useSessionPurge', () => {
       await useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', deleteData);
 
       expect(deleteData).toHaveBeenCalledTimes(1);
-      // The id carries the source (and its value), so a consumer's `staleAfter` edge can match on
-      // it by prefix instead of anyone reaching in to reset a status.
       expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'purge:transactions:eth' }));
     });
 

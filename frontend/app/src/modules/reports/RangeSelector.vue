@@ -75,8 +75,7 @@ function onPeriodChange(period: PeriodChangedEvent | null): void {
   input({ end: Math.min(period.end, now), start: period.start });
 }
 
-// The validity is the only thing anything consumes: no field ever renders a message, because
-// nothing touches them, which reproduces vuelidate's $autoDirty: false exactly.
+// Validity is the only output anything consumes; no field renders a message, since none is touched.
 watchImmediate(form.valid, (valid) => {
   emit('update:valid', valid);
 });

@@ -14,9 +14,10 @@ const ROTKI_DAPP_METADATA = {
   url: 'https://rotki.com',
 };
 
-// viem chain objects are only needed once WalletConnect actually connects, so
-// the `chains-viem` module (and the viem chain definitions it pulls) is loaded
-// lazily and memoised, keeping viem's chain data out of the initial bundle.
+/**
+ * Memoises the lazy `chains-viem` import, whose viem chain definitions are only needed once
+ * WalletConnect actually connects, and so are kept out of the initial bundle.
+ */
 let walletNetworksPromise: Promise<readonly Chain[]> | undefined;
 
 async function loadWalletNetworks(): Promise<readonly Chain[]> {
@@ -43,9 +44,10 @@ async function getRpcMap(chainIds: number[]): Promise<Record<string, string>> {
 
 const PING_TIMEOUT = 5000;
 
-// Module-level singletons: the provider and the connection state are shared by
-// every caller of `useWalletConnect()` (the store, gnosis-pay, the QR dialog),
-// mirroring how the previous AppKit instance was effectively global.
+/**
+ * Module-level singletons: the provider and the connection state are shared by every caller of
+ * {@link useWalletConnect}, which is the store, gnosis-pay and the QR dialog alike.
+ */
 let providerInstance: UniversalProvider | undefined;
 let providerPromise: Promise<UniversalProvider> | undefined;
 let listenersBound = false;

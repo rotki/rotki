@@ -111,7 +111,6 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
       const adminsMapping = get(gnosisPayAdminsMapping);
       const addressLower = address.toLowerCase();
 
-      // Find all safe addresses this admin address controls
       const foundSafeAddresses = Object.entries(adminsMapping)
         .filter(([, adminAddresses]) =>
           adminAddresses.some(adminAddr => adminAddr.toLowerCase() === addressLower))
@@ -140,7 +139,6 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
       clearError();
       clearValidation();
       await connectWallet();
-      // Address validation will be triggered by the watcher when connectedAddress changes
     }
     catch (error: unknown) {
       logger.error(error);

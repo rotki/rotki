@@ -30,9 +30,6 @@ describe('settings/HideSmallBalances.vue', () => {
 
   afterEach(() => {
     wrapper?.unmount();
-    // The menu is teleported into the body; leaving it behind would let the next test find a stale
-    // control and pass without rendering anything of its own.
-    document.body.innerHTML = '';
   });
 
   /** The controls live in a menu, so it has to be opened before anything is reachable. */

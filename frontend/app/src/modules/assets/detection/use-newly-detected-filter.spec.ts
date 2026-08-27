@@ -8,9 +8,7 @@ describe('tokenKindOf', () => {
       .toBe(NewDetectedTokenKind.SOLANA);
   });
 
-  // An absent pill is what "all types" meant in the select this replaces, and `undefined` is what
-  // `getAllIdentifiers` reads as every kind.
-  it('should read an absent pill as every kind', () => {
+  it('should read an absent pill as every kind, which is what getAllIdentifiers takes undefined for', () => {
     expect(tokenKindOf({})).toBeUndefined();
   });
 

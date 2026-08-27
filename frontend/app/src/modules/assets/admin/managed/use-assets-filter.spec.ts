@@ -29,9 +29,7 @@ describe('managedAssetStatusParams', () => {
     });
   });
 
-  // The backend needs the handling stated even when no pill says it, which is the one way the
-  // source and the bar's bag differ.
-  it('should state the default handling in the request', () => {
+  it('should state the default handling in the request even when no pill says it', () => {
     const { params } = setup();
 
     expect(toValue(params.source.values)).toHaveProperty(
@@ -69,7 +67,6 @@ describe('managedAssetStatusParams', () => {
     expect(get(status.onlyShowWhitelisted)).toBe(false);
   });
 
-  // Removing a pill is how a filter is turned off, and for the handling "off" is the default.
   it('should return to the defaults when the pills are cleared', () => {
     const { params, status } = setup(IgnoredAssetHandlingType.SHOW_ONLY, true, true);
 
@@ -94,8 +91,7 @@ describe('managedAssetStatusParams', () => {
     expect(get(status.onlyShowWhitelisted)).toBe(false);
   });
 
-  // A url is anyone's to write, and the handling reaches the request and the pill's label alike.
-  it('should fall back on a handling the backend does not take', () => {
+  it('should fall back on a handling the backend does not take, a url being anyone\'s to write', () => {
     const { params, status } = setup(IgnoredAssetHandlingType.SHOW_ONLY);
 
     params.source.fromQuery?.({ ignoredAssetsHandling: 'nonsense' });

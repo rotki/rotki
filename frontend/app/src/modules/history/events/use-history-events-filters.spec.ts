@@ -25,8 +25,6 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
   routeWhen: (): { mode: 'route' } => ({ mode: 'route' }),
   useServerTable: vi.fn((options: ServerTableMockOptions) => {
     const sources = options.params ?? [];
-    // The old `requestParams` bag is now the request-destination source that strips
-    // empties; `queryParamsOnly` is the url-destination one.
     capturedRequestParams = sources.find(
       source => source.to === 'request' && !source.isDefault,
     )?.values;
@@ -70,8 +68,6 @@ vi.mock('@/modules/history/events/use-history-event-navigation-consumer', () => 
   useHistoryEventNavigationConsumer: vi.fn(),
 }));
 
-// Store-backed too, and only consulted to expand an action verb into its type/subtype pair. One
-// row is enough for the wiring this spec covers.
 vi.mock('@/modules/history/events/action-picker/use-event-action-picker', () => ({
   useEventActionPicker: vi.fn(() => ({
     findRowByTypeSubtype: vi.fn(),
@@ -107,8 +103,6 @@ function createDefaultOptions(locationValue?: string): DefaultOptions {
   });
   return {
     options: {
-      // The view builds both and hands them in: the fields are what the table reads its url shape
-      // off, and nothing here exercises the URL.
       fields: ref<FieldDef[]>([]),
       filters: ref<Filters>({}),
       mainPage: ref(false),
@@ -160,9 +154,7 @@ describe('useHistoryEventsFilters', () => {
       expect(get(usedLocationLabels)).toEqual(['0xDEF']);
     });
 
-    // Kraken's shape: it owns the account axis without naming an address, which an empty array has
-    // to express. Defaulting the key would collapse this onto the unrestricted case.
-    it('should ignore local locationLabels when the view pins an empty account set', () => {
+    it('should ignore local locationLabels when the view pins an empty account set, as a location that owns the account axis without naming an address does, rather than treating it as unrestricted', () => {
       const { options, restrictions, toggles } = createDefaultOptions();
       set(restrictions, { externalAccounts: [] });
       const { onLocationLabelsChanged, usedLocationLabels } = useHistoryEventsFilters(options, toggles);

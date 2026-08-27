@@ -6,7 +6,6 @@ import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composabl
 const cache = ref<Record<string, AssetInfo | null>>({});
 const isAssetIgnored = vi.fn();
 
-// Reads the cache RECORD directly — must not trigger a mappings fetch.
 vi.mock('@/modules/assets/use-asset-info-cache', () => ({
   useAssetInfoCache: (): { cache: Ref<Record<string, AssetInfo | null>> } => ({ cache }),
 }));
@@ -15,7 +14,6 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
   useAssetsStore: (): { isAssetIgnored: typeof isAssetIgnored } => ({ isAssetIgnored }),
 }));
 
-// ETH2 resolves to ETH (the cache is keyed by the resolved identifier).
 vi.mock('@/modules/assets/use-resolve-asset-identifier', () => ({
   useResolveAssetIdentifier: (): ((id: string) => string) => (id: string): string => (id === 'ETH2' ? 'ETH' : id),
 }));

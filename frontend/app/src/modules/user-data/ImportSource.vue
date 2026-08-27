@@ -63,8 +63,6 @@ const form = useForm<ImportState, ImportState>({
   transform: (state): ImportState => ({ dateInputFormat: state.dateInputFormat }),
 });
 
-// Destructured, because a ref reached through `form.` in the template is not unwrapped and would
-// read as permanently truthy.
 const { valid } = form;
 
 const dateInputFormatExample = computed<string>(() => {

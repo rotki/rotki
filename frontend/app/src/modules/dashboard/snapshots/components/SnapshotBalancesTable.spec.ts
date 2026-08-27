@@ -11,7 +11,6 @@ import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 
-// Drive spam/ignored from per-test lists rather than resolving real asset info.
 let spamIds: string[] = [];
 let ignoredIds: string[] = [];
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', () => ({
@@ -97,8 +96,6 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.emitted('add')).toBeUndefined();
   });
 
-  // What each filter selects is covered directly against `useSnapshotBalanceRows`; here the
-  // question is only that the bar's bag reaches the rows.
   it('should narrow the rows to what the filter bag holds', async () => {
     wrapper = createWrapper();
     await wrapper.setProps({ filters: { [SnapshotBalanceFilterKeys.SEARCH]: 'eth' } });
@@ -120,8 +117,6 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
 
   it('should flag a row caught by a sanity warning', () => {
     wrapper = createWrapper();
-    // The NFT row (amount !== 1) is flagged; zero-value rows are not, to avoid
-    // flooding the table with valueless spam tokens.
     expect(wrapper.find('[data-testid=snapshot-balances-flag]').exists()).toBe(true);
   });
 

@@ -14,6 +14,7 @@ import {
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
+import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -50,8 +51,6 @@ const {
   retry: retryLookup,
 } = useEvmTxAutoFill({
   enabled: () => data.type === 'add',
-  // The swap form has no dedicated tracked-address field; route validation
-  // errors to the tx-hash field with a hint pointing the user at the spend list.
   errorFields: { relatedAddress: 'txRef', txHash: 'txRef' },
   errorMessages,
   evmChain: () => toSnakeCase(state.location),
@@ -89,17 +88,7 @@ watchImmediate(() => data, (data) => {
   }
 });
 
-watch(() => state.hasFee, (hasFee) => {
-  if (!hasFee) {
-    state.fee = [];
-    return;
-  }
-
-  // Seeding an existing group sets the flag and the rows together, so only an empty list wants a
-  // blank row; replacing it unconditionally would discard what was just loaded.
-  if (state.fee.length === 0)
-    state.fee.push(emptySubEvent());
-});
+useFeeRows(() => state.hasFee, () => state.fee, emptySubEvent);
 
 defineExpose({
   errorCount: form.errorCount,

@@ -41,7 +41,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         break;
       case SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY:
         reportProgress(
-          makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKING),
+          makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKE),
           { current: data.processed, total: data.total },
         );
         break;

@@ -13,11 +13,10 @@ describe('textSettingSchema', () => {
     expect(messagesOf(textSettingSchema({ messages }), '')).toStrictEqual([]);
   });
 
-  it('should reject a blank value when required', () => {
+  it('should reject a blank value when required, whitespace alone included', () => {
     const schema = textSettingSchema({ messages, required: true });
 
     expect(messagesOf(schema, '')).toStrictEqual(['needed']);
-    // Vuelidate's `required` trims, so whitespace alone counts as empty.
     expect(messagesOf(schema, '   ')).toStrictEqual(['needed']);
     expect(messagesOf(schema, 'a')).toStrictEqual([]);
   });
@@ -61,7 +60,6 @@ describe('numberSettingSchema', () => {
   });
 
   it('should report the between message when both bounds are given', () => {
-    // One message rather than two: the field says "between 2 and 5", not "too small" and "too big".
     const schema = numberSettingSchema({ max: 5, messages, min: 2 });
 
     expect(messagesOf(schema, '1')).toStrictEqual(['out of range']);

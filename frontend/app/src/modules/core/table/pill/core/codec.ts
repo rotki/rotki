@@ -35,10 +35,15 @@ function isBehaviourWrapped(value: unknown): value is FilterObjectWithBehaviour<
   return typeof value === 'object' && value !== null && !Array.isArray(value) && 'values' in value;
 }
 
+/**
+ * Writes one serialized value into the half of the transported form its field is bound to.
+ *
+ * @remarks
+ * A param-bound boolean stays a boolean, because it is consumed as one (a toggle's model, a request
+ * flag); stringifying it to `'true'` would make every reader parse it back.
+ */
 function writeTarget(field: FieldDef, target: SerializedState, value: WireValue): void {
   if (field.binding.kind === 'param') {
-    // Booleans stay booleans: a param-bound boolean is consumed as one (a toggle's model, a
-    // request flag), and stringifying it to `'true'` would make every reader parse it back.
     target.params[field.binding.paramKey] = typeof value === 'boolean' || Array.isArray(value) ? value : String(value);
   }
   else {

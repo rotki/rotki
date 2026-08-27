@@ -43,8 +43,13 @@ const emit = defineEmits<{
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
-// The control needs a plain boolean; nullable-boolean settings read `null`/`undefined` before the user
-// has ever toggled them, which we treat as off. `inverted` flips both the read and the written value.
+/**
+ * The switch position, as the plain boolean the control needs.
+ *
+ * @remarks
+ * A nullable-boolean setting reads `null` or `undefined` until the user has toggled it once, which
+ * counts as off. `inverted` flips the read and the written value alike.
+ */
 const enabled = computed<boolean>({
   get: () => {
     const value = get(model) ?? false;

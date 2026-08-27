@@ -11,7 +11,6 @@ import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-mana
 import EditBalancesSnapshotAssetPriceForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
 import TwoFieldsAmountInput from '@/modules/shell/components/inputs/TwoFieldsAmountInput.vue';
 
-// ETH priced at $2000 and €1800 at the timestamp -> historic USD->EUR rate 0.9.
 const ETH_USD = 2000;
 const ETH_EUR = 1800;
 
@@ -27,11 +26,12 @@ vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   }),
 }));
 
-// Direct USD->EUR forex rate 0.9 (matches ETH's 1800/2000 ratio).
+const { usdToEur } = vi.hoisted(() => ({ usdToEur: 1800 / 2000 }));
+
 vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
   useHistoricPriceCache: vi.fn(() => ({
     createKey: (fromAsset: string, ts: number): string => `${fromAsset}#${ts}`,
-    getHistoricPrice: (): unknown => bigNumberify(0.9),
+    getHistoricPrice: (): unknown => bigNumberify(usdToEur),
     getIsPending: (): boolean => false,
     resetHistoricalPricesData: vi.fn(),
   })),
@@ -138,14 +138,10 @@ describe('edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue', () => {
     await flushPromises();
     await nextTick();
 
-    // Negative control: the sibling test proves the same empty, blurred asset does show a message
-    // when it isn't locked, so an absent message here is suppression rather than an unreached rule.
     expect(wrapper.find('[data-testid=asset] .details').exists()).toBe(false);
   });
 
-  // The form validates for display only: it exposes no `validate`, so nothing it reports can stop a
-  // save. The dialog's gate lives in EditBalancesSnapshotForm, over category and location alone.
-  it('should expose no validate, leaving its messages purely decorative', async () => {
+  it('should expose no validate, so nothing it reports can stop a save', async () => {
     setCurrency('USD');
     wrapper = createWrapper();
     await flushPromises();

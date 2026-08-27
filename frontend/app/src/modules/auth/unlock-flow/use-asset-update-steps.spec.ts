@@ -18,8 +18,6 @@ vi.mock('@/modules/assets/use-assets', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-backend-management', async importOriginal => ({
-  // The status constants are values the code under test compares against, so the real
-  // ones have to come through; only the composable is replaced.
   ...(await importOriginal<typeof import('@/modules/shell/app/use-backend-management')>()),
   useBackendManagement: vi.fn(() => ({ restartBackend })),
 }));
@@ -116,9 +114,6 @@ describe('useAssetUpdateSteps', () => {
 
   describe('requestRestart', () => {
     it('should ask for a restart without deciding whether one is possible', async () => {
-      // The runtime check moved into restartBackend, which drives Electron, the
-      // docker control endpoint, or nothing at all. Guarding again here is what
-      // kept docker on the old silent no-op.
       restartBackend.mockResolvedValue({ status: BackendRestartStatus.restarted });
 
       const result = await useAssetUpdateSteps().requestRestart();
@@ -153,9 +148,7 @@ describe('useAssetUpdateSteps', () => {
       expect(result).toEqual({ error: { kind: UnlockErrorKind.restartFailed }, ok: false });
     });
 
-    // Not a failure: no runtime could restart anything, which is how the plain web build
-    // has always behaved, so the unlock has to continue rather than block login.
-    it('should continue when no runtime can restart at all', async () => {
+    it('should continue when no runtime can restart at all, which is not a failure', async () => {
       restartBackend.mockResolvedValue({ status: BackendRestartStatus.unavailable });
 
       const result = await useAssetUpdateSteps().requestRestart();

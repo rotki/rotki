@@ -17,7 +17,7 @@ const {
   index,
   completeGroupEvents,
   groupLocationLabel,
-  matchedMovement,
+  linkedLeg,
   hideActions,
   highlightType,
   variant = 'row',
@@ -31,7 +31,7 @@ const {
   completeGroupEvents: HistoryEventEntry[];
   groupLocationLabel?: string;
   /** Set when this row is a sub-event of an expanded linked (matched) movement. */
-  matchedMovement?: boolean;
+  linkedLeg?: boolean;
   hideActions?: boolean;
   /** The highlight colour. Its presence is what highlights the row. */
   highlightType?: HighlightType;
@@ -133,7 +133,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
           :event="event"
           :chain="chain"
           :group-location-label="groupLocationLabel"
-          :matched-movement="matchedMovement"
+          :linked-leg="linkedLeg"
           :highlight="!!highlightType"
           class="min-w-0 flex-1"
         />
@@ -196,7 +196,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       :event="event"
       :chain="chain"
       :group-location-label="groupLocationLabel"
-      :matched-movement="matchedMovement"
+      :linked-leg="linkedLeg"
       :highlight="!!highlightType"
       class="w-56 shrink-0"
     />

@@ -91,9 +91,19 @@ export function useLatestPrices(
     }
   };
 
+  /**
+   * Saves a manually entered price.
+   *
+   * @remarks
+   * Runs under its own `prices:manual:add` activity so that consumers priced off manual values,
+   * such as NFT balances, can declare themselves stale after a hand edit without also firing on
+   * every automatic price sweep.
+   *
+   * Pass `update` true to overwrite an existing manual price, false to add a new one.
+   *
+   * @returns whether the price was saved
+   */
   const save = async (data: ManualPriceFormPayload, update: boolean): Promise<boolean> => {
-    // Runs as a `prices:manual:add` activity so consumers priced off manual values (NFT balances)
-    // can declare themselves stale after a hand edit without also firing on every automatic sweep.
     const outcome = await submitTask<boolean>({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.MANUAL, ActivityPart.ADD),
       kind: ActivityKind.PRICES,

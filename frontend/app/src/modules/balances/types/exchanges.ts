@@ -11,8 +11,11 @@ export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 const GATE_LOCATIONS = ['global', 'europe', 'us'] as const;
 const OKX_LOCATIONS = ['global', 'eea', 'us'] as const;
 
-// `includes` on a readonly tuple narrows its argument to the member union, which an `unknown`
-// narrowed only to `string` cannot satisfy. A set lookup takes a plain string.
+/**
+ * Sets rather than the tuples themselves: `includes` on a readonly tuple narrows its argument to the
+ * member union, which an `unknown` narrowed only to `string` cannot satisfy, while a set lookup
+ * takes a plain string.
+ */
 const GATE_LOCATION_VALUES: ReadonlySet<string> = new Set(GATE_LOCATIONS);
 const OKX_LOCATION_VALUES: ReadonlySet<string> = new Set(OKX_LOCATIONS);
 

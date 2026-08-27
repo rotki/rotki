@@ -8,13 +8,9 @@ import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use
 /** The pill-bar fields for the oracle prices table. */
 export function useOraclePriceFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
-  // Asset and date resolution is the same for every table filtering on them, so it comes from one
-  // place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const { assetSearch } = useAssetInfoRetrieval();
 
-  // Built once: the search is debounced, and rebuilding it would hand each keystroke a fresh timer
-  // that cancels nothing.
   const searchAsset = assetSuggestions(assetSearch);
 
   return toOraclePriceFields(shared, t, {

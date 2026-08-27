@@ -98,8 +98,12 @@ function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined,
     texts,
   });
 
-  // The category header itself is searchable, then each row nested under it. A flat category has no
-  // header text to prefix its rows with.
+  /**
+   * Builds the searchable entries for one category, led by an entry for the header itself.
+   *
+   * @remarks
+   * A flat category has no header text, so its rows carry no category prefix in their match text.
+   */
   const categoryEntries = (category: SearchCategory, info: TabInfo): SettingsSearchEntry[] => {
     const categoryTitle = t(category.titleKey);
     const header: SettingsSearchEntry = {
@@ -156,8 +160,12 @@ export function useSettingsSearch(): UseSettingsSearchReturn {
   const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
 
-  // Resolves a settings tab's route/label/icon from that page's `nav` meta; returns undefined when the
-  // route lacks it so a single misconfigured tab is skipped rather than breaking the whole search.
+  /**
+   * Resolves a settings tab's route, label and icon from that page's `nav` meta.
+   *
+   * @returns `undefined` when the route declares no `nav`, which drops that one tab from the
+   * search rather than failing the whole derivation
+   */
   function tabInfo(name: RouteName): TabInfo | undefined {
     const nav = router.getRoutes().find(route => route.name === name)?.meta.nav;
     if (!nav)

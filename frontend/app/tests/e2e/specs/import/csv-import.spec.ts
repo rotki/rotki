@@ -96,7 +96,6 @@ test.describe.serial('csv import', () => {
     await importPage.selectSource('Nexo');
     await importPage.importCsv('nexo', 'nexo.csv');
 
-    // Navigate to history and filter by nexo (all nexo events have location=nexo)
     await historyPage.visit();
     await waitForNoRunningTasks(ctx.sharedPage);
     await historyPage.applyTableFilter('location', 'nexo');

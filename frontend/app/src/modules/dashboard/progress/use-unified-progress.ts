@@ -104,7 +104,6 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
       return balanceProgressData.percentage;
     }
 
-    // Use history progress if no balance queries
     if (!get(isBalanceQuerying)) {
       const progressData = get(historyProgress);
       return progressData?.percentage ?? 0;

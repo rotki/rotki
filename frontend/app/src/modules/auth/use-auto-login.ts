@@ -37,9 +37,18 @@ export function createAutoLogin(): UseAutoLoginReturn {
   const { resetSessionBackend } = useBackendManagement();
   const { checkIfPasswordConfirmationNeeded, confirmPassword, needsPasswordConfirmation } = usePasswordConfirmation();
 
-  // `immediate` so it also fires when this is created after the backend already connected
-  // (e.g. the login screen mounts post-connect) rather than only on a false→true transition.
-  watch(connected, async (isConnected) => {
+  /**
+   * Attempts to unlock the last profile as soon as the backend is reachable.
+   *
+   * @remarks
+   * Watched immediately rather than on a false-to-true transition, so it still runs where the
+   * backend connected before this was created, which is what the login screen mounting post-connect
+   * does. With no saved profile there is nothing to unlock, so the loader is dropped and the login
+   * form shown.
+   *
+   * @param isConnected - whether the backend is reachable
+   */
+  async function unlockLastProfile(isConnected: boolean): Promise<void> {
     if (!isConnected)
       return;
 
@@ -47,7 +56,6 @@ export function createAutoLogin(): UseAutoLoginReturn {
 
     await resetSessionBackend();
 
-    // No saved profile ⇒ nothing to auto-unlock; drop the loader and show the login form.
     if (!get(lastLogin)) {
       set(autolog, false);
       return;
@@ -57,7 +65,9 @@ export function createAutoLogin(): UseAutoLoginReturn {
 
     if (get(controller.state).kind !== UnlockPhase.ready)
       set(autolog, false);
-  }, { immediate: true });
+  }
+
+  watch(connected, unlockLastProfile, { immediate: true });
 
   return {
     autolog: readonly(autolog),

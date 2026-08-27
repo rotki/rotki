@@ -16,6 +16,32 @@ async function openSigilDb(): Promise<void> {
   });
 }
 
+/**
+ * Counts the queued records by reading IndexedDB directly.
+ *
+ * @remarks
+ * Goes around the module under test on purpose, so what the store holds is proved by the store
+ * rather than by the module reporting on itself.
+ */
+async function countEvents(): Promise<number> {
+  const db = await new Promise<IDBDatabase>((resolve) => {
+    const req = indexedDB.open('sigil', 1);
+    req.onupgradeneeded = (): void => {
+      req.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = (): void => resolve(req.result);
+  });
+
+  const count = await new Promise<number>((resolve) => {
+    const tx = db.transaction('events', 'readonly');
+    const req = tx.objectStore('events').count();
+    req.onsuccess = (): void => resolve(req.result);
+  });
+
+  db.close();
+  return count;
+}
+
 describe('use-sigil-queue', () => {
   beforeEach(() => {
     // eslint-disable-next-line no-global-assign
@@ -53,7 +79,6 @@ describe('use-sigil-queue', () => {
       await enqueue({ url: '/leftover', timestamp: Date.now() });
 
       startQueue();
-      // The initial flush is fire-and-forget: poll for it instead of sleeping
       await vi.waitUntil(() => fetchSpy.mock.calls.length > 0, { interval: 1, timeout: 2000 });
 
       expect(fetchSpy).toHaveBeenCalled();
@@ -64,11 +89,12 @@ describe('use-sigil-queue', () => {
   });
 
   describe('enqueue', () => {
-    it('should store entries in IndexedDB without throwing', async () => {
+    it('should store every entry it is given in IndexedDB', async () => {
       const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
       await enqueue({ url: '/page1', timestamp: 1000 });
       await enqueue({ url: '/page2', timestamp: 2000 });
-      // No error means entries were stored successfully
+
+      expect(await countEvents()).toBe(2);
     });
 
     it('should store entries with custom event data', async () => {
@@ -251,32 +277,11 @@ describe('use-sigil-queue', () => {
     it('should clear IndexedDB on stop for opt-out compliance', async () => {
       const { enqueue, stopQueue } = await import('@/modules/core/sigil/use-sigil-queue');
 
-      // Verify the DB was cleared by opening it and counting the records
-      async function countEvents(): Promise<number> {
-        const db = await new Promise<IDBDatabase>((resolve) => {
-          const req = indexedDB.open('sigil', 1);
-          req.onupgradeneeded = (): void => {
-            req.result.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
-          };
-          req.onsuccess = (): void => resolve(req.result);
-        });
-
-        const count = await new Promise<number>((resolve) => {
-          const tx = db.transaction('events', 'readonly');
-          const req = tx.objectStore('events').count();
-          req.onsuccess = (): void => resolve(req.result);
-        });
-
-        db.close();
-        return count;
-      }
-
       await enqueue({ url: '/data', timestamp: Date.now() });
       expect(await countEvents()).toBe(1);
 
       stopQueue();
 
-      // clearAll is fire-and-forget: poll the store until it drains
       await vi.waitUntil(async () => await countEvents() === 0, { interval: 1, timeout: 2000 });
 
       expect(await countEvents()).toBe(0);

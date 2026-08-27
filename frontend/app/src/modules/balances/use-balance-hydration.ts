@@ -121,14 +121,15 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
      * no new ones start. One chain's read failing must not abandon the rest, so every factory is
      * infallible — `ResultAsync<void, never>`. Nothing in the package enforces that, and the naive
      * call site silently drops chains while looking entirely correct.
+     *
+     * That is what the swallowed throw below buys, and it costs nothing: `handleCachedFetch` has
+     * already reported whatever it owns, so only a throw on the way to it reaches here.
      */
     const factories = chains.map(chain => async (): ResultAsync<void, never> => {
       try {
         await hydrateChain(payload, chain);
       }
       catch (error: unknown) {
-        // A rejection here is a rejection of the whole batch, so it never leaves this factory.
-        // `handleCachedFetch` reports what it owns; this covers a throw on the way to it.
         logger.error(error);
       }
       return ok(undefined);

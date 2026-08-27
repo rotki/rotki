@@ -51,7 +51,6 @@ test.describe.serial('settings::chains', () => {
       await chainsPage.verifyTabNotExists(testChain);
     }
 
-    // Now add the chain
     await chainsPage.addChain(testChain);
     await chainsPage.verifyTabExists(testChain);
 
@@ -59,7 +58,6 @@ test.describe.serial('settings::chains', () => {
     await chainsPage.selectTab('default');
     await chainsPage.selectTab(testChain);
 
-    // Remove the chain
     await chainsPage.removeChain(testChain);
     await chainsPage.verifyTabNotExists(testChain);
   });

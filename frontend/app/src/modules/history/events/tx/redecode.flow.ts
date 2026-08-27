@@ -3,6 +3,9 @@ import { msg } from '@/message-key';
 import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
+/** The `ignoreCache` a re-decode submits with, and therefore the one its children must be named for. */
+const IGNORE_CACHE = true;
+
 /**
  * Re-derive decodable chains' events from transactions already in the database.
  *
@@ -21,10 +24,8 @@ export const redecodeFlow: HistoryFlow<readonly string[], string> = {
    * constructor the mechanism submits under, so the parent gate cannot be broken by the two drifting
    * apart.
    */
-  // `true` because this flow always forces a re-decode; it must match the `ignoreCache` the
-  // mechanism submits with, or the children would not be gated by the parent that claims them.
   children: (chains: readonly string[]): readonly FlowChild<string>[] => chains.map(chain => ({
-    id: decodeActivityId(chain, true),
+    id: decodeActivityId(chain, IGNORE_CACHE),
     kind: ActivityKind.TX_DECODING,
     payload: chain,
   })),

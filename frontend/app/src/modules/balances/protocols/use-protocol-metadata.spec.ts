@@ -20,7 +20,13 @@ vi.mock('@/modules/core/common/file/file', () => ({
   getPublicProtocolImagePath: (path: string): string => `img:${path}`,
 }));
 
-// createSharedComposable caches the instance, so reset the module per test.
+/**
+ * Imports the metadata module fresh for one case.
+ *
+ * @remarks
+ * `createSharedComposable` caches its instance for the lifetime of the module, so without a reset
+ * before the import a case inherits the metadata the previous one already fetched.
+ */
 async function load(): Promise<typeof import('./use-protocol-metadata')> {
   vi.resetModules();
   return import('./use-protocol-metadata');

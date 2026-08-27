@@ -82,7 +82,7 @@ describe('createProgressUpdateHandler', () => {
     }));
 
     expect(mockReportProgress).toHaveBeenCalledWith(
-      makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKING),
+      makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKE),
       { current: 1, total: 2 },
     );
   });

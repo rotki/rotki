@@ -17,8 +17,7 @@ import {
 } from './core/types';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 
-// Re-exported so a migrating producer pulls the submission bridge, the id helpers and the
-// outcome guard from one module, keeping its import count under the `@rotki/max-dependencies` cap.
+// Re-exported so a producer stays under the `@rotki/max-dependencies` import cap.
 export { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from './core/types';
 
 export { isActionable } from '@/modules/core/tasks/task-result';
@@ -79,6 +78,11 @@ interface UseNativeTaskReturn {
    * gains ownership of queueing, lane caps, cancellation and re-run. Re-entrant calls for the same
    * {@link ActivityId} share the in-flight promise instead of double-submitting.
    *
+   * Take the value from the returned outcome, never from a variable the `run` body assigned. A
+   * deduped caller's `run` never executes, so such a variable keeps its initial value and the
+   * caller reads a success as empty. Anything the id does not distinguish is dedup surface:
+   * a cache read and a force-refresh need different ids, or the refresh is handed the read's promise.
+   *
    * Resolves a tick BEFORE the activity is marked terminal, so an imperative
    * `statusOf`/`useWorkStatus` read right after an `await` still reports active, silently. Reactive
    * readers are unaffected. Flush a microtask first if you need the settled status.
@@ -138,9 +142,9 @@ interface UseNativeTaskReturn {
 }
 
 /**
- * The single per-producer bridge that turns a {@link ActivitySpec} into an awaitable. Used by
- * each producer as it migrates native (Phase 2), so the migration is a thin call-site change and
- * the await semantics callers depend on are preserved.
+ * Turns an {@link ActivitySpec} into an awaitable, as the single bridge every producer submits
+ * through. Preserves the await semantics a caller depends on, so submitting an activity reads the
+ * same as awaiting the work directly.
  */
 export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
   const { t } = useI18n({ useScope: 'global' });

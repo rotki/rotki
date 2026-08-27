@@ -1,9 +1,14 @@
 import { defaultDocument } from '@vueuse/core';
 import { type HighlightRequest, useSettingsHighlight } from '@/modules/settings/use-settings-highlight';
 
-// A brief background flash, rounded and with horizontal padding, so the highlighted row reads as a
-// contained highlight instead of a bare outline hugging the text. `-mx-4` cancels the `px-4` for layout
-// (the surrounding content column already pads by the same amount), so nothing shifts while it is applied.
+/**
+ * The classes worn for the duration of the flash.
+ *
+ * @remarks
+ * Rounded and horizontally padded, so the row reads as a contained highlight rather than a bare
+ * outline hugging the text. `-mx-4` cancels the `px-4` for layout, since the surrounding content
+ * column already pads by the same amount, so nothing shifts while the highlight is applied.
+ */
 const HIGHLIGHT_CLASSES = ['rounded-lg', 'px-4', '-mx-4'] as const;
 
 /** The rui primary, exposed as a theme-aware `r, g, b` triplet; falls back to the light-theme value. */

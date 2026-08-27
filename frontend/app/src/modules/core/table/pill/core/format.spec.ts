@@ -2,9 +2,7 @@ import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/type
 import { describe, expect, it } from 'vitest';
 import { pillOperator, pillStateSummary, pillValueCaption, pillValueSummary } from '@/modules/core/table/pill/core/format';
 
-// The core works in operators; the words come from the Vue layer, which is what makes them
-// translatable. These stand in for it.
-const operatorLabels = {
+const vueLayerOperatorLabels = {
   after: 'after',
   before: 'before',
   between: 'between',
@@ -37,9 +35,7 @@ describe('pill format', () => {
       expect(pillOperator(field({}), filter({ op: 'is' }))).toBeUndefined();
     });
 
-    // The op itself, not a word: the words are the Vue layer's, which is what makes them
-    // translatable at all.
-    it('should name a non-default operator', () => {
+    it('should name a non-default operator by its op rather than a word, leaving the translatable copy to the Vue layer', () => {
       expect(pillOperator(field({}), filter({ op: 'is_not' }))).toBe('is_not');
     });
   });
@@ -80,14 +76,11 @@ describe('pill format', () => {
       expect(pillValueCaption(field({ resolveCaption }), filter({ values: ['a'] }))).toBe('caption for a');
     });
 
-    // No room for it beside several values, and no single value it would describe.
-    it('should drop the caption once a pill holds more than one value', () => {
+    it('should drop the caption once a pill holds more than one value for it to describe', () => {
       expect(pillValueCaption(field({ resolveCaption }), filter({ values: ['a', 'b'] }))).toBe('');
     });
 
-    // A validator's public key annotates the option while picking, but the index alone names it on
-    // the pill, and a 66-character key there pushes every other pill off the bar.
-    it('should drop the caption on the pill for a list-scoped field', () => {
+    it('should drop the caption on the pill for a field whose caption is scoped to the option list', () => {
       const listScoped = field({ captionScope: 'list', resolveCaption });
 
       expect(pillValueCaption(listScoped, filter({ values: ['a'] }))).toBe('');
@@ -113,23 +106,21 @@ describe('pill format', () => {
         { location: 'kraken' },
         { locationLabels: ['0xaaa', '0xbbb'] },
         [location, account],
-        operatorLabels,
+        vueLayerOperatorLabels,
       );
 
       expect(summary).toBe('Location: kraken · Account: 0xaaa, 0xbbb');
     });
 
     it('should show a non-default operator and a bare label for a boolean', () => {
-      const summary = pillStateSummary({ location: '!kraken', showIgnored: true }, {}, [location, ignored], operatorLabels);
+      const summary = pillStateSummary({ location: '!kraken', showIgnored: true }, {}, [location, ignored], vueLayerOperatorLabels);
 
       expect(summary).toBe('Location is not: kraken · Ignored');
     });
 
-    // A view saved before a field was removed from the table still reads as what is left of it,
-    // rather than as a broken row.
-    it('should drop what the given fields cannot describe', () => {
-      expect(pillStateSummary({ gone: 'x', location: 'kraken' }, {}, [location], operatorLabels)).toBe('Location: kraken');
-      expect(pillStateSummary({}, {}, [location], operatorLabels)).toBe('');
+    it('should drop what the given fields cannot describe, so a view saved before a field was removed still reads as what is left of it', () => {
+      expect(pillStateSummary({ gone: 'x', location: 'kraken' }, {}, [location], vueLayerOperatorLabels)).toBe('Location: kraken');
+      expect(pillStateSummary({}, {}, [location], vueLayerOperatorLabels)).toBe('');
     });
   });
 });

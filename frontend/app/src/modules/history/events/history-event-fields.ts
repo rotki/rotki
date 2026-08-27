@@ -93,7 +93,13 @@ function resolveIncludedKinds(entryTypes: HistoryEventEntryType[] | undefined): 
 /** The action pill is the same two request keys under one verb, so it cannot sit beside these. */
 const EXCLUDES_ACTION: readonly string[] = ['action'];
 
-/** The period, and the two amount bounds, as the single pills they read as on screen. */
+/**
+ * Builds the period, and the two amount bounds, as the single pills they read as on screen.
+ *
+ * @remarks
+ * The period refuses equal bounds: timestamps here are milliseconds and the backend scales both
+ * bounds by 1000, so an equal pair asks for the single millisecond `X000` rather than the second.
+ */
 function boundsFields(resolvers: HistoryFieldResolvers, options: HistoryEventFieldOptions): FieldDef[] {
   const { t } = resolvers;
   const period = options.disabled.period
@@ -101,8 +107,6 @@ function boundsFields(resolvers: HistoryFieldResolvers, options: HistoryEventFie
     : [toPeriodField(
         (): string => t('transactions.filter_field_labels.period'),
         {
-          // Timestamps here are milliseconds and the backend scales both bounds by 1000, so an
-          // equal pair asks for the single millisecond `X000` rather than the second.
           allowEqual: false,
           lowerKey: HistoryEventFilterKeys.START,
           upperKey: HistoryEventFilterKeys.END,
@@ -186,8 +190,6 @@ function classificationFields(
   if (!entryTypes || entryTypes.length > 1) {
     fields.push(decorateSharedField(
       toMatchFieldDef({
-        // The one excludable field in the app: the request takes entry types as
-        // `{ behaviour, values }`, which is what lets a type be filtered out rather than in.
         allowExclusion: true,
         key: HistoryEventFilterKeys.ENTRY_TYPE,
         label: (): string => t('transactions.filter_field_labels.entry_type'),
@@ -213,8 +215,6 @@ function classificationFields(
 
   if (included.evmOrOnline && !disabled.eventSubtypes) {
     fields.push(toMatchFieldDef({
-      // Types and subtypes are a cross product on the backend, so a subtype the selected types do
-      // not admit matches nothing at all.
       admits: values => options.subtypesFor(values[HistoryEventFilterKeys.EVENT_TYPE] ?? []),
       excludes: EXCLUDES_ACTION,
       key: HistoryEventFilterKeys.EVENT_SUBTYPE,
@@ -357,12 +357,12 @@ export interface ActionFieldOption {
  * from raw types would lose whether they picked an action or set the two fields by hand.
  *
  * It excludes Type and Subtype, and they exclude it: all three drive the same two request keys.
+ *
+ * The verb lookup is a `computed`, not a getter that rebuilds: `resolveLabel` and `resolveIcon`
+ * run once per candidate value while the bar narrows, so building the map inside them would be
+ * quadratic in the number of verbs on every keystroke.
  */
 export function toHistoryActionField(t: Translate, actions: () => ActionFieldOption[]): FieldDef {
-  // Computed, not a getter that rebuilds. `resolveLabel` and `resolveIcon` are called once per
-  // candidate value while the bar narrows, so rebuilding the map inside them cost a full pass over
-  // the actions for every value examined - quadratic in the number of verbs, on every keystroke,
-  // and every object it allocated was thrown away immediately.
   const byVerb = computed<Map<string, ActionFieldOption>>(
     () => new Map(actions().map(action => [action.verbKey, action])),
   );

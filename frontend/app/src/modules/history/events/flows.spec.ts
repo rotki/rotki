@@ -41,9 +41,7 @@ describe('history flow declarations', () => {
     expect(flows.length).toBeGreaterThan(0);
   });
 
-  it.each(flows.map(f => [f.name, f] as const))('%s should have a title that exists in the locale', (_name, declared) => {
-    // Presence, not type: the i18n plugin compiles locale leaves, so a translated key is a compiled
-    // node here rather than a string. A key that does not exist is plainly undefined.
+  it.each(flows.map(f => [f.name, f] as const))('%s should have a title that exists in the locale, asserted by presence rather than type because the i18n plugin compiles a locale leaf into a node rather than a string', (_name, declared) => {
     const value = declared.flow.titleKey
       .split('.')
       .reduce<unknown>((node, key) => (typeof node === 'object' && node !== null && key in node ? Reflect.get(node, key) : undefined), en);

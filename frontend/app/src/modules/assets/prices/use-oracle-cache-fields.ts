@@ -22,12 +22,8 @@ export function useOracleCacheFields(): FieldDef[] {
   const shared = useSharedFieldResolvers();
   const { assetSearch } = useAssetInfoRetrieval();
 
-  // Built once: the search is debounced, and rebuilding it would hand each keystroke a fresh timer
-  // that cancels nothing.
   const searchAsset = assetSuggestions(assetSearch);
 
-  // `price_management.*`, not the tab's own `Filter by From Asset`: a pill already reads as a
-  // filter, so the "Filter by" prefix said it twice and made the pill twice as wide.
   return [
     toAssetField({
       key: OracleCacheFilterKeys.FROM_ASSET,

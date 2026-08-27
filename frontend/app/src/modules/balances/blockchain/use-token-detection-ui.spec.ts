@@ -116,8 +116,6 @@ describe('useTokenDetectionUi', () => {
       const chainRef = ref<string[]>(['eth', 'optimism']);
       const addrRef = ref<string | null>(null);
 
-      // Use per-chain address lookup — eth has 0xaddr1, optimism has 0xaddr2
-      // With null accountAddress, detectedTokens returns noTokens for each chain
       const { detectedTokens } = useTokenDetectionUi(chainRef, addrRef);
       expect(get(detectedTokens).total).toBe(0);
 

@@ -7,13 +7,6 @@ import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { DuplicatesTab, useCustomizedEventDuplicatesDialog } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 
-/**
- * The seam: the dialog reads the events behind the duplicate group ids the domain composable found,
- * one set of rows per tab. Actions are handed to that composable with a callback, and only when the
- * user confirms does the callback run: the acted-on ids leave the selection, and the tabs whose
- * contents can have moved are re-read.
- */
-
 const push = vi.fn();
 vi.mock('vue-router', () => ({
   useRouter: (): { push: typeof push } => ({ push }),

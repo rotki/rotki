@@ -232,6 +232,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
    * later refresh then short-circuits on it. For the same reason it cannot be a `container`: the
    * ledger entry is needed, it just has to be true. A run that targeted nothing settles SKIPPED,
    * which stops a refresh fired before any account loaded from claiming the whole history.
+   *
+   * The liveness check has to stay outside the activity: `submitTask` dedups by id, so a caller
+   * that tests it from inside `run` is handed the in-flight promise and the branch never executes.
    */
   async function refreshOnce(params: RefreshTransactionsParams, wave: RefreshWave): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
@@ -249,8 +252,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (shouldNotRefresh({ alreadyLoaded: status.everCompleted && !userInitiated, novelty }))
       return;
 
-    // Must stay outside the activity: `submitTask` dedups by id, so moving it in hands the second
-    // caller the in-flight promise and the check never runs.
     if (status.active)
       return;
 

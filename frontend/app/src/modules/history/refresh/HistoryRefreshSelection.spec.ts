@@ -4,17 +4,6 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type Component, defineComponent, h, nextTick, type VNode } from 'vue';
 import HistoryRefreshSelection from '@/modules/history/refresh/HistoryRefreshSelection.vue';
 
-/**
- * The seam: this component is wiring. It owns the menu's open state, hands the shared selection
- * down to whichever tab is showing, routes "select all" to that tab's own toggle, and emits the
- * active tab's picks as the refresh payload before clearing and closing.
- *
- * What each tab does with its picks belongs to the tab components, and the selection state itself
- * is covered by `use-history-refresh-selection.spec.ts`.
- */
-
-// RuiMenu teleports its content lazily; stub it so the activator and the panel are both in the
-// tree without opening it, while still recording the open state the component drives.
 const RuiMenuStub = defineComponent({
   name: 'RuiMenu',
   props: { modelValue: { default: false, type: Boolean } },
@@ -62,8 +51,6 @@ async function createWrapper(props: { processing?: boolean; disabled?: boolean }
     props: { processing: false, ...props },
   });
 
-  // The tab items only render their content after the first tick, and the template refs the
-  // component routes "select all" through are only populated once they have.
   await nextTick();
   return wrapper;
 }
@@ -71,14 +58,13 @@ async function createWrapper(props: { processing?: boolean; disabled?: boolean }
 describe('historyRefreshSelection', () => {
   let wrapper: VueWrapper<InstanceType<typeof HistoryRefreshSelection>>;
 
-  /** Makes the active tab report a partial selection, which is what enables the refresh button. */
+  /** Selects accounts on the active tab, which is what enables the refresh button. */
   async function selectAccounts(): Promise<void> {
     const chains = wrapper.findComponent({ name: 'HistoryRefreshChains' });
     chains.vm.$emit('update:modelValue', accounts);
     await nextTick();
   }
 
-  /** Clicks a tab header, the way a user switches tabs. */
   async function openTab(tab: string): Promise<void> {
     const header = wrapper.findAll('button').find(button => button.text() === `history_refresh_selection.tabs.${tab}`);
     assert(header, `no tab header for ${tab}`);

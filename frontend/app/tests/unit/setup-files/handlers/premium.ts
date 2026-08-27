@@ -49,11 +49,9 @@ export const premiumHandlers = [
   http.get(`${backendUrl}/api/1/premium/devices`, () =>
     HttpResponse.json(mockPremiumDevicesResponse, { status: 200 })),
 
-  // PATCH /api/1/premium/devices
   http.patch(`${backendUrl}/api/1/premium/devices`, () =>
     HttpResponse.json({ result: true, message: '' }, { status: 200 })),
 
-  // DELETE /api/1/premium/devices
   http.delete(`${backendUrl}/api/1/premium/devices`, () =>
     HttpResponse.json({ result: true, message: '' }, { status: 200 })),
 ];

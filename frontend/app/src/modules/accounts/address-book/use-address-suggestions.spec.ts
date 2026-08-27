@@ -61,8 +61,7 @@ describe('modules/accounts/address-book/useAddressSuggestions', () => {
     unmount();
   });
 
-  it('should keep an address the user typed themselves', async () => {
-    // It was never offered, so it dropping out of a list it was never on means nothing.
+  it('should keep an address the user typed themselves, which was never on the offered list to drop off it', async () => {
     const { selection, unmount } = mountWith('eth', '0x999');
 
     set(suggestions, ['0xdef']);

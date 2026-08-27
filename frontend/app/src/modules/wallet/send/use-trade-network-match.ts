@@ -33,8 +33,6 @@ export function useTradeNetworkMatch(selectedChain: Ref<string>): UseTradeNetwor
     if (!get(connected) || !chainId)
       return false;
 
-    // An unresolvable chain compares unequal, which is the answer we want: the
-    // wallet is on something the form cannot send from.
     return get(selectedChain) !== getChainFromChainId(chainId);
   });
 
@@ -48,19 +46,26 @@ export function useTradeNetworkMatch(selectedChain: Ref<string>): UseTradeNetwor
     startPromise(switchNetwork(BigInt(chainId)));
   }
 
-  // No `curr === prev` guard: `connectedChainId` is a plain ref, so Vue does not
-  // fire this when it is written with the value it already holds.
-  watchImmediate(connectedChainId, (curr) => {
+  /**
+   * Follows the wallet onto a chain rotki supports.
+   *
+   * @remarks
+   * A chain rotki does not support leaves the selection alone, so that {@link wrongNetwork} reports
+   * the mismatch; adopting a fallback would hide it. No `curr === prev` guard is needed, since
+   * `connectedChainId` is a plain ref and Vue does not fire on a write of the value it already holds.
+   *
+   * @param curr - the chain id the wallet now reports, if it reports one
+   */
+  function followWalletChain(curr: number | undefined): void {
     if (!isDefined(curr))
       return;
 
-    // Keep the selection where it is when the wallet moves somewhere rotki does
-    // not support: `wrongNetwork` then reports the mismatch, where adopting a
-    // fallback chain would have hidden it.
     const chain = getChainFromChainId(curr);
     if (chain)
       set(selectedChain, chain);
-  });
+  }
+
+  watchImmediate(connectedChainId, followWalletChain);
 
   return {
     switchToSelectedChain,

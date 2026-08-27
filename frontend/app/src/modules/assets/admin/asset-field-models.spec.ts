@@ -26,8 +26,6 @@ describe('decimalsTextModel', () => {
     expect(get(decimalsTextModel(decimals))).toBe('18');
   });
 
-  // A new managed asset opens with null decimals. Interpolating that straight into a string is what
-  // put the word "null" in the box.
   it.each([
     [null],
     [undefined],

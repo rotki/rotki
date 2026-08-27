@@ -72,8 +72,6 @@ const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
 const { scrollToFirstError } = useFormErrorScroll();
 
-// Each field is read on its own rather than by spreading a bag over defaults: a caller forwarding
-// its own optional value passes a present key holding `undefined`, which a spread takes as the value.
 const errorCount = computed<number>(() => errors?.count ?? 0);
 
 const actionDisabled = computed<boolean>(() => action?.disabled ?? false);

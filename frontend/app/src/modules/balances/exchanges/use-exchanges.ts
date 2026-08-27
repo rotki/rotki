@@ -42,12 +42,17 @@ export function useExchanges(): UseExchangesReturn {
 
   const { callSetupExchange, queryRemoveExchange } = useExchangeApi();
 
+  /**
+   * Refreshes one exchange's balances.
+   *
+   * @remarks
+   * One native activity per location, so liveness and freshness are read off the orchestrator:
+   * `useWorkStatus(ActivityKind.EXCHANGE_BALANCES)` for all of them, or with a `location` for one.
+   */
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { ignoreCache, location } = payload;
     const threshold = get(valueThreshold);
 
-    // One native activity per exchange location; liveness/freshness are read off the orchestrator
-    // (`useWorkStatus(ActivityKind.EXCHANGE_BALANCES)` globally, or with `location` per-exchange).
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.EXCHANGE_BALANCES, location),
       kind: ActivityKind.EXCHANGE_BALANCES,

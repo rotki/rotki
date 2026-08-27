@@ -56,8 +56,6 @@ export function useTablePersistence(
     return false;
   })();
 
-  // The per-key policy map is the public vocabulary; the two lists below are the
-  // shape the rest of this module (and the backing store) still works in.
   const excludeKeys = keysWithPolicy(persist, 'never');
   const transientKeys = keysWithPolicy(persist, 'untilChanged');
 
@@ -68,8 +66,14 @@ export function useTablePersistence(
     tableId: ref<TableId | undefined>(persist?.tableId),
   });
 
-  // Tracks the initial values of transient keys from external navigation.
-  // Transient keys are only stripped from persistence when their values haven't changed from navigation.
+  /**
+   * The transient keys' values as an external navigation delivered them.
+   *
+   * @remarks
+   * A key with the `untilChanged` policy is stripped from what gets persisted only while it still
+   * holds the value the navigation brought. Once the user edits it, it becomes theirs and persists
+   * like any other, which is what keeps a link-shared filter from being saved as a preference.
+   */
   const navigationTransientValues = ref<Record<string, string | string[]>>();
 
   const resetTransientValues = (): void => {

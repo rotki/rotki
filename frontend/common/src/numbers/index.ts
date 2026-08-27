@@ -32,6 +32,14 @@ export function bigNumberify(value: string | number, fallback?: BigNumber): BigN
   }
 }
 
+/**
+ * A number or numeric string, parsed to a {@link BigNumber}.
+ *
+ * @remarks
+ * A value `BigNumber` refuses is reported as a zod issue rather than rethrown, because a throw from
+ * inside a transform escapes the parse entirely instead of failing it the way every other invalid
+ * field does.
+ */
 export const NumericString = z
   .number()
   .or(z.string())
@@ -40,8 +48,6 @@ export const NumericString = z
       return new BigNumber(arg);
     }
     catch {
-      // Without this the constructor throws straight out of the transform, which
-      // escapes zod instead of failing the parse like every other invalid field.
       ctx.addIssue({ code: 'custom', message: `${arg} is not a number` });
       return z.NEVER;
     }

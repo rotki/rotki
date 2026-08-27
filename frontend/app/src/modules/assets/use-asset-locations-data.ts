@@ -43,7 +43,6 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { addresses, identifier, locationFilter, onlyTags } = options;
 
   const currencySymbol = useSetting('currencySymbol');
-  // Every source that can still be filling the breakdown this table renders.
   const { useIsActive } = useTaskCenter();
   const { loadingBlockchainBalances } = useBalancesLoading();
   const detailsLoading = logicOr(
@@ -88,10 +87,6 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
     return locations.filter((assetLocation) => {
       const tags = assetLocation.tags ?? [];
       const includedInTags = tagsFilter.every(tag => tags.includes(tag));
-      // Both sides are the raw location id the row carries. Comparing display names instead meant
-      // comparing two different formatters: `getChainName('polygon_pos')` is `Polygon PoS` while
-      // `toSentenceCase('polygon_pos')` is `Polygon_pos`, so picking any location whose id has an
-      // underscore silently emptied the table.
       const locationMatches = !location || assetLocation.location === location;
       const accountMatches = picked.length === 0 || picked.includes(assetLocation.address);
 

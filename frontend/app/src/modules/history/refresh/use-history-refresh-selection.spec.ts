@@ -3,11 +3,8 @@ import { nextTick } from 'vue';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { type HistoryRefreshTab, useHistoryRefreshSelection } from '@/modules/history/refresh/use-history-refresh-selection';
 
-/**
- * The seam: the four tabs each hold their own picks, and everything the menu shows (the select-all
- * state, the counter, the search label) reads the *active* tab only. Switching tabs throws the
- * picks away, and the refresh payload is the active tab's picks in the shape the parent expects.
- */
+const MOCK_T_PLURAL_SUFFIX = '::';
+
 describe('useHistoryRefreshSelection', () => {
   let selection: ReturnType<typeof useHistoryRefreshSelection>;
 
@@ -73,7 +70,7 @@ describe('useHistoryRefreshSelection', () => {
     expect(get(selected)).toBe(false);
   });
 
-  it('should drop every pick when the tab changes', async () => {
+  it('should drop every pick and the all-selected flag when the tab changes', async () => {
     const { modelSearch, modelSelectedAccounts, modelSelectedChain, selected, setAllSelected } = selection;
 
     set(modelSearch, 'eth');
@@ -87,7 +84,6 @@ describe('useHistoryRefreshSelection', () => {
     expect(get(modelSelectedChain)).toBeUndefined();
     expect(get(modelSelectedAccounts)).toEqual([]);
 
-    // Back on the tab that had reported "all selected", to prove that flag was cleared too.
     await switchTo('chains');
     expect(get(selected)).toBe(false);
   });
@@ -152,8 +148,7 @@ describe('useHistoryRefreshSelection', () => {
 
       set(modelSelectedAccounts, [{ address: '0x1', chain: 'eth' }, { address: '0x2', chain: 'eth' }]);
 
-      // `mockT` marks a key it was given a pluralization argument for with a trailing `::`.
-      expect(get(typeText)).toBe('history_refresh_selection.type.accounts::');
+      expect(get(typeText)).toBe(`history_refresh_selection.type.accounts${MOCK_T_PLURAL_SUFFIX}`);
     });
   });
 

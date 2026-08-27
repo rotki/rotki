@@ -13,8 +13,6 @@ const TEST_DATA_DIR = '/test/data/dir';
 
 describe('useNewlyDetectedTokensDb', () => {
   beforeAll(() => {
-    // Set a global pinia for tests, it's needed otherwise the shared composable
-    // will access the wrong store. and make tests to fail.
     const pinia = createPinia();
     setActivePinia(pinia);
   });
@@ -98,9 +96,6 @@ describe('useNewlyDetectedTokensDb', () => {
       const originalDetectedAt = originalToken?.detectedAt;
       expect(originalDetectedAt).toBeDefined();
 
-      // `detectedAt` defaults to `Date.now()`, so the update can only be shown to
-      // preserve the original if a fresh default would differ. Move the clock
-      // rather than sleeping on it.
       const advanced = vi.spyOn(Date, 'now').mockReturnValue(originalDetectedAt! + 10_000);
 
       await addToken({

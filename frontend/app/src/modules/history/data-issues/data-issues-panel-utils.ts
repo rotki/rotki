@@ -27,14 +27,14 @@ export function panelFilterFields(fields: FieldDef[]): FieldDef[] {
   return fields.filter(field => PANEL_FILTER_KEYS.includes(field.key));
 }
 
-// Filter values are typed `string | string[] | boolean`; these fields only ever
-// produce strings/arrays, so narrow to the shapes the request payload accepts.
 type FilterValue = string | string[] | boolean | undefined;
 
+/** Drops a boolean filter value, keeping the single and multi shapes a request payload accepts. */
 export function asMulti(value: FilterValue): string | string[] | undefined {
   return value === undefined || typeof value === 'boolean' ? undefined : value;
 }
 
+/** Keeps a filter value only when it is a lone string, dropping multi-valued and boolean fields. */
 export function asSingle(value: FilterValue): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }

@@ -5,6 +5,7 @@ import {
   type CredentialsFormState,
   credentialsSchema,
 } from '@/modules/auth/create-account/credentials/credentials-form';
+import { syncStepValidity } from '@/modules/auth/create-account/step-validity';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 
 const form = defineModel<LoginCredentials>('form', { required: true });
@@ -52,9 +53,7 @@ const { errors, state, touch, valid: parses } = useModelForm<CredentialsFormStat
   schema,
 });
 
-// Immediate, so the wizard step starts with a real answer. A plain watch would leave `valid` at its
-// default and Continue would gate on a stale value.
-syncRefs(parses, valid);
+syncStepValidity(parses, valid);
 </script>
 
 <template>

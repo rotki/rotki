@@ -27,8 +27,13 @@ export function useBlockchainBalanceFields(): FieldDef[] {
   const resolvers = useSharedFieldResolvers();
   const { supportedChains } = useSupportedChains();
 
-  // The same list the chain select offered: every supported chain, minus eth2 while the module is
-  // off, because its balances are not in this table then either.
+  /**
+   * Lists the chains offered as suggestions, dropping eth2 while its module is disabled.
+   *
+   * @remarks
+   * The table holds no eth2 balances with the module off, so suggesting the chain would offer a
+   * filter that can only total zero.
+   */
   const chains = (): string[] => {
     const ids = get(supportedChains).map(chain => chain.id);
     return getModuleEnabled(Module.ETH2) ? ids : ids.filter(id => id !== Blockchain.ETH2);

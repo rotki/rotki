@@ -83,12 +83,6 @@ export const useBalanceFetching = createSharedComposable(() => {
       ? 'refreshFromChain: detect-then-query, every chain'
       : `refreshFromChain: query only (${autoDetectSkipReason() ?? 'unknown'}), every chain`);
 
-    // ⭐ One call for every chain, detecting or not. This used to split into "fire detection for
-    // the EVM chains and separately refresh the non-EVM ones", because detection ended in its own
-    // balance read and refreshing an EVM chain as well would have queried it twice. With detection
-    // a stage *inside* the chain job that reads its result, a chain is one job either way and the
-    // split has nothing left to express — a chain that cannot hold tokens simply has no detect
-    // stage.
     await refreshBlockchainBalances({}, RefreshMode.BACKGROUND, { detect });
 
     const due = await isSnapshotDue();

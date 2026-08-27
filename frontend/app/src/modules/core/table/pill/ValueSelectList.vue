@@ -56,8 +56,7 @@ const filtered = computed<SelectOption[]>(() => {
   const query = get(search).toLowerCase().trim();
   if (noFilter || !query)
     return options;
-  // Lowercased here rather than trusted from the producer: the needle already is, and a field
-  // resolving its keywords from raw values (a checksummed address) would otherwise never match.
+  // Lowercased here, not trusted from the producer: raw keywords (a checksummed address) never match.
   return options.filter(option =>
     option.label.toLowerCase().includes(query) || (option.keywords?.toLowerCase().includes(query) ?? false),
   );
@@ -65,8 +64,7 @@ const filtered = computed<SelectOption[]>(() => {
 
 const selectedSet = computed<Set<string>>(() => new Set(get(selected)));
 
-// Selected values pinned above the list as removable chips, so what is chosen stays visible
-// even when the option list is long (and scrolled away).
+// Selected values pinned above the list as chips, so the choice stays visible once it scrolls away.
 const labelByValue = computed<Map<string, string>>(() => new Map(options.map(option => [option.value, option.label])));
 const selectedChips = computed<SelectOption[]>(() =>
   get(selected).map(value => ({ label: get(labelByValue).get(value) ?? value, value })),
@@ -78,21 +76,21 @@ const { containerProps, list, scrollTo, wrapperProps } = useVirtualList(filtered
 // The first row the highlight may land on: past any pinned rows, unless they are all there is.
 const firstSelectable = computed<number>(() => (pinned < get(filtered).length ? pinned : 0));
 
-// Which values the list holds, order-independent. Selecting a value can REORDER the list without
-// changing what is in it (the asset list pins the selection to the top), and that must not count
-// as a new list: it would yank the highlight off the row the user just picked.
+// Order-independent, so pinning a selection to the top never reads as a new list.
 const filteredValues = computed<string>(() => [...get(filtered).map(option => option.value)].sort().join(','));
 
-// Put the highlight on the first result whenever the list's contents change — that is, whenever a
-// search returns something different. The list is virtualized, so it has to be scrolled there
-// too: leaving it where it was scrolled would highlight a row that is nowhere on screen.
+// Virtualized, so the highlight has to be scrolled to as well or it lands off screen.
 watch(filteredValues, () => {
   set(highlighted, get(firstSelectable));
   scrollTo(get(highlighted));
 });
 
-// Checkbox squares for multi-select, radio circles for single-select: a checkbox on a
-// single-choice field wrongly implies several values can be ticked at once.
+/**
+ * Picks a row's indicator icon: checkbox squares when several values may be held, circles otherwise.
+ *
+ * @remarks
+ * A checkbox on a single-choice field wrongly implies several values can be ticked at once.
+ */
 function indicatorIcon(selected: boolean): string {
   if (multiple)
     return selected ? 'lu-square-check' : 'lu-square';
@@ -110,9 +108,7 @@ function toggle(value: string): void {
   }
 }
 
-// A scroll slides rows under a stationary cursor and the browser reports a mousemove at
-// unchanged coordinates. Trusting it pins the arrow keys to one row and drags the highlight along
-// with any wheel scroll, so the last real position has to be tracked.
+// A wheel scroll slides rows under a stationary cursor and still reports a mousemove.
 let lastX = Number.NaN;
 let lastY = Number.NaN;
 

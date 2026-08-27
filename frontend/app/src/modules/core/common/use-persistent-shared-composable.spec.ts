@@ -28,34 +28,32 @@ describe('createPersistentSharedComposable', () => {
       return { dispose, value };
     });
 
-    const scope1 = effectScope();
-    scope1.run(() => useShared());
+    const firstSubscriber = effectScope();
+    firstSubscriber.run(() => useShared());
 
-    const scope2 = effectScope();
-    scope2.run(() => useShared());
+    const secondSubscriber = effectScope();
+    secondSubscriber.run(() => useShared());
 
-    scope1.stop();
-    // Still one subscriber — should not create new instance yet
-    const scope3 = effectScope();
+    firstSubscriber.stop();
+
+    const subscriberWhileSecondRemains = effectScope();
     let instance: ReturnType<typeof useShared> | undefined;
-    scope3.run(() => {
+    subscriberWhileSecondRemains.run(() => {
       instance = useShared();
     });
     expect(instance!.value.value).toBe(1);
 
-    scope2.stop();
-    scope3.stop();
+    secondSubscriber.stop();
+    subscriberWhileSecondRemains.stop();
 
-    // All subscribers gone and not busy — state should be disposed
-    // Verify by calling again — should get a fresh instance
-    const scope4 = effectScope();
+    const subscriberAfterAllLeft = effectScope();
     let newInstance: ReturnType<typeof useShared> | undefined;
-    scope4.run(() => {
+    subscriberAfterAllLeft.run(() => {
       newInstance = useShared();
     });
     expect(newInstance!.value.value).toBe(1);
     expect(newInstance).not.toBe(instance);
-    scope4.stop();
+    subscriberAfterAllLeft.stop();
   });
 
   it('keeps scope alive while busy even with no subscribers', () => {
@@ -66,35 +64,32 @@ describe('createPersistentSharedComposable', () => {
       return { value };
     });
 
-    const scope1 = effectScope();
+    const firstSubscriber = effectScope();
     let instance: ReturnType<typeof useShared> | undefined;
-    scope1.run(() => {
+    firstSubscriber.run(() => {
       instance = useShared();
     });
 
     guard!.acquireBusy();
-    scope1.stop();
+    firstSubscriber.stop();
 
-    // No subscribers but busy — scope should survive
-    // Re-subscribe and verify same instance
-    const scope2 = effectScope();
+    const subscriberWhileBusy = effectScope();
     let sameInstance: ReturnType<typeof useShared> | undefined;
-    scope2.run(() => {
+    subscriberWhileBusy.run(() => {
       sameInstance = useShared();
     });
     expect(sameInstance).toBe(instance);
 
     guard!.releaseBusy();
-    scope2.stop();
+    subscriberWhileBusy.stop();
 
-    // Now both conditions met — should be disposed
-    const scope3 = effectScope();
+    const subscriberAfterBusyReleased = effectScope();
     let freshInstance: ReturnType<typeof useShared> | undefined;
-    scope3.run(() => {
+    subscriberAfterBusyReleased.run(() => {
       freshInstance = useShared();
     });
     expect(freshInstance).not.toBe(instance);
-    scope3.stop();
+    subscriberAfterBusyReleased.stop();
   });
 
   it('preserves state mutated while subscribers are at zero and busy', () => {
@@ -105,31 +100,29 @@ describe('createPersistentSharedComposable', () => {
       return { value };
     });
 
-    const scope1 = effectScope();
+    const firstSubscriber = effectScope();
     let instance: ReturnType<typeof useShared> | undefined;
-    scope1.run(() => {
+    firstSubscriber.run(() => {
       instance = useShared();
     });
 
-    // Start work, then unmount all consumers
     guard!.acquireBusy();
-    scope1.stop();
+    firstSubscriber.stop();
 
-    // Mutate state while no subscribers exist (simulates async work updating refs)
-    instance!.value.value = 99;
+    const writtenWhileNobodySubscribed = 99;
+    instance!.value.value = writtenWhileNobodySubscribed;
 
-    // Re-subscribe — should get the same instance with the updated value
-    const scope2 = effectScope();
+    const resubscriber = effectScope();
     let resubscribed: ReturnType<typeof useShared> | undefined;
-    scope2.run(() => {
+    resubscriber.run(() => {
       resubscribed = useShared();
     });
 
     expect(resubscribed).toBe(instance);
-    expect(resubscribed!.value.value).toBe(99);
+    expect(resubscribed!.value.value).toBe(writtenWhileNobodySubscribed);
 
     guard!.releaseBusy();
-    scope2.stop();
+    resubscriber.stop();
   });
 
   it('supports multiple acquireBusy calls requiring matching releases', () => {
@@ -150,7 +143,6 @@ describe('createPersistentSharedComposable', () => {
     guard!.acquireBusy();
     scope1.stop();
 
-    // Release once — still busy
     guard!.releaseBusy();
 
     const scope2 = effectScope();

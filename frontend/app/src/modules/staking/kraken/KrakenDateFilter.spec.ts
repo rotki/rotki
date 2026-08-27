@@ -16,10 +16,6 @@ function barOf(wrapper: VueWrapper): ReturnType<typeof shallowMount<typeof PillF
   return wrapper.findComponent(PillFilterBar);
 }
 
-/**
- * The page's model is an object of unix seconds; the bar speaks the flat keyword map. Every test
- * here is about that bridge, which is the only thing this component does.
- */
 describe('krakenDateFilter', () => {
   it('should offer a single period field', () => {
     const wrapper = createWrapper({});

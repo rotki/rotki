@@ -6,12 +6,6 @@ import {
   useUntrackedMovementDestination,
 } from '@/modules/history/events/use-untracked-movement-destination';
 
-/**
- * The seam: which movements may be called unmatchable because their counterpart is not
- * tracked. Only a withdrawal qualifies -- a deposit's recorded address is usually the
- * exchange's own deposit address, so answering for one would flag nearly every deposit.
- */
-
 const trackedAddressesRef = ref<Record<string, string[]>>({});
 const accountsReadyRef = ref<boolean>(true);
 

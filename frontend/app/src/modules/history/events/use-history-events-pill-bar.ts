@@ -49,7 +49,14 @@ export function useHistoryEventsPillBar(
 
   const pillLabels = usePillBarLabels();
 
-  // Not a pill: it constrains how the other filters apply instead of filtering anything itself.
+  /**
+   * Flips exact matching on the events page.
+   *
+   * @remarks
+   * Kept out of the param bag on purpose: exact matching constrains how the other filters apply
+   * rather than narrowing anything on its own, so it is neither a pill nor part of a saved view,
+   * and it never reaches the URL the way the pill params do.
+   */
   function toggleMatchExact(): void {
     set(toggles, { ...get(toggles), matchExactEvents: !get(toggles).matchExactEvents });
   }
@@ -88,8 +95,6 @@ export function useHistoryEventsPillBar(
     },
   });
 
-  // A saved view is the bar's two models under a name, so it both reads from and writes to the
-  // same pair the bar is bound to.
   const pillState = computed<SavedViewState>(() => ({
     matches: get(filters),
     params: get(modelPillParams),

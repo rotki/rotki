@@ -34,6 +34,11 @@ interface SavedViewsReturn {
  * `params` instead, through the field's own `fromLegacy` when its stored form differs from what the
  * field now takes. Without that routing the entry would land in `matches`, which a param field
  * never reads, and the filter would vanish from the converted view without a word.
+ *
+ * A param has no form for exclusion, so an excluded value routed there is dropped rather than
+ * silently turned into an included one. On the `matches` side a single value stays a scalar, as the
+ * codec writes it; only several become a list, and a list has no room for a boolean, since a boolean
+ * field is one flag.
  */
 function stateFromLegacyFilter(entries: LegacySavedFilterEntry[], fields: FieldDef[]): SavedViewState {
   const fieldByKey = new Map(fields.map(field => [field.key, field]));
@@ -50,8 +55,6 @@ function stateFromLegacyFilter(entries: LegacySavedFilterEntry[], fields: FieldD
 
     if (field?.binding.kind === 'param') {
       const { paramKey } = field.binding;
-      // A param carries a plain list of values and has no form for exclusion, so an excluded
-      // value is dropped rather than silently turned into an included one.
       const values = entries
         .filter(entry => !entry.exclude)
         .map(entry => legacyValue(entry))
@@ -70,8 +73,6 @@ function stateFromLegacyFilter(entries: LegacySavedFilterEntry[], fields: FieldD
       return entry.exclude && typeof value === 'string' ? `!${value}` : value;
     });
 
-    // A single value stays a scalar, as the codec writes it; only a list of them becomes a list,
-    // and a list has no room for a boolean (a boolean field is one flag).
     matches[key] = values.length === 1 ? values[0] : values.filter(value => typeof value === 'string');
   }
 
@@ -164,20 +165,19 @@ export function useSavedViews(
    * the UI while the backend kept the legacy key, because a later write built from a snapshot
    * taken before the conversion's response had landed. Opening a menu is a deliberate act, seconds
    * away from that burst.
+   *
+   * Clearing the legacy key is what stops a second run, and that only lands with the write, so a
+   * second trigger arriving while the first is still in flight is held off by `converting`.
    */
   async function ensureConverted(): Promise<void> {
     const key = toValue(location);
     const legacy = get(allFilters)[key] ?? [];
-    // The write clears the legacy key, which is what stops this from running twice, so a second
-    // trigger arriving while it is still in flight has to be held off.
     if (legacy.length === 0 || converting)
       return;
     converting = true;
 
     const existing = get(views);
     const room = Math.max(LIMIT_PER_LOCATION - existing.length, 0);
-    // The old filters had no names, so each gets a generated one the user can recognise by its
-    // pill summary and rename by re-saving.
     const converted = legacy.slice(0, room).map((entries, index) => ({
       ...stateFromLegacyFilter(entries, toValue(fields)),
       name: t('table_filter.saved_views.converted_name', { number: existing.length + index + 1 }),

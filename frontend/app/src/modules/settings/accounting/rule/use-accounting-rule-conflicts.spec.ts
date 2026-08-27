@@ -35,8 +35,7 @@ describe('useAccountingRuleConflicts', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  // A notification links here asking for the conflicts to be resolved.
-  it('should open the dialog when the route asks for it', async () => {
+  it('should open the dialog when the route asks for it, as the notification link does', async () => {
     query = { resolveConflicts: 'true' };
     getAccountingRulesConflicts.mockResolvedValue({ total: 2 });
     const { checkConflicts, modelConflictsDialogOpen } = useAccountingRuleConflicts();
@@ -47,8 +46,7 @@ describe('useAccountingRuleConflicts', () => {
     expect(replace).toHaveBeenCalledWith({ query: {} });
   });
 
-  // Asking for conflicts when there are none should land on the page, not on an empty dialog.
-  it('should consume the request but stay closed when nothing conflicts', async () => {
+  it('should consume the request but stay closed when nothing conflicts, landing on the page', async () => {
     query = { resolveConflicts: 'true' };
     const { checkConflicts, modelConflictsDialogOpen } = useAccountingRuleConflicts();
     await checkConflicts();

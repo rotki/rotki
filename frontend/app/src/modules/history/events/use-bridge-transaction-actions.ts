@@ -25,6 +25,10 @@ interface UseBridgeTransactionActionsReturn {
   ignoreLoading: Readonly<Ref<boolean>>;
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
+  /**
+   * A computed rather than a `readonly()` ref: the notice carries the leg itself, and deep-readonly
+   * does not survive the BigNumber fields its events hold.
+   */
   resolutionNotice: ComputedRef<BridgeResolutionNotice | undefined>;
   confirmCreateCounterpart: (transaction: UnmatchedBridgeTransaction) => void;
   confirmIgnoreSelected: () => void;
@@ -60,8 +64,6 @@ export function useBridgeTransactionActions(
   const modelSelectedUnmatched = ref<string[]>([]);
   const modelSelectedIgnored = ref<string[]>([]);
   const notice = shallowRef<BridgeResolutionNotice>();
-  // Exposed through a computed rather than readonly(): the notice carries the leg itself, and
-  // deep-readonly does not survive the BigNumber fields its events hold.
   const resolutionNotice = computed<BridgeResolutionNotice | undefined>(() => get(notice));
 
   /**

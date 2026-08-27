@@ -36,10 +36,6 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   }),
 }));
 
-// Only `getErrorMessage` is needed besides the mocked composable, and it is a pure
-// helper re-exported from a light module. Taking it from its own home keeps the real
-// implementation without evaluating the notifications graph, which costs ~1.2s per
-// import - and this file re-imports once per test.
 vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
     '@/modules/core/common/logging/error-handling',
@@ -51,16 +47,12 @@ vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   }),
 }));
 
-// Same reasoning: `isActionableFailure` is a two-line pure predicate over the task
-// outcome, so it is restated here rather than pulling in the real task handler.
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   isActionableFailure: (outcome: { success: boolean; cancelled?: boolean; skipped?: boolean }): boolean =>
     !outcome.success && !outcome.cancelled && !outcome.skipped,
   useTaskHandler: (): object => ({ runTask: spies.runTask }),
 }));
 
-// Read only by `useBridgeMatchingFlow`, which no test here exercises - but the static
-// import still pulls the settings registry in (~1.1s) on every re-import.
 vi.mock('@/modules/settings/use-bridge-match-settings', () => ({
   useBridgeMatchSettings: (): object => ({
     bridgeMatchAmountTolerance: ref(0.05),
@@ -76,8 +68,6 @@ vi.mock('@/modules/history/use-history-store', () => ({
   useHistoryStore: (): object => ({ signalEventsModified: spies.signalEventsModified }),
 }));
 
-// `PremiumFeature` is only re-exported by use-feature-access, so take it from the
-// types module it actually lives in.
 vi.mock('@/modules/premium/use-feature-access', async () => ({
   PremiumFeature: (await vi.importActual<typeof import('@/modules/session/types')>(
     '@/modules/session/types',
@@ -97,9 +87,14 @@ describe('use-unmatched-bridge-transactions', () => {
     vi.restoreAllMocks();
   });
 
-  // `useUnmatchedBridgeTransactions` is a `createSharedComposable` singleton whose
-  // module-level refs would otherwise persist between tests; re-import per test
-  // so each starts from fresh state.
+  /**
+   * Imports the module under test into a fresh module registry.
+   *
+   * @remarks
+   * `useUnmatchedBridgeTransactions` is a `createSharedComposable` singleton, so its module-level
+   * refs are shared: without the reset, one test's rows and loading flags are the next one's
+   * starting state.
+   */
   async function importFresh(): Promise<typeof import('@/modules/history/events/use-unmatched-bridge-transactions')> {
     vi.resetModules();
     return import('@/modules/history/events/use-unmatched-bridge-transactions');
@@ -159,10 +154,7 @@ describe('use-unmatched-bridge-transactions', () => {
       });
     });
 
-    // The backend returns each event of a group as its own top-level row (verified against a
-    // real unmatched bridge group), so the gas fee event arrives as a separate row before the
-    // bridge leg rather than alongside it in one array.
-    it('should pick the bridge leg and not the gas fee event of the transaction group', async () => {
+    it('should pick the bridge leg and not the gas fee event the group leads with', async () => {
       spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([{ groupIdentifier: 'group-a', identifier: 2 }]);
       spies.fetchHistoryEvents.mockResolvedValueOnce({
         entries: [{
@@ -257,10 +249,7 @@ describe('use-unmatched-bridge-transactions', () => {
       });
     });
 
-    // A transaction can carry more than one bridge leg, each matched or ignored
-    // independently. Every reported leg must get its own row — collapsing them into one
-    // made ignoring a leg look like a no-op while the group as a whole stayed listed.
-    it('should create one row per reported leg of a multi-leg transaction', async () => {
+    it('should create one row per reported leg, legs being matched and ignored independently', async () => {
       spies.getUnmatchedBridgeTransactions.mockResolvedValueOnce([
         { groupIdentifier: 'group-e', identifier: 7 },
         { groupIdentifier: 'group-e', identifier: 8 },

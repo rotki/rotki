@@ -88,8 +88,6 @@ export function useSnapshotFxOverride(timestamp: MaybeRefOrGetter<number>): UseS
     try {
       const success = await write();
       if (success) {
-        // Busts the cached rate for this currency within ±1h so the editor
-        // re-reads the new value on next access.
         resetHistoricalPricesData([{ fromAsset: CURRENCY_USD, timestamp: toValue(timestamp) }]);
         await refreshOverride();
       }

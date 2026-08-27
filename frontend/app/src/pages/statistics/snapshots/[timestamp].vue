@@ -48,9 +48,11 @@ const locationsDrawer = ref<boolean>(false);
 const balanceFilters = ref<Filters>({});
 
 const { fetchSnapshot, persist, remove } = useSnapshotStore();
-// `rows` (and the prev/next order + deltas derived from them) come from the cached
-// net-value series; `refreshNetValue` re-pulls it so a save/delete here is
-// reflected in this page's navigation and in the list page (shared store state).
+/**
+ * `rows`, and the prev/next order and deltas derived from them, come from the cached net-value
+ * series. `refreshNetValue` re-pulls it, so a save or delete here reaches this page's navigation
+ * and the list page alike, both reading the same store.
+ */
 const { refresh: refreshNetValue, rows } = useSnapshotList();
 const { show } = useConfirmStore();
 
@@ -87,8 +89,10 @@ const exportBalance = computed<BigNumber>(() => {
   return get(isUsd) ? value : convertUsdToFiat(value, get(rate));
 });
 
-// Mirror the list view: show a skeleton in the export dialog while the historic
-// rate is still resolving instead of a misleading converted-from-zero balance.
+/**
+ * Skeletons the export dialog's balance while the historic rate resolves, as the list view does,
+ * rather than showing a misleading converted-from-zero figure.
+ */
 const exportBalanceLoading = computed<boolean>(() => !get(isUsd) && get(rateLoading));
 
 /** Snapshot timestamps oldest-first, used for prev/next navigation + the delta. */
@@ -256,15 +260,24 @@ onBeforeRouteLeave(() => {
   });
 });
 
-// The route guard above only covers in-app navigation; a browser refresh, tab
-// close or Electron window close bypasses it. Fall back to the native prompt.
-useEventListener(window, 'beforeunload', (event: BeforeUnloadEvent) => {
+/**
+ * Raises the browser's own leave prompt for an unsaved snapshot.
+ *
+ * @remarks
+ * Covers what the route guard above cannot see: a refresh, a tab close and an Electron window close
+ * all bypass in-app navigation. Legacy Chromium needs `returnValue` set for the prompt to appear.
+ *
+ * @param event - the pending unload, cancelled to raise the prompt
+ */
+function warnBeforeUnload(event: BeforeUnloadEvent): void {
   if (!get(isDirty))
     return;
+
   event.preventDefault();
-  // Legacy Chromium requires a returnValue to trigger the prompt.
   event.returnValue = '';
-});
+}
+
+useEventListener(window, 'beforeunload', warnBeforeUnload);
 </script>
 
 <template>

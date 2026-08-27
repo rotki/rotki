@@ -53,8 +53,13 @@ function onBlur(index: number, field: SwapSubEventField): void {
   touch(`${path}.${index}.${field}`);
 }
 
-// Both mutate the array in place: the rows the form has already recorded touched-state against must
-// keep their identity, which replacing the array would destroy.
+/**
+ * Drops one sub-event row from the list.
+ *
+ * @remarks
+ * This and {@link add} both mutate the bound array in place. The form keys touched-state by row
+ * identity, so handing it a rebuilt array would move one row's error flags onto another.
+ */
 function remove(index: number): void {
   get(modelValue).splice(index, 1);
 }

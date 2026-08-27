@@ -98,8 +98,6 @@ describe('data-issues table', () => {
   });
 
   it('should emit open with the row when a row is clicked', async () => {
-    // A lightweight table stub whose button re-emits `click:row`, so we assert the
-    // component forwards it as `open` without depending on RuiDataTable internals.
     const RuiDataTableStub = defineComponent({
       emits: ['click:row'],
       props: { rows: { default: () => [], type: Array } },

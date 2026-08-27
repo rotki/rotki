@@ -2,8 +2,7 @@ import type { Ref } from 'vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const CHANNEL_NAME = 'rotki.session.single-tab';
-// Upper bound for the random delay before a paused tab takes over a vacated session. Staggers
-// concurrent paused tabs so the first to fire claims and cancels the rest (see scheduleReclaim).
+// Upper bound on the random takeover delay, which staggers paused tabs so the first to fire wins.
 const RECLAIM_MAX_JITTER_MS = 400;
 
 interface TabMessage {
@@ -24,8 +23,13 @@ export interface UseSingleTabReturn {
   release: () => void;
 }
 
-// A collision-safe id that does not depend on crypto.randomUUID, which is undefined outside
-// a secure context — a Docker instance reached over plain http on a LAN IP is not one.
+/**
+ * Builds a collision-safe tab id from the clock and a random suffix.
+ *
+ * @remarks
+ * `crypto.randomUUID` is unavailable outside a secure context, and a Docker instance reached over
+ * plain http on a LAN address is not one.
+ */
 function createTabId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
@@ -49,8 +53,7 @@ function createSingleTab(): UseSingleTabReturn {
 
   let channel: BroadcastChannel | undefined;
   let reclaimTimer: ReturnType<typeof setTimeout> | undefined;
-  // Set right before an intentional reload (reclaim) so our own `pagehide` does not broadcast
-  // a release — that would tell the tab we just paused to take over and bounce ownership back.
+  // Set before an intentional reload, so our own `pagehide` does not release and bounce ownership back.
   let reloading = false;
 
   function cancelScheduledReclaim(): void {
@@ -116,8 +119,7 @@ function createSingleTab(): UseSingleTabReturn {
   }
 
   function release(): void {
-    // Logout: hand off first (a paused tab reloads and lands on login too, since the shared
-    // session is now gone), then drop the channel and reset for a future login on this tab.
+    // Hand off before dropping the channel; a paused tab reloads onto login, the session being gone.
     broadcastRelease();
     cancelScheduledReclaim();
     set(active, true);
@@ -141,7 +143,5 @@ function createSingleTab(): UseSingleTabReturn {
   };
 }
 
-// A global singleton (like the monitor/websocket services): the channel and tab id must
-// outlive layout remounts — the login-to-app layout switch would otherwise tear the shared
-// state down and drop the channel between subscribers.
+// Global, so the channel and tab id outlive the login-to-app layout remount rather than being torn down with it.
 export const useSingleTab = createGlobalState(createSingleTab);

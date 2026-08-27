@@ -25,8 +25,6 @@ vi.mock('@/modules/core/table/filters/shared/use-shared-field-resolvers', () => 
 }));
 
 describe('useMissingMappingsFields', () => {
-  // Not wire keys: these rows come from the local database and `getData` turns the two into a
-  // predicate over them.
   it('should filter on the location and the symbol', () => {
     expect(useMissingMappingsFields().map(field => field.key)).toStrictEqual([
       MissingMappingsFilterKeys.LOCATION,
@@ -49,9 +47,7 @@ describe('useMissingMappingsFields', () => {
     expect(location.resolveLabel?.('kraken')).toBe('Location(kraken)');
   });
 
-  // The predicate compares the location exactly, so one that is not offered would match nothing and
-  // read as an empty table rather than as a bad filter.
-  it('should refuse a location it does not offer', () => {
+  it('should refuse a location it does not offer, rather than match nothing and read as an empty table', () => {
     const [location] = useMissingMappingsFields();
 
     expect(location.validate?.('kraken')).toBe(true);

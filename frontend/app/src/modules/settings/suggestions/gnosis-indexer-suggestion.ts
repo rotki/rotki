@@ -56,13 +56,16 @@ export function createGnosisIndexerSuggestion(
   if (!hasCustomGnosisOrder(indexersOrder))
     return undefined;
 
-  // Blockscout is the only one of the two with a free tier, so it leads unless the user holds an
-  // etherscan key and no blockscout one — then the key they already have is the one that can
-  // still serve gnosis, assuming it is on a paid plan.
+  // Blockscout is the one with a free tier, so it leads unless the user's only key is an etherscan one.
   const blockscoutFirst = hasBlockscoutKey || !hasEtherscanKey;
   const recommendedChoice = blockscoutFirst ? EvmIndexer.BLOCKSCOUT : EvmIndexer.ETHERSCAN;
-  // A fresh copy every time: these orders are module constants that end up inside the settings
-  // update payload, and a shared instance would let anything downstream mutate them for good.
+  /**
+   * Overlays a gnosis indexer order onto the user's existing per-chain orders.
+   *
+   * @remarks
+   * The order is copied rather than referenced. These are module constants that travel into the
+   * settings update payload, where a shared instance could be mutated for the rest of the session.
+   */
   const withGnosisOrder = (order: readonly EvmIndexer[]): IndexersOrder => ({
     ...indexersOrder,
     [Blockchain.GNOSIS]: [...order],

@@ -4,8 +4,6 @@ import { ActivityKind, type WorkStatus } from '@/modules/task-center/core/types'
 import { useBalancesLoading } from './use-balance-loading';
 import { useBalanceRefreshState } from './use-balance-refresh-state';
 
-// Work runs native, so its liveness comes off the orchestrator. Hydration is not an activity at
-// all, so its half comes from the refresh-state store.
 const activeKinds = ref<Set<ActivityKind>>(new Set());
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
@@ -50,13 +48,9 @@ describe('useBalancesLoading', () => {
     expect(get(loadingBalancesAndDetection)).toBe(true);
   });
 
-  /**
-   * Hydration has no activity, so the orchestrator reports it as idle. This is the funnel every
-   * spinner reads; without the second source a chain being read from the DB renders as settled and
-   * empty for the whole cached phase.
-   */
-  it('should flag loading while a chain is hydrating', () => {
+  it('should flag loading while a chain is hydrating, even though hydration has no activity', () => {
     const { loadingBalances, loadingBlockchainBalances } = useBalancesLoading();
+    expect(get(activeKinds).size).toBe(0);
     expect(get(loadingBlockchainBalances)).toBe(false);
 
     useBalanceRefreshState().startHydration('eth');

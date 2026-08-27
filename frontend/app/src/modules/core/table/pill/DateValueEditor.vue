@@ -61,37 +61,50 @@ const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
 const showFrom = computed<boolean>(() => filter.op !== FilterOps.BEFORE);
 const showTo = computed<boolean>(() => filter.op !== FilterOps.AFTER);
 
-// The bounds are stored as strings holding the unix-second timestamp the picker emits, so the
-// value is already wire-ready (backend `fromTimestamp`/`toTimestamp` are unix seconds) and the
-// collapsed date field needs no serializer.
 const fromValue = computed<number | undefined>(() => toEpoch(filter.date?.from));
 const toValue = computed<number | undefined>(() => toEpoch(filter.date?.to));
 
 /**
- * The bounds each picker allows. Neither end may sit in the future — nothing has happened yet
- * after now, and a `from` past the backend's default `to` of now is answered with a 400 — and a
- * `between` may not be written back to front, which would return an empty table with no
- * explanation. The old bar refused both through `dateRangeValidator`; the pickers enforce them
- * here, where the user can see the days that are out of range greyed out.
+ * Seconds of clearance the two bounds have to keep from each other.
  *
+ * @remarks
  * An equal pair is allowed by default, since inclusive second bounds make it mean exactly that
  * second. A field whose column is stored in milliseconds says otherwise (`allowEqualBounds`),
- * because there the pair would ask for one millisecond rather than the second.
+ * because there the pair would ask for one millisecond rather than the whole second.
  */
-// A second of clearance when the field forbids an equal pair, so the two bounds cannot be pulled
-// onto the same instant from either side.
 const gap = computed<number>(() => (field.allowEqualBounds === false ? 1 : 0));
 
+/**
+ * The latest day the `from` picker offers.
+ *
+ * @remarks
+ * Capped at the `to` bound so a `between` cannot be written back to front, which would return an
+ * empty table with no explanation, and at now when there is no `to`: nothing has happened yet
+ * after now, and a `from` past the backend's default `to` of now is answered with a 400. The
+ * picker greys out the days outside the range, so the limit is visible rather than a rejection
+ * after the fact.
+ */
 const fromMaxDate = computed<number | 'now'>(() => {
   const to = get(toValue);
   return to === undefined ? 'now' : to - get(gap);
 });
 
+/** The earliest day the `to` picker offers, held at or above the `from` bound. */
 const toMinDate = computed<number | undefined>(() => {
   const from = get(fromValue);
   return from === undefined ? undefined : from + get(gap);
 });
 
+/**
+ * Reads a stored bound back as the unix-second epoch the picker takes.
+ *
+ * @remarks
+ * A bound is stored as a string holding the unix-second timestamp the picker emits, so it is
+ * already wire-ready (the backend's `fromTimestamp`/`toTimestamp` are unix seconds too) and the
+ * collapsed date field needs no serializer.
+ *
+ * @returns the epoch in seconds, or `undefined` when the bound is unset or not a finite number.
+ */
 function toEpoch(value: string | undefined): number | undefined {
   if (value === undefined || value === '')
     return undefined;

@@ -41,8 +41,6 @@ const { errors: fieldErrors, state, touch, validate } = useModelForm<AddressBook
   schema,
   serverErrors: errors,
   stateUpdated,
-  // The location picks which book the entry is written to rather than describing the entry, and it
-  // was outside the watched keys before, so switching books is not an unsaved change.
   transientKeys: ['location'],
 });
 

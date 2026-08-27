@@ -75,7 +75,7 @@ interface BridgeEntryMatch {
  * reports unresolved legs per event, and the exact event has to be acted on: a
  * transaction can carry more than one bridge leg (e.g. several bridged assets in one
  * transaction), so picking a leg positionally or by type heuristics would act on the
- * wrong — possibly already ignored — leg.
+ * wrong leg, possibly one that is already ignored.
  */
 function findBridgeEntry(rows: HistoryEventCollectionRow[], identifier: number): BridgeEntryMatch | undefined {
   for (const row of rows) {
@@ -166,8 +166,6 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
       const transactions: UnmatchedBridgeTransaction[] = [];
 
       for (const leg of legs) {
-        // The events of a group come back as separate rows, so the leg's event has to
-        // be looked for across all of them by its identifier.
         const bridgeMatch = findBridgeEntry(response.entries, leg.identifier);
 
         if (!bridgeMatch) {

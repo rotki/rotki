@@ -39,9 +39,11 @@ interface EventDetailRow {
   groupId: string;
   data: HistoryEventEntry;
   index: number;
-  /** True when this row is a sub-event of an expanded linked subgroup
-   * (a matched movement or a matched bridge transfer). */
-  matchedMovement?: boolean;
+  /**
+   * True when this row is one leg of an expanded linked subgroup, which is either a matched
+   * movement or a matched bridge transfer.
+   */
+  linkedLeg?: boolean;
 }
 
 interface EventPlaceholderRow {
@@ -143,7 +145,6 @@ export function useVirtualRows(
 ): UseVirtualRowsReturn {
   // Track how many items are visible per group (beyond initial limit)
   const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
-  // Track which swap rows are expanded (key: see `subgroupKey`)
   const expandedSwaps = shallowRef<Set<string>>(new Set());
   // Track which matched movement rows are expanded (key: see `subgroupKey`)
   const expandedMovements = shallowRef<Set<string>>(new Set());
@@ -159,7 +160,6 @@ export function useVirtualRows(
     for (const group of groupsValue) {
       const groupId = group.groupIdentifier;
 
-      // 1. Group header (always)
       rows.push({
         type: 'group-header',
         groupId,
@@ -188,18 +188,15 @@ export function useVirtualRows(
       visibleEvents.forEach((event, i) => {
         // Handle array (subgroup - could be swap or matched movement)
         if (Array.isArray(event)) {
-          // When a subgroup has events hidden by ignored-asset filtering,
-          // always show individual event rows without collapse controls.
-          const incomplete = isSubgroupIncomplete(event);
+          const forcedOpenWithoutCollapseControls = isSubgroupIncomplete(event);
 
           // Check if this is a matched asset movement (not a swap)
           if (isMatchedMovementGroup(event)) {
             const movementKey = subgroupKey(groupId, event);
-            const isMovementExpanded = incomplete || expandedMovementsSet.has(movementKey);
+            const isMovementExpanded = forcedOpenWithoutCollapseControls || expandedMovementsSet.has(movementKey);
 
             if (isMovementExpanded) {
-              // Add collapse header row (skip when forced open due to incomplete subgroup)
-              if (!incomplete) {
+              if (!forcedOpenWithoutCollapseControls) {
                 rows.push({
                   type: 'matched-movement-collapse',
                   groupId,
@@ -208,15 +205,13 @@ export function useVirtualRows(
                 });
               }
 
-              // When expanded, show individual event rows for each event.
-              // subIndex is used so the first event (index 0) retains edit/delete actions.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
                   index: subIndex,
-                  matchedMovement: true,
+                  linkedLeg: true,
                 });
               });
             }
@@ -233,12 +228,11 @@ export function useVirtualRows(
           }
           else {
             const swapKey = subgroupKey(groupId, event);
-            const isSwapExpanded = incomplete || expandedSwapsSet.has(swapKey);
+            const isSwapExpanded = forcedOpenWithoutCollapseControls || expandedSwapsSet.has(swapKey);
             const bridge = isMatchedBridgeGroup(event);
 
             if (isSwapExpanded) {
-              // Add collapse header row (skip when forced open due to incomplete subgroup)
-              if (!incomplete) {
+              if (!forcedOpenWithoutCollapseControls) {
                 rows.push({
                   type: 'swap-collapse',
                   groupId,
@@ -249,15 +243,13 @@ export function useVirtualRows(
                 });
               }
 
-              // `subIndex` restarts at 0 so the first row keeps its edit and delete actions. A
-              // bridge leg is marked linked, its legs being separate transactions on two chains.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
                   index: subIndex,
-                  matchedMovement: bridge,
+                  linkedLeg: bridge,
                 });
               });
             }

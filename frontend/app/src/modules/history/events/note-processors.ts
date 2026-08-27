@@ -45,9 +45,9 @@ export interface WordProcessorResult {
   skipNext?: boolean;
 }
 
+/** Formats one word of a note, or returns `undefined` to leave it to the next processor. */
 export type WordProcessor = (ctx: WordProcessorContext) => WordProcessorResult | undefined;
 
-// Pure word processors - each handles one type of word format
 const processAddress: WordProcessor = ({ word }) => {
   const isValidBch = isValidBchAddress(word);
   if (!isValidEthAddress(word) && !isValidBtcAddress(word) && !isValidBch && !isValidSolanaAddress(word))

@@ -33,7 +33,13 @@ interface UseAssetSelectInfoReturn {
  */
 const BATCH_DEBOUNCE_MS = 200;
 
-/** How many mapping requests may be in flight at once for one batch of queued identifiers. */
+/**
+ * How many mapping requests may be in flight at once for one batch of queued identifiers.
+ *
+ * @remarks
+ * Capped rather than released together: a large portfolio is 20 batches, more than one table
+ * prefetches its own list, and the backend serving them is a single local process.
+ */
 export const MAX_PARALLEL_ASSET_BATCHES = 4;
 
 /**
@@ -80,11 +86,6 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
     const collectionInfoMap: Record<string, AssetInfo | null> = {};
     const ids = identifiers.map(id => resolveAssetIdentifier(id));
 
-    // The batches are independent, so several are in flight at once: awaiting them one after the
-    // other made a large balance list wait for one round trip per 50 assets before the search could
-    // match anything. They are capped rather than all released together, because a large portfolio
-    // is 20 batches, more than one table prefetches its own list, and the backend serving them is a
-    // single local process.
     const batches = chunk(ids, 50);
     const responses = await mapWithConcurrency(
       batches,
@@ -141,8 +142,6 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
       logger.error('Error processing asset info batch for AssetSelect', error);
     }
     finally {
-      // Only this batch is released. Clearing the whole set would let a concurrent batch's
-      // identifiers be queued a second time while their request is still in flight.
       assetsToProcess.forEach(asset => pendingAssets.delete(asset));
     }
   }, BATCH_DEBOUNCE_MS);

@@ -22,6 +22,9 @@ interface UseHistoryEventsOverlayReturn {
  * `mode` rides the router query via `useHistoryEventsFilters`' `queryParamsOnly` rather than being
  * clobbered by pagination, and is NOT persisted across sessions: fresh navigation resets it to
  * 'none', back restores it from the history entry. Only the main page syncs.
+ *
+ * A completed history sync lands new events whose historical balances may have shifted, so the
+ * whole overlay is refreshed then; a hidden overlay stays idle.
  */
 export function useHistoryEventsOverlay(
   mode: MaybeRefOrGetter<OverlayMode>,
@@ -29,8 +32,6 @@ export function useHistoryEventsOverlay(
 ): UseHistoryEventsOverlayReturn {
   const available = isAccountingUpdateEnabled();
 
-  // The build flag is required too, so the 'balance' choice cannot enable it where the backend
-  // would reject every call.
   const enabled = computed<boolean>(() => available && toValue(mode) === OverlayMode.BALANCE);
 
   const pairs = computed<OverlayPair[]>(() => {
@@ -48,9 +49,6 @@ export function useHistoryEventsOverlay(
 
   provideAccountingOverlay({ enabled, overlay });
 
-  // When the history sync (tx query + exchange events + decoding) completes, new events have landed
-  // and their historical balances may have shifted, so the whole overlay is refreshed to re-resolve
-  // every visible row against the updated series. Guarded so a hidden overlay stays idle.
   const { syncCompleted } = useSyncCompleted();
   watch(syncCompleted, async () => {
     if (get(enabled))

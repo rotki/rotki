@@ -48,9 +48,13 @@ const statusColor = computed<string>(() => {
   return 'text-rui-primary';
 });
 
-// A cancel is the user's own doing, so it is the more informative thing to say when it
-// coincides with warnings — hence it wins over `complete_with_warnings` rather than
-// earning a third combined string.
+/**
+ * What the header says once the sync has finished.
+ *
+ * @remarks
+ * A cancellation outranks warnings rather than earning a third combined string: the user did the
+ * cancelling, so it is the more informative of the two to report.
+ */
 const title = computed<string>(() => {
   if (!get(isComplete))
     return t('sync_progress.title');

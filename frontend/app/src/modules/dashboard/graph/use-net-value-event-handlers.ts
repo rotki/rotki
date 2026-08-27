@@ -6,11 +6,14 @@ import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber } from '@rotki/common';
 import { type TooltipData, useGraphTooltip } from '@/modules/statistics/use-graph-tooltip';
 
-// ECharts emits datazoom in two shapes: with a `batch` array (inside-zoom),
-// or with the fields at the top level (slider drag). Each shape may carry
-// axis values (startValue/endValue, in ms) or only percentages (start/end,
-// 0–100 of the x-axis range) — slider drag typically only provides the
-// percentages, so we accept either.
+/**
+ * The zoom bounds carried by an ECharts `datazoom` event, flattened out of either shape it emits.
+ *
+ * @remarks
+ * An inside-zoom nests these in a `batch` array while a slider drag puts them at the top level.
+ * `startValue` and `endValue` are axis values in milliseconds; `start` and `end` are percentages
+ * of the x-axis range, 0 to 100. A slider drag commonly supplies only the percentages.
+ */
 interface ZoomFields {
   startValue?: unknown;
   endValue?: unknown;

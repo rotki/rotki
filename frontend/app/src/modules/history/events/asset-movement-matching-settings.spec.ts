@@ -61,9 +61,7 @@ describe('checkSetting', () => {
   it.each([
     [''],
     ['   '],
-  ])('should leave a field holding %s alone', (value) => {
-    // The menu writes on every keystroke, and an emptied field is on its way somewhere rather than
-    // wrong. The old rules only ever reported a value out of range.
+  ])('should stay silent about a field holding %s, since the menu writes on every keystroke and an emptied field is on its way somewhere', (value) => {
     expect(tolerance(value)).toEqual([]);
     expect(timeRange(value)).toEqual([]);
   });

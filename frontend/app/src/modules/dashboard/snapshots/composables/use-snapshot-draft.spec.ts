@@ -124,8 +124,6 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
   });
 
   it('should reconcile off locations by absorbing the difference', () => {
-    // B = 100; locations 60 + 20 = 80. The total is corrected to 100 on load, but
-    // the locations still sum to 80, so the snapshot reads as mismatched.
     const base: Snapshot = {
       balancesSnapshot: [balance('BTC', 100)],
       locationDataSnapshot: [location('kraken', 60), location('ledger', 20), location('total', 80)],

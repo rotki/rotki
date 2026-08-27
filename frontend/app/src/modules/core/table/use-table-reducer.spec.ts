@@ -73,9 +73,6 @@ describe('table reducer', () => {
 
   describe('provenance is monotonic', () => {
     it('should keep a pending user intent through a programmatic page reset', () => {
-      // The exact trap: a user filter edit set intent to 'user', then an internal
-      // page-1 reset arrives as 'programmatic'. It must not lower the intent, or the
-      // URL write the user earned is swallowed.
       const { state, effects } = reduce(makeState({ page: 3, pendingIntent: 'user' }), {
         page: 1,
         source: 'programmatic',
@@ -157,8 +154,6 @@ describe('table reducer', () => {
       });
 
       expect(state.page).toBe(1);
-      // request-only params never reach the URL, so no intent and no push-url: that is
-      // what stops the page reset from clobbering route-driven filter state.
       expect(state.pendingIntent).toBe('programmatic');
       expect(effectTypes(effects)).toEqual(['persist', 'fetch']);
     });

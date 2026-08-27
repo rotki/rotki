@@ -52,7 +52,6 @@ export class RotkiApp {
     const newAccountButton = this.page.locator('[data-testid=new-account]');
     const introductionContinue = this.page.locator('[data-testid=create-account-introduction-create]');
 
-    // Wait for either the login form's "Create account" button or the create wizard's continue button
     const visibleElement = await Promise.race([
       newAccountButton.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT }).then(() => 'login'),
       introductionContinue.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT }).then(() => 'create'),
@@ -136,13 +135,11 @@ export class RotkiApp {
     const hasAutocomplete = await activator.count() > 0;
 
     if (hasAutocomplete) {
-      // Click activator to open autocomplete dropdown
       await activator.click();
       // Wait for dropdown menu to appear
       const menu = this.page.locator('[role=menu]');
       await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
       await usernameInput.fill(username);
-      // Wait for dropdown option and click it
       const option = menu.getByText(username, { exact: true });
       await option.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
       await option.click();
@@ -284,7 +281,6 @@ export class RotkiApp {
     const hasSubmenuWrapper = await submenuWrapper.count() > 0;
 
     if (hasSubmenuWrapper) {
-      // Check if the submenu is expanded using data-expanded attribute
       const isExpanded = await submenuWrapper.getAttribute('data-expanded') === 'true';
 
       if (!isExpanded) {

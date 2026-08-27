@@ -10,6 +10,13 @@ const AssetPriceInput = z.tuple([NumericString, z.number()]);
 export const AssetPrice = z.object({
   isManualPrice: z.boolean(),
   oracle: z.string(),
+  /**
+   * Whether no oracle could price this asset, so it renders as unknown rather than as $0.
+   *
+   * @remarks
+   * The backend reports an unpriceable asset as a zero price attributed to the blockchain oracle,
+   * which is indistinguishable from a genuine zero until those two are read together.
+   */
   priceMissing: z.boolean().optional(),
   usdPrice: NumericString.nullish(),
   value: NumericString,
@@ -36,8 +43,6 @@ export const AssetPriceResponse = z.object({
     mappedAssets[asset] = {
       isManualPrice: oracle === response.oracles[PriceOracle.MANUALCURRENT],
       oracle: oracleKey,
-      // the backend reports assets no oracle could price as a zero price with
-      // the blockchain oracle, so mark them to render as unknown instead of $0
       priceMissing: value.isZero() && oracleKey === PriceOracle.BLOCKCHAIN,
       value,
     };

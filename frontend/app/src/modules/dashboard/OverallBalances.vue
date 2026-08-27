@@ -30,15 +30,18 @@ const { getNetValue } = statisticsStore;
 
 const premium = usePremium();
 const { updateFrontendSetting } = useSettingsOperations();
-// Was `initial-loading OR section-loading`; on the ledger the first implies the second, so any
-// balance work in flight is the whole condition.
 const { loadingBlockchainBalances: isLoading } = useBalancesLoading();
-// The header waits for the whole first load, once: see the composable for why this cannot be a
-// live loading read.
+
 const loadingNetWorth = useNetWorthLoading();
-// The delta and the chart wait for every load, not just the first, because a delta computed from
-// a half-loaded total is a number that is wrong while it moves. The latch is what carries them
-// through the first frames, where no balance activity has been submitted yet.
+
+/**
+ * Whether the delta and the chart have a total worth drawing.
+ *
+ * @remarks
+ * Wider than the header's own latch, which waits for the first load only. A delta computed from a
+ * half-loaded total is a number that is wrong while it moves, so these two wait for every load. The
+ * latch is what carries them through the first frames, before any balance activity is submitted.
+ */
 const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading));
 
 const zoomRange = ref<NetValueZoomRange>();
@@ -96,12 +99,16 @@ async function setTimeframe(value: TimeFrameSetting): Promise<void> {
   await updateFrontendSetting({ lastKnownTimeframe: value });
 }
 
-// Resetting on timeframe change keeps the header on the full-range numbers
-// after the user switches buttons, without clobbering an active zoom on routine
-// balance refreshes.
-watch(timeframe, () => {
+/**
+ * Drops the zoom when the timeframe changes, so the header goes back to full-range numbers after
+ * the user switches buttons. Watching the timeframe rather than the data leaves an active zoom
+ * alone across routine balance refreshes.
+ */
+function clearZoomForNewTimeframe(): void {
   set(zoomRange, undefined);
-});
+}
+
+watch(timeframe, clearZoomForNewTimeframe);
 
 onMounted(() => {
   if (!get(premium) && !isPeriodAllowed(get(timeframe)))

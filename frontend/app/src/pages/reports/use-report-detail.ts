@@ -57,9 +57,13 @@ export function useReportDetail(): UseReportDetailReturn {
   const hasActionableIssues = computed<boolean>(() => get(latest) && (get(missingAcquisitionsCount) > 0 || get(missingPricesCount) > 0));
   const showCompletenessWarning = computed<boolean>(() => get(hasActionableIssues) || (get(latest) && get(eventsSkippedCount) > 0));
 
-  // Detailed issues are only kept for the latest report. For older reports we can still tell
-  // whether they had incomplete processing, and only then is it worth explaining why the details
-  // are unavailable.
+  /**
+   * Whether an older report processed everything it was given.
+   *
+   * @remarks
+   * Detailed issues are kept only for the latest report, but this much survives for any of them, so
+   * it is what decides whether explaining the missing details is worth doing at all.
+   */
   const reportHadIssues = computed<boolean>(() => {
     const report = findReport();
     return !!report && report.processedActions < report.totalActions;

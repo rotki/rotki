@@ -58,8 +58,6 @@ const form = useModelForm<BalanceSnapshotFormState>({
   model,
   schema,
   stateUpdated,
-  // Only the fields this form gates count as an edit. The asset, amount and value are derived and
-  // rewritten by the price fetch on mount, which must not arm the dialog's unsaved-changes prompt.
   transientKeys: ['amount', 'assetIdentifier', 'timestamp', 'usdValue'],
 });
 
@@ -83,11 +81,7 @@ watch(assetType, (assetType) => {
     form.state.amount = '1';
 });
 
-// An NFT seeded from outside switches the asset input over; the model round trip itself is handled
-// by useModelForm.
-watchImmediate(model, () => {
-  checkAssetType();
-}, { deep: true });
+watchImmediate(model, checkAssetType, { deep: true });
 
 defineExpose({
   submitPrice,

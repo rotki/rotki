@@ -89,9 +89,7 @@ describe('combineOutcomes', () => {
     expect(combined.error.message).toBe('disabled');
   });
 
-  it('should not report a success when nothing ran', () => {
-    // The empty case is the whole point: a parent that ran no children has produced no data, so
-    // it must not write a completion its consumers read as "we already have this".
+  it('should not report a success when nothing ran, which consumers would read as "we already have this"', () => {
     const combined = combineOutcomes([]);
 
     assert(!combined.ok);

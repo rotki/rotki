@@ -24,9 +24,7 @@ describe('core/common/data/bignumbers', () => {
       expect(value.value).toStrictEqual(Zero);
     });
 
-    // These are the values bignumber.js throws on. The helper runs inside a computed, so a throw
-    // here is a render-time exception in whichever form is bound to the field.
-    it.each(['abc', '1.2.3', '-', '.', '0,5', '1 000'])('should read %s as zero rather than throw', (input) => {
+    it.each(['abc', '1.2.3', '-', '.', '0,5', '1 000'])('should read %s as zero rather than throw, which inside a computed would be a render-time exception', (input) => {
       expect(() => bigNumberify(input)).toThrow();
 
       const value = bigNumberifyFromRef(ref(input));
@@ -49,8 +47,6 @@ describe('core/common/data/bignumbers', () => {
       expect(parseNumericInput('   ')).toBeUndefined();
     });
 
-    // The first group throws in bignumber.js, the second parses into something unusable. A caller
-    // that has to reject a value cannot tell them apart, so neither may come back as a number.
     it.each(['abc', '1.2.3', '-', '.', '0,5', '1 000'])('should reject %s, which throws', (input) => {
       expect(() => bigNumberify(input)).toThrow();
       expect(parseNumericInput(input)).toBeUndefined();
@@ -66,9 +62,7 @@ describe('core/common/data/bignumbers', () => {
       expect(parseNumericInput('.5')?.toFixed()).toBe('0.5');
     });
 
-    // With a fallback the result is a number the caller can use straight away, so the parse and the
-    // "what does an unreadable field mean here" decision stay in one place.
-    it.each(['', '-', '1.2.3', 'NaN'])('should fall back on %s when given a fallback', (input) => {
+    it.each(['', '-', '1.2.3', 'NaN'])('should fall back on %s when given a fallback, so the caller gets a usable number rather than a decision to make', (input) => {
       expect(parseNumericInput(input, Zero)).toStrictEqual(Zero);
     });
 

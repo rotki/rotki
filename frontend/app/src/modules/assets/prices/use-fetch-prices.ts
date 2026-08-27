@@ -33,10 +33,15 @@ interface UseFetchPricesReturn {
 export const assetSetDigest = setDigest;
 
 /**
- * Fetches latest asset prices as a single native PRICES activity (Phase 2 migration). The whole
- * batched fetch is owned by the orchestrator — it schedules, reports progress, cancels and re-runs
- * it — while each 100-asset batch still flows through `runTaskResult`. Callers keep the same
- * `Promise<void>` API and read the prices store once it resolves.
+ * Fetches the latest asset prices as one PRICES activity.
+ *
+ * @remarks
+ * The orchestrator owns the whole batched fetch, meaning it schedules, reports progress, cancels
+ * and re-runs it, while each 100-asset batch runs through the `runTask` the activity hands its body.
+ * Callers await a `Promise<void>` and read the prices store once it resolves.
+ *
+ * It keeps no status of its own: liveness ("is it fetching") and freshness ("has it ever loaded")
+ * are read off the orchestrator through `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`.
  */
 export function useFetchPrices(): UseFetchPricesReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -50,8 +55,6 @@ export function useFetchPrices(): UseFetchPricesReturn {
     const selected = [...payload.selectedAssets];
     const assetCount = selected.length;
 
-    // No assets means no batches, so the run would query nothing and return ok immediately -
-    // there is nothing worth showing in the task center.
     if (assetCount === 0)
       return;
 
@@ -67,11 +70,6 @@ export function useFetchPrices(): UseFetchPricesReturn {
       },
     );
 
-    // No status bookkeeping: submitTask registers the PRICES activity, so liveness ("is it
-    // fetching") and freshness ("has it ever loaded") are read off the orchestrator via
-    // `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`. The run is a sequential, short-
-    // circuiting fold: flatMap drops every later batch on the first error, reporting progress
-    // before each step and once more on success.
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.LATEST, assetSetDigest(selected), payload.ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED),
       kind: ActivityKind.PRICES,

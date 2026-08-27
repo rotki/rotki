@@ -9,6 +9,11 @@ import { flatMap } from 'plainfp/result-async';
  * resolve → authenticate → probe → (resume | asset-update + fresh-login) sequence
  * is one flow with one phase, so a background auto-unlock and a manual login share
  * the same machine and can never race each other.
+ *
+ * @remarks
+ * `updatePrompt` and `conflicts` suspend the flow: entering either is the end of the current call,
+ * and nothing advances until the UI answers through `applyUpdate()` or `skipUpdate()`. Every other
+ * phase is passed through on the way somewhere.
  */
 export const UnlockPhase = {
   idle: 'idle',
@@ -49,8 +54,10 @@ export const UpdateOutcomeKind = {
  */
 export type UnlockCredentials = LoginCredentials;
 
-// The full version diff so the asset-update prompt can show local→remote + change count,
-// and the user can pick a partial `upToVersion` (advanced).
+/**
+ * Names the asset version diff the update prompt renders: local and remote versions, the change
+ * count, and the `upToVersion` a partial update stops at.
+ */
 export type UpdateChanges = AssetVersionUpdate;
 
 type AssetConflict = AssetUpdateConflictResult;
@@ -122,34 +129,46 @@ export interface UseUnlockFlowReturn {
 
 export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
   const state = ref<UnlockState>({ kind: UnlockPhase.idle });
-  // Lives only for the duration of one flow (needed to re-authenticate after an
-  // asset-update restart) and is dropped the moment we reach `ready`.
+  /** Held for one flow only: the restart path re-authenticates with it, and `ready` drops it. */
   let credentials: UnlockCredentials | undefined;
-  // True for a background auto-unlock: a failure (or nothing to resume/log in with)
-  // silently returns to the idle form instead of parking in `error`.
-  let auto = false;
+  /** A background auto-unlock, whose failures return to the idle form instead of parking in `error`. */
+  let startedInTheBackground = false;
   let pendingVersion = 0;
 
   const toPhase = (next: UnlockState): void => set(state, next);
-  // Any exit without a live session (error, or back to the idle form) tears the monitor
-  // down: the pipeline may have optimistically opened the websocket before probing, and
-  // if the session is not valid that socket 403s and would otherwise reconnect forever.
+  /**
+   * Moves the flow into its error phase, tearing the websocket down on the way out.
+   *
+   * @remarks
+   * The pipeline opens the socket before it knows the session is valid, so every exit without a
+   * live session has to disconnect: an invalid session makes that socket 403 and reconnect forever.
+   */
   const fail = (error: UnlockError): void => {
     steps.disconnect();
     toPhase({ kind: UnlockPhase.error, error });
   };
 
-  // Manual login/create: credentials come from the form/payload.
+  /**
+   * Runs the flow for a manual login or account creation.
+   *
+   * @remarks
+   * Failures park in the error phase for the form to render, unlike {@link startAuto}.
+   */
   async function start(creds: UnlockCredentials): Promise<void> {
-    auto = false;
+    startedInTheBackground = false;
     credentials = creds;
     await runPipeline();
   }
 
-  // Background auto-unlock: resolve the stored credentials first. Nothing stored ⇒
-  // there is nothing to auto-unlock with, so drop back to the idle login form.
+  /**
+   * Runs the flow in the background from the stored credentials.
+   *
+   * @remarks
+   * With nothing stored, or with a stored profile that carries no password, the flow returns to
+   * the idle login form rather than parking in the error phase.
+   */
   async function startAuto(): Promise<void> {
-    auto = true;
+    startedInTheBackground = true;
     toPhase({ kind: UnlockPhase.resolving });
     const resolved = await steps.resolveCredentials();
     if (!resolved.ok)
@@ -161,8 +180,15 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
     await runPipeline();
   }
 
-  // authenticate (no-op without sessions) → open the WS (so migration progress can
-  // stream) → probe whether the backend already has a live session for this user.
+  /**
+   * Authenticates, opens the websocket, then probes whether the backend already holds a live
+   * session for these credentials.
+   *
+   * @remarks
+   * The socket opens before the probe so backend migration progress can stream while it runs.
+   * A live session resumes straight away and never reaches the asset-update prompt: applying an
+   * update restarts the backend, which would kill the session just re-attached to.
+   */
   async function runPipeline(): Promise<void> {
     const creds = credentials;
     if (!creds)
@@ -184,14 +210,11 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
     if (!resumable.ok)
       return fail(resumable.error);
 
-    // Live session ⇒ resume directly, never touching the asset-update prompt (applying
-    // it would restart the backend and kill the session we just re-attached to).
     if (resumable.value)
       return finishUnlock(true);
 
-    // No live session and nothing to log in with (background auto-unlock without a saved
-    // password) ⇒ show the form for manual entry instead of a doomed empty-password login.
-    if (auto && !creds.password)
+    const wouldBeADoomedEmptyPasswordLogin = startedInTheBackground && !creds.password;
+    if (wouldBeADoomedEmptyPasswordLogin)
       return reset();
 
     await checkUpdate();
@@ -205,15 +228,22 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
 
     if (found.value.some) {
       pendingVersion = found.value.value.upToVersion;
-      // suspend: the UI shows the prompt and calls applyUpdate()/skipUpdate()
       return toPhase({ kind: UnlockPhase.updatePrompt, changes: found.value.value });
     }
 
     await finishUnlock(false);
   }
 
-  // user accepted the update (optionally resolving conflicts). `version` lets the prompt
-  // request a partial update (advanced); conflict re-resolution reuses the pending version.
+  /**
+   * Applies the pending asset update, then restarts the backend or suspends on conflicts.
+   *
+   * @remarks
+   * Conflict re-resolution calls this a second time with only a resolution, reusing the version
+   * the first call recorded.
+   *
+   * @param resolution - how to settle the conflicts a previous call reported
+   * @param version - stops the update short at this version; omitted, the whole pending diff applies
+   */
   async function applyUpdate(resolution?: Resolution, version?: number): Promise<void> {
     if (version !== undefined)
       pendingVersion = version;
@@ -223,7 +253,6 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
       return fail(outcome.error);
 
     if (outcome.value.kind === UpdateOutcomeKind.conflicts)
-      // suspend: the UI shows conflicts and calls applyUpdate(resolution)
       return toPhase({ kind: UnlockPhase.conflicts, conflicts: outcome.value.conflicts });
 
     await restart();
@@ -233,11 +262,15 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
     await finishUnlock(false);
   }
 
-  // The restart is a phase WITHIN this flow — it never tears the app down to the
-  // global "connecting" state. requestRestart hits the (initially no-op) HTTP
-  // control endpoint; waitReady polls /ping; then we re-authenticate with the
-  // password still held in this closure. An asset update only ever happens on the
-  // fresh-login branch, so after the restart we always do a fresh login.
+  /**
+   * Restarts the backend, re-authenticates against it, and finishes with a fresh login.
+   *
+   * @remarks
+   * The restart is a phase of this flow, not a drop back to the app-wide connecting state:
+   * `waitReady` polls until the backend answers, the password still held in this closure
+   * re-authenticates, and the socket is reopened because it dropped with the restart. An asset
+   * update only ever runs on the fresh-login branch, so a restart never ends in a resume.
+   */
   async function restart(): Promise<void> {
     const creds = credentials;
     if (!creds)
@@ -248,7 +281,7 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
       steps.requestRestart(),
       flatMap(async () => steps.waitReady()),
       flatMap(async () => steps.authenticate(creds)),
-      flatMap(async () => steps.connect()), // the socket dropped with the restart
+      flatMap(async () => steps.connect()),
     );
     if (!result.ok)
       return fail(result.error);
@@ -279,7 +312,7 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
   function reset(): void {
     steps.disconnect();
     credentials = undefined;
-    auto = false;
+    startedInTheBackground = false;
     pendingVersion = 0;
     toPhase({ kind: UnlockPhase.idle });
   }

@@ -54,8 +54,14 @@ export enum NoteLocation {
   SETTINGS_ACCOUNT = 'SETTINGS_ACCOUNT',
   SETTINGS_GENERAL = 'SETTINGS_GENERAL',
   SETTINGS_DATABASE = 'SETTINGS_DATA_SECURITY',
-  // The tab moved to /settings/chains, but this value is persisted in user_notes.location, so
-  // renaming it would orphan every note a user attached to the page. Keep it as is.
+  /**
+   * The chains settings tab, still carrying the name of the EVM tab it replaced.
+   *
+   * @remarks
+   * These values are persisted verbatim in `user_notes.location`, so this string exists in user
+   * databases already. Renaming it to match the route would orphan every note attached to the page,
+   * and there is no migration that could find them again.
+   */
   SETTINGS_EVM = 'SETTINGS_EVM',
   SETTINGS_ACCOUNTING = 'SETTINGS_ACCOUNTING',
   SETTINGS_ORACLE = 'SETTINGS_ORACLE',

@@ -135,7 +135,6 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
     const routeQuery = readUrlQuery();
 
     if (isEmpty(routeQuery)) {
-      // for empty query, we reset the filters, and pagination to defaults
       applySourceReads(params, routeQuery);
       set(filters, routeFilterSchema?.()?.parse({}));
       set(internalPagination, applyPaginationDefaults(get(itemsPerPage)));
@@ -206,8 +205,6 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
   // `none` means no URL state at all, so no route watcher is installed.
   if (syncsUrl) {
     watchImmediate(route, async () => {
-      // Consume the pending tag: a write we made arrives as 'self', anything else is
-      // a real navigation.
       const source = get(pendingUrlSource) ?? 'route';
       set(pendingUrlSource, undefined);
       set(pendingIntent, source);

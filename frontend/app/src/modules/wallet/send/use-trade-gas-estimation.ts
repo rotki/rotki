@@ -89,9 +89,6 @@ export function useTradeGasEstimation(options: UseTradeGasEstimationOptions): Us
     set(estimatingGas, true);
 
     try {
-      // Both sides can be undefined (an unresolvable chain, a wallet that has not
-      // reported its chain yet). That is not a match: estimating then would price
-      // the transaction on a chain nothing has confirmed.
       const selectedChainId = getChainIdFromChain(currentChain);
       if (selectedChainId !== undefined && selectedChainId === currentChainId) {
         const estimation = await estimate(currentAsset, abortController);

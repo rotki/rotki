@@ -15,9 +15,14 @@ export const useAccountLoading = createSharedComposable((): UseAccountLoadingRet
   const { useWorkStatusPrefix } = useTaskCenter();
   const { isRefreshing } = storeToRefs(useBalanceRefreshState());
 
-  // A chain is a *prefix* of an add/remove key, never a whole one — the id also carries what is
-  // being acted on. `partsWithin` is what encodes that: it takes the leading slice of the key, so
-  // the coarse read cannot drift from the ids the producers actually submit.
+  /**
+   * Tracks whether an account addition or removal is in flight.
+   *
+   * @remarks
+   * A chain is only the leading slice of an add/remove activity key, so matching is by prefix and
+   * `partsWithin` builds that prefix from the activity definition rather than from a literal here.
+   * @param blockchain - narrows the match to one chain; omitting it covers every chain
+   */
   const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> => {
     const within = blockchain ? ([blockchain] as const) : ([] as const);
     const add = useWorkStatusPrefix(accountAddActivity.kind, ...accountAddActivity.partsWithin(within));

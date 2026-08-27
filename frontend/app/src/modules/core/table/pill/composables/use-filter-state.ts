@@ -35,14 +35,12 @@ export interface UseFilterStateReturn {
 }
 
 /**
- * The pill bar's Layer-2 state container (the plan's `use-filter-state`, the `ActiveFilter[]`
- * evolution of `useFilterModel`). Owns `state: ActiveFilter[]` and derives the transported
- * `matches` + `params` through the pure codec over the given `fields`. No DOM, no async: asset
- * search is the editor's concern, injected there, not called in a setter (Pinia sync-only rule).
+ * Holds the pill bar's active filters and derives what the table transports.
  *
- * Not yet wired into any bar. The old Suggestion-based `useFilterModel`/`useFilterSelection`
- * stay as they are; unifying the two happens with the pill components (Phase 2), where the
- * asset-display translation is verified in-app.
+ * @remarks
+ * Owns `state: ActiveFilter[]` and derives `matches` and `params` from it through the pure codec
+ * over the given `fields`. No DOM and no async: asset search is the editor's concern, injected
+ * there rather than called from a setter, which the sync-only store rule requires.
  */
 export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterStateReturn {
   const state = ref<FilterState>([]);

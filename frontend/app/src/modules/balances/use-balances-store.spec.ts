@@ -26,7 +26,6 @@ describe('useBalancesStore', () => {
       },
     };
 
-    // Set up prices in store so getAssetPriceInCurrentCurrency can find the price
     const { prices } = storeToRefs(useBalancePricesStore());
     set(prices, assetPrices);
 

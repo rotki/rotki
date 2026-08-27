@@ -1,9 +1,10 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
-import type { ComponentPublicInstance } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain } from '@rotki/common';
+import { settleFormDebounce } from '@test/utils/form-timing';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -33,8 +34,6 @@ function selectStub(name: string, props: string[]): Record<string, unknown> {
     template: '<div />',
   };
 }
-
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function addressAccount(chain: string, address: string): BlockchainAccount {
   return {
@@ -99,8 +98,6 @@ describe('history/events/tx/TransactionForm.vue', () => {
   }
 
   function messages(testId: string): string[] {
-    // The account selector carries its validation inside the `field` bag; ChainSelect still takes
-    // errorMessages at the top level.
     const props = field(testId).props();
     const bag: unknown = props.field;
     const value: unknown = typeof bag === 'object' && bag !== null
@@ -132,9 +129,7 @@ describe('history/events/tx/TransactionForm.vue', () => {
     expect(await harness.validate()).toBe(false);
   });
 
-  // The form seeds a chain on open, so an empty `blockchain` is only reachable by clearing the
-  // select, never by opening the dialog on a payload that has none.
-  it('should reject the payload once the chain is cleared', async () => {
+  it('should reject the payload once the chain is cleared, the only way to empty a chain the form seeds on open', async () => {
     harness = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
@@ -219,15 +214,14 @@ describe('history/events/tx/TransactionForm.vue', () => {
 
   it('should not arm the close prompt for the chain it seeds itself', async () => {
     harness = createWrapper({ ...basePayload(), blockchain: '' });
-    // Past the point where an edit would be picked up, so only the seeding is in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleFormDebounce();
 
     expect(harness.stateUpdated()).toBe(false);
   });
 
   it('should arm the close prompt once a field is edited', async () => {
     harness = createWrapper();
-    await vi.advanceTimersByTimeAsync(600);
+    await settleFormDebounce();
 
     await editTxRef(OTHER_TX_HASH);
 

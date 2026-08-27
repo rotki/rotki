@@ -57,10 +57,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('colibri request routing', () => {
-    it('should address colibri under the origin in use and queue it separately', async () => {
-      // The origin arrives after startup (over IPC in embedded, from the custom
-      // backend flow otherwise), so a colibri request has to resolve against the
-      // url `setup` was last given rather than anything captured at construction.
+    it('should address colibri under the origin setup was last given, which arrives after construction, and queue it separately', async () => {
       api.setup('http://127.0.0.1:4141');
 
       server.use(
@@ -500,7 +497,6 @@ describe('modules/api/rotki-api', () => {
       const authFailureAction = vi.fn();
       api.setOnAuthFailure(authFailureAction);
 
-      // Still throws, but the auth-failure handler is skipped
       await expect(api.get('test', { skipAuthHandler: true })).rejects.toThrow();
 
       expect(authFailureAction).not.toHaveBeenCalled();
@@ -920,7 +916,6 @@ describe('modules/api/rotki-api', () => {
           })),
       );
 
-      // Should not throw - just verifies the option is accepted
       const result = await api.get<{ success: boolean }>('test', { retry: true });
 
       expect(result).toEqual({ success: true });
@@ -935,7 +930,6 @@ describe('modules/api/rotki-api', () => {
           })),
       );
 
-      // Should not throw - just verifies the option is accepted
       const result = await api.get<{ success: boolean }>('test', {
         retry: { maxRetries: 3, retryDelay: 1000 },
       });
@@ -1019,8 +1013,6 @@ describe('modules/api/rotki-api', () => {
       const pending = api.get('slow', { tags: ['cancel-me'] });
       const settled = expect(pending).rejects.toThrow(RequestCancelledError);
 
-      // The handler must have started: `active` flips before the request reaches the server, and
-      // cancelling a request the server has not seen proves nothing about the connection.
       await vi.waitFor(() => {
         expect(handlerSignal).toBeDefined();
       });

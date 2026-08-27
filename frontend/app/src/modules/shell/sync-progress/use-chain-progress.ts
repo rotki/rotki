@@ -85,7 +85,15 @@ export function settledAddresses(chain: Pick<ChainProgress, 'cancelled' | 'compl
   return chain.completed + chain.cancelled + chain.failed;
 }
 
-/** Whether every one of a chain's addresses has reached a terminal state. */
+/**
+ * Whether every one of a chain's addresses has reached a terminal state.
+ *
+ * @remarks
+ * Settled is not the same as complete, and the distinction reaches the UI: a group of settled items
+ * can hold cancelled and failed ones, so its summary must say it *finished* rather than claim every
+ * item in it succeeded. Only a group with neither may claim completion, or the summary contradicts
+ * the rows inside it, which already read cancelled or failed.
+ */
 export function isChainSettled(chain: Pick<ChainProgress, 'cancelled' | 'completed' | 'failed' | 'total'>): boolean {
   return chain.total > 0 && settledAddresses(chain) === chain.total;
 }

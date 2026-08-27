@@ -30,8 +30,6 @@ const getChain = vi.fn((name: string): Blockchain => {
   return Blockchain.ETH;
 });
 
-// `eth` is the only blockchain id that differs from its evm chain name, which is
-// what `getChainIdFromChain` has to bridge.
 const getEvmChainName = vi.fn((chain: string): string | undefined => {
   if (chain === Blockchain.ETH)
     return 'ethereum';
@@ -77,9 +75,6 @@ describe('useWalletHelper', () => {
 
     it('should return undefined for a chain rotki does not support', () => {
       const { getEvmChainNameFromChainId } = useWalletHelper();
-      // A connected wallet reports whatever chain it sits on, which is not
-      // constrained to rotki's list. Answering `ethereum` for it made the send
-      // form believe it was on mainnet.
       expect(getEvmChainNameFromChainId(99999)).toBeUndefined();
     });
   });

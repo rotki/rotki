@@ -92,8 +92,7 @@ describe('excludeMatchingDuringReset', () => {
     expect(excludeMatchingDuringReset(candidate, [candidate, reset(Status.RUNNING)])).toBe(false);
   });
 
-  it('should hold matching back while a reset is merely queued', () => {
-    // Yielding to a queued reset is what stops a stream of matching work starving it.
+  it('should hold matching back while a reset is merely queued, or a stream of matching work starves it', () => {
     const candidate = matching(Status.PENDING);
     expect(excludeMatchingDuringReset(candidate, [candidate, reset(Status.PENDING)])).toBe(false);
   });
@@ -115,9 +114,6 @@ describe('excludeMatchingDuringReset', () => {
   });
 
   it('should not deadlock when a reset and matching are both queued', () => {
-    // The asymmetry is the point: matching yields to a queued reset, but a reset only yields to
-    // matching that is already running. So with both queued the reset starts and the pair resolves,
-    // where a symmetric rule would leave each waiting on the other forever.
     const queuedReset = reset(Status.PENDING);
     const queuedMatching = matching(Status.PENDING);
     const all = [queuedReset, queuedMatching];
@@ -131,8 +127,7 @@ describe('excludeMatchingDuringReset', () => {
     expect(excludeMatchingDuringReset(candidate, [candidate, reset(Status.RUNNING)])).toBe(true);
   });
 
-  it('should not mistake other history-events work for matching', () => {
-    // The kind alone is too coarse — undecoded counts live under it too.
+  it('should not mistake other history-events work for matching, the kind alone being too coarse', () => {
     const candidate = activity({
       id: makeActivityId(Kind.HISTORY_EVENTS, ActivityPart.UNDECODED),
       kind: Kind.HISTORY_EVENTS,

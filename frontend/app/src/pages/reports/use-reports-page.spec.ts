@@ -1,7 +1,6 @@
-import type { VueWrapper } from '@vue/test-utils';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef } from 'vue';
 import { useReportsPage } from './use-reports-page';
 
@@ -55,24 +54,14 @@ vi.mock('@/modules/task-center/use-task-center', async () => {
 });
 
 describe('pages/reports/useReportsPage', () => {
-  // The composable registers an onMounted hook, so a harness left mounted would answer a later test.
-  const mounted: VueWrapper[] = [];
-
   function setup(): ReturnType<typeof useReportsPage> {
-    const { result, wrapper } = withSetup(() => useReportsPage({ onResetUploader }));
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useReportsPage({ onResetUploader })).result;
   }
 
   beforeEach(() => {
     vi.clearAllMocks();
     routeState.name = '/reports/';
     routeState.query = {};
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   describe('the regenerate query written by reports/[id]', () => {

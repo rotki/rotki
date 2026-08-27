@@ -51,7 +51,6 @@ declare global {
   }
 }
 
-// Handle Metamask and other wallet extension import
 export interface EIP6963ProviderInfo {
   rdns: string;
   uuid: string;

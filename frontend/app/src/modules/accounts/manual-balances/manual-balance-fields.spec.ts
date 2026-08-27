@@ -31,8 +31,6 @@ const options = {
 const fields = (): ReturnType<typeof toManualBalanceFields> => toManualBalanceFields(resolvers, t, options);
 
 describe('toManualBalanceFields', () => {
-  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
-  // here rather than against a second hand-written declaration.
   it('should parse optional route filter values', () => {
     const schema = routeSchemaFromFields(fields());
 
@@ -44,8 +42,6 @@ describe('toManualBalanceFields', () => {
     expect(schema.parse({})).toEqual({});
   });
 
-  // The tags pill is the whole point of the migration here: it was a selector of its own beside
-  // the bar, and it is param-bound rather than part of the filter bag.
   it('should offer the tags beside the table own fields', () => {
     expect(fields().map(field => field.key)).toStrictEqual(['location', 'label', 'asset', 'tags']);
   });
@@ -81,17 +77,14 @@ describe('toManualBalanceFields', () => {
     expect(asset.searchAsset).toBe(options.searchAsset);
   });
 
-  // A label is the name the user gave the balance, so there is no list of them to offer.
-  it('should have the label written rather than picked', () => {
+  it('should have the label written rather than picked, it being a name the user gave', () => {
     const [, label] = fields();
 
     expect(label.freeText).toBe(true);
     expect(label.suggest).toBeUndefined();
   });
 
-  // None of these keys is declared as behaviour-carrying, so the request has no form for an
-  // exclusion and the pill must not offer one.
-  it('should offer no exclusion on any field', () => {
+  it('should offer no exclusion on any field, since the request has no form for one', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);
       expect(field.operators).not.toContain('is_not');

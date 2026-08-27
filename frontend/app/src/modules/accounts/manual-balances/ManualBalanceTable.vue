@@ -39,8 +39,6 @@ const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
-// Declared here rather than left to the table: the asset search is scoped by the picked location,
-// so the fields read the bag, and they are built before the table that owns it.
 const modelFilters = ref<Filters>({});
 const fields = useManualBalanceFields(locations, modelFilters);
 const pillLabels = usePillBarLabels();

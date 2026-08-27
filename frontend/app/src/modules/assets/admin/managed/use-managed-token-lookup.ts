@@ -1,5 +1,6 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import { isValidEthAddress, type SupportedAsset } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { pick } from 'es-toolkit';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -64,6 +65,16 @@ export function useManagedTokenLookup(options: ManagedTokenLookupOptions): Manag
     return get(txEvmChains).some(({ evmChainName }) => evmChainName === chain);
   }
 
+  /**
+   * Looks the token up on chain and fills the fields the user has not filled themselves.
+   *
+   * @remarks
+   * The current field values are read *after* the request returns, never before. The user goes on
+   * typing while the lookup is in flight, so a copy taken beforehand would write the older values
+   * back over what they have since entered.
+   *
+   * Does nothing for a chain the backend cannot query.
+   */
   async function fetchTokenData(tokenAddress: string, chain: string): Promise<void> {
     if (!isSupportedChain(chain))
       return;
@@ -71,8 +82,6 @@ export function useManagedTokenLookup(options: ManagedTokenLookupOptions): Manag
     set(fetching, true);
     try {
       const details = await fetchTokenDetails({ address: tokenAddress, evmChain: chain });
-      // Read after the request, not before: the user goes on typing while it is in flight, and a
-      // copy taken beforehand would put the older value back.
       const current = pick(get(asset), FILLED_FIELDS);
 
       set(asset, {
@@ -84,7 +93,6 @@ export function useManagedTokenLookup(options: ManagedTokenLookupOptions): Manag
       onFilled([...FILLED_FIELDS]);
     }
     finally {
-      // Always re-enable the fields, even if the lookup throws, so the form never stays locked.
       set(fetching, false);
     }
   }
@@ -106,18 +114,27 @@ export function useManagedTokenLookup(options: ManagedTokenLookupOptions): Manag
     (): string | null | undefined => toValue(evmChain),
   ];
 
-  watch(watched, async ([tokenAddress, chain]): Promise<void> => {
+  /**
+   * Looks the token up whenever the address or chain changes, unless this edit is to be skipped.
+   *
+   * @remarks
+   * A skipped edit consumes the suppression, so the one after it looks up normally. An address
+   * that is not yet a valid one consumes it too: the user is still mid-paste, and holding the
+   * suppression open would carry it into whatever they eventually finish typing.
+   */
+  function lookUpOnEdit([tokenAddress, chain]: [string, string | null | undefined]): void {
     if (!chain)
       return;
 
-    // A suppressed run still counts as the run it suppresses, so the next edit looks up normally.
     if (get(skipNext) || !isValidEthAddress(tokenAddress)) {
       set(skipNext, false);
       return;
     }
 
-    await fetchTokenData(tokenAddress, chain);
-  });
+    startPromise(fetchTokenData(tokenAddress, chain));
+  }
+
+  watch(watched, lookUpOnEdit);
 
   return {
     fetching: readonly(fetching),

@@ -222,8 +222,6 @@ describe('useAccountImport', () => {
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
-    // A one-row import needs no umbrella, so this addition has no parent — the batch suppresses the
-    // umbrella rather than showing a parent over a single child.
     expect(addAccount).toHaveBeenCalledWith('btc', {
       label: 'Test Pub',
       tags: ['tag1'],

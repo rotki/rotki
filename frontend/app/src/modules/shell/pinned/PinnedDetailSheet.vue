@@ -46,12 +46,18 @@ let previouslyFocused: HTMLElement | undefined;
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/**
+ * Every focusable element the sheet holds.
+ *
+ * @remarks
+ * Deliberately unfiltered by visibility: everything the sheet renders while open is on screen, and
+ * the usual `offsetParent` test reports null for every element under jsdom.
+ */
 function focusable(): HTMLElement[] {
   const el = get(sheet);
   if (!el)
     return [];
-  // no visibility filter: everything the sheet renders while open is on screen, and the
-  // usual `offsetParent` test reports null for every element under jsdom
+
   return [...el.querySelectorAll<HTMLElement>(FOCUSABLE)];
 }
 
@@ -94,8 +100,6 @@ watch(open, async (isOpen) => {
   if (isOpen) {
     previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     await nextTick();
-    // the sheet itself takes focus first: its content may start with a scroll area rather
-    // than a control, and announcing the surface matters more than reaching a button fast
     (get(sheet) ?? focusable()[0])?.focus();
   }
   else {

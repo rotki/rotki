@@ -60,7 +60,6 @@ describe('useNotificationDispatcher', () => {
       message: 'message-2',
     });
 
-    // After cooldown, display should be allowed again
     vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
 
     notify({
@@ -275,8 +274,6 @@ describe('useNotificationDispatcher', () => {
       unsilence();
       notify({ display: true, message: 'loud', title: 'title' });
 
-      // Only the new one pops. The silenced notification must not be waiting in the queue to
-      // fire the moment silent mode is switched off.
       expect(get(queue)).toHaveLength(1);
       expect(get(queue)[0]).toMatchObject({ message: 'loud' });
     });

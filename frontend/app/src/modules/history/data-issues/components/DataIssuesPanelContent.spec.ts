@@ -159,9 +159,7 @@ describe('dataIssuesPanelContent', () => {
     expect(wrapper.text()).not.toContain('data_issues.empty.all_clear_title');
   });
 
-  // The list is virtualised, so the rendered card count reflects the window, not the
-  // issue count. Assert on the issue each card was handed instead.
-  it('should hand each rendered card its issue', async () => {
+  it('should hand each rendered card its issue, the virtualised count reflecting the window rather than the data', async () => {
     state.issues = [createIssue(1), createIssue(2), createIssue(3)];
     const wrapper = await createWrapper();
 

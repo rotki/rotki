@@ -24,8 +24,6 @@ const exchanges = (): string[] => ['kraken', 'binance'];
 const fields = (): FieldDef[] => toCexMappingFields(resolvers, t, exchanges);
 
 describe('toCexMappingFields', () => {
-  // These are the keys the backend takes as ordinary filters; they were `extraParams` only because
-  // the request payload never declared `locationSymbol`.
   it('should filter on the exchange and its symbol', () => {
     expect(fields().map(field => field.key)).toStrictEqual(['location', 'locationSymbol']);
   });
@@ -45,17 +43,14 @@ describe('toCexMappingFields', () => {
     expect(location.suggest?.()).toStrictEqual(['kraken', 'binance']);
   });
 
-  // The backend reads an unknown location as the common mappings rather than as no rows, so a typo
-  // would quietly show the wrong ones.
-  it('should refuse an exchange it does not offer', () => {
+  it('should refuse an exchange it does not offer, since the backend reads an unknown one as the common mappings', () => {
     const [location] = fields();
 
     expect(location.validate?.('kraken')).toBe(true);
     expect(location.validate?.('nonsense')).toBe(false);
   });
 
-  // There is no list of every symbol every exchange uses, so it is written rather than picked.
-  it('should type the symbol rather than pick it', () => {
+  it('should type the symbol rather than pick it, there being no list of every exchange symbol', () => {
     const [, symbol] = fields();
 
     expect(symbol.freeText).toBe(true);

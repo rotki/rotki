@@ -31,7 +31,6 @@ describe('dockerWarning', () => {
     const { unauthenticatedApiAccepted } = storeToRefs(useMainStore());
     set(unauthenticatedApiAccepted, false);
 
-    // The copy button shares the alert, so anchor on the label rather than on order.
     const wrapper = createWrapper();
     const accept = wrapper.findAll('button').find(button => button.text().includes('docker_warning.accept'));
     assert(accept, 'the accept button should be rendered');

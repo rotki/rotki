@@ -101,9 +101,11 @@ const allocation = computed<{ location: string; percent: number }[]>(() => {
     .sort((a, b) => b.percent - a.percent);
 });
 
-// The named segments shown in the bar/legend: the largest locations, with the
-// long tail of tiny (<1%) and overflow locations folded into a single "Other"
-// bucket so the row isn't cluttered with a string of 0% entries.
+/**
+ * The named segments of the bar and its legend: the largest locations, with the long tail of tiny
+ * (under 1%) and overflow ones folded into a single "Other" bucket, so the row is not a string of
+ * 0% entries.
+ */
 const allocationSegments = computed<AllocationSegment[]>(() => {
   const top = get(allocation).filter(entry => entry.percent >= 1).slice(0, ALLOCATION_LIMIT);
   const segments: AllocationSegment[] = top.map(entry => ({ location: entry.location, other: false, percent: Math.round(entry.percent) }));
@@ -132,11 +134,14 @@ function warningMessage(warning: SnapshotWarning): string {
   return '';
 }
 
-// Zero-value rows are overwhelmingly valueless spam/airdrop tokens, not edit
-// mistakes — listing each would bury the genuine warnings. Collapse them into a
-// single count (carrying an action that isolates those rows in the balances
-// table, since the collapsed line names none of them) and keep every other
-// warning one-to-one.
+/**
+ * One line per warning, except the zero-value rows.
+ *
+ * @remarks
+ * Those are collapsed to a single count, since listing each would bury the genuine warnings; see
+ * {@link useSnapshotBalanceDisplay} for why they are not edit mistakes. The collapsed line names
+ * none of them, so it carries an action that isolates those rows in the balances table instead.
+ */
 const warningMessages = computed<{ action: boolean; text: string }[]>(() => {
   const all = get(warnings);
   const messages = all
@@ -152,9 +157,9 @@ const warningMessages = computed<{ action: boolean; text: string }[]>(() => {
   return messages;
 });
 
-// The sanity warnings are advisory, so let the user dismiss them. Re-surface when
-// the set of warnings changes (an edit introduced or resolved something).
+/** The sanity warnings are advisory, so they can be dismissed until the set of them changes. */
 const warningsDismissed = ref<boolean>(false);
+
 watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
   set(warningsDismissed, false);
 });

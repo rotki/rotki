@@ -116,7 +116,6 @@ export async function stopCoverage(page: Page): Promise<void> {
   if (v8CoverageData.length === 0)
     return;
 
-  // Write V8 coverage data
   const coverageFile = join(V8_COVERAGE_DIR, `coverage-${randomUUID()}.json`);
   writeFileSync(coverageFile, JSON.stringify({ result: v8CoverageData }));
 }

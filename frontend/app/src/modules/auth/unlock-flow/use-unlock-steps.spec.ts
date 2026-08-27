@@ -84,8 +84,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   // Mirrors the real predicate: only an actionable `TaskFailed` carries a `cause`.
   isActionable: (error: { _tag?: string }): boolean => error?._tag === 'TaskFailed',
   makeActivityId: (kind: string, ...parts: (string | number)[]): string => [kind, ...parts].join(':'),
-  // The real bridge runs the spec's `run` and returns its outcome; do the same so a test drives
-  // the flow purely through `runTaskResult`.
   useNativeTask: vi.fn(() => ({
     runTaskResult,
     submitTask: vi.fn(runSpecWith(runTaskResult)),
@@ -280,7 +278,6 @@ describe('useUnlockSteps', () => {
       const store = setupStore();
       const { syncConflict } = storeToRefs(store);
       const payload = { localLastModified: 1, remoteLastModified: 2 };
-      // the task monitor forwards the original error as the cause of an actionable TaskFailed
       runTaskResult.mockResolvedValue(err(TaskFailed({ cause: new SyncConflictError('conflict!', { payload }), message: 'conflict!' })));
 
       const { loginSteps } = useUnlockSteps();
@@ -387,7 +384,6 @@ describe('useUnlockSteps', () => {
     it('should start the monitor only after the create ack sets the cookie', async () => {
       setupStore();
       callCreateAccount.mockResolvedValue({ taskId: 1 });
-      // run the executor so the ack→monitor ordering inside createUnlock is observable.
       runTaskResult.mockImplementation(async (executor: () => Promise<unknown>) => {
         await executor();
         return ok({ exchanges: [], settings: { frontendSettings: '{}' } });

@@ -24,8 +24,6 @@ const resolvers: SharedFieldResolvers = {
 };
 
 describe('toAddressBookFields', () => {
-  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
-  // here rather than against a second hand-written declaration.
   describe('route query', () => {
     const schema = routeSchemaFromFields(toAddressBookFields(resolvers, t));
 
@@ -53,9 +51,7 @@ describe('toAddressBookFields', () => {
     ]);
   });
 
-  // Neither has a list to pick from: names are whatever the user wrote, and the book holds
-  // arbitrary addresses rather than tracked ones.
-  it('should have both values written rather than picked', () => {
+  it('should have both values written rather than picked, since the book holds arbitrary addresses and user-written names', () => {
     const [name, address] = toAddressBookFields(resolvers, t);
 
     expect(name.freeText).toBe(true);
@@ -91,8 +87,7 @@ describe('toAddressBookChainField', () => {
 });
 
 describe('toAddressBookStrictField', () => {
-  // A boolean pill has no editor and no value segment: adding it turns the filter on.
-  it('should bind the strict toggle to its param as a boolean', () => {
+  it('should bind the strict toggle to its param as a boolean, adding the pill turning it on', () => {
     expect(toAddressBookStrictField(t)).toMatchObject({
       binding: { kind: 'param', paramKey: 'strictBlockchain', to: 'both' },
       key: 'strictBlockchain',

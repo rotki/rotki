@@ -11,8 +11,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const showCompleted = ref<boolean>(false);
 
-// Split on the same definition of "settled" the rest of the panel uses, so a chain cannot be in
-// progress here while the header counts it complete.
 const inProgressChains = computed<ChainProgress[]>(() =>
   chains.filter(chain => !isChainSettled(chain)),
 );
@@ -34,9 +32,6 @@ const completedIconColor = computed<string>(() => {
   return get(hasCancelledChains) ? 'text-rui-warning' : 'text-rui-success';
 });
 
-// The group holds every *settled* chain, which includes cancelled and failed ones. Calling that
-// "complete" contradicts the rows inside it, which already say cancelled or failed — so only a
-// clean group claims completion, and any other mix says it finished.
 const cleanFinish = computed<boolean>(() => !get(hasFailedChains) && !get(hasCancelledChains));
 
 const completedLabel = computed<string>(() => {

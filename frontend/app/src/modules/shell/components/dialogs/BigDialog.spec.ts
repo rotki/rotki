@@ -84,8 +84,6 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
   });
 
   it('should fall back to the default labels when the action group omits them', () => {
-    // A caller forwarding its own optional labels passes present keys holding `undefined`, which
-    // must still land on the defaults rather than rendering nothing.
     wrapper = createWrapper({ action: { primary: undefined, secondary: undefined } });
 
     expect(wrapper.find('[data-testid="confirm"]').text()).toBe('common.actions.confirm');

@@ -152,13 +152,10 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       ];
       wrapper = createWrapper(protocolCache);
 
-      // Only non-cancelled in-progress item should show
       const items = wrapper.findAll('[data-testid="protocol-cache-item"]');
       expect(items).toHaveLength(1);
       expect(items[0].attributes('data-chain')).toBe('optimism');
 
-      // The cancelled item settles into the group, whose label then says the group finished
-      // rather than claiming every protocol in it was refreshed.
       expect(wrapper.text()).toContain('sync_progress.finished_protocol_cache');
       expect(wrapper.text()).not.toContain('sync_progress.completed_protocol_cache');
     });

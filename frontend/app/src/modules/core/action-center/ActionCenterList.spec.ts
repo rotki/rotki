@@ -33,7 +33,12 @@ interface ListProps {
   clearHint?: string;
 }
 
-// `VueWrapper` without type arguments: a generic SFC has no `InstanceType`.
+/**
+ * Mounts the list with one item and the remaining required props filled in.
+ *
+ * @remarks
+ * The wrapper carries no type argument because a generic SFC has no `InstanceType` to name.
+ */
 function mountList(props: Partial<ListProps> = {}): VueWrapper {
   return mount(ActionCenterList, {
     props: {

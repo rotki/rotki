@@ -1,3 +1,4 @@
+import type { Collection as DexieCollection } from 'dexie';
 import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ItemFilter } from '@/modules/user-data/pagination';
@@ -38,7 +39,6 @@ interface ResolvedTokenQuery {
 function resolveTokenQuery(payload: NewDetectedTokensRequestPayload): ResolvedTokenQuery {
   const { ascending = [], orderByAttributes = [], tokenKind } = payload;
 
-  // Convert from snake_case (from useServerTable) to camelCase for IndexedDB
   const snakeCaseOrderBy = orderByAttributes.length > 0 ? orderByAttributes[0] : 'detected_at';
   const orderBy = transformCase(snakeCaseOrderBy, true);
   const order = ascending.length > 0 && ascending[0] ? 'asc' : 'desc';
@@ -79,24 +79,22 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
       const { limit, offset } = payloadValue;
       const { filter, order, orderBy } = resolveTokenQuery(payloadValue);
 
-      // Get total count (unfiltered)
+      /**
+       * Opens a new ordered, filtered collection over the token table.
+       *
+       * @remarks
+       * A fresh one per call, because a Dexie collection is spent once it has been walked: reusing
+       * the one that produced the count would yield no rows for the data read.
+       */
+      const openCollection = (): DexieCollection<NewDetectedTokenRecord, number | undefined> => {
+        const ordered = db().newlyDetectedTokens.orderBy(orderBy);
+        const directed = order === 'desc' ? ordered.reverse() : ordered;
+        return filter ? directed.filter(filter) : directed;
+      };
+
       const total = await db().newlyDetectedTokens.count();
-
-      // Build collection for counting filtered results
-      let countCollection = db().newlyDetectedTokens.orderBy(orderBy);
-      if (order === 'desc') {
-        countCollection = countCollection.reverse();
-      }
-      const filteredCountCollection = filter ? countCollection.filter(filter) : countCollection;
-      const found = filter ? await filteredCountCollection.count() : total;
-
-      // Build fresh collection for data retrieval (don't reuse after count)
-      let dataCollection = db().newlyDetectedTokens.orderBy(orderBy);
-      if (order === 'desc') {
-        dataCollection = dataCollection.reverse();
-      }
-      const filteredDataCollection = filter ? dataCollection.filter(filter) : dataCollection;
-      const data = await filteredDataCollection.offset(offset).limit(limit).toArray();
+      const found = filter ? await openCollection().count() : total;
+      const data = await openCollection().offset(offset).limit(limit).toArray();
 
       return {
         data,
@@ -119,7 +117,6 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
       const ttlDays = get(newlyDetectedTokensTtlDays);
       const cutoffTime = Date.now() - (ttlDays * SECONDS_PER_DAY * 1000);
 
-      // Get expired token IDs using indexed query, then delete
       const expiredIds = await db().newlyDetectedTokens.where('detectedAt').below(cutoffTime).primaryKeys();
 
       if (expiredIds.length > 0) {
@@ -143,7 +140,6 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
       if (totalCount > maxCount) {
         const toRemove = totalCount - maxCount;
 
-        // Get IDs of oldest tokens using indexed sort and limit
         const idsToRemove = await db().newlyDetectedTokens.orderBy('detectedAt').limit(toRemove).primaryKeys();
 
         if (idsToRemove.length > 0) {
@@ -264,7 +260,6 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
     }
   }
 
-  // Prune on initialization when database becomes ready
   watch(isReady, async (ready) => {
     if (ready) {
       await prune();

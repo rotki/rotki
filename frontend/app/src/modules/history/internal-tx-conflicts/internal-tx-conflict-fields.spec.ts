@@ -43,8 +43,7 @@ describe('toInternalTxConflictFields', () => {
     expect(chain.suggest?.()).toStrictEqual(['optimism']);
   });
 
-  // A conflict is on exactly one chain, and only on a chain the backend knows.
-  it('should apply only one chain, and only a known one', () => {
+  it('should apply only one chain, and only one the backend knows, a conflict being on exactly one', () => {
     const [chain] = fields();
 
     expect(chain.multiple).toBe(false);
@@ -52,8 +51,6 @@ describe('toInternalTxConflictFields', () => {
     expect(chain.validate?.('made_up')).toBe(false);
   });
 
-  // Neither key is declared as behaviour-carrying, so the request has no form for an exclusion and
-  // the pill must not offer one.
   it('should offer no exclusion on any field', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);

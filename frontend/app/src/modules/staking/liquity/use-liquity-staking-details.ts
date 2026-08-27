@@ -38,10 +38,10 @@ export function useLiquityStakingDetails(): UseLiquityStakingDetailsReturn {
 
   const modelSelectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 
-  const stakingActivity = useActivity(ActivityKind.LIQUITY, ActivityPart.STAKING);
+  const stakingActivity = useActivity(ActivityKind.LIQUITY, ActivityPart.STAKE);
   const stakingQueryStatus = computed<ActivitySteps | undefined>(() => get(stakingActivity)?.steps);
   const liquityHistoricPriceStatus = getProtocolStatsPriceQueryStatus('liquity');
-  const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKING);
+  const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
 
   const selectedAddresses = computed<string[]>(() =>
     get(modelSelectedAccounts).map(account => getAccountAddress(account)));

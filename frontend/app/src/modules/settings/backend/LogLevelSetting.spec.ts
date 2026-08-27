@@ -36,6 +36,9 @@ vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> =
   }),
 }));
 
+const UPDATE_DEBOUNCE_MS = 1500;
+const PAST_THE_UPDATE_DEBOUNCE_MS = UPDATE_DEBOUNCE_MS + 100;
+
 describe('logLevelSetting', () => {
   let wrapper: VueWrapper<InstanceType<typeof LogLevelSetting>>;
 
@@ -114,8 +117,7 @@ describe('logLevelSetting', () => {
     await wrapper.find('.loglevel-input .input').trigger('input', { value: 'warning' });
     await nextTick();
 
-    // Debounced handleUpdate (1500ms) — advance past it.
-    await vi.advanceTimersByTimeAsync(1600);
+    await vi.advanceTimersByTimeAsync(PAST_THE_UPDATE_DEBOUNCE_MS);
     await nextTick();
 
     expect(updateBackendConfigurationMock).toHaveBeenCalledWith('warning');

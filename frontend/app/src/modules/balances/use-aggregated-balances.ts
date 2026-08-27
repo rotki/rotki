@@ -209,10 +209,14 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     return map;
   });
 
-  // Per-chain on-chain totals keyed by trade-location identifier (e.g. 'ethereum').
-  // Drives chain discoverability in global search; kept separate from
-  // `balancesByLocation` so the umbrella `'blockchain'` aggregate stays
-  // authoritative for premium consumers iterating that map.
+  /**
+   * On-chain totals per chain, keyed by trade-location identifier such as `ethereum`.
+   *
+   * @remarks
+   * What makes a chain discoverable in global search. Kept apart from {@link balancesByLocation} so
+   * that its umbrella `blockchain` aggregate stays authoritative for the premium consumers that
+   * iterate that map.
+   */
   const balancesByChainLocation = computed<Record<string, BigNumber>>(() => {
     const balances = get(blockchainBalances);
     const locations = get(tradeLocations);

@@ -61,8 +61,14 @@ const { clearSelection, goToEvent, hasActiveSelection, isActiveRow } = useDataIs
 
 useDataIssuesPanelPolling(hasRemediatingRows, reloadAll);
 
-// Resolving needs the issue selected first (the resolve dialog reads the selected
-// issue), so a card-triggered resolve selects then opens the dialog.
+/**
+ * Opens the resolve dialog on the issue whose card was acted on.
+ *
+ * @remarks
+ * The two steps are ordered, not incidental. The dialog reads the selected-issue model rather
+ * than taking an argument, so the selection has to be in place before the request; the other way
+ * round opens it on whatever was selected before, or on nothing at all.
+ */
 function onResolveFromCard(issue: DataIssue): void {
   set(modelSelectedIssue, issue);
   onResolveRequest();
@@ -76,23 +82,34 @@ watchDebounced(panelFilters, () => {
   startPromise(refreshList());
 }, { debounce: 300, deep: true });
 
-// Virtualise the loaded cards so only the visible window mounts (each card resolves an
-// asset icon/avatar and runs observers), and append the next page as the user nears the
-// end. Each card fills its row exactly (the card is `h-full` and distributes its rows
-// with flex), so the row height is fixed: 159px card + 8px gap.
-const ITEM_HEIGHT = 167;
+/** Fixed, because the card is `h-full` and distributes its own rows with flex. */
+const CARD_HEIGHT = 159;
+
+/** The `pb-2` on each row wrapper below; the two only agree if they are changed together. */
+const ROW_GAP = 8;
+
+const ITEM_HEIGHT = CARD_HEIGHT + ROW_GAP;
+
+// Only the visible window mounts: every card resolves an asset icon and runs its own observers.
 const { containerProps, list: visibleRows, wrapperProps } = useVirtualList(rows, {
   itemHeight: ITEM_HEIGHT,
   overscan: 4,
 });
 
-// Fetch the next page only when the user actually scrolls to the bottom of the loaded
-// cards (scroll-based, so it can't loop the way a "last visible index" watcher can).
-const { arrivedState } = useScroll(containerProps.ref);
-watch(() => arrivedState.bottom, (atBottom) => {
+/**
+ * Loads the next page once the user reaches the bottom of the cards already rendered.
+ *
+ * @remarks
+ * Driven by scroll position rather than by the last visible index, which can loop: rendering the
+ * new page moves that index, which requests another page.
+ */
+function loadMoreAtBottom(atBottom: boolean): void {
   if (atBottom)
     startPromise(loadMore());
-});
+}
+
+const { arrivedState } = useScroll(containerProps.ref);
+watch(() => arrivedState.bottom, loadMoreAtBottom);
 
 onMounted(() => {
   startPromise(reloadAll());

@@ -5,19 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';
 import { NewDetectedTokenKind } from '@/modules/assets/detection/types';
 
-// `isReady` is only flipped to true after both migrations settle, so polling it is a
-// stronger signal than a fixed sleep - and it returns as soon as the work is done.
-const POLL_OPTIONS = { interval: 5, timeout: 2000 } as const;
+const POLL_UNTIL_READY = { interval: 5, timeout: 2000 } as const;
 
 async function waitUntilReady(isReady: Ref<boolean>): Promise<void> {
-  await vi.waitUntil(() => get(isReady), POLL_OPTIONS);
+  await vi.waitUntil(() => get(isReady), POLL_UNTIL_READY);
 }
 
 async function waitUntilNotReady(isReady: Ref<boolean>): Promise<void> {
-  await vi.waitUntil(() => !get(isReady), POLL_OPTIONS);
+  await vi.waitUntil(() => !get(isReady), POLL_UNTIL_READY);
 }
 
-// Old database structure (before migration)
+/** The version-1 schema, where `missingMappings` lived in a per-user `<username>.data` database. */
 interface OldUserDB extends Dexie {
   missingMappings: EntityTable<MissingMapping, 'id'>;
 }
@@ -69,8 +67,7 @@ describe('useDatabase', () => {
   });
 
   afterEach(async () => {
-    // Dispose the shared composable first so it closes its open Dexie connection
-    // before we delete the databases; otherwise Dexie force-closes it and warns.
+    // Dispose first, or Dexie force-closes the still-open connection during the deletes and warns.
     scope.stop();
 
     const allDatabases = await Dexie.getDatabaseNames();
@@ -80,8 +77,7 @@ describe('useDatabase', () => {
           await Dexie.delete(dbName);
         }
         catch {
-          // A leftover database another test still holds open cannot be deleted, and the next test
-          // opens its own by name regardless, so failing here would fail a passing test.
+          // A database another test still holds open cannot be deleted, and the next test opens its own.
         }
       }
     }
@@ -175,8 +171,6 @@ describe('useDatabase', () => {
     });
 
     it('should migrate missing mappings from old database', async () => {
-      // The old database has to exist before `useDatabase` initialises, or there is nothing to
-      // migrate from.
       const oldDb = createOldUserDb(testUsername);
       await oldDb.open();
 
@@ -402,8 +396,6 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      // Held whole rather than destructured: `db` is a getter, and a destructured copy would keep
-      // answering with the first user's database.
       const database = scope.run(() => useDatabase())!;
 
       await nextTick();
@@ -457,8 +449,6 @@ describe('useDatabase', () => {
       set(mockDataDirectory, '/path/one');
 
       const { useDatabase } = await import('./use-database');
-      // Held whole rather than destructured: `db` is a getter, and a destructured copy would keep
-      // answering with the first user's database.
       const database = scope.run(() => useDatabase())!;
 
       await nextTick();

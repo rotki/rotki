@@ -128,13 +128,18 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
     validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
   });
 
+  /**
+   * Resolves the display names for a set of addresses.
+   *
+   * @remarks
+   * Sent at low priority: these names decorate rows that already render without them, so this must
+   * never be the reason a user action waits behind the queue.
+   */
   const getAddressesNames = async (addresses: AddressBookSimplePayload[]): Promise<AddressBookEntries> => {
     const response = await api.post<AddressBookEntries>(
       '/names',
       { addresses },
       {
-        // Decoration for rows that already render without it, resolved on every render that
-        // shows an address. It must never be the reason a user action waits.
         priority: RequestPriority.LOW,
         validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },

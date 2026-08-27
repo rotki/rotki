@@ -63,11 +63,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { assetSearch } = useAssetInfoRetrieval();
   const { stateConfigs } = useHistoryEventStateMapping();
-  // The bar offers the same verbs the event form's action picker does, from the same model, so a
-  // filter and an edit speak of events in one vocabulary.
   const { rows: actionRows } = useEventActionPicker();
-  // Asset, location, protocol, address and date resolution is the same for every table that
-  // filters on them, so it comes from one place rather than being restated here.
   const shared = useSharedFieldResolvers();
 
   /**
@@ -94,9 +90,12 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
     return (Array.isArray(picked) ? picked[0] : picked)?.toString();
   });
 
-  // One debounced search per scope rather than one per call: `assetSuggestions` builds the
-  // debounce, so rebuilding it inside the search would give every keystroke a fresh timer that
-  // cancels nothing.
+  /**
+   * Holds one debounced asset search per scope, rebuilt only when the scoping location changes.
+   *
+   * @remarks `assetSuggestions` builds the debounce, so calling it inside `searchAsset` instead
+   * would give every keystroke a fresh timer that cancels nothing.
+   */
   const search = computed(() => assetSuggestions(assetSearch, get(location)));
   const searchAsset = async (value: string): Promise<AssetsWithId> => get(search)(value);
 
@@ -115,8 +114,6 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
     suggest: (): string[] => get(accountValues),
   });
   const ignoredField = toHistoryIgnoredField(t);
-  // An action's direction is what its icon colour carries, the same in/out reading the event rows
-  // use, so a verb looks the same on a pill as it does in the table.
   const directionColors = { in: 'success', neutral: 'secondary', out: 'error' } as const;
   const actionOptions = computed<ActionFieldOption[]>(() => get(actionRows).map(row => ({
     icon: { color: directionColors[row.direction], icon: row.icon },

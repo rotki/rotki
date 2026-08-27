@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -16,9 +16,6 @@ vi.mock('@/modules/settings/use-setting-model', () => ({
 }));
 
 const Menu = (await import('@/modules/history/events/AssetMovementMatchingSettingsMenu.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 const AmountInputStub = {
   emits: ['update:modelValue'],
@@ -120,10 +117,7 @@ describe('assetMovementMatchingSettingsMenu', () => {
     expect(get(timeRange)).toBe(7200);
   });
 
-  // Deliberately flipped in the zod swap. `callIfValid` asked the whole validator whether anything
-  // was wrong rather than the field being written, so an out-of-range tolerance silently stopped
-  // the time range from saving, and the two settings have nothing to do with each other.
-  it('should save a valid time range while the tolerance is invalid', async () => {
+  it('should save a valid time range while the tolerance is invalid, since each field is validated on its own rather than on the whole form', async () => {
     await edit(0, '200');
 
     await edit(1, '5');

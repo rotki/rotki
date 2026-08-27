@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { NotificationCategory } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
-import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useServiceKeyHandler } from '@/modules/settings/api-keys/external/use-service-key-handler';
+import { useServiceKeyNotifications } from '@/modules/settings/api-keys/external/use-service-key-notifications';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -17,19 +17,10 @@ const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof 
 const key = useApiKey(name);
 const status = actionStatus(name);
 
-const { prioritized, remove: removeNotification } = useNotificationsStore();
+const { dismissCategory } = useServiceKeyNotifications();
 
-/**
- * After an api key is added, remove the beaconchain notification
- */
-function removeBeaconchainNotification() {
-  // using prioritized list here, because the actionable notifications are always on top (index 0|1)
-  // so it is faster to find
-  const notifications = prioritized.filter(data => data.category === NotificationCategory.BEACONCHAIN);
-
-  notifications.forEach((notification) => {
-    removeNotification(notification.id);
-  });
+function dismissKeyRequest(): void {
+  dismissCategory(NotificationCategory.BEACONCHAIN);
 }
 </script>
 
@@ -70,7 +61,7 @@ function removeBeaconchainNotification() {
       :hint="t('external_services.beaconchain.hint')"
       :loading="loading"
       :status="status"
-      @save="save($event, removeBeaconchainNotification)"
+      @save="save($event, dismissKeyRequest)"
     >
       <i18n-t
         scope="global"

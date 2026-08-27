@@ -63,8 +63,6 @@ describe('useGnosisPaySafeMigration', () => {
     vi.resetModules();
     setActivePinia(createPinia());
     fetchGnosisPaySafeMigration.mockReset();
-    // The real `addAccounts` resolves an `AdditionSummary` and does not throw on a failed add, so
-    // `undefined` here let the composable claim success for an addition that never happened.
     addAccounts.mockReset().mockResolvedValue({
       added: [{ address: NEW_SAFE, chain: Blockchain.GNOSIS }],
       cancelled: false,
@@ -157,9 +155,7 @@ describe('useGnosisPaySafeMigration', () => {
     expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
   });
 
-  // Additions report failure as a value, not a throw. Without reading the summary the Safe was
-  // announced as added and the suggestion dismissed while nothing had been stored.
-  it('should surface an error and keep the safe when the addition reports a failure', async () => {
+  it('should surface an error and keep the safe when the addition reports failure as a value', async () => {
     fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
     addAccounts.mockResolvedValue({
       added: [],

@@ -84,20 +84,26 @@ describe('text-utils', () => {
     expect(toCapitalCase('')).toBe('');
   });
 
-  it('should validate Ethereum addresses', () => {
-    expect(isValidEthAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbB')).toBe(true);
-    expect(isValidEthAddress('0x0000000000000000000000000000000000000000')).toBe(true);
-    expect(isValidEthAddress('0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF')).toBe(true);
-    expect(isValidEthAddress('0x1234567890123456789012345678901234567890')).toBe(true);
+  it.each([
+    ['a mixed-case address', '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbB'],
+    ['the zero address', '0x0000000000000000000000000000000000000000'],
+    ['an all-f address', '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF'],
+    ['an all-digit address', '0x1234567890123456789012345678901234567890'],
+  ])('should accept %s', (_case, address) => {
+    expect(isValidEthAddress(address)).toBe(true);
+  });
 
-    expect(isValidEthAddress('')).toBe(false);
-    expect(isValidEthAddress(undefined)).toBe(false);
-    expect(isValidEthAddress('0x')).toBe(false);
-    expect(isValidEthAddress('0x123')).toBe(false);
-    expect(isValidEthAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb')).toBe(false); // Missing one character
-    expect(isValidEthAddress('742d35Cc6634C0532925a3b844Bc9e7595f0bEbB')).toBe(false); // Missing 0x
-    expect(isValidEthAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbBG')).toBe(false); // Invalid hex char
-    expect(isValidEthAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbB0')).toBe(false); // Too long
+  it.each([
+    ['an empty string', ''],
+    ['nothing at all', undefined],
+    ['a bare prefix', '0x'],
+    ['far too few characters', '0x123'],
+    ['one character short', '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'],
+    ['no 0x prefix', '742d35Cc6634C0532925a3b844Bc9e7595f0bEbB'],
+    ['a non-hex character', '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbBG'],
+    ['one character too many', '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbB0'],
+  ])('should reject %s', (_case, address) => {
+    expect(isValidEthAddress(address)).toBe(false);
   });
 
   it('should validate Hyperliquid Core token addresses', () => {
@@ -294,8 +300,7 @@ describe('text-utils', () => {
   });
 
   it('should decode HTML entities', () => {
-    // Note: Using numeric entity &#8226; instead of &bull; because happy-dom
-    // doesn't support all named HTML entities (only basic ones like &lt; &gt; &amp;)
+    // Numeric rather than `&bull;`: happy-dom decodes only the basic named entities.
     expect(decodeHtmlEntities('&#8226;')).toBe('\u2022');
     expect(decodeHtmlEntities('&lt;div&gt;')).toBe('<div>');
     expect(decodeHtmlEntities('&amp;')).toBe('&');

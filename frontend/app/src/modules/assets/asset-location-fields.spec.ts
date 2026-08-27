@@ -43,16 +43,12 @@ describe('toAssetLocationFields', () => {
     expect(fields().map(field => field.key)).toStrictEqual(['location', 'account', 'tags']);
   });
 
-  // This table filters the breakdown it already holds, so every field rides the bar's params
-  // rather than a filter bag sent to the backend.
-  it('should bind every field to a param', () => {
+  it('should bind every field to a param, since this table filters the breakdown it already holds', () => {
     for (const field of fields()) {
       expect(field.binding).toMatchObject({ kind: 'param' });
     }
   });
 
-  // The row carries the raw id, so the pill does too: a display name would have to be turned back
-  // into an id to filter on, which is what the old comparison got wrong.
   it('should offer the locations this asset is held at, by their raw id', () => {
     const location = fieldOf('location');
 
@@ -61,8 +57,7 @@ describe('toAssetLocationFields', () => {
     expect(location?.resolveLabel?.('polygon_pos')).toBe('name:polygon_pos');
   });
 
-  // A balance is held at one location, so a second one would only widen back to the whole table.
-  it('should take one location and several of everything else', () => {
+  it('should take one location and several of everything else, a balance being held at one', () => {
     expect(fieldOf('location')?.multiple).toBe(false);
     expect(fieldOf('account')?.multiple).toBe(true);
     expect(fieldOf('tags')?.multiple).toBe(true);
@@ -84,7 +79,6 @@ describe('toAssetLocationFields', () => {
     });
   });
 
-  // Nothing here is sent to a backend, so there is no request form for an exclusion either.
   it('should offer no exclusion on any field', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);
@@ -106,7 +100,6 @@ describe('assetLocationParams', () => {
     });
   });
 
-  // Removing a pill is how a filter is turned off, so nothing picked means no key at all.
   it('should draw no pill for a key at its default', () => {
     expect(get(assetLocationParams(ref<string[]>([]), ref<string>(''), ref<string[]>([]))))
       .toStrictEqual({});

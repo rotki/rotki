@@ -2,7 +2,7 @@ import type { useHistoryEventsApi } from '@/modules/history/api/events/use-histo
 import type { NativeActivitySpec } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
-import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
@@ -99,27 +99,19 @@ describe('useTransactionSync', () => {
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should notify on an actionable failure and mark the address failed', async () => {
+    it('should notify on an actionable failure and mark the address failed with the chain type it was queried under', async () => {
       mocks.submitTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       const { syncTransactionTask } = useTransactionSync();
       await syncTransactionTask(account, TransactionChainType.EVM);
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
-      // A failed query never sends the completion websocket message, so nothing else would ever
-      // move this entry off "querying".
-      // The chain type rides along so a synthesized entry carries the right subtype; defaulting to
-      // evm would wrongly describe an evmlike or bitcoin address.
       expect(mocks.markAddressFailed).toHaveBeenCalledWith(account, TransactionChainType.EVM);
-      // Marked, NOT removed: the sync panel derives its chain list from these entries, so removing
-      // it took the whole chain out of the panel and out of its own denominator.
       expect(mocks.removeQueryStatus).not.toHaveBeenCalled();
       expect(mocks.markAddressCancelled).not.toHaveBeenCalled();
     });
 
-    it('should leave a skipped task alone', async () => {
-      // A skipped task never ran, so it has not failed and must not be reported as such. A chain
-      // with no API key reports Skipped, and a bare `else` on the error would have marked it failed.
+    it('should leave a task skipped for a missing api key alone, rather than reporting it as failed', async () => {
       mocks.submitTask.mockResolvedValue(err(Skipped({ message: 'no api key' })));
 
       const { syncTransactionTask } = useTransactionSync();
@@ -146,20 +138,27 @@ describe('useTransactionSync', () => {
       { address: '0xBBB', chain: 'eth' },
     ];
 
-    /**
-     * Runs the chain activity's own body instead of stubbing its outcome — the verdict it computes
-     * from its children is the thing under test, and a `submitTask` that only resolves `ok` would
-     * report every one of these tests as passing whatever the body did.
-     */
+    let chainBodyRan: boolean;
+
     function runChainBody(...accountOutcomes: Result<void, TaskError>[]): void {
       let account = 0;
       mocks.submitTask.mockImplementation(async (spec: NativeActivitySpec) => {
         if (spec.id !== chainId)
           return accountOutcomes[account++] ?? ok(undefined);
 
+        chainBodyRan = true;
         return spec.run({ cancelled: (): boolean => false, report: vi.fn(), runTask: vi.fn() });
       });
     }
+
+    beforeEach(() => {
+      chainBodyRan = false;
+      runChainBody();
+    });
+
+    afterEach(() => {
+      expect(chainBodyRan).toBe(true);
+    });
 
     it('should complete when at least one account synced', async () => {
       runChainBody(err(TaskFailed({ message: 'boom' })), ok(undefined));
@@ -181,9 +180,6 @@ describe('useTransactionSync', () => {
     });
 
     it('should settle cancelled, not failed, when its accounts were cancelled', async () => {
-      // The chain's verdict now folds its children's outcomes, so cancellation has to survive that
-      // fold: reporting a user-stopped chain as FAILED would put an error row in the task centre for
-      // something the user chose to stop.
       runChainBody(err(Cancelled({ message: 'stopped' })), err(BackendCancelled({ message: 'stopped' })));
       const { syncAndReDecodeEvents } = useTransactionSync();
 
@@ -193,10 +189,7 @@ describe('useTransactionSync', () => {
       expect(isCancellation(outcome.error)).toBe(true);
     });
 
-    it('should report a real failure over a cancellation', async () => {
-      // The other side of the same fold: a chain where one address genuinely failed and the rest were
-      // cancelled is a failure worth surfacing. (A user cancelling the chain *itself* still reads
-      // CANCELLED — `cancelRequested` overrides the run's outcome in the orchestrator.)
+    it('should report a real failure over a cancellation when one account failed and the rest were cancelled', async () => {
       runChainBody(err(TaskFailed({ message: 'boom' })), err(Cancelled({ message: 'stopped' })));
       const { syncAndReDecodeEvents } = useTransactionSync();
 
@@ -207,25 +200,14 @@ describe('useTransactionSync', () => {
     });
 
     it('should declare the chain activity as a container', async () => {
-      runChainBody();
       const { syncAndReDecodeEvents } = useTransactionSync();
 
       await syncAndReDecodeEvents('eth', { accounts, type: TransactionChainType.EVM });
 
-      // It groups the per-account syncs, which carry the same kind and write their own ledger
-      // entries; a completion recorded here would claim freshness for the chain on their behalf.
       expect(mocks.submitTask).toHaveBeenCalledWith(expect.objectContaining({ container: true, id: chainId }));
     });
   });
 
-  /**
-   * Against the real store rather than the mock above.
-   *
-   * A failing evmlike query calls `markAddressFailed` and then the unconditional `finished` tail,
-   * and the defect was in what the second call did to the first one's result. Every assertion in
-   * this file's other tests is on the mock recording that a call happened, which is true either
-   * way, so none of them can see it. This one asserts the status the address is actually left in.
-   */
   describe('evmlike failure against the real query-status store', () => {
     const evmlikeAccount: ChainAddress = { address: '0xABC', chain: 'zksync_lite' };
 

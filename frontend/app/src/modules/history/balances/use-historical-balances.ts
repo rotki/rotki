@@ -11,12 +11,14 @@ interface UseHistoricalBalancesReturn {
 }
 
 /**
- * Triggers backend historical-balance processing as a single native HISTORICAL_BALANCES activity
- * (Phase 2 migration). The orchestrator owns its liveness, progress, cancellation and re-run —
- * which is what makes the smart re-run policy (an event edit invalidating historical balances)
- * actually fire. The producer just fires the single backend task and awaits it; the backend streams
- * fine-grained progress over the websocket, which the progress handler pushes straight onto this
- * activity via `orchestrator.reportProgress` (no parallel status store).
+ * Triggers backend historical-balance processing as one HISTORICAL_BALANCES activity.
+ *
+ * @remarks
+ * The orchestrator owns its liveness, progress, cancellation and re-run, which is what lets the
+ * smart re-run policy fire when an event edit invalidates historical balances. This fires the
+ * single backend task and awaits it; the backend streams fine-grained progress over the websocket,
+ * which the progress handler pushes onto the activity through `orchestrator.reportProgress` rather
+ * than into a parallel status store.
  */
 export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -43,8 +45,6 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       title: t('task_center.group.historical_balances'),
     });
 
-    // Preserve the original contract: surface a genuine processing failure to the caller (cancels
-    // and skips stay quiet) so the trigger's awaiters can react.
     onActionableError(outcome, (error) => {
       throw new Error(error.message);
     });

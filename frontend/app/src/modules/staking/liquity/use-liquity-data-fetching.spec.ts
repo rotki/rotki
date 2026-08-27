@@ -62,8 +62,6 @@ describe('useLiquityDataFetching', () => {
     set(mockActiveModules, [Module.LIQUITY]);
     set(mockPremium, true);
     workStatus = { ...IDLE };
-    // Default to a cancelled outcome so the success mapper (schema parse) never runs unless a test
-    // opts in; a cancellation is non-actionable, so it also asserts no error notification.
     runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
   });
 
@@ -196,8 +194,6 @@ describe('useLiquityDataFetching', () => {
       const { fetchStaking } = useLiquityDataFetching();
       await fetchStaking();
 
-      // `runTaskResult` stands in for the whole `runTask`, so the query callback itself never
-      // runs here; the claim is that the outcome is validated and written to the store.
       expect(get(useLiquityStore().staking)).toEqual(staking);
       expect(notifyError).not.toHaveBeenCalled();
     });

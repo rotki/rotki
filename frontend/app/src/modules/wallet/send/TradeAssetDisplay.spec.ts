@@ -64,8 +64,6 @@ describe('tradeAssetDisplay', () => {
 
     createWrapper({ name: 'Zeus Finance', symbol: 'ZEU' });
 
-    // The computeds are created but never read, so the lazy body must not run: this is what makes
-    // the pre-resolved props an actual saving rather than a cosmetic one.
     expect(resolver).not.toHaveBeenCalled();
   });
 
@@ -84,8 +82,7 @@ describe('tradeAssetDisplay', () => {
     expect(wrapper.find('[data-testid="trade-asset-balance"]').exists()).toBe(true);
   });
 
-  it('should hide the balance when the amount is zero', () => {
-    // Every row is zero until a wallet is connected, and a column of zeroes is worse than none.
+  it('should hide the balance when the amount is zero, as every row is until a wallet connects', () => {
     const wrapper = createWrapper({ data: { ...ASSET, amount: bigNumberify(0) } });
 
     expect(wrapper.find('[data-testid="trade-asset-balance"]').exists()).toBe(false);

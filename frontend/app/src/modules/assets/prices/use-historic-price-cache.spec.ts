@@ -104,7 +104,7 @@ describe('useHistoricPriceCache', () => {
     expect(resolve(key)).toEqual(bigNumberify(mockPrice));
   });
 
-  it('should store resolved prices in the shared store storage', async () => {
+  it('should store resolved prices in the app-lifetime store, not a composable-scoped map', async () => {
     const { createKey, resolve } = useHistoricPriceCache();
     const { useHistoricCachePriceStore } = await import('@/modules/assets/prices/use-historic-cache-price-store');
     const { historicStorage } = useHistoricCachePriceStore();
@@ -119,8 +119,6 @@ describe('useHistoricPriceCache', () => {
     vi.advanceTimersByTime(2500);
     await flushPromises();
 
-    // The cache lives in the app-lifetime store, not a composable-scoped map, so
-    // the store's storage must hold the resolved value.
     expect(get(historicStorage.cache)[key]).toEqual(bigNumberify(mockPrice));
   });
 
@@ -131,39 +129,34 @@ describe('useHistoricPriceCache', () => {
       assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
     }));
 
-    // First subscriber resolves and populates the store-backed cache.
-    const scope1 = effectScope();
-    let first!: ReturnType<typeof useHistoricPriceCache>;
-    scope1.run(() => {
-      first = useHistoricPriceCache();
+    const onlySubscriber = effectScope();
+    let beforeTeardown!: ReturnType<typeof useHistoricPriceCache>;
+    onlySubscriber.run(() => {
+      beforeTeardown = useHistoricPriceCache();
     });
-    first.resolve(key);
+    beforeTeardown.resolve(key);
     vi.advanceTimersByTime(2500);
     await flushPromises();
-    expect(first.resolve(key)).toEqual(bigNumberify(mockPrice));
+    expect(beforeTeardown.resolve(key)).toEqual(bigNumberify(mockPrice));
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
 
-    // Last subscriber unmounts -> createSharedComposable disposes the instance.
-    scope1.stop();
+    onlySubscriber.stop();
 
-    // A new subscriber re-creates the composable; the cache must come back from
-    // the store with no refetch.
-    const scope2 = effectScope();
-    let second!: ReturnType<typeof useHistoricPriceCache>;
-    scope2.run(() => {
-      second = useHistoricPriceCache();
+    const laterSubscriber = effectScope();
+    let afterTeardown!: ReturnType<typeof useHistoricPriceCache>;
+    laterSubscriber.run(() => {
+      afterTeardown = useHistoricPriceCache();
     });
-    // Confirm the shared instance was actually disposed and re-created.
-    expect(second).not.toBe(first);
-    expect(get(second.cache)[key]).toEqual(bigNumberify(mockPrice));
-    expect(second.resolve(key)).toEqual(bigNumberify(mockPrice));
+    expect(afterTeardown).not.toBe(beforeTeardown);
+    expect(get(afterTeardown.cache)[key]).toEqual(bigNumberify(mockPrice));
+    expect(afterTeardown.resolve(key)).toEqual(bigNumberify(mockPrice));
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    scope2.stop();
+    laterSubscriber.stop();
   });
 
-  it('should surface each batch as its own native activity', async () => {
+  it('should surface each batch as its own native activity, so two never dedup onto one promise', async () => {
     const { ActivityKind, ActivityPart } = await import('@/modules/task-center/core/types');
     const { useTaskOrchestrator } = await import('@/modules/task-center/use-task-orchestrator');
     const orchestrator = useTaskOrchestrator();
@@ -182,8 +175,6 @@ describe('useHistoricPriceCache', () => {
     vi.advanceTimersByTime(2500);
     await flushPromises();
 
-    // Each batch carries its own id, so two batches never dedup onto one promise, and both are
-    // visible in the task center instead of running behind a raw backend task.
     const ids = orchestrator.snapshot()
       .map(activity => activity.id)
       .filter(id => id.startsWith(`${ActivityKind.PRICES}:${ActivityPart.HISTORIC}:${ActivityPart.BATCH}:`));
@@ -196,45 +187,45 @@ describe('useHistoricPriceCache', () => {
   it('should reset historical prices data', async () => {
     const { cache, createKey, resetHistoricalPricesData, resolve } = useHistoricPriceCache();
 
-    // Under range (should be removed alongside with the targeted timestamp)
-    const mockTimestamp1 = mockTimestamp - (59 * 60);
-    const mockTimestamp2 = mockTimestamp + (59 * 60);
-    const key = createKey(mockAsset, mockTimestamp);
-    const key1 = createKey(mockAsset, mockTimestamp1);
-    const key2 = createKey(mockAsset, mockTimestamp2);
+    const insideWindow = 59 * 60;
+    const outsideWindow = 100 * 60;
 
-    // Outside range (should not be removed)
-    const mockTimestamp3 = mockTimestamp - (100 * 60);
-    const mockTimestamp4 = mockTimestamp + (100 * 60);
-    const key3 = createKey(mockAsset, mockTimestamp3);
-    const key4 = createKey(mockAsset, mockTimestamp4);
+    const targeted = mockTimestamp;
+    const insideWindowBefore = targeted - insideWindow;
+    const insideWindowAfter = targeted + insideWindow;
+    const outsideWindowBefore = targeted - outsideWindow;
+    const outsideWindowAfter = targeted + outsideWindow;
 
-    // Other asset, but under range (should not be removed)
-    const otherKey = createKey('OTHER', mockTimestamp1);
+    const targetedKey = createKey(mockAsset, targeted);
+    const insideWindowBeforeKey = createKey(mockAsset, insideWindowBefore);
+    const insideWindowAfterKey = createKey(mockAsset, insideWindowAfter);
+    const outsideWindowBeforeKey = createKey(mockAsset, outsideWindowBefore);
+    const outsideWindowAfterKey = createKey(mockAsset, outsideWindowAfter);
+    const otherAssetInsideWindowKey = createKey('OTHER', insideWindowBefore);
 
     const mockPricesResponse = {
       targetAsset: 'USD',
       assets: {
         [mockAsset]: {
-          [mockTimestamp]: mockPrice,
-          [mockTimestamp1]: mockPrice,
-          [mockTimestamp2]: mockPrice,
-          [mockTimestamp3]: mockPrice,
-          [mockTimestamp4]: mockPrice,
+          [targeted]: mockPrice,
+          [insideWindowBefore]: mockPrice,
+          [insideWindowAfter]: mockPrice,
+          [outsideWindowBefore]: mockPrice,
+          [outsideWindowAfter]: mockPrice,
         },
         OTHER: {
-          [mockTimestamp1]: mockPrice,
+          [insideWindowBefore]: mockPrice,
         },
       },
     };
     runTaskMock.mockResolvedValue(ok(mockPricesResponse));
 
-    resolve(key);
-    resolve(key1);
-    resolve(key2);
-    resolve(key3);
-    resolve(key4);
-    resolve(otherKey);
+    resolve(targetedKey);
+    resolve(insideWindowBeforeKey);
+    resolve(insideWindowAfterKey);
+    resolve(outsideWindowBeforeKey);
+    resolve(outsideWindowAfterKey);
+    resolve(otherAssetInsideWindowKey);
 
     vi.advanceTimersByTime(2500);
     await flushPromises();
@@ -243,18 +234,18 @@ describe('useHistoricPriceCache', () => {
     expect(entries).toHaveLength(6);
 
     resetHistoricalPricesData([
-      { fromAsset: mockAsset, timestamp: mockTimestamp },
+      { fromAsset: mockAsset, timestamp: targeted },
     ]);
 
     entries = Object.entries(get(cache));
     expect(entries).toHaveLength(3);
 
-    expect(entries.map(([id]) => id)).toContain(key3);
-    expect(entries.map(([id]) => id)).toContain(key4);
-    expect(entries.map(([id]) => id)).toContain(otherKey);
+    expect(entries.map(([id]) => id)).toContain(outsideWindowBeforeKey);
+    expect(entries.map(([id]) => id)).toContain(outsideWindowAfterKey);
+    expect(entries.map(([id]) => id)).toContain(otherAssetInsideWindowKey);
 
-    expect(entries.map(([id]) => id)).not.toContain(key);
-    expect(entries.map(([id]) => id)).not.toContain(key1);
-    expect(entries.map(([id]) => id)).not.toContain(key2);
+    expect(entries.map(([id]) => id)).not.toContain(targetedKey);
+    expect(entries.map(([id]) => id)).not.toContain(insideWindowBeforeKey);
+    expect(entries.map(([id]) => id)).not.toContain(insideWindowAfterKey);
   });
 });

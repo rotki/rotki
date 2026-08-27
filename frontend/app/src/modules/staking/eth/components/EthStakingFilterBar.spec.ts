@@ -21,8 +21,6 @@ const VALIDATOR: ValidatorData = {
   withdrawalAddress: '0x347AC2e04dD10cBF70F65c058Ac3a078D4D9E0e5',
 };
 
-// RuiMenu lazily teleports its content; stub it to render both slots inline so the activator and
-// the editor are always in the tree, as `PillFilterBar.spec.ts` does.
 const RuiMenuStub = defineComponent({
   name: 'RuiMenu',
   emits: ['update:modelValue'],
@@ -39,11 +37,7 @@ interface Harness {
   warnings: string[];
 }
 
-/**
- * The bar wired the way the staking page wires it: both models held outside and written back, which
- * is what makes the field list reactive to what the bar itself emits.
- */
-function createHarness(): Harness {
+function createHarnessWithModelsWrittenBack(): Harness {
   const pinia = createCustomPinia();
   setActivePinia(pinia);
   useBlockchainAccountsStore().accounts[Blockchain.ETH2] = [{
@@ -82,8 +76,7 @@ function createHarness(): Harness {
   return { bar: wrapper.findComponent(PillFilterBar), filter, selection, warnings };
 }
 
-/** Adds the validator pill and picks validator 9, the way the reported crash was triggered. */
-async function pickValidator(bar: BarWrapper): Promise<void> {
+async function addValidatorPillAndPick(bar: BarWrapper): Promise<void> {
   const fields: FieldDef[] = bar.props('fields');
   bar.findComponent(PillMenu).vm.$emit('select', fields.find(field => field.key === 'validator'));
   await nextTick();
@@ -99,30 +92,23 @@ async function pickValidator(bar: BarWrapper): Promise<void> {
 }
 
 describe('ethStakingFilterBar', () => {
-  // Picking a validator stops the status field from being offered, while the status filter it was
-  // picked alongside is still in the bar's state. The codec skips a filter whose field is gone, so
-  // the bag the bar derives and the bag the page holds disagree with no way to converge, and the
-  // round-trip watchers rebuild the state on every flush until Vue aborts the render. The
-  // `__vnode` TypeError the user actually sees is the half-patched tree, not the fault.
   it('should not loop when a validator is picked while a status filter is active', async () => {
-    const { bar, warnings } = createHarness();
+    const { bar, warnings } = createHarnessWithModelsWrittenBack();
     await nextTick();
 
-    await pickValidator(bar);
+    await addValidatorPillAndPick(bar);
 
     expect(warnings.filter(message => message.includes('Maximum recursive updates'))).toEqual([]);
   });
 
   it('should clear the status filter, not just hide its field, when a validator is picked', async () => {
-    const { bar, filter, selection } = createHarness();
+    const { bar, filter, selection } = createHarnessWithModelsWrittenBack();
     await nextTick();
 
-    // The precondition is half the test: `status` reading as undefined at the end proves nothing
-    // if it could also read that way having never been set.
     expect(get(filter)?.status).toBe('active');
     expect(bar.props('fields').some((field: FieldDef) => field.key === 'status')).toBe(true);
 
-    await pickValidator(bar);
+    await addValidatorPillAndPick(bar);
 
     const picked = get(selection);
     expect('validators' in picked && picked.validators.map(entry => entry.index)).toEqual([9]);

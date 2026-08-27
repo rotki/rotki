@@ -76,8 +76,10 @@ const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAsset
 
 const fieldLabel = computed<string>(() => label ?? t('asset_select.label'));
 
-// Both slots render the asset without its context menu; hoisted so the bag is one stable identity
-// rather than a fresh object per rendered row.
+/**
+ * Shared by both slots, which render the asset without its context menu. Hoisted so this is one
+ * stable identity rather than a fresh object per rendered row.
+ */
 const noMenu: AssetActions = { hideMenu: true };
 
 const itemDisplay = computed<AssetDisplay>(() => ({ dense }));

@@ -41,8 +41,6 @@ const option = computed<EChartsOption>(() => {
     grid: { bottom: 4, left: 4, right: 8, top: 4 },
     series: [series],
     tooltip: {
-      // The chart lives inside a teleported RuiMenu; render the tooltip on <body> so the menu's
-      // bounds don't clip it.
       appendToBody: true,
       trigger: 'axis',
       valueFormatter: value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 8 }),

@@ -74,8 +74,6 @@ const {
 
 const usedTitle = computed<string>(() => sectionTitle || t('transactions.title'));
 
-// The filter bag, and the fields bound to it, in that order: the fields read the bag to scope
-// their option lists, and the table below reads the url shape of the bag off the fields.
 const modelFilters = ref<Filters>({});
 const fields = useHistoryEventFields({ modelFilters, restrictions: () => restrictions });
 

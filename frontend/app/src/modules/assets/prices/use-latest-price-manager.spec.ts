@@ -54,9 +54,7 @@ describe('useLatestPrices', () => {
   }
 
   describe('items', () => {
-    it('should compute usdPrice in current currency without double conversion', async () => {
-      // Prices are now fetched directly in the selected currency (EUR),
-      // so the stored price is already in EUR
+    it('should compute usdPrice in current currency without double conversion, since prices arrive already in it', async () => {
       setupPrices('EUR', { EUR: 0.85 }, { ETH: 1700 });
 
       const { useAssetPricesApi } = await import('@/modules/assets/api/use-asset-prices-api');

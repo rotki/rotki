@@ -11,8 +11,6 @@ import { type HistoryEventFieldOptions, toHistoryAccountField, toHistoryActionFi
 const t = (key: string): string => key;
 const resolvers = {
   formatDate: (value: string): string => `date:${value}`,
-  // The real one reads the user's date format; here anything with two slashes is a date, so the
-  // parsing rules stay the parser's own tests and these stay about field assembly.
   parseDate: (value: string): string | undefined => (/^\d+\/\d+\/\d+$/.test(value) ? `ts:${value}` : undefined),
   resolveHex: (value: string): string => `hex:${value}`,
   resolveAssetChain: (value: string): string | undefined => (value.startsWith('eip155:8453') ? 'base' : undefined),
@@ -53,17 +51,13 @@ function keysOf(overrides: Partial<HistoryEventFieldOptions> = {}): string[] {
 }
 
 describe('toHistoryEventFields', () => {
-  // Both the url shape of the filter bag and the keys the request wraps as `{ behaviour, values }`
-  // are derived from these fields, so they are asserted here rather than against a second
-  // hand-written declaration that could disagree with the field list.
   describe('route query', () => {
     it('should coerce single route values into arrays where the request takes many', () => {
       expect(routeSchemaFromFields(fields()).parse({ asset: 'ETH', entryTypes: 'evm event', txRefs: '0xabc' }))
         .toEqual({ asset: 'ETH', entryTypes: ['evm event'], txRefs: ['0xabc'] });
     });
 
-    // The period pill collapses the two bounds, which is what the url and the request carry.
-    it('should keep the two period bounds as they are sent', () => {
+    it('should keep the two period bounds as the url and the request carry them, however the pill collapses them', () => {
       expect(routeSchemaFromFields(fields()).parse({ fromTimestamp: '1700000000', toTimestamp: '1700086400' }))
         .toEqual({ fromTimestamp: '1700000000', toTimestamp: '1700086400' });
     });
@@ -73,9 +67,6 @@ describe('toHistoryEventFields', () => {
     });
   });
 
-  // The backend takes entry types as `{ behaviour, values }` so a type can be excluded. The pill
-  // writes exclusion as a `!` prefix, which is what the URL carries too; the wrapping happens at
-  // request assembly, from the keys named here.
   describe('behaviour keys', () => {
     it('should declare entry types as the only behaviour-carrying key', () => {
       expect(behaviourKeysFromFields(fields())).toStrictEqual(['entryTypes']);
@@ -120,9 +111,7 @@ describe('toHistoryEventFields', () => {
     });
   });
 
-  // The one table whose timestamp column is milliseconds: the backend scales both bounds by 1000,
-  // so an equal pair asks for the single millisecond `X000` and drops the rest of that second.
-  it('should refuse a period whose two bounds name the same second', () => {
+  it('should refuse a period whose two bounds name the same second, which this millisecond-column table would scale to the single millisecond X000', () => {
     expect(fieldOf('period')?.allowEqualBounds).toBe(false);
   });
 
@@ -147,8 +136,7 @@ describe('toHistoryEventFields', () => {
     expect(keysOf()).toContain('entryTypes');
   });
 
-  // The one excludable field in the app: the request takes entry types as `{ behaviour, values }`.
-  it('should offer exclusion on the entry type alone', () => {
+  it('should offer exclusion on the entry type alone, the only field the request takes as `{ behaviour, values }`', () => {
     expect(fieldOf('entryTypes')?.allowExclusion).toBe(true);
     expect(fieldOf('entryTypes')?.operators).toContain('is_not');
 
@@ -229,14 +217,11 @@ describe('toHistoryEventFields', () => {
     expect(fieldOf('addresses')?.resolveLabel?.('0xabc')).toBe('hex:0xabc');
   });
 
-  // A full hash is both too long for a pill and, in privacy mode, as revealing as an address.
-  it('should shorten and scramble tx hash values like addresses', () => {
+  it('should shorten and scramble tx hash values like addresses, a full hash being as revealing', () => {
     expect(fieldOf('txRefs')?.resolveLabel?.('0xdeadbeef')).toBe('hex:0xdeadbeef');
   });
 
-  // A transaction reference may be a signature rather than a hash, which is why it is not the
-  // shared hex check.
-  it('should apply a transaction reference only when it is one', () => {
+  it('should apply a transaction reference only when it is one, by its own check rather than the shared hex one, since it may be a signature rather than a hash', () => {
     expect(fieldOf('txRefs')?.validate?.(`0x${'a'.repeat(64)}`)).toBe(true);
     expect(fieldOf('txRefs')?.validate?.('0xnope')).toBe(false);
     expect(resolveOptionalText(fieldOf('txRefs')?.invalidHint)).toBe('transactions.filter.invalid_tx_hash');
@@ -291,8 +276,6 @@ describe('toHistoryActionField', () => {
     { icon: { color: 'success', icon: 'lu-download' }, label: 'Receive', verbKey: 'receive' },
   ];
 
-  // The verb rides the URL alone: the request gets the type/subtype pair from the param source,
-  // so rebuilding the pill does not depend on reading raw types back out.
   it('should build a url-only param pill offering the action verbs', () => {
     const field = toHistoryActionField(t, actions);
     expect(field).toMatchObject({
@@ -312,8 +295,7 @@ describe('toHistoryActionField', () => {
     expect(field.resolveIcon?.('gone')).toBeUndefined();
   });
 
-  // All three drive the same two request keys, so they must never be active together.
-  it('should exclude the type and subtype fields, and be excluded by them', () => {
+  it('should exclude the type and subtype fields, and be excluded by them, all three driving the same request keys', () => {
     expect(toHistoryActionField(t, actions).excludes).toStrictEqual(['eventTypes', 'eventSubtypes']);
     expect(fieldOf('eventTypes')?.excludes).toStrictEqual(['action']);
     expect(fieldOf('eventSubtypes')?.excludes).toStrictEqual(['action']);
@@ -325,9 +307,7 @@ describe('toHistoryActionField', () => {
 });
 
 describe('toHistoryIgnoredField', () => {
-  // A boolean pill is on once added and off once removed: no editor, no value segment. The wire
-  // form stays inverted (`excludeIgnoredAssets`), which the param source handles.
-  it('should build a param-bound boolean pill carried on both request and url', () => {
+  it('should build a param-bound boolean pill carried on both request and url, with no suggestions to edit', () => {
     const field = toHistoryIgnoredField(t);
     expect(field).toMatchObject({
       binding: { kind: 'param', paramKey: 'showIgnoredAssets', to: 'both' },
@@ -360,9 +340,7 @@ describe('toHistoryAccountField', () => {
     expect(field.resolveCaption?.('0xabc')).toBe('caption:0xabc');
   });
 
-  // The bar can only offer an account if the field lists one, and can only find it by address or
-  // ENS through the keywords: the label is a name, or a shortened and scrambled address.
-  it('should offer its accounts as values, searchable beyond their label', () => {
+  it('should offer its accounts as values, searchable by address and ENS through the keywords rather than only the label', () => {
     const field = toHistoryAccountField(t, {
       resolveCaption: (): undefined => undefined,
       resolveKeywords: (address: string): string => `${address} alice.eth`,

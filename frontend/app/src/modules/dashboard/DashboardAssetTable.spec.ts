@@ -6,12 +6,6 @@ import { type Component, type ComputedRef, defineComponent, h, type VNode } from
 import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 
-/**
- * The seam: the value column and the table total are only shown once the prices behind them are
- * known. Without a price a balance is valued from whichever chains have reported so far, so the
- * cell would print a fraction of the amount printed next to it, as a settled-looking number.
- */
-
 const pendingAssets = ref<Set<string>>(new Set());
 
 vi.mock('@/modules/assets/prices/use-price-utils', async () => {
