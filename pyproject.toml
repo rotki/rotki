@@ -25,6 +25,7 @@ dependencies = [
     "rotki-pysqlcipher3==2026.8.3",
     "rotki-sqlite==2026.07.2",
     "requests==2.33.1",
+    "oauthlib==3.3.1",
     "bech32==1.2.0",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",
