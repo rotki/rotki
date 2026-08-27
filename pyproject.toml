@@ -546,6 +546,12 @@ ignored-classes = "rsqlite"
 [tool.uv]
 exclude-newer = "1 week"
 exclude-newer-package = { eth-keyfile = "2026-08-22T00:00:00Z", eth-keys = "2026-08-22T00:00:00Z", eth-rlp = "2026-08-23T00:00:00Z", hexbytes = "2026-08-22T00:00:00Z", xxhash = "2026-08-18T00:00:00Z", rotki-pysqlcipher3 = "2026-08-27T10:11:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+exclude-dependencies = [
+    # Rotki only uses HTTP/WebSocket providers. Windows IPC is the only Web3 path using pywin32.
+    { package = { name = "web3", version = "7.16.0" }, dependencies = ["pywin32"] },
+    # Rotki runs an MCP server. Only MCP's Windows stdio client uses pywin32.
+    { package = { name = "mcp", version = "1.28.1" }, dependencies = ["pywin32"] },
+]
 
 [tool.uv.sources]
 eth-account = { git = "https://github.com/rotki/eth-account.git", rev = "ca1dd054e50667e8955ea89c841bb4bf2af567db" }

@@ -68,7 +68,7 @@ jobs:
           echo "::group::packaging dependencies"
           uv sync --locked --group packaging
           echo "::endgroup::"
-          uv run package.py --build full
+          uv run --group packaging package.py --build full
 
       - name: Upload files
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -156,7 +156,7 @@ jobs:
           echo "::group::packaging dependencies"
           uv sync --locked --group packaging
           echo "::endgroup::"
-          uv run ./package.py --build full
+          uv run --group packaging ./package.py --build full
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
@@ -234,7 +234,7 @@ jobs:
           echo ::group::"packaging dependencies"
           uv sync --locked --group packaging
           echo ::endgroup::
-          uv run package.py --build full
+          uv run --group packaging package.py --build full
         shell: powershell
 
       - name: Upload files
