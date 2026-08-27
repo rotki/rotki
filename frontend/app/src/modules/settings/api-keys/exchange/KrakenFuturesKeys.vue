@@ -52,7 +52,7 @@ function toggle(): void {
     {{ t('exchange_settings.inputs.kraken_futures_keys') }}
     <RuiTooltip
       v-if="editMode"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

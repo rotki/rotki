@@ -41,7 +41,7 @@ const showMore = computed<number>(() => protocols.length - visible);
         v-if="showMore > 0"
         open-on-hover
         :close-delay="200"
-        :popper="{ placement: 'bottom' }"
+        :options="{ placement: 'bottom' }"
       >
         <template #activator="{ open, attrs }">
           <div

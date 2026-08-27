@@ -49,7 +49,7 @@ watchImmediate(() => asset, (asset) => {
 <template>
   <RuiMenu
     menu-class="min-w-[18rem] max-w-[20rem]"
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
   >
     <template #activator="{ attrs }">
       <MenuTooltipButton

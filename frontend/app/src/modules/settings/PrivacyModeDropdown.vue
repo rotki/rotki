@@ -54,7 +54,7 @@ async function updateScramble(value: boolean): Promise<void> {
       v-model="showPrivacyModeMenu"
       data-testid="privacy-menu-content"
       menu-class="w-[22rem]"
-      :popper="{ placement: 'bottom-end' }"
+      :options="{ placement: 'bottom-end' }"
       :persistent="settingMenuOpen"
     >
       <template #activator="{ attrs }">
@@ -92,7 +92,7 @@ async function updateScramble(value: boolean): Promise<void> {
         <RuiMenu
           v-model="settingMenuOpen"
           menu-class="w-[20rem]"
-          :popper="{ placement: 'bottom-end' }"
+          :options="{ placement: 'bottom-end' }"
           :close-on-content-click="false"
         >
           <template #activator="{ attrs }">

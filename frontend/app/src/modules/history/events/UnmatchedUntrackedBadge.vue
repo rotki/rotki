@@ -8,7 +8,7 @@ defineProps<{
 <template>
   <RuiTooltip
     :open-delay="200"
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     tooltip-class="max-w-80"
   >
     <template #activator>

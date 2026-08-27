@@ -73,7 +73,7 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiTooltip
           v-if="item.isFiat"
           :open-delay="400"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           tooltip-class="max-w-80"
         >
           <template #activator>

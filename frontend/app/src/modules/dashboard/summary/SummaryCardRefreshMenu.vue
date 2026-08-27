@@ -33,7 +33,7 @@ defineSlots<{
     v-else
     class="relative pr-1"
   >
-    <RuiMenu :popper="{ placement: 'bottom-start' }">
+    <RuiMenu :options="{ placement: 'bottom-start' }">
       <template #activator="{ attrs }">
         <RefreshButton
           :loading="loading"

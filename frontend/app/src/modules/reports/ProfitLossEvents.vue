@@ -208,7 +208,7 @@ onMounted(async () => {
       <template #item.group="{ row }">
         <RuiTooltip
           v-if="row.groupId && (row.groupLine.top || row.groupLine.bottom)"
-          :popper="{ placement: 'right' }"
+          :options="{ placement: 'right' }"
           :open-delay="400"
           class="h-full !block"
         >
@@ -325,7 +325,7 @@ onMounted(async () => {
       <template #item.expand="{ row }">
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiTableRowExpander

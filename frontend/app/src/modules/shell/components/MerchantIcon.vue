@@ -37,7 +37,7 @@ const iconName = computed<string>(() => mccIconMap[code] ?? DEFAULT_ICON);
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>

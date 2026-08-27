@@ -16,7 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
     <template #label>
       <div class="flex items-center justify-end gap-2">
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :open-delay="400"
           tooltip-class="max-w-[10rem]"
         >

@@ -206,7 +206,7 @@ onBeforeMount(async () => {
       </RuiButton>
       <RuiMenu
         v-model="openAction"
-        :popper="{ placement: 'bottom-end' }"
+        :options="{ placement: 'bottom-end' }"
       >
         <template #activator="{ attrs }">
           <RuiButton
@@ -222,7 +222,7 @@ onBeforeMount(async () => {
         <RuiTooltip
           :open-delay="400"
           class="w-full"
-          :popper="{ placement: 'left' }"
+          :options="{ placement: 'left' }"
           tooltip-class="max-w-[200px]"
         >
           <template #activator>

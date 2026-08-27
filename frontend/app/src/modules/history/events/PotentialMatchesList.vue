@@ -141,7 +141,7 @@ watchDebounced(onlyExpectedAssets, () => {
           :class="isPinned ? 'w-28' : 'w-36'"
         />
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           tooltip-class="max-w-80"
         >
           <template #activator>

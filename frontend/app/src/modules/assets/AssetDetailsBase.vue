@@ -133,7 +133,7 @@ watch(menuOpened, (menuOpened) => {
     v-model="menuOpened"
     class="flex"
     menu-class="w-[16rem] max-w-[90%]"
-    :popper="{ placement: 'bottom-start' }"
+    :options="{ placement: 'bottom-start' }"
   >
     <template #activator="{ attrs }">
       <ReuseImage

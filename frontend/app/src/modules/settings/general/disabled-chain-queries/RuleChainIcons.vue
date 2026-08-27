@@ -13,7 +13,7 @@ defineProps<{
     <RuiTooltip
       v-for="chainId in chainIds"
       :key="chainId"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="300"
     >
       <template #activator>

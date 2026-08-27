@@ -123,7 +123,7 @@ defineExpose({
       <RuiTooltip
         v-if="!hideActions"
         :open-delay="400"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
       >
         <template #activator>
           <RuiButton

@@ -201,7 +201,7 @@ defineExpose({
           <div class="flex gap-3 items-center">
             <RuiTooltip
               v-if="!item.owned"
-              :popper="{ placement: 'top' }"
+              :options="{ placement: 'top' }"
               :open-delay="400"
             >
               <template #activator>
@@ -214,7 +214,7 @@ defineExpose({
             </RuiTooltip>
             <RuiTooltip
               v-else
-              :popper="{ placement: 'top' }"
+              :options="{ placement: 'top' }"
               :open-delay="400"
             >
               <template #activator>

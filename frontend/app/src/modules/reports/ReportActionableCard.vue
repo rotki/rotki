@@ -219,7 +219,7 @@ function close() {
       <div class="grow" />
 
       <RuiTooltip
-        :popper="{ placement: 'bottom' }"
+        :options="{ placement: 'bottom' }"
         :open-delay="400"
       >
         <template #activator>

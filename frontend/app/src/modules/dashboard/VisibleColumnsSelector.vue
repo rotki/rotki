@@ -59,7 +59,7 @@ function update(value: TableColumn) {
 <template>
   <RuiMenu
     menu-class="max-w-[15rem]"
-    :popper="{ placement: 'bottom-end' }"
+    :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
       <MenuTooltipButton

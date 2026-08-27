@@ -15,7 +15,7 @@ const { isMdAndUp } = useBreakpoint();
 <template>
   <RuiMenu
     v-model="model"
-    :popper="{ placement: isMdAndUp ? 'right-start' : 'bottom-end' }"
+    :options="{ placement: isMdAndUp ? 'right-start' : 'bottom-end' }"
     :close-on-content-click="false"
   >
     <template #activator="{ attrs }">

@@ -43,7 +43,7 @@ const tooltipMessage = computed<string>(() =>
 <template>
   <div class="flex justify-start items-center gap-2">
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
       tooltip-class="max-w-[10rem]"
       :disabled="!isIgnoringDisabled || isLoading"

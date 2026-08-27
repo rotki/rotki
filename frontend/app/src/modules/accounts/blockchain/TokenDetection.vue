@@ -17,7 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
   <div class="flex items-center justify-end">
     {{ detectedTokens.total }}
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

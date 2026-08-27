@@ -27,7 +27,7 @@ const chainData = computed(() => ({
 <template>
   <RuiTooltip
     :disabled="!tooltip || !shouldShowAmount"
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>

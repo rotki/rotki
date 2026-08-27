@@ -258,7 +258,7 @@ async function save() {
         <template #header.taxable>
           <RuiTooltip
             :open-delay="400"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             class="flex items-center"
             tooltip-class="max-w-[10rem]"
           >
@@ -278,7 +278,7 @@ async function save() {
         <template #header.countEntireAmountSpend>
           <RuiTooltip
             :open-delay="400"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             class="flex items-center"
             tooltip-class="max-w-[10rem]"
           >
@@ -298,7 +298,7 @@ async function save() {
         <template #header.countCostBasisPnl>
           <RuiTooltip
             :open-delay="400"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             class="flex items-center"
             tooltip-class="max-w-[10rem]"
           >

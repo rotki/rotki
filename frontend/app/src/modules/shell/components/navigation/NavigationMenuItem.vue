@@ -102,7 +102,7 @@ onMounted(() => {
       </DefineImage>
       <RuiTooltip
         v-if="mini"
-        :popper="{ placement: 'right' }"
+        :options="{ placement: 'right' }"
         :open-delay="400"
       >
         <template #activator>

@@ -14,11 +14,11 @@ const showMenu = ref(false);
   <RuiMenu
     v-model="showMenu"
     menu-class="w-full max-w-96 !bg-transparent"
-    :popper="{ placement: 'bottom-end' }"
+    :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

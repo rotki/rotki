@@ -177,7 +177,7 @@ const key = computed(() => {
         <RuiMenu
           v-if="extraHashCount > 0"
           v-model="hashMenuOpen"
-          :popper="{ placement: 'bottom-start' }"
+          :options="{ placement: 'bottom-start' }"
         >
           <template #activator="{ attrs }">
             <RuiButton

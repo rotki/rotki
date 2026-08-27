@@ -25,7 +25,7 @@ async function forceSaveAndClose(): Promise<void> {
   <RuiMenu
     id="snapshot-action-menu"
     v-model="visible"
-    :popper="{ placement: 'bottom-end' }"
+    :options="{ placement: 'bottom-end' }"
     :persistent="importSnapshotDialog"
   >
     <template #activator="{ attrs }">

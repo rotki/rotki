@@ -34,7 +34,7 @@ const pillLabels = usePillBarLabels();
     <div class="flex gap-4 justify-between grow">
       <div class="flex gap-4 content-center">
         <RuiTooltip
-          :popper="{ placement: 'bottom' }"
+          :options="{ placement: 'bottom' }"
           :open-delay="500"
         >
           <template #activator>
@@ -55,7 +55,7 @@ const pillLabels = usePillBarLabels();
 
         <div>
           <RuiTooltip
-            :popper="{ placement: 'bottom' }"
+            :options="{ placement: 'bottom' }"
             :open-delay="500"
           >
             <template #activator>
@@ -75,7 +75,7 @@ const pillLabels = usePillBarLabels();
           </RuiTooltip>
 
           <RuiTooltip
-            :popper="{ placement: 'bottom' }"
+            :options="{ placement: 'bottom' }"
             :open-delay="500"
           >
             <template #activator>
@@ -96,7 +96,7 @@ const pillLabels = usePillBarLabels();
         </div>
       </div>
 
-      <HintMenuIcon :popper="{ placement: 'left-start' }">
+      <HintMenuIcon :options="{ placement: 'left-start' }">
         {{ t('asset_table.newly_detected.subtitle') }}
       </HintMenuIcon>
     </div>

@@ -93,7 +93,7 @@ onMounted(async () => {
           {{ t('common.actions.generate') }}
         </CardTitle>
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :open-delay="400"
         >
           <template #activator>

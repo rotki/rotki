@@ -76,7 +76,7 @@ const loading = isAccountOperationRunning();
       >
         <RuiTooltip
           class="flex"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :open-delay="400"
         >
           <template #activator>

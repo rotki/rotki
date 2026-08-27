@@ -10,7 +10,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <RuiMenu
     close-on-content-click
-    :popper="{ placement: 'bottom-end' }"
+    :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

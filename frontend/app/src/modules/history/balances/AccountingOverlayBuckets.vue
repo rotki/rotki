@@ -74,7 +74,7 @@ const affectedIndex = computed<number>(() => {
         <RuiTooltip
           v-if="excessivePrecision"
           :open-delay="200"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiIcon
@@ -111,7 +111,7 @@ const affectedIndex = computed<number>(() => {
                address holding the same asset on several chains), so lead every row with its icon. -->
           <RuiTooltip
             :open-delay="200"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
           >
             <template #activator>
               <LocationIcon

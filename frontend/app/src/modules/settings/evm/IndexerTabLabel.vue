@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
       />
       <span>{{ tab.name }}</span>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

@@ -30,7 +30,7 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('help_sidebar.report_issue.dialog.submit_options.email') }}
     </RuiButton>
     <RuiMenu
-      :popper="{ placement: 'bottom-end' }"
+      :options="{ placement: 'bottom-end' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

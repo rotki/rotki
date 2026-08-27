@@ -97,7 +97,7 @@ defineExpose({
     >
       <RuiTooltip
         :disabled="!queryConfigs[query]?.tooltip"
-        :popper="{ placement: 'top-start' }"
+        :options="{ placement: 'top-start' }"
       >
         <template #activator>
           <div class="flex items-center">

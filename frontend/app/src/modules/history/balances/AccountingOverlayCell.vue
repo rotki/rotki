@@ -132,7 +132,7 @@ const placeholder = computed<string | undefined>(() => {
       <span class="text-rui-text-disabled">{{ t('accounting_overlay.no_data') }}</span>
       <RuiTooltip
         :open-delay="300"
-        :popper="{ placement: 'left' }"
+        :options="{ placement: 'left' }"
       >
         <template #activator>
           <RuiIcon

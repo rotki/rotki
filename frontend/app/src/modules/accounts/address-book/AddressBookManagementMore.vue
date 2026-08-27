@@ -48,7 +48,7 @@ async function doImport() {
 <template>
   <div>
     <RuiMenu
-      :popper="{ placement: 'bottom-end' }"
+      :options="{ placement: 'bottom-end' }"
       menu-class="max-w-[24rem]"
       close-on-content-click
     >

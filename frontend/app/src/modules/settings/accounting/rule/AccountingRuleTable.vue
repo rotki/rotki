@@ -136,7 +136,7 @@ function openEventsDialog(eventIds: number[]) {
   >
     <template #header.taxable>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center h-full"
         tooltip-class="max-w-[10rem]"
@@ -156,7 +156,7 @@ function openEventsDialog(eventIds: number[]) {
     </template>
     <template #header.countEntireAmountSpend>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center"
         tooltip-class="max-w-[10rem]"
@@ -176,7 +176,7 @@ function openEventsDialog(eventIds: number[]) {
     </template>
     <template #header.countCostBasisPnl>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center"
         tooltip-class="max-w-[10rem]"
