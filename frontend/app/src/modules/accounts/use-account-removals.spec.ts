@@ -36,10 +36,9 @@ vi.mock('@/modules/task-center/use-native-task', async importOriginal => ({
   useNativeTask: vi.fn(() => ({ cancelByType: vi.fn(() => vi.fn()), runTaskResult, statusOf: vi.fn(), submitTask })),
 }));
 
-// runTaskResult is mocked and does not invoke its api callback; opt into invoking it when the API call must run.
-function whenOk<R>(value: R, invoke = true): void {
+function whenOk<R>(value: R, invokeApiCallback = true): void {
   runTaskResult.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<R, TaskError>> => {
-    if (invoke)
+    if (invokeApiCallback)
       await task();
     return ok(value);
   });
@@ -64,13 +63,7 @@ describe('useAccountRemovals', () => {
     vi.clearAllMocks();
   });
 
-  // Asserted on the *submitted spec*, not on the descriptor. Declaring `lane` on the activity and
-  // asserting `laneOf` there both passed while every removal still went out on the default lane,
-  // because no call site forwarded it — so the family caps were dead config and removals that used
-  // to run one at a time all raced. Only reading what `submitTask` received can catch that.
   describe('lane', () => {
-    // The outcome is the caller's business (`use-account-delete` gates the local removal on it);
-    // here only the lane the submission carries is under test.
     const cases: [string, (accounts: Removals) => Promise<unknown>, string][] = [
       ['removeAccount', async (accounts): Promise<unknown> => accounts.removeAccount({ accounts: ['0xabc'], chain: 'eth' }), 'accounts-remove:eth'],
       ['deleteXpub', async (accounts): Promise<unknown> => accounts.deleteXpub({ chain: 'btc', xpub: 'xpub123' }), 'accounts-remove:btc'],
@@ -95,9 +88,6 @@ describe('useAccountRemovals', () => {
       expect(mocks.notifyError).not.toHaveBeenCalled();
     });
 
-    // Same hazard as the add side: an account delete and an xpub delete on one chain both used
-    // `accounts:remove:<chain>`, so an overlap deduped the second onto the first while the UI
-    // still dropped its rows, and accounts that were never deleted reappear on the next fetch.
     it('should give a plain removal and an xpub removal distinct activity ids', async () => {
       whenOk({ perAccount: {}, totals: { assets: {}, liabilities: {} } }, false);
       const { useAccountRemovals } = await importModule();
@@ -119,9 +109,6 @@ describe('useAccountRemovals', () => {
   });
 
   describe('removeAgnosticAccount', () => {
-    // Keyed by the account category alone, two removals under one category were the same activity,
-    // so `submitTask` handed the second the first's promise and the second address was never sent
-    // while the UI dropped its row. The same collision the chain-scoped removals had.
     it('should give each address its own activity id within a category', async () => {
       whenOk({ perAccount: {}, totals: { assets: {}, liabilities: {} } }, false);
       const { useAccountRemovals } = await importModule();

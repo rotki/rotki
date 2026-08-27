@@ -73,7 +73,13 @@ export const useWalletStore = defineStore(STORE_ID, () => {
 
   const isWalletConnect = computed<boolean>(() => get(walletMode) === WALLET_MODES.WALLET_CONNECT);
 
-  // Sync centralized state with active wallet composable
+  /**
+   * Copies the active wallet backend's connection state into the store's own refs.
+   *
+   * @remarks
+   * Does nothing while the backend for the current mode is not loaded. An injected wallet
+   * advertises no chain list, so `supportedChainIds` is cleared rather than left stale.
+   */
   const syncWalletState = (): void => {
     if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
       if (!walletConnectInstance)
@@ -203,8 +209,13 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     set(supportedChainIds, []);
   };
 
-  // Called by the store reset plugin on logout. `$patch` cannot clear the recent
-  // transactions since they are exposed as a getter, so they are reset here.
+  /**
+   * Clears the whole wallet state, connection and recent transactions alike.
+   *
+   * @remarks
+   * The store reset plugin calls this on logout. Its `$patch` cannot reach the recent
+   * transactions, exposed as a getter, so they are reset here instead.
+   */
   const reset = (): void => {
     resetState();
     resetTransactions();
@@ -287,7 +298,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   };
 
   const sendTransaction = async (params: TransactionParams): Promise<Hash> => {
-    // Check WalletConnect connection if in WalletConnect mode
     if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
       const wc = await getWalletConnect();
       await wc.checkWalletConnection();
@@ -334,8 +344,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     }
   };
 
-  // Watch for changes in wallet mode. The immediate run has no previous mode and nothing is
-  // connected yet, so disconnecting there would only clear the remembered provider.
+  // The immediate run has no previous mode and no connection, so only a real mode change disconnects.
   watch(walletMode, async (walletMode, previousWalletMode) => {
     if (previousWalletMode !== undefined && walletMode !== previousWalletMode) {
       await disconnect();

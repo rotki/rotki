@@ -6,7 +6,6 @@ import { AssetsManagerPage } from '../../pages/assets-manager-page';
 import { CustomAssetsPage } from '../../pages/custom-assets-page';
 import { LatestPricePage } from '../../pages/price-manager-page';
 
-// Assets used in ignored asset tests
 const TEST_ASSETS_TO_IGNORE = ['1SG', 'ZIX', '1CR'];
 
 test.describe('assets', () => {
@@ -18,10 +17,8 @@ test.describe('assets', () => {
     test.beforeAll(async ({ browser, request }) => {
       ctx = await createLoggedInContext(browser, request);
 
-      // Ensure the specific test assets are not ignored (clean state for these assets only)
       await apiEnsureSymbolsNotIgnored(request, TEST_ASSETS_TO_IGNORE);
 
-      // Navigate to assets page once
       assetsPage = new AssetsManagerPage(ctx.sharedPage);
       await assetsPage.visit('asset-manager-managed');
     });
@@ -37,7 +34,6 @@ test.describe('assets', () => {
     });
 
     test('add another 2 ignored assets and confirm count increased by 3', async () => {
-      // Refresh to clear any pending operations from previous test
       await ctx.sharedPage.locator('button', { hasText: 'Refresh' }).first().click();
       await expect(ctx.sharedPage.locator('[data-id="thead-loader"]')).toHaveCount(0);
       await assetsPage.addIgnoredAsset('ZIX');
@@ -46,7 +42,6 @@ test.describe('assets', () => {
     });
 
     test('remove an ignored asset, and confirm count decreased by one', async () => {
-      // Click refresh to get fresh state (clear any pending operations)
       await ctx.sharedPage.locator('button', { hasText: 'Refresh' }).first().click();
       await expect(ctx.sharedPage.locator('[data-id="thead-loader"]')).toHaveCount(0);
       await assetsPage.selectShowAll();
@@ -59,27 +54,19 @@ test.describe('assets', () => {
     let ctx: SharedTestContext;
     let assetsPage: AssetsManagerPage;
 
-    // Unique ID for this test run to avoid conflicts with existing assets
     let uniqueId: string;
-    // Test address for EVM asset - use a unique address per run
     let testAddress: string;
-    // Symbols for cleanup
     let otherAssetSymbol: string;
 
     test.beforeAll(async ({ browser, request }) => {
-      // Generate unique ID based on timestamp
       uniqueId = Date.now().toString().slice(-6);
-      // Generate a pseudo-random address based on uniqueId
       testAddress = `0x${uniqueId.padStart(40, 'f')}`;
       otherAssetSymbol = `OTH${uniqueId}`;
 
       ctx = await createLoggedInContext(browser, request);
 
-      // Point Ethereum at the mock RPC so the ERC20 token-detail lookup resolves locally
-      // instead of querying live public nodes (which rate-limit and stall the dialog).
       await apiConfigureRpcMock(request, 'ETH');
 
-      // Navigate to assets page once
       assetsPage = new AssetsManagerPage(ctx.sharedPage);
       await assetsPage.visit('asset-manager-managed');
     });

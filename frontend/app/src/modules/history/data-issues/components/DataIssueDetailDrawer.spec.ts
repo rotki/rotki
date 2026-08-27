@@ -8,14 +8,10 @@ import { createRuiPlugin } from '@/plugins/rui';
 
 const push = vi.fn();
 
-// Override the global vue-router mock with a stable `push` spy so the navigation
-// away from a related event can be asserted.
 vi.mock('vue-router', () => ({
   useRouter: (): Record<string, unknown> => ({ push }),
 }));
 
-// Render the drawer's default slot inline so its content lands in the wrapper DOM
-// instead of a teleport target.
 const DrawerStub = defineComponent({
   props: { modelValue: { default: false, type: Boolean } },
   setup(_, { slots }): () => VNode {

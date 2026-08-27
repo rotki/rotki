@@ -45,7 +45,6 @@ describe('settings/api-keys/exchange/exchange-keys-form', () => {
       expect(predicate('kucoin')).toBe(false);
     });
 
-    // `coinbaseprime` is a separate exchange, and only plain coinbase mangles its secret.
     it('should not read coinbaseprime as coinbase', () => {
       expect(isCoinbase('coinbaseprime')).toBe(false);
     });
@@ -60,10 +59,9 @@ describe('settings/api-keys/exchange/exchange-keys-form', () => {
       expect(requiresApiSecret('bitpanda', capabilities)).toBe(false);
     });
 
-    // An empty list is what the store holds before the backend answers; treating every exchange as
-    // needing a secret is the safe reading, since that is the common case.
     it('should be required while the capabilities are unknown', () => {
-      expect(requiresApiSecret('bitpanda', { withoutApiSecret: [], withPassphrase: [] })).toBe(true);
+      const unansweredCapabilities: ExchangeCapabilities = { withoutApiSecret: [], withPassphrase: [] };
+      expect(requiresApiSecret('bitpanda', unansweredCapabilities)).toBe(true);
     });
 
     it('should turn coinbase escaped newlines into real ones', () => {
@@ -147,8 +145,6 @@ describe('settings/api-keys/exchange/exchangeKeysSchema', () => {
     };
   }
 
-  // The default location is kucoin, which the fixture marks as needing a passphrase, so a complete
-  // form has to carry one.
   function state(overrides: Partial<ExchangeKeysFormState> = {}): ExchangeKeysFormState {
     return {
       apiKey: 'key',
@@ -179,7 +175,6 @@ describe('settings/api-keys/exchange/exchangeKeysSchema', () => {
       expect(errorsFor({}, { apiKey: '' })).toStrictEqual(['apiKey']);
     });
 
-    // vuelidate's required trims, so whitespace alone never counted as an answer.
     it('should not accept whitespace as an api key', () => {
       expect(errorsFor({}, { apiKey: '   ' })).toStrictEqual(['apiKey']);
     });
@@ -233,11 +228,6 @@ describe('settings/api-keys/exchange/exchangeKeysSchema', () => {
         .toStrictEqual(['krakenFuturesApiKey']);
     });
 
-    /**
-     * The pair is read from one state, so clearing the half that caused the demand clears the
-     * demand with it. Judging each field against whatever the other last held is what let an
-     * invalid pair through in an earlier form.
-     */
     it('should stop demanding once the other half is cleared again', () => {
       expect(errorsFor(kraken, { krakenFuturesApiKey: '', krakenFuturesApiSecret: '' }))
         .toStrictEqual([]);

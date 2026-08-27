@@ -8,14 +8,13 @@ import { type ComputedRef, defineComponent, h, type VNode } from 'vue';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { type AccountingOverlayContext, provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 
-// Drives the direction arrow; `mock`-prefixed so it can be read inside the hoisted factory.
-let mockDirection: 'in' | 'out' | 'neutral' = 'neutral';
+let mockDirectionArrow: 'in' | 'out' | 'neutral' = 'neutral';
 
 interface EventTypeData { color: string; direction: string; icon: string }
 
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   useHistoryEventMappings: (): { getEventTypeData: () => ComputedRef<EventTypeData> } => ({
-    getEventTypeData: (): ComputedRef<EventTypeData> => computed(() => ({ color: 'success', direction: mockDirection, icon: 'lu-arrow-down' })),
+    getEventTypeData: (): ComputedRef<EventTypeData> => computed(() => ({ color: 'success', direction: mockDirectionArrow, icon: 'lu-arrow-down' })),
   }),
 }));
 
@@ -50,7 +49,7 @@ function mountCell(opts: {
   counterparty?: string | null;
   direction?: 'in' | 'out' | 'neutral';
 }): VueWrapper {
-  mockDirection = opts.direction ?? 'neutral';
+  mockDirectionArrow = opts.direction ?? 'neutral';
   const overlay: UseAccountingOverlayReturn = {
     balanceAfter: () => opts.balance === undefined ? undefined : bigNumberify(opts.balance),
     bucketsAt: () => [],

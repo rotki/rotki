@@ -64,15 +64,13 @@ describe('date-utils', () => {
       expect(convertFromTimestamp(startOfUnixEpoch, DateFormat.DateMonthYearHourMinuteSecond)).toBe(expectedDate);
     });
 
-    // Edge case: Turn of the millennium
     it('should handle the turn of the millennium correctly', () => {
       const turnOfMillennium = dayjs('2000-01-01T00:00:00').unix();
       const expectedDate = '01/01/2000';
       expect(convertFromTimestamp(turnOfMillennium, DateFormat.DateMonthYearHourMinuteSecond)).toBe(expectedDate);
     });
 
-    // Invalid input: Negative timestamp (before UNIX epoch)
-    it('should handle negative timestamps correctly', () => {
+    it('should handle negative timestamps, being dates before the UNIX epoch, correctly', () => {
       const negativeTimestamp = dayjs('1969-12-31T23:59:59').unix();
       const expectedDate = '31/12/1969 23:59:59';
       expect(convertFromTimestamp(negativeTimestamp, DateFormat.DateMonthYearHourMinuteSecond)).toBe(expectedDate);
@@ -84,8 +82,7 @@ describe('date-utils', () => {
       expect(convertFromTimestamp(farFutureTimestamp, DateFormat.DateMonthYearHourMinuteSecond)).toBe(expectedDate);
     });
 
-    // Edge case: Very end of the day (one second before midnight)
-    it('should handle times just before midnight correctly', () => {
+    it('should handle times one second before midnight correctly', () => {
       const timestampJustBeforeMidnight = dayjs('2023-04-15T23:59:59').unix();
       const expectedDate = '15/04/2023 23:59:59';
       expect(convertFromTimestamp(timestampJustBeforeMidnight, DateFormat.DateMonthYearHourMinuteSecond)).toBe(

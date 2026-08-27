@@ -16,6 +16,15 @@ interface UseAssetIconApiReturn {
 }
 
 export function useAssetIconApi(): UseAssetIconApiReturn {
+  /**
+   * The absolute icon url for an asset, for use as an `<img src>`.
+   *
+   * @remarks
+   * Fully resolved rather than a path, because nothing fetches this: the browser does, and it has
+   * no api client to resolve a relative target against.
+   *
+   * Pass `randomString` as a cache-buster, to force a re-fetch after an icon changes.
+   */
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
     const params = new URLSearchParams();
     params.set('asset_id', identifier);
@@ -23,7 +32,6 @@ export function useAssetIconApi(): UseAssetIconApiReturn {
     if (randomString)
       params.set('t', String(randomString));
 
-    // Not a request but an <img src>, so it needs the resolved url rather than a target.
     return `${api.colibriBaseURL}/assets/icon?${params.toString()}`;
   };
 

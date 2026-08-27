@@ -21,6 +21,11 @@ export type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<C
  * @remarks
  * Kept apart from the cache logic in `use-item-cache.ts` so it can live in a Pinia store and outlive
  * the composable that reads it.
+ *
+ * That outliving is the whole point of injecting it: a `createSharedComposable` cache is disposed
+ * once its last subscriber goes away, so a cache holding its own storage is wiped every time the
+ * user navigates away from the only page reading it. Holding the storage in a store instead makes
+ * it app-lifetime, and the composable rebinds to whatever is already there.
  */
 export interface ItemCacheStorage<T> {
   /** Resolved values keyed by identifier. */

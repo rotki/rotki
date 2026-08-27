@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { HighlightTargetTypes } from '@/modules/history/events/use-history-event-navigation';
 import { usePinnedMatchPanel, type UsePinnedMatchPanelReturn } from '@/modules/history/events/use-pinned-match-panel';
@@ -64,10 +64,6 @@ interface Harness {
   panel: UsePinnedMatchPanelReturn<TestRow>;
 }
 
-// Every harness keeps its watchers alive, so an un-unmounted one from an earlier test would
-// answer this one's row collections and highlight props too.
-const mounted: VueWrapper[] = [];
-
 function mountPanel(): Harness {
   let panel!: UsePinnedMatchPanelReturn<TestRow>;
   const Comp = defineComponent({
@@ -84,7 +80,6 @@ function mountPanel(): Harness {
     },
   });
   const wrapper = mount(Comp);
-  mounted.push(wrapper);
   return { panel, wrapper };
 }
 
@@ -103,11 +98,6 @@ describe('usePinnedMatchPanel', () => {
     set(isPinned, true);
     useRouteMock.mockReturnValue(computed(() => ({ query: get(routeQuery) })));
     useRouterMock.mockReturnValue({ replace: routerReplace });
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   describe('selecting a row', () => {

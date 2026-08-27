@@ -76,20 +76,28 @@ function setMax(): void {
   }
 }
 
-// Both sides hold what the user is typing, so a value that is not a number yet reads as nothing
-// entered rather than being handed to a parse that throws.
-watch([model, price], ([value, price]) => {
+/**
+ * Recomputes the fiat value as the amount is typed.
+ *
+ * @remarks
+ * Both refs hold in-progress input, so a value that is not yet a number reads as nothing entered
+ * rather than being handed to a parse that throws.
+ */
+function syncFiatValue(): void {
   if (!get(isAmountSelected))
     return;
 
-  const amount = parseNumericInput(value);
-  if (amount && price) {
-    set(fiatValue, amount.multipliedBy(price).toString());
+  const amount = parseNumericInput(get(model));
+  const priceValue = get(price);
+  if (amount && priceValue) {
+    set(fiatValue, amount.multipliedBy(priceValue).toString());
   }
   else {
     set(fiatValue, '0');
   }
-});
+}
+
+watch([model, price], syncFiatValue);
 
 watch([fiatValue, price], ([fiatValue, price]) => {
   if (get(isAmountSelected))

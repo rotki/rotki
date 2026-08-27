@@ -7,17 +7,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MoneriumAuth from './MoneriumAuth.vue';
 
-/**
- * The seam: every notification this card raises belongs to one connection flow, so it must be
- * dispatched under the shared Monerium group. Grouping is what makes the dispatcher replace the
- * previous step instead of leaving "Authorizing..." and a stale "session key expired" warning
- * stacked in the notification panel.
- *
- * Success is the exception, and deliberately raises nothing: the card itself flips to the
- * connected state, so the outcome is already on screen and the flow only clears what its earlier
- * steps left behind.
- */
-
 const { mockCompleteOAuth, mockNotify, mockOpenUrl, mockRemoveMatching } = vi.hoisted(() => ({
   mockCompleteOAuth: vi.fn(),
   mockNotify: vi.fn(),
@@ -128,8 +117,6 @@ describe('moneriumAuth', () => {
 
     expect(mockRemoveMatching).toHaveBeenCalledOnce();
     const [predicate] = mockRemoveMatching.mock.calls[0];
-    // the earlier steps of this flow go, including the session-expired warning that shares the
-    // group and is what the re-authentication just resolved; nothing else does
     expect(predicate({ group: NotificationGroup.MONERIUM_AUTH })).toBe(true);
     expect(predicate({ group: NotificationGroup.MISSING_API_KEY })).toBe(false);
     expect(predicate({})).toBe(false);

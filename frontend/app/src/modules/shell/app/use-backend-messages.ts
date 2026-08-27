@@ -100,15 +100,11 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   });
 
   onBeforeMount(() => {
-    // 1. First, synchronously check for any startup error that occurred before mount.
-    // This guarantees we don't miss errors that happened before the Vue app was ready.
     const pendingError = getStartupError();
     if (pendingError) {
       handleStartupError(pendingError.message, pendingError.code);
     }
 
-    // 2. Set up listeners for future async errors and other IPC messages.
-    // This also signals to the main process that the renderer is ready.
     setupListeners({
       onAbout: () => set(showAbout, true),
       onError: (message: string, code: BackendCode) => {

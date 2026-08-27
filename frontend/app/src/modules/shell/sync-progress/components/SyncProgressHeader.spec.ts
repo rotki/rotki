@@ -121,13 +121,11 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
       expect(wrapper.text()).toContain('sync_progress.title');
     });
 
-    it('should show complete title when phase is COMPLETE', () => {
+    it('should show complete title when phase is COMPLETE, ruling out the two keys it is a prefix of', () => {
       set(mockPhase, SyncPhase.COMPLETE);
       wrapper = createWrapper();
 
       expect(wrapper.text()).toContain('sync_progress.complete');
-      // `sync_progress.complete` is a prefix of both other keys, so a bare `toContain`
-      // cannot tell them apart. Rule the other two out explicitly.
       expect(wrapper.text()).not.toContain('sync_progress.complete_cancelled');
       expect(wrapper.text()).not.toContain('sync_progress.complete_with_warnings');
     });

@@ -47,7 +47,6 @@ export async function apiLogout(request: APIRequestContext): Promise<void> {
     },
   });
 
-  // Also logout from colibri
   await request.post(`${colibriUrl}/user/logout`, {
     failOnStatusCode: false,
   });
@@ -344,7 +343,6 @@ export async function apiSearchAssetsBySymbol(
 
   if (response.ok()) {
     const body = await response.json();
-    // The result is an array of assets with 'identifier' field
     if (Array.isArray(body.result)) {
       return body.result.map((asset: { identifier: string }) => asset.identifier);
     }
@@ -373,7 +371,6 @@ export async function apiEnsureSymbolsNotIgnored(
     identifiersToCheck.push(...identifiers);
   }
 
-  // Filter to only those that are actually ignored
   const toRemove = identifiersToCheck.filter(id => ignoredAssets.includes(id));
 
   if (toRemove.length > 0) {

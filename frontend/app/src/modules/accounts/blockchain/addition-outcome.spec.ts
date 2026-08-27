@@ -18,8 +18,6 @@ describe('additionError', () => {
 
     const error = additionError([failure(TaskFailed({ cause, message: 'wrapped' }))], 'fallback');
 
-    // Identity, not just shape: `handleErrors` branches on `instanceof ApiValidationError` to fill
-    // in per-field errors, and a re-wrapped copy would lose that.
     expect(error).toBe(cause);
   });
 
@@ -45,8 +43,7 @@ describe('isNothingButCancelled', () => {
     expect(isNothingButCancelled(summary({ added: [{ address: '0xabc', chain: 'eth' }], cancelled: true }))).toBe(false);
   });
 
-  // A real failure alongside a cancellation is still worth reporting, so this must not swallow it.
-  it('should be false when something failed for real', () => {
+  it('should be false when something failed for real, even alongside a cancellation', () => {
     expect(isNothingButCancelled(summary({ cancelled: true, failed: [failure(Cancelled({ message: 'x' }))] }))).toBe(false);
   });
 

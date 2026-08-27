@@ -1,5 +1,5 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
-import type { ComponentPublicInstance } from 'vue';
 import type { AddressBookPayload } from '@/modules/accounts/address-book/eth-names';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,9 +12,6 @@ vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
 }));
 
 const AddressBookForm = (await import('@/modules/accounts/address-book/AddressBookForm.vue')).default;
-
-/** The stubs declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function fieldStub(name: string): Record<string, unknown> {
   return {
@@ -128,9 +125,6 @@ describe('modules/accounts/address-book/AddressBookForm', () => {
   it('should arm the unsaved-changes prompt on an edit, however early', async () => {
     harness = createHarness();
 
-    // FLIP: `useFormStateWatcher` installed its watcher behind a 500 ms timer, so an edit made
-    // before it arrived was never seen and the dialog closed without prompting. `dirty` compares
-    // against a baseline taken at construction, so there is no window to miss.
     await edit('address-book-form-name', 'my wallet');
 
     expect(harness.stateUpdated()).toBe(true);
@@ -142,15 +136,12 @@ describe('modules/accounts/address-book/AddressBookForm', () => {
     await edit('address-book-form-name', 'my wallet');
     await edit('address-book-form-name', '');
 
-    // FLIP: the old watcher latched on the first change and never looked again.
     expect(harness.stateUpdated()).toBe(false);
   });
 
-  it('should not arm the unsaved-changes prompt when only the location changes', async () => {
+  it('should not arm the unsaved-changes prompt when only the location changes, which picks the book rather than describing the entry', async () => {
     harness = createHarness();
 
-    // The location is not one of the watched keys, so switching between the global and private
-    // books is not an edit of the entry itself.
     await edit('address-book-form-location', 'global');
 
     expect(harness.model().location).toBe('global');
@@ -165,8 +156,6 @@ describe('modules/accounts/address-book/AddressBookForm', () => {
     });
     await nextTick();
 
-    // FLIP: external results reached `$errors` only once the field was dirty, so a failed save the
-    // dialog was already holding stayed invisible until the user edited the field it named.
     expect(messages('address-book-form-name')).toEqual(['Name is already taken']);
   });
 });

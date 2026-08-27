@@ -143,13 +143,9 @@ export const ActivitySourceType = {
 export type ActivitySourceType = (typeof ActivitySourceType)[keyof typeof ActivitySourceType];
 
 /**
- * Carries what the controller needs to cancel/re-run an item. Every activity is owned by the
- * orchestrator, which addresses it by id, so the source only has to identify itself.
- *
- * A `BACKEND_TASK` arm existed while the floor surfaced un-migrated backend tasks; it went with
- * the floor once every producer was native. Seven further arms (TX_SYNC, DECODING,
- * EXCHANGE_EVENTS, PROTOCOL_CACHE, BALANCE_QUERY, REQUEST_TAG, INFO) were declared for a
- * per-producer routing scheme that native migration made unnecessary, and were deleted in W0.
+ * Carries what the controller needs to cancel or re-run an item. Every activity is owned by the
+ * orchestrator, which addresses it by id, so the source only has to identify itself. A single arm
+ * is therefore enough: routing per producer would need more, and nothing routes per producer.
  */
 interface ActivitySource {
   type: typeof ActivitySourceType.NATIVE;
@@ -314,9 +310,7 @@ export const ActivityPart = {
   BALANCES: 'balances',
   POOLS: 'pools',
   STATISTICS: 'statistics',
-  // The Liquity staking variant. A *part* named `staking` under the `LIQUITY` kind
-  // (`liquity:staking`); unrelated to the `STAKING` *kind* — parts and kinds are separate keyspaces.
-  STAKING: 'staking',
+  STAKE: 'stake',
   ERC20: 'erc20',
   VERSIONS: 'versions',
   UPDATE: 'update',
@@ -329,7 +323,7 @@ export const ActivityPart = {
    * kind alone is not an identity — see the ids in `use-history-transactions.ts`.
    */
   TRANSACTIONS: 'transactions',
-  EXCHANGE_EVENTS: 'exchange-events',
+  EXCHANGE: 'exchange',
   MATCH: 'match',
   BRIDGE: 'bridge',
   LOOKUP: 'lookup',
@@ -342,8 +336,10 @@ export const ActivityPart = {
   VERIFY: 'verify',
   LOGIN: 'login',
   CREATE: 'create',
-  // Scope facets: whether a flow covers everything or an explicit subset. The subset's members stay
-  // raw values appended after `CHAINS`.
+  /**
+   * Scope facets: whether a flow covers everything or an explicit subset. A subset's members stay
+   * raw values, appended after `CHAINS`.
+   */
   ALL: 'all',
   CHAINS: 'chains',
   /**

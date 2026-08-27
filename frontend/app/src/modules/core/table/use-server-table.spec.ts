@@ -65,7 +65,6 @@ vi.mock('@/modules/core/api', () => ({
 vi.mock('vue-router', () => ({
   useRoute: useRouteMock,
   useRouter: useRouterMock,
-  // The mocked push always resolves successfully, so no write is ever a failure.
   isNavigationFailure: vi.fn().mockReturnValue(false),
 }));
 
@@ -940,9 +939,6 @@ describe('request.cancelTag', () => {
     await flushPromises();
     requestFn.mockClear();
 
-    // An account filter change drives both the request-only and the url-only source. Without the
-    // self-write guard the route push re-applies url state, which recomputes `requestPayload` and
-    // overwrites the debounced old value, so the fetch is skipped.
     set(locationLabels, ['0x1aEa862845522cFF463D11B9371EedEa73e458bE']);
     await nextTick();
     await flushPromises();
@@ -1023,8 +1019,6 @@ describe('request.cancelTag', () => {
     await nextTick();
     await flushPromises();
 
-    // Simulate external navigation (browser back/forward) by directly changing the route.
-    // This should apply filters from the route, unlike self-writes which skip applyUrlState.
     set(mockRoute, { query: { asset: 'ETH', limit: '10' } });
     await nextTick();
     await flushPromises();
@@ -1205,10 +1199,7 @@ describe('source destinations', () => {
     expect(pushedQuery).not.toHaveProperty('requestParam');
   });
 
-  it('should write the URL when the filter changes', async () => {
-    // Regression guard: the internal `setPage(1, 'programmatic')` fired by the
-    // filter watcher must not clear the pending `user` provenance, otherwise no
-    // URL write happens at all.
+  it('should write the URL when the filter changes, since the internal page reset must not clear the pending user intent', async () => {
     const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
       fetch: mockRequestData(),
       urlState: { mode: 'route' },
@@ -1227,9 +1218,7 @@ describe('source destinations', () => {
     expect(getLastPushedQuery()).toHaveProperty('asset', 'ETH');
   });
 
-  it('should write the URL when a url-only source changes even though no fetch fires', async () => {
-    // Was the `queryParamsOnly` watcher: url-only values never reach requestPayload,
-    // so without a dedicated write the URL would go stale.
+  it('should write the URL when a url-only source changes even though no fetch fires, since such values never reach the request payload', async () => {
     const requestFn = vi.fn().mockResolvedValue({
       data: [],
       found: 0,
@@ -1525,9 +1514,7 @@ describe('generic inference', () => {
     vi.clearAllMocks();
   });
 
-  it('should infer the payload from fetch when no generics are passed', async () => {
-    // No explicit generics: `TPayload` has to come from `fetch`. If it ever widens
-    // to `any` the type assertions below fail rather than silently passing.
+  it('should infer the payload from fetch when no generics are passed, so a widening to any fails the assertions below rather than passing silently', async () => {
     const table = scope.run(() => useServerTable({
       fetch: mockRequestWithExtras(),
       urlState: { mode: 'route' },
@@ -1587,9 +1574,7 @@ describe('page reset', () => {
     expect(get(pagination).page).toBe(1);
   });
 
-  it('should NOT reset the page when a url-only param changes', async () => {
-    // Url-only values never reach the api, so the result set cannot move under them
-    // and the current page is still valid.
+  it('should NOT reset the page when a url-only param changes, since the result set cannot move under a value the api never sees', async () => {
     const highlight = ref<string>('a');
     const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestData(),
@@ -1612,10 +1597,7 @@ describe('page reset', () => {
     expect(get(pagination).page).toBe(5);
   });
 
-  it('should reset the page when a request-only param changes (8b)', async () => {
-    // Request-only values reach the api, so the result set moves under them and the
-    // current page can be invalid. Resetting carries no user intent, so no URL write is
-    // earned: this is the parity fix for filters edited outside the TableFilter bar.
+  it('should reset the page when a request-only param changes, earning no URL write because the reset carries no user intent', async () => {
     const account = ref<string>('a');
     const { pagination } = scope.run(() => useServerTable<TestItem, TestPayloadWithExtras, TestFilters>({
       fetch: mockRequestWithExtras(),

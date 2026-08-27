@@ -30,7 +30,6 @@ export function useHistoryWatchers(): void {
 
   const processingDebounced = useRefWithDebounce(processing, 500);
 
-  // Protocol cache status reset when refresh task completes
   const { useIsActive } = useTaskCenter();
   const refreshProtocolCacheTaskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
   const protocolCacheStore = useProtocolCacheStatusStore();

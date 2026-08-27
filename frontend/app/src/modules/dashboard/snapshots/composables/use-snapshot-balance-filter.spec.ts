@@ -8,7 +8,6 @@ import {
 } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 
 describe('readSnapshotFilters', () => {
-  // An empty bag has to mean what the three ticked checkboxes this replaces meant.
   it('should read an empty bag as the table defaults', () => {
     expect(readSnapshotFilters({})).toStrictEqual({
       category: undefined,
@@ -41,13 +40,11 @@ describe('readSnapshotFilters', () => {
     expect(state.search).toBe('eth');
   });
 
-  // The bag types every value as one-or-many, and the url can carry a repeated key.
-  it('should take the first of a repeated value', () => {
+  it('should take the first of a repeated value, which the url can carry', () => {
     expect(readSnapshotFilters({ [SnapshotBalanceFilterKeys.SEARCH]: ['eth', 'dai'] }).search).toBe('eth');
   });
 
-  // A hand-written url can carry either; neither may reach the predicate as itself.
-  it('should fall back on values it does not know', () => {
+  it('should fall back on values it does not know, rather than let one reach the predicate', () => {
     const state = readSnapshotFilters({
       [SnapshotBalanceFilterKeys.CATEGORY]: 'nonsense',
       [SnapshotBalanceFilterKeys.ZERO_VALUE]: 'nonsense',
@@ -57,23 +54,19 @@ describe('readSnapshotFilters', () => {
     expect(state.zeroValue).toBe(ZeroValueFilter.HIDE);
   });
 
-  // `hide` is the default, so it is not one of the values the pill offers: an absent pill is how
-  // the default is stated, and offering it too would give the user two ways to say one thing.
   it('should not treat the default as a settable value', () => {
     expect(readSnapshotFilters({
       [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.HIDE,
     }).zeroValue).toBe(ZeroValueFilter.HIDE);
   });
 
-  // Only a real boolean counts; the presence of the key is not enough.
-  it('should read a non-boolean show flag as off', () => {
+  it('should read a non-boolean show flag as off, the presence of the key not being enough', () => {
     expect(readSnapshotFilters({ [SnapshotBalanceFilterKeys.SHOW_SPAM]: 'true' }).showSpam).toBe(false);
   });
 });
 
 describe('isolateZeroValue', () => {
-  // This is what the summary's zero-value warning asks the table for.
-  it('should set the zero-value pill to only', () => {
+  it('should set the zero-value pill to only, which is what the summary warning asks for', () => {
     expect(isolateZeroValue({})).toStrictEqual({
       [SnapshotBalanceFilterKeys.ZERO_VALUE]: ZeroValueFilter.ONLY,
     });

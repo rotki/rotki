@@ -99,7 +99,14 @@ async function save(): Promise<boolean> {
 
 type MigrationFormRef = InstanceType<typeof SolanaTokenMigrationForm> | null | undefined;
 
-// Suggests a merge for a unique-constraint conflict; returns true when handled.
+/**
+ * Emits a merge suggestion when a failed migration names an asset it collided with.
+ *
+ * @remarks
+ * Recognising the collision also clears the dialog's asset selection, because the merge flow takes
+ * over from that point.
+ * @returns whether a suggestion was emitted; `false` leaves the error for the caller to report
+ */
 function suggestMergeOnConflict(message: string, assetToMigrate: string): boolean {
   if (!isUniqueConstraintError(message))
     return false;

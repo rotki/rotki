@@ -35,9 +35,14 @@ const { toggleDrawer } = visibilityStore;
  */
 const busy = computed<boolean>(() => !get(logged) || !get(connected));
 
-// `logged` is still true across a restart that keeps the session (the desktop
-// settings form, and the window before the asset-update flows log out), so the
-// message has to follow the reason rather than assume a sign-out.
+/**
+ * What the overlay says while the app is busy.
+ *
+ * @remarks
+ * Follows `logged` rather than assuming a sign-out: it stays true across a restart that keeps the
+ * session, which is what the desktop settings form does, and what the asset-update flows do until
+ * the moment they log out.
+ */
 const busyMessage = computed<string>(() =>
   get(logged) ? t('connection_loading.restarting') : t('connection_loading.logging_out'),
 );

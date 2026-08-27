@@ -2,9 +2,6 @@
 import { UNMATCHED_ACTIONS, UNMATCHED_LAYOUTS, type UnmatchedAction, type UnmatchedLayout, type UnmatchedRowActionSpec, type UnmatchedRowConfirm } from '@/modules/history/events/unmatched-actions';
 import UnmatchedConfirmStrip from '@/modules/history/events/UnmatchedConfirmStrip.vue';
 
-// The action strip of a single unmatched row. The two arrangements differ only in how much
-// room there is for labels, so they share one component: what a row may do is decided by the
-// spec its surface hands down, and the layout only decides where the buttons go.
 const { spec, layout, ignoreLoading = false } = defineProps<{
   spec: UnmatchedRowActionSpec;
   layout: UnmatchedLayout;

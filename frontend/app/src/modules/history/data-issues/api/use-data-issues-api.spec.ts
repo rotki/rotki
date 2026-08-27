@@ -11,6 +11,21 @@ function listPayload(): { limit: number; offset: number } {
   return { limit: 10, offset: 0 };
 }
 
+describe('useDataIssuesApi request shape', () => {
+  it('should send no ordering params, which the endpoint orders server-side and rejects', async () => {
+    let sent: URLSearchParams | undefined;
+    server.use(http.get(LIST_URL, ({ request }) => {
+      sent = new URL(request.url).searchParams;
+      return HttpResponse.json({ message: '', result: { entries: [], entriesFound: 0, entriesLimit: -1, entriesTotal: 0 } });
+    }));
+
+    await useDataIssuesApi().listIssues({ ascending: [false], limit: 10, offset: 0, orderByAttributes: ['ts_start'] });
+
+    expect(sent?.has('order_by_attributes')).toBe(false);
+    expect(sent?.has('ascending')).toBe(false);
+  });
+});
+
 describe('useDataIssuesApi error classification', () => {
   it('should classify a 404 as not-found', async () => {
     server.use(http.get(LIST_URL, () => HttpResponse.json({ message: 'gone', result: null }, { status: 404 })));

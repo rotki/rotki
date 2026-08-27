@@ -244,8 +244,6 @@ describe('useBalanceHydration', () => {
     await abandoned;
     await flushPromises();
 
-    // The abandoned read settling must not clear the new session's liveness, nor evict its entry
-    // from the dedup map - a third caller joining would then start a second concurrent GET.
     expect(get(refreshState.hydratingChains).has(Blockchain.ETH)).toBe(true);
     expect(h.queryBlockchainBalances).toHaveBeenCalledTimes(2);
 

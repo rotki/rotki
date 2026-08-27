@@ -73,16 +73,14 @@ describe('useAccountFetching', () => {
     expect(mocks.updateAccounts).toHaveBeenCalledWith('btc', []);
   });
 
-  // A delete bumps the chain's revision. A read that was already in flight is carrying a
-  // pre-delete snapshot, so writing it back would replace the chain wholesale and put the
-  // deleted account back.
   it.each([
     ['btc', async (): Promise<void> => { mocks.queryBtcAccounts.mockResolvedValue({ standalone: [], xpubs: [] }); }],
     ['eth', async (): Promise<void> => { mocks.queryAccounts.mockResolvedValue([{ address: '0xabc', label: null, tags: null }]); }],
-  ])('should drop a %s read whose revision moved while it was in flight', async (chain, arrange) => {
+  ])('should drop a %s read whose revision moved while it was in flight, rather than write a pre-delete snapshot back and resurrect the account', async (chain, arrange) => {
     await arrange();
-    // 0 when the read starts, 1 by the time it resolves
-    mocks.revisionOf.mockReturnValueOnce(0).mockReturnValue(1);
+    const revisionWhenReadStarted = 0;
+    const revisionAfterTheDelete = 1;
+    mocks.revisionOf.mockReturnValueOnce(revisionWhenReadStarted).mockReturnValue(revisionAfterTheDelete);
 
     const { useAccountFetching } = await importModule();
     await useAccountFetching().fetch(chain);
@@ -118,10 +116,7 @@ describe('useAccountFetching', () => {
     expect(mocks.notifyError).toHaveBeenCalledOnce();
   });
 
-  // This runs once per supported chain, so a logout mid-flight raised one notification per chain.
-  // They stack at `z-[10000]` over the user menu and swallow clicks — the notification is about a
-  // session `handleAuthFailure` has already torn down.
-  it('should stay silent when the session expired', async () => {
+  it('should stay silent when the session expired, since this runs once per chain and the toasts stack over the user menu', async () => {
     mocks.queryAccounts.mockRejectedValue(unauthorized());
     const { useAccountFetching } = await importModule();
 
@@ -130,9 +125,7 @@ describe('useAccountFetching', () => {
     expect(mocks.notifyError).not.toHaveBeenCalled();
   });
 
-  // The guard must key on the status, not on "it came from the accounts query" — otherwise it
-  // swallows every real backend failure on this path too.
-  it('should still notify for a non-401 FetchError', async () => {
+  it('should still notify for a non-401 FetchError, so the guard keys on the status rather than on the path', async () => {
     const error = new FetchError('boom');
     error.status = 500;
     mocks.queryAccounts.mockRejectedValue(error);

@@ -8,12 +8,6 @@ import CustomizedEventDuplicatesDialog from '@/modules/history/events/Customized
 import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vue';
 import { DuplicatesTab } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 
-/**
- * The seam: this dialog is wiring. It loads on mount, gives each tab its rows and loading state,
- * shows the actions that belong to the tab being viewed, and routes every click to the composable.
- * What those actions do is covered by `use-customized-event-duplicates-dialog.spec.ts`.
- */
-
 const dialogApi = {
   autoFixLoading: ref<boolean>(false),
   autoFixRows: ref<DuplicateRow[]>([]),
@@ -62,7 +56,6 @@ vi.mock('@/modules/history/events/use-customized-event-duplicates', () => ({
   useCustomizedEventDuplicates: (): typeof duplicatesApi => duplicatesApi,
 }));
 
-// RuiDialog teleports; stub it so its contents can be queried.
 const RuiDialogStub = defineComponent({
   name: 'RuiDialog',
   props: { modelValue: { default: false, type: Boolean } },

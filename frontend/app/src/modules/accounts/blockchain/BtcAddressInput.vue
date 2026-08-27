@@ -8,7 +8,7 @@ import { XpubPrefix } from '@/modules/accounts/xpub';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';
 import { requiredField } from '@/modules/core/form/fields';
 import { toServerErrors } from '@/modules/core/form/server-errors';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 
 interface DisambiguationOption {
   readonly value: XpubPrefix;
@@ -45,8 +45,7 @@ const schema = computed<ZodType>(() => z.object({
 const { errors: fieldErrors, setServerErrors, state, touch, validate } = useForm<XpubFormState, XpubFormState>({
   initial: (): XpubFormState => ({ derivationPath: '', xpub: '' }),
   schema,
-  // The assembled payload is handed to the parent as it is typed; there is nothing to submit here.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): XpubFormState => ({ ...state }),
 });
 

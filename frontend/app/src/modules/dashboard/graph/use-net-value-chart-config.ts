@@ -44,9 +44,13 @@ export function useNetValueChartConfig(
 
   const MS = 1000;
 
-  // Persist the active zoom across chart rebuilds (chartData refreshes every
-  // balance update). Without this, dataZoom rebuilds with no start/end and
-  // ECharts snaps the slider back to full range.
+  /**
+   * The active zoom, carried across chart rebuilds.
+   *
+   * @remarks
+   * `chartData` refreshes on every balance update, and a `dataZoom` rebuilt with no start or end
+   * makes ECharts snap the slider back to full range.
+   */
   const zoomBounds = computed<{ startValue?: number; endValue?: number }>(() => {
     const range = toValue(zoomRange);
     if (!range)

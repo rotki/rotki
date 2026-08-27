@@ -38,6 +38,8 @@ function applySourceRead(destination: 'request' | 'url' | 'both', key: string, q
   expect(source?.fromQuery).toBeDefined();
   source!.fromQuery!(query);
 }
+const RANGE_DEBOUNCE_MS = 300;
+
 const state = ref<Collection<CalendarEvent>>({ data: [], found: 0, limit: 10, total: 0 });
 const pagination = ref({ limit: 10, limits: [10], page: 1, total: 0 });
 const isLoading = ref<boolean>(false);
@@ -81,9 +83,15 @@ function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
 describe('useCalendarData', () => {
   let scope: EffectScope;
 
-  // Run each instance inside an owned effect scope so its watchers are disposed
-  // in afterEach. Otherwise watchers on the shared module-level `state` ref leak
-  // across tests and fire on later `set(state, ...)` mutations.
+  /**
+   * Builds an instance whose watchers this test owns and disposes.
+   *
+   * @remarks
+   * The scope is stopped in `afterEach`, which is what keeps the instance's watchers on the
+   * shared module-level `state` ref from outliving the test. An instance created outside a scope
+   * keeps reacting, and its effects then run during a later test's `set(state, ...)`, surfacing
+   * as calls on a mock that test never touched.
+   */
   function createCalendarData(accounts: Ref<BlockchainAccount[]>): ReturnType<typeof useCalendarData> {
     return scope.run(() => useCalendarData(accounts))!;
   }
@@ -158,14 +166,11 @@ describe('useCalendarData', () => {
       const { modelRange } = createCalendarData(accounts);
 
       set(modelRange, [100, 200]);
-      // `refDebounced(modelRange, 300)` — drive the debounce instead of sleeping
-      await vi.advanceTimersByTimeAsync(300);
+      await vi.advanceTimersByTimeAsync(RANGE_DEBOUNCE_MS);
 
       // Accounts are shareable and round-trip through the URL.
       expect(sourceValues('both', 'accounts').accounts).toEqual(['0xabc#eth', '0xdef#optimism']);
 
-      // The visible range is request-only: it is a viewport, not a filter, and would
-      // otherwise add a history entry per month stepped through.
       const rangeValues = sourceValues('request', 'fromTimestamp');
       expect(rangeValues.fromTimestamp).toBe('100');
       expect(rangeValues.toTimestamp).toBe('200');
@@ -206,8 +211,6 @@ describe('useCalendarData', () => {
       const accounts = ref<BlockchainAccount[]>([]);
       createCalendarData(accounts);
 
-      // With no accounts selected the request source is empty, so it cannot be found
-      // by key; identify it as the request source that is not the date range.
       const source = (captured.params ?? []).find(
         item => item.to === 'request' && !('fromTimestamp' in toValue(item.values)),
       );

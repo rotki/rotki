@@ -111,7 +111,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   };
 
   const getWebSocketUrl = (): string => {
-    // Get the current window location to determine the HTTP port
     const currentPort = defaultWindow?.location.port;
     if (currentPort) {
       // WebSocket server runs on HTTP port + 1
@@ -234,7 +233,13 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     }
   }
 
-  // Create message handler with WebSocket sending capability
+  /**
+   * Sends one message over the bridge socket as JSON.
+   *
+   * @remarks
+   * The message is dropped without error while the socket is not open, so a return from here is
+   * not evidence that anything was delivered.
+   */
   function sendMessage(message: any): void {
     const wsInstance = get(ws);
     if (wsInstance?.readyState === WebSocket.OPEN) {

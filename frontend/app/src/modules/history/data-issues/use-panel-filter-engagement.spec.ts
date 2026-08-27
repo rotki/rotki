@@ -5,9 +5,6 @@ import { usePanelFilterEngagement } from '@/modules/history/data-issues/use-pane
 
 const focused = shallowRef<boolean>(false);
 
-// happy-dom never updates VueUse's active-element tracking (element.focus() moves
-// document.activeElement but fires no event it listens for), so driving real focus
-// here would test the DOM rather than the grace period this composable owns.
 vi.mock('@vueuse/core', async importOriginal => ({
   ...await importOriginal<typeof import('@vueuse/core')>(),
   useFocusWithin: (): { focused: Ref<boolean> } => ({ focused }),
@@ -42,9 +39,7 @@ describe('usePanelFilterEngagement', () => {
     expect(get(engaged)).toBe(true);
   });
 
-  // The grace period is the whole point: a click on a teleported suggestion lands
-  // after the input blurs, and would otherwise dismiss the floating drawer.
-  it('should stay engaged for the grace period after focus leaves', async () => {
+  it('should stay engaged for the grace period after focus leaves, so a click on a teleported suggestion lands before the drawer dismisses', async () => {
     const engaged = engagement();
     set(focused, true);
     await vi.advanceTimersByTimeAsync(0);

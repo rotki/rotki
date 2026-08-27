@@ -50,8 +50,10 @@ const ExplorerEndpoints = z.object({
 
 const ExplorersSettings = z.record(z.string(), ExplorerEndpoints.optional());
 
-// Spelled out as literals so the inferred type is BigNumber.RoundingMode itself
-// rather than a number that has to be asserted into it.
+/**
+ * Spelled out as literals so that the inferred type is `BigNumber.RoundingMode` itself, rather than
+ * a number that every consumer has to assert into it.
+ */
 const RoundingMode = z.literal([0, 1, 2, 3, 4, 5, 6, 7, 8]);
 
 export type RoundingMode = z.infer<typeof RoundingMode>;
@@ -230,8 +232,10 @@ export const FrontendSettings = z.object({
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
   defaultThemeVersion: z.number().default(1),
   defiSetupDone: z.boolean().default(false),
-  // The external services whose optional-API-key prompt the user has dismissed. No `.catch`: an
-  // unreadable value here should surface rather than silently re-show every prompt.
+  /**
+   * The external services whose optional-API-key prompt the user has dismissed. Deliberately without
+   * a `.catch`, so that an unreadable value surfaces rather than silently re-showing every prompt.
+   */
   dismissedApiKeyNotices: z.array(z.string()).default([]),
   enableAliasNames: z.boolean().default(true),
   enablePasswordConfirmation: EnablePasswordConfirmation.default(true),

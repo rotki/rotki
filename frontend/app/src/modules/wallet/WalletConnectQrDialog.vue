@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { useClipboard } from '@vueuse/core';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useWalletConnect } from '@/modules/wallet/use-wallet-connect';
@@ -19,9 +20,16 @@ const open = computed<boolean>({
   },
 });
 
-// Render the WalletConnect pairing URI to our own QR canvas via the lazily
-// imported `qrcode` library (kept out of the main bundle).
-watch([qrCanvas, connectUri], async ([canvas, uri]) => {
+/**
+ * Draws the WalletConnect pairing URI onto this dialog's own canvas.
+ *
+ * @remarks
+ * `qrcode` is imported at draw time rather than at module scope, which keeps it out of the initial
+ * bundle: nothing needs it until a pairing is actually started.
+ */
+async function drawPairingQr(): Promise<void> {
+  const canvas = get(qrCanvas);
+  const uri = get(connectUri);
   if (!canvas || !uri)
     return;
 
@@ -32,6 +40,10 @@ watch([qrCanvas, connectUri], async ([canvas, uri]) => {
   catch (error) {
     logger.error('Failed to render WalletConnect QR code', error);
   }
+}
+
+watch([qrCanvas, connectUri], () => {
+  startPromise(drawPairingQr());
 });
 </script>
 

@@ -35,8 +35,6 @@ const addresses = ref<string[]>([]);
 
 const { isPricePending } = usePriceUtils();
 
-// Every row here is the same asset in a different place, so one price decides all of them. Without
-// it a row shows the value the chain that reported attached to it, next to the full amount.
 const valuePending = computed<boolean>(() => isPricePending(identifier));
 
 const {
@@ -53,8 +51,6 @@ const {
   onlyTags,
 });
 
-// Offered from the unfiltered breakdown, so the bar lists the locations and accounts this asset is
-// held in rather than every location and account there is.
 const fields = useAssetLocationFields(assetLocations);
 const pillLabels = usePillBarLabels();
 
@@ -130,19 +126,29 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
 
 useRememberTableSorting<AssetLocation>(TableId.ASSET_LOCATION, sort, headers);
 
-// An account is only held on a chain, so an exchange location and an account can never both match
-// a row. Whichever was picked last wins, rather than leaving the user with an empty table.
-watch(locationFilter, (location) => {
-  if (location && !matchChain(location)) {
-    set(addresses, []);
-  }
-});
+/**
+ * Keeps the location and account filters mutually exclusive, clearing whichever was set first.
+ *
+ * @remarks
+ * An account is only ever held on a chain, so an exchange location and an account can never both
+ * match the same row: leaving both set would empty the table. Clearing the older pill means the
+ * one the user picked last is the one that takes effect.
+ */
+function keepLocationAndAccountsExclusive(): void {
+  watch(locationFilter, (location) => {
+    if (location && !matchChain(location)) {
+      set(addresses, []);
+    }
+  });
 
-watch(addresses, (picked) => {
-  if (picked.length > 0 && !matchChain(get(locationFilter))) {
-    set(locationFilter, '');
-  }
-});
+  watch(addresses, (picked) => {
+    if (picked.length > 0 && !matchChain(get(locationFilter))) {
+      set(locationFilter, '');
+    }
+  });
+}
+
+keepLocationAndAccountsExclusive();
 
 watch([onlyTags, locationFilter, addresses], () => {
   setPage(1);

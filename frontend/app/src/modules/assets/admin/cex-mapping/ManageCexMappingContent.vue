@@ -59,8 +59,14 @@ onMounted(async () => {
   await refetch();
 });
 
-// A new mapping starts from whatever the bar is narrowed to, so adding one while filtered to an
-// exchange does not make the user pick it again.
+/**
+ * Opens the form dialog on a blank mapping, seeded from whatever the pill bar is narrowed to.
+ *
+ * @remarks
+ * Adding while filtered to an exchange should not ask for that exchange again, so the location
+ * fields come from the filter. `payload` is spread last and wins, which is how the `?location=`
+ * and `?locationSymbol=` query handled on mount reaches the form.
+ */
 function add(payload?: Partial<CexMapping>) {
   set(modelValue, {
     asset: '',

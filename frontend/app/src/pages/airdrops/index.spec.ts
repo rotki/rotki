@@ -314,8 +314,6 @@ describe('pages/airdrops/index', () => {
       pageState.status = 'unknown';
       wrapper = mountPage();
 
-      // Emitted from the alert itself, so this pins the `@close` binding. Writing the model
-      // directly would pass with that binding deleted.
       wrapper.findComponent(AlertStub).vm.$emit('close');
       await nextTick();
 

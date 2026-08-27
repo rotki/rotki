@@ -13,8 +13,6 @@ describe('composables/api/blockchain/addresses-names', () => {
     vi.clearAllMocks();
   });
 
-  // Restored here rather than at the end of each test: a failing assertion throws past an inline
-  // restore, and the leaked spy then fails unrelated tests further down the file.
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -545,9 +543,6 @@ describe('composables/api/blockchain/addresses-names', () => {
         expect(started).toBeGreaterThan(0);
       });
 
-      // The lookups are still unresolved, so this is the assertion that matters: an unrelated
-      // request must not be stuck behind them. Raced rather than awaited outright, so starvation
-      // reports itself instead of hanging until the test times out.
       const starved = new Promise<string>((resolve) => {
         setTimeout(resolve, 1000, 'starved behind the ens lookups');
       });

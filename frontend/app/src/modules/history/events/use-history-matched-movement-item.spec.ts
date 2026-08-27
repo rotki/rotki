@@ -433,9 +433,7 @@ describe('useHistoryMatchedMovementItem', () => {
       expect(notes).toContain('from_part::0x8454...3000');
     });
 
-    it('should select correct secondary event when adjustment events are present', () => {
-      // Simulates: primary is ASSET_MOVEMENT_EVENT (kraken withdrawal),
-      // there's a SEND adjustment event (also kraken), and the actual counterpart is an EVM_EVENT (ACCOUNT DEPOSIT)
+    it('should select the evm counterpart as the secondary event, not the same-location adjustment event sitting between it and the primary', () => {
       const events = ref([
         createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
           identifier: 1,

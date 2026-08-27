@@ -25,8 +25,6 @@ describe('useWalletConnectionState', () => {
   it('should set requesting=true during a tracked promise and reset to false on resolve', async () => {
     const { isRequestingAccounts, trackAccountsRequest } = useWalletConnectionState();
 
-    // Hold the request open by hand instead of deferring it with a timer: the
-    // flag is then observed at a point the test controls, not one it races.
     let completeRequest!: (value: string) => void;
     const promise = new Promise<string>((resolve) => {
       completeRequest = resolve;

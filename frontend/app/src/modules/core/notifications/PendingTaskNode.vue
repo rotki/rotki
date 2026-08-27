@@ -17,21 +17,24 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Every parent starts closed, at every depth. The rolled-up row already answers the question a
-// reader arrives with — what is running and how far along — and a refresh that opened its own
-// fan-out pushed the other jobs off the panel to say the same thing twice. Opening one is a click.
+/**
+ * Whether this node's children are shown. Every parent starts closed, at every depth.
+ *
+ * @remarks
+ * The rolled-up row already answers what a reader arrives asking: what is running, and how far
+ * along. A parent that opened its own fan-out pushed the other jobs off the panel in order to
+ * repeat that, so expanding is left as a deliberate click.
+ */
 const expanded = ref<boolean>(false);
 
 const descendants = computed<Activity[]>(() => children.get(activity.id) ?? []);
 
 const isParent = computed<boolean>(() => get(descendants).length > 0);
 
-// A parent shows its subtree's leaf tally, so its ring and its "4 of 11" agree. A leaf shows what
-// the orchestrator derived for it.
+/** A parent counts its subtree's leaves, so its ring and its "4 of 11" agree. */
 const steps = computed<ActivitySteps | undefined>(() => (get(isParent) ? subtreeSteps(children, activity) : undefined));
 
-// A parent rolls its subtree up, giving each leaf fractional credit for its own progress; a leaf
-// shows what the orchestrator derived for it.
+/** A parent rolls its subtree up, giving each leaf fractional credit for its own progress. */
 const percentage = computed<number>(() => (get(isParent) ? subtreeProgress(children, activity) : activity.percentage));
 
 /**

@@ -2,10 +2,12 @@ import type { AssetCollection, AssetInfo } from '@rotki/common';
 import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 /**
- * Pure-state store for the asset-info cache. Holds only the persistent storage
- * containers; the fetch/debounce/LRU logic lives in useAssetInfoCache, which
- * binds to this so the cache survives composable teardown instead of being wiped
- * at zero subscribers.
+ * Holds the resolved name, symbol and icon data for every asset the app has looked up, plus the
+ * collections those assets roll up into.
+ *
+ * @remarks
+ * State only. `useAssetInfoCache` owns the fetching, batching and eviction, and binds to the
+ * {@link ItemCacheStorage} kept here rather than holding one of its own.
  */
 export const useAssetInfoCacheStore = defineStore('assets/info-cache', () => {
   const storage = createItemCacheStorage<AssetInfo>();

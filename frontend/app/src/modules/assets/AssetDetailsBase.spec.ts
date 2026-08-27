@@ -1,3 +1,4 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
@@ -6,14 +7,7 @@ import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 
-/**
- * The children are inspected through name selectors, so their instance type is not known here.
- * Declaring the props as an open record is what keeps `props('size')` from narrowing its key to
- * `never`, which a `test:unit` run would not have caught.
- */
-type AnyProps = ComponentPublicInstance<Record<string, unknown>>;
-
-type AnyPropsWrapper = VueWrapper<AnyProps>;
+type AnyPropsWrapper = VueWrapper<StubInstance>;
 
 const ASSET: NftAsset = {
   identifier: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
@@ -28,8 +22,7 @@ const AppImage = {
   template: '<img data-testid="app-image" :src="src" />',
 };
 
-// `changeable` is declared here although the real AssetIcon has no such prop: that is what lets the
-// regression test below see a value if the binding is ever passed again.
+/** Declares `changeable`, which the real AssetIcon does not, so the regression test below can see it. */
 const AssetIcon = {
   name: 'AssetIcon',
   props: ['identifier', 'size', 'showChain', 'forceChain', 'resolutionOptions', 'optimizeForVirtualScroll', 'changeable'],
@@ -42,8 +35,7 @@ const AssetDetailsMenuContent = {
   template: '<div data-testid="menu-content" />',
 };
 
-// The real menu needs a popper; this keeps the activator slot (and its `attrs`) rendering so the
-// icon-only and roomy activator branches can still be told apart.
+/** Pass-through stand-in for the real menu, which needs a popper. */
 const RuiMenu = {
   name: 'RuiMenu',
   template: '<div data-testid="rui-menu"><slot name="activator" :attrs="{}" /><slot /></div>',
@@ -68,19 +60,19 @@ describe('assetDetailsBase', () => {
   }
 
   function icon(wrapper: VueWrapper): AnyPropsWrapper {
-    return wrapper.findComponent<AnyProps>({ name: 'AssetIcon' });
+    return wrapper.findComponent<StubInstance>({ name: 'AssetIcon' });
   }
 
   function listItem(wrapper: VueWrapper): AnyPropsWrapper {
-    return wrapper.findComponent<AnyProps>({ name: 'ListItem' });
+    return wrapper.findComponent<StubInstance>({ name: 'ListItem' });
   }
 
   function menuContent(wrapper: VueWrapper): AnyPropsWrapper {
-    return wrapper.findComponent<AnyProps>({ name: 'AssetDetailsMenuContent' });
+    return wrapper.findComponent<StubInstance>({ name: 'AssetDetailsMenuContent' });
   }
 
   function appImage(wrapper: VueWrapper): AnyPropsWrapper {
-    return wrapper.findComponent<AnyProps>({ name: 'AppImage' });
+    return wrapper.findComponent<StubInstance>({ name: 'AppImage' });
   }
 
   beforeEach(() => {
@@ -96,9 +88,7 @@ describe('assetDetailsBase', () => {
       expect(icon(createWrapper({ display: { size: '48px' } })).props('size')).toBe('48px');
     });
 
-    // A caller forwarding its own optional size hands over a present key holding `undefined`.
-    // Spreading the bag over a defaults object would take that `undefined` as the value.
-    it('should keep the default size when the display bag holds an explicit undefined', () => {
+    it('should keep the default size when the display bag holds an explicit undefined, which a spread would take as the value', () => {
       expect(icon(createWrapper({ display: { size: undefined } })).props('size')).toBe('30px');
     });
 
@@ -124,10 +114,7 @@ describe('assetDetailsBase', () => {
       expect(icon(createWrapper({ resolution: { enableAssociation: false } })).props('resolutionOptions')).toStrictEqual({ associate: false });
     });
 
-    // `changeable` was removed from AssetIcon in #7937 (May 2024) when the cache-busting timestamp
-    // went away, but two callers kept passing it, so for two years it landed as a DOM attribute and
-    // did nothing. Nothing may pass it again: neither as a prop nor as a stray attribute.
-    it('should not pass changeable to the icon', () => {
+    it('should not pass changeable to the icon, neither as a prop nor as a stray attribute', () => {
       const wrapper = createWrapper();
 
       expect(icon(wrapper).props('changeable')).toBeUndefined();

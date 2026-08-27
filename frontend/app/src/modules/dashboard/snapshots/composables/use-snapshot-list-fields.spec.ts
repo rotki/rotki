@@ -21,10 +21,6 @@ describe('useSnapshotListFields', () => {
   });
 });
 
-/**
- * The list filters on an object of unix seconds and mirrors it into the URL; the bar speaks the
- * flat keyword map. Everything here is about that bridge.
- */
 describe('toSnapshotListMatches', () => {
   it('should pass the filter bounds to the bar as strings', () => {
     const filters = ref<SnapshotListFilters>({ fromTimestamp: 1600000000, toTimestamp: 1700000000 });

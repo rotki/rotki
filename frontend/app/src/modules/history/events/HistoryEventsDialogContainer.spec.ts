@@ -9,15 +9,6 @@ import * as stubs from '@/modules/history/events/dialog-components';
 import { DIALOG_TYPES, type DialogEventHandlers } from '@/modules/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';
 
-/**
- * The seam: which dialog the container renders for the open dialog type, and where each
- * dialog's events go. The models behind them live in `use-history-events-dialog-container`,
- * which has its own spec.
- */
-
-// Every dialog is replaced by a stub that renders nothing, so the container's own wiring is
-// what the assertions see. `stubs` below is the mocked module itself, so a `findComponent`
-// is matching the exact component the container rendered.
 vi.mock('@/modules/history/events/dialog-components', async () => {
   const { defineComponent, h } = await import('vue');
 
@@ -52,6 +43,8 @@ vi.mock('@/modules/history/events/dialog-components', async () => {
 
 const movement = createMock<UnmatchedAssetMovement>({ groupIdentifier: 'group-a' });
 const transaction = createMock<UnmatchedBridgeTransaction>({ groupIdentifier: 'group-b' });
+
+const ALWAYS_RENDERED: string[] = ['AccountingRuleFormDialog'];
 
 const container = {
   bridgeSubject: ref<UnmatchedBridgeTransaction | undefined>(),
@@ -127,7 +120,6 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
   it('should render only the accounting rule form while no dialog is open', () => {
     const view = mountContainer();
 
-    // It is the one dialog with no `v-if`: it decides for itself from its own model.
     expect(view.findComponent(stubs.AccountingRuleFormDialog).exists()).toBe(true);
     expect(view.findComponent(stubs.HistoryEventFormDialog).exists()).toBe(false);
     expect(view.findComponent(stubs.TransactionFormDialog).exists()).toBe(false);
@@ -153,8 +145,8 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
       .filter(([, stub]) => view.findComponent(stub).exists())
       .map(([name]) => name);
 
-    expect(rendered).toStrictEqual(expect.arrayContaining([expected]));
-    expect(rendered).toHaveLength(2); // the dialog itself, plus the accounting rule form
+    expect(rendered).toStrictEqual(expect.arrayContaining([expected, ...ALWAYS_RENDERED]));
+    expect(rendered).toHaveLength(ALWAYS_RENDERED.length + 1);
   });
 
   it('should give the decoding status dialog what the composable decided about persistence', () => {

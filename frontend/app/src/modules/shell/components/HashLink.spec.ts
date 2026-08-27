@@ -268,7 +268,6 @@ describe('hash-link', () => {
       wrapper = createWrapper({ text: address });
       await nextTick();
 
-      // When privacyMode >= SEMI_PRIVATE, shouldShowAmount is false, applying blur
       const blurElement = wrapper.find('.blur');
       expect(blurElement.exists()).toBe(true);
     });
@@ -441,7 +440,6 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, location: 'eth', displayMode: 'link' });
 
-      // Container should exist because showLink is true
       const linkButton = wrapper.findComponent({ name: 'LinkButton' });
       expect(linkButton.exists()).toBe(true);
     });
@@ -450,7 +448,6 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, displayMode: 'copy' });
 
-      // Container should exist because showCopy is true
       const copyButton = wrapper.findComponent({ name: 'InlineCopyButton' });
       expect(copyButton.exists()).toBe(true);
     });

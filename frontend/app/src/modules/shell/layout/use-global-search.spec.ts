@@ -5,7 +5,6 @@ import { useGlobalSearch } from '@/modules/shell/layout/use-global-search';
 const searchEntries = ref<RouteSearchEntry[]>([]);
 const actionEntries = ref<RouteActionEntry[]>([]);
 
-// storeToRefs on a plain mock store: pass the object through unchanged.
 vi.mock('pinia', async importOriginal => ({
   ...(await importOriginal<object>()),
   storeToRefs: (store: unknown): unknown => store,

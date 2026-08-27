@@ -1,5 +1,6 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -11,9 +12,6 @@ vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
 }));
 
 const HistoricPriceForm = (await import('@/modules/assets/prices/historic/HistoricPriceForm.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 /** Every field is a third-party input, so they are stubbed down to the two things the form uses. */
 function inputStub(name: string): Record<string, unknown> {
@@ -121,8 +119,7 @@ describe('historicPriceForm', () => {
     expect(await wrapper.vm.validate()).toBe(false);
   });
 
-  // The epoch is a real date, not a missing one, so the rule lets it through.
-  it('should accept a zero timestamp', async () => {
+  it('should accept a zero timestamp, the epoch being a real date rather than a missing one', async () => {
     wrapper = createWrapper({ ...baseModel(), timestamp: 0 });
     await vi.advanceTimersToNextTimerAsync();
 
@@ -159,7 +156,6 @@ describe('historicPriceForm', () => {
     await edit('historic-price-value', '');
 
     expect(messages('historic-price-value')).toEqual(['price_form.price_non_empty']);
-    // The untouched fields stay quiet.
     expect(messages('historic-price-from-asset')).toEqual([]);
   });
 
@@ -180,8 +176,7 @@ describe('historicPriceForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleMountedWork();
 
     await edit('historic-price-value', '3000');
 
@@ -205,8 +200,7 @@ describe('historicPriceForm', () => {
     expect(field('historic-price-value').props('disabled')).toBeFalsy();
   });
 
-  // The three locked fields keep their rules, so an edit row seeded without one cannot be saved.
-  it('should still gate the locked fields while editing', async () => {
+  it('should still gate the locked fields while editing, so a row seeded without one cannot save', async () => {
     wrapper = createWrapper(withoutTimestamp(), { editMode: true });
     await vi.advanceTimersToNextTimerAsync();
 

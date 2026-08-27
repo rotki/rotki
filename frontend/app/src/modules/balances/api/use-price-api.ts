@@ -83,13 +83,18 @@ export function usePriceApi(): UsePriceApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
+  /**
+   * Seeds the price cache from what the backend already holds, without pricing anything new.
+   *
+   * @remarks
+   * Queued at low priority: this runs at session load, when the rest of the app is competing for the
+   * same slots, and it is prefetching by definition — nothing on screen is waiting for it.
+   */
   const queryOnlyCacheHistoricalRates = async (payload: Required<HistoricPricesPayload>): Promise<HistoricPrices> => {
     const response = await api.post<HistoricPrices>(
       '/assets/prices/historical',
       payload,
       {
-        // Seeds the price cache at session load, when the rest of the app is competing for the
-        // same slots. Prefetching by definition: nothing on screen is waiting for it.
         priority: RequestPriority.LOW,
         validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },

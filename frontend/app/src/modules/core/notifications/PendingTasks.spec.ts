@@ -16,8 +16,6 @@ import {
 const activities = ref<Activity[]>([]);
 const confirmCancel = vi.fn();
 
-// The real model and the real job derivation run; only the orchestrator underneath is faked, so
-// what the panel shows is what the tree actually produces.
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): { model: ComputedRef<ActivityModel> } => ({
     model: computed<ActivityModel>(() => assembleActivityModel(get(activities), (key: string): string => key)),

@@ -79,9 +79,6 @@ describe('useTaskMonitor', () => {
     await monitor.monitor();
 
     expect(get(store.taskById)[2]).toBeUndefined();
-    // `result` is asserted, not just `message`: `objectContaining` ignores the field, and
-    // anything but `null` sends the handler down its success branch — see the end-to-end case in
-    // `use-task-handler.spec.ts`.
     expect(mockHandleResult).toHaveBeenCalledWith(
       {
         message: expect.stringContaining('Task 2 not found'),
@@ -92,10 +89,7 @@ describe('useTaskMonitor', () => {
   });
 
   it('should apply exponential backoff on timeout errors and keep task running', async () => {
-    // The timeout path ends with a real `setTimeout(resolve, backoffMs)` (1s on the
-    // first retry). Fake timers let us fast-forward that sleep instead of waiting it
-    // out in real time; the asserted state is set before the sleep, so coverage is
-    // unchanged.
+    const FIRST_RETRY_DELAY_MS = 1000;
     vi.useFakeTimers();
     try {
       store.addTask(3, 'Test task');
@@ -105,7 +99,7 @@ describe('useTaskMonitor', () => {
       mockQueryTaskResult.mockRejectedValue(timeoutError);
 
       const pending = monitor.monitor();
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(FIRST_RETRY_DELAY_MS);
       await pending;
 
       expect(get(store.taskById)[3]).toBeDefined();
@@ -138,31 +132,27 @@ describe('useTaskMonitor', () => {
   });
 
   it('should track unknown task ids and consume them past threshold', async () => {
-    // Add a task so monitor runs (hasRunningTasks = true)
     store.addTask(10, 'Test task');
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [10, 999] });
     mockQueryTaskResult.mockResolvedValue({ result: 'ok', message: '' });
 
-    // First call: task 10 is processed, unknown task 999 gets registered
     await monitor.monitor();
 
     expect(get(store.unknownTasks)).toHaveProperty('999');
     expect(mockQueryTaskResult).toHaveBeenCalledWith(10);
 
-    // Re-add a task so monitor has running tasks
     store.addTask(11, 'Test task');
 
-    // Manually set the unknown task timestamp to be past the threshold (> 30s ago)
-    const pastTime = Math.floor(Date.now() / 1000) - 60;
-    store.setUnknownTasks({ 999: pastTime });
+    const UNKNOWN_TASK_THRESHOLD_SECONDS = 30;
+    const pastTheThreshold = Math.floor(Date.now() / 1000) - (UNKNOWN_TASK_THRESHOLD_SECONDS * 2);
+    store.setUnknownTasks({ 999: pastTheThreshold });
 
     mockQueryTasks.mockResolvedValue({ pending: [], completed: [11, 999] });
     mockQueryTaskResult.mockResolvedValue({ result: 'consumed', message: '' });
 
     await monitor.monitor();
 
-    // Unknown task 999 should have been consumed
     expect(mockQueryTaskResult).toHaveBeenCalledWith(999);
   });
 

@@ -106,9 +106,8 @@ export function useEthStakingSelection(
       const indices = toList(value[EthStakingSelectionKeys.VALIDATOR]);
       const addresses = toList(value[EthStakingSelectionKeys.WITHDRAWAL_ADDRESS]);
 
-      // The two fields exclude each other, so only one can carry values. Reading the addresses only
-      // when no validator is named keeps that deterministic rather than order-dependent.
-      if (indices.length === 0 && addresses.length > 0) {
+      const namesNoValidator = indices.length === 0;
+      if (namesNoValidator && addresses.length > 0) {
         set(selection, { accounts: addresses.map(address => ({ address, chain: Blockchain.ETH })) });
         return;
       }

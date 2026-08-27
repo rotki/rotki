@@ -114,9 +114,8 @@ export function useAccountBalancesPagination(
     if (queryAddresses)
       set(addresses, queryAddresses);
 
-    // A chain the current category does not have would filter every row away, and the URL is the
-    // one source that can carry one (a stale link, or a hand-edited query).
-    set(chains, chain.filter(id => get(chainIds).includes(id)));
+    const chainsInThisCategory = chain.filter(id => get(chainIds).includes(id));
+    set(chains, chainsInThisCategory);
 
     if (qTab !== undefined)
       set(tab, qTab);

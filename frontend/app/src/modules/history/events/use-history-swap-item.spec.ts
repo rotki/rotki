@@ -37,7 +37,7 @@ vi.mock('@/modules/history/event-utils', () => ({
     event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
 }));
 
-// Create EvmHistoryEvent which has counterparty property
+/** Builds an EVM history event fixture, defaulting to the spend leg of a trade. */
 function createMockEvent(overrides: Partial<EvmHistoryEvent & { eventAccountingRuleStatus: HistoryEventAccountingRuleStatus }> = {}): HistoryEventEntry {
   return {
     identifier: 1,

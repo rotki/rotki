@@ -16,9 +16,7 @@ function crumbs(wrapper: VueWrapper): string[] {
 }
 
 describe('tablePageLayout', () => {
-  // Every entry but the last is a step on the way; only the last one is the page you are on. The
-  // two read differently on purpose, and which branch an entry takes is decided per index.
-  it('should render every title entry', () => {
+  it('should render every title entry, the last as the current page and the rest as steps', () => {
     const wrapper = createWrapper({ title: ['Balances', 'Blockchain', 'Ethereum'] });
 
     expect(crumbs(wrapper)).toEqual(['Balances', 'Blockchain', 'Ethereum']);
@@ -33,8 +31,7 @@ describe('tablePageLayout', () => {
     expect(spans[2].findComponent({ name: 'RuiIcon' }).exists()).toBe(false);
   });
 
-  // The last entry is the current page, so it is the one carrying the filled pill.
-  it('should render only the last entry as the current page', () => {
+  it('should render only the last entry as the current page, carrying the filled pill', () => {
     const wrapper = createWrapper({ title: ['Balances', 'Blockchain'] });
     const spans = wrapper.findAll('.text-rui-text > span');
 
@@ -42,8 +39,7 @@ describe('tablePageLayout', () => {
     expect(spans[1].classes()).toContain('rounded-md');
   });
 
-  // A one-entry title has no "way there", so it must not render a dangling separator.
-  it('should render a single entry as the current page with no separator', () => {
+  it('should render a single entry as the current page with no dangling separator', () => {
     const wrapper = createWrapper({ title: ['Dashboard'] });
     const spans = wrapper.findAll('.text-rui-text > span');
 

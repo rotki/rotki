@@ -4,7 +4,7 @@ import { msg } from '@/message-key';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import {
   emptyPremiumCredentialsForm,
@@ -58,8 +58,7 @@ const mainActionText = computed<string>(() => {
 const form = useForm<PremiumCredentialsFormState, PremiumCredentialsFormState>({
   initial: emptyPremiumCredentialsForm,
   schema: premiumCredentialsSchema(),
-  // The page decides what to do with the outcome, so the persist stays in `setupPremium`.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): PremiumCredentialsFormState => ({ ...state }),
 });
 

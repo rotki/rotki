@@ -22,20 +22,14 @@ export const useHistoryEventsStatus = createSharedComposable((): UseHistoryEvent
 
   const { isAllFinished: isQueryingTxsFinished } = storeToRefs(useTxQueryStatusStore());
   const { isAllFinished: isQueryingOnlineEventsFinished } = storeToRefs(useEventsQueryStatusStore());
-  // Decoding runs native (Phase 2): tx decoding aggregates across every per-chain activity,
-  // block-event decoding is its own kind so each can gate independently.
   const txEventsDecoding = useIsActive(ActivityKind.TX_DECODING);
   const ethBlockEventsDecoding = useIsActive(ActivityKind.ETH_BLOCK_DECODING);
   const anyEventsDecoding = logicOr(txEventsDecoding, ethBlockEventsDecoding);
-  // Protocol cache refresh runs native (W9).
   const protocolCacheUpdatesLoading = useIsActive(ActivityKind.PROTOCOL_CACHE);
-  // Online events run native (W7): aggregate liveness across every per-queryType activity.
+  // Prefix, not exact: online events submit one activity per queryType.
   const onlineHistoryEventsLoading = useIsActivePrefix(ActivityKind.ONLINE_EVENTS);
-  // Exchange events run native (Phase 2): aggregate liveness across every {location, name} activity.
   const queryExchangeEventsLoading = useIsActive(ActivityKind.EXCHANGE_EVENTS);
-  // Repulling runs native (W7): a single-in-flight activity.
   const isRepulling = useIsActive(ActivityKind.REPULLING);
-  // Transaction sync runs native (Phase 2): aggregate liveness across every {chain, address} activity.
   const isTransactionsLoading = useIsActive(ActivityKind.TX_SYNC);
 
   const refreshing = logicOr(sectionLoading, anyEventsDecoding, queryExchangeEventsLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);

@@ -9,7 +9,6 @@ vi.mock('@/modules/core/common/data/date', () => ({
   millisecondsToSeconds: mockMillisecondsToSeconds,
 }));
 
-// Type guard to check if status has period-related fields (EVM/EvmLike/Solana)
 function hasPeriodsFields(status: TxQueryStatusData): status is TxQueryStatusData & {
   period: [number, number];
   originalPeriodEnd?: number;
@@ -22,7 +21,6 @@ describe('store/history/query-status/tx-query-status', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    // Reset mock return value after clearAllMocks
     mockMillisecondsToSeconds.mockReturnValue(1000);
   });
 
@@ -129,9 +127,7 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(Object.keys(get(store.queryStatus))).toHaveLength(0);
     });
 
-    // `period[1]` is the range's target end on STARTED and the cursor on every later message. Stored
-    // raw, STARTED compares against itself and reports a full bar before anything has been queried.
-    it('should park the cursor at the start of the range on STARTED', () => {
+    it('should park the cursor at the start of the range on STARTED, where raw it would read as 100%', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
@@ -150,9 +146,7 @@ describe('store/history/query-status/tx-query-status', () => {
       });
     });
 
-    // The EVM cursor must keep advancing through the range: this is the behaviour that the STARTED
-    // normalisation above must not disturb.
-    it('should advance the evm cursor across the message sequence', () => {
+    it('should advance the evm cursor across the message sequence, which the STARTED normalisation must not stall', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
       const base = { address: '0x123', chain: 'ETH', subtype: 'evm' } as const;
@@ -254,8 +248,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
-      // `period` is optional on this subtype alone, so a message without one must not erase what an
-      // earlier message established, or the progress bar appears and then vanishes mid-query.
+      // `period` is optional on bitcoin alone, and omitting it must not erase the stored range.
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
         chain: 'BTC',
@@ -263,8 +256,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'bitcoin',
       });
 
-      // The target end survives as `originalPeriodEnd`, while the cursor stays where STARTED left
-      // it: at the beginning, because nothing has been queried yet.
+      // The target end survives as `originalPeriodEnd`; the cursor stays where STARTED parked it.
       expect(get(store.queryStatus).bc1abcbtc).toMatchObject({
         originalPeriodEnd: 1000,
         period: [0, 0],
@@ -336,8 +328,6 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
-      // STARTED status should only set originalPeriodEnd, not originalPeriodStart
-      // This is the fix for the 100% progress bug
       store.setUnifiedTxQueryStatus({
         address: '0x123',
         chain: 'ETH',
@@ -535,7 +525,6 @@ describe('store/history/query-status/tx-query-status', () => {
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'started');
       store.markAddressCancelled({ address: '0x123', chain: 'scroll' });
 
-      // Trying to set finished should be a no-op since it's cancelled
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'finished');
       expect(get(store.queryStatus)['0x123scroll'].status).toBe(TransactionsQueryStatus.CANCELLED);
     });
@@ -546,8 +535,7 @@ describe('store/history/query-status/tx-query-status', () => {
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'started');
       store.markAddressFailed({ address: '0x123', chain: 'scroll' }, 'evmlike');
 
-      // The caller marks the query failed and then runs its unconditional `finished` tail. Without
-      // the guard that tail reports the failed address as complete.
+      // Callers run an unconditional `finished` tail after a failure, which must not overwrite FAILED.
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'finished');
       expect(get(store.queryStatus)['0x123scroll'].status).toBe(TransactionsQueryStatus.FAILED);
     });
@@ -654,8 +642,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
       store.markAddressFailed({ address: '0x123', chain: 'gnosis' });
 
-      // Assert the entry exists as well: with no entry at all `isAllFinished` is vacuously true,
-      // so on its own it would pass even if nothing were created.
+      // `isAllFinished` is vacuously true with no entry, so the existence check carries the test.
       expect(get(store.queryStatus)['0x123gnosis']).toBeDefined();
       expect(get(store.isAllFinished)).toBe(true);
     });
@@ -785,8 +772,7 @@ describe('store/history/query-status/tx-query-status', () => {
       const store = useTxQueryStatusStore();
       store.syncing = true;
 
-      // The empty-result path: the backend stops at QUERYING_TRANSACTIONS_FINISHED and never sends
-      // the decode pair, so requiring the decode left the address querying forever.
+      // On an empty result the backend never sends the decode pair, so waiting for it never settles.
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
         chain: 'BTC',

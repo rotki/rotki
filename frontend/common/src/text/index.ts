@@ -1,7 +1,5 @@
 /// <reference lib="dom" />
 
-// Addresses and transaction hashes live in their own module: they are a self-contained group with
-// a base58 decoder behind them, and together they took this file past the line cap.
 export * from './address';
 
 export * from './case';
@@ -173,18 +171,15 @@ export function pluralize(word: string, amount?: number): string {
     'you',
     'wood',
   ];
-  // save some time in the case that singular and plural are the same
   if (uncountable.includes(word.toLowerCase()))
     return word;
 
-  // check for irregular forms
   for (const w in irregular) {
     const pattern = new RegExp(`${w}$`, 'i');
     const replace = irregular[w];
     if (pattern.test(word))
       return word.replace(pattern, replace);
   }
-  // check for matches using regular expressions
   for (const reg in plural) {
     const pattern = new RegExp(reg, 'i');
     if (pattern.test(word))
@@ -217,7 +212,13 @@ export function isValidUrl(text?: string): boolean {
   return /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}\.[\d()A-Za-z]{1,6}\b([\w#%&()+./:=?@~-]*)$/.test(text);
 }
 
-// Transform HTML code entities such as &bull; into “•”
+/**
+ * Resolves HTML character entities such as `&bull;` to the characters they stand for.
+ *
+ * @remarks
+ * Parses through the DOM, so it needs a browser environment and will strip any markup the input
+ * happens to carry rather than escaping it. Input that parses to nothing is returned unchanged.
+ */
 export function decodeHtmlEntities(input: string): string {
   const doc = new DOMParser().parseFromString(input, 'text/html');
   return doc.documentElement.textContent || input;

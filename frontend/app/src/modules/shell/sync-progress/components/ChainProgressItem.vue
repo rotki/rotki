@@ -20,28 +20,31 @@ const INITIAL_SHOW_COUNT = 5;
 const expanded = ref<boolean>(false);
 const showAll = ref<boolean>(false);
 
-// Failed is terminal, so a chain whose addresses all failed is finished rather than perpetually
-// unresolved. Without it such a chain rendered no icon at all: not complete, yet not active.
 const isComplete = computed<boolean>(() => isChainSettled(chain));
 
 const hasActivity = computed<boolean>(() => chain.inProgress > 0);
 const hasCancelled = computed<boolean>(() => chain.cancelled > 0);
 const hasFailed = computed<boolean>(() => chain.failed > 0);
 
+/**
+ * Sort order for the address list, busiest first.
+ *
+ * @remarks
+ * Typed as a total record on purpose: a status without an entry would read back `undefined`, and
+ * `undefined - number` is NaN, which leaves the comparator incoherent rather than merely wrongly
+ * ordered. Adding a status therefore fails typecheck here.
+ */
+const STATUS_PRIORITY: Record<AddressStatus, number> = {
+  [AddressStatus.QUERYING]: 0,
+  [AddressStatus.DECODING]: 1,
+  [AddressStatus.PENDING]: 2,
+  [AddressStatus.FAILED]: 3,
+  [AddressStatus.CANCELLED]: 4,
+  [AddressStatus.COMPLETE]: 5,
+};
+
 const sortedAddresses = computed(() =>
-  [...chain.addresses].sort((a, b) => {
-    // Every status needs an entry: a missing one yields `undefined` here, and `undefined - number`
-    // is NaN, which makes the comparator incoherent rather than merely wrongly ordered.
-    const priority: Record<AddressStatus, number> = {
-      [AddressStatus.QUERYING]: 0,
-      [AddressStatus.DECODING]: 1,
-      [AddressStatus.PENDING]: 2,
-      [AddressStatus.FAILED]: 3,
-      [AddressStatus.CANCELLED]: 4,
-      [AddressStatus.COMPLETE]: 5,
-    };
-    return priority[a.status] - priority[b.status];
-  }),
+  [...chain.addresses].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]),
 );
 
 const visibleAddresses = computed(() => {

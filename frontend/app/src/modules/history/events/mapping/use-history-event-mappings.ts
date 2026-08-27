@@ -185,9 +185,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     const defaultKey = 'default';
     const type = findEventType(event);
     const { counterparty, eventSubtype, eventType } = event;
-    // The event forms model "no counterparty" as an empty string rather than null, so collapse
-    // that to undefined and let the nullish fallback pick the default mapping. Without it the
-    // identifier below comes back empty and callers read a valid combination as unknown.
     const counterpartyVal = (counterparty === '' ? undefined : counterparty) ?? defaultKey;
     const data = type && get(transactionEventTypesData)[type];
 

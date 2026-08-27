@@ -26,9 +26,7 @@ describe('modules/accounts/blockchain/address-entries', () => {
       expect(parseAddressEntries(text)).toEqual([ADDRESS, OTHER_ADDRESS]);
     });
 
-    it('should keep the first spelling of a repeated address', () => {
-      // The same address in another case is the same account, and what the user wrote first is
-      // what they get back.
+    it('should keep the first spelling of a repeated address, the same account in another case', () => {
       expect(parseAddressEntries(`${ADDRESS}\n${ADDRESS.toLowerCase()}`)).toEqual([ADDRESS]);
     });
 

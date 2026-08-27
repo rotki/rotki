@@ -21,6 +21,14 @@ interface AccountOption {
  * Scoped to the category on purpose — the accounts page shows one category at a time, so offering
  * every tracked account would offer accounts that cannot appear in the table. That scoping is why
  * this cannot simply reuse history's list, which is drawn from the events instead.
+ *
+ * An xpub is named by the account itself; anything else resolves through the address book, falling
+ * back to the label it was tracked under. That fallback matters because alias names can be switched
+ * off entirely and a non-EVM account rarely has one, so without it a named account reads here as a
+ * bare address while its own table row reads as its name.
+ *
+ * Keywords are lowercased to match the search box, and matched on the raw address rather than the
+ * shown one, since what a user pastes is the full, unscrambled address.
  */
 export function useBlockchainAccountOptions(category: MaybeRefOrGetter<string>): AccountFieldOptions & {
   readonly options: ComputedRef<AccountOption[]>;
@@ -38,10 +46,6 @@ export function useBlockchainAccountOptions(category: MaybeRefOrGetter<string>):
       if (byAddress.has(address))
         continue;
 
-      // An xpub is named by the account itself. Anything else resolves through the address book
-      // (an ENS or alias name), falling back to the label the account was tracked under: alias
-      // names can be switched off entirely, and a non-EVM account rarely has one, so without the
-      // fallback a named account read as a bare address here while its table row read as its name.
       const name = isXpubAccount(item)
         ? getAccountLabel(item)
         : getAddressName(address, getChain(item)) ?? item.label;
@@ -66,10 +70,7 @@ export function useBlockchainAccountOptions(category: MaybeRefOrGetter<string>):
   return {
     options,
     resolveCaption: (address: string): string | undefined =>
-      // With no name the label is the address itself, so a caption would only repeat it.
       get(byAddress).get(address)?.name ? shortAddress(address) : undefined,
-    // Lowercased because the search box lowercases what is typed, and matched on the raw address
-    // rather than the shown one: what the user pastes is the full, unscrambled address.
     resolveKeywords: (address: string): string | undefined => {
       const option = get(byAddress).get(address);
       return option && `${option.address} ${option.name ?? ''} ${option.tags.join(' ')}`.toLowerCase();

@@ -1,4 +1,5 @@
 import type { ResultAsync } from 'plainfp/result-async';
+import { neverSettles } from '@test/utils/never-settles';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
@@ -7,8 +8,6 @@ import { ActivityKind, makeActivityId } from './core/types';
 import { useNativeTask } from './use-native-task';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 
-// The handler backs the runner the facade binds to each activity, and the backend abort behind
-// `cancel`; the orchestrator stays real.
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   useTaskHandler: (): Record<string, unknown> => ({
     cancelTaskById: vi.fn(async () => true),
@@ -218,16 +217,12 @@ describe('useNativeTask', () => {
 
   describe('reset', () => {
     /** Only the orchestrator can settle this, which is the whole point of the two tests below. */
-    const neverSettles = async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>(() => {});
 
-    // An id is held in `inflight` until it settles, so a reset that drops a record without settling
-    // its caller poisons that id for the life of the process.
-    it('should settle a caller waiting on work that reset dropped', async () => {
+    it('should settle a caller waiting on work that reset dropped, which would poison the id', async () => {
       const { submitTask } = useNativeTask();
       const orchestrator = useTaskOrchestrator();
       const id = makeActivityId(ActivityKind.PRICES, 'reset-settles');
 
-      // Nothing but the orchestrator can settle this.
       const outcome = submitTask({
         id,
         kind: ActivityKind.PRICES,
@@ -247,12 +242,11 @@ describe('useNativeTask', () => {
       expect(raced).toBe('settled');
     });
 
-    it('should let the same activity run again after reset', async () => {
+    it('should free the activity id on reset, so the same activity runs again instead of dedupping onto the abandoned promise', async () => {
       const { submitTask } = useNativeTask();
       const orchestrator = useTaskOrchestrator();
       const id = makeActivityId(ActivityKind.PRICES, 'reset-reruns');
 
-      // Awaited only after the reset releases it; the assertion is about the SECOND submit.
       const abandoned = submitTask({
         id,
         kind: ActivityKind.PRICES,
@@ -263,7 +257,6 @@ describe('useNativeTask', () => {
       orchestrator.reset();
       await abandoned;
 
-      // The id must be free again, or this dedups onto the abandoned promise and never runs.
       const run = vi.fn(async () => ok(undefined));
       await submitTask({ id, kind: ActivityKind.PRICES, run, title: 'prices' });
 
@@ -274,7 +267,6 @@ describe('useNativeTask', () => {
       const { submitTask } = useNativeTask();
       const orchestrator = useTaskOrchestrator();
 
-      // Saturate the default lane with work only the orchestrator can settle.
       const abandoned = [1, 2, 3, 4].map(async n => submitTask({
         id: makeActivityId(ActivityKind.PRICES, `slot-${n}`),
         kind: ActivityKind.PRICES,

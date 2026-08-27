@@ -25,12 +25,9 @@ export function toInternalTxConflictFields(
     decorateSharedField(
       toMatchFieldDef({
         key: InternalTxConflictFilterKeys.CHAIN,
-        // The pill says what the column says.
         label: (): string => t('internal_tx_conflicts.columns.chain'),
         multiple: false,
         suggest: chains,
-        // Checked against the same list it offers, so a chain the backend does not know is never
-        // applied.
         validate: (value: string): boolean => chains().includes(value),
       }),
       SharedFieldKinds.CHAIN,

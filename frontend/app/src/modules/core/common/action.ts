@@ -29,10 +29,15 @@ export interface ActionDataEntry<T = string> {
   readonly detailPath?: string;
 }
 
-// The backend sends icon/color as free-form strings; only their runtime shape can be
-// validated, so `z.custom` keeps the parsed type aligned with ActionDataEntry.
 const isString = (value: unknown): boolean => typeof value === 'string';
 
+/**
+ * Parses one action data entry off the wire.
+ *
+ * @remarks
+ * The backend sends `icon` and `color` as free-form strings, so `z.custom` validates the runtime
+ * shape only while keeping the parsed type assignable to {@link ActionDataEntry}.
+ */
 const ActionDataEntrySchema = z.object({
   identifier: z.string(),
   label: z.string(),

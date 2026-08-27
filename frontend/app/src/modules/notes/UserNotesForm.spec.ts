@@ -58,8 +58,7 @@ describe('userNotesForm', () => {
     expect(await wrapper.vm.validate()).toBe(false);
   });
 
-  // The title carries a placeholder rule object, not a rule: a note saves without one.
-  it('should not require a title', async () => {
+  it('should not require a title, its placeholder rule object being no rule', async () => {
     wrapper = createWrapper({ content: 'a note', title: '' });
     await vi.advanceTimersToNextTimerAsync();
 
@@ -123,9 +122,7 @@ describe('userNotesForm', () => {
     expect(updates!.at(-1)![0].title).toBe('');
   });
 
-  // The title is validated by nothing, but it is still watched for changes: editing only the title
-  // has to arm the dialog's unsaved-changes prompt.
-  it('should flag stateUpdated when only the title is edited', async () => {
+  it('should flag stateUpdated when only the title is edited, which no rule validates', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersByTimeAsync(600);
 

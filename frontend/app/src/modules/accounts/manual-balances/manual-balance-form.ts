@@ -70,8 +70,6 @@ export function manualBalanceSchema(messages: ManualBalanceMessages, options: Ma
     amount: requiredField(messages.amount),
     asset: requiredField(messages.asset),
     label: z.string().superRefine((label, ctx) => {
-      // Reported in the order the rules were declared: uniqueness first, then presence. The
-      // uniqueness check reads the label untrimmed, as it is compared against stored ones.
       if (!editing && takenLabels.includes(label))
         ctx.addIssue({ code: 'custom', message: messages.labelExists(label) });
 

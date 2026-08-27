@@ -1,14 +1,8 @@
+import { I18nTStub } from '@test/stubs/I18nT';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import CreateAccountErrorAlert from './CreateAccountErrorAlert.vue';
-
-// The unit setup stubs I18nT with `true`, which renders none of its slots. Override it
-// with a stub that renders #here so the link branch is actually observable.
-const I18nTStub = {
-  name: 'I18nT',
-  template: '<span><slot name="here" /></span>',
-};
 
 function mountAlert(error: string): VueWrapper<InstanceType<typeof CreateAccountErrorAlert>> {
   return mount(CreateAccountErrorAlert, {

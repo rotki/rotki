@@ -21,6 +21,8 @@ vi.mock('@/modules/staking/use-blockchain-validators-store', () => ({
   })),
 }));
 
+const EXITED_VALIDATOR_AMOUNT = 0;
+
 function validator(publicKey: string, amount: number): EthereumValidator {
   return createMock<EthereumValidator>({ amount: bigNumberify(amount), publicKey });
 }
@@ -71,8 +73,7 @@ describe('useEthValidatorManagement', () => {
     });
 
     it('should total zero when every selected validator has exited', () => {
-      // The balance response omits exited validators entirely, so they carry a stand-in zero.
-      set(mockEthStakingValidators, [validator('0xaaa', 32), validator('0xexited', 0)]);
+      set(mockEthStakingValidators, [validator('0xaaa', 32), validator('0xexited', EXITED_VALIDATOR_AMOUNT)]);
 
       const { setTotal, total } = create();
       setTotal([{ index: 1000, publicKey: '0xexited', status: 'exited' }]);
@@ -81,7 +82,7 @@ describe('useEthValidatorManagement', () => {
     });
 
     it('should sum only the backed part of a mixed selection', () => {
-      set(mockEthStakingValidators, [validator('0xactive', 32), validator('0xexited', 0)]);
+      set(mockEthStakingValidators, [validator('0xactive', 32), validator('0xexited', EXITED_VALIDATOR_AMOUNT)]);
 
       const { setTotal, total } = create();
       setTotal([
@@ -94,21 +95,16 @@ describe('useEthValidatorManagement', () => {
   });
 
   describe('fetchValidatorsWithFilter', () => {
-    /** The shape `queryEth2Validators` resolves with, for the given entries. */
     function answer(entries: Array<{ index: number; publicKey: string; status: string }>): unknown {
       return { entries, entriesFound: entries.length, entriesLimit: 100 };
     }
 
-    /**
-     * Holds every request open so a test can decide the order the answers arrive in.
-     * @returns the resolvers, in request order.
-     */
-    function deferAnswers(): Array<(value: unknown) => void> {
-      const pending: Array<(value: unknown) => void> = [];
+    function deferAnswerResolversInRequestOrder(): Array<(value: unknown) => void> {
+      const resolvers: Array<(value: unknown) => void> = [];
       mockQueryEth2Validators.mockImplementation(async () => new Promise((resolve) => {
-        pending.push(resolve);
+        resolvers.push(resolve);
       }));
-      return pending;
+      return resolvers;
     }
 
     it('should skip the request and total all validators when the filter is empty', async () => {
@@ -191,7 +187,7 @@ describe('useEthValidatorManagement', () => {
 
     it('should ignore a response the newest filter has already superseded', async () => {
       set(mockEthStakingValidators, [validator('0xaaa', 4), validator('0xbbb', 6)]);
-      const pending = deferAnswers();
+      const resolvers = deferAnswerResolversInRequestOrder();
 
       const { modelSelection, total } = create();
       set(modelSelection, { validators: [{ index: 1, publicKey: '0xaaa', status: 'active' }] });
@@ -199,35 +195,29 @@ describe('useEthValidatorManagement', () => {
       set(modelSelection, { validators: [{ index: 2, publicKey: '0xbbb', status: 'active' }] });
       await flushPromises();
 
-      expect(pending).toHaveLength(2);
+      expect(resolvers).toHaveLength(2);
 
-      // The newer filter answers first, then the older request arrives late. Nothing serialises
-      // these, so the late one must be dropped rather than allowed to overwrite the newer answer.
-      pending[1](answer([{ index: 2, publicKey: '0xbbb', status: 'active' }]));
+      const [resolveOlderRequest, resolveNewerRequest] = resolvers;
+      resolveNewerRequest(answer([{ index: 2, publicKey: '0xbbb', status: 'active' }]));
       await flushPromises();
-      pending[0](answer([{ index: 1, publicKey: '0xaaa', status: 'active' }]));
+      resolveOlderRequest(answer([{ index: 1, publicKey: '0xaaa', status: 'active' }]));
       await flushPromises();
 
       expect(get(total).toNumber()).toBe(6);
     });
 
-    it('should still apply the answer when the same filter is requested twice', async () => {
-      // The premium component re-emits `update:filter` after every change, so an unchanged filter
-      // is re-requested as a matter of course. Both requests carry the same filter, so both answers
-      // are valid: a guard keyed to the call rather than to the filter rejects the first one's
-      // answer and `total` then never updates at all.
+    it('should still apply the answer when the same filter is requested twice, since both answers are valid', async () => {
       set(mockEthStakingValidators, [validator('0xaaa', 4), validator('0xbbb', 6)]);
-      const pending = deferAnswers();
+      const resolvers = deferAnswerResolversInRequestOrder();
 
       const { modelFilter, modelSelection, total } = create();
       set(modelSelection, { validators: [{ index: 2, publicKey: '0xbbb', status: 'active' }] });
       await flushPromises();
 
-      // A distinct object carrying nothing new, which is what the re-emit produces.
       set(modelFilter, {});
       await flushPromises();
 
-      pending[0](answer([{ index: 2, publicKey: '0xbbb', status: 'active' }]));
+      resolvers[0](answer([{ index: 2, publicKey: '0xbbb', status: 'active' }]));
       await flushPromises();
 
       expect(get(total).toNumber()).toBe(6);
@@ -235,15 +225,14 @@ describe('useEthValidatorManagement', () => {
 
     it('should ignore an in-flight response once the total is set directly', async () => {
       set(mockEthStakingValidators, [validator('0xaaa', 4), validator('0xbbb', 6)]);
-      const pending = deferAnswers();
+      const resolvers = deferAnswerResolversInRequestOrder();
 
       const { modelSelection, setTotal, total } = create();
       set(modelSelection, { validators: [{ index: 1, publicKey: '0xaaa', status: 'active' }] });
       await flushPromises();
 
-      // What the page refresh does: recompute over everything while a filtered request is open.
       setTotal();
-      pending[0](answer([{ index: 1, publicKey: '0xaaa', status: 'active' }]));
+      resolvers[0](answer([{ index: 1, publicKey: '0xaaa', status: 'active' }]));
       await flushPromises();
 
       expect(get(total).toNumber()).toBe(10);

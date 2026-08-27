@@ -7,8 +7,6 @@ import Eth2Input from '@/modules/accounts/blockchain/Eth2Input.vue';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
-// The validator itself rather than the account state holding it: this form edits one field of that
-// state, and taking the whole thing only meant unwrapping it again here.
 const validator = defineModel<Eth2Validator>('validator', { required: true });
 
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });

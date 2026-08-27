@@ -4,9 +4,6 @@ import { createMock } from '@test/utils/create-mock';
 import { describe, expect, it } from 'vitest';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE } from './use-deletion-strategies';
 
-// `buildDeletionConfirmationMessage` takes `t` as a parameter (it is not a
-// composable), so we hand it the same shared mock the global `useI18n` uses.
-// mockT returns `key` alone, or `key::<comma-joined arg values>` when given params.
 const t = mockT;
 
 function txGroups(count: number): Map<string, TransactionGroup> {

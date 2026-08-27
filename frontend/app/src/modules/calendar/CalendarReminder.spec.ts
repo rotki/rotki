@@ -76,9 +76,7 @@ describe('calendarReminder', () => {
     expect(rows()).toHaveLength(3);
   });
 
-  // Rows are removed by position, so dropping the middle one is where an off-by-one would show. The
-  // rows are one, two and three hours, so the amounts say which ones survived.
-  it('should drop only the clicked row', async () => {
+  it('should drop only the clicked row, removal being by position', async () => {
     wrapper = await createWrapper();
 
     await deleteMiddleRow();
@@ -86,9 +84,7 @@ describe('calendarReminder', () => {
     expect(rows().map(row => row.props('amount'))).toEqual(['1', '3']);
   });
 
-  // The rows are the dialog's to save. Writing one the moment it is edited meant a cancelled dialog
-  // still changed the event, which is the whole reason persistence moved to `save`.
-  it('should not touch the server when a row is deleted', async () => {
+  it('should not touch the server when a row is deleted, the rows being the dialog\'s to save', async () => {
     wrapper = await createWrapper();
 
     await deleteMiddleRow();

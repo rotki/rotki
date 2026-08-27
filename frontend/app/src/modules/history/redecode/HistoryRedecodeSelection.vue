@@ -24,18 +24,12 @@ const search = ref<string>('');
 const selection = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
-// Every chain that can be redecoded, not just the EVM ones. The consumer decides whether a request
-// is the full run by comparing the selection against `decodableTxChainsInfo`, so offering a
-// narrower list here meant selecting everything still read as a partial run: it never took the
-// canonical `redecode:all` id and so never deduped against the Redecode All button.
 const { decodableTxChainsInfo } = useSupportedChains();
 
 const filteredChains = computed<ChainInfo[]>(() => {
   const query = getTextToken(get(search));
   return get(decodableTxChainsInfo).filter(chain =>
     getTextToken(chain.name).includes(query)
-    // Narrowed with `in` rather than on `type`: the fallback chain variant types `type` as a plain
-    // string, so comparing it to 'evm' excludes nothing.
     || ('evmChainName' in chain && getTextToken(chain.evmChainName).includes(query)),
   );
 });

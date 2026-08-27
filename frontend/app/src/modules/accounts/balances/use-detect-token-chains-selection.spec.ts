@@ -133,8 +133,8 @@ describe('useDetectTokenChainsSelection', () => {
     it('should deselect all when called without arguments and all are selected', () => {
       const { hasSelection, toggle } = useDetectTokenChainsSelection('');
 
-      toggle(); // select all
-      toggle(); // deselect all
+      toggle();
+      toggle();
 
       expect(get(hasSelection)).toBe(false);
     });

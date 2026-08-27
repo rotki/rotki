@@ -158,8 +158,6 @@ describe('modules/sync-progress/components/LocationProgressList', () => {
       ];
       wrapper = createWrapper(locations);
 
-      // binance is cancelled so it settles into the group, which then says the group finished
-      // rather than claiming every location in it completed.
       expect(wrapper.text()).toContain('sync_progress.finished_locations');
       expect(wrapper.text()).not.toContain('sync_progress.completed_locations');
       const items = wrapper.findAll('[data-testid="location-item"]');

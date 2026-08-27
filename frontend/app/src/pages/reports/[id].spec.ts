@@ -16,10 +16,6 @@ type ReportDetail = ReturnType<typeof useReportDetail>;
 
 const regenerateReport = vi.fn(async (): Promise<void> => {});
 
-/**
- * The page is a seam: it owns no logic beyond handing the composable's output to its children, so
- * the composable is mocked and the assertions are about what reaches each child.
- */
 const detailState = vi.hoisted(() => ({
   eventsSkipped: 0,
   latest: true,

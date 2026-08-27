@@ -1,4 +1,3 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { ComputedRef } from 'vue';
 import {
   type BigNumber,
@@ -7,7 +6,7 @@ import {
   type LiquityStatisticDetails,
 } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LUSD_ID } from './liquity-assets';
 import { StatisticView } from './liquity-statistics';
 import { useLiquityStatistics } from './use-liquity-statistics';
@@ -59,29 +58,20 @@ function statistic(overrides: Partial<LiquityStatisticDetails> = {}): LiquitySta
 }
 
 describe('modules/staking/liquity/useLiquityStatistics', () => {
-  const mounted: VueWrapper[] = [];
-
   function setup(
     statisticValue: LiquityStatisticDetails | null,
     poolValue: LiquityPoolDetailEntry | null = null,
   ): ReturnType<typeof useLiquityStatistics> {
-    const { result, wrapper } = withSetup(() => useLiquityStatistics({
+    return withSetup(() => useLiquityStatistics({
       pool: () => poolValue,
       statistic: () => statisticValue,
-    }));
-    mounted.push(wrapper);
-    return result;
+    })).result;
   }
 
   beforeEach(() => {
     vi.clearAllMocks();
     isActive.current = false;
     prices.current = {};
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   it('should start on the historical view', () => {

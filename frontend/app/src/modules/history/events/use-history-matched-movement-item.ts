@@ -14,6 +14,10 @@ export interface UseHistoryMatchedMovementItemProps {
 
 export interface UseHistoryMatchedMovementItemReturn {
   primaryEvent: ComputedRef<HistoryEventEntry>;
+  /**
+   * The matching counterpart of `primaryEvent`: the largest non-fee event, preferring one whose
+   * entry type differs from the primary's.
+   */
   secondaryEvent: ComputedRef<HistoryEventEntry | undefined>;
   hasMissingRule: ComputedRef<boolean>;
   chain: ComputedRef<Blockchain>;
@@ -39,7 +43,6 @@ export function useHistoryMatchedMovementItem(
 
   const { getLocationData } = useLocations();
 
-  // For asset movements, use the first non-fee asset movement event as primary
   const primaryEvent = computed<HistoryEventEntry>(() => {
     const assetMovementEvent = get(events).find(
       item => item.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT && item.eventSubtype !== 'fee',
@@ -47,9 +50,6 @@ export function useHistoryMatchedMovementItem(
     return assetMovementEvent ?? get(events)[0];
   });
 
-  // Secondary event is the matching counterpart (non-fee, different from primary).
-  // Prefer events with a different entryType (e.g., EVM_EVENT vs ASSET_MOVEMENT_EVENT).
-  // Among multiple matches, pick the one with the largest amount (main counterpart, not adjustment).
   const secondaryEvent = computed<HistoryEventEntry | undefined>(() => {
     const primary = get(primaryEvent);
     const candidates = get(events).filter(

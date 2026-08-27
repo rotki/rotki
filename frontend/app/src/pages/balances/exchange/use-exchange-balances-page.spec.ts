@@ -1,8 +1,7 @@
-import type { VueWrapper } from '@vue/test-utils';
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, ref, type Ref } from 'vue';
 import { isBinance, useExchangeBalancesPage } from './use-exchange-balances-page';
 
@@ -104,13 +103,8 @@ describe('pages/balances/exchange/isBinance', () => {
 });
 
 describe('pages/balances/exchange/useExchangeBalancesPage', () => {
-  // Each harness watches the shared route ref, so a leftover one would answer a later test.
-  const mounted: VueWrapper[] = [];
-
   function setup(exchange?: string): ReturnType<typeof useExchangeBalancesPage> {
-    const { result, wrapper } = withSetup(() => useExchangeBalancesPage(() => exchange));
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useExchangeBalancesPage(() => exchange)).result;
   }
 
   beforeEach(() => {
@@ -118,11 +112,6 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
     connected.current = [];
     exchangeBalances.current = {};
     routeRef.current = ref({ query: {} });
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   it('should refresh the savings balances on mount', async () => {
@@ -157,8 +146,6 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
     });
 
     it('should not reorder the unsorted list when the sorted one is read', async () => {
-      // The mobile picker binds `usedExchanges` and the desktop tabs bind `sortedExchanges`.
-      // Sorting in place would silently reorder the picker as soon as the tabs render.
       connected.current = [{ location: 'kraken' }, { location: 'binance' }];
       exchangeBalances.current = { binance: [balance('BTC', 500)], kraken: [balance('ETH', 100)] };
 

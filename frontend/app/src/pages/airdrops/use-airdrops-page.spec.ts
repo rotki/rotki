@@ -1,24 +1,19 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { Airdrops } from '@/modules/airdrops/airdrops';
 import type { AirdropWithIndex } from '@/pages/airdrops/airdrop-rows';
 import { bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type MaybeRefOrGetter, nextTick, type Ref } from 'vue';
 import { useAirdropsPage } from './use-airdrops-page';
 
 const ADDRESS_A = '0xaaa';
 const ADDRESS_B = '0xbbb';
 
-// Everything the mocks capture on mount. Filled in by the factories below, read back through the
-// accessors, which fail loudly rather than yielding undefined when the page was never mounted.
 const { airdropsRef, eligibleAddresses, fetchAirdrops, rememberSorting, selectedAddresses, status } = vi.hoisted(() => {
   const airdropsRef: { current?: Ref<Airdrops> } = {};
   /** What the page hands `useAirdropFields` as the addresses worth offering. */
   const eligibleAddresses: { current?: MaybeRefOrGetter<string[]> } = {};
-  // The two params the pill bar writes. The real `airdropParams` wraps them in a params bag; here
-  // they are handed back directly so a test can drive them the way the bar would.
   const selectedAddresses: { current?: Ref<string[]> } = {};
   const status: { current?: Ref<string> } = {};
 
@@ -75,24 +70,13 @@ function row(index: number): AirdropWithIndex {
 }
 
 describe('pages/airdrops/useAirdropsPage', () => {
-  // The composable registers an onMounted hook and a watcher, so a harness left mounted would
-  // answer a later test.
-  const mounted: VueWrapper[] = [];
-
   function setup(): ReturnType<typeof useAirdropsPage> {
-    const { result, wrapper } = withSetup(() => useAirdropsPage());
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useAirdropsPage()).result;
   }
 
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   it('should fetch the airdrops on mount', async () => {

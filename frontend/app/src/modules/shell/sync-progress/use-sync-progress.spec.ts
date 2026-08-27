@@ -67,13 +67,6 @@ describe('useSyncProgress', () => {
     total,
   });
 
-  /**
-   * Seeds the store the way a real sync does: addresses registered first, statuses after.
-   *
-   * @remarks
-   * `setUnifiedTxQueryStatus` only updates addresses `initializeQueryStatus` already knows, so
-   * seeding statuses alone leaves the store empty and the assertions pass against nothing.
-   */
   const setupTxStore = (statuses: UnifiedTransactionStatusData[]): void => {
     const txStore = useTxQueryStatusStore();
     const addresses = statuses
@@ -122,9 +115,6 @@ describe('useSyncProgress', () => {
     });
 
     it('should complete when a chain failed rather than sitting short of the end', () => {
-      // The regression this guards: a failed address is terminal, but the two chain-completion
-      // counters here did not know about it, so a run holding one sat at "Syncing History 93%"
-      // forever even though the chain list it summarised had already settled.
       setupTxStore([
         createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
         createEvmTxStatus('0x456', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
@@ -255,16 +245,12 @@ describe('useSyncProgress', () => {
       decodingStatusStore.resetDecodingSyncProgress();
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
 
-      // Stop sync progress (simulates the finally block running)
       decodingStatusStore.stopDecodingSyncProgress();
-
-      // Simulate a late WS update arriving after stop
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
 
       const { decoding } = useSyncProgress();
       const decodingValue = get(decoding);
 
-      // The sync progress should still show the old value (50), not the updated one (100)
       expect(decodingValue).toHaveLength(1);
       expect(decodingValue[0].processed).toBe(50);
     });
@@ -279,7 +265,6 @@ describe('useSyncProgress', () => {
       const { decoding } = useSyncProgress();
       const decodingValue = get(decoding);
 
-      // All updates should have been applied while decodingSyncing was true
       expect(decodingValue).toHaveLength(1);
       expect(decodingValue[0].processed).toBe(100);
     });
@@ -292,7 +277,6 @@ describe('useSyncProgress', () => {
       const { decoding } = useSyncProgress();
       const decodingValue = get(decoding);
 
-      // Chains with total = 0 are filtered out by decodingSyncStatus
       expect(decodingValue).toHaveLength(0);
     });
   });
@@ -327,8 +311,6 @@ describe('useSyncProgress', () => {
       ]);
 
       const { overallProgress } = useSyncProgress();
-      // 1 of 2 accounts completed = 50%
-      // Only transactions weight applies
       expect(get(overallProgress)).toBe(50);
     });
 
@@ -346,61 +328,58 @@ describe('useSyncProgress', () => {
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
 
       const { overallProgress } = useSyncProgress();
-      // All activities at 100%
       expect(get(overallProgress)).toBe(100);
     });
   });
 
   describe('disabled chain queries', () => {
-    // These entries come from backend websocket status, not from work the frontend submitted, so
-    // the backend still reports on chains the user switched off. Without filtering here, a disabled
-    // chain keeps a row in the panel and drags the percentage down - the whole point of the setting
-    // is that whatever is skipped is treated as not being there.
+    const WIRE_ETH = 'ETH';
+    const SETTING_ETH = 'eth';
+    const WIRE_POLYGON = 'POLYGON_POS';
+    const SETTING_POLYGON = 'polygon_pos';
+    const WIRE_ADDRESS = '0xAbC';
+    const SETTING_ADDRESS = '0xabc';
+
     function disableChains(value: Record<string, string[]>): void {
       const store = useSettingsRepo();
       store.updateGeneral({ ...store.general, disabledChainQueries: value });
     }
 
-    // The transaction messages carry `SupportedBlockchain.value` ('ETH') while the setting is keyed
-    // by its serialized form ('eth'), so the fixtures use the real casing of each side. The chain
-    // half is already normalized by `useTxQueryStatusStore`; the address half is not, which is why
-    // the per-address test below pairs a checksummed address on the wire with a lower-cased rule.
     it('should exclude a disabled chain from the transaction progress', () => {
       setupTxStore([
-        createEvmTxStatus('0x111', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', 'POLYGON_POS', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x111', WIRE_ETH, TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0x222', WIRE_POLYGON, TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
 
-      // 1 of 2 accounts done while polygon counts, so the bar sits at 50%.
       expect(get(useSyncProgress().overallProgress)).toBe(50);
 
-      disableChains({ polygon_pos: [] });
-      // With polygon treated as absent the only tracked account is finished, so the run is done.
+      disableChains({ [SETTING_POLYGON]: [] });
       expect(get(useSyncProgress().overallProgress)).toBe(100);
     });
 
     it('should exclude a disabled chain from the chain and account counts', () => {
       setupTxStore([
-        createEvmTxStatus('0x111', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', 'POLYGON_POS', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-        createEvmTxStatus('0x333', 'POLYGON_POS', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x111', WIRE_ETH, TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0x222', WIRE_POLYGON, TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x333', WIRE_POLYGON, TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
-      disableChains({ polygon_pos: [] });
+      disableChains({ [SETTING_POLYGON]: [] });
 
       const { chains, completedChains, totalAccounts, totalChains } = useSyncProgress();
       expect(get(totalChains)).toBe(1);
       expect(get(completedChains)).toBe(1);
       expect(get(totalAccounts)).toBe(1);
-      expect(get(chains).map(chain => chain.chain)).toEqual(['eth']);
+      expect(get(chains).map(chain => chain.chain)).toEqual([SETTING_ETH]);
     });
 
-    it('should exclude a single disabled address but keep the rest of its chain', () => {
+    it('should exclude a single disabled address, whatever its casing, but keep the rest of its chain', () => {
       setupTxStore([
-        createEvmTxStatus('0x111', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0xAbC', 'ETH', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x111', WIRE_ETH, TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus(WIRE_ADDRESS, WIRE_ETH, TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
-      // Checksummed on the wire, lower-cased in the rule: a case-only difference must not defeat it.
-      disableChains({ eth: ['0xabc'] });
+
+      expect(WIRE_ADDRESS.toLowerCase()).toBe(SETTING_ADDRESS);
+      disableChains({ [SETTING_ETH]: [SETTING_ADDRESS] });
 
       const { chains, totalAccounts, totalChains } = useSyncProgress();
       expect(get(totalChains)).toBe(1);
@@ -408,13 +387,12 @@ describe('useSyncProgress', () => {
       expect(get(chains)[0].addresses.map(a => a.address)).toEqual(['0x111']);
     });
 
-    it('should exclude a disabled chain from decoding, which carries a fifth of the bar', () => {
+    it('should exclude a disabled chain from decoding, which owns the whole bar when nothing else runs', () => {
       const decodingStatusStore = useDecodingStatusStore();
       decodingStatusStore.resetDecodingSyncProgress();
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('polygon_pos', 100, 0));
 
-      // Decoding is the only running phase, so it owns the whole bar: one chain done, one not.
       expect(get(useSyncProgress().overallProgress)).toBe(50);
 
       disableChains({ polygon_pos: [] });
@@ -455,7 +433,7 @@ describe('useSyncProgress', () => {
 
       const { totalChains, completedChains } = useSyncProgress();
       expect(get(totalChains)).toBe(2);
-      expect(get(completedChains)).toBe(1); // eth is complete
+      expect(get(completedChains)).toBe(1);
     });
 
     it('should count locations correctly', () => {
@@ -484,13 +462,13 @@ describe('useSyncProgress', () => {
     it('should count unique addresses correctly', () => {
       setupTxStore([
         createEvmTxStatus('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x111', 'optimism', TransactionsQueryStatus.QUERYING_TRANSACTIONS), // Same address, different chain
+        createEvmTxStatus('0x111', 'optimism', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
         createEvmTxStatus('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
       ]);
 
       const { uniqueAddresses, totalAccounts } = useSyncProgress();
       expect(get(totalAccounts)).toBe(3);
-      expect(get(uniqueAddresses)).toBe(2); // 0x111 and 0x222
+      expect(get(uniqueAddresses)).toBe(2);
     });
   });
 
@@ -607,7 +585,6 @@ describe('useSyncProgress', () => {
       decodingStatusStore.markDecodingCancelled('eth');
 
       const { overallProgress } = useSyncProgress();
-      // Only decoding activity, cancelled = 100%
       expect(get(overallProgress)).toBe(100);
     });
   });

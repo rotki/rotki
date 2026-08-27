@@ -41,8 +41,6 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
   let openGate: (() => void) | undefined;
   let unstarted: ReturnType<typeof setTimeout> | undefined;
 
-  // Starts open, for the same reason `pending()` returns undefined when nothing is armed: a
-  // session that never promised a read has nothing to wait for. Only `arm` closes it.
   const ready = ref<boolean>(true);
 
   const clearTimer = (): void => {
@@ -113,14 +111,19 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
    * release waiters into a half-filled store. Settles on rejection too, so a failed read cannot
    * strand a waiter.
    */
+  /**
+   * Tracks a read, opening the gate once it finishes.
+   *
+   * @remarks
+   * The *first* read to finish is enough: from there the store is as complete as this session is
+   * going to make it, and any later read is targeted, scoped to what it changed.
+   */
   const track = async (load: Promise<void>): Promise<void> => {
     clearTimer();
     const tracked = load.finally(() => {
       if (current === tracked)
         current = undefined;
 
-      // The first read to finish opens the gate: from here the store is as complete as this session
-      // is going to make it, and a later targeted read is scoped to what it changed.
       settle();
     });
     current = tracked;

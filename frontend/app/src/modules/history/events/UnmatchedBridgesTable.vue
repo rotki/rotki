@@ -11,8 +11,6 @@ import UnmatchedUntrackedBadge from '@/modules/history/events/UnmatchedUntracked
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
-// The dialog presentation. Like the cards, it only lays out: the row wording and the action
-// spec are handed down, so the two cannot disagree about what a leg is called.
 const selected = defineModel<string[]>('selected', { required: true });
 
 const { highlightedGroupIdentifier } = defineProps<{

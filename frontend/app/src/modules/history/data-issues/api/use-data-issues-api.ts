@@ -51,9 +51,6 @@ export function useDataIssuesApi(): UseDataIssuesApiReturn {
     payload: DataIssuesRequestPayload,
   ): ResultAsync<Collection<DataIssue>, DataIssueError> =>
     fromAsync(async () => {
-      // The `/data_issues` endpoint orders rows server-side (ts_start desc) and
-      // its schema does not accept ordering params; strip the sort keys the shared
-      // pagination composable injects so the backend doesn't reject the request.
       const query = omit(payload, ['orderByAttributes', 'ascending']);
       const response = await api.get<unknown>(BASE, {
         ...VALID_STATUSES,

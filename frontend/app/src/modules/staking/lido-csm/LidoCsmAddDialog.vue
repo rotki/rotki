@@ -84,8 +84,6 @@ const form = useForm<NodeOperatorState, NodeOperatorPayload>({
   },
 });
 
-// Destructured, because a ref reached through `form.` in the template is not unwrapped and would
-// read as permanently truthy.
 const { submitting, valid } = form;
 
 function closeDialog(): void {

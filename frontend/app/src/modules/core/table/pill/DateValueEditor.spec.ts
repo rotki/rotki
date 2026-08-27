@@ -11,20 +11,14 @@ const ButtonGroupStub = defineComponent({
   template: '<div data-testid="operators"><slot /></div>',
 });
 
-// Emits an epoch number like the real picker (type="epoch"); an empty input emits undefined.
-// It also honours `autofocus` on mount, as the real picker does, so the focus tests exercise the
-// prop the editor actually sets rather than restating the template.
 const DateTimePickerStub = defineComponent({
   name: 'RuiDateTimePicker',
   props: {
     autofocus: { default: false, type: Boolean },
-    // The bound constraints the editor computes from the other end, so a test can read what the
-    // real picker would grey out.
     maxDate: { default: undefined, type: [Number, String] },
     menuOpen: { default: false, type: Boolean },
     minDate: { default: undefined, type: Number },
     modelValue: { default: undefined, type: Number },
-    // which end of the day the picker completes an entry that omits the time with
     partialTime: { default: undefined, type: String },
   },
   emits: ['update:modelValue', 'update:menuOpen'],
@@ -64,12 +58,10 @@ function createWrapper(
   });
 }
 
-// The two pickers are told apart by their test id rather than by position, so a template reorder
-// cannot make these assertions pass for the wrong bound.
 function boundProp(
   wrapper: VueWrapper<InstanceType<typeof DateValueEditor>>,
   testId: string,
-  prop: 'maxDate' | 'minDate' | 'partialTime',
+  prop: 'autofocus' | 'maxDate' | 'minDate' | 'partialTime',
 ): unknown {
   const found = wrapper.findAllComponents(DateTimePickerStub)
     .find(component => component.attributes('data-testid') === testId);
@@ -87,8 +79,6 @@ function bounds(wrapper: VueWrapper<InstanceType<typeof DateValueEditor>>): {
   };
 }
 
-// Mounts into a host that records what escapes the editor: the editor stops the key on its own
-// root while a calendar is up, and nothing above that root may see it.
 function hostWithEscapeListener(): { escaped: Mock; host: HTMLElement } {
   const host = document.createElement('div');
   document.body.appendChild(host);
@@ -114,9 +104,6 @@ describe('dateValueEditor', () => {
     expect(before.find('[data-testid=date-to]').exists()).toBe(true);
   });
 
-  // A range is usually thought of in whole days, so a bound may be given as a bare date. The two
-  // ends take opposite sides of the day the entry omits the time of, or a To of today would cut
-  // the day off at midnight and hide everything that happened during it.
   it('should complete a date-only bound from its own end of the day', () => {
     const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] });
 
@@ -130,7 +117,6 @@ describe('dateValueEditor', () => {
     expect(bounds(createWrapper(filter))).toStrictEqual({ fromMax: 1704153600, toMin: 1704067200 });
   });
 
-  // A millisecond-backed column scales both bounds by 1000, so an equal pair asks for `X000` alone.
   it('should keep a second between the bounds when the field forbids an equal pair', () => {
     const filter: ActiveFilter = { date: { from: '1704067200', to: '1704153600' }, fieldKey: 'period', op: 'between', values: [] };
 
@@ -166,30 +152,24 @@ describe('dateValueEditor', () => {
     expect(wrapper.emitted('update')?.[0]).toStrictEqual([{ fieldKey: 'period', op: 'after', values: [] }]);
   });
 
-  // Must go through the picker's `autofocus` prop, not a ref: it moves the caret from its own
-  // focus handler, so focusing from outside lands at the wrong point in its lifecycle.
-  it('should focus the from bound on mount', async () => {
+  it('should focus the from bound on mount, through the picker\'s own autofocus prop', async () => {
     const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] }, document.body);
     await nextTick();
 
+    expect(boundProp(wrapper, 'date-from', 'autofocus')).toBe(true);
     expect(document.activeElement).toBe(wrapper.get('[data-testid=date-from]').element);
     wrapper.unmount();
   });
 
-  // `before` renders no From bound, so the first field is the To one.
   it('should focus the to bound when there is no from bound', async () => {
     const wrapper = createWrapper({ fieldKey: 'period', op: 'before', values: [] }, document.body);
     await nextTick();
 
+    expect(boundProp(wrapper, 'date-to', 'autofocus')).toBe(true);
     expect(document.activeElement).toBe(wrapper.get('[data-testid=date-to]').element);
     wrapper.unmount();
   });
 
-  // Escape closes innermost first: the picker binds it inside its calendar, so emitting
-  // unconditionally would collapse both layers on one press. Asserted through a host listener,
-  // because `RuiMenu`'s popover closes on escape whatever the editor emits — the key *not* leaving
-  // the editor is what keeps the pill open. The picker is stubbed, so this covers the editor's
-  // contract only; the real two-layer press is an e2e assertion.
   it('should keep escape inside the editor while the calendar is up', async () => {
     const { escaped, host } = hostWithEscapeListener();
     const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] }, host);

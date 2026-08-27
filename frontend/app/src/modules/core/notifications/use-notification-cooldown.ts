@@ -111,8 +111,6 @@ export const useNotificationCooldown = createSharedComposable((): UseNotificatio
       notificationSchedule: { ...get(schedule), ...updates },
     });
 
-    // Losing a write only costs one extra notification later, so log it rather than raise a
-    // notification about having failed to record a notification.
     if (!status.success)
       logger.warn(`Failed to persist the notification schedule: ${status.message}`);
   }

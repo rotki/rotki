@@ -7,6 +7,7 @@ import tsdoc from 'eslint-plugin-tsdoc';
 
 import { backendMappingKeys } from './app/backend-strings.generated.js';
 import { premiumComponentKeys } from './app/premium-keys.generated.js';
+import { localRules } from './eslint-local-rules.js';
 
 // Pre-load the ESM-only ESLint parsers before the config factories run.
 // @intlify/eslint-plugin-vue-i18n require()s them while eslint composes configs
@@ -15,76 +16,6 @@ import 'jsonc-eslint-parser';
 import 'yaml-eslint-parser';
 
 const src = path.join('app', 'src');
-
-/**
- * Flags a run of `//` lines sitting inside a block rather than above a declaration.
- *
- * @remarks
- * A paragraph in the middle of a function body is where behaviour goes to hide: it is invisible to
- * anyone reading the signature, it cannot be surfaced by tooling, and nothing fails when it stops
- * being true. The same words on the enclosing function's TSDoc reach every caller.
- *
- * Only runs are reported, since a single line is usually a local aside rather than a contract. A
- * run introducing a nested declaration is left alone, that being TSDoc written with the wrong
- * delimiter rather than a stray paragraph.
- */
-const noMidBodyCommentBlock = {
-  meta: {
-    type: 'suggestion',
-    docs: { description: 'disallow multi-line comment blocks inside a function body' },
-    messages: {
-      midBody: 'Move this {{count}}-line comment onto the enclosing function as TSDoc, or cut it to one line.',
-    },
-    schema: [{
-      type: 'object',
-      properties: { minLines: { type: 'integer', minimum: 2 } },
-      additionalProperties: false,
-    }],
-  },
-  create(context) {
-    const { sourceCode } = context;
-    const minLines = context.options[0]?.minLines ?? 3;
-
-    return {
-      'Program:exit': () => {
-        const comments = sourceCode.getAllComments().filter(comment => comment.type === 'Line');
-        let run = [];
-
-        const flush = () => {
-          const [first] = run;
-          if (run.length < minLines || !first)
-            return;
-
-          // Indented, so inside a block. A run at column 0 is module-level prose.
-          if (first.loc.start.column === 0)
-            return;
-
-          // A run introducing the declaration beneath it is misdelimited TSDoc, not stray prose.
-          const next = sourceCode.getTokenAfter(run.at(-1), { includeComments: false });
-          if (next && ['function', 'const', 'let', 'async', 'class', 'interface', 'type'].includes(next.value))
-            return;
-
-          context.report({ data: { count: run.length }, loc: first.loc, messageId: 'midBody' });
-        };
-
-        for (const comment of comments) {
-          const previous = run.at(-1);
-          const contiguous = previous
-            && comment.loc.start.line === previous.loc.end.line + 1
-            && comment.loc.start.column === previous.loc.start.column;
-
-          if (!contiguous) {
-            flush();
-            run = [];
-          }
-          if (!comment.value.trim().startsWith('eslint-'))
-            run.push(comment);
-        }
-        flush();
-      },
-    };
-  },
-};
 
 // Keys referenced only through dynamic/computed lookups the static scanner cannot see, so they must
 // not be reported as unused. `translationKeys()` covers the keys the ui-library resolves internally.
@@ -326,7 +257,7 @@ export default rotki({
   files: ['app/src/**/*.ts', 'app/src/**/*.vue', 'common/src/**/*.ts'],
   plugins: {
     jsdoc,
-    local: { rules: { 'no-mid-body-comment-block': noMidBodyCommentBlock } },
+    local: { rules: localRules },
     tsdoc,
   },
   // Errors, not warnings: the tree is at zero, so anything these report is newly introduced.
@@ -354,9 +285,9 @@ export default rotki({
     'jsdoc/require-param-description': 'error',
     'jsdoc/require-returns-check': 'error',
     'jsdoc/require-returns-description': 'error',
-    // Behaviour buried mid-body reaches nobody reading the signature. A warning rather than an
-    // error only because the tree still holds ~290 of them; it becomes an error at zero.
-    'local/no-mid-body-comment-block': 'warn',
+    'local/no-closure-result-in-activity-run': 'error',
+    'local/no-comment-run': 'error',
+    'local/tsdoc-on-declaration': 'error',
     'tsdoc/syntax': 'error',
   },
 }, {

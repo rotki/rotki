@@ -1,10 +1,11 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type {
   AccountingRuleLinkedSettingMap,
   AccountingRuleWithLinkedProperty,
 } from '@/modules/settings/types/accounting';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, nextTick, ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import '@test/i18n';
 
 const options = ref<AccountingRuleLinkedSettingMap[]>([]);
@@ -49,9 +50,8 @@ describe('accountingRuleWithLinkedSetting', () => {
     });
   }
 
-  /** The stubs below declare their props at runtime, so their instances are typed loosely. */
-  function control(name: string): VueWrapper<ComponentPublicInstance<Record<string, unknown>>> {
-    return wrapper.findComponent<ComponentPublicInstance<Record<string, unknown>>>({ name });
+  function control(name: string): VueWrapper<StubInstance> {
+    return wrapper.findComponent<StubInstance>({ name });
   }
 
   function lastModel(): AccountingRuleWithLinkedProperty {
@@ -112,9 +112,6 @@ describe('accountingRuleWithLinkedSetting', () => {
     expect(lastModel().linkedSetting).toBeUndefined();
   });
 
-  // The mapping arrives over the api, so a rule opened before it lands has nothing to link to, and
-  // a link naming nothing is not a link. Refused outright rather than taken and undone, which would
-  // flash the select open on its way back out.
   it('should refuse the link while there is nothing to link to', async () => {
     wrapper = createWrapper({ value: true });
 

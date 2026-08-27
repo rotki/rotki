@@ -49,7 +49,6 @@ const { pending, showConfirmation, status } = useCacheClear<string>(
 );
 
 const taskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
-// Transaction decoding runs native (Phase 2): aggregate liveness across every per-chain activity.
 const eventTaskLoading = useIsActive(ActivityKind.TX_DECODING);
 const loading = logicOr(pending, taskRunning, eventTaskLoading);
 

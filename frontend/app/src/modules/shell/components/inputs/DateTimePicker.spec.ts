@@ -6,6 +6,16 @@ import { defineComponent, h, type VNode } from 'vue';
 import { setupDayjs } from '@/modules/core/common/data/date';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
+/** The quick-option buttons, in the order the picker renders them. */
+const QuickOption = {
+  DAY_BEFORE: 0,
+  WEEK_BEFORE: 1,
+  MONTH_BEFORE: 2,
+  NINETY_DAYS_BEFORE: 3,
+  SIX_MONTHS_BEFORE: 4,
+  YEAR_BEFORE: 5,
+} as const;
+
 function getEmittedValue(wrapper: VueWrapper, event: string, callIndex: number): number {
   const emitted = wrapper.emitted(event);
   expect(emitted).toBeDefined();
@@ -14,7 +24,6 @@ function getEmittedValue(wrapper: VueWrapper, event: string, callIndex: number):
   return Number(value);
 }
 
-// Mock RuiDateTimePicker to render the menu-content slot
 const RuiDateTimePickerStub = defineComponent({
   emits: ['update:modelValue'],
   name: 'RuiDateTimePicker',
@@ -96,9 +105,8 @@ describe('components/inputs/DateTimePicker.vue', () => {
         },
       });
 
-      // Find the "1 year before" button (last quick option)
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      const yearBeforeButton = quickOptionButtons[5];
+      const yearBeforeButton = quickOptionButtons[QuickOption.YEAR_BEFORE];
 
       // First click - should subtract 1 year from initial date
       await yearBeforeButton.trigger('click');
@@ -109,7 +117,6 @@ describe('components/inputs/DateTimePicker.vue', () => {
       const expectedFirstValue = initialDate.subtract(1, 'year').unix();
       expect(firstValue).toBe(expectedFirstValue);
 
-      // Update the wrapper with new value to simulate v-model
       await wrapper.setProps({ modelValue: firstValue });
 
       // Second click - should subtract another year from the new value (not from now)
@@ -133,9 +140,8 @@ describe('components/inputs/DateTimePicker.vue', () => {
         },
       });
 
-      // Find the "1 month before" button
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      const monthBeforeButton = quickOptionButtons[2];
+      const monthBeforeButton = quickOptionButtons[QuickOption.MONTH_BEFORE];
 
       // First click - should subtract 1 month from initial date
       await monthBeforeButton.trigger('click');
@@ -146,7 +152,6 @@ describe('components/inputs/DateTimePicker.vue', () => {
       const expectedFirstValue = initialDate.subtract(1, 'month').valueOf();
       expect(firstValue).toBe(expectedFirstValue);
 
-      // Update the wrapper with new value to simulate v-model
       await wrapper.setProps({ modelValue: firstValue });
 
       // Second click - should subtract another month from the new value
@@ -169,9 +174,8 @@ describe('components/inputs/DateTimePicker.vue', () => {
         },
       });
 
-      // Find the "1 day before" button (first quick option)
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      const yesterdayButton = quickOptionButtons[0];
+      const yesterdayButton = quickOptionButtons[QuickOption.DAY_BEFORE];
 
       await yesterdayButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
@@ -192,9 +196,8 @@ describe('components/inputs/DateTimePicker.vue', () => {
         },
       });
 
-      // Find the "week before" button (second quick option)
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      const weekBeforeButton = quickOptionButtons[1];
+      const weekBeforeButton = quickOptionButtons[QuickOption.WEEK_BEFORE];
 
       await weekBeforeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
@@ -215,9 +218,8 @@ describe('components/inputs/DateTimePicker.vue', () => {
         },
       });
 
-      // Find the "90 days before" button (fourth quick option)
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      const ninetyDaysButton = quickOptionButtons[3];
+      const ninetyDaysButton = quickOptionButtons[QuickOption.NINETY_DAYS_BEFORE];
 
       await ninetyDaysButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
@@ -238,9 +240,8 @@ describe('components/inputs/DateTimePicker.vue', () => {
         },
       });
 
-      // Find the "6 months before" button (fifth quick option)
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      const sixMonthsButton = quickOptionButtons[4];
+      const sixMonthsButton = quickOptionButtons[QuickOption.SIX_MONTHS_BEFORE];
 
       await sixMonthsButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();

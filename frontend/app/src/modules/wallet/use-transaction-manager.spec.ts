@@ -4,9 +4,6 @@ import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTransactionManager } from '@/modules/wallet/use-transaction-manager';
 
-// The seam: what ends up on the recent-transaction record, and that a completed
-// transfer both flips to `completed` and triggers the post-transaction refresh.
-
 type Receipt = Awaited<ReturnType<ViemWalletClient['waitForTransactionReceipt']>>;
 
 const HASH: Hash = '0xhash';
@@ -44,8 +41,6 @@ describe('useTransactionManager', () => {
       await handleTransactionSuccess(walletClient(), HASH, txParams(), '0xfrom');
       await vi.waitFor(() => expect(get(recentTransactions)).toHaveLength(1));
 
-      // Not the chain the wallet reports: nothing checks that the two agree, and
-      // only this one is known to be a chain rotki supports.
       expect(get(recentTransactions)[0].chain).toBe('monad');
     });
 

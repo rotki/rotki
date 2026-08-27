@@ -152,9 +152,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
-          // Empty `chainAddresses` means every named address is excluded; naming none leaves it
-          // `undefined`.
-          if (isChainExcluded(chain) || chainAddresses?.length === 0)
+          const everyNamedAddressExcluded = chainAddresses?.length === 0;
+          if (isChainExcluded(chain) || everyNamedAddressExcluded)
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.disabled') }));
 
           if (detect)

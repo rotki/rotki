@@ -2,6 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { DuplicateRow } from '@/modules/history/events/use-customized-event-duplicates';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
+import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -72,7 +73,7 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
         {{ t('customized_event_duplicates.actions.show_in_history') }}
       </RuiButton>
     </div>
-    <ScrollableDialogContent max-height="calc(100vh - 23rem)">
+    <ScrollableDialogContent :max-height="HISTORY_DIALOG_MAX_HEIGHT">
       <RuiDataTable
         v-model="selected"
         :cols="columns"

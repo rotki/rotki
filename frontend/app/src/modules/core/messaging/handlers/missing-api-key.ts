@@ -26,6 +26,11 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
   /**
    * The offers that apply to this service: opening the settings page that holds the key, reordering
    * the transaction indexers, fetching a key, and suppressing the message for good.
+   *
+   * @remarks
+   * Etherscan is the one service never offered a "get a key" link. It ships with a packaged
+   * fallback key, so it keeps working without one; every other service here, blockscout included,
+   * has no default and rejects keyless queries on its PRO endpoints.
    */
   function buildActions(service: MissingApiKey['service'], route?: RouteLocationRaw, external?: string): NotificationAction[] {
     const actions: NotificationAction[] = [];
@@ -51,9 +56,8 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       });
     }
 
-    // Unlike etherscan (which ships with a packaged fallback key), blockscout has no
-    // default key and its PRO endpoints reject keyless queries, so also offer to get one.
-    if (external && !isEtherscan) {
+    const needsAUserSuppliedKey = external && !isEtherscan;
+    if (needsAUserSuppliedKey) {
       actions.push({
         action: async () => openUrl(external),
         icon: 'lu-external-link',

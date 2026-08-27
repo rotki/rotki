@@ -39,9 +39,7 @@ describe('modules/accounts/blockchain/eth2-validator-form', () => {
       expect(messagesFor({}, 'publicKey')).toEqual([MESSAGES.required]);
     });
 
-    it('should report a field the payload has not got yet as missing, not as mistyped', () => {
-      // An untouched form holds no key at all. Requiring the type here would fail the schema on a
-      // field bound to no message of its own and block the save with nothing on screen.
+    it('should report a field the payload has not got yet as missing, not as mistyped, since it is bound to no message of its own', () => {
       expect(messagesFor({}, 'ownershipPercentage')).toEqual([]);
       expect(schema.safeParse({ validatorIndex: '42' }).success).toBe(true);
     });

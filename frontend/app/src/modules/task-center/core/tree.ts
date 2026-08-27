@@ -100,13 +100,14 @@ export function someInSubtree(
  * @param children - direct children by parent id, as {@link ActivityTree.children} builds them
  * @param root - the activity whose subtree is counted; counts as its own leaf when childless
  * @returns settled leaves over total leaves, both counted across the whole subtree
+ *
+ * Walked iteratively against a seen-set, since a malformed parent chain would otherwise recurse
+ * forever, and a task panel is not where a producer's mistake should take the renderer down.
  */
 export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): ActivitySteps {
   let current = 0;
   let total = 0;
 
-  // Iterative, with a seen-set: a malformed parent chain would otherwise recurse forever, and a
-  // task panel is not where a producer's mistake should take the renderer down with it.
   const seen = new Set<ActivityId>();
   const stack: Activity[] = [root];
 

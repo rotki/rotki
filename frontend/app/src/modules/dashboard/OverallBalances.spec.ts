@@ -5,14 +5,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
 
-/**
- * The seam: the header's net worth is a sum, so it reads zero before the first balances land.
- * This card promises never to render that zero as if it were the user's balance: while the latch
- * from `useNetWorthLoading` is closed it shows a skeleton instead, and the delta row underneath
- * follows the same latch so the two do not disagree. It also promises that a refresh, which is
- * not the latch, leaves the net worth on screen and only skeletons the delta.
- */
-
 const state = vi.hoisted(() => ({ loading: false, netWorthLoading: false }));
 
 vi.mock('@/modules/balances/use-balance-loading', async () => {

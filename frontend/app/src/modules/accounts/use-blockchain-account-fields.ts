@@ -17,15 +17,11 @@ export function useBlockchainAccountFields(category: MaybeRefOrGetter<string>): 
   const { t } = useI18n({ useScope: 'global' });
 
   const { chainIds } = useAccountCategoryHelper(category);
-  // Address and chain-name resolution is the same for every table filtering on them, so it comes
-  // from one place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const accountOptions = useBlockchainAccountOptions(category);
 
   const tagOptions = useTagFieldOptions();
 
-  // The account pill is history's, bound to this table's own `addresses` param and its own,
-  // category-scoped account list.
   return [
     toAccountField(
       {

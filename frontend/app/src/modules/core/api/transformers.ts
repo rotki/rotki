@@ -59,9 +59,7 @@ function convertKeysRecursively(data: unknown, options: ConvertKeysOptions): unk
 }
 
 function convertKeys<T>(data: T, options: ConvertKeysOptions): T {
-  // The one assertion for the whole transformer family lives here rather than at each caller;
-  // see the note on convertKeys above for what was tried instead.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the one assertion for the whole transformer family, contained here rather than repeated at each caller
   return convertKeysRecursively(data, options) as T;
 }
 

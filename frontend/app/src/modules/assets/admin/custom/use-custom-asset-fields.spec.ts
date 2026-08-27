@@ -10,9 +10,7 @@ describe('useCustomAssetFields', () => {
     expect(type?.suggest?.()).toStrictEqual(['fiat', 'stock']);
   });
 
-  // The types are whatever the user has created, so the pill has to follow the list rather than
-  // capture it once: a type created after the bar mounted must still be offered.
-  it('should follow a reactive list of types', () => {
+  it('should follow a reactive list of types, so one created after the bar mounted is still offered', () => {
     const types = ref<string[]>(['fiat']);
     const fields = useCustomAssetFields(types);
 

@@ -1,6 +1,14 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type Balance, type BigNumber, bigNumberify, Zero } from '@rotki/common';
 
+/**
+ * Reads a numeric field reactively, answering zero for anything unreadable.
+ *
+ * @remarks
+ * The fallback is not a convenience. bignumber.js rejects what it cannot parse by *throwing*, and
+ * this runs inside a computed, so an unparsable value would surface as a render-time exception in
+ * whichever form is bound to the field rather than as a bad number.
+ */
 export function bigNumberifyFromRef(value: MaybeRefOrGetter<string | number>): ComputedRef<BigNumber> {
   return computed(() => {
     const val = toValue(value);
@@ -8,8 +16,6 @@ export function bigNumberifyFromRef(value: MaybeRefOrGetter<string | number>): C
     if (val === '')
       return Zero;
 
-    // bignumber.js rejects anything it cannot parse by throwing, and this runs inside a computed,
-    // so an unparsable value would surface as a render-time exception rather than a bad number.
     return bigNumberify(val, Zero);
   });
 }

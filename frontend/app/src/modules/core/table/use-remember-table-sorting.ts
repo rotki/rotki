@@ -47,6 +47,17 @@ function defaultTableSorting<T>(): TableSorting<T> {
   return {};
 }
 
+/**
+ * Restores a table's saved sort order on mount, and remembers it as the user changes it.
+ *
+ * @remarks
+ * Both halves live inside `onBeforeMount` deliberately. Registering the watcher at setup time
+ * instead fires it on the sort's *initial* value, which overwrites the saved preference with the
+ * table's default before the user has touched anything.
+ *
+ * Only columns the table still declares as sortable are restored, so a saved sort on a column that
+ * has since been removed is dropped rather than applied to nothing.
+ */
 export function useRememberTableSorting<T>(
   id: TableId,
   sort: WritableComputedRef<DataTableSortData<T>> | Ref<DataTableSortData<T>>,
@@ -72,8 +83,6 @@ export function useRememberTableSorting<T>(
       }
     }
 
-    // Must stay inside onBeforeMount: outside, it fires on the initial sort value and overwrites
-    // the saved preference before the user has touched anything.
     watch(sort, (sort) => {
       if (get(persistTableSorting)) {
         set(rawData, { ...get<TableSorting<T>>(rawData), [id]: sort });

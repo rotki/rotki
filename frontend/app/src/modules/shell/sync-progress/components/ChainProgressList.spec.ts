@@ -129,15 +129,11 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
     });
 
-    it('should treat a chain whose addresses all failed as settled', () => {
-      // Failed is terminal, so this chain is finished, just not cleanly. Counting it as still in
-      // progress stranded it at 0/3 forever while the header reported the sync complete.
+    it('should treat a chain whose addresses all failed as settled, and say the group finished rather than completed', () => {
       const chains = [createFailedChainProgress('gnosis', 3)];
       wrapper = createWrapper(chains);
 
       expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
-      // "Finished", not "complete" — the group summary must not claim a clean finish for a
-      // chain that failed.
       expect(wrapper.text()).toContain('sync_progress.finished_chains');
     });
 
@@ -274,8 +270,6 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       ];
       wrapper = createWrapper(chains);
 
-      // optimism has 2 completed + 1 cancelled = 3 total, so it is settled and moves into the
-      // group — which then says "finished" rather than claiming a clean completion.
       expect(wrapper.text()).toContain('sync_progress.finished_chains');
     });
 

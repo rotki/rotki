@@ -23,9 +23,7 @@ function response(collection: unknown): unknown {
 }
 
 describe('nftResponse', () => {
-  // The backend sends null here for an NFT that belongs to no collection, which
-  // used to fail the parse for the whole page of results rather than that entry.
-  it('should parse an nft with no collection', () => {
+  it('should parse an nft with no collection, which the backend sends as null', () => {
     const result = NftResponse.safeParse(response(null));
 
     expect(result.success).toBe(true);

@@ -5,9 +5,13 @@ import { app } from '@/main';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 
-// Bumped whenever the surface premium builds against changes. v29 (components major 16): the
-// statistics schemas read usdValue, and HistoryEventsView takes a single `restrictions` prop.
-// A v16 bundle refuses to render below this, rather than failing halfway.
+/**
+ * The surface the premium bundle builds against; bump it whenever that surface changes.
+ *
+ * @remarks
+ * A bundle refuses to render below this rather than failing halfway through, so raising it is what
+ * turns an incompatibility into a message instead of a broken page.
+ */
 const PREMIUM_COMPONENTS_VERSION = 29;
 
 type PremiumLibrary = {

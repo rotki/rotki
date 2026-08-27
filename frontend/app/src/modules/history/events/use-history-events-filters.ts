@@ -82,11 +82,17 @@ interface UseHistoryEventsFiltersReturn {
   usedLocationLabels: ComputedRef<string[]>;
 }
 
+/**
+ * Wires the history events filter axes to the request payload, the URL and the filter bar.
+ *
+ * @param options - the declared filter fields, the filter model and whether this is the main page.
+ * @param toggles - the boolean view toggles, part of the active-filter check.
+ * @param overlayMode - written back by `applyHistoryEventRouteQuery` when the overlay is restored
+ * from the route, so it has to stay writable and cannot be widened to `MaybeRefOrGetter`.
+ */
 export function useHistoryEventsFilters(
   options: HistoryEventsFiltersOptions,
   toggles: Ref<HistoryEventsToggles>,
-  // Written back by applyHistoryEventRouteQuery (history-event-query.ts) when the overlay is
-  // restored from the route, so it cannot be widened to MaybeRefOrGetter.
   overlayMode: WritableRef<OverlayMode> = ref<OverlayMode>(OverlayMode.NONE),
 ): UseHistoryEventsFiltersReturn {
   const { fields, filters: modelFilters, mainPage } = options;
@@ -146,15 +152,25 @@ export function useHistoryEventsFilters(
     return undefined;
   });
 
-  // A view that selects accounts for the user owns this axis outright, so its (possibly empty) set
-  // replaces the bar's, rather than being merged with it.
+  /**
+   * The account addresses this view filters by.
+   *
+   * @remarks
+   * A view that picks the accounts for the user owns this axis outright, so its (possibly empty)
+   * set replaces the bar's rather than being merged with it.
+   */
   const usedLocationLabels = computed<string[]>(() => {
     const pinned = externalAccounts();
     return pinned ? pinned.map(account => account.address) : get(locationLabels);
   });
 
-  // Owned here rather than by the caller: it is written back from the route like locationLabels,
-  // and expanded into the request by the source that already owns the two event-type keys.
+  /**
+   * The selected action verb.
+   *
+   * @remarks
+   * Owned here rather than by the caller: it is written back from the route like `locationLabels`,
+   * and expanded into the request by the source that already owns the two event-type keys.
+   */
   const action = ref<string>();
 
   const sources = buildHistoryEventSources({
@@ -258,9 +274,14 @@ export function useHistoryEventsFilters(
     set(toggles, { ...getDefaultToggles() });
   }
 
+  /**
+   * Applies a change to the selected action verb.
+   *
+   * @remarks
+   * The intent has to be marked by hand: `action` feeds both a request and a url source, so the
+   * table cannot recognise this as an interaction and the new verb never reaches the URL.
+   */
   function onActionChanged(verbKey: string | undefined): void {
-    // Same as locationLabels below: it drives a request source and a url source, so the change has
-    // to be attributed explicitly or it never reaches the URL.
     markUserIntent();
     set(action, verbKey);
   }

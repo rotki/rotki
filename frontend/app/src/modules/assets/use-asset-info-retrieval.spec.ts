@@ -1,6 +1,7 @@
 import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
 import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { neverSettles } from '@test/utils/never-settles';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
@@ -54,9 +55,6 @@ describe('useAssetRetrieval', () => {
   let api: ReturnType<typeof useAssetInfoApi>;
 
   beforeEach(() => {
-    // The mocked useNotificationDispatcher returns a module-level notify spy that
-    // is shared across tests; without clearing, calls from the failure/timeout
-    // tests leak into the success test when the order is reshuffled.
     vi.clearAllMocks();
     setActivePinia(createPinia());
     assetInfoCache = useAssetInfoCache();
@@ -93,6 +91,21 @@ describe('useAssetRetrieval', () => {
       expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
 
+    it('should read the details off the activity outcome, so a deduped caller whose run never executes is not answered with an empty token', async () => {
+      const tokenDetail: ERC20Token = {
+        decimals: 6,
+        name: 'USD Coin',
+        symbol: 'USDC',
+      };
+
+      submitTask.mockResolvedValueOnce(ok(tokenDetail));
+
+      const result = await assetInfoRetrieval.fetchTokenDetails(payload);
+
+      expect(api.erc20details).not.toHaveBeenCalled();
+      expect(result).toEqual(tokenDetail);
+    });
+
     it('should handle failure', async () => {
       runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
         await task();
@@ -108,13 +121,10 @@ describe('useAssetRetrieval', () => {
       expect(useNotificationDispatcher().notify).toHaveBeenCalled();
     });
 
-    it('should time out and cancel the task when the lookup never resolves', async () => {
-      // Regression: a stalled ERC20 lookup (e.g. no RPC node answers) must not leave the
-      // caller awaiting forever, which would keep the asset form fields disabled indefinitely.
+    it('should time out and cancel the task when the lookup never resolves, rather than leave the form fields disabled forever', async () => {
       vi.useFakeTimers();
       cancelActivityMock.mockClear();
-      // Native submission that never settles.
-      submitTask.mockReturnValueOnce(new Promise<never>(() => {}));
+      submitTask.mockReturnValueOnce(neverSettles());
 
       try {
         const resultPromise = assetInfoRetrieval.fetchTokenDetails(payload);

@@ -31,8 +31,6 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
-// `assetSuggestions` drops ignored assets, which is a store read. Hoisted so the set can be
-// written per test without the mock factory closing over an uninitialised binding.
 const { ignoredAssets } = vi.hoisted(() => ({ ignoredAssets: new Set<string>() }));
 
 vi.mock('@/modules/assets/use-assets-store', () => ({
@@ -192,7 +190,6 @@ describe('assetSearchTokens', () => {
   });
 
   it('should keep a symbol that is also the identifier', () => {
-    // BTC, ETH and every non-EVM asset are their own identifier, and that is what people type.
     expect(assetTokensMatch(assetSearchTokens('BTC', { name: 'Bitcoin', symbol: 'BTC' }), 'btc')).toBe(true);
     expect(assetTokensMatch(assetSearchTokens('ETH', { name: 'Ether', symbol: 'ETH' }), 'eth')).toBe(true);
   });
@@ -216,6 +213,7 @@ describe('assetTokensMatch', () => {
   const DAI_ID = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
   const resolved = assetSearchTokens(DAI_ID, { name: 'Dai Stablecoin', symbol: 'DAI' });
   const unresolved = assetSearchTokens(DAI_ID, null);
+  const ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM = '6b1';
 
   it('should match on symbol or name', () => {
     expect(assetTokensMatch(resolved, 'dai')).toBe(true);
@@ -232,8 +230,8 @@ describe('assetTokensMatch', () => {
   });
 
   it('should not try short keywords against the address', () => {
-    // "6b1" is in the address, but a keyword this short hits a great many addresses by chance.
-    expect(assetTokensMatch(resolved, '6b1')).toBe(false);
+    expect(resolved.address).toContain(ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM);
+    expect(assetTokensMatch(resolved, ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM)).toBe(false);
   });
 
   it('should match an unresolved asset on its identifier', () => {
@@ -246,7 +244,7 @@ describe('assetTokensMatch', () => {
   });
 
   it('should not fall back to the identifier once the asset is resolved', () => {
-    // Every EVM identifier contains "erc20"; matching it for resolved assets returns the whole list.
+    expect(resolved.identifier).toContain('erc20');
     expect(assetTokensMatch(resolved, 'erc20')).toBe(false);
   });
 
@@ -255,16 +253,15 @@ describe('assetTokensMatch', () => {
   });
 
   it('should keep matching a pasted identifier once the asset resolves', () => {
-    // The keyword is longer than the address it contains, so only the identifier can carry this
-    // match. Without it the row is found while the metadata is in flight and vanishes when it
-    // lands, which is the same flicker seen from the other side.
     const keyword = getTextToken(DAI_ID);
+    expect(keyword.length).toBeGreaterThan(resolved.address.length);
     expect(assetTokensMatch(unresolved, keyword)).toBe(true);
     expect(assetTokensMatch(resolved, keyword)).toBe(true);
   });
 
   it('should not match an unresolved asset on a short identifier fragment', () => {
-    expect(assetTokensMatch(unresolved, '6b1')).toBe(false);
+    expect(unresolved.identifier).toContain(ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM);
+    expect(assetTokensMatch(unresolved, ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM)).toBe(false);
   });
 
   describe('an evm asset the backend has no name for', () => {
@@ -272,8 +269,7 @@ describe('assetTokensMatch', () => {
     const tokens = assetSearchTokens(DAI_ID, { name: standIn, symbol: standIn });
 
     it('should not be matched by the words of its stand-in name', () => {
-      // Every unnamed EVM asset is given the same "EVM Token: 0x…" stand-in, so matching its words
-      // returns all of them at once.
+      expect(standIn.toLowerCase()).toContain('token');
       expect(assetTokensMatch(tokens, 'token')).toBe(false);
       expect(assetTokensMatch(tokens, 'evm')).toBe(false);
     });
@@ -282,10 +278,9 @@ describe('assetTokensMatch', () => {
       expect(assetTokensMatch(tokens, '0x6b175474')).toBe(true);
     });
 
-    it('should not be found by a short address fragment', () => {
-      // The stand-in name embeds the address, so matching it as a name would sneak past the
-      // minimum length that protects address matching.
-      expect(assetTokensMatch(tokens, '6b1')).toBe(false);
+    it('should not be found by a short address fragment embedded in its stand-in name', () => {
+      expect(standIn.toLowerCase()).toContain(ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM);
+      expect(assetTokensMatch(tokens, ADDRESS_FRAGMENT_BELOW_THE_MATCH_MINIMUM)).toBe(false);
     });
   });
 });
@@ -334,10 +329,6 @@ describe('assetSuggestions', () => {
     expect(params.limit).toBe(10);
   });
 
-  // Every asset input in the app hides ignored assets (`AssetSelect` defaults `showIgnored` to
-  // false), and the pill bar's own asset editor goes through `useAssetSearch`, which filters them.
-  // Without this the same field behaved two ways: a spam asset offered while typing in the bar
-  // could not be found in the checklist the pill opens.
   it('should drop ignored assets from the suggestions', async () => {
     ignoredAssets.add('SPAM');
     const assetSearch = vi.fn().mockResolvedValue([
@@ -374,8 +365,6 @@ describe('assetDisplayLabel', () => {
     expect(assetDisplayLabel(unknown, 'USDC')).toBe('USDC');
   });
 
-  // A raw identifier swamps a pill or a suggestion row, so an asset with no metadata falls back
-  // to the shortened contract address instead.
   it('should fall back to the shortened address when there is no symbol', () => {
     expect(assetDisplayLabel(unknown)).toBe('0x214A...f818');
     expect(assetDisplayLabel(unknown, '  ')).toBe('0x214A...f818');
@@ -397,8 +386,6 @@ describe('assetDisplayCaption', () => {
     expect(assetDisplayCaption(unknown, 'USD Coin')).toBe('USD Coin');
   });
 
-  // An asset with no metadata reports its identifier as its name; echoing it under the label
-  // would just repeat the row.
   it('should drop a name that is only the identifier again', () => {
     expect(assetDisplayCaption(unknown, unknown)).toBeUndefined();
     expect(assetDisplayCaption(unknown)).toBeUndefined();

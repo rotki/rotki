@@ -49,8 +49,6 @@ export function textSettingField(rules: TextSettingRules): ZodType<string> {
 
   return z.string().superRefine((value, ctx) => {
     if (isBlank(value)) {
-      // A blank value is the required rule's business alone: an optional field that is empty must
-      // not also trip the length rule.
       if (required)
         ctx.addIssue({ code: 'custom', message: messages.required });
 

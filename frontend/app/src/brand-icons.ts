@@ -1,7 +1,3 @@
-// Brand/logo icons dropped from @rotki/ui-library when it moved to lucide v1
-// (which removed all third-party brand marks). They are re-registered here,
-// byte-identical to what the library rendered before, so there is no visual
-// change. Only the subset rotki actually renders is kept.
 interface BrandIcon {
   name: string;
   components: [string, Record<string, string>][];
@@ -29,4 +25,13 @@ const xTwitter: BrandIcon = {
   ],
 };
 
+/**
+ * Supplies the third-party brand marks rotki renders, which lucide itself does not carry.
+ *
+ * @remarks
+ * The `virtual:rotki-icons` scanner can only resolve names lucide ships, so these carry their own
+ * path data and are appended to its output when the Rui plugin is created. Every name keeps the
+ * `lu-` prefix because `RuiIcon` resolves brand and lucide names from one namespace. Adding an
+ * entry here is what makes a brand mark renderable; nothing detects it from usage.
+ */
 export const brandIcons = [github, discord, xTwitter];

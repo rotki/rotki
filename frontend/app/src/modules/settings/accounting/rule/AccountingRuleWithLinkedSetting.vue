@@ -17,8 +17,10 @@ const { identifier, label, hint, learnMoreUrl } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Three controls over a payload of two fields, where the absence of one of them is what the
-// checkbox means. Mapped once here, so each control binds to plain state.
+/**
+ * The three controls, over a payload of two fields where the absence of one is what the checkbox
+ * means. Mapped once here so that each control binds to plain state.
+ */
 const state = reactive<LinkedPropertyState>(toLinkedPropertyState(get(modelValue)));
 
 useModelMirror<AccountingRuleWithLinkedProperty, LinkedPropertyState>({
@@ -32,12 +34,15 @@ const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 
 const linkableSettingOptions = accountingRuleLinkedMappingData(() => identifier);
 
-// Not a wrapper over the payload: ticking the box has to choose a setting for the select below it
-// to open on, and unticking has to let it go.
-//
-// The options arrive over the api, so a rule opened before they land has nothing to link to. The
-// tick is refused outright rather than taken and then undone, which would flash the select open
-// for a tick on its way back out.
+/**
+ * Whether the rule follows a linked setting.
+ *
+ * @remarks
+ * Not a plain wrapper over the payload: ticking has to choose the setting the select below opens on,
+ * and unticking has to let it go. The options arrive over the api, so a rule opened before they land
+ * has nothing to link to, and the tick is refused outright rather than taken and undone, which would
+ * flash the select open on its way back out.
+ */
 const linked = computed<boolean>({
   get: () => state.linked,
   set: (value: boolean) => {

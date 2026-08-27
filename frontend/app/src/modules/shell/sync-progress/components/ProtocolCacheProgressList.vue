@@ -30,8 +30,6 @@ const hasInProgress = computed<boolean>(() => get(inProgressCache).length > 0);
 const completedCount = computed<number>(() => get(completedCache).length);
 const hasCompleted = computed<boolean>(() => !!get(completedCount));
 
-// A cancelled protocol never got refreshed, so the summary says the group finished rather than
-// claiming every one of them was refreshed.
 const completedLabel = computed<string>(() => {
   const count = get(completedCount);
   return get(hasCancelledItems)

@@ -7,7 +7,7 @@ import { Blockchain, toHumanReadable } from '@rotki/common';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { toServerErrors } from '@/modules/core/form/server-errors';
-import { type FormApi, useForm } from '@/modules/core/form/use-form';
+import { type FormApi, noSubmit, useForm } from '@/modules/core/form/use-form';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import {
   type RepullingEthStakingFormState,
@@ -44,8 +44,7 @@ const form: FormApi<RepullingEthStakingFormState, RepullingEthStakingPayload> = 
     entryTypeRequired: t('transactions.repulling.validation.entry_type_non_empty'),
     rangeRequired: t('transactions.repulling.validation.date_non_empty'),
   }, form.state.entryType !== OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
-  // The dialog owns the persist and reads the payload off the model.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: toEthStakingPayload,
 });
 
@@ -105,8 +104,6 @@ watch(() => form.state.filterMode, () => {
   form.state.selectedAddresses = [];
 });
 
-// Block productions are fetched whole, so a range left over from withdrawals is dropped rather
-// than sent.
 watch(showDateRangePicker, (show) => {
   if (!show) {
     form.state.fromTimestamp = undefined;

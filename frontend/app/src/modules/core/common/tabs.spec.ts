@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { tabKey } from '@/modules/core/common/tabs';
 
 describe('tabKey', () => {
-  // The e2e suite writes these keys as literals, so the shape is a contract.
-  it('should drop the leading slash and join segments with a dash', () => {
+  it('should drop the leading slash and join segments with a dash, a shape the e2e suite writes as literals', () => {
     expect(tabKey('/settings/rpc')).toBe('settings-rpc');
     expect(tabKey('/asset-manager/more/cex-mapping')).toBe('asset-manager-more-cex-mapping');
   });

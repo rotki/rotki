@@ -27,7 +27,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const loggedUserIdentifier = useLoggedUserIdentifier();
   const controller = useUnlockFlowController();
 
-  // Single-string error for the create wizard (the login form uses the `errors` array).
+  /** The create wizard shows one message, where the login form renders the whole `errors` array. */
   const error = computed<string>(() => {
     if (get(controller.state).kind !== UnlockPhase.error)
       return '';
@@ -52,10 +52,14 @@ export function useAccountManagement(): UseAccountManagementReturn {
     });
   };
 
-  // Dismissing the form's error alert (fired on field `touched`, and before each login attempt)
-  // must only clear a terminal error — never reset an in-flight unlock. A background auto-unlock
-  // can be running while the form is interactive; a full `controller.reset()` here would drop the
-  // flow's credentials and abort it with "unlock without an active flow".
+  /**
+   * Dismisses a terminal unlock error, leaving any other phase untouched.
+   *
+   * @remarks
+   * The phase guard is load-bearing. Forms call this on field touch and before each login attempt,
+   * and an unconditional reset would discard the credentials of a background auto-unlock that is
+   * still in flight.
+   */
   const clearErrors = (): void => {
     if (get(controller.state).kind === UnlockPhase.error)
       controller.reset();

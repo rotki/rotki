@@ -5,10 +5,7 @@ import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
 const { refreshBlockchainBalances, detectDue, fetchAccounts, withDetection, skipReason, willDetect, queryBalancesAsync, snapshotDue, isSnapshotDue } = vi.hoisted(() => {
-  // Whether a detection sweep is due this run. The real composable decides it from the cooldown
-  // settings; here a test sets it directly and `withDetection` hands it to the pass.
   const detectDue = { value: false };
-  // Whether the backend's snapshot schedule is due; `useSnapshotSchedule` is tested on its own.
   const snapshotDue = { value: true };
   return {
     detectDue,
@@ -65,7 +62,6 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn(),
 }));
 
-// The activity's task runner, handed to `run` by the stubbed `submitTask` below.
 const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
 
 vi.mock('@/modules/task-center/use-native-task', async () => {

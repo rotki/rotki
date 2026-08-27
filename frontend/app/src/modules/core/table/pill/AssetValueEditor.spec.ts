@@ -12,11 +12,8 @@ function asset(identifier: string, symbol: string): AssetInfoWithId {
   return { identifier, isCustomAsset: false, name: `${symbol} coin`, symbol };
 }
 
-// The search is driven entirely by `useAssetSearch`; the editor only decides what to seed it with
-// and how to order what comes back. Both are observable through these handles.
 const modelSearch = ref<string>('');
 const visibleAssets = ref<AssetInfoWithId[]>([]);
-// Resolves rather than returning undefined: the editor hands the result to `startPromise`.
 const preload = vi.fn<(keyword: string) => Promise<void>>(async () => {});
 
 vi.mock('@/modules/shell/components/inputs/use-asset-search', () => ({
@@ -67,17 +64,12 @@ describe('assetValueEditor', () => {
     expect(preload).toHaveBeenCalledWith('ETH');
   });
 
-  // The seed only exists so the list is not empty on open. Putting it through `modelSearch` would
-  // show `ETH` in the search box as text the user has to clear before typing their own.
-  it('should not prefill the search box with the seed', () => {
+  it('should not prefill the search box with the seed, which the user would have to clear before typing', () => {
     createWrapper([]);
     expect(get(modelSearch)).toBe('');
   });
 
-  // Reopening a pill is usually about swapping the asset for a sibling — the same symbol on
-  // another chain — so the list opens on the selection's own symbol rather than on `ETH` or on a
-  // single row. Still without prefilling the box.
-  it('should seed on the selected asset symbol when there is one', () => {
+  it('should seed on the selected asset symbol rather than ETH, so its siblings on other chains are listed', () => {
     createWrapper([USDC]);
     expect(preload).toHaveBeenCalledWith('USDC');
     expect(get(modelSearch)).toBe('');
@@ -89,10 +81,7 @@ describe('assetValueEditor', () => {
     expect(preload).not.toHaveBeenCalled();
   });
 
-  // A single-select list has no chip row, so the asset being filtered on has to hold a place in
-  // the options themselves or it scrolls out of sight as soon as the user searches for anything
-  // else. It is pinned first, and declared as pinned so the highlight skips past it.
-  it('should pin the selected asset above the search results', () => {
+  it('should pin the selected asset above the search results, and declare it pinned so the highlight skips it', () => {
     set(visibleAssets, [asset(DAI, 'DAI'), asset(USDC, 'USDC')]);
     const props = listProps(createWrapper([USDC]));
     expect(props.options.map((option: { value: string }) => option.value)).toStrictEqual([USDC, DAI]);

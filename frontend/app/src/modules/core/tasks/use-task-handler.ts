@@ -13,8 +13,6 @@ import { TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
-// The task-result model now lives in its own leaf module; re-exported here so existing
-// consumers keep importing it from `use-task-handler`.
 export type { TaskError } from '@/modules/core/tasks/task-result';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
@@ -28,9 +26,14 @@ function useTaskHandlerInternal(): {
   cancelTaskById: (taskId: number) => Promise<boolean>;
   handleResult: (result: TaskActionResult<any>, taskId: number) => void;
 } {
-  // Keyed by backend task id — the only identity the backend reports back. Keying by task *type*
-  // let two concurrent tasks of one type overwrite each other's handler, leaving the loser's
-  // promise pending forever.
+  /**
+   * The resolver waiting on each in-flight backend task, keyed by that task's backend id.
+   *
+   * @remarks
+   * The id is the only identity the backend reports back with a result. Keying by task *type*
+   * instead let two concurrent tasks of one type overwrite each other's entry, so the loser's
+   * promise was never settled and whatever awaited it hung for the rest of the session.
+   */
   const handlers = new Map<number, (result: TaskActionResult<any>) => void>();
   const store = useTaskStore();
   const api = useTaskApi();

@@ -22,10 +22,12 @@ const SavedViewMatch = z.union([
  * view carry the param-bound pills (account, state, show-ignored, action) that the older
  * `savedFilters` shape could not express. Both are typed as the bar's two models, so a stored view
  * can be handed straight back to it.
+ *
+ * A `matches` value is optional so the record lines up with the bar's
+ * `MatchedKeywordWithBehaviour`, whose keys are all optional: a view has to be handed back to the
+ * bar as it stands.
  */
 export const SavedView = z.object({
-  // The value is optional so the record lines up with the bar's `MatchedKeywordWithBehaviour`,
-  // whose keys are all optional: a view has to be handed back to the bar as it stands.
   matches: z.record(z.string(), SavedViewMatch.optional()).default({}),
   name: z.string().min(1),
   params: z.record(z.string(), SavedViewValue).default({}),

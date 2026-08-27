@@ -39,8 +39,6 @@ const { pinPanel } = useAreaVisibilityStore();
 
 const settled = useRefWithDebounce(logicOr(processing, autoMatchLoading, bridgeAutoMatchLoading), 200);
 
-// Locked and ignored-only rows sit under the actionable ones: their counts are
-// real information, but neither asks the user to do something right now.
 const rows = computed<HistoryEventIssue[]>(() => [...get(activeItems), ...get(reviewItems), ...get(lockedItems)]);
 
 async function openDuplicates(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
@@ -63,8 +61,6 @@ function openTarget(target: HistoryIssueTarget): void {
       startPromise(openDuplicates(target.groupIds, target.status));
       break;
     case 'pin':
-      // `pinPanel` focuses the tab and reveals the rail, so the panel opens beside
-      // the table whether or not it was already pinned.
       pinPanel(target.panel);
       break;
     case 'route':
@@ -76,10 +72,6 @@ function openTarget(target: HistoryIssueTarget): void {
   }
 }
 
-// Counts only settle once the history work (tx query, exchange events, decoding,
-// matching) is idle, so a scan runs whenever that settles - including right away
-// when the page opens on an already-synced session, which is why this is
-// `watchImmediate` and not tied to a sync-completion signal.
 watchImmediate(settled, (busy) => {
   if (!busy) {
     startPromise(refreshAll());

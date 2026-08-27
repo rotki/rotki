@@ -49,12 +49,21 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     return assets.filter(item => !missingAssets.includes(item));
   };
 
+  /**
+   * Fetches prices for the given assets and writes the result into the balances store.
+   *
+   * @remarks
+   * Sets no status of its own: the in-flight state belongs to the native PRICES activity, read
+   * with `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`. Custom assets that no longer
+   * resolve are dropped before the request rather than sent and failed.
+   *
+   * @param ignoreCache - bypasses the cached prices, and additionally re-fetches exchange rates.
+   * @param selectedAssets - the assets to price; an empty list requests none.
+   */
   const performPriceFetch = async (
     ignoreCache: boolean,
     selectedAssets: string[],
   ): Promise<void> => {
-    // Loading status is owned by the native PRICES activity (see use-fetch-prices); no manual
-    // setStatus here. Read it via `useTaskCenter().useWorkStatus(ActivityKind.PRICES)`.
     if (ignoreCache) {
       await fetchExchangeRates();
     }
@@ -76,7 +85,7 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
 
     try {
       while (get(taskQueue).length > 0) {
-        const task = get(taskQueue).shift(); // FIFO: take from front
+        const task = get(taskQueue).shift();
         if (!task)
           break;
 
@@ -94,7 +103,19 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     }
   };
 
-  // Add task to queue and start processing if not already running
+  /**
+   * Queues one price fetch and resolves once that fetch, and not merely the queueing, has run.
+   *
+   * @remarks
+   * Fetches are serialised: only one drain of the queue runs at a time, so two overlapping
+   * refreshes cannot both hit the backend and race each other's write into the balances store.
+   * The drain is started on the next tick, so several calls made in the same tick are picked up
+   * by one pass of the loop. Each queued task keeps its own settlers, so a failure reaches the
+   * caller that enqueued it rather than whichever caller happened to trigger the drain.
+   *
+   * @param ignoreCache - forwarded to the fetch; bypasses cached prices and exchange rates.
+   * @param selectedAssets - the assets to price.
+   */
   const enqueueTask = async (ignoreCache: boolean, selectedAssets: string[]): Promise<void> =>
     new Promise<void>((resolve, reject) => {
       const task: PriceRefreshTask = {
@@ -104,7 +125,6 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
         selectedAssets,
       };
 
-      // Add to end of queue (FIFO)
       get(taskQueue).push(task);
 
       startPromise(nextTick(() => {
@@ -141,7 +161,6 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     }
   }
 
-  // Watch for assets without prices and automatically fetch them
   watchDebounced(noPriceAssets, async assets => fetchNoPriceAssets(assets), { debounce: 800, maxWait: 2000 });
 
   return {

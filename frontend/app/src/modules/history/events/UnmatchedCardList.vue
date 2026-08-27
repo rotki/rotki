@@ -4,10 +4,7 @@ import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogConten
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-// The list fills the height its host gives it rather than capping itself against the
-// viewport: the select-all bar and the pager sit outside the scroll area, so a cap that
-// guesses the surrounding chrome loses the pager off the bottom of a short window. The
-// host must be a bounded flex column (the pinned rail is).
+// Never caps its own height, so the host must be a bounded flex column or the pager scrolls away.
 const { items, rowKey, emptyDescription, highlighted, accented, loading } = defineProps<{
   items: T[];
   /** Stable identity of a card, and what the selection model stores. */

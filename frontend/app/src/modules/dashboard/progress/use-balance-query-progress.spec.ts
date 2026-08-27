@@ -181,7 +181,6 @@ describe('useBalanceQueryProgress', () => {
     const { balanceProgress } = useBalanceQueryProgress();
     await nextTick();
 
-    // eth completes, optimism starts running
     set(activities, [
       balanceActivity('eth', ActivityStatus.COMPLETE),
       balanceActivity('optimism', ActivityStatus.RUNNING),

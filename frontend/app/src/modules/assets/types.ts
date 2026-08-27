@@ -186,9 +186,14 @@ export const NON_EVM_CHAIN_ASSET_TYPES: Readonly<Record<string, string | undefin
   [SOLANA_CHAIN]: SOLANA_TOKEN,
 };
 
+/**
+ * Whether an asset of this type can be marked as spam.
+ *
+ * @remarks
+ * Excludes Hyperliquid Core tokens, which have no protocol storage in the backend yet: offering
+ * the spam actions for one would fail validation rather than mark it.
+ */
 export function isSpammableAssetType(assetType?: string | null): boolean {
-  // Hyperliquid Core tokens do not have protocol storage in the backend yet, so exposing the spam
-  // actions would make them fail validation instead of marking the asset as spam.
   return assetType === EVM_TOKEN || assetType === SOLANA_TOKEN;
 }
 

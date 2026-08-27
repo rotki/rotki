@@ -19,8 +19,6 @@ function row(publicKey: string): CSVRow {
     addressExtras: { ownershipPercentage: '100' },
     chain: 'eth2',
     label: '',
-    // `CSVRow` is the schema's *output*, so the transforms have already run: `tags` is a list here,
-    // not the raw `;`-joined string the CSV carries.
     tags: [],
   };
 }
@@ -57,8 +55,7 @@ describe('useValidatorImport', () => {
     expect(maxActive).toBe(1);
   });
 
-  // Counted after the save, so the bar never shows a validator as imported before it is.
-  it('should count a validator only once it has been saved', async () => {
+  it('should count a validator only once it has been saved, so the bar never runs ahead', async () => {
     const seen: number[] = [];
     let progress = 0;
     mocks.save.mockImplementation(async () => {

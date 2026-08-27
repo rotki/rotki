@@ -6,22 +6,16 @@ function subject(chain: string, address: string): AccountSubject {
 }
 
 describe('account activity lanes', () => {
-  // The lane is the only thing serializing removals. One that minted no lane would take the
-  // default, which is uncapped, and the serial behaviour would be lost silently rather than loudly.
-  it('should put a removal on its chain lane', () => {
+  it('should put a removal on its chain lane, since the default lane is uncapped and would lose the serial behaviour silently', () => {
     expect(accountRemoveActivity.laneOf?.(subject('eth', '0xabc'))).toBe('accounts-remove:eth');
   });
 
-  // Per chain, not one lane for every removal: the family cap of 1 is what makes a chain serial,
-  // and a shared lane would serialize unrelated chains against each other instead.
-  it('should give each chain its own removal lane', () => {
+  it('should give each chain its own removal lane, so unrelated chains are not serialized against each other', () => {
     const eth = accountRemoveActivity.laneOf?.(subject('eth', '0xabc'));
     expect(accountRemoveActivity.laneOf?.(subject('gnosis', '0xabc'))).not.toBe(eth);
   });
 
-  // Additions and removals are independent operations; pooling them would make a removal wait on
-  // an unrelated addition.
-  it('should not share a lane between an addition and a removal on one chain', () => {
+  it('should not share a lane between an addition and a removal on one chain, so a removal never waits on an unrelated addition', () => {
     const add = accountAddActivity.laneOf?.(subject('eth', '0xabc'));
     expect(accountRemoveActivity.laneOf?.(subject('eth', '0xabc'))).not.toBe(add);
   });

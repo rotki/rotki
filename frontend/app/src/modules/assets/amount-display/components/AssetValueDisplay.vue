@@ -61,7 +61,6 @@ const { assetOracle, isManualPrice } = useOracleInfo({
 });
 const { currency } = useAmountDisplaySettings();
 
-// Computed - currency symbol (always uses user's default)
 const displaySymbol = computed<string>(() => get(currency).unicodeSymbol);
 
 const hasProvidedValue = computed<boolean>(() => providedValue !== undefined && providedValue.gt(0));
@@ -82,7 +81,6 @@ const showAssetOracle = computed<boolean>(() =>
   !isDefined(timestamp) && isDefined(assetOracle),
 );
 
-// Scrambling (depends on displayValue computed)
 const { scrambledValue } = useScrambledValue({ value: displayValue });
 </script>
 

@@ -27,8 +27,6 @@ vi.mock(import('@/modules/task-center/use-native-task'), async (importOriginal) 
   const actual = await importOriginal();
   const { ok } = await import('plainfp/result');
   return {
-    // Keeps the real `ActivityKind`/`makeActivityId` the producers build their ids from; only the
-    // task-running surface is stubbed.
     ...actual,
     useNativeTask: vi.fn().mockReturnValue({
       cancelByType: vi.fn(() => vi.fn()),

@@ -62,9 +62,14 @@ export function useSnapshotList(filters: WritableRef<SnapshotListFilters> = ref(
 
   const loading = shallowRef<boolean>(false);
 
-  // Pure USD-only derivation: no historic-rate lookups here. Each row carries
-  // its chronological predecessor (from the full series, before any range
-  // filter) so the display layer can compute the Δ for just the visible rows.
+  /**
+   * The rows, in USD only.
+   *
+   * @remarks
+   * Deliberately free of historic-rate lookups, so building the list never reaches the forex
+   * endpoint. Each row carries its chronological predecessor, taken from the full series before any
+   * range filter, which is what lets the display layer compute a delta for the visible rows alone.
+   */
   const baseRows = computed<SnapshotListRow[]>(() => {
     const { data, times } = get(netValue);
     const rows: SnapshotListRow[] = [];

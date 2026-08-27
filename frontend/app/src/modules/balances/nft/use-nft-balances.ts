@@ -14,6 +14,7 @@ import { Module } from '@/modules/core/common/modules';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
+import { shouldSkipFetch } from '@/modules/task-center/core/status';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -42,14 +43,20 @@ export function useNftBalances(): NftBalancesReturn {
     return mapCollectionResponse(result);
   };
 
+  /**
+   * Refreshes the non-fungible balances, an expensive query.
+   *
+   * @remarks
+   * Only two things make it stale: a hand-edited price, since that changes what an NFT is worth, and
+   * enabling the module, which makes these fetchable where they were not before. The price trigger
+   * is scoped to manual edits alone, so the automatic sweeps do not keep re-running this.
+   */
   const refreshNonFungibleBalances = async (userInitiated = false): Promise<void> => {
     if (!get(activeModules).includes(Module.NFTS))
       return;
 
-    // `fetchDisabled(refresh)` was `!(isFirstLoad || refresh) || loading`; on the orchestrator's
-    // projection that is `(everCompleted && !userInitiated) || active`.
     const status = statusOf(ActivityKind.NFT_BALANCES);
-    if ((status.everCompleted && !userInitiated) || status.active) {
+    if (shouldSkipFetch(status, userInitiated)) {
       logger.info('skipping non fungible balances refresh');
       return;
     }
@@ -67,10 +74,7 @@ export function useNftBalances(): NftBalancesReturn {
       kind: ActivityKind.NFT_BALANCES,
       rerunnable: true,
       staleAfter: [
-        // A hand-edited price changes what NFTs are worth. Scoped to `prices:manual:*` so the
-        // automatic price sweeps do not keep re-running this expensive query.
         { kind: ActivityKind.PRICES, parts: [ActivityPart.MANUAL] },
-        // Enabling the module makes these fetchable where they were not before.
         { kind: ActivityKind.MODULE_TOGGLE, parts: [Module.NFTS, 'enabled'] },
       ],
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(

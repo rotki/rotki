@@ -149,13 +149,10 @@ describe('modules/sync-progress/components/DecodingProgressList', () => {
       ];
       wrapper = createWrapper(decoding);
 
-      // Only non-cancelled in-progress item should show
       const items = wrapper.findAll('[data-testid="decoding-item"]');
       expect(items).toHaveLength(1);
       expect(items[0].attributes('data-chain')).toBe('optimism');
 
-      // The cancelled item settles into the group, whose label then says the group finished
-      // rather than claiming every chain in it was decoded.
       expect(wrapper.text()).toContain('sync_progress.finished_decoding');
       expect(wrapper.text()).not.toContain('sync_progress.completed_decoding');
     });

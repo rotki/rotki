@@ -1,6 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { UNMATCHED_ACTIONS, UNMATCHED_LAYOUTS, type UnmatchedLayout, type UnmatchedRowActionSpec, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 
@@ -50,10 +50,6 @@ async function openOverflow(wrapper: Wrapper): Promise<void> {
 }
 
 describe('modules/history/events/UnmatchedActions', () => {
-  afterEach(() => {
-    document.body.innerHTML = '';
-  });
-
   describe('card layout', () => {
     it('should keep find-match labelled and the rest of the line as icons', async () => {
       const wrapper = mountActions(UNMATCHED_LAYOUTS.CARD, { markExternal });

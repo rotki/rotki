@@ -1,8 +1,7 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { StakingLocation } from '@/pages/staking/staking-pages';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStakingPage } from './use-staking-page';
 
 const LAST_LOCATION_KEY = 'rotki.staking.last_location';
@@ -13,7 +12,6 @@ vi.mock('vue-router', () => ({
   useRouter: (): { push: typeof pushMock } => ({ push: pushMock }),
 }));
 
-// The real map pulls in four staking pages; only the identity of each entry matters here.
 vi.mock('@/pages/staking/staking-pages', () => ({
   stakingPages: {
     'eth2': { name: 'Eth2Page' },
@@ -28,24 +26,13 @@ vi.mock('@/modules/core/common/file/file', () => ({
 }));
 
 describe('pages/staking/useStakingPage', () => {
-  // The composable registers an onMounted hook that can navigate, so a leftover harness would
-  // push during a later test.
-  const mounted: VueWrapper[] = [];
-
   function setup(location: StakingLocation | ''): ReturnType<typeof useStakingPage> {
-    const { result, wrapper } = withSetup(() => useStakingPage(() => location));
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useStakingPage(() => location)).result;
   }
 
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   describe('with a location in the route', () => {
@@ -145,8 +132,6 @@ describe('pages/staking/useStakingPage', () => {
       set(modelLocation, 'eth2');
       await flushPromises();
 
-      // The prop is the source of truth; the write only navigates, and the real route change is
-      // what swaps the page.
       expect(get(modelLocation)).toBe('kraken');
     });
   });

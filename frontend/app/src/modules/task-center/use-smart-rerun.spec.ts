@@ -83,9 +83,8 @@ describe('useSmartRerun', () => {
   it('should ignore running, non-rerunnable, or unaffected activities', () => {
     const running = activity(ActivityKind.HISTORICAL_BALANCES, ActivityStatus.RUNNING, true, 'a');
     const notRerunnable = activity(ActivityKind.HISTORICAL_BALANCES, ActivityStatus.COMPLETE, false, 'b');
-    // PNL_REPORT is intentionally excluded from the policy, so a terminal rerunnable one is unaffected.
-    const unaffected = activity(ActivityKind.PNL_REPORT, ActivityStatus.COMPLETE, true);
-    modelRef.value = model([running, notRerunnable, unaffected]);
+    const outsideThePolicy = activity(ActivityKind.PNL_REPORT, ActivityStatus.COMPLETE, true);
+    modelRef.value = model([running, notRerunnable, outsideThePolicy]);
 
     taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
 

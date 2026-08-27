@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { EIP1193Provider } from '@/types';
+import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -28,10 +28,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
   let injectedProvider: EIP1193Provider | undefined;
 
-  // Provider store for enhanced provider detection and selection
   const providerStore = useUnifiedProviders();
 
-  // Define event handlers as part of the composable scope (maintain same references)
   const handleAccountsChanged = (accounts: string[]): void => {
     logger.debug(`Injected provider accounts changed: ${accounts.length} account(s)`);
     if (accounts.length > 0) {
@@ -75,18 +73,34 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   const { isPackaged } = useInterop();
   const { disconnectProxy, startConnectionHealthCheck, stopConnectionHealthCheck } = useWalletProxy();
 
+  /**
+   * Visits every provider event this composable subscribes to, with the handler bound to it.
+   *
+   * @remarks
+   * The single place the pairing is written down. Subscribing and unsubscribing both go through
+   * here, so they cannot drift apart and both necessarily pass the same function reference, which
+   * is what `removeListener` matches on. Adding an event means adding one line here.
+   *
+   * @param apply - run once per event; `on` and `removeListener` are what get passed in.
+   */
+  function eachProviderEvent(
+    apply: <K extends EIP1193EventName>(event: K, handler: (...args: EIP1193ProviderEvents[K]) => void) => void,
+  ): void {
+    apply('accountsChanged', handleAccountsChanged);
+    apply('chainChanged', handleChainChanged);
+    apply('connect', handleConnect);
+    apply('disconnect', handleDisconnect);
+    apply('error', handleError);
+  }
+
   const removeProviderEventListeners = (provider: EIP1193Provider): void => {
     logger.debug('Removing injected wallet event listeners from provider');
-    if (provider.removeListener) {
-      provider.removeListener('accountsChanged', handleAccountsChanged);
-      provider.removeListener('chainChanged', handleChainChanged);
-      provider.removeListener('connect', handleConnect);
-      provider.removeListener('disconnect', handleDisconnect);
-      provider.removeListener('error', handleError);
-    }
-    else {
+    if (!provider.removeListener) {
       logger.warn('Provider has no removeListener method');
+      return;
     }
+
+    eachProviderEvent((event, handler) => provider.removeListener?.(event, handler));
   };
 
   const connectInjectedProvider = async (): Promise<void> => {
@@ -122,11 +136,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   const addProviderEventListeners = (provider: EIP1193Provider): void => {
     logger.debug('Adding injected wallet event listeners to provider');
 
-    provider.on?.('accountsChanged', handleAccountsChanged);
-    provider.on?.('chainChanged', handleChainChanged);
-    provider.on?.('connect', handleConnect);
-    provider.on?.('disconnect', handleDisconnect);
-    provider.on?.('error', handleError);
+    eachProviderEvent((event, handler) => provider.on?.(event, handler));
   };
 
   /**

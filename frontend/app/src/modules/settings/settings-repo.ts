@@ -63,11 +63,18 @@ export const useSettingsRepo = defineStore('settings', () => {
   const mirrors = resolveMirrors();
   const wireIndex = buildWireIndex();
 
-  // Runs the registry-declared effects and mirror syncs for the keys of a channel that just changed.
-  // `changedWireKeys` are the wire field names of the merged object; each is resolved to its logical
-  // registry entry via `wireIndex`. Effects (e.g. reconfiguring BigNumber's format) get the whole
-  // merged object; mirrors (e.g. the `itemsPerPage` global ref, or animations' localStorage) are
-  // pushed the new value, guarded to avoid a write echo.
+  /**
+   * Runs the registry-declared effects and mirror syncs for the keys a channel update changed.
+   *
+   * @remarks
+   * An effect takes the whole merged object, because reconfiguring something like BigNumber's
+   * format reads more than one field. A mirror is pushed the single new value, and only when it
+   * differs from what the mirror already holds, so a mirror write cannot echo back as a change.
+   *
+   * @param channel - the channel whose settings were merged
+   * @param changedWireKeys - wire field names, resolved to logical registry entries through the index
+   * @param merged - the channel's settings after the merge, handed to every effect
+   */
   const applySideEffects = (channel: SettingChannel, changedWireKeys: string[], merged: object): void => {
     for (const wireKey of changedWireKeys) {
       const found = wireIndex.get(`${channel}:${wireKey}`);

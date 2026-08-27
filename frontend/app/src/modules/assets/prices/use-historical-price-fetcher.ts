@@ -67,9 +67,6 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
       prices: {},
       rateLimitedPricesTimestamps: [],
     };
-    // One native PRICES activity per (asset, interval, range) — the payload fields that make the
-    // query distinct. A per-asset id alone would let two different ranges for the same asset
-    // dedup onto one promise. Readers aggregate with `useWorkStatusPrefix`.
     const outcome = await submitTask<HistoricalAssetPriceResponse>({
       id: makeActivityId(
         ActivityKind.PRICES,

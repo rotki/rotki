@@ -3,12 +3,6 @@ import { Severity } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGoogleCalendarIntegration } from '@/modules/calendar/use-google-calendar-integration';
 
-/**
- * The seam: connecting to Google has two shapes, and this decides which one runs. The packaged app
- * hands the tokens back over IPC, everywhere else they are pasted in and take the same path. Every
- * failure is reported, and the flags the buttons read are always put back.
- */
-
 const notify = vi.fn();
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: (): { notify: typeof notify } => ({ notify }),
@@ -25,8 +19,6 @@ vi.mock('@/modules/settings/api/use-google-calendar-api', () => ({
   useGoogleCalendarApi: (): typeof calendarApi => calendarApi,
 }));
 
-// `logging.ts` calls `useInterop()` while it is being imported, so the stub has to exist before
-// any import runs.
 const { interop, openUrl } = vi.hoisted(() => {
   const openUrl = vi.fn<(url: string) => Promise<void>>();
   return { interop: { isPackaged: false, openUrl }, openUrl };

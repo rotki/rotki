@@ -17,7 +17,13 @@ vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
   }),
 }));
 
-// Build a raw (camelCased) series response entry as the backend transformer would deliver it.
+/**
+ * Builds one series entry in the camelCased shape the response transformer hands over.
+ *
+ * @remarks
+ * Typed as `Record<string, unknown>` rather than as the domain type, so the composable is fed
+ * wire-shaped data and the parsing it does is part of what the test exercises.
+ */
 function entry(opts: { protocol?: string | null; times: number[]; values: string[] }): Record<string, unknown> {
   return {
     asset: 'ETH',
@@ -120,9 +126,7 @@ describe('useAccountingOverlay', () => {
     expect(buckets.map(b => b.protocol)).toEqual([null, 'aave-v3']);
   });
 
-  it('should merge same-scope series (null and empty protocol) into one wallet bucket', async () => {
-    // Backend splits one plain-wallet position across two consecutive windows, tagging the
-    // early one null and the later one '' — they must merge, not double-count.
+  it('should merge same-scope series (null and empty protocol) into one wallet bucket rather than double-count them', async () => {
     runTaskMock.mockResolvedValue(success([
       entry({ protocol: null, times: [100, 200], values: ['10', '4'] }),
       entry({ protocol: '', times: [300, 400], values: ['50', '60'] }),
@@ -195,8 +199,6 @@ describe('useAccountingOverlay', () => {
   });
 
   it('should fetch a pair registered via ensurePair that is absent from the view set', async () => {
-    // Mirrors a linked asset movement: the deposit pair is not in `groups.data`, so the cell
-    // registers it directly. Before registration the cell sees only the loading default.
     runTaskMock.mockResolvedValue(success([entry({ times: [100], values: ['9'] })]));
     const { overlay } = create([]);
     await overlay.refresh();
@@ -244,8 +246,8 @@ describe('useAccountingOverlay', () => {
       await overlay.refresh();
       await flushPromises();
 
-      // event at 400s (ms); no window → all change-points + the held value at the event.
-      const series = overlay.seriesUpTo('0xA', 'ETH', 400_000);
+      const eventAfterEveryChangePoint = 400_000;
+      const series = overlay.seriesUpTo('0xA', 'ETH', eventAfterEveryChangePoint);
       expect(series).toEqual([
         { time: 100, value: 1 },
         { time: 200, value: 3 },
@@ -260,8 +262,8 @@ describe('useAccountingOverlay', () => {
       await overlay.refresh();
       await flushPromises();
 
-      // event at 250s → only points <= 250, plus the event value (3, held since 200).
-      const series = overlay.seriesUpTo('0xA', 'ETH', 250_000);
+      const eventBetweenTwoChangePoints = 250_000;
+      const series = overlay.seriesUpTo('0xA', 'ETH', eventBetweenTwoChangePoints);
       expect(series).toEqual([
         { time: 100, value: 1 },
         { time: 200, value: 3 },

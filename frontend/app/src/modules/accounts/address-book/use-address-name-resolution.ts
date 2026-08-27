@@ -50,7 +50,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
   const { supportedChains } = useSupportedChains();
   const { ensAvatarUrl, getAddressesNames } = useAddressesNamesApi();
 
-  // Pre-computed chain ID lists by type
   const evmChainIds = computed<string[]>(() =>
     get(supportedChains)
       .filter(chain => chain.type === 'evm' || chain.type === 'evmlike')

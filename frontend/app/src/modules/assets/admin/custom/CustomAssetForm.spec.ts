@@ -1,13 +1,11 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import CustomAssetForm from '@/modules/assets/admin/custom/CustomAssetForm.vue';
 import '@test/i18n';
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 const saveIcon = vi.fn<(identifier: string) => void>();
 
@@ -108,12 +106,10 @@ describe('customAssetForm', () => {
     expect(await wrapper.vm.validate()).toBe(false);
   });
 
-  it('should pass validation with no notes at all', async () => {
+  it('should pass validation with no notes at all, since its rule exists only to hold server errors', async () => {
     wrapper = createWrapper({ ...baseModel(), notes: '' });
     await vi.advanceTimersToNextTimerAsync();
 
-    // Notes carries a rule that always returns true. It exists to hold server errors, not to
-    // reject anything, and the field is never required.
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
@@ -151,7 +147,6 @@ describe('customAssetForm', () => {
     await edit('name', '');
 
     expect(messages('name')).toEqual(['asset_form.name_non_empty']);
-    // The untouched field stays quiet.
     expect(messages('type')).toEqual([]);
   });
 
@@ -174,8 +169,7 @@ describe('customAssetForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleMountedWork();
 
     await edit('name', 'A boat');
 
@@ -198,8 +192,6 @@ describe('customAssetForm', () => {
     expect(saveIcon).toHaveBeenCalledWith('custom-2');
   });
 
-  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
-  // rejected save said nothing at all on a field the user had not been in.
   it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { name: ['already taken'] };
     wrapper = createWrapper(baseModel(), { errorMessages });

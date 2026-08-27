@@ -1,5 +1,6 @@
 import { err, none, ok, type OptionType as Option, type ResultType as Result, some } from 'plainfp';
 import { useAssets } from '@/modules/assets/use-assets';
+import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { BackendRestartStatus, useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useAssetUpdateThrottle } from './use-asset-update-throttle';
 import {
@@ -27,8 +28,7 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
   const { applyUpdates, checkForUpdate } = useAssets();
   const { restartBackend } = useBackendManagement();
   const updateThrottle = useAssetUpdateThrottle();
-  // A specific remote version the user permanently skipped (shared with AssetUpdateMessage).
-  const skipped = useLocalStorage<number>('rotki_skip_asset_db_version', 0);
+  const skipped = useLocalStorage<number>(SKIPPED_ASSET_VERSION_KEY, 0);
 
   return {
     applyUpdate: async (upToVersion, resolution): Promise<Result<ApplyOutcome, UnlockError>> => {
@@ -56,17 +56,12 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
       }));
     },
     requestRestart: async (): Promise<Result<void, UnlockError>> => {
-      // One call for every runtime: Electron restarts its managed process, docker
-      // goes through `/_control`, and the plain web build reports `unavailable`
-      // because no control endpoint is served there.
       const result = await restartBackend();
       if (result.status === BackendRestartStatus.failed)
         return err({ kind: UnlockErrorKind.restartFailed });
 
       return ok(undefined);
     },
-    // No real wait needed: every restart path reconnects before it resolves, and
-    // where none is available the restart did not happen at all.
     waitReady: async (): Promise<Result<void, UnlockError>> => ok(undefined),
   };
 }

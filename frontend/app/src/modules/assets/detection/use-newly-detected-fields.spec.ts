@@ -22,10 +22,7 @@ describe('useNewlyDetectedFields', () => {
     addresses = {};
   });
 
-  // With no solana account every detected token is an evm one, so the field would offer a filter
-  // that cannot narrow anything. The select this replaces stayed on screen as a single-option
-  // dropdown in exactly that case.
-  it('should offer nothing when there is no solana account', () => {
+  it('should offer nothing when there is no solana account, since every detected token is then an evm one', () => {
     addresses = { eth: ['0xabc'] };
 
     expect(get(useNewlyDetectedFields())).toStrictEqual([]);

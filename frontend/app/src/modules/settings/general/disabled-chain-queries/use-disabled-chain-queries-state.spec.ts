@@ -107,10 +107,7 @@ describe('useDisabledChainQueriesState', () => {
       expect(payload).toEqual({ eth: [ADDR_A], optimism: [ADDR_A] });
     });
 
-    it('should not add a second rule for a chain that already has one', async () => {
-      // The chain picker offers every chain, including ones already ruled, and the payload collapses
-      // both onto one key - so a re-add showed the chain twice in the list while saving nothing, and
-      // the phantom row only disappeared on the next reload.
+    it('should not add a second rule for a chain the picker still offers', async () => {
       harness = createHarness({ source: { zksync_lite: [] } });
       await flushPromises();
 

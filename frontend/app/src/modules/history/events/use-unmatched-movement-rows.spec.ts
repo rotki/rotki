@@ -5,14 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNMATCHED_ACTIONS, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import { type UnmatchedMovementRow, useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';
 
-/**
- * The seam: the row model decides what a movement is called and what may be done to it, and
- * every word it picks depends on the direction. A withdrawal leaves the exchange (a payment
- * out), a deposit arrives on it (income in), which is also what the backend writes when
- * either is resolved as external. Anything here that reads the same for both directions
- * describes half the rows wrongly.
- */
-
 const { spies } = vi.hoisted(() => ({
   spies: {
     isDestinationUntracked: vi.fn<() => boolean>(() => false),

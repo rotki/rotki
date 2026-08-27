@@ -158,7 +158,6 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
 
   const isDecodableChains = (chain: string): boolean => get(decodableChainSet).has(chain);
 
-  // Info lookup (internal)
   const getChainInfoById = (chain: string): ChainInfo | null =>
     get(chainById).get(chain) ?? null;
 
@@ -280,8 +279,13 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
   const useBlockchainRedirectLink = (blockchain: MaybeRefOrGetter<string>): ComputedRef<string> =>
     computed<string>(() => getBlockchainRedirectLink(toValue(blockchain)));
 
-  // Loaded imperatively from the unlock flow (post-login), so the calls never fire
-  // on the login screen. The store state is cleared on logout by `resetState()`.
+  /**
+   * Loads the supported chain lists into the store.
+   *
+   * @remarks
+   * The unlock flow calls this explicitly rather than a watcher triggering it, so the requests
+   * never fire while the login screen is up. `resetState()` clears what it wrote on logout.
+   */
   const refreshSupportedChains = async (): Promise<void> => {
     const [chains, evmChains] = await Promise.all([
       fetchSupportedChains(),

@@ -105,7 +105,6 @@ describe('useHistoryTransactionDecoding', () => {
 
   describe('redecodeTransactions', () => {
     it('should complete the flow even when a chain fails', async () => {
-      // The umbrella runs for real; every child decode fails.
       mocks.submitTask.mockImplementation(async (spec: {
         kind: string;
         run: (ctx: { report: () => void; runTask: unknown }) => Promise<unknown>;

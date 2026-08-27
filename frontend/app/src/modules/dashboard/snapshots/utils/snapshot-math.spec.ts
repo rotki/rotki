@@ -20,6 +20,11 @@ import { getTotalValue, locationsTotal } from '@/modules/dashboard/snapshots/uti
 
 const TS = 1_600_000_000;
 
+const BTC_VALUE = 100;
+const ETH_VALUE = 50;
+const KRAKEN_START = 100;
+const LEDGER_START = 50;
+
 function balance(
   assetIdentifier: string,
   usdValue: number,
@@ -41,13 +46,13 @@ function location(name: string, usdValue: number): LocationDataSnapshot {
 function snapshot(): Snapshot {
   return {
     balancesSnapshot: [
-      balance('BTC', 100),
-      balance('ETH', 50),
+      balance('BTC', BTC_VALUE),
+      balance('ETH', ETH_VALUE),
     ],
     locationDataSnapshot: [
-      location('kraken', 100),
-      location('ledger', 50),
-      location('total', 150),
+      location('kraken', KRAKEN_START),
+      location('ledger', LEDGER_START),
+      location('total', KRAKEN_START + LEDGER_START),
     ],
   };
 }
@@ -99,9 +104,10 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
     });
 
     it('should apply the subtotal delta of remove-old-then-add-new', () => {
-      // kraken=100, BTC was 100 -> now 200, so +100
-      const result = applyBalanceEdit(snapshot(), 0, { balance: balance('BTC', 200), location: 'kraken' });
-      expect(result.locationDataSnapshot.find(item => item.location === 'kraken')?.usdValue.toNumber()).toBe(200);
+      const doubledFromKrakenStart = 200;
+      const result = applyBalanceEdit(snapshot(), 0, { balance: balance('BTC', doubledFromKrakenStart), location: 'kraken' });
+      expect(result.locationDataSnapshot.find(item => item.location === 'kraken')?.usdValue.toNumber())
+        .toBe(KRAKEN_START + (doubledFromKrakenStart - BTC_VALUE));
     });
 
     it('should recompute the total after an edit', () => {
@@ -255,11 +261,10 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
         balance: balance('SOL', 100),
         location: [location('kraken', 60), location('ledger', 40)].map(l => ({ location: l.location, usdValue: l.usdValue })),
       });
-      expect(locationsTotal(result.locationDataSnapshot).toNumber()).toBe(250); // 160 + 90
-      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(160);
-      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(90);
-      // total tracks the net of all balances regardless of how it is split
-      expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(250);
+      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(KRAKEN_START + 60);
+      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(LEDGER_START + 40);
+      expect(locationsTotal(result.locationDataSnapshot).toNumber()).toBe(KRAKEN_START + 60 + LEDGER_START + 40);
+      expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(BTC_VALUE + ETH_VALUE + 100);
     });
 
     it('should create new location rows from a split', () => {
@@ -272,28 +277,23 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
     });
 
     it('should credit each location its share when an edit raises the value', () => {
-      // BTC 100 -> 200 (delta +100), split as +60 kraken / +40 ledger.
       const result = applyBalanceEdit(snapshot(), 0, {
-        balance: balance('BTC', 200),
+        balance: balance('BTC', BTC_VALUE + 100),
         location: [{ location: 'kraken', usdValue: bigNumberify(60) }, { location: 'ledger', usdValue: bigNumberify(40) }],
       });
-      // each location moves only by its own delta — the stale old value is not
-      // dumped onto the first row.
-      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(160); // 100 + 60
-      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(90); // 50 + 40
-      expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(250); // 200 + 50
+      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(KRAKEN_START + 60);
+      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(LEDGER_START + 40);
+      expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(BTC_VALUE + 100 + ETH_VALUE);
     });
 
-    it('should debit each location its share when an edit lowers the value', () => {
-      // BTC 100 -> 20 (delta -80), split as -50 kraken / -30 ledger (negated by
-      // the dialog from the positive removal amounts the user enters).
+    it('should debit each location its share when an edit lowers the value, the dialog having negated the amounts', () => {
       const result = applyBalanceEdit(snapshot(), 0, {
         balance: balance('BTC', 20),
         location: [{ location: 'kraken', usdValue: bigNumberify(-50) }, { location: 'ledger', usdValue: bigNumberify(-30) }],
       });
-      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(50); // 100 - 50
-      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(20); // 50 - 30
-      expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(70); // 20 + 50
+      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(KRAKEN_START - 50);
+      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(LEDGER_START - 30);
+      expect(getTotalValue(result.locationDataSnapshot).toNumber()).toBe(20 + ETH_VALUE);
     });
 
     it('should behave identically to the single-location path for one entry', () => {
@@ -303,14 +303,13 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
     });
 
     it('should debit each location by its share when deleting with a split', () => {
-      // BTC (100) split 70/30 across kraken/ledger; deleting unwinds each share.
       const result = applyBalanceDelete(snapshot(), 0, [
         { location: 'kraken', usdValue: bigNumberify(70) },
         { location: 'ledger', usdValue: bigNumberify(30) },
       ]);
       expect(result.balancesSnapshot).toHaveLength(1);
-      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(30); // 100 - 70
-      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(20); // 50 - 30
+      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(KRAKEN_START - 70);
+      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(LEDGER_START - 30);
     });
 
     it('should add back each share when deleting a split liability', () => {
@@ -322,8 +321,8 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
         { location: 'kraken', usdValue: bigNumberify(20) },
         { location: 'ledger', usdValue: bigNumberify(10) },
       ]);
-      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(0); // -20 + 20
-      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(0); // -10 + 10
+      expect(result.locationDataSnapshot.find(l => l.location === 'kraken')?.usdValue.toNumber()).toBe(-20 + 20);
+      expect(result.locationDataSnapshot.find(l => l.location === 'ledger')?.usdValue.toNumber()).toBe(-10 + 10);
     });
 
     it('should match the single-location delete for one entry', () => {
@@ -379,11 +378,10 @@ describe('modules/dashboard/snapshots/utils/snapshot-math', () => {
 
     it('should match balances by identity, not index, when an earlier row is removed', () => {
       const original = snapshot();
-      // Drop BTC (index 0); ETH shifts from index 1 to 0 but is otherwise unchanged.
-      const result = { ...original, balancesSnapshot: [balance('ETH', 50)] };
-      const changes = buildSnapshotChanges(original, result);
-      // Only BTC's removal — ETH's index shift must NOT register as a change.
-      expect(changes).toEqual([{ before: balance('BTC', 100), index: 0, kind: 'balance-removed' }]);
+      const withBtcDroppedSoEthShiftsDown = { ...original, balancesSnapshot: [balance('ETH', ETH_VALUE)] };
+      const changes = buildSnapshotChanges(original, withBtcDroppedSoEthShiftsDown);
+
+      expect(changes).toEqual([{ before: balance('BTC', BTC_VALUE), index: 0, kind: 'balance-removed' }]);
     });
 
     it('should describe a removed location', () => {

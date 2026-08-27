@@ -4,9 +4,13 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 
-// `api.serverUrl` is a read-only getter on the real client, so the mock exposes
-// one over a cell the tests can move; assigning to the property directly would
-// not typecheck.
+/**
+ * Holds the server url the api mock reports, in a cell a case can move between connections.
+ *
+ * @remarks
+ * `serverUrl` is a read-only getter on the real client, so the mock reads through this cell.
+ * Assigning to the property directly would not typecheck.
+ */
 const { mockServerUrl } = vi.hoisted(() => ({ mockServerUrl: { value: 'http://localhost:4242' } }));
 
 const mockHandleMessage = vi.fn();
@@ -86,7 +90,13 @@ function createMockWebSocket(): MockWebSocketInstance {
 
 let latestWsUrl: string | undefined;
 
-// Use a class-based mock so `new WebSocket()` works correctly
+/**
+ * Stands in for the global `WebSocket` constructor.
+ *
+ * @remarks
+ * The code under test calls `new WebSocket(...)`, so the stand-in has to be constructible. The
+ * constructor returns the plain fake socket that the assertions then inspect.
+ */
 class MockWebSocket {
   constructor(url?: string) {
     latestWsUrl = url;
@@ -160,9 +170,7 @@ describe('useWebsocketConnection', () => {
       expect(latestWsUrl).toBe('ws://localhost:4242/ws/');
     });
 
-    // Only *trailing* slashes are stripped, so an instance served under a
-    // sub-path still addresses its own socket rather than the origin root.
-    it('should keep a sub-path when one is configured', async () => {
+    it('should keep a sub-path when one is configured, stripping only trailing slashes', async () => {
       mockServerUrl.value = 'http://localhost:4242/rotki/';
       const { useWebsocketConnection } = await loadComposable();
 

@@ -90,9 +90,8 @@ export function useHistoryEventsAutoFetch(
   const scheduleRead = useDebounceFn(read, SETTLE_QUIET, { maxWait: SUSTAINED_MAX_WAIT });
 
   watch(runningProducers, (current, previous) => {
-    // Only on a fall: work starting produces nothing, work finishing does. Gated here rather than
-    // inside the reader, because other signals are live while nothing is running.
-    if (current < (previous ?? 0) && toValue(shouldFetch))
+    const aProducerFinished = current < (previous ?? 0);
+    if (aProducerFinished && toValue(shouldFetch))
       startPromise(scheduleRead());
   });
 

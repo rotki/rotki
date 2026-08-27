@@ -29,7 +29,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   })),
 }));
 
-// Exchange-events querying lives in useExchangeEventsRefresh (tested separately); stub it out here.
 vi.mock('@/modules/history/events/tx/use-exchange-events-refresh', () => ({
   useExchangeEventsRefresh: vi.fn(() => ({ queryAllExchangeEvents: vi.fn() })),
 }));

@@ -99,8 +99,6 @@ describe('modules/staking/liquity/LiquityStatistics', () => {
           LiquityAssetBalanceList: AssetListStub,
           LiquityPnlRow: PnlRowStub,
           LiquityStatisticRow: { props: ['label'], template: '<div><slot /></div>' },
-          // The detail rows live inside a collapsed accordion, so a pass-through is what puts
-          // them in the tree at all.
           RuiAccordion: { template: '<div><slot /></div>' },
           RuiAccordions: { template: '<div><slot /></div>' },
         },

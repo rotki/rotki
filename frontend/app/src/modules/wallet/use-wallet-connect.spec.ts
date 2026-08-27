@@ -12,8 +12,6 @@ vi.mock('./viem-client', () => ({
 const network1 = { id: 1, rpcUrls: { default: { http: ['https://rpc.one'] } } };
 const network8453 = { id: 8453, rpcUrls: { default: { http: ['https://rpc.base'] } } };
 
-// The caller supplies the chains; `chains-viem` only enriches them with an rpc
-// url. 143 is deliberately absent from the viem table.
 const CHAIN_IDS = [1, 8453];
 
 vi.mock('./chains-viem', () => ({
@@ -21,7 +19,6 @@ vi.mock('./chains-viem', () => ({
   getWalletNetwork: vi.fn((chainId: bigint) => (chainId === 1n ? network1 : undefined)),
 }));
 
-// Set fresh per test; UniversalProvider.init reads it at call time.
 let mockProviderInstance: ReturnType<typeof createProvider>;
 
 vi.mock('@walletconnect/universal-provider', () => ({
@@ -99,8 +96,6 @@ describe('modules/wallet/use-wallet-connect', () => {
     it('should refuse to pair when no chains are available', async () => {
       const wc = await loadComposable();
 
-      // An empty list means the supported-chains fetch has not landed or failed.
-      // Pairing anyway opens a session that negotiates nothing.
       await expect(wc.connect([])).rejects.toThrow('No supported chains');
       expect(mockProviderInstance.connect).not.toHaveBeenCalled();
     });

@@ -79,9 +79,6 @@ export function useHistorySwapItem(
   // A joined matched-bridge subgroup: both legs carry the bridge subtype
   const isBridge = computed<boolean>(() => get(events).some(e => e.eventSubtype === 'bridge'));
 
-  // Separate spend and receive events. For matched bridge groups the source
-  // chain deposit is the spend side and the destination chain withdrawal the
-  // receive side.
   const spendEvents = computed<HistoryEventEntry[]>(() =>
     get(events).filter(e => e.eventSubtype === 'spend' || (e.eventSubtype === 'bridge' && e.eventType === 'deposit')),
   );

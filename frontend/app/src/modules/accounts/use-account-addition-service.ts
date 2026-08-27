@@ -30,10 +30,20 @@ export interface AccountAdditionFailure<T = AccountPayload | XpubAccountPayload>
   account: T;
 }
 
-// Callback types for account addition completion
+/**
+ * Carries what an addition produced into the follow-up work that has to run after it.
+ *
+ * @remarks
+ * Handed to the completion callback once every payload entry has settled, successes and failures
+ * alike, so the follow-up sees the whole addition rather than one address at a time.
+ */
 export interface AccountAdditionParams {
   addedAccounts: Account[];
   modulesToEnable?: Module[];
+  /**
+   * The chain the addition targeted, or `undefined` when it spanned every EVM chain. Absent means
+   * "all", not "unknown": it is what sends the follow-up down the fetch-everything branch.
+   */
   chain?: string;
   isXpub?: boolean;
 }
@@ -113,6 +123,9 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
    * The chain jobs run concurrently rather than one at a time. Each is a detection plus a full
    * network query, so awaiting them in a loop would serialise around twenty of them on an
    * every-EVM-chain addition; `BALANCES_LANE` is where that concurrency is capped.
+   *
+   * Tags are re-read before anything else, because the add itself can have created system tags
+   * (`Contract` among them) that nothing else would fetch.
    */
   const completeAccountAddition = async (
     params: AccountAdditionParams,
@@ -126,7 +139,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       modulesToEnable,
     } = params;
 
-    // Refresh tags first in case new system tags (like 'Contract') were created
     await fetchTags();
 
     trackAddedAddresses(addedAccounts.map(item => item.address));
@@ -182,8 +194,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     const outcome = await addEvmAccount(account, options);
     if (isErr(outcome)) {
-      // Only a real failure is worth a log line. A cancelled bulk add would otherwise write one
-      // console error per in-flight address, which is the noise this branch exists to avoid.
       if (isActionable(outcome.error))
         logger.error(outcome.error.message);
 
@@ -226,7 +236,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   ): ResultAsync<string, AccountAdditionFailure> => pipe(
     await addAccount(chain, 'xpub' in account ? account : [account], options),
     mapError((error: TaskError) => {
-      // As in `addSingleEvmAddress`: a cancellation is not a failure to log.
       if (isActionable(error))
         logger.error(error.message);
 
@@ -256,14 +265,19 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     const isXpub = 'xpub' in payload;
     const everyEvmChain = isEveryEvmChain(chain);
 
+    /**
+     * Sorts one addition's outcome into the added, cancelled or failed tally.
+     *
+     * @remarks
+     * A cancellation is recorded but never reported: the user asked for it, so neither the failure
+     * list nor "failed to add N of M addresses" should mention it.
+     */
     const collect = (result: Result<Account[], AccountAdditionFailure<AccountPayload | XpubAccountPayload>>): void => {
       if (!isErr(result)) {
         addedAccounts.push(...result.value);
         return;
       }
 
-      // A cancellation is recorded, never reported: the user asked for it, so neither the failure
-      // list nor "failed to add N of M addresses" should mention it.
       if (!isActionable(result.error.error)) {
         cancelled = true;
         return;
@@ -273,8 +287,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     };
 
     if (isXpub) {
-      // One xpub is one unit of work, so there is nothing to fan out — but it still returns the
-      // same summary, so the caller has one shape to handle.
       collect(mapResult(
         await addSingleAccount(payload, chain, options),
         address => [{ address, chain }],
@@ -284,8 +296,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       const results = await runEvmAdditionBatch(
         payload,
         account => account.address,
-        // No options object when there is no umbrella: a single-item batch with no outer parent has
-        // nothing to attach to, and `{ parent: undefined }` would only be noise on the way down.
         async (account, parent) => addSingleEvmAddress(account, parent ? { parent } : undefined),
         options?.parent,
       );
@@ -302,8 +312,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       results.forEach(result => collect(mapResult(result, address => [{ address, chain }])));
     }
 
-    // The notification lists addresses, so an xpub failure is not one of its rows — the caller
-    // reports that from the summary instead.
     const failedAddresses = failed
       .map(failure => failure.account)
       .filter((account): account is AccountPayload => !('xpub' in account));

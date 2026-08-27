@@ -88,15 +88,16 @@ const DEFAULT_LIMITS: NarrowLimits = { perField: 5, total: 20 };
 /**
  * Match rank, lower is better: a label that starts with the query beats one that merely
  * contains it, and a field beats one of its own values (the field is the broader answer).
+ *
+ * @remarks
+ * The last two ranks answer without matching anything, so they sit below everything that did: a
+ * typed value always matches, and guidance only says what the field's syntax is.
  */
 const RANK_FIELD_PREFIX = 0;
 const RANK_VALUE_PREFIX = 1;
 const RANK_FIELD_SUBSTRING = 2;
 const RANK_VALUE_SUBSTRING = 3;
-// A typed-value offer is ranked last: it always matches, so it must never crowd out a real one.
 const RANK_TYPED_VALUE = 4;
-// Below everything that matched something concrete: guidance is what a field offers when it has
-// nothing to answer with yet, so any real match is a better answer than telling the user the syntax.
 const RANK_GUIDANCE = 5;
 
 /**
@@ -299,15 +300,19 @@ interface RankContext {
   readonly hints?: SyntaxHints;
 }
 
-/** Every way one field can answer the query, in one list. */
+/**
+ * Gathers every way one field can answer the query, in one list.
+ *
+ * @remarks
+ * Guidance is offered only when nothing else on this field matched: a query that already reads as
+ * a filter gets the filter itself, and repeating the field beneath it says nothing new.
+ */
 function rankField(field: FieldDef, context: RankContext): Ranked[] {
   const { hints, limits, needle, operatorLabels, recentValues, typed } = context;
   const remembered = recentValues?.(field) ?? [];
   const matched = fieldMatch(field, needle, hints);
   // Read as a whole filter, for the fields whose values are written rather than picked.
   const parsed = typedFilterMatches(field, typed, operatorLabels);
-  // Guidance only when the query yielded nothing on this field: a query that already reads as a
-  // filter gets the filter itself, and repeating the field beneath it says nothing new.
   const guidance = parsed.length === 0 && !matched ? guidanceMatch(field, typed) : undefined;
   const typedValue = typedValueSuggestion(field, typed);
 

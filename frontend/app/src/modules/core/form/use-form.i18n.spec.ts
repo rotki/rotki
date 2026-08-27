@@ -3,8 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { useForm } from '@/modules/core/form/use-form';
 
-// A separate spec because it needs its own `vue-i18n` mock: the global one returns the key from
-// both `t` and `te`, which cannot tell a translated key apart from an untranslated message.
 vi.mock('vue-i18n', () => ({
   useI18n: (): { locale: Ref<string>; t: (key: string) => string; te: (key: string) => boolean } => ({
     locale: ref(''),
@@ -50,7 +48,6 @@ describe('useForm i18n handling', () => {
 
     form.validate();
 
-    // Asking intlify for this as a key logs a "Not found key" warning on every keystroke.
     const [message] = form.errors('label');
     expect(message).not.toContain('translated:');
     expect(message).toContain('expected string');

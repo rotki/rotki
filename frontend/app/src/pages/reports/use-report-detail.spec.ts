@@ -1,4 +1,3 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, ReportActionableItem, Reports } from '@/modules/reports/report-types';
 import {
@@ -12,7 +11,7 @@ import {
 } from '@test/utils/reports-test-data';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useReportDetail } from './use-report-detail';
 
@@ -27,8 +26,6 @@ interface StoreState {
   reports: Reports;
 }
 
-// `vi.hoisted` runs before the imports above, so nothing here may call a fixture. These are inert
-// starting values; `beforeEach` gives every field the one the test needs.
 const { fetchReports, getActionableItems, pushMock, replaceMock, routeState, storeState } = vi.hoisted(() => {
   const routeState: RouteState = { params: { id: '' }, query: {} };
   const storeState: StoreState = {
@@ -74,22 +71,14 @@ vi.mock('@/modules/reports/use-reports-store', async () => {
   };
 });
 
-// `storeToRefs` is auto-imported from pinia; the mocked store above already hands back refs, so it
-// only has to pass them through.
 vi.mock('pinia', async importOriginal => ({
   ...(await importOriginal<typeof import('pinia')>()),
   storeToRefs: (store: Record<string, unknown>): Record<string, unknown> => store,
 }));
 
 describe('pages/reports/useReportDetail', () => {
-  // Each harness registers an onMounted hook. One left mounted would keep answering later tests, so
-  // every wrapper is tracked and torn down.
-  const mounted: VueWrapper[] = [];
-
   function setup(): ReturnType<typeof useReportDetail> {
-    const { result, wrapper } = withSetup(() => useReportDetail());
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useReportDetail()).result;
   }
 
   beforeEach(() => {
@@ -99,11 +88,6 @@ describe('pages/reports/useReportDetail', () => {
     storeState.actionableItems = createActionableItems();
     storeState.lastGenerated = LATEST_REPORT_ID;
     storeState.reports = createReports([createReport()]);
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   it('should resolve the report named by the route param', async () => {

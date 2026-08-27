@@ -32,8 +32,11 @@ export function useAccountingRulesTable(): UseAccountingRulesTableReturn {
   const { getAccountingRules } = useAccountingSettings();
 
   const modelCustomRuleHandling = shallowRef<CustomRuleHandling>(CustomRuleHandling.EXCLUDE);
-  // Owned here rather than left to the table: the subtype field narrows by the picked event types,
-  // so the fields read the bag, and they are built before the table that would otherwise own it.
+  /**
+   * The filter bag, owned here rather than left to the table: the subtype field narrows by the
+   * picked event types, so the fields read the bag, and they are built before the table that would
+   * otherwise own it.
+   */
   const modelFilters = ref<Filters>({});
   const fields = useAccountingRuleFields(modelFilters);
 

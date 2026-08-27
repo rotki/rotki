@@ -2,8 +2,6 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 
-// Re-exported here (the highlight-navigation module) so consumers that already depend on it can
-// pull in the route-derived highlight targets without an extra import dependency.
 export { useHistoryEventHighlights } from '@/modules/history/events/use-history-event-highlights';
 
 /**

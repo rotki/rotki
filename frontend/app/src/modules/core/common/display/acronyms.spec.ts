@@ -11,7 +11,6 @@ describe('capitalizeAcronyms', () => {
     expect(capitalizeAcronyms('Asset movement event')).toBe('Asset movement event');
   });
 
-  // Whole-word only: `ethereum` starts with `eth` but is not the acronym.
   it('should not touch a word that merely starts with an acronym', () => {
     expect(capitalizeAcronyms('Ethereum staking')).toBe('Ethereum staking');
   });

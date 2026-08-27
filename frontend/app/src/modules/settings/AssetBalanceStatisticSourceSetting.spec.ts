@@ -45,9 +45,7 @@ describe('assetBalanceStatisticSourceSetting', () => {
     setActivePinia(createPinia());
   });
 
-  it('should give each radio a boolean value', () => {
-    // `value` is the radio payload, not a boolean prop, so a `value` shorthand would reach RuiRadio
-    // as an empty string: the events option would never match the setting and would persist ''.
+  it('should bind each radio a boolean value, not the empty string a shorthand would pass', () => {
     const wrapper = createWrapper();
     const radios = wrapper.findAll('[data-testid=radio]');
 

@@ -17,8 +17,6 @@ import { useTagFieldOptions } from '@/modules/core/table/filters/shared/use-tag-
  */
 export function useAssetLocationFields(rows: MaybeRefOrGetter<AssetLocation[]>): ComputedRef<FieldDef[]> {
   const { t } = useI18n({ useScope: 'global' });
-  // Location and address resolution is the same for every table filtering on them, so it comes from
-  // one place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const accounts = useAssetLocationAccountOptions(rows);
   const tagOptions = useTagFieldOptions();

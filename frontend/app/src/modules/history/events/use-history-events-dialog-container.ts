@@ -81,8 +81,6 @@ export function useHistoryEventsDialogContainer(
 
   const { closeDialog, currentDialog, show } = useHistoryEventsDialogManager();
 
-  // Dialogs only render when they match the type (v-if), so reading the data back off the
-  // open dialog is safe, and a write can only ever mean "close me".
   const modelFormData = computed({
     get: () => {
       const dialog = get(currentDialog);
@@ -124,6 +122,13 @@ export function useHistoryEventsDialogContainer(
     },
   });
 
+  /**
+   * Builds the open state and subject of one potential-matches dialog.
+   *
+   * @remarks Its members have to be spread flat into the composable's return rather than passed
+   * on as a nested object: a template only unwraps refs that are top-level setup bindings, so
+   * `matches.modelOpen` would reach `v-model` as the ref itself.
+   */
   function createPotentialMatches<T>(onMatched: () => void): PotentialMatchesState<T> {
     const subject = shallowRef<T>();
     const modelOpen = shallowRef<boolean>(false);
@@ -146,8 +151,6 @@ export function useHistoryEventsDialogContainer(
     };
   }
 
-  // Flattened rather than returned as two nested objects: a template only unwraps refs that
-  // are top-level setup bindings, so `matches.modelOpen` would reach `v-model` as the ref.
   const movement = createPotentialMatches<UnmatchedAssetMovement>(onMovementMatched);
   const bridge = createPotentialMatches<UnmatchedBridgeTransaction>(onBridgeMatched);
 

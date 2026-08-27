@@ -35,6 +35,12 @@ export interface UseHistoryEventItemReturn {
   extraData: ComputedRef<Record<string, any> | undefined>;
 }
 
+/** Recovers a block number from the first sibling in the group that carries one. */
+function blockNumberFromSibling(groupEvents: HistoryEventEntry[] | undefined): number | undefined {
+  const sibling = groupEvents?.find(other => 'blockNumber' in other);
+  return sibling && 'blockNumber' in sibling ? sibling.blockNumber : undefined;
+}
+
 /** `extraData` is declared loosely on the event schemas, so confirm it is indexable before use. */
 function isExtraData(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null;
@@ -102,12 +108,7 @@ export function useHistoryEventItem(
     if ('blockNumber' in ev)
       return ev.blockNumber;
 
-    // MEV reward transaction events are EVM events that get moved into a block
-    // production group. They don't carry a `blockNumber` field themselves, so
-    // recover it from a sibling block event in the same group to keep the note's
-    // block number linkable.
-    const sibling = toValue(groupEvents)?.find(other => 'blockNumber' in other);
-    return sibling && 'blockNumber' in sibling ? sibling.blockNumber : undefined;
+    return blockNumberFromSibling(toValue(groupEvents));
   });
 
   const extraData = computed<Record<string, any> | undefined>(() => {

@@ -52,8 +52,7 @@ describe('task-center status helpers', () => {
     expect(rollupStatus([])).toBe(ActivityStatus.COMPLETE);
   });
 
-  // Skipping everything is not a success; skipping some of it does not spoil the run.
-  it('should roll up to skipped only when every member was skipped', () => {
+  it('should roll up to skipped only when every member was skipped, a partial skip not spoiling the run', () => {
     expect(rollupStatus([ActivityStatus.SKIPPED, ActivityStatus.SKIPPED])).toBe(ActivityStatus.SKIPPED);
     expect(rollupStatus([ActivityStatus.COMPLETE, ActivityStatus.SKIPPED])).toBe(ActivityStatus.COMPLETE);
     expect(rollupStatus([ActivityStatus.SKIPPED, ActivityStatus.FAILED])).toBe(ActivityStatus.FAILED);

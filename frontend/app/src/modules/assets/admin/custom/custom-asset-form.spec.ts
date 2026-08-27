@@ -40,11 +40,9 @@ describe('customAssetSchema', () => {
     expect(messagesFor({ ...valid, notes: null })).toEqual([]);
   });
 
-  it('should carry the fields it does not validate', () => {
+  it('should carry the fields it does not validate, since neither has a message bound to it', () => {
     const result = customAssetSchema(messages).safeParse(valid);
 
-    // Notes and the identifier reach the api untouched. Rejecting them here would block the save
-    // with nothing on screen, since neither has a message bound to it.
     expect(result.success && result.data).toEqual(valid);
   });
 

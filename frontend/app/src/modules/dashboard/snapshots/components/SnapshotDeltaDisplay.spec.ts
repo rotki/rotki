@@ -27,8 +27,6 @@ describe('modules/dashboard/snapshots/components/SnapshotDeltaDisplay', () => {
   let pinia: ReturnType<typeof createPinia>;
 
   function createWrapper(props: InstanceType<typeof SnapshotDeltaDisplay>['$props']): VueWrapper<InstanceType<typeof SnapshotDeltaDisplay>> {
-    // Mount with the *active* pinia so the component's `useSetting('currencySymbol')`
-    // reads the currency that `setCurrency` (via updateGeneralSettings) wrote to.
     return mount(SnapshotDeltaDisplay, {
       global: {
         plugins: [pinia],
@@ -110,7 +108,6 @@ describe('modules/dashboard/snapshots/components/SnapshotDeltaDisplay', () => {
 
   it('should render a dash when a historic rate is permanently missing', () => {
     setCurrency('EUR');
-    // day1 resolves, day2 is missing (not pending, no positive rate).
     getHistoricPrice.mockImplementation((_asset: string, ts: number) =>
       ts === day1 ? bigNumberify(0.8) : NoPrice);
 

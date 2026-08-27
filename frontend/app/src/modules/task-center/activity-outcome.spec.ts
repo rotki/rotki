@@ -7,10 +7,6 @@ describe('activityOutcome', () => {
     expect(activityOutcome(ActivityStatus.RUNNING).color).toBe('primary');
   });
 
-  /**
-   * Filled means it needs attention. A refresh settles dozens of children successfully, so filling
-   * those made a wall of green the loudest thing in the panel and buried the chain still at 0%.
-   */
   it('should fill only the outcomes that need attention', () => {
     const filled = Object.values(ActivityStatus).filter(status => activityOutcome(status).variant === 'filled');
 
@@ -22,11 +18,6 @@ describe('activityOutcome', () => {
       expect(activityOutcome(status).icon).toBeDefined();
   });
 
-  /**
-   * Failed and skipped both count as *done* in the progress rollup (`projection.ts`), which is
-   * correct — no further progress is coming — and is exactly why the row has to say what happened.
-   * A subtree at 100% with two failed chains is otherwise indistinguishable from a clean one.
-   */
   it('should separate a failure from a skip', () => {
     expect(activityOutcome(ActivityStatus.FAILED).color).toBe('error');
     expect(activityOutcome(ActivityStatus.SKIPPED).color).toBe('warning');

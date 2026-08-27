@@ -5,11 +5,6 @@ import { defineComponent, h, type VNode } from 'vue';
 import SimpleRpcNodeManager from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
 import '@test/i18n';
 
-/**
- * Single-value endpoints (KSM, DOT, beacon, mempool) do not get the header "Add node" button, so
- * the empty state is the only entry point for setting one. Without it an unset endpoint - the
- * shipped default for Polkadot - is unreachable from the UI.
- */
 const { readSetting, show, write } = vi.hoisted(() => ({
   readSetting: vi.fn(),
   show: vi.fn(),
@@ -28,7 +23,6 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
-// Stubbed down to the seam the manager uses: the url model and the exposed `validate`.
 vi.mock('@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', async () => {
   const { defineComponent, h } = await import('vue');
   return {

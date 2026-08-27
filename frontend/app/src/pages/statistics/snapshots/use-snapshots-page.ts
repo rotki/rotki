@@ -47,8 +47,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
   const modelImportDialog = shallowRef<boolean>(false);
   const selectedTimestamp = shallowRef<number>(0);
 
-  // View-state lives in the URL query, so it survives reload and is restored by the browser's
-  // back/forward when returning from a snapshot's detail page.
+  // View state lives in the URL query, so a reload or a back navigation restores it.
   const modelFilters = ref<SnapshotListFilters>({});
   const modelPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 
@@ -77,8 +76,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
     (): number => get(modelPagination).limit,
   ], writeQuery);
 
-  // When the list is empty, tell apart a genuinely empty account from a range filter that
-  // excludes everything.
+  // Tells a genuinely empty account apart from a range filter that excludes everything.
   const emptyDescription = computed<string>(() => get(hasSnapshots)
     ? t('dashboard.snapshot.list.empty_filtered')
     : t('dashboard.snapshot.list.empty'));
@@ -87,9 +85,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
     startPromise(router.push(`/statistics/snapshots/${timestamp}`));
   }
 
-  // The export dialog shows the selected snapshot's stored USD net worth; the dialog converts it
-  // at the snapshot's historic rate itself (#12277), lazily, so opening it never triggers a
-  // whole-series conversion.
+  // The stored USD net worth: the export dialog converts it at the historic rate itself, lazily.
   const selectedRow = computed<SnapshotListRow | undefined>(() =>
     get(rows).find(item => item.timestamp === get(selectedTimestamp)));
   const selectedBalance = computed<BigNumber>(() => get(selectedRow)?.usdValue ?? Zero);
@@ -133,7 +129,13 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
     );
   }
 
-  // Force-save refetches every balance (slow, rate-limit prone), so confirm first.
+  /**
+   * Asks for confirmation, then forces a new snapshot to be taken.
+   *
+   * @remarks
+   * The save refetches every balance, which is slow and prone to provider rate limits, so it is
+   * never started straight off a click.
+   */
   function confirmTakeSnapshot(): void {
     show(
       {

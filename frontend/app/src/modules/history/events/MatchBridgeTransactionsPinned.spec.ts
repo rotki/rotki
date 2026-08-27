@@ -8,12 +8,6 @@ import { defineComponent, h } from 'vue';
 import MatchBridgeTransactionsPinned from '@/modules/history/events/MatchBridgeTransactionsPinned.vue';
 import { PinnedNames } from '@/modules/session/types';
 
-/**
- * The seam: the panel's behaviour lives in `usePinnedMatchPanel`, which has its own spec. What is
- * left here is the wiring that makes this the bridge panel rather than the asset movement one -
- * the bridge collections, the bridge flow, and the labels and explanation the drawer is given.
- */
-
 const panel = {
   activeGroupIdentifier: ref<string | undefined>(),
   activePotentialMatchIdentifier: ref<number | undefined>(),

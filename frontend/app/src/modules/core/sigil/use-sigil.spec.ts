@@ -432,7 +432,6 @@ describe('useSigil', () => {
       await nextTick();
 
       sigilBus.emit('history:ready');
-      // Allow the async promise chain in onHistoryReady to resolve
       await flushPromises();
 
       const eventNames = mockEnqueue.mock.calls.map(

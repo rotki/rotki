@@ -7,7 +7,6 @@ import LiquityStakingPagePlaceholder from '@/modules/staking/liquity/LiquityStak
 
 const isMdAndDown = vi.hoisted(() => ({ current: false }));
 
-// `useBreakpoint` is auto-imported from the ui-library, not from the app.
 vi.mock('@rotki/ui-library', async (importOriginal) => {
   const { computed } = await import('vue');
   return {

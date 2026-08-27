@@ -128,6 +128,10 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
    * reconnect and some session settling, so throwing would strand the UI mid-sequence -
    * but swallowing it, as this did, let a flow report success after a restart that never
    * happened, leaving the backend holding data it was supposed to reload.
+   *
+   * A resolved `restarted` means the connection is already back, so no caller needs to wait on
+   * readiness afterwards; `unavailable` means nothing was restarted at all, which is how the plain
+   * web build has always behaved and is not a failure.
    */
   const restartBackend = async (forceRestart = false): Promise<BackendRestartResult> => {
     if (interop.isPackaged) {
@@ -154,8 +158,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       logger.error(error);
       result = { message: getErrorMessage(error), status: BackendRestartStatus.failed };
     }
-    // Reconnect either way. A refused restart leaves the backend up and serving, so
-    // staying disconnected would break an app that has nothing wrong with it.
     set(connectionEnabled, true);
     setWsConnectionEnabled(true);
     connect();
@@ -186,8 +188,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     if (!!url && !sessionOnly) {
       await backendChanged(url);
     }
-    // `isPackaged` only: boot starts a backend where the app owns one. In docker the tree is
-    // already up, so restarting here bounces it on every page load.
     else if (interop.isPackaged) {
       await restartBackend();
     }

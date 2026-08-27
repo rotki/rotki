@@ -3,9 +3,7 @@ import type {
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
-import { camelCase } from 'es-toolkit';
-import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
-import { objectKeys } from '@/modules/core/common/data/array';
+import { includes, isFilterEnabled, sortBy, sortKeyOf } from '@/modules/accounts/account-common';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { sum } from '@/modules/core/common/display/balances';
 
@@ -63,9 +61,7 @@ export function sortAndFilterValidators(
     ? filtered
     : filtered.sort((a, b) => {
         for (const [i, attr] of orderByAttributes.entries()) {
-          // The table sends snake_case attributes, so match the converted name against the row's keys.
-          const converted = camelCase(attr);
-          const key = objectKeys(a).find(candidate => candidate === converted);
+          const key = sortKeyOf(a, attr);
           if (!key)
             continue;
 

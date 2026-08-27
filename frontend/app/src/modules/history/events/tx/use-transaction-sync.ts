@@ -86,6 +86,19 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     }
   };
 
+  /**
+   * Syncs one account's transactions on one chain, as its own native activity.
+   *
+   * @remarks
+   * One `TX_SYNC` activity per chain and address, on that chain's own lane, so the family cap gives
+   * two concurrent accounts *per chain*. Liveness, cancellation and re-run are the orchestrator's;
+   * the chain grouping and the decode hand-off belong to {@link syncAndReDecodeEvents}.
+   *
+   * Evmlike chains emit no websocket messages, so the query status is driven from here instead:
+   * `started` before the task and `finished` after it, both only when `trackProgress` puts this
+   * account in the query-status panel. `setEvmlikeStatus` refuses to write over an entry already
+   * marked cancelled or failed, so the closing call cannot resurrect one.
+   */
   const syncTransactionTask = async (
     account: ChainAddress,
     type: TransactionChainType,
@@ -103,15 +116,10 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       accounts: [blockchainAccount],
     };
 
-    // Evmlike chains don't send websocket messages, so track status manually
-    // Only track when progress display is enabled
     if (isEvmlike && trackProgress)
       setEvmlikeStatus(account, 'started');
 
     const chainName = getChainName(chain);
-    // One native TX_SYNC activity per {chain, address}, on that chain's own lane so the family cap
-    // gives two concurrent accounts *per chain*. Liveness, cancellation and re-run are the
-    // orchestrator's; the chain grouping and the decode hand-off are in syncAndReDecodeEvents.
     const outcome = await submitTask({
       id: accountSyncActivityId(chain, address),
       kind: ActivityKind.TX_SYNC,
@@ -142,8 +150,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       }
     }
 
-    // Mark evmlike as finished when the task completes (but not when cancelled)
-    // setEvmlikeStatus already guards against overwriting cancelled entries
     if (isEvmlike && trackProgress)
       setEvmlikeStatus(account, 'finished');
 
@@ -165,6 +171,12 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * `subtree` promise rather than an array that would still be empty when `run` first executes. The
    * two halves arrive separately because only the accounts decide the chain's verdict; the decode is
    * follow-on work with its own kind and row.
+   *
+   * The chain row is a `container`: it produces no data of its own, and the per-account children
+   * carry the same kind and write their own ledger entries, so it must not claim freshness for the
+   * chain on their behalf. The decode is declared alongside the accounts rather than run after
+   * them, waiting on them through `deps` and settling as a no-op when they were all cancelled, so a
+   * refresh has the same shape whether or not there turns out to be anything to decode.
    */
   const syncAndReDecodeEvents = async (
     chain: string,
@@ -180,8 +192,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     });
 
     const chainWork = submitTask({
-      // Produces no data of its own — the per-account children carry the same kind and write their
-      // own ledger entries, so this row must not claim freshness for the chain on their behalf.
       container: true,
       id: chainId,
       kind: ActivityKind.TX_SYNC,
@@ -191,8 +201,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       run: async (): Promise<Result<void, TaskError>> => {
         logger.debug(`syncing ${chain} transactions for ${accounts.length} addresses`);
         const { accounts: accountWork, decode } = await subtree;
-        // Both halves are already in flight, so awaiting them in sequence costs nothing and keeps
-        // the verdict off the decode.
         const outcomes = await Promise.all(accountWork);
         await Promise.all(decode);
         return combineOutcomes(outcomes);
@@ -203,9 +211,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
 
     const accountWork = accounts.map(async account => syncTransactionTask(account, type, trackProgress, chainId));
 
-    // Decoding is declared here rather than run at the end: it waits on every account of the chain
-    // through `deps`, and completes as a no-op when they were all cancelled, so a refresh has the
-    // same shape whether or not there turns out to be anything to decode.
     const decodeWork = TransactionChainTypeNeedDecoding.includes(type)
       ? [decodeTransactionsTask(chain, false, {
           deps: accounts.map(account => accountSyncActivityId(chain, account.address)),
@@ -219,11 +224,17 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     return chainWork;
   };
 
+  /**
+   * Syncs a mixed set of accounts, one chain activity per chain they group into.
+   *
+   * @remarks
+   * The account set is known synchronously, so every chain and every account below it is declared
+   * in this one pass. There is no limiter of its own: {@link CHAIN_SYNC_LANE} caps how many chains
+   * run at a time.
+   */
   const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true, parent?: ActivityId): Promise<Result<void, TaskError>[]> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
-    // The account set is known here, synchronously, so every chain and every account below it is
-    // declared in this pass. No limiter: CHAIN_SYNC_LANE caps how many chains run at once.
     return Promise.all(Object.entries(groupBy(accounts, item => item.chain))
       .map(async ([chain, chainAccounts]) => syncAndReDecodeEvents(chain, {
         accounts: chainAccounts,

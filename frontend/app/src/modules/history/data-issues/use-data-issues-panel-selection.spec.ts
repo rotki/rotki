@@ -12,7 +12,6 @@ const push = vi.fn();
 const replace = vi.fn();
 const clearHighlightTarget = vi.fn();
 
-// The shared vue-router mock exposes no `replace`, which clearSelection needs.
 vi.mock('vue-router', () => ({
   useRoute: (): unknown => route,
   useRouter: (): unknown => ({ push, replace }),

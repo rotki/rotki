@@ -64,14 +64,10 @@ export function toDataIssueFields(
       searchAsset: resolution.searchAsset,
     }, resolvers),
     {
-      // Not the shared address kind: a `locationLabel` is an address on a chain but an exchange
-      // account *name* elsewhere, so `resolveDisplay` decides per value.
       ...toMatchFieldDef({
         key: DataIssuesFilterKeys.ACCOUNT,
         label: (): string => t('data_issues.filter.account'),
         multiple: false,
-        // Not checked against the option list: it is fetched as the bar is built, so a value
-        // restored from the URL can arrive first.
         validate: (value: string): boolean => value.length > 0,
       }),
       ...resolution.account,

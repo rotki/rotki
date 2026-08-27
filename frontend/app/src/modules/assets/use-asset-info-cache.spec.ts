@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 
+/** Past the cache's soft `size` of 500 and well under its `maxSize` of 5000, so nothing is evicted. */
+const DISTINCT_ASSETS = 504;
+
 describe('modules/assets/use-asset-info-cache', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -51,36 +54,31 @@ describe('modules/assets/use-asset-info-cache', () => {
       assets: { [key]: asset },
     });
 
-    // First subscriber resolves and populates the store-backed cache.
-    const scope1 = effectScope();
-    let first!: ReturnType<typeof useAssetInfoCache>;
-    scope1.run(() => {
-      first = useAssetInfoCache();
+    const onlySubscriber = effectScope();
+    let beforeTeardown!: ReturnType<typeof useAssetInfoCache>;
+    onlySubscriber.run(() => {
+      beforeTeardown = useAssetInfoCache();
     });
-    first.resolve(key);
+    beforeTeardown.resolve(key);
     vi.advanceTimersByTime(2500);
     await flushPromises();
-    expect(first.resolve(key)).toEqual(asset);
+    expect(beforeTeardown.resolve(key)).toEqual(asset);
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
 
-    // Last subscriber unmounts -> createSharedComposable disposes the instance.
-    scope1.stop();
+    onlySubscriber.stop();
 
-    // A new subscriber re-creates the composable; the cache must come back from
-    // the store with no refetch.
-    const scope2 = effectScope();
-    let second!: ReturnType<typeof useAssetInfoCache>;
-    scope2.run(() => {
-      second = useAssetInfoCache();
+    const laterSubscriber = effectScope();
+    let afterTeardown!: ReturnType<typeof useAssetInfoCache>;
+    laterSubscriber.run(() => {
+      afterTeardown = useAssetInfoCache();
     });
-    // Confirm the shared instance was actually disposed and re-created.
-    expect(second).not.toBe(first);
-    expect(get(second.cache)[key]).toEqual(asset);
-    expect(second.resolve(key)).toEqual(asset);
+    expect(afterTeardown).not.toBe(beforeTeardown);
+    expect(get(afterTeardown.cache)[key]).toEqual(asset);
+    expect(afterTeardown.resolve(key)).toEqual(asset);
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
-    scope2.stop();
+    laterSubscriber.stop();
   });
 
   it('should not request failed assets twice unless they expire', async () => {
@@ -129,7 +127,7 @@ describe('modules/assets/use-asset-info-cache', () => {
     expect(cache.resolve('KEY')).toEqual(asset);
   });
 
-  it('should grow past the soft cap to fit the working set', async () => {
+  it('should grow past the soft cap to fit the working set, evicting nothing below the ceiling', async () => {
     const cache = await getCache();
     vi.mocked(useAssetInfoApi().assetMapping).mockImplementation(async (identifier): Promise<AssetMap> => {
       const mapping: AssetMap = { assetCollections: {}, assets: {} };
@@ -156,17 +154,15 @@ describe('modules/assets/use-asset-info-cache', () => {
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
-    // 504 distinct assets (AST-0, AST-1..49, AST-51..504) — well past the old
-    // hard 500 cap and under the 5000 resilient ceiling, so none are evicted.
-    for (let i = 51; i < 505; i++) cache.resolve(`AST-${i}`);
+    for (let i = 51; i <= DISTINCT_ASSETS; i++) cache.resolve(`AST-${i}`);
 
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
     const entries = Object.entries(get(cache.cache));
-    expect(entries).toHaveLength(504);
+    expect(entries).toHaveLength(DISTINCT_ASSETS);
     expect(entries.map(([id]) => id)).toContain('AST-0');
-    expect(entries.map(([id]) => id)).toContain('AST-504');
+    expect(entries.map(([id]) => id)).toContain(`AST-${DISTINCT_ASSETS}`);
   });
 
   it('should not delete cache if the request after expiry hits any error', async () => {

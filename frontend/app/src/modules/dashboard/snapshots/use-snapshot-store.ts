@@ -11,8 +11,10 @@ import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
 export const useSnapshotStore = defineStore('snapshots', () => {
   const { deleteSnapshot, getSnapshotData, updateSnapshotData } = useSnapshotApi();
 
-  // Internal, non-reactive cache — callers always receive a fresh fetch result
-  // or the cached value; we never render straight off this map.
+  /**
+   * Deliberately a plain map rather than reactive state: a caller is handed either a fresh fetch or
+   * the cached value, and nothing renders off this directly.
+   */
   const cache = new Map<number, Snapshot>();
 
   async function fetchSnapshot(timestamp: number, refresh = false): Promise<Snapshot> {

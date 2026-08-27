@@ -3,7 +3,6 @@ import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';
 
 describe('useBridgeLogging', () => {
   beforeEach(() => {
-    // useBridgeLogging is a shared composable; reset state between tests
     const { clearLogs } = useBridgeLogging();
     clearLogs();
   });

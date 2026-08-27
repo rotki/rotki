@@ -56,9 +56,13 @@ defineSlots<{
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
-// Bind the control to a concrete string ref: the writer key is constrained to string-valued settings
-// (enums are string enums), so the draft round-trips as a string and this keeps the child's generic
-// inference simple.
+/**
+ * The draft the control binds to, as a concrete string rather than the setting's own type.
+ *
+ * @remarks
+ * The writer key is constrained to string-valued settings, enums included, since those are string
+ * enums. Naming the type here keeps the child's generic inference simple.
+ */
 const selected = computed<string>({
   get: () => get(model),
   set: (value) => {

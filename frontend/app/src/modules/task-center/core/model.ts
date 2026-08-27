@@ -86,10 +86,14 @@ export function assembleActivityModel(activities: Activity[], t: TranslateFn): A
 
   const { children, roots } = buildTree(deduped, compareActivities);
 
-  // Roots only. Rolling up the per-kind groups counted every subtree twice — an umbrella's
-  // percentage is already the mean of its children (`projection.ts` `percentageOf`), so a history
-  // refresh contributed once as HISTORY_SYNC and again as TX_SYNC, each weighted like a single
-  // unrelated activity.
+  /**
+   * Rolled up from the roots alone.
+   *
+   * @remarks
+   * An umbrella's own percentage is already the mean of its children, so rolling up the per-kind
+   * groups instead would count every subtree twice, each time weighted like a single unrelated
+   * activity.
+   */
   const overallPercentage = rollupPercentage(roots.map(root => root.percentage));
   const current = active[0] ?? pending[0];
 

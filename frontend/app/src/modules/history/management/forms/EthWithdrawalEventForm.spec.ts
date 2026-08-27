@@ -205,7 +205,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     });
   });
 
-  it('should not call editHistoryEvent when only updating the historic price', async () => {
+  it('should not call editHistoryEvent when nothing changed', async () => {
     wrapper = createWrapper({
       props: {
         data: {
@@ -216,21 +216,32 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       },
     });
     await vi.advanceTimersToNextTimerAsync();
-    const saveMethod = wrapper.vm.save;
 
-    // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoricalPriceMock.mockResolvedValueOnce(true);
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
 
-    // click save after changing the historic price
+  it('should not call editHistoryEvent when the historic price is the only edit', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
     await wrapper.find('[data-testid=primary] input').setValue('1000');
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
   });

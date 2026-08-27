@@ -47,9 +47,6 @@ describe('createAutoLogin', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    // clearAllMocks wipes call history but NOT implementations; a test that sets
-    // startAuto.mockImplementation would otherwise leak it into later tests under
-    // shuffle. Reset just that spy to its default resolved value.
     startAuto.mockReset().mockResolvedValue(undefined);
     resetSessionBackend.mockReset().mockResolvedValue(undefined);
     set(lastLoginRef, '');
@@ -95,7 +92,6 @@ describe('createAutoLogin', () => {
 
   it('should keep the loader up on a successful auto-unlock while navigation is pending', async () => {
     set(lastLoginRef, 'alice');
-    // success ⇒ the flow ends in `ready` and navigation runs asynchronously
     startAuto.mockImplementation(async () => set(controllerStateRef, { kind: 'ready' }));
     const autoLogin = scope.run(() => createAutoLogin());
 

@@ -110,7 +110,6 @@ describe('useNarrowSuggestions', () => {
     await vi.advanceTimersByTimeAsync(400);
     set(query, 'fres');
     await vi.advanceTimersByTimeAsync(400);
-    // The first search resolves only now, long after the second already published.
     await vi.advanceTimersByTimeAsync(500);
 
     expect(get(suggestions).map(entry => entry.label)).toEqual(['FRESH']);

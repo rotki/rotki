@@ -1,6 +1,10 @@
-// Barrel for HistoryEventsView.vue alone, which sits at the max-dependencies cap. Not a public
-// API: every other caller imports from the individual files. It should be retired by consolidating
-// the view's composables behind one facade.
+/**
+ * Re-exports the view's composables for `HistoryEventsView.vue` alone, which sits at the
+ * `max-dependencies` cap.
+ *
+ * @remarks Not a public API: every other caller imports from the individual files.
+ */
+
 export { useHistoryEventFields } from './use-history-event-fields';
 
 export { useHistoryEventNavigationConsumer } from './use-history-event-navigation-consumer';

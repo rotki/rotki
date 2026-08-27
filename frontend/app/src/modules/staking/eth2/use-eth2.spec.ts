@@ -22,8 +22,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 
 describe('useEth2Staking', () => {
   beforeEach(() => {
-    // Per-test instance: created in the describe body it would be shared, letting store state leak
-    // between cases.
     setActivePinia(createPinia());
     const premium = usePremium();
     set(premium, true);

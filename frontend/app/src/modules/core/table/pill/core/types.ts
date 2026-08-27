@@ -71,6 +71,16 @@ type FieldBinding =
 /**
  * A filter as the bar shows and edits it, whichever way its value is transported. The one shape
  * the pill components read, so they never branch on where a field's value ends up.
+ *
+ * @remarks
+ * The resolver callbacks here — {@link FieldDef.resolveLabel}, {@link FieldDef.resolveCaption},
+ * {@link FieldDef.resolveKeywords}, {@link FieldDef.suggest} — are called once per candidate value
+ * on every keystroke while the bar narrows. Anything they need should be indexed or built once
+ * outside the callback: work done inside runs over the whole candidate list per character typed.
+ *
+ * A field's *absence* from the bar is how a filter is turned off, so a default must be expressed by
+ * having no pill rather than by a pill carrying the default value. Offering the default as a value
+ * too gives the user two ways to say one thing, and one of them reads as an active filter.
  */
 export interface FieldDef {
   readonly key: string;
@@ -84,6 +94,13 @@ export interface FieldDef {
   readonly operators: readonly FilterOp[];
   readonly multiple: boolean;
   readonly binding: FieldBinding;
+  /**
+   * Whether the pill offers a "not" operator.
+   *
+   * @remarks
+   * False unless the request has a form for an exclusion on this key. Offering one the backend
+   * cannot express builds a filter that silently returns the unfiltered set.
+   */
   readonly allowExclusion: boolean;
   /**
    * Keys of fields this one cannot coexist with, because they write the same wire keys. History's

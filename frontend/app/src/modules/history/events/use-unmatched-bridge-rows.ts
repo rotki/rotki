@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { arrayify } from '@/modules/core/common/data/array';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -49,6 +49,14 @@ interface UseUnmatchedBridgeRowsReturn {
 }
 
 /**
+ * Finds the event for this leg specifically, rather than whichever event heads its collection.
+ */
+function findOwnLegEvent(transaction: UnmatchedBridgeTransaction): HistoryEventEntryWithMeta {
+  return arrayify(transaction.events).find(event => event.entry.identifier === transaction.identifier)
+    ?? getEventEntryFromCollection(transaction.events);
+}
+
+/**
  * The bridge surface's model: what the rows are, what they are called, and what may be done
  * to them. It has no notion of a table, a card or a pinned rail - the host picks a
  * presentation and both are handed the same rows and the same action specs.
@@ -71,10 +79,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
 
   const rows = computed<UnmatchedBridgeRow[]>(() =>
     toValue(transactions).map((transaction) => {
-      // Show the leg's own event: the row's collection can hold several events and the
-      // first one is not necessarily the leg this row acts on.
-      const { entry, ...meta } = arrayify(transaction.events).find(event => event.entry.identifier === transaction.identifier)
-        ?? getEventEntryFromCollection(transaction.events);
+      const { entry, ...meta } = findOwnLegEvent(transaction);
       const eventEntry = { ...entry, ...meta };
       const ignored = !!toValue(showRestore);
       const untrackedCounterpart = !ignored && isCounterpartUntracked(transaction);
@@ -133,8 +138,6 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
     if (!row.untrackedCounterpart) {
       confirms[UNMATCHED_ACTIONS.MARK_EXTERNAL] = {
         confirmLabel: t('bridge_matching.dialog.mark_external'),
-        // A deposit is resolved as a payment out, a withdrawal as income in. Asking about a
-        // payment either way misdescribes half of what the user is about to confirm.
         message: row.direction === 'deposit'
           ? t('bridge_matching.dialog.confirm_mark_external')
           : t('bridge_matching.dialog.confirm_mark_external_in'),

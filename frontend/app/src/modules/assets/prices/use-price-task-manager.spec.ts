@@ -76,8 +76,6 @@ describe('usePriceTaskManager', () => {
     });
 
     it('should append any new prices to the existing data when re-called', async () => {
-      // Seed the existing DAI price first so this test does not depend on a sibling
-      // test's leftover store state, then append ETH.
       await executeFetchPrices(['DAI'], createMockPriceResponse({ DAI: [1, 0] }));
       await executeFetchPrices(['ETH'], createMockPriceResponse({ ETH: [2, 1] }));
 

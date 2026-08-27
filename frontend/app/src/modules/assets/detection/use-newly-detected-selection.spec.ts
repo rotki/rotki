@@ -35,9 +35,7 @@ describe('useNewlyDetectedSelection', () => {
     return useNewlyDetectedSelection({ filters, found: 2, refetch });
   }
 
-  // Selecting everything means everything the table is *showing*, so it has to ask for the
-  // identifiers of the kind the pill narrowed to rather than of every kind.
-  it('should select all of the narrowed kind', async () => {
+  it('should select all of the narrowed kind, meaning everything the table is showing rather than every kind', async () => {
     const { modelSelected, toggleSelection } = setup({
       [NewlyDetectedFilterKeys.TOKEN_KIND]: NewDetectedTokenKind.SOLANA,
     });
@@ -105,8 +103,7 @@ describe('useNewlyDetectedSelection', () => {
     expect(removeNewDetectedTokens).toHaveBeenCalledWith(['one']);
   });
 
-  // Marking as spam removes the rows too, but only once the marking actually succeeded.
-  it('should remove the rows it marked as spam', async () => {
+  it('should remove the rows it marked as spam, but only once the marking succeeded', async () => {
     const { markAsSpam } = setup();
 
     await markAsSpam(['a', 'a', 'b']);

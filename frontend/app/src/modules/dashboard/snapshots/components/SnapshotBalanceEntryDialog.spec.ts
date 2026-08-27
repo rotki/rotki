@@ -174,12 +174,9 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog', ()
     expect(mutation.location).toEqual([{ location: 'kraken', usdValue: bigNumberify(250) }]);
   });
 
-  // The location preview and the overdrawn-location check read the same field on every keystroke,
-  // where a throw takes the dialog down rather than surfacing as a bad number.
   it('should keep rendering while the value field holds no number', async () => {
     await openAddWith('2', '1.2.3');
 
-    // Nothing readable was entered, so the location is previewed as unchanged.
     const preview = wrapper.findComponent({ name: 'EditBalancesSnapshotForm' }).props('previewLocationBalance');
     expect(preview.before.toNumber()).toBe(100);
     expect(preview.after.toNumber()).toBe(100);

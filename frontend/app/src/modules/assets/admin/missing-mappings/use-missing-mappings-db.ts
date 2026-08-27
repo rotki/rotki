@@ -26,7 +26,6 @@ interface UseMissingMappingsDBReturn {
 }
 
 export function useMissingMappingsDB(): UseMissingMappingsDBReturn {
-  // This should not be destructured to avoid accessing it during the composable creation
   const { db } = useDatabase();
 
   async function put(mapping: AddMissingMapping): Promise<number> {

@@ -75,10 +75,10 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
 
   const decimalPlaces = computed<number>(() => get(displayValue).decimalPlaces() ?? 0);
 
-  // An explicit, fixed precision requested by the caller (e.g. to align a column of amounts).
+  /** A fixed precision the caller asked for, typically to align a column of amounts. */
   const fixedDecimals = computed<number | undefined>(() => toValue(decimals));
 
-  // The precision actually rendered: explicit override, else 0 for integers, else the user setting.
+  /** The precision actually rendered: the caller's override, else 0 for integers, else the setting. */
   const effectivePrecision = computed<number>(() => {
     if (toValue(integer))
       return 0;
@@ -93,7 +93,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
       && get(displayValue).gte(10 ** (get(minimumDigitToBeAbbreviated) - 1)),
   );
 
-  // Subscript notation is suppressed when a fixed precision is requested, so columns stay aligned.
+  /** Suppressed under a fixed precision, so a column of amounts stays aligned. */
   const subscriptEnabled = computed<boolean>(() => get(fixedDecimals) === undefined && get(subscriptDecimals));
 
   const roundingMode = computed(() => (toValue(rounding) === 'amount' ? get(amountRoundingMode) : get(valueRoundingMode)));
@@ -150,9 +150,13 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
     return '';
   });
 
-  // Leading zeros in the fractional part of a sub-1 positive value (0 for anything else), which
-  // is what decides whether subscript notation is worthwhile. Extracted so shouldUseSubscript
-  // stays simple.
+  /**
+   * How many leading zeros the fractional part has, for a value strictly between 0 and 1.
+   *
+   * @remarks
+   * Zero for anything else, including negatives and NaN. This is what decides whether subscript
+   * notation is worth using: below two, the notation costs more characters than it saves.
+   */
   const subscriptLeadingZeros = computed<number>(() => {
     const val = get(displayValue);
     if (!val.lt(1) || !val.gt(0) || val.isZero() || val.isNaN()) {

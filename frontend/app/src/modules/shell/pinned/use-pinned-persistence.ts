@@ -72,8 +72,10 @@ export function usePinnedPersistence(): void {
   const { logged, username } = storeToRefs(useSessionAuthStore());
 
   const persistedWidth = useLocalStorage<number>(WIDTH_KEY, PINNED_DEFAULT_WIDTH);
-  // The app shell only mounts once a user is unlocked, and `username` is set before `logged`
-  // flips, so the key is bound to the user this rail belongs to.
+  /**
+   * Keyed to the user this rail belongs to. Reading `username` once at setup is enough: the app
+   * shell mounts only after a user is unlocked, and `username` is set before `logged` flips.
+   */
   const persistedTabs = useLocalStorage<PersistedPinnedTabs>(tabsKeyFor(get(username)), { activeId: null, names: [] });
 
   // Restore once, and only into an untouched rail so nothing already pinned is clobbered.

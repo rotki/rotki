@@ -74,8 +74,6 @@ function createMockTransaction(overrides: {
 } = {}): UnmatchedBridgeTransaction {
   return {
     groupIdentifier: overrides.groupIdentifier ?? 'group1',
-    // The first event of the group is the gas fee event, never the bridge leg, so a
-    // regression that falls back to it would send this identifier instead.
     // @ts-expect-error partial mock for testing - only identifier is needed
     events: { entry: { identifier: GAS_FEE_EVENT_IDENTIFIER } },
     identifier: overrides.identifier ?? 1,
@@ -204,9 +202,6 @@ describe('use-bridge-transaction-actions', () => {
       expect(get(composable.resolutionNotice)).toBeUndefined();
     });
 
-    // The regression this pair pins: a withdrawal is resolved as income from an untracked
-    // source, not as a payment out, and the backend event ends up a receive. Reporting the
-    // deposit wording for both directions describes half of them as the opposite transfer.
     it('should describe a resolved withdrawal as income rather than a payment', async () => {
       const composable = useBridgeTransactionActions();
 

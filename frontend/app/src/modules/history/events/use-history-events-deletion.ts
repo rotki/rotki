@@ -123,8 +123,6 @@ export function useHistoryEventsDeletion(
 
     if (success) {
       showSuccessMessage(title, successMessage);
-      // Single choke point for every deletion path (events / transactions / ignore / filter):
-      // a removal makes computed P&L / historical balances stale (issue #6825).
       taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
     }
     else {
@@ -236,7 +234,6 @@ export function useHistoryEventsDeletion(
     await new Promise<void>((resolve) => {
       showConfirm(
         confirmation,
-        // Primary: Delete transactions
         async () => {
           const txResult = await deleteCompleteTransactions(transactions);
           const eventsResult = await deletePartialEvents(remainingEventIds);

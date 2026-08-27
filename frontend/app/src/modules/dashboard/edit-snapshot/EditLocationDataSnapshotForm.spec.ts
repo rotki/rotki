@@ -1,10 +1,13 @@
 import type { LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
+import { settleFormDebounce } from '@test/utils/form-timing';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import EditLocationDataSnapshotForm from '@/modules/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+
+const MESSAGE_ENTER_TRANSITION_MS = 700;
 
 type FormInstance = InstanceType<typeof EditLocationDataSnapshotForm>;
 
@@ -98,7 +101,7 @@ describe('edit-snapshot/EditLocationDataSnapshotForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.vm.validate();
-    await vi.advanceTimersByTimeAsync(700);
+    await vi.advanceTimersByTimeAsync(MESSAGE_ENTER_TRANSITION_MS);
     await nextTick();
 
     expect(wrapper.find('[data-testid=edit-location-location] .details').text())
@@ -114,26 +117,22 @@ describe('edit-snapshot/EditLocationDataSnapshotForm.vue', () => {
     const value = wrapper.find('[data-testid=edit-location-value] input');
     await value.setValue('');
     await value.trigger('blur');
-    // The field's message sits behind an enter transition, so it is not in the DOM immediately.
-    await vi.advanceTimersByTimeAsync(700);
+    await vi.advanceTimersByTimeAsync(MESSAGE_ENTER_TRANSITION_MS);
 
     expect(wrapper.find('[data-testid=edit-location-value] .details .text-rui-error').text())
       .toBe('dashboard.snapshot.edit.dialog.location_data.rules.value');
   });
 
-  // The other side of the flag: a dialog the user has not touched must not prompt about unsaved
-  // changes on close, which is what any state the form writes for itself on open would cause.
-  it('should not flag stateUpdated before anything is edited', async () => {
+  it('should not flag stateUpdated before anything is edited, so an untouched dialog closes clean', async () => {
     wrapper = createWrapper();
-    await vi.advanceTimersByTimeAsync(600);
+    await settleFormDebounce();
 
     expect(wrapper.emitted('update:stateUpdated')?.flat() ?? []).not.toContain(true);
   });
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleFormDebounce();
 
     await wrapper.find('[data-testid=edit-location-value] input').setValue('6000');
     await vi.advanceTimersToNextTimerAsync();

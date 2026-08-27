@@ -53,8 +53,6 @@ export function numericSeparatorsSchema(messages: NumericSeparatorsMessages): Zo
     addFieldIssues(state.thousand, 'thousand', messages.thousand, ctx);
     addFieldIssues(state.decimal, 'decimal', messages.decimal, ctx);
 
-    // The pair rule reports on both fields: the submit is all-or-nothing, so blaming only the field
-    // that was last edited would leave the other looking persistable when it is not.
     if (state.thousand === state.decimal) {
       ctx.addIssue({ code: 'custom', message: messages.thousand.sameAsOther, path: ['thousand'] });
       ctx.addIssue({ code: 'custom', message: messages.decimal.sameAsOther, path: ['decimal'] });

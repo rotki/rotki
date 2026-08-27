@@ -1,12 +1,11 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { type ComponentPublicInstance, defineComponent } from 'vue';
+import { defineComponent } from 'vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import '@test/i18n';
-
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 /**
  * `AssetRowDetails` sits between two components that both take the breakdown bag, so its job is to
@@ -34,8 +33,6 @@ function createWrapper(
   return mount(AssetRowDetails, {
     global: {
       stubs: {
-        // `hideTotal` needs its Boolean type declared or the valueless `hide-total` attribute
-        // arrives as the empty string instead of `true`.
         AssetBalances: defineComponent({
           name: 'AssetBalances',
           props: {
@@ -109,9 +106,7 @@ describe('balances/protocols/components/AssetRowDetails.vue', () => {
     expect(nested(createWrapper(breakdown)).props('breakdown')).toStrictEqual(breakdown);
   });
 
-  // A non-native asset takes the nested branch regardless of `hide`, and the nested table always
-  // suppresses its own total row: that is the whole reason the prop is hardcoded rather than passed.
-  it('should always hide the total on the nested table', () => {
+  it('should always hide the total on the nested table, whatever the outer hide asks for', () => {
     expect(nested(createWrapper(undefined, 'BTC')).props('hideTotal')).toBe(true);
   });
 

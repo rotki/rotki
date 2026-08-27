@@ -18,9 +18,7 @@ describe('manualBalanceTagsParams', () => {
     expect(get(tags)).toStrictEqual([]);
   });
 
-  // The url carries them joined, the request carries them as a list, and both come off the one
-  // declaration: the source emits the array and the url half stringifies it.
-  it('should send the tags to the request as a list', () => {
+  it('should send the tags to the request as a list, while the url half of the same declaration stringifies them', () => {
     const tags = ref<string[]>(['a', 'b']);
 
     expect(toValue(manualBalanceTagsParams(tags).source.values)).toStrictEqual({ tags: ['a', 'b'] });
@@ -36,9 +34,7 @@ describe('manualBalanceTagsParams', () => {
     expect(get(manualBalanceTagsParams(tags).pillParams)).toStrictEqual({ tags: ['a'] });
   });
 
-  // Removing the pill is how the filter is turned off, so no tags means no key at all rather than
-  // an empty list the bar would draw as a pill.
-  it('should draw no pill when nothing is picked', () => {
+  it('should draw no pill when nothing is picked, emitting no key at all rather than an empty list', () => {
     expect(get(manualBalanceTagsParams(ref<string[]>([])).pillParams)).toStrictEqual({});
   });
 

@@ -85,13 +85,12 @@ describe('useAutoTokenDetection', () => {
 
   it('should ask for detection only once when called concurrently', async () => {
     let release!: () => void;
-    // Only the detecting pass blocks, so the second call is free to observe the in-flight sweep.
-    const blocked = new Promise<void>((resolve) => {
+    const firstPassStillDetecting = new Promise<void>((resolve) => {
       release = resolve;
     });
     const pass = vi.fn<(detect: boolean) => Promise<void>>(async (detect) => {
       if (detect)
-        await blocked;
+        await firstPassStillDetecting;
     });
     const { withDetection } = useAutoTokenDetection();
 

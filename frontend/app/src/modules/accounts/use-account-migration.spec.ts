@@ -67,10 +67,7 @@ describe('useAccountMigration', () => {
 
     expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
     expect(h.notify).toHaveBeenCalledOnce();
-    // The query waits on the accounts read, so it is not called in the same tick.
     await flushPromises();
-    // A migrated address is new to the chain, so the cache cannot have its balances. Detect, then
-    // query — the same order an addition needs, and for the same reason.
     expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
       { blockchain: 'eth' },
       'background',

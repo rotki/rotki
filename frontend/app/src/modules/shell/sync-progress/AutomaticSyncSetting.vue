@@ -14,9 +14,14 @@ const { disabled = false, dense = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// `premiumShouldSync` is an unregistered backend flag (returned in the `other` bucket and mirrored to
-// the premium store), so it is written through the general settings update rather than the registry
-// writer; `update()` refreshes the premium store's sync state from the response.
+/**
+ * The draft of `premiumShouldSync`.
+ *
+ * @remarks
+ * That flag is unregistered: the backend returns it in the `other` bucket and mirrors it to the
+ * premium store, so it is written through the general settings update rather than the registry
+ * writer, and `update()` refreshes the premium store's sync state from the response.
+ */
 const sync = ref<boolean>(false);
 const { premiumSync } = storeToRefs(usePremiumStore());
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();

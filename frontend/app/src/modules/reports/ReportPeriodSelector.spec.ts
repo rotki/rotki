@@ -174,13 +174,6 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
     });
 
     it('should emit null period when custom is clicked from a past year (regression: stale max-date)', async () => {
-      // Regression for the bug where clicking the Custom button while a
-      // past year was selected synchronously re-emitted that year's period.
-      // The parent (RangeSelector) would briefly apply the stale window as
-      // the model, the custom DateTimeRangePicker would mount against it,
-      // and RuiDateTimePicker would latch its max-date validation
-      // ("Date cannot be after 12/31/<past-year>") because
-      // `useDateTimeSelection` captures `maxDate` once at mount.
       const pastYear = (Number(currentYear) - 4).toString();
       wrapper = createWrapper({
         props: {
@@ -189,7 +182,6 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
         },
       });
 
-      // Drop the mount-time period emit from the assertion window.
       await vi.advanceTimersToNextTimerAsync();
 
       const customButton = wrapper.find('[data-testid=button-custom]');
@@ -197,8 +189,6 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const periodEvents = wrapper.emitted<(PeriodChangedEvent | null)[]>('update:period')!;
-      // The very next period emit after the click must be null — not a
-      // payload reflecting the past year.
       const eventsAfterMount = periodEvents.slice(1);
       expect(eventsAfterMount.length).toBeGreaterThan(0);
       expect(eventsAfterMount[0][0]).toBeNull();

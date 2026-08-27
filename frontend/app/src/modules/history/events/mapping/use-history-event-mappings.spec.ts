@@ -72,11 +72,9 @@ describe('useHistoryEventMappings', () => {
       });
     });
 
-    it('should resolve a combination whose counterparty is an empty string', async () => {
+    it('should resolve a combination whose counterparty is an empty string, which the forms use for "none" and callers would otherwise read as unknown', async () => {
       const { findEventTypeData } = await setup();
 
-      // the event forms model "no counterparty" as '', and callers treat an empty
-      // identifier as an unknown combination
       expect(findEventTypeData({ counterparty: '', eventSubtype: 'bridge', eventType: 'receive' })).toMatchObject({
         direction: 'in',
         identifier: 'bridge receive',

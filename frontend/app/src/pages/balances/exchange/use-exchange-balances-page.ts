@@ -41,8 +41,10 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { refreshBalance, refreshExchangeBalance } = useBalanceRefresh();
 
-  // Seeded from the route once. The tabs themselves are links, so the router drives the page and
-  // this only sets the initially highlighted one.
+  /**
+   * Seeded from the route once, and only ever the initially highlighted tab: the tabs are links, so
+   * the router is what drives the page from there.
+   */
   const modelSelectedTab = shallowRef<string | undefined>(toValue(exchange) ?? undefined);
   const modelSelectedExchange = shallowRef<string>('');
   const modelExchangeDetailTabs = shallowRef<number>(0);
@@ -62,8 +64,13 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
     );
   }
 
-  // Sorts a copy: `sort` in place would reorder the array `usedExchanges` has cached, so rendering
-  // the desktop tabs would silently reorder the mobile picker bound to it.
+  /**
+   * The exchanges by balance, largest first, for the desktop tabs.
+   *
+   * @remarks
+   * Sorts a copy. `sort` in place would reorder the array {@link usedExchanges} has cached, so
+   * rendering the tabs would silently reorder the mobile picker bound to it.
+   */
   const sortedExchanges = computed<string[]>(() =>
     [...get(usedExchanges)].sort((a, b) => exchangeBalance(b).minus(exchangeBalance(a)).toNumber()),
   );

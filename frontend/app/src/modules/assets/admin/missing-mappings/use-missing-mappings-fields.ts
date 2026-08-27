@@ -27,8 +27,6 @@ export function useMissingMappingsFields(): FieldDef[] {
         label: (): string => t('common.location'),
         multiple: false,
         suggest: exchanges,
-        // The predicate compares the location exactly, so an exchange that is not offered would
-        // match nothing and read as an empty table rather than as a bad filter.
         validate: (value: string): boolean => exchanges().includes(value),
       }),
       SharedFieldKinds.LOCATION,

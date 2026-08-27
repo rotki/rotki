@@ -16,15 +16,17 @@ interface UseTaskControllerReturn {
 }
 
 /**
- * Uniform control over every activity. The orchestrator owns them all, so both commands are a
- * lookup by id; they return a plainfp {@link Result} so callers (and the future UI) render
- * failures without try/catch.
+ * Offers uniform cancel and rerun control over every activity.
+ *
+ * @remarks
+ * The orchestrator owns them all, so both commands are a lookup by id, and it is the orchestrator
+ * that rejects an activity which cannot be cancelled or rerun. Both return a plainfp
+ * {@link Result} so callers render failures without try/catch.
  */
 export function useTaskController(): UseTaskControllerReturn {
   const orchestrator = useTaskOrchestrator();
   const { model } = useTaskCenter();
 
-  // A non-cancellable / non-rerunnable activity is rejected by the orchestrator, not here.
   async function cancel(activity: Activity): Promise<CommandResult> {
     return orchestrator.cancel(activity.id);
   }

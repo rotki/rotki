@@ -9,8 +9,6 @@ const runTaskMock = vi.fn();
 const notifyError = vi.fn();
 const queryExchangeBalances = vi.fn();
 
-// Native producer path: real useNativeTask + orchestrator drive submitTask; only the task handler
-// the facade delegates to is mocked, so runTask resolves from runTaskMock.
 vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
@@ -50,13 +48,11 @@ describe('useExchanges', () => {
     store = useBalancesStore();
     exchanges = useExchanges();
     vi.clearAllMocks();
-    // The api call returns a pending task; the activity records its id so a cancel can abort it.
     queryExchangeBalances.mockResolvedValue({ taskId: 1 });
   });
 
   describe('fetchExchangeBalances', () => {
     it('should store the balances for the location on success', async () => {
-      // Backend Balance.serialize() emits { amount, value } (post usd_value -> value migration).
       runTaskMock.mockResolvedValue(ok({ BTC: { amount: '1', value: '50000' } }));
 
       await exchanges.fetchExchangeBalances({ ignoreCache: false, location: 'kraken' });

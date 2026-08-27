@@ -17,9 +17,7 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): { updateFrontendSetting: typeof updateFrontendSetting } => ({ updateFrontendSetting }),
 }));
 
-// RuiMenu teleports its content lazily; stub it so the activator and the content are both in the
-// tree without having to open it.
-const RuiMenuStub = defineComponent({
+const RuiMenuAlwaysOpenInTreeStub = defineComponent({
   name: 'RuiMenu',
   props: { disabled: { default: false, type: Boolean }, modelValue: { default: false, type: Boolean } },
   emits: ['update:modelValue'],
@@ -52,11 +50,15 @@ function view(name: string, matches: SavedView['matches'] = {}): SavedView {
   return { matches, name, params: {} };
 }
 
-function createWrapper(state: SavedViewState = { matches: {}, params: {} }): VueWrapper<InstanceType<typeof PillViewsMenu>> {
+function createWrapper(
+  state: SavedViewState = { matches: {}, params: {} },
+  attachTo?: HTMLElement,
+): VueWrapper<InstanceType<typeof PillViewsMenu>> {
   return mount(PillViewsMenu, {
+    attachTo,
     global: {
       plugins: [createCustomPinia()],
-      stubs: { RuiMenu: RuiMenuStub },
+      stubs: { RuiMenu: RuiMenuAlwaysOpenInTreeStub },
     },
     props: {
       fields: [location, account],
@@ -66,12 +68,17 @@ function createWrapper(state: SavedViewState = { matches: {}, params: {} }): Vue
   });
 }
 
+/** Drives the menu's own open state to `open`, which the stub does not do for it. */
+async function setMenuOpen(wrapper: VueWrapper<InstanceType<typeof PillViewsMenu>>, open: boolean): Promise<void> {
+  wrapper.findComponent({ name: 'RuiMenu' }).vm.$emit('update:modelValue', open);
+  await nextTick();
+}
+
 function storeViews(views: SavedView[]): void {
   useSettingsRepo().updateFrontend({ savedViews: { [SavedFilterLocations.HISTORY_EVENTS]: views } });
 }
 
 describe('pillViewsMenu', () => {
-  // jsdom has no layout and no `scrollIntoView`, so the call itself is what can be asserted.
   const scrollIntoView = vi.fn();
 
   beforeAll(() => {
@@ -119,8 +126,7 @@ describe('pillViewsMenu', () => {
     expect(wrapper.emitted('apply')?.[0]?.[0]).toMatchObject({ name: 'second' });
   });
 
-  // Nothing filtered means there is nothing to name, so the input says why instead of sitting dead.
-  it('should not offer to save while no filter is active', () => {
+  it('should not offer to save while no filter is active, saying why rather than sitting dead', () => {
     const wrapper = createWrapper();
     expect(wrapper.get('[data-testid=pill-views-name]').attributes('disabled')).toBeDefined();
     expect(wrapper.find('[data-testid=pill-views-hint]').exists()).toBe(true);
@@ -168,8 +174,7 @@ describe('pillViewsMenu', () => {
       savedViews: { [SavedFilterLocations.HISTORY_EVENTS]: [view('b')] },
     });
   });
-  // The list scrolls once a few views are stored, and the arrow keys are handled on the list
-  // itself, so nothing else can pull the highlighted row back into view.
+
   it('should bring the highlighted view into view as the arrows move it', async () => {
     const wrapper = createWrapper();
     storeViews([view('first'), view('second')]);
@@ -179,5 +184,22 @@ describe('pillViewsMenu', () => {
     await wrapper.get('[data-testid=pill-views-list]').trigger('keydown', { key: 'ArrowDown' });
 
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+  });
+
+  it('should take focus onto the list when it opens, since the menu is told not to do it', async () => {
+    const wrapper = createWrapper({ matches: {}, params: {} }, document.body);
+
+    await setMenuOpen(wrapper, true);
+
+    expect(document.activeElement).toBe(wrapper.get('[data-testid=pill-views-list]').element);
+  });
+
+  it('should hand focus back to the activator when it closes, rather than leave it on the body', async () => {
+    const wrapper = createWrapper({ matches: {}, params: {} }, document.body);
+    await setMenuOpen(wrapper, true);
+
+    await setMenuOpen(wrapper, false);
+
+    expect(document.activeElement).toBe(wrapper.get('[data-testid=pill-views]').element);
   });
 });

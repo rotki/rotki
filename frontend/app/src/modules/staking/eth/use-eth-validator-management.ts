@@ -49,9 +49,15 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
     set(total, totalStakedAmount);
   }
 
+  /**
+   * Sets the total directly, as the page refresh does.
+   *
+   * @remarks
+   * Claims `wantedFilter`, so a query still in flight cannot land on top of this. A query that
+   * completes checks the slot instead of claiming it, which is why it calls {@link applyTotal}
+   * rather than coming back through here.
+   */
   function setTotal(validators?: Eth2Validators['entries']): void {
-    // Claims the slot, so a request still in flight cannot land on top of a caller that has just
-    // set the total directly (the page refresh does exactly that).
     wantedFilter = '';
     applyTotal(validators);
   }
@@ -85,8 +91,6 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
 
     try {
       const validators = await queryEth2Validators(combinedFilter);
-      // Not `setTotal`: this must not claim the slot, it has to check whether the answer it carries
-      // is still the one being asked for.
       if (filterKey === wantedFilter)
         applyTotal(validators.entries);
     }

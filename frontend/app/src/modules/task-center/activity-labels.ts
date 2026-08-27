@@ -42,12 +42,14 @@ const ACTIVITY_LABEL: Partial<Record<ActivityKind, Partial<Record<ActivityPart, 
     [Part.MATCH]: msg.$t('task_center.activity.history_events.match'),
     [Part.UNDECODED]: msg.$t('task_center.activity.history_events.undecoded'),
   },
-  // Parallel siblings: four facets of one protocol, shown together. The contrast between them is
-  // the information, so they stay terse where a lone activity would get a sentence.
+  /**
+   * Parallel siblings: four facets of one protocol, shown together. The contrast between them is
+   * the information, so they stay terse where a lone activity would get a sentence.
+   */
   [Kind.LIQUITY]: {
     [Part.BALANCES]: msg.$t('task_center.activity.liquity.balances'),
     [Part.POOLS]: msg.$t('task_center.activity.liquity.pools'),
-    [Part.STAKING]: msg.$t('task_center.activity.liquity.staking'),
+    [Part.STAKE]: msg.$t('task_center.activity.liquity.staking'),
     [Part.STATISTICS]: msg.$t('task_center.activity.liquity.statistics'),
   },
   [Kind.PNL_REPORT]: {

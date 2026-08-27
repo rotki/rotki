@@ -155,8 +155,6 @@ export function enumParam<T extends string>(
   fallback: T,
 ): ParamRef {
   return {
-    // The default is stated by the pill's absence, so offering it as a value too would give the
-    // user two ways to say one thing, one of which reads as a filter.
     pill: (): T | undefined => get(model) === fallback ? undefined : get(model),
     read: (raw: RawQueryValue): void => {
       const value = firstOf(raw);

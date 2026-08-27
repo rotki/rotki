@@ -36,13 +36,11 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     queryFiatExchangeRates,
     queryHistoricalRate,
   } = usePriceApi();
-  // Latest-price fetching runs as a native orchestrator activity; see use-fetch-prices.
   const { fetchPrices } = useFetchPrices();
 
   const fetchExchangeRates = async (symbol?: SupportedCurrency): Promise<void> => {
     const selectedCurrency = symbol ?? get(currencySymbol);
 
-    // One native PRICES activity (`prices:exchange-rates`); liveness is read off the orchestrator.
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES),
       kind: ActivityKind.PRICES,
@@ -103,7 +101,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     source,
     toAsset,
   }: OracleCachePayload): Promise<ActionStatus> => {
-    // Single shared id ⇒ only one oracle-cache build at a time, preserving the old type-wide guard.
     if (statusOf(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE).active) {
       return {
         message: t('actions.balances.create_oracle_cache.already_running'),

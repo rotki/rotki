@@ -5,7 +5,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { toServerErrors } from '@/modules/core/form/server-errors';
-import { type FormApi, useForm } from '@/modules/core/form/use-form';
+import { type FormApi, noSubmit, useForm } from '@/modules/core/form/use-form';
 import { type RepullingExchangeFormState, repullingExchangeSchema } from '@/modules/history/events/tx/repulling-forms';
 import { shouldShowDateRangePicker } from '@/modules/history/events/tx/use-repulling-transaction-form';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -21,26 +21,27 @@ const { syncingExchanges } = useExchangeData();
 
 const hasNoExchanges = computed<boolean>(() => get(syncingExchanges).length === 0);
 
-/*
+/**
+ * Owns the exchange choice and the optional range this tab edits.
+ *
+ * @remarks
  * `useForm` rather than `useModelForm`: the chosen exchange is the form's main field and is not part
  * of the shared payload, so the state is wider than the model. Only the range is mirrored back.
+ *
+ * `schema` is a getter rather than a computed over `showDateRangePicker`: that computed reads the
+ * state this form owns, so as a dependency the two would be defined in terms of each other.
  */
 const form: FormApi<RepullingExchangeFormState, RepullingExchangeFormState> = useForm({
   initial: (): RepullingExchangeFormState => ({
-    // Spelled out, not left off: a key the state does not carry fails the schema on its absence
-    // rather than on the rule, and reports zod's own message instead of the one below.
     exchange: undefined,
     fromTimestamp: get(modelValue).fromTimestamp,
     toTimestamp: get(modelValue).toTimestamp,
   }),
-  // A getter, not a computed over `showDateRangePicker`: that reads the state this form owns, so
-  // the two would be defined in terms of each other.
   schema: (): ZodType => repullingExchangeSchema({
     exchangeRequired: t('transactions.repulling.validation.exchange_non_empty'),
     rangeRequired: t('transactions.repulling.validation.date_non_empty'),
   }, shouldShowDateRangePicker(false, form.state.exchange)),
-  // The dialog owns the persist and reads the range off the model.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): RepullingExchangeFormState => ({ ...state }),
 });
 
@@ -61,8 +62,6 @@ watchImmediate(errors, (value) => {
  */
 syncRefs(form.dirty, stateUpdated);
 
-// An exchange that reports no range has no picker, so anything already in it is dropped rather than
-// sent.
 watch(showDateRangePicker, (show) => {
   if (!show) {
     form.state.fromTimestamp = undefined;

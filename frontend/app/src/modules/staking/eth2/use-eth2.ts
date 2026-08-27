@@ -10,6 +10,7 @@ import { onActionableError, type TaskError } from '@/modules/core/tasks/task-res
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEth2Api } from '@/modules/staking/api/use-eth2-api';
 import { activityLabel } from '@/modules/task-center/activity-labels';
+import { shouldSkipFetch } from '@/modules/task-center/core/status';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -38,13 +39,19 @@ export function useEth2Staking(): UseEth2StakingReturn {
 
   const { getBlockchainAccounts } = useBlockchainAccountData();
 
+  /**
+   * Refreshes the backend's staking-performance cache.
+   *
+   * @remarks
+   * Only the cache: the performance data itself is read separately through `fetchPerformance`, so
+   * this activity's success mapper has no store side effect.
+   */
   async function syncEthStakingPerformance(userInitiated = false): Promise<boolean> {
     if (!get(premium))
       return false;
 
-    // `fetchDisabled(refresh)` on the orchestrator projection: skip cached loads and re-entrancy.
     const status = statusOf(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
-    if ((status.everCompleted && !userInitiated) || status.active)
+    if (shouldSkipFetch(status, userInitiated))
       return false;
 
     const defaults: EthStakingPayload = {
@@ -52,8 +59,6 @@ export function useEth2Staking(): UseEth2StakingReturn {
       offset: 0,
     };
 
-    // The performance data itself is read separately via `fetchPerformance`; this activity only
-    // refreshes the backend cache, so the success mapper has no store side effect.
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.STAKING, ActivityPart.PERFORMANCE),
       kind: ActivityKind.STAKING,

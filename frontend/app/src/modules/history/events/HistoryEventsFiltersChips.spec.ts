@@ -4,12 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
 
-/**
- * The seam: which chip is rendered, what its close button calls, and that the fix and refresh
- * actions on the duplicate chip appear only in the states that offer them. What each of those
- * calls does to the URL belongs to `use-history-events-filters-chips`, which has its own spec.
- */
-
 const chips = {
   allDuplicatesResolved: ref<boolean>(false),
   confirmFixDuplicate: vi.fn(),
@@ -95,8 +89,6 @@ describe('modules/history/events/HistoryEventsFiltersChips', () => {
     ['duplicate-events-chip', 'showDuplicates', 'removeDuplicateEventsParam'],
   ] as const)('should close the %s through the composable', async (testId, flag, remover) => {
     set(chips[flag], true);
-    // The duplicate chip renders the fix action inside its own body, so it is turned
-    // off here to leave the close button as the only one under the chip.
     set(chips.isAutoFixable, false);
     const view = mountChips();
 

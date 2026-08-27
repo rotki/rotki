@@ -4,7 +4,7 @@ import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import TradeAssetSelector from '@/modules/wallet/send/TradeAssetSelector.vue';
 
 const NAMES: Record<string, { symbol: string; name: string }> = {
@@ -73,9 +73,6 @@ vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', () => 
   useTokenDetectionOrchestrator: vi.fn(() => ({ detectTokens: orchestratorDetect })),
 }));
 
-// happy-dom reports every element as zero-height, so the real useVirtualList would render an empty
-// window and no assertion about rows could distinguish "filtered out" from "scrolled out of view".
-// The stub renders everything and records the windowing config, which is what this component owns.
 vi.mock('@vueuse/core', async () => {
   const mod = await vi.importActual<typeof import('@vueuse/core')>('@vueuse/core');
   const { computed: vueComputed, shallowRef, toValue: vueToValue } = await import('vue');
@@ -95,16 +92,6 @@ vi.mock('@vueuse/core', async () => {
 });
 
 describe('tradeAssetSelector', () => {
-  // Wrappers are unmounted between tests. `allOwnedAssets` is a module-level ref shared by every
-  // instance, so a leaked component keeps reacting to it and its effects run during later tests,
-  // which is invisible except as call counts on a mock that this test never touched.
-  const mounted: VueWrapper[] = [];
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
-  });
-
   function createWrapper(props: Record<string, unknown> = {}): VueWrapper {
     const pinia = createPinia();
     setActivePinia(pinia);
@@ -120,8 +107,6 @@ describe('tradeAssetSelector', () => {
             props: { modelValue: String },
             template: '<button data-testid="chain-select" @click="$emit(\'update:modelValue\', \'all\')" />',
           },
-          // RuiDialog teleports to body, which puts its content outside the wrapper. This renders
-          // the same slot inline so the dialog's contents can be queried.
           RuiDialog: {
             props: { modelValue: Boolean },
             template: '<div v-if="modelValue"><slot /></div>',
@@ -136,7 +121,6 @@ describe('tradeAssetSelector', () => {
         ...props,
       },
     });
-    mounted.push(wrapper);
     return wrapper;
   }
 
@@ -207,8 +191,6 @@ describe('tradeAssetSelector', () => {
     await openDialog(wrapper);
     virtualScrollTo.mockClear();
 
-    // A balances refresh rebuilds the owned list into a new array with the same contents. Resetting
-    // the scroll on that would yank the list from under a user who was scrolling it.
     set(allOwnedAssets, [...get(allOwnedAssets)]);
     await flushPromises();
 
@@ -228,8 +210,6 @@ describe('tradeAssetSelector', () => {
     const emptyHeight = [...wrapper.find('[data-testid="trade-asset-empty"]').element.classList]
       .find(name => name.startsWith('h-['));
 
-    // A `max-h` would size the dialog to the result count, so it would grow and collapse on every
-    // keystroke. Both states must pin the same fixed height instead.
     expect(populatedHeight).toBeDefined();
     expect(emptyHeight).toBe(populatedHeight);
     expect(populated.className).not.toContain('max-h-');
@@ -240,8 +220,6 @@ describe('tradeAssetSelector', () => {
     await openDialog(wrapper);
 
     const close = wrapper.find('[data-testid="trade-asset-close"]');
-    // happy-dom computes no colours, so the guard is on the override that caused it: the icon sat
-    // on the card's white header with `text-white`, which made it invisible in light mode.
     expect(close.html()).not.toContain('text-white');
 
     await close.trigger('click');
@@ -290,9 +268,8 @@ describe('tradeAssetSelector', () => {
     const wrapper = createWrapper({ modelValue: 'eip155:1/erc20:0xaaa' });
     await openDialog(wrapper);
 
-    // Fourth of ETH, AGE, TUSD, ZEU: opening at the top would strand the active asset off screen
-    // and make enter commit a different one.
-    expect(virtualScrollTo).toHaveBeenCalledWith(3);
+    const indexAmongEthAgeTusdZeu = 3;
+    expect(virtualScrollTo).toHaveBeenCalledWith(indexAmongEthAgeTusdZeu);
   });
 
   it('should mark the selected row', async () => {
@@ -306,8 +283,6 @@ describe('tradeAssetSelector', () => {
   });
 
   it('should tick only the selected chain when an identifier spans chains', async () => {
-    // ETH is the native asset of ethereum, optimism and base alike, so comparing the identifier
-    // alone ticks every one of them and the user cannot tell which network is selected.
     set(allOwnedAssets, [tradable('ETH', 'eth'), tradable('ETH', 'optimism')]);
     set(supportedChainsForConnectedAccount, ['eth', 'optimism']);
     const wrapper = createWrapper({ chain: 'optimism', modelValue: 'ETH' });
@@ -324,8 +299,6 @@ describe('tradeAssetSelector', () => {
   it('should not resolve any asset name before the dialog is opened', () => {
     createWrapper();
 
-    // Resolution queues a backend mapping fetch per unknown asset, so touching it on mount costs a
-    // request for the entire holding even when the dialog is never opened.
     expect(getAssetField).not.toHaveBeenCalled();
   });
 
@@ -369,8 +342,6 @@ describe('tradeAssetSelector', () => {
   });
 
   it('should default to the head of the display order rather than the raw owned list', async () => {
-    // Raw order puts TUSD first; display order puts native ETH first. The form must open on what
-    // the dialog shows at the top, or the selection sits nowhere near it.
     set(allOwnedAssets, [
       tradable('eip155:1/erc20:0xccc', 'eth'),
       tradable('ETH', 'eth'),

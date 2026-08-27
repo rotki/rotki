@@ -40,11 +40,9 @@ describe('parseValue', () => {
     ['', 0],
     ['0', 0],
     ['42', 42],
-    // parseInt truncates rather than rejecting, which is why '1.5' is saved as 1.
     ['1.5', 1],
     ['1e5', 1],
     ['abc', 0],
-    // parseInt does accept a sign, unlike the field's validation rule.
     ['-1', -1],
   ])('should parse %j as %i', (input, expected): void => {
     expect(parseValue(input)).toBe(expected);
@@ -103,11 +101,7 @@ describe('diffBackendOptions', () => {
     expect(diffBackendOptions(fields(), {})).toEqual(initial);
   });
 
-  // The two functions answer slightly different questions: the diff only looks
-  // at the seven fields the form owns, while the changed check compares whole
-  // objects. An initial option the form does not render therefore enables save
-  // while contributing nothing to the payload.
-  it('should ignore an initial option the form does not own', (): void => {
+  it('should leave an initial option the form does not own out of the diff, while the changed check still reports it', (): void => {
     const withExtra: Partial<BackendOptions> = { ...initial, sleepSeconds: 60 };
 
     expect(diffBackendOptions(fields(), withExtra)).toEqual({});
@@ -125,7 +119,6 @@ describe('hasBackendOptionChanges', () => {
   });
 
   it('should be false when a numeric field changes only in formatting', (): void => {
-    // Both parse to 300, so nothing is actually different.
     expect(hasBackendOptionChanges(fields({ maxLogSize: '300.4' }), initial)).toBe(false);
   });
 });
@@ -142,13 +135,9 @@ describe('backendNumericSchema', () => {
     return result.error.issues.filter(issue => issue.path.join('.') === 'maxLogSize').map(issue => issue.message);
   }
 
-  // The table measured from vuelidate's `and(numeric, minValue(0))` + `required`,
-  // which this schema replaces. Every row, including the message order of the
-  // last one, is the behaviour that shipped.
   it.each([
     ['0', []],
     ['300', []],
-    // numeric allows a fractional part; parseValue truncates it on save.
     ['1.5', []],
     ['', ['non-empty']],
     ['-1', ['min-0']],
@@ -156,8 +145,6 @@ describe('backendNumericSchema', () => {
     ['1e5', ['min-0']],
     ['abc', ['min-0']],
     ['1.', ['min-0']],
-    // Unreachable through a type="number" input, but vuelidate reported both
-    // rules in this order: not digits, and empty once trimmed.
     ['  ', ['min-0', 'non-empty']],
   ])('should report %j as %j', (value, expected): void => {
     expect(messagesFor(value)).toEqual(expected);

@@ -19,8 +19,6 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
   useWalletStore: vi.fn(() => ({ connected, connectedChainId, getGasFeeForChain })),
 }));
 
-// The chain refs carry rotki blockchain ids (`eth`), which is what the send form
-// binds; an unknown chain resolves to no numeric id, as the real helper does.
 vi.mock('@/modules/wallet/use-wallet-helper', () => ({
   useWalletHelper: vi.fn(() => ({
     getChainIdFromChain: (chain: string): number | undefined => CHAIN_IDS[chain],
@@ -115,8 +113,6 @@ describe('useTradeGasEstimation', () => {
   });
 
   it('should charge no gas when the selected chain has no numeric id', async () => {
-    // Both sides of the chain comparison are undefined here: the chain cannot be
-    // resolved and the wallet has reported no chain. That is not a match.
     set(chain, 'newchain');
     set(connectedChainId, undefined);
     const { estimatedGasFee } = create();
@@ -147,8 +143,6 @@ describe('useTradeGasEstimation', () => {
     const { estimatedGasFee } = create();
     await nextTick();
 
-    // Clearing the asset makes the next run bail before it aborts anything, so the first request
-    // is still live when it resolves - only the stale-asset check can discard it.
     set(asset, '');
     await nextTick();
     pending.resolve('99');

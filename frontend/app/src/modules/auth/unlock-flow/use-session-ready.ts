@@ -41,7 +41,6 @@ export function useSessionReady(): UseSessionReadyReturn {
     await fetchTransactionStatusSummary();
     await navigateToDashboard();
     set(showReleaseNotes, false);
-    // Fire-and-forget: a premium-gated network check that must not block navigation.
     startPromise(checkGnosisPaySafeMigration());
   }
 

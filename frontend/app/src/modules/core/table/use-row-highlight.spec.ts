@@ -60,7 +60,6 @@ describe('useRowHighlight', () => {
     vi.advanceTimersByTime(800);
     highlight(second);
 
-    // the first row's original timer must not clear the second highlight
     vi.advanceTimersByTime(800);
     expect(isHighlighted(second)).toBe(true);
 

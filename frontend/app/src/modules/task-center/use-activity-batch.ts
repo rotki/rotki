@@ -53,6 +53,11 @@ export function useActivityBatch(): UseActivityBatchReturn {
    *
    * The umbrella runs on {@link UMBRELLA_LANE}, never the children's lane: a parent holding a slot
    * in the lane it is waiting on throttles its own children, and at a cap of 1 deadlocks.
+   *
+   * The umbrella is submitted before its children, so the parent gate applies to them, but its `run`
+   * needs their promises, which exist only once submitted; hence the deferred `subtree`. Results are
+   * then read off the children rather than through the umbrella, because a second batch over the
+   * same prefix dedups onto the first umbrella and its outcome would report the wrong run's work.
    */
   async function runActivityBatch<TItem, TResult>(
     umbrella: BatchUmbrella,
@@ -67,8 +72,6 @@ export function useActivityBatch(): UseActivityBatchReturn {
 
     const batchId = umbrella.id;
 
-    // The umbrella is submitted before its children so the parent gate applies to them, but its
-    // `run` needs their promises, which only exist once submitted.
     let declared!: (work: readonly Promise<TResult>[]) => void;
     const subtree = new Promise<readonly Promise<TResult>[]>((resolve) => {
       declared = resolve;
@@ -92,8 +95,6 @@ export function useActivityBatch(): UseActivityBatchReturn {
     const work = items.map(async item => run(item, batchId));
     declared(work);
 
-    // Results come from the children, not through the umbrella: a second batch over the same prefix
-    // dedups onto the first umbrella, and reading its outcome would report the wrong run's work.
     const results = await Promise.all(work);
     await batch;
     return results;

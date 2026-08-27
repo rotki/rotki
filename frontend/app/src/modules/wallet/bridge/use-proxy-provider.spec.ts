@@ -23,8 +23,6 @@ function createMockBridge(): MockWalletBridge {
 }
 
 function installBridge(bridge: MockWalletBridge | undefined): void {
-  // Type-narrowed assignment: the global `Window.walletBridge` is `WalletBridgeApi | undefined`,
-  // and the structural shape of MockWalletBridge satisfies the subset our SUT calls.
   Object.assign(window, { walletBridge: bridge });
 }
 

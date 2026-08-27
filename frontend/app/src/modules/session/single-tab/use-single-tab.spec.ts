@@ -65,8 +65,6 @@ describe('useSingleTab', () => {
     pagehideHandlers = [];
     vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
     vi.stubGlobal('location', { reload });
-    // Capture the pagehide listeners each load registers so they can be torn down per test —
-    // the createGlobalState singleton never disposes, so they would otherwise accumulate.
     vi.spyOn(window, 'addEventListener').mockImplementation((type, handler, options) => {
       if (type === 'pagehide' && typeof handler === 'function')
         pagehideHandlers.push(handler);

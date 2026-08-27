@@ -3,7 +3,7 @@ import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { BlockchainRpcNodeManageState } from '@/modules/settings/types/rpc';
 import { toServerErrors } from '@/modules/core/form/server-errors';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import {
   type BlockchainRpcNodeFormState,
   blockchainRpcNodeSchema,
@@ -33,7 +33,7 @@ const schema = computed<ZodType>(() => blockchainRpcNodeSchema({
 const form = useForm<BlockchainRpcNodeFormState, BlockchainRpcNodeFormState>({
   initial: (): BlockchainRpcNodeFormState => stateFromNode(get(modelValue).node),
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): BlockchainRpcNodeFormState => ({ ...state }),
 });
 

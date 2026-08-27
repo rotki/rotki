@@ -178,8 +178,6 @@ export function exchangeKeysSchema(context: ExchangeKeysContext): ZodType<Exchan
     apiSecret: z.string(),
     binanceHistoryStartTs: z.number().optional(),
     binanceMarkets: z.array(z.string()).optional(),
-    // The three region/tier fields take their own enums rather than a bare string: none of them
-    // carries a rule, but naming the type here is what lets the state fold back over the entry.
     gateLocation: GateLocation.optional(),
     krakenAccountType: KrakenAccountType.optional(),
     krakenFuturesApiKey: z.string().optional(),
@@ -202,8 +200,6 @@ export function exchangeKeysSchema(context: ExchangeKeysContext): ZodType<Exchan
     demand(sensitiveEditable && requiresApiSecret(location, capabilities), 'apiSecret', nonEmpty);
     demand(sensitiveEditable && requiresPassphrase(location, capabilities), 'passphrase', nonEmpty);
 
-    // Each half is demanded only because the other was given, so both are read from the state in
-    // front of us rather than from whatever either field last held.
     demand(futuresEditable && isPresent(state.krakenFuturesApiSecret), 'krakenFuturesApiKey', bothFutures);
     demand(futuresEditable && isPresent(state.krakenFuturesApiKey), 'krakenFuturesApiSecret', bothFutures);
 

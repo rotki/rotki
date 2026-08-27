@@ -163,10 +163,6 @@ describe('modules::account::use-logout', () => {
   });
 
   it('should skip the backend call but still clean up locally after a restart', async () => {
-    // A restart already ended the session and settled the user DB (core runs the
-    // same logout on its graceful shutdown). Calling the endpoint again would
-    // reach a backend with nobody logged in, which 409s and shows the user a
-    // spurious "Logout failed".
     const { logout } = useLogout();
     await logout(true, { skipBackendCall: true });
     await flushPromises();

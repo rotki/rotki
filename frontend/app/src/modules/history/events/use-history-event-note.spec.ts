@@ -90,7 +90,6 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  // The date-in-a-note case; see `note-processors.spec.ts` for why a throw here is not contained.
   it('should leave a date-like word as plain text when an amount is present', () => {
     const notes = 'Register yabir.eth until 09/09/2026';
 
@@ -101,10 +100,6 @@ describe('useHistoryEventNotes', () => {
     ]);
   });
 
-  // The real note this was found on. It carries two words BigNumber rejects, the standalone `.`
-  // and the date, both of them *after* the amount. The throw discarded the whole computed result,
-  // so the GRT amount was parsed and then thrown away with everything else, which read as "the
-  // amount is not detected".
   it('should format the amount in a note that also contains a date and a bare period', () => {
     const notes = 'Undelegate 153.912179766381639129 GRT from indexer 0x089f78D8cF0a5ae1b7A581B1910a73F8CB3e4774 . Lock expires at 09/09/2026 15:04:56 CEST';
 
@@ -121,8 +116,6 @@ describe('useHistoryEventNotes', () => {
     expect(formatted.map(item => item.word).join(' ')).toContain('09/09/2026');
   });
 
-  // Defence in depth for the same failure: whatever a processor throws on, it must cost that one
-  // word and not the surrounding render.
   it('should keep formatting the rest of a note when one word cannot be parsed', () => {
     const notes = 'Receive 100 ETH before 01/02/2027';
 
@@ -505,11 +498,7 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  it('should link the block number in a combined mev reward transaction note', () => {
-    // Note produced by the backend when a MEV reward transaction event is moved
-    // into a block production group (see db/eth2.py combine_block_with_tx_events).
-    // The event itself is an EVM event without a block number field; the block
-    // number is recovered from the group and passed in here.
+  it('should link both the block number and the transaction hash in a combined mev reward note', () => {
     const blockNumber = 17173975;
     const txHash = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
     const notes = `Receive 0.05 ETH as mev reward for block ${blockNumber} in ${txHash}`;
@@ -521,7 +510,6 @@ describe('useHistoryEventNotes', () => {
       address: `${blockNumber}`,
       showHashLink: true,
     });
-    // the transaction hash should still be linked as a tx, not swallowed
     expect(formatted).toContainEqual(expect.objectContaining({
       type: NoteType.TX,
       address: txHash,

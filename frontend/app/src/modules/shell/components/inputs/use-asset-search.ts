@@ -262,23 +262,25 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     return true;
   }
 
-  watch([
-    (): string | undefined => toValue(chain),
-    (): NftHandling | undefined => toValue(nftHandling),
-  ], async () => {
+  /**
+   * Clears whatever the previous scope left behind when the chain or nft handling changes.
+   *
+   * @remarks
+   * The cached options go, so a stale out-of-scope asset cannot be picked; the next search
+   * repopulates for the new scope. A *selection* the new scope cannot offer goes too, since keeping
+   * it is how a token stayed picked on a row the user had just switched to nft, and this form saves
+   * without revalidating what is in the field.
+   */
+  async function discardOutOfScopeSelection(): Promise<void> {
     abortPending();
     set(loading, false);
 
     const selected = get(modelValue);
     if (!selected) {
-      // Drop options cached for the previous scope so a stale, out-of-scope asset can't be picked;
-      // the next search repopulates for the new one.
       set(assets, []);
       return;
     }
 
-    // A selection the new scope cannot offer has to go with it: keeping it is how a token stayed
-    // picked on a row the user had just switched to nft.
     if (!admitsSelection(selected)) {
       set(assets, []);
       onSelectionLost?.();
@@ -286,7 +288,12 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
     }
 
     await retainSelectedValueInOptions([]);
-  });
+  }
+
+  watch([
+    (): string | undefined => toValue(chain),
+    (): NftHandling | undefined => toValue(nftHandling),
+  ], discardOutOfScopeSelection);
 
   /**
    * Fills the options from a search without routing the keyword through `modelSearch`, so a

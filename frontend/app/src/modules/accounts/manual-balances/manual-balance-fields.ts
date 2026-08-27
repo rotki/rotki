@@ -39,8 +39,6 @@ export function toManualBalanceFields(
         label: (): string => t('common.location'),
         multiple: false,
         suggest: locations,
-        // Checked against the same list it offers, so a location the user has no balance in is
-        // never applied.
         validate: (value: string): boolean => locations().includes(value),
       }),
       SharedFieldKinds.LOCATION,

@@ -94,8 +94,8 @@ export function useXpubInput(
 
     const detected = getPrefix(payload.xpubType);
     set(prefix, detected);
-    // A read-only field detects nothing, so the type it was saved with is stated instead.
-    if (toValue(disabled) && payload.xpub)
+    const readOnlyFieldDetectsNothing = toValue(disabled);
+    if (readOnlyFieldDetectsNothing && payload.xpub)
       set(detectedType, detected);
   });
 

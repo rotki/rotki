@@ -6,8 +6,6 @@ import { defineComponent, h, type VNode } from 'vue';
 import { setupDayjs } from '@/modules/core/common/data/date';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 
-// Stub RuiDateTimePicker so we can render the `menu-content` slot (where
-// the quick-option buttons live) without pulling in the full picker.
 const RuiDateTimePickerStub = defineComponent({
   emits: ['update:modelValue'],
   name: 'RuiDateTimePicker',
@@ -25,8 +23,10 @@ const RuiDateTimePickerStub = defineComponent({
   },
 });
 
-// Vue Test Utils types `emitted()` as `unknown[][] | undefined`. Narrow it
-// to the `[number]`-per-call shape our picker emits before touching values.
+const PICKERS = 2;
+const QUICK_OPTIONS_PER_PICKER = 7;
+const LAST_12_HOURS = 0;
+
 function isSingleNumberCall(value: unknown[]): value is [number] {
   return value.length === 1 && typeof value[0] === 'number';
 }
@@ -87,48 +87,40 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
     });
   }
 
+  async function clickQuickOption(
+    picker: VueWrapper<InstanceType<typeof DateTimeRangePicker>>,
+    index: number,
+  ): Promise<void> {
+    await picker.findAll('button.quick-option')[index].trigger('click');
+    await nextTick();
+  }
+
   describe('quick options', (): void => {
     it('should render all seven quick-option buttons inside both pickers', (): void => {
       wrapper = createWrapper();
 
-      // Each picker renders the same DefineQuickOptions template, so the
-      // button count is 2 × 7 = 14. The component re-uses the template to
-      // keep start/end menus in sync without duplicating the button list.
       const quickOptionButtons = wrapper.findAll('button.quick-option');
-      expect(quickOptionButtons).toHaveLength(14);
+      expect(quickOptionButtons).toHaveLength(PICKERS * QUICK_OPTIONS_PER_PICKER);
     });
 
-    it('should update end before start (regression: stale max-date error)', async (): Promise<void> => {
+    it('should update end before start when a stale end is held with no start, so the start picker never validates against the stale max date', async (): Promise<void> => {
       const now = dayjs('2026-04-23T14:58:00');
       vi.setSystemTime(now.toDate());
 
       wrapper = createWrapper({
         props: {
-          // Mirror the "arrived at Custom from a past year/quarter" state —
-          // end is stuck at the previous period's end until onChanged
-          // clears it. In the buggy path, setting start first would
-          // trigger start > end validation.
           end: dayjs('2024-06-30T23:59:59').unix(),
           start: undefined,
         },
       });
 
-      // Click the first quick option ("Last 12 hours") in the start picker.
-      const buttons = wrapper.findAll('button.quick-option');
-      await buttons[0].trigger('click');
-      // `start` is written in a `nextTick` microtask; flush it without moving
-      // the fake clock (see the preset test below for why advancing timers is
-      // order-fragile here).
-      await nextTick();
+      await clickQuickOption(wrapper, LAST_12_HOURS);
 
-      // Both update events should have fired exactly once each.
       const endEmits = wrapper.emitted('update:end');
       const startEmits = wrapper.emitted('update:start');
       expect(endEmits).toHaveLength(1);
       expect(startEmits).toHaveLength(1);
 
-      // End must be emitted first — that's what protects the start picker
-      // from validating against a stale max-date.
       expect(firstNumberArg(endEmits, 0)).toBe(now.unix());
       expect(firstNumberArg(startEmits, 0)).toBe(now.subtract(12, 'hour').unix());
     });
@@ -144,10 +136,6 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
         },
       });
 
-      const buttons = wrapper.findAll('button.quick-option');
-
-      // Button layout (order matches `quickOptions`): 12h, 24h, 7d, 1m,
-      // 90d, 6m, 1y — then the same seven repeated for the end picker.
       const cases: Array<{ index: number; expectedStart: number }> = [
         { expectedStart: now.subtract(12, 'hour').unix(), index: 0 },
         { expectedStart: now.subtract(24, 'hour').unix(), index: 1 },
@@ -158,13 +146,8 @@ describe('components/inputs/DateTimeRangePicker.vue', () => {
         { expectedStart: now.subtract(1, 'year').unix(), index: 6 },
       ];
 
-      for (const { index } of cases) {
-        await buttons[index].trigger('click');
-        // `nextTick`, not `advanceTimersToNextTimerAsync`: `start` is written in a microtask, and
-        // advancing the clock would jump it to some unrelated pending timer, drifting `dayjs()` and
-        // making the preset math order-dependent.
-        await nextTick();
-      }
+      for (const { index } of cases)
+        await clickQuickOption(wrapper, index);
 
       const startEmits = wrapper.emitted('update:start');
       expect(startEmits).toHaveLength(cases.length);

@@ -14,8 +14,6 @@ export function StoreResetPlugin({ store }: PiniaPluginContext): void {
       state = cloneDeep(initialState);
     }
     store.$patch(toReactive(state));
-    // If a store has its own reset function (e.g. to cancel actions)
-    // Then we will also call this to properly cleanup.
     if (typeof store.reset === 'function')
       store.reset();
   };

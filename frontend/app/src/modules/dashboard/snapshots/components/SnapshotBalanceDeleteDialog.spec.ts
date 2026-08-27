@@ -69,9 +69,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     expect(wrapper.find<HTMLInputElement>('.loc').element.value).toBe('kraken');
   });
 
-  it('should preselect the sole eligible location among several', async () => {
-    // kraken (60) can't cover the 100 removal, but ledger (120) can — and it's the
-    // only one that can, so it should be auto-selected despite there being two.
+  it('should preselect the only location holding enough to cover the removal', async () => {
     const snapshot: Snapshot = {
       balancesSnapshot: [
         { amount: bigNumberify(1), assetIdentifier: 'ETH', category: BalanceType.ASSET, timestamp: TS, usdValue: bigNumberify(100) },
@@ -105,8 +103,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
   });
 
   it('should require a location even when removing a worthless row', async () => {
-    // Two venues so a single one isn't auto-preselected, and a zero-value row.
-    const snapshot: Snapshot = {
+    const twoVenuesSoNeitherIsAutoPreselected: Snapshot = {
       balancesSnapshot: [
         { amount: bigNumberify(1), assetIdentifier: 'ETH', category: BalanceType.ASSET, timestamp: TS, usdValue: bigNumberify(0) },
       ],
@@ -116,11 +113,10 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
         { location: 'total', timestamp: TS, usdValue: bigNumberify(100) },
       ],
     };
-    wrapper = createWrapper(snapshot);
+    wrapper = createWrapper(twoVenuesSoNeitherIsAutoPreselected);
     wrapper.vm.open(0);
     await nextTick();
 
-    // Location is mandatory everywhere now — unset blocks confirm.
     wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
     expect(wrapper.emitted('confirm')).toBeUndefined();
 
@@ -142,7 +138,6 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
     expect(wrapper.emitted('confirm')).toBeUndefined();
 
-    // Valid split is emitted.
     const split: LocationSplit[] = [{ location: 'kraken', usdValue: bigNumberify(100) }];
     wrapper.findComponent({ name: 'SnapshotLocationSplit' }).vm.$emit('update:modelValue', split);
     wrapper.findComponent({ name: 'SnapshotLocationSplit' }).vm.$emit('update:valid', true);

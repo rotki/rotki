@@ -37,8 +37,11 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
         off();
     };
 
-    // Debounced: a settle emits more than once in quick succession (the status, then the ledger
-    // write), and the dialog should not blink shut on the first of them.
+    /**
+     * Closes the dialog once the work it asks about has settled, debounced because a settle emits
+     * more than once in quick succession — the status, then the ledger write — and the dialog
+     * should not blink shut on the first of them.
+     */
     const dismissWhenSettled = useDebounceFn(async () => {
       if (done)
         return;

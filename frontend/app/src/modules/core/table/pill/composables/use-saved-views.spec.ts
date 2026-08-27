@@ -33,13 +33,13 @@ function view(name: string): SavedView {
   return { matches: {}, name, params: {} };
 }
 
-/** Translations are stubbed as `key::args` in unit tests, so a generated name reads as its key. */
 function convertedName(number: number): string {
   return `table_filter.saved_views.converted_name::${number}`;
 }
 
-// The conversion routes a legacy value by the binding of the field that owns its key, so the
-// fields under test are the contract: `location` is filter-bound, `account` is param-bound.
+const ACCOUNT_ADDRESS = '0xAbC';
+const STORED_ACCOUNT_LABEL = `My wallet (${ACCOUNT_ADDRESS})`;
+
 const fields: FieldDef[] = [
   {
     allowExclusion: true,
@@ -153,19 +153,16 @@ describe('useSavedViews', () => {
         name: convertedName(1),
         params: {},
       }]);
-      // Only this location moves: the other two tables still render the old filter bar.
       expect(lastPatch()?.savedFilters).toEqual({
         [SavedFilterLocations.ETH_VALIDATORS]: [[{ key: 'status', value: 'active' }]],
       });
     });
 
-    // A filter whose field has since become param-bound has to be carried into `params`: a param
-    // field never reads `matches`, so leaving it there loses the pill without saying so.
     it('should convert a filter whose field is now param-bound into params', async () => {
       useSettingsRepo().updateFrontend({
         savedFilters: {
           [location]: [[
-            { key: 'account', value: 'My wallet (0xAbC)' },
+            { key: 'account', value: STORED_ACCOUNT_LABEL },
             { key: 'location', value: 'kraken' },
           ]],
         },
@@ -174,17 +171,14 @@ describe('useSavedViews', () => {
       await useSavedViews(location, fields).ensureConverted();
 
       const [converted] = lastPatch()?.savedViews?.[location] ?? [];
-      // The stored form was `label (address)`; the field takes the address alone.
-      expect(converted?.params).toStrictEqual({ addresses: ['0xAbC'] });
+      expect(converted?.params).toStrictEqual({ addresses: [ACCOUNT_ADDRESS] });
       expect(converted?.matches).toStrictEqual({ location: 'kraken' });
     });
 
-    // A param carries a plain list, with no form for the `!` the codec writes for an excluded
-    // matcher value, so keeping it would turn "not this account" into "this account".
     it('should drop an excluded value from a param-bound field', async () => {
       useSettingsRepo().updateFrontend({
         savedFilters: {
-          [location]: [[{ exclude: true, key: 'account', value: '0xAbC' }]],
+          [location]: [[{ exclude: true, key: 'account', value: ACCOUNT_ADDRESS }]],
         },
       });
 
@@ -203,11 +197,7 @@ describe('useSavedViews', () => {
       expect(updateFrontendSetting).not.toHaveBeenCalled();
     });
 
-    // Every frontend setting shares one stored blob and a write sends the whole thing, so a
-    // conversion firing on mount lands in the burst of writes that logging in produces and is
-    // clobbered by a later one built from an older snapshot. Verified in the app before it was
-    // moved onto opening the views menu.
-    it('should not convert until it is asked to', async () => {
+    it('should not convert on mount, only when it is asked to', async () => {
       useSettingsRepo().updateFrontend({
         savedFilters: { [location]: [[{ key: 'location', value: 'kraken' }]] },
       });
@@ -218,9 +208,7 @@ describe('useSavedViews', () => {
       expect(updateFrontendSetting).not.toHaveBeenCalled();
     });
 
-    // A legacy filter could hold a date or amount bound, which is stored under its own wire key
-    // rather than as a value list; the codec reads those keys straight back as a collapsed pill.
-    it('should carry a bound key through unchanged', async () => {
+    it('should carry a date or amount bound key through unchanged, under its own wire key', async () => {
       useSettingsRepo().updateFrontend({
         savedFilters: {
           [location]: [[
@@ -235,9 +223,7 @@ describe('useSavedViews', () => {
       expect(storedViews()[0].matches).toStrictEqual({ fromTimestamp: '1785189600', maxAmount: '100' });
     });
 
-    // The write clearing the legacy key is what makes this run once, so anything arriving before
-    // that write lands has to be held off or the same filters convert twice.
-    it('should convert once when asked twice at the same time', async () => {
+    it('should convert once when asked twice before the clearing write lands', async () => {
       useSettingsRepo().updateFrontend({
         savedFilters: { [location]: [[{ key: 'location', value: 'kraken' }]] },
       });

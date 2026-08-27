@@ -2,9 +2,13 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 
-// Right-hand drawer container for the issue detail, used by the full data-issues page. The pinned
-// rail uses a bottom sheet instead (see DataIssuesPanelContent), because a drawer opening beside
-// the rail reads as a second, competing surface.
+/**
+ * Whether the drawer is showing.
+ *
+ * @remarks
+ * This container is for the full data-issues page. The pinned rail uses a bottom sheet instead,
+ * because a drawer opening beside the rail reads as a second, competing surface.
+ */
 const open = defineModel<boolean>({ required: true });
 
 const { issue, busy = false } = defineProps<{

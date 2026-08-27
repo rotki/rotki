@@ -79,8 +79,13 @@ export function useTokenDetectionUi(
   const chains = computed<string[]>(() => arrayify(toValue(chain)));
   const detectingTokens = useIsDetecting(chain, accountAddress);
 
-  // `every`, not `some`: a row spanning several chains still has work to do while one of them is
-  // allowed, and only the excluded ones drop out of the queue.
+  /**
+   * Whether detection is off for this row.
+   *
+   * @remarks
+   * `every`, not `some`: a row spanning several chains still has work to do while one of them is
+   * allowed, and only the excluded chains drop out of the queue.
+   */
   const detectionDisabled = computed<boolean>(() => {
     const chainsValue = get(chains);
     const address = toValue(accountAddress);

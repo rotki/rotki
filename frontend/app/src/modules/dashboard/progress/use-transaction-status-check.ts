@@ -5,6 +5,8 @@ import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/u
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
+const SECONDS_TO_MS = 1_000;
+
 interface UseTransactionStatusCheckReturn {
   /**
    * The earliest queried timestamp in milliseconds (minimum of EVM and exchanges).
@@ -93,9 +95,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
       return 0;
     }
 
-    // Use the earliest (minimum) timestamp to show the most out-of-sync status
-    // Convert seconds to milliseconds
-    return Math.min(...timestamps) * 1000;
+    return Math.min(...timestamps) * SECONDS_TO_MS;
   });
 
   const isNeverQueried = computed<boolean>(() => {

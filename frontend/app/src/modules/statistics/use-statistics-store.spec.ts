@@ -32,7 +32,6 @@ function createBalanceWithPrice(
   const usdValue = amountBN.multipliedBy(priceBN);
   const currency = generalSettingsStore ? generalSettingsStore.general.mainCurrency.tickerSymbol : 'USD';
   const rate = getExchangeRate(currency);
-  // If asset matches main currency, value = amount; otherwise value = usdValue * rate
   const value = asset === currency ? amountBN : usdValue.multipliedBy(rate);
 
   return {
@@ -101,8 +100,8 @@ describe('useStatisticsStore', () => {
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // The JPY asset is the main currency, so it counts at face value; everything else converts.
-      const assets = 10000 + (4000 * JPY_RATE) + (20000 * JPY_RATE);
+      const mainCurrencyAssetAtFaceValue = 10000;
+      const assets = mainCurrencyAssetAtFaceValue + (4000 * JPY_RATE) + (20000 * JPY_RATE);
       const liabilities = 1000 * JPY_RATE;
       expect(totalValue.toNumber()).toBe(assets - liabilities);
     });
@@ -120,8 +119,8 @@ describe('useStatisticsStore', () => {
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // No asset is in EUR, so every value converts.
-      const assets = (100 + 4000 + 20000) * EUR_RATE;
+      const noAssetIsInTheMainCurrency = 100 + 4000 + 20000;
+      const assets = noAssetIsInTheMainCurrency * EUR_RATE;
       const liabilities = 1000 * EUR_RATE;
       expect(totalValue.toNumber()).toBe(assets - liabilities);
     });
@@ -144,9 +143,9 @@ describe('useStatisticsStore', () => {
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // The JPY liability is the main currency, so it counts at face value; the USD one converts.
       const assets = 4000 * JPY_RATE;
-      const liabilities = 5000 + (1000 * JPY_RATE);
+      const mainCurrencyLiabilityAtFaceValue = 5000;
+      const liabilities = mainCurrencyLiabilityAtFaceValue + (1000 * JPY_RATE);
       expect(totalValue.toNumber()).toBe(assets - liabilities);
     });
   });
@@ -166,7 +165,6 @@ describe('useStatisticsStore', () => {
   describe('getNetValue snapshotCount', () => {
     it('should return snapshotCount of 0 when there is no backend data', () => {
       const store = useStatisticsStore();
-      // netValue is empty by default (no backend data)
       const result = store.getNetValue(0);
 
       expect(result.snapshotCount).toBe(0);
@@ -200,8 +198,8 @@ describe('useStatisticsStore', () => {
         times: [now - 300, now - 200, now - 100],
       };
 
-      // Only include snapshots after now - 150 (should exclude first two)
-      const result = store.getNetValue(now - 150);
+      const afterTheFirstTwoSnapshots = now - 150;
+      const result = store.getNetValue(afterTheFirstTwoSnapshots);
 
       expect(result.snapshotCount).toBe(1);
       // 1 real snapshot + 1 appended current balance

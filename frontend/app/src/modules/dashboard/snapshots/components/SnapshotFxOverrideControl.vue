@@ -33,9 +33,14 @@ function startEdit(): void {
   set(open, true);
 }
 
+/**
+ * Stores the entered rate, if it is one.
+ *
+ * @remarks
+ * A field holding no number and a rate of zero are both refused: the first throws on parse, and the
+ * second would price every balance at nothing.
+ */
 async function apply(): Promise<void> {
-  // A rate the field does not hold a number for, and a rate of zero, are both unusable: the one
-  // would throw on parse and the other would price every balance at nothing.
   const value = parseNumericInput(get(input));
   if (!value?.isGreaterThan(0))
     return;

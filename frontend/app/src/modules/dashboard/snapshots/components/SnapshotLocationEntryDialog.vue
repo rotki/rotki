@@ -35,16 +35,7 @@ const excludedLocations = ref<string[]>([]);
 
 const form = useTemplateRef<InstanceType<typeof EditLocationDataSnapshotForm>>('form');
 
-// Snapshots are stored in USD; editing in the user's fiat must use the historic
-// USD -> fiat rate at the snapshot's timestamp, not today's (#12277).
-const { isUsd, loading, rate, rateReady } = useHistoricFiatConversion(() => timestamp);
-
-// Without a historic forex rate the fiat value can't be converted back to USD;
-// block the save and point the user at the summary's exchange-rate control.
-const rateMissing = computed<boolean>(() => !get(isUsd) && !get(rateReady));
-// Only surface the dead-end once the lookup has settled, so it doesn't flash
-// while the historic rate is still being fetched.
-const showRateMissing = computed<boolean>(() => get(rateMissing) && !get(loading));
+const { isUsd, rate, rateMissing, showRateMissing } = useHistoricFiatConversion(() => timestamp);
 
 function openAdd(): void {
   set(editedIndex, null);
@@ -80,8 +71,6 @@ async function save(): Promise<void> {
   if (!formData)
     return;
 
-  // The field is free text, so a value that is not a number is not written into the row: the parse
-  // it would otherwise go through throws.
   const entered = parseNumericInput(formData.usdValue);
   if (!entered)
     return;

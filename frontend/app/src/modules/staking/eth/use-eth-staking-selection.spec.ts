@@ -54,9 +54,7 @@ describe('useEthStakingSelection', () => {
     unmount();
   });
 
-  // `{ key: undefined }` is not `{}` to the bar's round-trip guard: a bag carrying undefined keys
-  // makes a pill vanish the moment it is added.
-  it('should omit a key entirely rather than carry it as undefined', () => {
+  it('should omit a key entirely rather than carry it as undefined, which the round-trip guard rejects', () => {
     const { matches, unmount } = createHarness();
 
     expect(get(matches)).toStrictEqual({});
@@ -86,9 +84,7 @@ describe('useEthStakingSelection', () => {
     unmount();
   });
 
-  // The union has no empty member, and the component branches on `'accounts' in filter`, so the
-  // cleared state has to be a shape rather than undefined.
-  it('should fall back to an empty validator selection when every pill is cleared', () => {
+  it('should fall back to an empty validator selection when every pill is cleared, the union having no empty member', () => {
     const { matches, selection, unmount } = createHarness({ accounts: [{ address: ADDRESS, chain: 'eth' }] });
 
     set(matches, {});
@@ -98,9 +94,7 @@ describe('useEthStakingSelection', () => {
     unmount();
   });
 
-  // The pill carries an index, the model wants the entry, and the store loads asynchronously.
-  // Resolving straight from an empty store would silently empty the selection.
-  it('should keep a validator the store has not loaded', () => {
+  it('should keep a validator the store has not loaded yet', () => {
     const { matches, selection, unmount } = createHarness({ validators: [VALIDATOR] });
 
     // The pinia here is empty, so the validators store resolves nothing at all.

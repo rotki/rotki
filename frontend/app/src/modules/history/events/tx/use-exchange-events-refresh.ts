@@ -41,8 +41,6 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
     const outcome = await submitTask({
       id: exchangeEventsActivityId(exchange.location, exchange.name),
       kind: ActivityKind.EXCHANGE_EVENTS,
-      // The location's own lane, capped at 1: one exchange's accounts query in sequence, and the
-      // family's active cap decides how many locations run at once.
       lane: familyLane(EXCHANGE_EVENTS_LANE_PREFIX, exchange.location),
       parent,
       rerunnable: true,

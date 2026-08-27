@@ -68,15 +68,22 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
     emit('update', { ...filter, op });
 }
 
-onMounted(() => {
-  // Seeded so the list opens on the selected asset's siblings rather than one row. Through
-  // `preload`, not `modelSearch`, which would leave text in the box for the user to clear.
+/**
+ * Fills the list so it opens on the selected asset's siblings rather than on a single row.
+ *
+ * @remarks
+ * Seeds through `preload` rather than `modelSearch`, which would leave the query as text in the
+ * search box for the user to clear. A list that already holds results is left as it is.
+ */
+function seedVisibleAssets(): void {
   if (get(visibleAssets).length > 0)
     return;
 
   const [current] = filter.values;
   startPromise(preload(current === undefined ? 'ETH' : field.resolveLabel?.(current) ?? current));
-});
+}
+
+onMounted(seedVisibleAssets);
 </script>
 
 <template>

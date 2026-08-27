@@ -26,7 +26,6 @@ describe('pinnedIndicator', () => {
   afterEach(() => {
     wrapper?.unmount();
     wrapper = undefined;
-    document.body.innerHTML = '';
   });
 
   it('should render nothing when no panel is pinned', () => {

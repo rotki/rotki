@@ -60,8 +60,6 @@ describe('planReminderSync', () => {
     expect(plan.deleted).toEqual([1, 2]);
   });
 
-  // An event has no use for the same interval twice, and the old per-row persistence refused one
-  // too, so the reconciliation has to keep refusing it.
   it('should not add a row that duplicates the interval of a kept row', () => {
     const plan = planReminderSync(stored, [
       { identifier: 1, secsBefore: 900 },
@@ -78,9 +76,7 @@ describe('planReminderSync', () => {
     expect(plan.added).toEqual([900]);
   });
 
-  // Freeing an interval and taking it with a new row in the same edit has to resolve as both, or
-  // the new row is silently dropped as a duplicate of one that is on its way out.
-  it('should add an interval freed by an update in the same plan', () => {
+  it('should add an interval freed by an update in the same plan, not drop it as a duplicate', () => {
     const plan = planReminderSync(stored, [
       { identifier: 1, secsBefore: 1800 },
       { identifier: 2, secsBefore: 3600 },
@@ -99,8 +95,7 @@ describe('planReminderSync', () => {
     expect(plan.updated).toEqual([]);
   });
 
-  // The in-time switch is a reminder at zero seconds, so it rides the same reconciliation.
-  it('should add and delete the zero-second reminder like any other', () => {
+  it('should add and delete the zero-second reminder the in-time switch sets like any other', () => {
     expect(planReminderSync([], [{ secsBefore: 0 }]).added).toEqual([0]);
     expect(planReminderSync([{ identifier: 3, secsBefore: 0 }], []).deleted).toEqual([3]);
   });

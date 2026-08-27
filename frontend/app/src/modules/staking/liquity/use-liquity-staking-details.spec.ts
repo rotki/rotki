@@ -1,4 +1,3 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { ComputedRef } from 'vue';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
@@ -11,7 +10,7 @@ import {
 } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLiquityStakingDetails } from './use-liquity-staking-details';
 
 const OWNER_A = '0xaaa';
@@ -91,12 +90,8 @@ function stakeOf(amount: number): LiquityStakingDetails[string] {
 }
 
 describe('modules/staking/liquity/useLiquityStakingDetails', () => {
-  const mounted: VueWrapper[] = [];
-
   function setup(): ReturnType<typeof useLiquityStakingDetails> {
-    const { result, wrapper } = withSetup(() => useLiquityStakingDetails());
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useLiquityStakingDetails()).result;
   }
 
   beforeEach(() => {
@@ -107,11 +102,6 @@ describe('modules/staking/liquity/useLiquityStakingDetails', () => {
     storeState.pools = {};
     storeState.staking = {};
     storeState.statistics = null;
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   it('should start with nothing selected, so every address is aggregated', () => {
@@ -134,8 +124,6 @@ describe('modules/staking/liquity/useLiquityStakingDetails', () => {
 
   it('should offer every address holding a position, staked or pooled', () => {
     storeState.staking = { [OWNER_A]: stakeOf(100) };
-    // A plain literal, not `createMock`: the proxy answers every property, so `Object.keys` on it
-    // returns the mock's own method names rather than the addresses.
     storeState.pools = { [OWNER_B]: { balances: null, proxies: null } };
 
     expect(get(setup().availableAddresses)).toEqual([OWNER_A, OWNER_B]);

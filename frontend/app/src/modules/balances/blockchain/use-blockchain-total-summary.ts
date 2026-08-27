@@ -13,11 +13,18 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalSummaryReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { isPricePending } = usePriceUtils();
 
+  /**
+   * One card per chain, ordered by value.
+   *
+   * @remarks
+   * A card sums the values its assets carry, so a single unpriced asset leaves it short by that
+   * asset's whole holding with nothing to say so. Each chain therefore tracks whether any of its
+   * prices is still pending, and a chain that is entirely unpriced sums to zero but is kept: it
+   * sits there loading rather than vanishing and popping back in once the prices land.
+   */
   const blockchainTotals = computed<BlockchainTotal[]>(() => {
     const balanceData = get(balances);
     const sums: Record<string, BigNumber> = {};
-    // A chain's card sums the values its assets carry, so one unpriced asset leaves the card short
-    // by that asset's whole holding, with nothing to say so.
     const pending: Record<string, boolean> = {};
 
     const collectChain = (chain: string, chainBalance: Balances[string]): void => {
@@ -41,8 +48,6 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalSummaryReturn {
     }
 
     return Object.entries(sums)
-      // A chain whose assets are all unpriced sums to zero, and dropping it would make the card
-      // vanish and pop back in once prices land, rather than sit there loading.
       .filter(([chain, sum]) => sum.gt(0) || pending[chain])
       .sort(([, aValue], [, bValue]) => sortDesc(aValue, bValue))
       .map(([chain, value]) => ({

@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getWalletNetwork, SUPPORTED_WALLET_NETWORKS } from '@/modules/wallet/chains-viem';
 
-// The seam: this table only enriches a chain with an rpc url and the payload for
-// `wallet_addEthereumChain`. It does not decide which chains the wallet offers,
-// so a missing entry must return undefined rather than a wrong chain.
-
 describe('chains-viem', () => {
   it('should carry the chains whose add-network fallback we rely on', () => {
-    // Deliberately not an equality assertion against the backend's chain list.
-    // Entries here are optional enrichment, so a chain rotki gains does not have
-    // to appear, and adding a new entry must not fail a test.
     expect(SUPPORTED_WALLET_NETWORKS.map(network => network.id)).toEqual(
       expect.arrayContaining([1, 143, 999]),
     );

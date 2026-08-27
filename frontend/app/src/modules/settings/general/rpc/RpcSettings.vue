@@ -43,8 +43,6 @@ function scrollActiveIntoView(): void {
 
 onMounted(() => scrollActiveIntoView());
 watch(selectedKey, () => scrollActiveIntoView());
-// When the chain list populates after mount, re-scroll so the active rail item
-// is visible (relevant for deep-links into entries far down the list).
 watch(rpcSettingTabs, () => scrollActiveIntoView());
 </script>
 

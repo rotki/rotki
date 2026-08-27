@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,9 +30,6 @@ vi.mock('@/modules/user-data/use-import-data-api', () => ({
 }));
 
 const ImportSource = (await import('@/modules/user-data/ImportSource.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 /** Declares the two props the upload outcome is read through, which `inputStub` does not carry. */
 const fileUploadStub: Record<string, unknown> = {
@@ -165,8 +162,6 @@ describe('importSource', () => {
 
     await typeFormat('');
 
-    // The empty-value rule is `requiredIf(refIsTruthy(dateInputFormat))`: required only while the
-    // field already holds something, so it cannot fire. A blank pattern is caught as invalid.
     expect(messages()).toEqual(['general_settings.date_display.validation.invalid']);
     expect(importDisabled()).toBe(true);
   });
@@ -176,8 +171,6 @@ describe('importSource', () => {
     await attachFile();
     await enableCustomFormat();
 
-    // The only input the empty-value rule can fire on: truthy enough to arm its own
-    // `requiredIf`, blank once trimmed.
     await typeFormat('   ');
 
     expect(messages()).toEqual([
@@ -191,8 +184,6 @@ describe('importSource', () => {
     await attachFile();
     await enableCustomFormat();
 
-    // No blur: the import button is gated on validity, and a disabled button cannot be clicked to
-    // blur the field, so waiting for blur would leave the user with no message at all.
     field('import-date-format').vm.$emit('update:modelValue', 'not a date');
     await vi.advanceTimersToNextTimerAsync();
 

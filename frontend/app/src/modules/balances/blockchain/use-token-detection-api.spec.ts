@@ -26,8 +26,6 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
-// The task runner is now handed to the producer by its activity, so the spec passes its own
-// instead of faking the handler module.
 const mockRunTask = vi.fn();
 
 const mockNotifyError = vi.fn();

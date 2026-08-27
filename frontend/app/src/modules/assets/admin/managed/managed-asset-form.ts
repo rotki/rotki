@@ -106,8 +106,6 @@ export function managedAssetSchema(messages: ManagedAssetMessages, rules: Manage
     if (!rules.requiresAddress)
       return;
 
-    // Checked here rather than on the field so it can read the asset type beside it. An empty
-    // address is already reported as missing, and saying it is also malformed adds nothing.
     const typed = value.address;
     if (typeof typed !== 'string' || typed.trim() === '')
       return;

@@ -26,8 +26,6 @@ function addTarget(id: string): { element: HTMLElement; animation: Animation; an
   const element = document.createElement('div');
   element.id = id;
   document.body.appendChild(element);
-  // createMock supplies an `Animation`-typed stub; the SUT only reads `cancel`
-  // and assigns `onfinish`, which lands on the underlying mock and reads back.
   const cancelSpy = vi.fn();
   const animation = createMock<Animation>({ cancel: cancelSpy });
   const animateSpy = vi.fn(() => animation);
@@ -60,12 +58,10 @@ describe('useSettingsPageHighlight', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     set(mockHighlightTarget, undefined);
-    document.body.innerHTML = '';
   });
 
   afterEach(() => {
     wrappers.splice(0).forEach(wrapper => wrapper.unmount());
-    document.body.innerHTML = '';
   });
 
   describe('same-page highlighting', () => {

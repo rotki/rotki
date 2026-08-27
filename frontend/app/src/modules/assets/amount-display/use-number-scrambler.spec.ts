@@ -2,11 +2,6 @@ import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { useNumberScrambler } from './use-number-scrambler';
 
-/**
- * The seam: the single place a displayed amount is scrambled, reached by every amount component
- * through `use-scrambled-value` and directly by the statistics store. It is handed an unvalidated
- * user setting, so these tests pin what it does with a bad one.
- */
 describe('useNumberScrambler', () => {
   const value = bigNumberify(1234.5);
 

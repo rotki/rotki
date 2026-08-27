@@ -119,8 +119,7 @@ describe('modules/staking/liquity/repriceStatistic', () => {
       expect(priced.totalWithdrawnStabilityPoolValue.toNumber()).toBe(800);
     });
 
-    it('should leave an unpriced gain at its amount, not at zero', () => {
-      // An unknown price is not a claim that the asset is worthless, so it is multiplied by 1.
+    it('should leave an unpriced gain at its amount, not at zero, an unknown price being no claim of worthlessness', () => {
       const priced = repriceStatistic(recorded, StatisticView.CURRENT, pricesOf({}), One);
 
       expect(priced.stabilityPoolGains[0].value.toNumber()).toBe(2);
@@ -149,36 +148,38 @@ describe('modules/staking/liquity/repriceStatistic', () => {
 });
 
 describe('modules/staking/liquity/calculatePnl', () => {
+  const DEPOSITED = 1000;
+  const WITHDRAWN = 400;
+  const GAINS = 50;
+  const OWED_BY_THE_POOL = DEPOSITED - WITHDRAWN;
+
+  const depositHistory = (): ReturnType<typeof statistic> => statistic({
+    totalDepositedStabilityPool: bigNumberify(DEPOSITED),
+    totalValueGainsStabilityPool: bigNumberify(GAINS),
+    totalWithdrawnStabilityPool: bigNumberify(WITHDRAWN),
+  });
+
   it('should be the gains when nothing was consumed by a liquidation', () => {
-    // Deposited 1000, withdrew 400, and 600 is still in the pool: nothing was lost.
     const result = calculatePnl(
-      statistic({
-        totalDepositedStabilityPool: bigNumberify(1000),
-        totalValueGainsStabilityPool: bigNumberify(50),
-        totalWithdrawnStabilityPool: bigNumberify(400),
-      }),
-      pool({ deposited: assetBalance('LUSD', 600) }),
+      depositHistory(),
+      pool({ deposited: assetBalance('LUSD', OWED_BY_THE_POOL) }),
       pricesOf({}),
       One,
     );
 
-    expect(result.toNumber()).toBe(50);
+    expect(result.toNumber()).toBe(GAINS);
   });
 
   it('should subtract the LUSD a liquidation consumed', () => {
-    // 600 should be there but only 500 is, so 100 LUSD went to liquidations.
+    const consumedByLiquidation = 100;
     const result = calculatePnl(
-      statistic({
-        totalDepositedStabilityPool: bigNumberify(1000),
-        totalValueGainsStabilityPool: bigNumberify(50),
-        totalWithdrawnStabilityPool: bigNumberify(400),
-      }),
-      pool({ deposited: assetBalance('LUSD', 500) }),
+      depositHistory(),
+      pool({ deposited: assetBalance('LUSD', OWED_BY_THE_POOL - consumedByLiquidation) }),
       pricesOf({}),
       One,
     );
 
-    expect(result.toNumber()).toBe(-50);
+    expect(result.toNumber()).toBe(GAINS - consumedByLiquidation);
   });
 
   it('should price the consumed LUSD at the given LUSD price', () => {

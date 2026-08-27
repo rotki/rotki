@@ -41,8 +41,6 @@ describe('managedAssetSchema', () => {
   });
 
   it('should report a missing address as missing and nothing else', () => {
-    // Vuelidate reported this as both missing and malformed. Saying an empty field is the wrong
-    // shape adds nothing to being told it is empty.
     expect(messagesFor({ ...token, address: '' })).toEqual(['address_missing']);
   });
 
@@ -91,9 +89,7 @@ describe('managedAssetSchema', () => {
     ['symbol'],
     ['name'],
     ['decimals'],
-  ])('should carry %s without validating it', (key) => {
-    // These are where server errors land, not rules. A structural rule here would block the save
-    // with nothing on screen, since most of them show no message of their own.
+  ])('should carry %s without validating it, since it holds server errors and shows no message of its own', (key) => {
     expect(messagesFor({ ...token, [key]: '' })).toEqual([]);
   });
 
@@ -131,9 +127,7 @@ describe('toManagedAssetFormState', () => {
     expect(state.protocol).toBe('aave');
   });
 
-  it('should leave the fields with their own converters alone', () => {
-    // `decimals` and `started` keep the difference between unset and zero, which the payload
-    // records as null and their converters read on the way to the input.
+  it('should leave decimals and started unset, keeping the difference between unset and zero', () => {
     const state = toManagedAssetFormState(asset);
 
     expect(state.decimals).toBeUndefined();
@@ -149,10 +143,7 @@ describe('toManagedAssetFormState', () => {
     expect(state.tokenKind).toBe(EvmTokenKind.ERC20);
   });
 
-  // The mirroring in `useMappedModelForm` compares the mapped payload against the state to decide
-  // whether an outside edit is news. A mapper that answered differently for the same input would
-  // report every pass as a change and the two directions would never settle.
-  it('should answer the same for the same payload', () => {
+  it('should answer the same for the same payload, so the form mirroring settles instead of reporting every pass as a change', () => {
     expect(toManagedAssetFormState(asset)).toEqual(toManagedAssetFormState(asset));
   });
 });

@@ -4,8 +4,7 @@ import { flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EVM_TOKEN } from '@/modules/assets/types';
 
-// Nullable on purpose: the response type declares these optional, but the backend sends null for a
-// field the contract does not answer, which is what the lookup has to survive.
+/** Nullable on purpose: the backend sends null, not absent, for a field the contract does not answer. */
 const fetchTokenDetails = vi.fn<(payload: { address: string; evmChain: string }) => Promise<{
   decimals?: number | null;
   name?: string | null;
@@ -99,8 +98,6 @@ describe('useManagedTokenLookup', () => {
   });
 
   it('should keep what the user typed for a field the contract answers with null', async () => {
-    // The response type says these are optional, but the backend documents that a contract which
-    // does not answer reports them as null, and a null is not what the user typed.
     fetchTokenDetails.mockResolvedValue({ decimals: null, name: null, symbol: null });
     set(asset, { ...get(asset), decimals: 8, name: 'My own name', symbol: 'MINE' });
     setup();

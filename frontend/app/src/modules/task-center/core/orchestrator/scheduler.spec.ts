@@ -25,13 +25,9 @@ describe('createScheduler', () => {
     expect(scheduler.isRunning('a')).toBe(true);
   });
 
-  /**
-   * Two live jobs may legitimately share an id: cancelling a RUNNING activity settles it terminal
-   * while the scheduler still holds its job, and `rerun` then schedules a second under that id.
-   * Slot accounting keyed by id collapsed the pair into one entry, so the lane ran over its cap.
-   */
   it('should count two live jobs sharing an id as two occupied slots', async () => {
-    const scheduler = createScheduler({ decode: 2 }, 4);
+    const DECODE_CAP = 2;
+    const scheduler = createScheduler({ decode: DECODE_CAP }, 4);
     const first = controllableJob('same', 'decode');
     const second = controllableJob('same', 'decode');
     const third = controllableJob('other', 'decode');
@@ -41,8 +37,7 @@ describe('createScheduler', () => {
     scheduler.submit(third.job);
     await flush();
 
-    // The cap is 2, and the two same-id jobs already occupy it.
-    expect(scheduler.runningCount('decode')).toBe(2);
+    expect(scheduler.runningCount('decode')).toBe(DECODE_CAP);
     expect(scheduler.isQueued('other')).toBe(true);
   });
 
@@ -57,7 +52,6 @@ describe('createScheduler', () => {
     first.finish();
     await flush();
 
-    // Only the finished job's slot is released; the second is still running under the same id.
     expect(scheduler.runningCount('decode')).toBe(1);
     expect(scheduler.isRunning('same')).toBe(true);
   });
@@ -87,8 +81,7 @@ describe('createScheduler', () => {
       expect(scheduler.isQueued('c')).toBe(true);
     });
 
-    // The point of families: one cap per chain, not one cap shared by every chain.
-    it('should give each lane in the family its own slots', () => {
+    it('should give each lane in the family its own slots, not one cap shared by all', () => {
       const scheduler = createScheduler({}, 4, { 'tx-sync:': 2 });
       ['a', 'b'].forEach(id => scheduler.submit(controllableJob(id, 'tx-sync:eth').job));
       ['c', 'd'].forEach(id => scheduler.submit(controllableJob(id, 'tx-sync:gnosis').job));
@@ -145,9 +138,13 @@ describe('createScheduler', () => {
     const blocker = controllableJob('blocker', 'default');
     const normal = controllableJob('normal', 'default', () => true, 1);
     const urgent = controllableJob('urgent', 'default', () => true, 2);
-    scheduler.submit(blocker.job); // takes the only slot
-    scheduler.submit(normal.job); // queued first
-    scheduler.submit(urgent.job); // queued second but higher priority
+    scheduler.submit(blocker.job);
+    scheduler.submit(normal.job);
+    scheduler.submit(urgent.job);
+
+    expect(scheduler.isRunning('blocker')).toBe(true);
+    expect(scheduler.isQueued('normal')).toBe(true);
+    expect(scheduler.isQueued('urgent')).toBe(true);
 
     blocker.finish();
     await flush();
@@ -166,8 +163,6 @@ describe('createScheduler', () => {
 
   describe('family active-lane caps', () => {
     it('should cap how many lanes of a family run at once', () => {
-      // Two accounts per chain, but only two chains live — the shape a pre-submitted tree would
-      // otherwise lose, since every account is queued from the start.
       const scheduler = createScheduler({}, 8, { 'tx-sync:': 2 }, { 'tx-sync:': 2 });
       for (const chain of ['eth', 'optimism', 'gnosis', 'base']) {
         for (const n of [1, 2])
@@ -197,8 +192,7 @@ describe('createScheduler', () => {
       expect(scheduler.isRunning('gnosis-1')).toBe(true);
     });
 
-    it('should let an already active lane keep taking work', () => {
-      // The cap is on how many lanes are live, not on the work inside them.
+    it('should let an already active lane keep taking work beyond the active-lane cap', () => {
       const scheduler = createScheduler({}, 8, { 'tx-sync:': 3 }, { 'tx-sync:': 1 });
       for (const n of [1, 2, 3])
         scheduler.submit(controllableJob(`eth-${n}`, 'tx-sync:eth').job);
@@ -215,21 +209,15 @@ describe('createScheduler', () => {
   });
 
   describe('clear', () => {
-    /**
-     * A slot is freed from `run()`'s `finally`, and a reset abandons those runs rather than
-     * resolving them. Leaving the slots occupied meant a lane stayed full for the life of the
-     * process, so the next session's work queued behind jobs belonging to a session that had ended
-     * and never started at all.
-     */
     it('should free the slots of running jobs, not just the queue', () => {
-      const scheduler = createScheduler({ decode: 2 });
+      const DECODE_CAP = 2;
+      const scheduler = createScheduler({ decode: DECODE_CAP });
       const running = [1, 2].map(n => controllableJob(`old-${n}`, 'decode'));
       running.forEach(({ job }) => scheduler.submit(job));
-      // A third job cannot start: the lane is at its cap of 2.
       scheduler.submit(controllableJob('old-3', 'decode').job);
-      expect(scheduler.runningCount('decode')).toBe(2);
+      expect(scheduler.runningCount('decode')).toBe(DECODE_CAP);
+      expect(scheduler.isQueued('old-3')).toBe(true);
 
-      // The session ends. The abandoned runs are never resolved.
       scheduler.clear();
 
       expect(scheduler.runningCount('decode')).toBe(0);

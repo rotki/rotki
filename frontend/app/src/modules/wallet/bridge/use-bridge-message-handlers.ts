@@ -191,7 +191,6 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
         }
         catch (error) {
           logger.warn('Provider initialization failed, continuing anyway:', error);
-          // Continue anyway - initialization failure shouldn't block the request
         }
       }
 

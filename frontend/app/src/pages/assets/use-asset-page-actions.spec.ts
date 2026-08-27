@@ -119,8 +119,6 @@ describe('pages/assets/useAssetPageActions', () => {
 
   describe('ignore', () => {
     it('should ask for confirmation when ignoring, preferring the symbol over the name', async () => {
-      // Both are set, so this fails if the fallback order is reversed. With only one of them
-      // present either order produces the same string and the test proves nothing.
       set(asset, { name: 'Some Token', symbol: 'ABC' });
 
       await setup().toggleIgnoreAsset();

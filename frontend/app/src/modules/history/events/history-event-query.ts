@@ -64,12 +64,11 @@ export function buildHistoryEventSources({
   usedLocationLabels,
   validators,
 }: HistoryEventSourceDeps): ParamSource[] {
-  // Resolved here rather than injected: `useHistoryEventsFilters` is at its dependency cap, and
-  // this is the file that owns the request keys an action expands into.
   const { rows: actionRows } = useEventActionPicker();
 
   /**
-   * The type and subtype keys one verb expands into.
+   * The type and subtype keys one verb expands into. They replace the type and subtype filters
+   * rather than narrowing them, which is why the two cannot be active beside a verb.
    *
    * A verb regularly names more than one type/subtype pair, so taking the first filters by a
    * fraction of what the verb means — and which one that is depends on the mapping's key order.
@@ -123,8 +122,6 @@ export function buildHistoryEventSources({
           identifiers: get(missingAcquisitionFromQuery),
         };
 
-        // An action replaces the type and subtype filters rather than adding to them, which is
-        // why the two cannot be active beside it.
         const verb = get(action);
         const actionKeys = verb === undefined ? undefined : resolveActionKeys(verb);
         if (actionKeys) {
@@ -212,8 +209,6 @@ function applyHistoryEventRouteQuery(
     toggles: Ref<HistoryEventsToggles>;
   },
 ): void {
-  // A URL with no action simply has none: an older or hand-written link then reads as whatever
-  // event types it carries, rather than claiming an action it never expressed.
   const actionParam = query.action;
   set(target.action, typeof actionParam === 'string' && actionParam.length > 0 ? actionParam : undefined);
 
@@ -228,7 +223,5 @@ function applyHistoryEventRouteQuery(
       : [],
   });
 
-  // Restore the accounting-overlay mode from the route (e.g. on back navigation); an
-  // empty/absent param resets it to 'none', so a fresh visit starts with the overlay off.
   set(target.overlayMode, query.overlay === OverlayMode.BALANCE ? OverlayMode.BALANCE : OverlayMode.NONE);
 }

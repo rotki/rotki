@@ -83,9 +83,7 @@ describe('useAccountLoading', () => {
     expect(get(loading)).toBe(true);
   });
 
-  // Add and remove ids both end in what they act on, so the per-chain gate has to match by
-  // prefix; an exact lookup would match no id at all and silently never report activity.
-  it('should pass the blockchain filter to the task lookup', async () => {
+  it('should pass the blockchain filter to the task lookup by prefix, since an exact id lookup would match nothing and silently never report activity', async () => {
     const { useAccountLoading } = await importModule();
     const { isAccountOperationRunning } = useAccountLoading();
     isAccountOperationRunning('eth');

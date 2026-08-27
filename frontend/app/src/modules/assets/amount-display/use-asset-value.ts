@@ -24,13 +24,21 @@ export interface UseAssetValueReturn {
   loading: ComputedRef<boolean>;
 }
 
+/** Treats a zero, negative or missing price as no price at all. */
+function positiveOrZero(value: BigNumber): BigNumber {
+  return value.gt(0) ? value : Zero;
+}
+
 /**
- * Calculates the value of an asset in the user's currency based on amount and price.
+ * Calculates the value of an asset in the user's currency, from an amount and a price.
  *
- * Handles:
- * - Using a known price when provided
- * - Looking up current prices from cache
- * - Looking up historic prices when timestamp is provided
+ * @remarks
+ * The price comes from one of three sources, in order: the historic price at a given timestamp,
+ * a price the caller already knows, or the current price from the cache.
+ *
+ * A timestamped lookup never falls back to the current price. Showing today's price against a
+ * historic date reads as a real figure while being wrong by however much the price has moved,
+ * whereas a zero reads as missing.
  */
 export function useAssetValue(options: UseAssetValueOptions): UseAssetValueReturn {
   const {
@@ -71,27 +79,17 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
     const ts = get(timestampToUse);
     const known = toValue(knownPrice);
 
-    if (!assetVal) {
+    if (!assetVal)
       return Zero;
-    }
 
-    // If historic timestamp is provided, use historic price (no fallback to current price)
-    if (ts > 0) {
-      const historicPrice = getHistoricPrice(assetVal, ts);
-      if (historicPrice.gt(0)) {
-        return historicPrice;
-      }
-      return Zero;
-    }
+    const wantsHistoricPrice = ts > 0;
+    if (wantsHistoricPrice)
+      return positiveOrZero(getHistoricPrice(assetVal, ts));
 
-    // If known price is provided, use it directly
-    if (known !== undefined && known !== null) {
-      return known.gt(0) ? known : Zero;
-    }
+    if (known !== undefined && known !== null)
+      return positiveOrZero(known);
 
-    // Fall back to looking up the price (already in current currency)
-    const current = getAssetPrice(assetVal, Zero);
-    return current.gt(0) ? current : Zero;
+    return positiveOrZero(getAssetPrice(assetVal, Zero));
   });
 
   const value = computed<BigNumber>(() => {

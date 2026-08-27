@@ -6,12 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 
-/**
- * The seam: what the page hands each of its four children, and where their events go. Every
- * decision behind those values belongs to a composable with its own spec - the filters, the
- * actions, the selection, and `use-history-events-view-actions` for the page's own handlers.
- */
-
 const groups = ref<Collection<HistoryEventRow>>(
   createMock<Collection<HistoryEventRow>>({ data: [], found: 0, limit: 10, total: 0 }),
 );

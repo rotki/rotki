@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
+import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import UnmatchedMovementsCards from '@/modules/history/events/UnmatchedMovementsCards.vue';
 import UnmatchedMovementsTable from '@/modules/history/events/UnmatchedMovementsTable.vue';
 import { useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 
-// The host of the unmatched-movements surface. See UnmatchedBridgesList for the shape: the
-// model and both presentations are free of `isPinned`, and only this file reads it.
 const selected = defineModel<string[]>('selected', { required: true });
 
 const {
@@ -45,11 +44,6 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRow
   movements: () => movements,
   showRestore: () => showRestore,
 });
-
-// Pinned, the host is a bounded flex column, so the card list is sized by what is left over
-// and the pager stays in view. The dialog cannot propagate a height down to the table, so it
-// keeps its viewport cap.
-const maxHeight = 'calc(100vh - 23rem)';
 </script>
 
 <template>
@@ -81,7 +75,7 @@ const maxHeight = 'calc(100vh - 23rem)';
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
-      :max-height="isPinned ? undefined : maxHeight"
+      :max-height="isPinned ? undefined : HISTORY_DIALOG_MAX_HEIGHT"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       :loading="loading"

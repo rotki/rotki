@@ -65,11 +65,9 @@ export const useDynamicMessages = createSharedComposable(() => {
     const validMessages = getValidMessages(get(dashboardMessages));
 
     return validMessages.filter((message) => {
-      // If target is 'free', only show to free users
       if (message.target === 'free' && isPremium)
         return false;
 
-      // If target is 'premium', only show to premium users
       if (message.target === 'premium' && !isPremium)
         return false;
 

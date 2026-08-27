@@ -144,7 +144,6 @@ describe('composables::session::load', () => {
       expect(mockRefreshFromChain).toHaveBeenCalled();
       expect(mockOnBalancesLoaded).toHaveBeenCalled();
 
-      // Seed must run before live refresh and chain refetch
       const seedOrder = mockSeedFromHistoric.mock.invocationCallOrder[0];
       const refreshOrder = mockRefreshPrices.mock.invocationCallOrder[0];
       const chainOrder = mockRefreshFromChain.mock.invocationCallOrder[0];
@@ -153,8 +152,6 @@ describe('composables::session::load', () => {
     });
 
     it('should not fetch the balances until the ignored assets have arrived', async () => {
-      // the balances must not land before the lists that decide what they count, otherwise the
-      // net worth briefly includes ignored assets. https://github.com/rotki/rotki/issues/12764
       let resolveIgnoredAssets: () => void = (): void => {};
       mockFetchIgnoredAssets.mockReturnValue(new Promise<void>((resolve) => {
         resolveIgnoredAssets = (): void => {
@@ -204,8 +201,7 @@ describe('composables::session::load', () => {
 
       load();
 
-      // no flushPromises: the gate must already be closed by the time `load` returns, or a
-      // consumer snapshotting the account store in the meantime sees it empty.
+      // Asserting without a flushPromises is the point: awaiting first would pass either way.
       expect(mockArmAccountLoad).toHaveBeenCalledTimes(1);
       expect(mockArmAccountLoad.mock.invocationCallOrder[0])
         .toBeLessThan(mockFetchIgnoredAssets.mock.invocationCallOrder[0]);

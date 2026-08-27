@@ -15,9 +15,7 @@ describe('useSharedFieldResolvers', () => {
     useSettingsRepo().updateFrontend({ scrambleData, scrambleMultiplier: 3.5 });
   }
 
-  // A filtered address must be no more revealing than the same address anywhere else in the app,
-  // and the pill is the one place it is shown back to the user in full context.
-  describe('privacy mode', () => {
+  describe('privacy mode: a filtered address is no more revealing than the same address anywhere else', () => {
     it('should shorten an address without altering it while privacy is off', () => {
       setScramble(false);
       const { resolveHex } = useSharedFieldResolvers();
@@ -40,8 +38,7 @@ describe('useSharedFieldResolvers', () => {
       expect(ADDRESS).not.toContain(shown.slice(-4));
     });
 
-    // The same resolver backs the transaction-hash field, whose values are just as identifying.
-    it('should scramble a transaction hash too', () => {
+    it('should scramble a transaction hash too, its values being just as identifying', () => {
       const hash = `0x${'ab'.repeat(32)}`;
       setScramble(true);
       const { resolveHex } = useSharedFieldResolvers();
@@ -54,8 +51,6 @@ describe('useSharedFieldResolvers', () => {
     setScramble(false);
     const { resolveAssetSymbol } = useSharedFieldResolvers();
 
-    // Nothing is cached for it, so the resolver hands back the `EVM Token: 0x…` stand-in, which is
-    // no more readable on a pill than the raw identifier was.
     const shown = resolveAssetSymbol('eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818');
 
     expect(shown).toBe('0x214A...f818');

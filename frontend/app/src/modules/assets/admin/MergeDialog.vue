@@ -46,12 +46,8 @@ const form = useForm<MergePayload, MergePayload, string | ValidationErrors>({
   }),
 });
 
-// Destructured, because a ref reached through `form.` in the template is not unwrapped and
-// would read as permanently truthy.
 const { errorCount, submitting, valid } = form;
 
-// The button is also blocked while a server error stands, which vuelidate did through
-// $externalResults feeding $invalid. The core keeps the two apart, so the count is read here.
 const blocked = computed<boolean>(() => !get(valid) || get(errorCount) > 0 || get(submitting));
 
 const excluded = computed<string[]>(() => {

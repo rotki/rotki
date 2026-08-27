@@ -36,15 +36,11 @@ function toValueIcon(meta: { color: string; icon: RuiIcons }): ValueIcon {
  */
 export function useDataIssueFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
-  // Asset, address and date resolution is the same for every table filtering on them, so it comes
-  // from one place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const { kindLabel, stateLabel } = useDataIssuesFormat();
   const account = useDataIssueAccountOptions();
   const { assetSearch } = useAssetInfoRetrieval();
 
-  // Built once rather than per call: `assetSuggestions` carries the debounce, so rebuilding it on
-  // every keystroke would give each one a fresh timer that cancels nothing.
   const searchAsset = assetSuggestions(assetSearch);
 
   const stateLabels = computed<Map<string, string>>(

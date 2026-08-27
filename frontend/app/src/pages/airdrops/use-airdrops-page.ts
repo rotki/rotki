@@ -85,11 +85,15 @@ export function useAirdropsPage(): UseAirdropsPageReturn {
     await fetchAirdrops();
   });
 
-  // Narrowing can leave the current page past the end of the shorter result, which reads as an
-  // empty table.
-  watch([status, selectedAddresses], () => {
+  /**
+   * Returns to the first page whenever the filter narrows, since the current page can otherwise sit
+   * past the end of the shorter result and read as an empty table.
+   */
+  function resetPageForNarrowedFilter(): void {
     set(modelPagination, { ...get(modelPagination), page: 1 });
-  });
+  }
+
+  watch([status, selectedAddresses], resetPageForNarrowedFilter);
 
   return {
     cols,

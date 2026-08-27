@@ -27,8 +27,6 @@ const completedIconColor = computed<string>(() =>
   get(hasCancelledLocations) ? 'text-rui-warning' : 'text-rui-success',
 );
 
-// A cancelled location sits in this group too, so the summary must not claim completion for it —
-// the rows inside already say cancelled.
 const completedLabel = computed<string>(() => {
   const count = get(completedCount);
   return get(hasCancelledLocations)

@@ -36,8 +36,10 @@ export function useEthStakingFilterFields(
   const { t } = useI18n({ useScope: 'global' });
   const dateInputFormat = useSetting('dateInputFormat');
 
-  // No serializer of its own: the bounds are stored as the unix seconds they are sent as, and the
-  // date editor reads and writes them through `formatBound`/`parseBound`.
+  /**
+   * The date range, carrying no serializer of its own: the bounds are stored as the unix seconds
+   * they are sent as, and the date editor reads and writes them through `formatBound`/`parseBound`.
+   */
   const periodField: FieldDef = toDateFieldDef({
     formatBound: dateDeserializer(dateInputFormat),
     key: 'period',
@@ -47,14 +49,18 @@ export function useEthStakingFilterFields(
     upperKey: EthStakingFilterValueKeys.END,
   });
 
-  // Declared rather than derived from a matcher: a matcher describes a field to the old text bar,
-  // and this one only ever feeds the pill bar.
+  /**
+   * The validator status.
+   *
+   * @remarks
+   * Written out rather than derived from a matcher, since a matcher describes a field to the old
+   * text bar and this one only ever feeds the pill bar. Its label is the plain noun for the same
+   * reason: `eth_validator_combined_filter.status` is the long hint the old bar showed.
+   */
   const statusField: FieldDef = {
     allowExclusion: false,
     binding: { kind: 'filter' },
     key: EthStakingFilterValueKeys.STATUS,
-    // `eth_validator_combined_filter.status` is the long "filter by the status of the validator"
-    // hint the old bar showed; a pill wants the noun.
     label: (): string => t('common.status'),
     multiple: false,
     operators: [FilterOps.IS],

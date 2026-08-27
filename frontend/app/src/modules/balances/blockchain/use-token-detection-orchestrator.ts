@@ -114,8 +114,13 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
     await queueDetectionForChain(chain, chainAddresses, parent);
   };
 
-  // Detection ends in a balance read, so the chains it touched are hydrated once it settles —
-  // The only coupling between the layers: work finishing triggers hydration for its subject.
+  /**
+   * Detects tokens for the given addresses and hydrates the balances of every chain it touched.
+   *
+   * @remarks
+   * Hydration is part of the contract: awaiting this call is what makes the newly detected token
+   * balances readable from the store.
+   */
   const detectTokens = async (
     chain: string | string[],
     addrs: string[],

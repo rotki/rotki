@@ -24,9 +24,6 @@ function field(valueType: FilterValueType, overrides: Partial<FieldDef> = {}): F
 
 function createWrapper(fieldDef: FieldDef, filter: ActiveFilter): VueWrapper<InstanceType<typeof PillValueEditor>> {
   return mount(PillValueEditor, {
-    // AssetValueEditor pulls in the Pinia-backed asset search; stub it since this spec only
-    // checks the dispatch, not the asset editor internals. The text editor reads the scramble
-    // setting, so a pinia is still needed.
     global: {
       plugins: [createCustomPinia()],
       stubs: { AssetValueEditor: true, RuiAutoComplete: true, RuiButtonGroup: true, RuiTextField: true },

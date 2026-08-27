@@ -9,7 +9,6 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-// each test wants its own proxy instance, so the sharing wrapper is a pass-through here
 vi.mock('@vueuse/core', async (importOriginal): Promise<any> => ({
   ...(await importOriginal<any>()),
   createSharedComposable: <T>(fn: T): T => fn,

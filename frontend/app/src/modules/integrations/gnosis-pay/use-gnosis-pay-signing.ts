@@ -105,19 +105,14 @@ Issued At: ${issuedAt}`;
   }
 
   /**
-   * Reports a failed sign-in step and tells the caller to stop. A non-actionable failure (a cancelled
-   * or superseded task) stops the flow silently, since there is nothing for the user to act on.
+   * Reports a failed sign-in step. A non-actionable failure (a cancelled or superseded task) is
+   * silent, since there is nothing for the user to act on.
    */
-  function reportSignInFailure(outcome: Result<void, TaskError>): boolean {
-    if (!isErr(outcome))
-      return false;
-
-    if (isActionable(outcome.error)) {
-      showErrorMessage(t('external_services.gnosispay.siwe.failed'), outcome.error.message);
-      logger.error('Sign-in with Ethereum failed:', outcome.error.message);
+  function reportSignInFailure(error: TaskError): void {
+    if (isActionable(error)) {
+      showErrorMessage(t('external_services.gnosispay.siwe.failed'), error.message);
+      logger.error('Sign-in with Ethereum failed:', error.message);
     }
-
-    return true;
   }
 
   async function signInWithEthereum(): Promise<void> {
@@ -135,51 +130,49 @@ Issued At: ${issuedAt}`;
         return;
       }
 
-      let nonce = '';
-      const nonceOutcome = await submitTask({
+      const nonceOutcome = await submitTask<string>({
         id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.NONCE),
         kind: ActivityKind.GNOSIS_PAY,
         rerunnable: false,
-        run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        run: async ({ runTask }): Promise<Result<string, TaskError>> => mapResult(
           await runTask<string>(
             async () => fetchNonce(),
           ),
-          (value) => {
-            nonce = value;
-          },
+          value => value,
         ),
         subtitle: activityLabel(ActivityKind.GNOSIS_PAY, ActivityPart.NONCE),
         title: t('task_center.group.gnosis_pay'),
       });
 
-      if (reportSignInFailure(nonceOutcome))
+      if (isErr(nonceOutcome)) {
+        reportSignInFailure(nonceOutcome.error);
         return;
+      }
 
-      const message = createSiweMessage(address, nonce);
+      const message = createSiweMessage(address, nonceOutcome.value);
       const client = getWalletClient();
       const signature = await signMessage(client, address, message);
 
-      let verified = false;
-      const verifyOutcome = await submitTask({
+      const verifyOutcome = await submitTask<boolean>({
         id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),
         kind: ActivityKind.GNOSIS_PAY,
         rerunnable: false,
-        run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
           await runTask<boolean>(
             async () => verifySiweSignature(message, signature),
           ),
-          (value) => {
-            verified = value;
-          },
+          value => value,
         ),
         subtitle: activityLabel(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),
         title: t('task_center.group.gnosis_pay'),
       });
 
-      if (reportSignInFailure(verifyOutcome))
+      if (isErr(verifyOutcome)) {
+        reportSignInFailure(verifyOutcome.error);
         return;
+      }
 
-      if (verified) {
+      if (verifyOutcome.value) {
         set(signInSuccess, true);
         clearSessionExpiredWarning();
         if (onSignInComplete)

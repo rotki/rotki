@@ -34,8 +34,6 @@ const currencySymbol = useSetting('currencySymbol');
 
 const cacheSource = ref<PriceOracle>(PriceOracle.CRYPTOCOMPARE);
 const newFromAsset = ref<string>('');
-// A cache is nearly always wanted against the currency the user reads prices in, so that is the
-// default rather than an empty picker.
 const newToAsset = ref<string>(get(currencySymbol));
 /**
  * The bar owns the filter bag; the two assets are read out of it.

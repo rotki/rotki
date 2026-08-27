@@ -288,10 +288,9 @@ describe('use-virtual-rows', () => {
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', true);
 
-      // both legs are marked as linked sub-events so per-leg chain/tx context is shown
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
       expect(eventRows).toHaveLength(2);
-      expect(eventRows.every(r => r.type === 'event-row' && r.matchedMovement)).toBe(true);
+      expect(eventRows.every(r => r.type === 'event-row' && r.linkedLeg)).toBe(true);
     });
 
     it('should not flag the collapse row of a plain swap subgroup as bridge', async () => {
@@ -314,9 +313,8 @@ describe('use-virtual-rows', () => {
       expect(collapseRows).toHaveLength(1);
       expect(collapseRows[0]).toHaveProperty('bridge', false);
 
-      // plain swap legs share one transaction, so no linked sub-event marking
       const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
-      expect(eventRows.every(r => r.type === 'event-row' && !r.matchedMovement)).toBe(true);
+      expect(eventRows.every(r => r.type === 'event-row' && !r.linkedLeg)).toBe(true);
     });
 
     it('should assign subgroup-relative index so the first expanded event has index 0', async () => {
@@ -584,7 +582,6 @@ describe('use-virtual-rows', () => {
 
     it('should create matched-movement-row when array contains an asset movement event', () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
-      // Real data: first event is EVM_EVENT (chain side), second is ASSET_MOVEMENT_EVENT (exchange side)
       const chainEvent = createMockEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'remove asset' });
       const exchangeEvent = createAssetMovementEvent({ groupIdentifier: 'group1', identifier: 3, eventSubtype: 'deposit asset' });
 
@@ -740,7 +737,6 @@ describe('use-virtual-rows', () => {
       toggleMovementExpanded(movementKeys(flattenedRows)[0]);
       await nextTick();
 
-      // Find matched-movement-collapse row index
       const rows = get(flattenedRows);
       const collapseIndex = rows.findIndex(r => r.type === 'matched-movement-collapse');
 

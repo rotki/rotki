@@ -64,8 +64,14 @@ const displaySubtitle = computed<ActivityText | undefined>(() => {
 // Resolved here rather than at submit time, so a language change updates work already in flight.
 const subtitle = computed<string | undefined>(() => resolveText(t, get(displaySubtitle)));
 
-// A child of "History refresh" reads better as "Ethereum" than as "Transaction sync / Ethereum":
-// a chain and its accounts carry the same title, so under a parent the subtitle is the identity.
+/**
+ * What this row is called: its subtitle when nested under a parent, its title otherwise.
+ *
+ * @remarks
+ * Under a parent the subtitle is the identity. Every chain and account in one flow carries the same
+ * title, so a child of "History refresh" reads as "Ethereum" rather than "Transaction sync /
+ * Ethereum", where only the second half distinguishes it from its siblings.
+ */
 const label = computed<string>(() => (nested ? get(subtitle) ?? activity.title : activity.title));
 
 const secondary = computed<string | undefined>(() => (nested ? undefined : get(subtitle)));
@@ -108,8 +114,7 @@ const outcomeText = computed<string>(() => {
   return reason ? t('pending_task.status.with_reason', { reason, status }) : status;
 });
 
-// The ring only earns the slot when it has a real number to put in it. Everything else — including
-// a running row the producer never counted steps for — says its status in words instead.
+/** The ring earns the slot only with a real number to put in it; everything else says so in words. */
 const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminateProgress));
 </script>
 

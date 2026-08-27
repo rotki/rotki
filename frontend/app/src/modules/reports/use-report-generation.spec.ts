@@ -31,8 +31,6 @@ vi.mock('@/modules/reports/use-report-operations', () => ({
 
 const mockRunTask = vi.fn();
 
-// Native producer path: useNativeTask + the real orchestrator drive submitTask; only the task
-// handler the facade delegates to is mocked, so runTask resolves from mockRunTask.
 vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
@@ -54,7 +52,6 @@ describe('useReportGeneration', () => {
     scope = effectScope();
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // Both api calls return a pending task; the activity records its id so a cancel can abort it.
     mockGenerateReportCaller.mockResolvedValue({ taskId: 1 });
     mockExportReportDataCaller.mockResolvedValue({ taskId: 2 });
   });

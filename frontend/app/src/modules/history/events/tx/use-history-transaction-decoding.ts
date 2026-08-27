@@ -51,8 +51,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     ignoreCache = false,
     placement: DecodePlacement = {},
   ): Promise<void> => {
-    // One native TX_DECODING activity per chain; the orchestrator owns liveness
-    // (`useWorkStatus(ActivityKind.TX_DECODING)`), cancellation and per-chain re-run.
+    // One activity per chain, so liveness, cancellation and rerun are all per-chain.
     const outcome = await submitTask({
       deps: placement.deps,
       id: decodeActivityId(chain, ignoreCache),
@@ -100,8 +99,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         processed < total && !isBtcChains(chain) && isEvmType === !isEvmLikeChains(chain),
       )
       .map(({ chain }) => chain);
-    // No wrapper: each of these submits onto DECODE_LANE, which is what bounds how many chains
-    // decode at once. Wrapping them in a second limiter only hid that.
+    // Unbounded on purpose: DECODE_LANE is what caps how many chains decode at once.
     await Promise.all(chains.map(async chain => decodeTransactionsTask(chain)));
   };
 
@@ -129,9 +127,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const flowId = redecodeFlow.id(coversEverything ? undefined : decodeChains);
     const children = redecodeFlow.children(decodeChains);
 
-    // The flow is submitted before its children so the parent gate applies to them, but its `run`
-    // needs their promises — which only exist once submitted. It waits on this rather than on an
-    // array that would still be empty when the run body first executes.
+    // The flow is submitted before its children, so its `run` awaits this rather than a still-empty array.
     let declared!: (work: readonly Promise<void>[]) => void;
     const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
       declared = resolve;
@@ -152,8 +148,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
         return ok(undefined);
       },
-      // The title names the flow; the scope only shows up as a subtitle, so a two-chain run is not
-      // presented identically to the full one.
+      // Only the subtitle carries the scope, so a partial run does not read as the full one.
       subtitle: coversEverything
         ? undefined
         : activityLabelFor(msg.$t('task_center.activity.redecode.chains'), { chains: decodeChains.map(chain => getChainName(chain)).join(', ') }),
@@ -165,8 +160,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     await flow;
   };
 
-  // Decoding submits under two id shapes at once (`tx_decoding:<chain>` for a chain sweep,
-  // `tx_decoding:<chain>:pull` for a targeted re-decode), so this cancels the whole kind.
+  /**
+   * Cancels every decode in flight, whatever submitted it.
+   *
+   * @remarks
+   * Decoding runs under two id shapes at once, `tx_decoding:&lt;chain&gt;` for a chain sweep and
+   * `tx_decoding:&lt;chain&gt;:pull` for a targeted re-decode, so cancelling by id would leave the
+   * other shape running.
+   */
   function cancelDecoding(): void {
     cancelByKind(ActivityKind.TX_DECODING);
   }
@@ -175,8 +176,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     cancelDecoding,
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
-    // Re-exported because a decode is always preceded by a read of what is left to decode. For the
-    // counts alone, take `useUndecodedTransactionsStatus` directly.
+    // Re-exported because a decode is always preceded by a read of what is left to decode.
     fetchUndecodedTransactionsBreakdown,
     redecodeTransactions,
   };

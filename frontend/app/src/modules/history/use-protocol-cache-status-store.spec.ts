@@ -65,8 +65,6 @@ describe('useProtocolCacheStatusStore', () => {
       store.setProtocolCacheStatus(createStatus('optimism', 'aave', 0, 0));
 
       const filtered = get(store.protocolCacheStatus);
-      // Both have been set, but the old one (eth#uniswap) was auto-completed
-      // and new one (optimism#aave) has total=0, so it should be filtered out
       expect(filtered.every(s => s.total > 0)).toBe(true);
     });
   });
@@ -75,8 +73,6 @@ describe('useProtocolCacheStatusStore', () => {
     it('should mark all entries as cancelled', () => {
       const store = useProtocolCacheStatusStore();
       store.setProtocolCacheStatus(createStatus('eth', 'uniswap', 200, 100));
-      // Setting a new status auto-completes old ones, so set another one
-      // to have at least one non-completed entry
       store.markAllProtocolCacheCancelled();
 
       const status = get(store.protocolCacheUpdateStatus);

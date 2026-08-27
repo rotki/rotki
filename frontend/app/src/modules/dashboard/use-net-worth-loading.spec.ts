@@ -4,13 +4,6 @@ import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useNetWorthLoading } from '@/modules/dashboard/use-net-worth-loading';
 
-/**
- * The seam: a latch that starts closed and opens once, when the first load settles. It must not
- * track liveness in either direction. The balance activities are submitted after the dashboard
- * renders, so a live read is false on those first frames; and once it has opened a refresh must
- * not close it again, or the total the user is reading would blank on every refresh.
- */
-
 vi.mock('@/modules/balances/use-balance-loading', () => ({ useBalancesLoading: vi.fn() }));
 
 vi.mock('@/modules/balances/use-balance-status', () => ({ useBalanceStatus: vi.fn() }));

@@ -89,6 +89,15 @@ const spamDisabled = computed<boolean>(() => {
   });
 });
 
+/**
+ * The chain whose explorer can show this asset, when one can.
+ *
+ * @remarks
+ * Hyperliquid Core tokens have none: their ids are not HyperEVM addresses, so no explorer would
+ * resolve them. Their icon comes from the resolved asset type instead, so nothing is lost.
+ *
+ * @returns the chain, or undefined when the asset has no explorer page
+ */
 function getAssetLocation(row: SupportedAsset): string | undefined {
   if (row.assetType === EVM_TOKEN)
     return row?.evmChain ?? undefined;
@@ -96,8 +105,6 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
   if (row.assetType === SOLANA_TOKEN)
     return SOLANA_CHAIN;
 
-  // AssetIcon supplies the Hyperliquid icon from the resolved asset type. Core token IDs are not
-  // HyperEVM addresses, so they intentionally have no explorer location here.
   return undefined;
 }
 </script>

@@ -35,8 +35,8 @@ interface UseRouteSearchReturn {
  */
 export function useRouteSearch(): UseRouteSearchReturn {
   const router = useRouter();
-  // Kept in sync with the drawer gate in `useNavigationMenu`: a page that only exists in
-  // accounting-update builds has to be hidden from search there too.
+
+  /** The same gate the drawer applies in `useNavigationMenu`, so search hides what it hides. */
   const dataIssuesEnabled = isAccountingUpdateEnabled();
 
   const isRouteName = (name: RouteRecordNameGeneric): name is RouteName =>

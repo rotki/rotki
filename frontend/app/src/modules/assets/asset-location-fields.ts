@@ -40,8 +40,6 @@ export function toAssetLocationFields(
       toParamFieldDef({
         key: 'location',
         label: t('common.location'),
-        // A balance is held at one location, so narrowing to two would only ever widen back to the
-        // unfiltered table.
         multiple: false,
         paramKey: 'location',
         suggest: options.locations,

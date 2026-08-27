@@ -75,28 +75,34 @@ export function useEthStakingSelectionFields(): ComputedRef<FieldDef[]> {
     get(ethStakingValidators).map(validator => [validator.index.toString(), { publicKey: validator.publicKey }]),
   ));
 
+  /**
+   * Picks validators by index, captioned with their public key.
+   *
+   * @remarks
+   * The caption is scoped to the list: while picking, the key is what tells two indices apart, but
+   * on a pill the index already names the validator and a key beside it pushes every other pill off
+   * the bar. It is truncated the way an account's address is, since a whole public key crowds the
+   * index it annotates off its own row.
+   *
+   * Keywords match the raw index and key rather than the shown ones, because what the user types is
+   * the real value, lowercased to meet the search box. The value likewise stays the real index,
+   * which is what the request carries; only its display follows privacy mode, exactly as an address
+   * does.
+   */
   const validatorField: FieldDef = toMatchFieldDef({
-    // The key tells two indices apart while picking; on the pill the index already names the
-    // validator, and a key beside it pushes every other pill off the bar.
     captionScope: 'list',
     excludes: [EthStakingSelectionKeys.WITHDRAWAL_ADDRESS],
     key: EthStakingSelectionKeys.VALIDATOR,
     label: (): string => t('eth2_page.filter.validator'),
     multiple: true,
-    // Shortened the way an account's address is: a whole public key is 66 characters and crowds
-    // the index it is meant to annotate off its own row.
     resolveCaption: (value: string): string | undefined => {
       const publicKey = get(byIndex).get(value)?.publicKey;
       return publicKey ? truncateAddress(scrambleAddress(publicKey), 4) : undefined;
     },
-    // Matched on the raw index and key, not the shown ones: what the user types is the real value,
-    // and lowercased because the search box lowercases what is typed.
     resolveKeywords: (value: string): string | undefined => {
       const publicKey = get(byIndex).get(value)?.publicKey;
       return `${value} ${publicKey ?? ''}`.toLowerCase();
     },
-    // The value stays the real index, which is what the request carries; only its display follows
-    // privacy mode, exactly as an address does.
     resolveLabel: (value: string): string => scrambleIdentifier(value),
     suggest: (): string[] => get(ethStakingValidators).map(validator => validator.index.toString()),
   });

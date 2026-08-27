@@ -4,12 +4,6 @@ import type { Collection } from '@/modules/core/common/collection';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTradeRecipientAddress } from '@/modules/wallet/send/use-trade-recipient-address';
 
-/**
- * The seam: what a typed search turns into, and which of those the recipient can end up being.
- * Three sources feed the suggestions (the private address book, the tracked accounts and ENS), the
- * connected account is never among them, and only a real address is ever taken as the recipient.
- */
-
 const ALICE = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
 const BOB = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12';
 const CONNECTED = '0x1234567890123456789012345678901234567890';
@@ -134,8 +128,6 @@ describe('useTradeRecipientAddress', () => {
 
       await recipient.searchAddresses(ALICE);
 
-      // The later, nameless entry wins the deduplication, so pasting an address you have in the
-      // address book shows it without its name. Pre-existing, kept here as the record of it.
       expect(get(recipient.directOptions)).toEqual([{ address: ALICE }]);
     });
 

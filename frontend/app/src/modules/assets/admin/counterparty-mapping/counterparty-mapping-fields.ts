@@ -24,7 +24,6 @@ export function toCounterpartyMappingFields(
     decorateSharedField(
       toMatchFieldDef({
         key: CounterpartyMappingFilterKeys.COUNTERPARTY,
-        // The pill says what the column says.
         label: (): string => t('common.counterparty'),
         multiple: false,
         suggest: counterparties,

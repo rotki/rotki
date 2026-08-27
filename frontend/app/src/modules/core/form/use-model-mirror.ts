@@ -54,8 +54,6 @@ export function useModelMirror<TModel extends object, TState extends object>(
 ): void {
   const { model, seeded = false, state, toModel, toState } = options;
 
-  // Every edit is written back, because the parent saves what it reads off the payload, not what
-  // the state holds.
   watch(() => state, (value) => {
     set(model, toModel(value, get(model)));
   }, { deep: true });

@@ -40,8 +40,13 @@ function onBlur(index: number, field: 'amount' | 'asset'): void {
   touch(`${path}.${index}.${field}`);
 }
 
-// Both mutate the array in place: the rows the form has already recorded touched-state against must
-// keep their identity, which replacing the array would destroy.
+/**
+ * Drops the fee row at `index`.
+ *
+ * @remarks
+ * This and {@link add} mutate the model array in place: the rows the form has already recorded
+ * touched state against have to keep their identity, which replacing the array would destroy.
+ */
 function remove(index: number): void {
   get(modelValue).splice(index, 1);
 }

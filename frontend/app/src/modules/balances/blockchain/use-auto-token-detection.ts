@@ -25,11 +25,16 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
 
   const inFlight = shallowRef<boolean>(false);
 
+  /**
+   * Whether enough time has passed since the last sweep to run another.
+   *
+   * @remarks
+   * A stored timestamp in the future counts as never-run rather than as a very recent run, which is
+   * what a database restore or a clock rollback leaves behind.
+   */
   function isCooldownElapsed(): boolean {
     const now = Date.now();
     const lastAt = get(lastAutoDetectAt);
-    // Clock-skew guard: if the stored timestamp is in the future
-    // (DB restore, clock rollback), treat it as never-run.
     const elapsed = lastAt > now ? Number.POSITIVE_INFINITY : now - lastAt;
     const cooldownMs = get(autoDetectTokensCooldownHours) * HOUR_IN_MS;
     return elapsed >= cooldownMs;
@@ -48,6 +53,16 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
     return null;
   }
 
+  /**
+   * Runs a pass, telling it whether this is the run that should sweep for tokens.
+   *
+   * @remarks
+   * The timestamp is persisted whatever the pass does, failure included, so a chain that breaks
+   * every time does not trigger a fresh sweep on every login.
+   *
+   * @param pass - the work to run, handed whether to detect
+   * @returns whatever the pass returned
+   */
   async function withDetection<T>(pass: (detect: boolean) => Promise<T>): Promise<T> {
     const skip = skipReason();
     if (skip !== null) {
@@ -63,8 +78,6 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
       return await pass(true);
     }
     finally {
-      // Always persist the timestamp, even on failure, so a persistently broken
-      // chain doesn't trigger detection on every login.
       await updateFrontendSetting({ lastAutoDetectAt: now });
       set(inFlight, false);
       logger.debug(`Auto token detection: persisted lastAutoDetectAt=${now}`);

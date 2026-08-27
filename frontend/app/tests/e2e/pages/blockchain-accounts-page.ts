@@ -28,7 +28,6 @@ export class BlockchainAccountsPage {
   }
 
   async addAccount(balance: FixtureBlockchainAccount): Promise<void> {
-    // Use filter to target the Add blockchain account dialog specifically
     const addAccountDialog = this.page.locator('[data-testid=bottom-dialog]').filter({ hasText: 'Add blockchain account' });
     await addAccountDialog.waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=blockchain-balance-form]').waitFor({ state: 'visible' });

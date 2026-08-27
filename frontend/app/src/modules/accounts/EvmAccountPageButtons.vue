@@ -23,11 +23,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading('evm');
 const { useIsActive, useIsActivePrefix } = useTaskCenter();
-// Both layers — hydration is not an activity, so the orchestrator alone reports a DB read as idle.
-const eth2Loading = logicOr(
-  useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
-  useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
-);
+const eth2Querying = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
+const eth2Hydrating = useBalanceRefreshState().useIsHydrating(Blockchain.ETH2);
+const eth2Loading = logicOr(eth2Querying, eth2Hydrating);
 
 const isEth2Loading = logicOr(
   eth2Loading,

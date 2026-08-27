@@ -9,8 +9,10 @@ const search = defineModel<string>('search', { required: true });
 const fields = useBlockchainBalanceFields();
 const pillLabels = usePillBarLabels();
 
-// The page keeps the two refs because the chain list also decides what is aggregated; the bar only
-// writes through them.
+/**
+ * Written through by the bar, but owned by the page: the chain list decides what is aggregated as
+ * well as what is filtered, so the page keeps both refs.
+ */
 const params = blockchainBalanceParams(chains, search);
 </script>
 

@@ -2,12 +2,6 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 
-/**
- * The seam: the strip renders the message it is handed and reports the two things the panel
- * can act on - undo the resolution, or dismiss the notice. It decides neither the wording nor
- * what undo does, so those belong to the actions composable, not here.
- */
-
 describe('modules/history/events/UnmatchedResolutionStrip', () => {
   let wrapper: VueWrapper<InstanceType<typeof UnmatchedResolutionStrip>> | undefined;
 

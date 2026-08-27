@@ -137,8 +137,6 @@ describe('useAssetSearch', () => {
     expect(mockAssetMapping).toHaveBeenCalledWith(['eip155:1/erc20:0xA']);
   });
 
-  // The snapshot editor flips this under the user with a radio. The options were fetched for the
-  // other kind, so leaving them up let a token be picked on a row that had become an nft.
   it('should drop the options when the nft handling changes', async () => {
     mockAssetSearch.mockResolvedValue([makeAsset('eip155:1/erc20:0xA')]);
     const { api, nftHandling } = setup();
@@ -151,8 +149,6 @@ describe('useAssetSearch', () => {
     expect(get(api.visibleAssets)).toHaveLength(0);
   });
 
-  // Worse than stale options: the selection itself survived the flip, so an nft row kept the token
-  // the user had picked before switching.
   it('should give up a selection the new nft handling cannot offer', async () => {
     const { modelValue, nftHandling, selectionLost } = setup({ modelValue: 'eip155:1/erc20:0xA' });
 
@@ -163,10 +159,7 @@ describe('useAssetSearch', () => {
     expect(modelValue).toBeDefined();
   });
 
-  // Narrow but silent: the flip has to land between the request leaving and its response arriving.
-  // Aborting alone does not cover it, since a response that has already resolved is a microtask
-  // away from being written, and this form saves without validating what is in the field.
-  it('should discard a response that arrives after the nft handling changed', async () => {
+  it('should discard a response that resolved before the nft handling changed, which aborting alone cannot catch', async () => {
     let resolveSearch!: (assets: AssetInfoWithId[]) => void;
     mockAssetSearch.mockReturnValue(new Promise((resolve) => {
       resolveSearch = resolve;

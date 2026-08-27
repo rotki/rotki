@@ -8,7 +8,6 @@ import {
 import { actionKeysForAnchor } from '@/modules/settings/settings-actions';
 import { getRegistryEntry, registryEntries, registryKeysForAnchor } from '@/modules/settings/settings-registry';
 
-// The settings tabs derive their route/label/icon from each page's `nav` meta via the router.
 const settingsRoutes = [
   { name: '/settings/account/', meta: { nav: { icon: 'lu-user', labelKey: 'Account' } } },
   { name: '/settings/general/', meta: { nav: { icon: 'lu-settings', labelKey: 'General' } } },
@@ -112,9 +111,6 @@ describe('useSettingsSearch', () => {
     });
 
     it('should own every highlight id in exactly one registry (setting xor action)', () => {
-      // Every anchor is owned by exactly one source: a registry setting (via its `anchor`) or a
-      // `settingsActions` entry. This derived invariant replaces a hand-kept keyless allowlist, so an
-      // anchor that loses its owner (or gains a second) fails here instead of drifting silently.
       const ids = Object.values(SettingsHighlightIds);
       const ownedByBoth = ids.filter(id => registryKeysForAnchor(id).length > 0 && actionKeysForAnchor(id).length > 0);
       const ownedByNeither = ids.filter(id => registryKeysForAnchor(id).length === 0 && actionKeysForAnchor(id).length === 0);
@@ -138,25 +134,26 @@ describe('useSettingsSearch', () => {
       rows.forEach(entry => expect(entry.texts[0]).toBe('General'));
     });
 
-    it('should build flat and sub-group breadcrumbs for the interface tab', () => {
-      const rowFor = (id: SettingsHighlightId): SettingsSearchEntry | undefined =>
-        allEntries.find(entry => entry.highlightId === id);
+    const rowFor = (id: SettingsHighlightId): SettingsSearchEntry | undefined =>
+      allEntries.find(entry => entry.highlightId === id);
 
-      // a flat category (interface) drops the category segment: breadcrumb is tab > setting
-      const language = rowFor(SettingsHighlightIds.LANGUAGE);
-      expect(language?.texts).toEqual(['Interface', 'general_settings.language.title']);
+    it('should drop the category segment for a flat category, leaving tab then setting', () => {
+      expect(rowFor(SettingsHighlightIds.LANGUAGE)?.texts).toEqual([
+        'Interface',
+        'general_settings.language.title',
+      ]);
+    });
 
-      // a sub-group setting inserts its group segment: tab > group > setting (still no category)
-      const minOutOfSync = rowFor(SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD);
-      expect(minOutOfSync?.texts).toEqual([
+    it('should insert the group segment for a sub-group setting, still without a category', () => {
+      expect(rowFor(SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD)?.texts).toEqual([
         'Interface',
         'frontend_settings.history_query_indicator.title',
         'frontend_settings.history_query_indicator.min_out_of_sync_period.title',
       ]);
+    });
 
-      // a non-flat category keeps the category segment: tab > category > setting
-      const graphBasis = rowFor(SettingsHighlightIds.GRAPH_BASIS);
-      expect(graphBasis?.texts).toEqual([
+    it('should keep the category segment for a non-flat category, giving tab then category then setting', () => {
+      expect(rowFor(SettingsHighlightIds.GRAPH_BASIS)?.texts).toEqual([
         'Interface',
         'frontend_settings.subtitle.graph_settings',
         'frontend_settings.graph_basis.title',

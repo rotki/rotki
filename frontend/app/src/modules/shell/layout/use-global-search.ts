@@ -123,13 +123,17 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
       });
   }
 
+  /**
+   * Every location worth searching, manual and on-chain alike.
+   *
+   * @remarks
+   * The per-chain totals are merged in so that a chain location such as `ethereum` is reachable
+   * even where no manual balance carries that label; a location holding both is summed.
+   */
   function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
     const locationBalances = get(balancesByLocation);
     const chainBalances = get(balancesByChainLocation);
 
-    // Merge per-chain on-chain totals so chain locations (e.g. 'ethereum') surface in global search
-    // even when the user has no manual balance tagged with that label. When both exist for the same
-    // identifier, sum.
     const merged: Record<string, BigNumber> = { ...locationBalances };
     for (const identifier in chainBalances) {
       const existing = merged[identifier];

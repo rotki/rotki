@@ -35,8 +35,6 @@ vi.mock('@/pages/reports/use-reports-page', async () => {
   const { computed: computedFn, shallowRef: shallowRefFn } = await import('vue');
   return {
     useReportsPage: (): ReturnType<typeof useReportsPage> => {
-      // Published back to the test so it can put a file in the uploader; the import button stays
-      // disabled without one, and a click on a disabled button is silently dropped.
       pageState.modelReportDebugData = shallowRefFn<File | undefined>(undefined);
       return {
         exportData,

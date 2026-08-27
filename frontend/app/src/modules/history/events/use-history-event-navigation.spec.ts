@@ -44,7 +44,13 @@ describe('use-history-event-navigation', () => {
     await nextTick();
   });
 
-  // Re-import for each test to reset the module-level shared composable state
+  /**
+   * Imports the module under test with its shared state discarded.
+   *
+   * @remarks
+   * `useHistoryEventNavigation` is a shared composable, so its refs live as long as the module
+   * does. Reusing the import would let one test see the pending navigation another left behind.
+   */
   async function importFresh(): Promise<typeof import('./use-history-event-navigation')> {
     vi.resetModules();
     return import('./use-history-event-navigation');
@@ -176,7 +182,6 @@ describe('use-history-event-navigation', () => {
     });
 
     it('should fall back to next candidate when position is -1', async () => {
-      // Green not found, yellow found at position 15
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(-1);
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(15);
 

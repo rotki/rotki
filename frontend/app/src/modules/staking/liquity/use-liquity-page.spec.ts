@@ -1,8 +1,7 @@
-import type { VueWrapper } from '@vue/test-utils';
 import type { Ref } from 'vue';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LIQUITY_PRICED_ASSETS } from './liquity-assets';
 import { useLiquityPage } from './use-liquity-page';
 
@@ -15,8 +14,6 @@ const {
   moduleEnabled,
   resetProtocolStatsPriceQueryStatus,
 } = vi.hoisted(() => {
-  // Given real refs in `beforeEach`; `vi.hoisted` runs before the imports, so nothing can be
-  // constructed here.
   const currencySymbol: { current?: Ref<string> } = {};
   const moduleEnabled: { current?: Ref<boolean> } = {};
 
@@ -70,14 +67,8 @@ vi.mock('@/modules/premium/use-premium', async () => {
 });
 
 describe('modules/staking/liquity/useLiquityPage', () => {
-  // Both watchers stay live for as long as the harness does, so a leftover one would refetch
-  // during a later test.
-  const mounted: VueWrapper[] = [];
-
   function setup(): ReturnType<typeof useLiquityPage> {
-    const { result, wrapper } = withSetup(() => useLiquityPage());
-    mounted.push(wrapper);
-    return result;
+    return withSetup(() => useLiquityPage()).result;
   }
 
   beforeEach(async () => {
@@ -85,11 +76,6 @@ describe('modules/staking/liquity/useLiquityPage', () => {
     const { shallowRef } = await import('vue');
     currencySymbol.current = shallowRef('EUR');
     moduleEnabled.current = shallowRef(false);
-  });
-
-  afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
   });
 
   it('should not fetch while the module is off', async () => {

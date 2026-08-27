@@ -37,9 +37,6 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   }),
 }));
 
-// Mocked outright rather than spread over `...actual`: importActual evaluates the real
-// notifications graph, which costs ~1.2s to import.
-// `getErrorMessage` is a pure helper re-exported from a light module, so take it from there.
 vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
     '@/modules/core/common/logging/error-handling',
@@ -95,9 +92,13 @@ describe('use-unmatched-asset-movements', () => {
     vi.restoreAllMocks();
   });
 
-  // `useUnmatchedAssetMovements` is a `createSharedComposable` singleton whose
-  // module-level refs would otherwise persist between tests; re-import per test
-  // so each starts from fresh state.
+  /**
+   * Re-imports the module under test so each case starts from empty state.
+   *
+   * @remarks
+   * `useUnmatchedAssetMovements` is a `createSharedComposable` singleton, so its module-level refs
+   * survive between tests unless the module registry is reset first.
+   */
   async function importFresh(): Promise<typeof import('@/modules/history/events/use-unmatched-asset-movements')> {
     vi.resetModules();
     return import('@/modules/history/events/use-unmatched-asset-movements');

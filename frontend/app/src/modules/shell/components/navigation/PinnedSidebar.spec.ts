@@ -7,8 +7,6 @@ import { PinnedNames } from '@/modules/session/types';
 import PinnedSidebar from '@/modules/shell/components/navigation/PinnedSidebar.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-// Replace the registry with two distinct stateful stub components so a tab switch
-// can be observed to preserve (or lose) each panel's local state.
 vi.mock('@/modules/shell/pinned/pinned-registry', async () => {
   const { defineComponent: dc, h: hh, ref } = await import('vue');
   const { msg } = await import('@/message-key');
@@ -32,7 +30,6 @@ vi.mock('@/modules/shell/pinned/pinned-registry', async () => {
   };
 });
 
-// Force a desktop breakpoint so the collapsed mini-bar (gated on !isLgAndDown) can render.
 vi.mock('@rotki/ui-library', async (importActual) => {
   const actual = await importActual<typeof import('@rotki/ui-library')>();
   const { ref } = await import('vue');
@@ -42,7 +39,6 @@ vi.mock('@rotki/ui-library', async (importActual) => {
   };
 });
 
-// Render the drawer's default slot inline instead of into a teleport target.
 const DrawerStub = defineComponent({
   props: { modelValue: { default: false, type: Boolean } },
   setup: (_, { slots }) => (): ReturnType<typeof h> => h('div', slots.default?.()),

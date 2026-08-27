@@ -44,8 +44,7 @@ function shapePending(
   currentValue: unknown,
   fromVersion: string,
 ): PendingSuggestion | undefined {
-  // A choice asks the user to decide, so it stands even when one of its options is what they
-  // already have. Its builder is the one that decides whether to offer it at all.
+  // A choice stands even when an option is what the user already has; its builder gates it instead.
   if (suggestion.choices)
     return { ...suggestion, currentValue, fromVersion };
 
@@ -88,8 +87,7 @@ export function collectPendingSuggestions(
       = compareVersions(vs.version, lastApplied) > 0 && compareVersions(vs.version, appVersion) <= 0;
 
     for (const suggestion of vs.suggestions) {
-      // A decision is retired by being answered, not by the version cursor, so the window that
-      // scopes a value nudge to its release does not apply to it.
+      // A decision is retired by being answered, not by the version window that scopes a value nudge.
       if (!versionPending && suggestion.decisionId === undefined)
         continue;
 
@@ -162,8 +160,7 @@ export function useSettingsSuggestions(
       if (!suggestion)
         continue;
 
-      // Stamped here rather than in the builder: whether a row is a decision is the registry's call,
-      // and this is what carries it through to `applySelected` so the answer can be recorded.
+      // Whether a row is a decision is the registry's call, and the stamp carries it to `applySelected`.
       const stamped = decisionId === undefined ? suggestion : { ...suggestion, decisionId };
 
       const existing = byVersion.get(version);
@@ -176,9 +173,15 @@ export function useSettingsSuggestions(
     return { registry: Array.from(byVersion, ([version, suggestions]) => ({ suggestions, version })), settled };
   }
 
-  // Awaited by `initialize` rather than fire-and-forget: `updateFrontendSetting` rewrites the
-  // whole settings blob from a snapshot of the repo, so a concurrent write (the privacy reset
-  // that follows in `initialize`) would snapshot the pre-stamp version and put it back.
+  /**
+   * Collects the suggestions this version has to offer and stamps the applied-version cursor.
+   *
+   * @remarks
+   * Must be awaited, not fired and forgotten: `updateFrontendSetting` rewrites the whole settings
+   * blob from a snapshot taken when it is called, so a write racing this one snapshots the
+   * pre-stamp version and puts it back. A new account offers nothing and only stamps, since
+   * everything up to this version is already the default it was created with.
+   */
   async function checkForSuggestions(
     frontendSettings: FrontendSettings,
     generalSettings: GeneralSettings,

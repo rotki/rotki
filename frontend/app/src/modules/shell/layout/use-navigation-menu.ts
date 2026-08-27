@@ -33,9 +33,6 @@ interface MenuDivider {
 
 export type MenuItem = MenuNavItem | MenuNavGroup | MenuDivider;
 
-// The data-issues inbox is part of the accounting refactor and only served in builds where the
-// backend exposes it (see `isAccountingUpdateEnabled`). When disabled, History collapses from a
-// group into a single item that links straight to Events.
 const HISTORY_ROUTE = '/history/';
 const HISTORY_EVENTS_ROUTE = '/history/events/';
 
@@ -53,8 +50,6 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
   const router = useRouter();
   const dataIssuesEnabled = isAccountingUpdateEnabled();
 
-  // A name taken from the live router is always registered, so `hasRoute` both validates it and
-  // narrows the generic route name to a typed RouteName. This is the type-safe alternative to a cast.
   const isRouteName = (name: RouteRecordNameGeneric): name is RouteName =>
     name !== undefined && router.hasRoute(name);
 
@@ -70,7 +65,13 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
     testId: entry.nav.drawer ?? '',
   });
 
-  // Splits the drawer routes into ordered top-level entries and a parent -> children lookup.
+  /**
+   * Splits the routes that declare `nav.drawer` into top-level entries and a lookup of children by parent.
+   *
+   * @remarks
+   * Only the top-level list is ordered here, by section then order; children keep router order until
+   * `toEntry` sorts them. Routes in `ACCOUNTING_UPDATE_ROUTES` are omitted unless the feature flag is on.
+   */
   function collectEntries(): { topLevel: MenuEntry[]; childrenByParent: Map<string, MenuEntry[]> } {
     const childrenByParent = new Map<string, MenuEntry[]>();
     const topLevel: MenuEntry[] = [];
@@ -93,8 +94,13 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
     return { topLevel, childrenByParent };
   }
 
-  // Turns a top-level entry into a group (when it has children) or a plain item, collapsing History
-  // to an Events link when the data-issues inbox is disabled.
+  /**
+   * Renders a top-level entry as a group when it has children, or as a plain item otherwise.
+   *
+   * @remarks
+   * History is the exception: with the accounting update disabled its data-issues child is filtered
+   * out, so it is emitted as a single item pointing at Events rather than an empty group.
+   */
   function toEntry(entry: MenuEntry, children: MenuEntry[]): MenuNavItem | MenuNavGroup {
     if (entry.name === HISTORY_ROUTE && !dataIssuesEnabled)
       return { ...toItem(entry), path: pathOf(HISTORY_EVENTS_ROUTE) };

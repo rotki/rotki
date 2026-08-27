@@ -60,9 +60,6 @@ describe('useNftBalances', () => {
   beforeEach(async (): Promise<void> => {
     scope = effectScope();
     setActivePinia(createPinia());
-    // Reset the shared route query (mutated by other tests' router.push). A fresh
-    // useRouter() call returns its own push mock, so this does not affect the
-    // push spy asserted on the describe-level router instance.
     await useRouter().push({ query: {} });
     fetchNonFungibleBalances = useNftBalances().fetchNonFungibleBalances;
   });
@@ -84,9 +81,6 @@ describe('useNftBalances', () => {
 
     beforeEach((): void => {
       set(mainPage, true);
-      // Reset shared filter state to the settled baseline (undefined) so each test
-      // starts identically. A first mount with an empty route sets this from 'none'
-      // to undefined; leaving the 'none' seed leaks across tests.
       set(ignoredAssetsHandling, undefined);
     });
 

@@ -130,7 +130,6 @@ describe('modules/dashboard/snapshots/utils/snapshot-mutations', () => {
 
   describe('applyReconcileLocations', () => {
     it('should absorb the difference into the chosen location and snap the total to balances', () => {
-      // balances 100; locations 60 + 20 = 80; stored total 80 — all off.
       const snap = snapshot(
         [balance('100')],
         [location('kraken', '60'), location('ledger', '20'), location('total', '80')],

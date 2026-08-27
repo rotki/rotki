@@ -11,21 +11,16 @@ const { description, tag = 'span', short = false } = defineProps<{
   short?: boolean;
 }>();
 
-// The inbox card uses a condensed one-liner; the detail drawer keeps the full
-// sentence. Both share the same interpolation slots below.
+// Both keys take the same interpolation slots, so only the sentence length differs.
 const keypath = computed<string>(() => short ? description.shortMessageKey : description.messageKey);
 
 const { useAssetField } = useAssetInfoRetrieval();
 
-// Resolve the asset identifier to its symbol so the sentence reads with a short
-// symbol (e.g. "USDC") instead of the raw `eip155:...` identifier. Falls back to
-// the identifier only when the asset cannot be resolved at all.
+// Empty until resolved, so the template falls back to the raw `eip155:...` identifier.
 const symbol = useAssetField(() => description.asset, 'symbol');
 const name = useAssetField(() => description.asset, 'name');
 
-// The sentence shows the symbol only; the hover title carries the fuller identity:
-// "Symbol (Name)" then the raw identifier on the next line. Native title so it stays
-// zero-cost across a list of cards.
+// A native `title` rather than a tooltip component, so a long list of cards stays cheap.
 const assetTitle = computed<string>(() => {
   const assetSymbol = get(symbol) || description.asset || '';
   const assetName = get(name);
@@ -33,8 +28,13 @@ const assetTitle = computed<string>(() => {
   return description.asset && description.asset !== header ? `${header}\n${description.asset}` : header;
 });
 
-// Render the exact amount (its own decimal count) so tiny values show in full
-// rather than the rounded "< 0.001" form, which reads awkwardly in the sentence.
+/**
+ * Pins the display precision to the amount's own decimal count.
+ *
+ * @remarks
+ * The default rounding renders a tiny amount as a "less than" threshold, which reads as an
+ * approximation in the middle of a sentence that is stating an exact discrepancy.
+ */
 function exact(amount: BigNumber): FormatOptions {
   return { decimals: amount.decimalPlaces() ?? undefined };
 }

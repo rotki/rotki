@@ -18,8 +18,7 @@ vi.mock('@/modules/core/tasks/use-task-api', () => ({
 describe('useTaskHandler', () => {
   let handler: ReturnType<typeof import('@/modules/core/tasks/use-task-handler').useTaskHandler>;
   let store: ReturnType<typeof import('@/modules/core/tasks/use-task-store').useTaskStore>;
-  // built from the same (post-reset) module graph as the handler, otherwise the
-  // class identity differs and the handler's `instanceof` check misses
+  /** Built from the same post-reset module graph as the handler, or its `instanceof` check misses. */
   let cancellationError: (message: string) => Error;
 
   beforeEach(async () => {

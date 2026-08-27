@@ -44,9 +44,6 @@ describe('useAddressNameResolution', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
     vi.useFakeTimers();
-    // `useAddressNameResolution` is a `createSharedComposable` singleton; acquire it
-    // inside an owned scope so `afterEach` can dispose it and force a fresh instance
-    // (bound to the new pinia) for the next test.
     scope = effectScope();
     scope.run(() => {
       resolution = useAddressNameResolution();
@@ -294,8 +291,6 @@ describe('useAddressNameResolution', () => {
       const store = useAddressNamesStore();
       store.setEnsNames({ '0xAddr1': 'same.eth' });
 
-      // Calling with the same value should not trigger cache invalidation
-      // We verify by checking the function doesn't throw and completes
       resolution.updateEnsNamesAndReset({ '0xAddr1': 'same.eth' });
 
       const { ensNames } = storeToRefs(store);
@@ -326,7 +321,6 @@ describe('useAddressNameResolution', () => {
 
       expect(get(name)).toBe('stored_name');
 
-      // The cache lives in the app-lifetime store, not a composable-scoped map.
       const { addressNameStorage } = useAddressNamesStore();
       expect(get(addressNameStorage.cache)[`${address}#${Blockchain.ETH}`]?.name).toBe('stored_name');
     });

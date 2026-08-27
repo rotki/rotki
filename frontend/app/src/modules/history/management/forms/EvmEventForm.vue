@@ -71,8 +71,6 @@ const {
   enabled: () => data.type === 'add',
   errorFields: { relatedAddress: 'locationLabel', txHash: 'txRef' },
   errorMessages,
-  // Backend expects the canonical chain key (e.g. 'polygon_pos'); the form's
-  // `location` carries the human-readable form from `txChainsToLocation`.
   evmChain: () => toSnakeCase(state.location),
   onResolved: (result) => {
     state.timestamp = result.timestamp * 1000;

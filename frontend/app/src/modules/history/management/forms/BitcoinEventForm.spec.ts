@@ -198,12 +198,10 @@ describe('forms/BitcoinEventForm.vue', () => {
     expect(notesTextArea.element.value).toBe(group.userNotes);
   });
 
-  it('should lock the location to the saved transaction outside the add flow', async () => {
+  it('should lock the location to the saved transaction outside the add flow, since the location picks the asset and a BTC event could otherwise be relabelled BCH', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    // the location picks the asset, so leaving it editable would let a BTC event that
-    // belongs to a saved bitcoin transaction be relabelled as BCH, and vice versa
     expect(wrapper.find('[data-testid=location] input').attributes('disabled')).toBeUndefined();
 
     for (const data of [
@@ -245,9 +243,6 @@ describe('forms/BitcoinEventForm.vue', () => {
     await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
     await wrapper.find('[data-testid=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
 
-    // group.counterparty is null, so no counterparty field to set
-    // group.eventSubtype is '', so no eventSubtype field to set
-
     const saveMethod = wrapper.vm.save;
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
@@ -275,7 +270,7 @@ describe('forms/BitcoinEventForm.vue', () => {
     });
   });
 
-  it('should not call editHistoryEvent when only updating the historic price', async () => {
+  it('should not call editHistoryEvent when nothing changed', async () => {
     wrapper = createWrapper({
       props: {
         data: {
@@ -286,21 +281,32 @@ describe('forms/BitcoinEventForm.vue', () => {
       },
     });
     await vi.advanceTimersToNextTimerAsync();
-    const saveMethod = wrapper.vm.save;
 
-    // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoricalPriceMock.mockResolvedValueOnce(true);
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
 
-    // click save after changing the historic price
+  it('should not call editHistoryEvent when the historic price is the only edit', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event: group,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
     await wrapper.find('[data-testid=primary] input').setValue('1000');
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
   });

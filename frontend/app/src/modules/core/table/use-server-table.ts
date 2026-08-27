@@ -18,8 +18,6 @@ import { useTableSorting } from '@/modules/core/table/use-table-sorting';
 import { routeWhen, type UrlState, useUrlStateSync } from '@/modules/core/table/use-url-state-sync';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
-// Re-exported so the facade's public surface stays exactly what it was before the
-// provenance and URL-sync internals moved into their own modules.
 export type { ChangeSource };
 
 export { routeWhen };
@@ -120,16 +118,13 @@ export function useServerTable<
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
 
-  // Both derived from the declared fields, and cached against them: a gated field list can change
-  // while the table is mounted, and the URL must be read with the keys in play at that moment.
+  // Recomputed rather than captured: a gated field list can change while the table is mounted.
   const behaviourKeys = computed<string[]>(() => behaviourKeysFromFields(toValue(fields) ?? []));
   const routeFilterSchema = computed<Schema | undefined>(() => {
     const declared = toValue(fields);
     return declared ? routeSchemaFromFields(declared) : undefined;
   });
 
-  // Commit callbacks feed the reducer. They are defined before the sub-composables that
-  // receive them and call the hoisted `dispatch`.
   const commitSort = (sorting: DataTableSortData<TItem>): void => dispatch({ sorting, type: 'sort-set' });
   const commitPage = (page: number, source: ChangeSource = 'user'): void => dispatch({ page, source, type: 'page-set' });
   const commitLimit = (limit: number): void => dispatch({ limit, type: 'limit-set' });
@@ -150,9 +145,7 @@ export function useServerTable<
 
   const { collection, error, isLoading, refetch } = useTableData<TItem, TPayload>(
     requestData,
-    // Annotated because `requestPayload` is declared below: without it TypeScript walks
-    // the cycle (data -> pagination -> requestPayload -> data) and gives up with `any`.
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define -- lazy thunk; only invoked after requestPayload is defined below
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define -- lazy thunk, invoked only after requestPayload is defined below; the return type is annotated to break the data/pagination/requestPayload cycle, which otherwise infers `any`
     (): ComputedRef<TPayload> => requestPayload,
     cancelTag,
   );

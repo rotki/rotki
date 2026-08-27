@@ -1,6 +1,7 @@
 import type { EffectScope, Ref } from 'vue';
 import type { GetAssetBalancePayload } from '@/modules/wallet/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
+import { neverSettles } from '@test/utils/never-settles';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTradeAssetBalance } from '@/modules/wallet/send/use-trade-asset-balance';
@@ -106,8 +107,7 @@ describe('useTradeAssetBalance', () => {
       .mockReturnValueOnce(new Promise<BigNumber>((res) => {
         resolve = res;
       }))
-      // The refresh the asset change triggers never settles, so only the stale answer could land.
-      .mockReturnValue(new Promise<BigNumber>(() => {}));
+      .mockReturnValue(neverSettles<BigNumber>());
     const { assetBalance, refreshAssetBalance } = create();
     const pending = refreshAssetBalance();
 
