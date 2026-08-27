@@ -762,7 +762,8 @@
             "success": "Skipped events exported to CSV successfully"
           },
           "title": "CSV Export"
-        }
+        },
+        "unavailable": "{queryType} is not available"
       },
       "warning": {
         "missing_api_key": {
