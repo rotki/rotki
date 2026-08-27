@@ -61,7 +61,7 @@ const { t } = useI18n({ useScope: 'global' });
         {{ type.label }}
       </div>
       <RuiTooltip
-        :popper="{ placement: 'top', scroll: false, resize: false }"
+        :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

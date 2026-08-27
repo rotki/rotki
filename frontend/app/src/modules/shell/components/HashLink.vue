@@ -226,7 +226,7 @@ const tags = useAccountTags(() => text);
       v-if="!hideText"
       ref="tooltip"
       class="min-w-0 overflow-hidden"
-      :popper="{ placement: 'top', scroll: false, resize: false }"
+      :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       :open-delay="400"
       :disabled="truncateLength === 0"
       tooltip-class="[&_*]:font-mono"

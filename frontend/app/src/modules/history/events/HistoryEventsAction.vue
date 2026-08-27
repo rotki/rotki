@@ -123,7 +123,7 @@ function redecodeWithOptions(target: DecodableEventType): void {
     <RuiMenu
       v-model="showMenu"
       menu-class="max-w-[15rem] z-[100]"
-      :popper="{ placement: 'bottom-end', scroll: false, resize: false }"
+      :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

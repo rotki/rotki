@@ -24,7 +24,7 @@ const locationData = useLocationData(() => location);
   >
     <template #icon>
       <RuiTooltip
-        :popper="{ placement: 'top', scroll: false, resize: false }"
+        :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

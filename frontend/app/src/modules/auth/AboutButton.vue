@@ -12,7 +12,7 @@ function show() {
 <template>
   <RuiTooltip
     :text="t('account_management.about_tooltip')"
-    :popper="{ placement: 'top', offsetDistance: 0 }"
+    :options="{ offset: 0, placement: 'top' }"
   >
     <template #activator>
       <RuiButton

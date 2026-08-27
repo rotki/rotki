@@ -84,7 +84,7 @@ function redecode() {
   <RuiMenu
     v-model="open"
     class="!border-0"
-    :popper="{ placement: 'bottom', offsetSkid: 35 }"
+    :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
       <RuiButton
