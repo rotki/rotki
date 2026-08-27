@@ -104,7 +104,7 @@ onMounted(async () => {
       </RuiButton>
     </template>
 
-    <RuiCard content-class="flex flex-col gap-4">
+    <RuiCard :class-names="{ content: 'flex flex-col gap-4' }">
       <RuiTextField
         v-model="search"
         variant="outlined"

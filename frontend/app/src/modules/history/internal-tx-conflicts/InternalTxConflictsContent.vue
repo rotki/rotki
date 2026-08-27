@@ -331,7 +331,7 @@ defineExpose({
             <RuiTooltip
               :options="{ placement: 'top' }"
               :open-delay="400"
-              tooltip-class="max-w-80"
+              :class-names="{ tooltip: 'max-w-80' }"
             >
               <template #activator>
                 <span class="truncate max-w-48 inline-block align-bottom">

@@ -11,7 +11,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <RuiMenu
     :options="{ placement: 'right-start' }"
-    menu-class="max-w-[25rem]"
+    :class-names="{ menu: 'max-w-[25rem]' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

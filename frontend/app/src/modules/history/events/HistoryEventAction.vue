@@ -37,7 +37,7 @@ function onEditRule(): void {
 <template>
   <div class="flex items-center">
     <RuiMenu
-      menu-class="max-w-[15rem] z-[100]"
+      :class-names="{ menu: 'max-w-[15rem] z-[100]' }"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >

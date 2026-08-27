@@ -49,7 +49,7 @@ defineExpose({
     <RuiCard
       variant="outlined"
       class="overflow-hidden mb-2"
-      content-class="flex justify-between items-center"
+      :class-names="{ content: 'flex justify-between items-center' }"
     >
       <template #custom-header>
         <div class="bg-rui-grey-100 dark:bg-rui-grey-800 text-rui-text-secondary px-4 py-2 font-medium text-sm">

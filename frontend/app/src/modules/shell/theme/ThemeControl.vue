@@ -54,7 +54,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
   <div class="relative">
     <RuiMenu
       v-if="!menu"
-      menu-class="w-[16rem]"
+      :class-names="{ menu: 'w-[16rem]' }"
       :options="{ placement: 'bottom-end' }"
     >
       <template #activator="{ attrs }">
@@ -108,8 +108,10 @@ async function changeSelectedTheme(selectedTheme: Theme) {
             hide-details
             hide-track
             :tick-size="12"
-            slider-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
-            tick-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
+            :class-names="{
+              slider: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
+              tick: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
+            }"
             vertical
             @update:model-value="changeSelectedTheme($event)"
           />

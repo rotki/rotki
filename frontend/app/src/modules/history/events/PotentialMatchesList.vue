@@ -142,7 +142,7 @@ watchDebounced(onlyExpectedAssets, () => {
         />
         <RuiTooltip
           :options="{ placement: 'top' }"
-          tooltip-class="max-w-80"
+          :class-names="{ tooltip: 'max-w-80' }"
         >
           <template #activator>
             <RuiCheckbox

@@ -133,7 +133,7 @@ watch(modelSearch, () => setPage(1));
         <RuiTooltip
           v-else-if="isPriceMissing(row.asset)"
           :open-delay="400"
-          tooltip-class="max-w-[16rem]"
+          :class-names="{ tooltip: 'max-w-[16rem]' }"
         >
           <template #activator>
             <RuiIcon

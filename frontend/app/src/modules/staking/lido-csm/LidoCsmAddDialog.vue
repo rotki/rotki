@@ -113,7 +113,7 @@ async function submitForm(): Promise<void> {
     <RuiCard
       divide
       no-padding
-      content-class="overflow-hidden"
+      :class-names="{ content: 'overflow-hidden' }"
     >
       <template #header>
         {{ t('staking_page.lido_csm.form.title') }}

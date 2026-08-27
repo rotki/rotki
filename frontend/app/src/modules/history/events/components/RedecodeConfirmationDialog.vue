@@ -115,7 +115,7 @@ watch(show, (value) => {
     v-model="show"
     :max-width="700"
   >
-    <RuiCard content-class="!pt-0">
+    <RuiCard :class-names="{ content: '!pt-0' }">
       <template #header>
         {{ t('transactions.actions.redecode_events') }}
       </template>

@@ -203,7 +203,7 @@ function promptClose() {
               v-if="!actionHidden"
               :disabled="!actionTooltip"
               :options="{ placement: 'top' }"
-              tooltip-class="max-w-80"
+              :class-names="{ tooltip: 'max-w-80' }"
             >
               <template #activator>
                 <BigDialogConfirmButton

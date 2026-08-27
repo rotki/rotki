@@ -44,7 +44,7 @@ const menuOpen = ref<boolean>(false);
   <RuiMenu
     v-model="menuOpen"
     :options="{ placement: 'bottom-end' }"
-    menu-class="max-w-[24rem]"
+    :class-names="{ menu: 'max-w-[24rem]' }"
     close-on-content-click
   >
     <template #activator="{ attrs }">

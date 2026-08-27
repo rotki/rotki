@@ -60,7 +60,7 @@ const {
       class="pb-4"
       :options="{ placement: 'bottom' }"
       :open-delay="400"
-      tooltip-class="max-w-80"
+      :class-names="{ tooltip: 'max-w-80' }"
     >
       <template #activator>
         <RuiChip
@@ -82,7 +82,7 @@ const {
       class="pb-4"
       :options="{ placement: 'bottom' }"
       :open-delay="400"
-      tooltip-class="max-w-80"
+      :class-names="{ tooltip: 'max-w-80' }"
     >
       <template #activator>
         <RuiChip

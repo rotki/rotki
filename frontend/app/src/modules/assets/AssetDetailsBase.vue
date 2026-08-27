@@ -132,7 +132,7 @@ watch(menuOpened, (menuOpened) => {
     :key="asset.identifier"
     v-model="menuOpened"
     class="flex"
-    menu-class="w-[16rem] max-w-[90%]"
+    :class-names="{ menu: 'w-[16rem] max-w-[90%]' }"
     :options="{ placement: 'bottom-start' }"
   >
     <template #activator="{ attrs }">

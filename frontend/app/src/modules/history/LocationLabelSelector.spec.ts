@@ -24,8 +24,8 @@ const stubs = {
   EnsAvatar: true,
   LocationIcon: true,
   RuiAutoComplete: {
-    props: ['menuClass', 'options'],
-    template: `<div data-testid="autocomplete" :data-menu-class="menuClass">
+    props: ['classNames', 'options'],
+    template: `<div data-testid="autocomplete" :data-menu-class="classNames?.menu">
       <slot />
       <template v-if="options.length > 0">
         <div data-testid="selection-slot"><slot name="selection" :item="options[0]" /></div>

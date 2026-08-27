@@ -12,7 +12,7 @@ const { connected } = storeToRefs(useMainStore());
     <RuiTooltip
       :text="t('backend_settings_button.tooltip')"
       :options="{ offset: 0, placement: 'top' }"
-      tooltip-class="max-w-[12rem]"
+      :class-names="{ tooltip: 'max-w-[12rem]' }"
     >
       <template #activator>
         <RuiButton

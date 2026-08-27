@@ -136,7 +136,7 @@ watch(open, async (isOpen) => {
       tabindex="-1"
       :style="{ height }"
       class="absolute bottom-0 left-0 right-0 border-t-2 border-rui-primary flex flex-col shadow-lg !rounded-b-none z-10 overflow-hidden focus:outline-none"
-      content-class="h-full"
+      :class-names="{ content: 'h-full' }"
       data-testid="pinned-detail-sheet"
       v-bind="$attrs"
     >

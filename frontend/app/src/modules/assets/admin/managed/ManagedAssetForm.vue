@@ -350,7 +350,7 @@ defineExpose({
       <RuiAccordions>
         <RuiAccordion
           header-grow
-          header-class="p-4"
+          :class-names="{ header: 'p-4' }"
         >
           <template #header>
             {{ t('asset_form.optional') }}

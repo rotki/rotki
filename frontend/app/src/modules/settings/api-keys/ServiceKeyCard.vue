@@ -110,7 +110,7 @@ defineExpose({
     no-padding
     class="h-full"
     :class="{ '!border-rui-success/50 bg-rui-success/5 dark:bg-rui-success/5': keySet }"
-    content-class="h-full flex flex-col"
+    :class-names="{ content: 'h-full flex flex-col' }"
   >
     <div class="grow">
       <div class="px-6 pt-6">

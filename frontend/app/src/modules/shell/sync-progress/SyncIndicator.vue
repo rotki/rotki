@@ -168,7 +168,7 @@ watchImmediate(runCounter, (runCounter) => {
     <RuiMenu
       id="balances-saved-dropdown"
       v-model="visible"
-      menu-class="z-[215]"
+      :class-names="{ menu: 'z-[215]' }"
       :persistent="syncSettingMenuOpen"
     >
       <template #activator="{ attrs }">

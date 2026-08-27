@@ -162,7 +162,7 @@ onMounted(() => {
 <template>
   <RuiMenu
     v-model="showMenu"
-    menu-class="w-full max-w-96"
+    :class-names="{ menu: 'w-full max-w-96' }"
     :options="{ placement: 'bottom-end' }"
     :disabled="disabled"
     class="!border-l-0"

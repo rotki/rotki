@@ -85,7 +85,7 @@ const {
 
       <RuiAccordions class="pt-4">
         <RuiAccordion
-          header-class="pt-4 pb-4 -mb-4 border-t border-default justify-center w-full"
+          :class-names="{ header: 'pt-4 pb-4 -mb-4 border-t border-default justify-center w-full' }"
           class="flex-col-reverse"
         >
           <div class="grid md:grid-cols-2 md:gap-12">

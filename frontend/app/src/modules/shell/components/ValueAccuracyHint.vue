@@ -14,7 +14,7 @@ const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
     class="mx-2 text-rui-text-secondary"
     :options="{ placement: 'top' }"
     :open-delay="400"
-    tooltip-class="max-w-[10rem]"
+    :class-names="{ tooltip: 'max-w-[10rem]' }"
   >
     <template #activator>
       <RuiIcon

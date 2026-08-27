@@ -28,7 +28,7 @@ function updateModel(newValue: string) {
   <div>
     <RuiMenu
       :options="{ placement: 'left' }"
-      menu-class="max-w-[18rem]"
+      :class-names="{ menu: 'max-w-[18rem]' }"
     >
       <template #activator="{ attrs }">
         <div

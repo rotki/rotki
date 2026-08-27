@@ -260,7 +260,7 @@ async function save() {
             :open-delay="400"
             :options="{ placement: 'top' }"
             class="flex items-center"
-            tooltip-class="max-w-[10rem]"
+            :class-names="{ tooltip: 'max-w-[10rem]' }"
           >
             <template #activator>
               <div class="flex items-center text-left gap-2">
@@ -280,7 +280,7 @@ async function save() {
             :open-delay="400"
             :options="{ placement: 'top' }"
             class="flex items-center"
-            tooltip-class="max-w-[10rem]"
+            :class-names="{ tooltip: 'max-w-[10rem]' }"
           >
             <template #activator>
               <div class="flex items-center text-left gap-2">
@@ -300,7 +300,7 @@ async function save() {
             :open-delay="400"
             :options="{ placement: 'top' }"
             class="flex items-center"
-            tooltip-class="max-w-[10rem]"
+            :class-names="{ tooltip: 'max-w-[10rem]' }"
           >
             <template #activator>
               <div class="flex items-center text-left gap-2">

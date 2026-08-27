@@ -218,7 +218,7 @@ onBeforeMount(async () => {
       <RuiTooltip
         :open-delay="400"
         :options="{ placement: 'top' }"
-        tooltip-class="max-w-80"
+        :class-names="{ tooltip: 'max-w-80' }"
       >
         <template #activator>
           <RuiButton
@@ -244,7 +244,7 @@ onBeforeMount(async () => {
         <RuiTooltip
           :open-delay="400"
           :options="{ placement: 'top' }"
-          tooltip-class="max-w-80"
+          :class-names="{ tooltip: 'max-w-80' }"
         >
           <template #activator>
             <RuiButton

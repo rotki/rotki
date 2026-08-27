@@ -47,7 +47,7 @@ const dot = '•';
         <RuiChip
           size="sm"
           :color="color"
-          content-class="!text-[9px]"
+          :class-names="{ content: '!text-[9px]' }"
           class="leading-3 uppercase !p-0.5"
         >
           {{ item.status }}

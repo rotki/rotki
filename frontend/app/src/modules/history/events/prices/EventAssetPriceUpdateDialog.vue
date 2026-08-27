@@ -139,7 +139,7 @@ watch(modelValue, (payload) => {
     max-width="500"
     @update:model-value="close()"
   >
-    <RuiCard content-class="!pb-0">
+    <RuiCard :class-names="{ content: '!pb-0' }">
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 pt-2">
           <CardTitle>

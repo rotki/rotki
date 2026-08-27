@@ -74,7 +74,7 @@ async function forceSaveAndClose(): Promise<void> {
 
         <RuiTooltip
           :open-delay="400"
-          tooltip-class="max-w-[16rem]"
+          :class-names="{ tooltip: 'max-w-[16rem]' }"
         >
           <template #activator>
             <RuiIcon
@@ -90,7 +90,7 @@ async function forceSaveAndClose(): Promise<void> {
       <RuiTooltip
         class="mt-2"
         :open-delay="400"
-        tooltip-class="max-w-[16rem]"
+        :class-names="{ tooltip: 'max-w-[16rem]' }"
       >
         <template #activator>
           <SettingSwitch

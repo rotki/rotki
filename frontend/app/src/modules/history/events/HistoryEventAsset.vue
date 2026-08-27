@@ -59,9 +59,8 @@ watch(menuOpened, (menuOpened) => {
   <RuiMenu
     v-model="menuOpened"
     class="flex"
-    menu-class="w-[16rem] max-w-[90%] z-[100]"
+    :class-names="{ menu: 'w-[16rem] max-w-[90%] z-[100]', wrapper: 'w-full' }"
     :disabled="disableOptions"
-    wrapper-class="w-full"
     :options="{
       placement: 'bottom-start',
       strategy: 'fixed',
