@@ -49,7 +49,7 @@ const { t } = useI18n({ useScope: 'global' });
       </div>
     </div>
     <div>
-      <RuiMenu :popper="{ placement: 'bottom-end' }">
+      <RuiMenu :options="{ placement: 'bottom-end' }">
         <template #activator="{ attrs }">
           <RuiButton
             variant="outlined"

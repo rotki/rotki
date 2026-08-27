@@ -124,7 +124,7 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
     -->
     <RuiTooltip
       v-else
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
@@ -156,7 +156,7 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
 
     <RuiTooltip
       v-if="cancellable"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

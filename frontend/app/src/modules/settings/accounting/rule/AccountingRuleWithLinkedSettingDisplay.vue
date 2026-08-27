@@ -46,7 +46,7 @@ const value = computed<boolean>(() => {
     <template #icon>
       <RuiTooltip
         v-if="selectedLinkableSetting"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

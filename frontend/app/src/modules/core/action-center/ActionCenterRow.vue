@@ -79,7 +79,7 @@ const lockedHint = computed<string>(() => item.minimumTier
 
     <RuiTooltip
       v-if="item.locked"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

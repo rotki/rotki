@@ -111,7 +111,7 @@ const {
         <template #item.claimed="{ row: { claimed, cutoffTime, hasDecoder } }">
           <RuiTooltip
             v-if="!hasDecoder"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             :open-delay="400"
             tooltip-class="max-w-[12rem]"
           >

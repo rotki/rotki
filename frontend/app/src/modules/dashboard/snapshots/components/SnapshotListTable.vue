@@ -106,7 +106,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
       <div class="flex items-center justify-center gap-1">
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiButton
@@ -128,7 +128,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
 
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiButton
@@ -149,7 +149,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
 
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiButton

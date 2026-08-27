@@ -74,7 +74,7 @@ watch(open, async (isOpen) => {
     v-if="visible"
     v-model="open"
     menu-class="w-[26rem] max-w-[90vw]"
-    :popper="{ placement: 'bottom-end' }"
+    :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

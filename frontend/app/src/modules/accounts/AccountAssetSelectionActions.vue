@@ -27,7 +27,7 @@ const { t } = useI18n({ useScope: 'global' });
     class="flex gap-3"
   >
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
@@ -47,7 +47,7 @@ const { t } = useI18n({ useScope: 'global' });
 
     <template v-if="selectionMode">
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>
@@ -70,7 +70,7 @@ const { t } = useI18n({ useScope: 'global' });
       </RuiTooltip>
       <div class="border-l border-default pl-3">
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :open-delay="400"
         >
           <template #activator>

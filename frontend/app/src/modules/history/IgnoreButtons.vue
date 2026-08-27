@@ -14,7 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div class="flex gap-2">
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
@@ -36,7 +36,7 @@ const { t } = useI18n({ useScope: 'global' });
       <span>{{ t('ignore_buttons.ignore_tooltip') }}</span>
     </RuiTooltip>
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

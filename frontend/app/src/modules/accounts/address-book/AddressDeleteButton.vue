@@ -36,7 +36,7 @@ function handleDelete(): void {
 <template>
   <RuiTooltip
     v-if="canDelete"
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>

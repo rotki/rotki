@@ -329,7 +329,7 @@ defineExpose({
             class="flex items-center gap-1"
           >
             <RuiTooltip
-              :popper="{ placement: 'top' }"
+              :options="{ placement: 'top' }"
               :open-delay="400"
               tooltip-class="max-w-80"
             >

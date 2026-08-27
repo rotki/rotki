@@ -55,7 +55,7 @@ function collapse(): void {
     <RuiTooltip
       v-for="tab in tabs"
       :key="tab.name"
-      :popper="{ placement: 'left' }"
+      :options="{ placement: 'left' }"
       :open-delay="300"
     >
       <template #activator>

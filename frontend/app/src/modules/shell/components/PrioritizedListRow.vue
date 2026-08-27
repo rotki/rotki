@@ -68,7 +68,7 @@ const emit = defineEmits<{
     <td class="text-end !pl-0">
       <RuiTooltip
         v-if="!disableDelete"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

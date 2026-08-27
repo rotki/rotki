@@ -93,7 +93,7 @@ async function navigateToApiKeys(): Promise<void> {
 
         <RuiMenu
           v-model="showChainMenu"
-          :popper="{ placement: 'bottom-end' }"
+          :options="{ placement: 'bottom-end' }"
         >
           <template #activator="{ attrs }">
             <RuiButton

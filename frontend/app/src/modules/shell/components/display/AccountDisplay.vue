@@ -39,7 +39,7 @@ const aliasName = computed<string | null>(() => {
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
     :disabled="noTruncate && !aliasName"
     class="flex items-center flex-nowrap gap-2"
@@ -58,7 +58,7 @@ const aliasName = computed<string | null>(() => {
           />
           <RuiTooltip
             v-else
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             :open-delay="400"
           >
             <template #activator>

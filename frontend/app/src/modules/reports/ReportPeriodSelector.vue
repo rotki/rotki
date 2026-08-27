@@ -164,7 +164,7 @@ const quarterModel = computed({
         {{ t('generate.period') }}
       </div>
       <div class="flex gap-4">
-        <RuiMenu :popper="{ placement: 'bottom-end' }">
+        <RuiMenu :options="{ placement: 'bottom-end' }">
           <template #activator="{ attrs }">
             <RuiButtonGroup
               v-model="yearModel"

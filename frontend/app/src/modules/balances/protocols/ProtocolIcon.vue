@@ -26,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
     :disabled="!showTooltip"
   >

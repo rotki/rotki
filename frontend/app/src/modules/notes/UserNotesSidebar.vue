@@ -66,7 +66,7 @@ watch(locationName, (locationName) => {
             <ReuseCountBadge :count="notesCount" />
           </template>
           <RuiTooltip
-            :popper="{ placement: 'bottom' }"
+            :options="{ placement: 'bottom' }"
             :open-delay="400"
           >
             <template #activator>

@@ -209,7 +209,7 @@ onMounted(() => {
       <template v-else>
         <div class="flex mt-4 mb-6">
           <RuiTooltip
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             :open-delay="400"
           >
             <template #activator>
@@ -227,7 +227,7 @@ onMounted(() => {
             {{ t('conflict_dialog.keep_local_tooltip') }}
           </RuiTooltip>
           <RuiTooltip
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             :open-delay="400"
           >
             <template #activator>

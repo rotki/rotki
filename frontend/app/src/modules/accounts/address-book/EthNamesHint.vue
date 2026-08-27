@@ -4,7 +4,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div>
-    <RuiMenu :popper="{ placement: 'right' }">
+    <RuiMenu :options="{ placement: 'right' }">
       <template #activator="{ attrs }">
         <RuiButton
           variant="text"

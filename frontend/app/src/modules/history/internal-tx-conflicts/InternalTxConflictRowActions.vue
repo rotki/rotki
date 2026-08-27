@@ -20,7 +20,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div class="flex items-center">
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
@@ -42,7 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('internal_tx_conflicts.resolution.resolve') }} ({{ actionLabel }})
     </RuiTooltip>
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

@@ -55,7 +55,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
     <RuiMenu
       v-if="!menu"
       menu-class="w-[16rem]"
-      :popper="{ placement: 'bottom-end' }"
+      :options="{ placement: 'bottom-end' }"
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton

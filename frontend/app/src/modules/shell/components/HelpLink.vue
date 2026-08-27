@@ -12,7 +12,7 @@ const { href, onLinkClick } = useLinks(() => url);
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>

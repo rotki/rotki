@@ -56,7 +56,7 @@ const { t } = useI18n({ useScope: 'global' });
         {{ t('accounting_settings.rule.add') }}
       </RuiButton>
       <RuiMenu
-        :popper="{ placement: 'bottom-end' }"
+        :options="{ placement: 'bottom-end' }"
         close-on-content-click
       >
         <template #activator="{ attrs }">

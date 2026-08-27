@@ -202,7 +202,7 @@ function promptClose() {
             <RuiTooltip
               v-if="!actionHidden"
               :disabled="!actionTooltip"
-              :popper="{ placement: 'top' }"
+              :options="{ placement: 'top' }"
               tooltip-class="max-w-80"
             >
               <template #activator>

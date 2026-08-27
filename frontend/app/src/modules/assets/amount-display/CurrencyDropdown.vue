@@ -77,7 +77,7 @@ watch(visible, (isVisible, wasVisible) => {
   <RuiMenu
     v-model="visible"
     menu-class="w-[22rem]"
-    :popper="{ placement: 'bottom' }"
+    :options="{ placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
       <MenuTooltipButton
