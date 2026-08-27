@@ -2,7 +2,7 @@
 # code parts picked up from
 # https://github.com/matthew-brett/multibuild/
 MACPYTHON_URL=https://www.python.org/ftp/python
-MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
+MACPYTHON_PY_PREFIX=/Library/Frameworks/PythonT.framework/Versions
 DOWNLOADS_SDIR=~/
 
 function lex_ver {
@@ -32,6 +32,8 @@ function install_mac_cpython {
     local py_osx_ver=$2
     local py_stripped
     local py_inst
+    local choice_changes
+    local installer_result
     py_version="$1"
     py_stripped=$(strip_ver_suffix "$py_version")
 
@@ -52,16 +54,41 @@ function install_mac_cpython {
     else
       echo "Using cached $inst_path"
     fi
-    sudo installer -pkg "$inst_path" -target /
     local py_mm=${py_version:0:4}
-    export PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_mm
+    choice_changes=$(mktemp)
+    cat > "$choice_changes" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    <dict>
+        <key>attributeSetting</key>
+        <integer>1</integer>
+        <key>choiceAttribute</key>
+        <string>selected</string>
+        <key>choiceIdentifier</key>
+        <string>org.python.Python.PythonTFramework-${py_mm}</string>
+    </dict>
+</array>
+</plist>
+EOF
+    sudo installer -pkg "$inst_path" -applyChoiceChangesXML "$choice_changes" -target /
+    installer_result=$?
+    rm "$choice_changes"
+    if [[ $installer_result -ne 0 ]]; then
+        return "$installer_result"
+    fi
+
+    export PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python${py_mm}t
     export PYTHON_DIR=$MACPYTHON_PY_PREFIX/$py_mm
-    # Install certificates for Python 3.6
+    # The free-threaded framework shares certificates with the regular framework.
     local inst_cmd="/Applications/Python ${py_mm}/Install Certificates.command"
     if [ -e "$inst_cmd" ]; then
         sh "$inst_cmd"
     fi
 }
 
-install_mac_cpython "$1" "$2"
-echo "PATH=$PYTHON_DIR:$PYTHON_DIR/bin:$PATH" >> $GITHUB_ENV
+install_mac_cpython "$1" "$2" || exit 1
+"$PYTHON_EXE" -c 'import sys, sysconfig; assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1; assert not sys._is_gil_enabled()'
+echo "PATH=$PYTHON_DIR:$PYTHON_DIR/bin:$PATH" >> "$GITHUB_ENV"
+echo "UV_PYTHON=$PYTHON_EXE" >> "$GITHUB_ENV"
