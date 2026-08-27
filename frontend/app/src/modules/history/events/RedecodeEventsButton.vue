@@ -26,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
     <template #append>
       <RuiTooltip
         v-if="hasOptions"
-        :popper="{ placement: 'top', scroll: false, resize: false }"
+        :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       >
         <template #activator>
           <RuiButton

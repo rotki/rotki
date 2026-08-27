@@ -28,8 +28,8 @@ interface AssetIconProps {
   chainIconSize?: string;
   forceChain?: string;
   /**
-   * Disables scroll event listeners on tooltip popper for better performance in virtualized lists.
-   * The tooltip still works on hover, but won't recalculate position during scroll.
+   * Disables the tooltip's ancestor scroll and resize listeners, for performance in virtualized
+   * lists. The tooltip still opens on hover, but will not recalculate its position during scroll.
    */
   optimizeForVirtualScroll?: boolean;
 }
@@ -177,11 +177,12 @@ const tooltip = computed(() => {
   };
 });
 
-// Popper options - disable scroll listeners for virtualized lists to prevent reflow during scroll
-const popperOptions = computed(() => ({
+const tooltipOptions = computed(() => ({
+  autoUpdate: {
+    resize: !optimizeForVirtualScroll,
+    scroll: !optimizeForVirtualScroll,
+  },
   placement: 'top' as const,
-  scroll: !optimizeForVirtualScroll,
-  resize: !optimizeForVirtualScroll,
 }));
 
 const usedChainIconSize = computed(() => chainIconSize || `${(Number.parseInt(size) * 50) / 100}px`);
@@ -227,7 +228,7 @@ const { copied, copy } = useCopy(() => identifier);
 
 <template>
   <RuiTooltip
-    :popper="popperOptions"
+    :options="tooltipOptions"
     :open-delay="400"
     :disabled="noTooltip || !shouldShowAmount"
     persist-on-tooltip-hover

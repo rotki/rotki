@@ -46,7 +46,7 @@ watch(open, (isOpen) => {
 <template>
   <RuiMenu
     v-model="open"
-    :popper="{ placement: 'bottom', offsetSkid: 35 }"
+    :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

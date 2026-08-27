@@ -10,7 +10,7 @@ const { copy } = useClipboard({ source: () => value });
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top', offsetDistance: 0 }"
+    :options="{ offset: 0, placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>
