@@ -14,11 +14,13 @@ from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BTC,
     A_CRV,
+    A_ETH,
     A_ETH_MATIC,
     A_ETH_POL,
     A_LINK,
     A_POL,
     A_USD,
+    A_WETH_ARB,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -51,14 +53,6 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import FiatAsset
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
-
-
-@pytest.fixture(name='historical_price_oracles_order')
-def fixture_historical_price_oracles_order(
-        cryptocompare_historical_price_oracles_order: tuple,
-) -> tuple:
-    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
-    return cryptocompare_historical_price_oracles_order
 
 
 mocked_prices = {
@@ -471,7 +465,7 @@ def test_oracle_instance_caches_price(price_historian):
         mock_add.assert_called_with([HistoricalPrice(
             from_asset=A_BTC,
             to_asset=A_USD,
-            source=HistoricalPriceOracle.CRYPTOCOMPARE,
+            source=HistoricalPriceOracle.DEFILLAMA,
             timestamp=expected_timestamp,
             price=expected_price,
         )])
@@ -590,7 +584,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
         timestamp=Timestamp(1742814047),
     )
 
-    assert price.is_close('3591639.375183')
+    assert price.is_close('3606838.214124')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
@@ -610,7 +604,7 @@ def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
         timestamp=Timestamp(1742829743),
     )
 
-    assert price.is_close('91.707127')
+    assert price.is_close('91.901195')
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
@@ -716,3 +710,54 @@ def test_historical_price_underlying_tokens_unpriced_when_a_leg_is_missing(
         max_seconds_distance=3600,
     )
     assert price is None
+
+
+def test_historical_price_collection_member_uses_main_asset(
+        globaldb: GlobalDBHandler,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Test that a non-main collection member is priced as the collection's main asset.
+
+    WETH on arbitrum is in the same collection as ETH, but its own cryptocompare mapping
+    points at the thin WETH ticker instead of ETH, so prices cached against the token
+    itself can be wildly off. Regression test: the main asset's price must win.
+    """
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_ETH, to_asset=A_USD, price=Price(FVal('2561.88')),
+        timestamp=(query_timestamp := Timestamp(1726869600)),
+        source=HistoricalPriceOracle.MANUAL,
+    ))
+    globaldb.add_single_historical_price(HistoricalPrice(  # the bad price seen in the wild
+        from_asset=A_WETH_ARB, to_asset=A_USD, price=Price(FVal('1013.49')),
+        timestamp=query_timestamp, source=HistoricalPriceOracle.CRYPTOCOMPARE,
+    ))
+
+    assert PriceHistorian.get_price_for_special_asset(
+        from_asset=A_WETH_ARB,
+        to_asset=A_USD,
+        timestamp=query_timestamp,
+        max_seconds_distance=HOUR_IN_SECONDS,
+    ) == Price(FVal('2561.88'))
+
+
+def test_historical_price_collection_main_asset_is_not_redirected_to_itself(
+        globaldb: GlobalDBHandler,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Test that the main asset of a collection is not redirected to itself.
+
+    get_collection_main_asset returns the main asset for every member, the main asset
+    included, so an unguarded redirect would make ETH query its own price through here
+    and recurse endlessly once a cache miss escalates to a remote query.
+    """
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_ETH, to_asset=A_USD, price=Price(FVal('2561.88')),
+        timestamp=(query_timestamp := Timestamp(1726869600)),
+        source=HistoricalPriceOracle.MANUAL,
+    ))
+    assert PriceHistorian.get_price_for_special_asset(  # ETH needs no special handling,
+        from_asset=A_ETH,  # so this must decline instead of resolving its own price
+        to_asset=A_USD,
+        timestamp=query_timestamp,
+        max_seconds_distance=HOUR_IN_SECONDS,
+    ) is None
