@@ -48,6 +48,18 @@ function filterBalance(balance: ManualBalance, filters: Filters): boolean {
   return matches.length > 0 && matches.every(match => match.matches);
 }
 
+/**
+ * Filters, sorts and pages manual balances in memory, standing in for the server-side query the
+ * other tables issue.
+ *
+ * @remarks
+ * `balances` is never reordered. With no filter active the working set *is* the array passed in,
+ * and callers take that straight from the store, so sorting in place would reorder the store for
+ * every other consumer.
+ *
+ * @returns a collection whose `limit` is always -1, since the paging has already happened here and
+ * there is no server page size to report
+ */
 export function sortAndFilterManualBalance(
   balances: ManualBalanceWithValue[],
   params: ManualBalanceRequestPayload,
@@ -73,7 +85,7 @@ export function sortAndFilterManualBalance(
   const sorted
     = orderByAttributes.length === 0
       ? filtered
-      : filtered.sort((a, b) => {
+      : [...filtered].sort((a, b) => {
           for (const [i, attr] of orderByAttributes.entries()) {
             // The table sends snake_case attributes, so match the converted name against the row's keys.
             const converted = camelCase(attr);
