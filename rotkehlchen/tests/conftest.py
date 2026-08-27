@@ -360,6 +360,27 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(skip_accounting_update)
 
 
+def pytest_terminal_summary(terminalreporter: Any) -> None:
+    """Report interactions dropped while recording, since the cassette is then incomplete.
+
+    A dropped interaction is invisible at record time: the run passes because the code
+    falls back to another provider, and the gap only surfaces later as a confusing
+    CannotOverwriteExistingCassetteException on replay.
+    """
+    if len(DISCARDED_RECORDINGS) == 0:
+        return
+
+    terminalreporter.section('VCR recording warnings', red=True)
+    terminalreporter.write_line(
+        f'Discarded {len(DISCARDED_RECORDINGS)} transient failure(s) while recording. The '
+        f'cassettes just written are INCOMPLETE and will fail on replay, since the code '
+        f'fell back to another provider that was not recorded. Re-record them once the '
+        f'service below answers again:',
+    )
+    for entry in DISCARDED_RECORDINGS:
+        terminalreporter.write_line(f'  {entry}')
+
+
 def requires_env(allowed_envs: list[TestEnvironment]):
     """Conditionally run tests if the environment is in the list of allowed environments"""
     try:
@@ -380,6 +401,26 @@ def get_cassette_dir(request: pytest.FixtureRequest) -> Path:
          cassettes are in   `cassettes/unit/decoders/test_aave/`
     """
     return Path(request.node.path).relative_to(TESTS_ROOT_DIR).with_suffix('')
+
+
+# populated while recording, reported by pytest_terminal_summary
+DISCARDED_RECORDINGS: Final[list[str]] = []
+
+
+def should_discard_recorded_response(response: dict[str, Any]) -> bool:
+    """Whether a response is a transient failure that must not be written to a cassette"""
+    status = response['status']['code']
+
+    return (
+        (
+            'RECORD_CASSETTES' in os.environ
+            and (
+                status == HTTPStatus.TOO_MANY_REQUESTS
+                or 500 <= status < 600  # transient http status errors
+            )
+        )
+        or is_etherscan_rate_limited(response)
+    )
 
 
 def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
@@ -423,15 +464,23 @@ def vcr_fixture(vcr: VCR) -> VCR:
     # pytest-deadfixtures ignore
     """
 
+    last_request_uri = ['']  # best-effort label for a discarded response
+
+    def before_record_request(request: Any) -> Any:
+        last_request_uri[0] = request.uri
+        return request
+
     def before_record_response(response: dict[str, Any]) -> dict[str, Any] | None:
-        if (
-            ('RECORD_CASSETTES' in os.environ and response['status']['code'] != HTTPStatus.OK) or
-            is_etherscan_rate_limited(response)
-        ):
+        if should_discard_recorded_response(response):
+            DISCARDED_RECORDINGS.append(
+                f'{response["status"]["code"]} {last_request_uri[0]}',
+            )
             return None
 
         return response
 
+    # the built-in filters (filter_query_parameters etc.) still run before this one
+    vcr.before_record_request = before_record_request
     vcr.before_record_response = before_record_response
 
     def beaconchain_matcher(r1, r2):
