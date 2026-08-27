@@ -1,11 +1,12 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { err } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { err, isErr } from 'plainfp/result';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { SyncWarningSource, useSyncWarningsStore } from '@/modules/shell/sync-progress/use-sync-warnings-store';
 import { useRefreshHandlers } from './use-refresh-handlers';
 
@@ -102,6 +103,18 @@ describe('useRefreshHandlers', () => {
       const warnings = useSyncWarningsStore();
       expect(get(warnings.warnings)).toEqual([]);
       expect(mockNotifyError).toHaveBeenCalledOnce();
+    });
+
+    it('should report a skip rather than a success, submitting nothing, when the source is unavailable', async () => {
+      vi.mocked(useModuleEnabled).mockReturnValueOnce({ enabled: computed<boolean>(() => false) });
+
+      const { queryOnlineEvent } = useRefreshHandlers();
+      const outcome = await queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
+
+      assert(isErr(outcome));
+      expect(outcome.error.message).toContain('actions.online_events.skipped.unavailable');
+      expect(outcome.error.message).toContain('actions.online_events.query_type.block_productions');
+      expect(submitTask).not.toHaveBeenCalled();
     });
 
     it('should ignore cancelled outcomes', async () => {
