@@ -1,3 +1,4 @@
+import { invalid } from '@test/utils/invalid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/core/common/modules';
@@ -225,8 +226,7 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
     it('should delete nothing for a source it does not recognise, rather than a broader purge', async () => {
       const { showConfirmation } = purge();
 
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the branch is defensive, so the only way to reach it is a value the enum forbids
-      showConfirmation('not_a_purgeable_source' as Purgeable);
+      showConfirmation(invalid<Purgeable>('not_a_purgeable_source'));
       await accept();
 
       expect(everyDeleteCall()).toBe(0);

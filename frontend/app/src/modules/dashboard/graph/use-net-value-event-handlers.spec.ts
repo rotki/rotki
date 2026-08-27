@@ -2,6 +2,7 @@ import type VChart from 'vue-echarts';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
+import { invalid } from '@test/utils/invalid';
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, ref, type Ref, type ShallowRef, shallowRef, type VNode } from 'vue';
@@ -115,13 +116,8 @@ function createFakeChart(): FakeChart {
   return { chart, handlers, zr, zrHandlers };
 }
 
-// The fake chart intentionally implements only the members the composable
-// touches (it reads `.chart` and its echarts methods), so a single contained
-// assertion bridges it to the vue-echarts instance type.
 function chartInstanceRef(chart: FakeChart['chart'] | null): ShallowRef<InstanceType<typeof VChart> | null> {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the fake only mocks the members the SUT uses; contained here
-  const instance = chart === null ? null : ({ chart } as unknown as InstanceType<typeof VChart>);
-  return shallowRef(instance);
+  return shallowRef(chart === null ? null : invalid<InstanceType<typeof VChart>>({ chart }));
 }
 
 describe('useNetValueEventHandlers', () => {
