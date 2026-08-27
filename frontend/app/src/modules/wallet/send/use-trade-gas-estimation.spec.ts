@@ -175,6 +175,24 @@ describe('useTradeGasEstimation', () => {
     expect(getGasFeeForChain).toHaveBeenCalledTimes(2);
   });
 
+  it('should keep reporting estimation while a newer request is still in flight', async () => {
+    const first = deferred();
+    const second = deferred();
+    getGasFeeForChain.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const { estimatingGas } = create();
+    await nextTick();
+
+    set(asset, 'DAI');
+    await flushPromises();
+
+    expect(get(estimatingGas)).toBe(true);
+
+    second.resolve('0.05');
+    await flushPromises();
+
+    expect(get(estimatingGas)).toBe(false);
+  });
+
   it('should reset the fee when the estimate fails', async () => {
     getGasFeeForChain.mockRejectedValue(new Error('rpc is down'));
     const { estimatedGasFee } = create();
