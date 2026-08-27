@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
@@ -287,6 +288,22 @@ class PriceHistorian:
 
             if aggregated_price != ZERO:
                 return Price(aggregated_price)
+
+        # Last resort: an asset that is a non-main member of a collection is the same
+        # asset on another chain, so it must be priced as the collection's main asset.
+        # Without this, each member is priced through its own oracle mapping and members
+        # whose mapping differs from the main asset's silently get a different price.
+        # Mirrors Inquirer._maybe_replace_asset so current and historical prices agree.
+        if (
+            (main_asset_id := AssetResolver.get_collection_main_asset(from_asset.identifier)) is not None and  # noqa: E501
+            main_asset_id != from_asset.identifier  # the main asset is a member of its own collection  # noqa: E501
+        ):
+            return PriceHistorian._get_cached_price_or_query(
+                from_asset=Asset(main_asset_id),
+                to_asset=to_asset,
+                timestamp=timestamp,
+                max_seconds_distance=max_seconds_distance,
+            )
 
         return None
 
