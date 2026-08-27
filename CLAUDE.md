@@ -1006,10 +1006,7 @@ one:
 3. Bump `globaldb_assets_version` in `rotkehlchen/tests/api/test_database.py`.
 
 Verify by diffing a `.dump` of the old and new packaged DB: the only changes should be
-`assets_version` plus exactly what the update touches. Known issue: the tool's final `clean_folder`
-step can die with `database is locked` on `PRAGMA journal_mode=DELETE` after the update has already
-applied; finish by hand with `wal_checkpoint(TRUNCATE)`, `journal_mode=DELETE`, then move the file
-out of the `global/` subdirectory.
+`assets_version` plus exactly what the update touches.
 
 ## Rotki Backend Style Preferences (strict)
 

@@ -1,5 +1,6 @@
 import argparse
 import shutil
+import sqlite3
 import sys
 from http import HTTPStatus
 from pathlib import Path
@@ -142,13 +143,27 @@ def prepare_globaldb(args: argparse.Namespace) -> tuple[GlobalDBHandler, Path]:
     ), target_directory
 
 
-def clean_folder(globaldb: GlobalDBHandler, target_directory: Path):
+def clean_folder(globaldb: GlobalDBHandler, target_directory: Path) -> None:
     """Set journal_mode=DELETE in the global db. Move it out of the temporary directory to the
     final location, and clean up the temporary directory."""
-    with globaldb.conn.read_ctx() as cursor:
-        cursor.execute('PRAGMA journal_mode=DELETE')
+    # Leaving WAL needs exclusive access to the file, so every handle the handler holds (the
+    # writer and the read pool) has to be gone first. Going through the handler's own read_ctx
+    # instead asks a pooled reader to switch the journal while the writer is still attached, and
+    # sqlite answers "database is locked" -- after the update has already been applied, so the
+    # run looks successful right up to the point where it leaves an unusable WAL pair behind.
+    globaldb.cleanup()
+
+    db_path = target_directory / GLOBALDIR_NAME / GLOBALDB_NAME
+    connection = sqlite3.connect(db_path)
+    try:
+        connection.execute('PRAGMA wal_checkpoint(TRUNCATE)')  # fold the -wal back into the db
+        if (mode := connection.execute('PRAGMA journal_mode=DELETE').fetchone()[0]) != 'delete':
+            print(f'Failed to leave WAL mode in the new global DB. Journal mode is {mode}')
+            sys.exit(1)
+    finally:
+        connection.close()
 
     print('Cleaning up...')
-    (target_directory / GLOBALDIR_NAME / GLOBALDB_NAME).rename(target_directory / GLOBALDB_NAME)
+    db_path.rename(target_directory / GLOBALDB_NAME)
     shutil.rmtree(target_directory / GLOBALDIR_NAME)
     print('Done!')
