@@ -335,6 +335,24 @@ def test_starknet_historical_price_after_ticker_change(cryptocompare: Cryptocomp
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_special_cases(cryptocompare: Cryptocompare) -> None:
+    """Test that _special_case_handling combines the two queries it makes into one price.
+
+    The cassette for this test is hand-edited and is no longer a recording. DPI is priced
+    through mainnet WETH (see CRYPTOCOMPARE_SPECIAL_CASES_MAPPING), and assets update 42
+    repointed that token's cryptocompare mapping from the thin WETH ticker to ETH, so every
+    request made here moved from WETH to ETH. Cryptocompare needs an api key for both of its
+    endpoints now, so the cassette could not be re-recorded and its WETH labels were rewritten
+    to ETH in place.
+
+    That makes the numbers below stubs rather than market data. The recorded current price of
+    1198.44 came from the broken WETH ticker -- the same cassette's historical rows put ETH at
+    3170-3462 EUR on that same day -- which is why the expected 325.97568 is roughly a third of
+    what DPI really cost in EUR then. Only the arithmetic is under test. The two historical
+    assertions were always taken from the working ticker and are unaffected.
+
+    Whoever obtains an api key and re-records this should expect the current price to come out
+    near 870 EUR, and should treat that as the correction it is rather than a regression.
+    """
     a_eur, a_dpi = A_EUR.resolve_to_asset_with_oracles(), A_DPI.resolve_to_asset_with_oracles()
     current_price = cryptocompare._special_case_handling(
         method_name='query_current_price',
