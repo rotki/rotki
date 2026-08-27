@@ -76,7 +76,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
           v-if="ignoredAssets"
           :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
           :open-delay="400"
-          tooltip-class="max-w-60"
+          :class-names="{ tooltip: 'max-w-60' }"
         >
           <template #activator>
             <button
@@ -176,7 +176,7 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
       v-if="ignoredAssets"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       :open-delay="400"
-      tooltip-class="max-w-60"
+      :class-names="{ tooltip: 'max-w-60' }"
     >
       <template #activator>
         <button

@@ -13,7 +13,7 @@ const showMenu = ref(false);
 <template>
   <RuiMenu
     v-model="showMenu"
-    menu-class="w-full max-w-96 !bg-transparent"
+    :class-names="{ menu: 'w-full max-w-96 !bg-transparent' }"
     :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">

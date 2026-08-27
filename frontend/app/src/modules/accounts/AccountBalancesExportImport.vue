@@ -31,7 +31,7 @@ async function doImport() {
   <div>
     <RuiMenu
       :options="{ placement: 'bottom-end' }"
-      menu-class="max-w-[24rem]"
+      :class-names="{ menu: 'max-w-[24rem]' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

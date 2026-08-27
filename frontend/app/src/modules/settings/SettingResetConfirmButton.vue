@@ -28,7 +28,7 @@ function cancel(): void {
 <template>
   <RuiMenu
     v-model="open"
-    menu-class="max-w-[14rem]"
+    :class-names="{ menu: 'max-w-[14rem]' }"
     :options="{ placement: 'top' }"
   >
     <template #activator="{ attrs }">

@@ -126,7 +126,7 @@ defineExpose({
     <RuiAccordions>
       <RuiAccordion
         data-testid="eth-withdrawal-event-form-advance"
-        header-class="py-4"
+        :class-names="{ header: 'py-4' }"
         eager
       >
         <template #header>

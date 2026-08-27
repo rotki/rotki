@@ -18,7 +18,7 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiTooltip
           :options="{ placement: 'top' }"
           :open-delay="400"
-          tooltip-class="max-w-[10rem]"
+          :class-names="{ tooltip: 'max-w-[10rem]' }"
         >
           <template #activator>
             <RuiIcon name="lu-info" />

@@ -137,7 +137,7 @@ function applyDistribute(): void {
     position="right"
     :stateless="entryOpen"
     class="flex flex-col"
-    content-class="flex flex-col"
+    :class-names="{ content: 'flex flex-col' }"
     data-testid="snapshot-locations-drawer"
   >
     <div class="flex items-center justify-between gap-2 p-4 border-b border-default">

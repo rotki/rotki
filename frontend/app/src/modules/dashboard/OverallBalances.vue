@@ -112,7 +112,7 @@ onMounted(() => {
 <template>
   <RuiCard
     class="overall-balances"
-    content-class="grid grid-cols-1 lg:grid-cols-12 p-2 gap-4 overflow-hidden"
+    :class-names="{ content: 'grid grid-cols-1 lg:grid-cols-12 p-2 gap-4 overflow-hidden' }"
   >
     <div
       class="lg:col-span-4 flex flex-col justify-start lg:p-4"

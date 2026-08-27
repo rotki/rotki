@@ -104,7 +104,7 @@ function onUpdateModelValue(value: string): void {
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full [&_.group]:py-1.5"
-    menu-class="!min-w-full"
+    :class-names="{ menu: '!min-w-full' }"
     :hint="hint"
     :label="fieldLabel"
     :clearable="clearable"

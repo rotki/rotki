@@ -23,7 +23,7 @@ const tooltip = computed<string>(() => checking
   <RuiMenu
     v-model="open"
     :options="{ placement: 'bottom-end' }"
-    menu-class="w-[36rem] max-w-[90vw]"
+    :class-names="{ menu: 'w-[36rem] max-w-[90vw]' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

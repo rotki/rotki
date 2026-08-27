@@ -21,7 +21,7 @@ const chainName = useChainName(() => chainId);
   <RuiTooltip
     :disabled="!shouldShowAmount"
     :close-delay="0"
-    tooltip-class="!-ml-1"
+    :class-names="{ tooltip: '!-ml-1' }"
   >
     <template #activator>
       <ChainIcon

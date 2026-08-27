@@ -122,7 +122,7 @@ function redecodeWithOptions(target: DecodableEventType): void {
     </RuiButton>
     <RuiMenu
       v-model="showMenu"
-      menu-class="max-w-[15rem] z-[100]"
+      :class-names="{ menu: 'max-w-[15rem] z-[100]' }"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >

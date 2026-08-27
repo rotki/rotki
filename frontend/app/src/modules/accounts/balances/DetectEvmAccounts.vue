@@ -14,7 +14,7 @@ const { detectEvmAccounts } = useBlockchainAccountManagement();
   <RuiTooltip
     :options="{ placement: 'right' }"
     :open-delay="400"
-    tooltip-class="max-w-[16rem]"
+    :class-names="{ tooltip: 'max-w-[16rem]' }"
   >
     <template #activator>
       <RuiButton

@@ -102,7 +102,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
             v-if="row.isFiat"
             :open-delay="400"
             :options="{ placement: 'top' }"
-            tooltip-class="max-w-80"
+            :class-names="{ tooltip: 'max-w-80' }"
           >
             <template #activator>
               <RuiChip

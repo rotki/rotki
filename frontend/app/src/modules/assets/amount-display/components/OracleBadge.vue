@@ -7,7 +7,7 @@ defineProps<{
 <template>
   <RuiChip
     color="warning"
-    content-class="!text-[10px]"
+    :class-names="{ content: '!text-[10px]' }"
     class="font-bold leading-3 uppercase !p-0.5 mb-0.5 mt-0.5"
     size="sm"
   >

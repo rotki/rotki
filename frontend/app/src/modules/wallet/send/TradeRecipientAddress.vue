@@ -56,7 +56,7 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
 <template>
   <RuiMenu
     v-model="modelOpenSuggestionsMenu"
-    wrapper-class="w-full"
+    :class-names="{ wrapper: 'w-full' }"
   >
     <template #activator>
       <div
@@ -162,7 +162,7 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
     <RuiCard
       divide
       no-padding
-      content-class="overflow-hidden pb-2"
+      :class-names="{ content: 'overflow-hidden pb-2' }"
     >
       <template #header>
         {{ t('trade.recipient.select_recipient_address') }}

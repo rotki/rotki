@@ -119,7 +119,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     :filter="filter"
     :label="t('transactions.filter.account')"
     variant="outlined"
-    menu-class="!min-w-full"
+    :class-names="{ menu: '!min-w-full' }"
     v-bind="$attrs"
   >
     <template #selection="{ item }">

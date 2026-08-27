@@ -223,7 +223,7 @@ onBeforeMount(async () => {
           :open-delay="400"
           class="w-full"
           :options="{ placement: 'left' }"
-          tooltip-class="max-w-[200px]"
+          :class-names="{ tooltip: 'max-w-[200px]' }"
         >
           <template #activator>
             <RuiButton

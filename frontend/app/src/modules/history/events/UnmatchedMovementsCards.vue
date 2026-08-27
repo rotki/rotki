@@ -74,7 +74,7 @@ const { t } = useI18n({ useScope: 'global' });
           v-if="item.isFiat"
           :open-delay="400"
           :options="{ placement: 'top' }"
-          tooltip-class="max-w-80"
+          :class-names="{ tooltip: 'max-w-80' }"
         >
           <template #activator>
             <RuiChip

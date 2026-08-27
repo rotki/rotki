@@ -96,7 +96,7 @@ const truncatedLabelDisplayed = computed(() => {
   <RuiChip
     variant="outlined"
     class="w-full hover:cursor-default max-w-[32rem] min-w-[15rem] !bg-rui-grey-100 dark:!bg-rui-grey-900"
-    content-class="w-full flex items-center px-0"
+    :class-names="{ content: 'w-full flex items-center px-0' }"
     size="sm"
     color="primary"
   >

@@ -76,7 +76,7 @@ watch(visible, (isVisible, wasVisible) => {
 <template>
   <RuiMenu
     v-model="visible"
-    menu-class="w-[22rem]"
+    :class-names="{ menu: 'w-[22rem]' }"
     :options="{ placement: 'bottom' }"
   >
     <template #activator="{ attrs }">

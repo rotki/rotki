@@ -40,7 +40,7 @@ watch(display, (value) => {
     v-model="display"
     max-width="600"
   >
-    <RuiCard content-class="!pt-0">
+    <RuiCard :class-names="{ content: '!pt-0' }">
       <template #header>
         {{ t('accounting_settings.rule.action_dialog.title') }}
       </template>

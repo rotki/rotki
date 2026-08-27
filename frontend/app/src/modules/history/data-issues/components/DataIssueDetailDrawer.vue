@@ -26,7 +26,7 @@ const emit = defineEmits<{
     temporary
     position="right"
     class="flex flex-col"
-    content-class="flex flex-col"
+    :class-names="{ content: 'flex flex-col' }"
     data-testid="data-issue-detail-drawer"
   >
     <DataIssueDetailContent

@@ -103,7 +103,7 @@ const userNotesLabel = computed<string>(() => {
     >
       <RuiAccordion
         data-testid="advanced-accordion"
-        header-class="py-3"
+        :class-names="{ header: 'py-3' }"
         eager
       >
         <template #header>

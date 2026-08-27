@@ -78,7 +78,7 @@ onBeforeMount(async () => {
   <RuiDialog
     v-model="open"
     max-width="800"
-    content-class="mt-[16rem] !top-0 pb-2"
+    :class-names="{ content: 'mt-[16rem] !top-0 pb-2' }"
   >
     <template #activator="{ attrs }">
       <div
@@ -120,7 +120,7 @@ onBeforeMount(async () => {
       variant="flat"
       no-padding
       rounded="sm"
-      content-class="overflow-hidden"
+      :class-names="{ content: 'overflow-hidden' }"
     >
       <RuiAutoComplete
         ref="input"

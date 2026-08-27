@@ -206,7 +206,7 @@ function redetectTokens(): void {
     <RuiCard
       divide
       no-padding
-      content-class="overflow-hidden"
+      :class-names="{ content: 'overflow-hidden' }"
     >
       <template #header>
         {{ t('trade.select_asset.select_token') }}

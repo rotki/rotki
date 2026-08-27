@@ -43,7 +43,7 @@ const aliasName = computed<string | null>(() => {
     :open-delay="400"
     :disabled="noTruncate && !aliasName"
     class="flex items-center flex-nowrap gap-2"
-    tooltip-class="[&_*]:font-mono"
+    :class-names="{ tooltip: '[&_*]:font-mono' }"
   >
     <template #activator>
       <div

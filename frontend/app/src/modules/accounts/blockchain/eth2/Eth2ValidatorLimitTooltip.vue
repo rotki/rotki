@@ -12,7 +12,7 @@ const { validatorsLimitInfo } = useEthStaking();
     v-if="validatorsLimitInfo.showWarning"
     :open-delay="300"
     persist-on-tooltip-hover
-    tooltip-class="max-w-[12rem]"
+    :class-names="{ tooltip: 'max-w-[12rem]' }"
   >
     <template #activator>
       <RuiIcon

@@ -55,7 +55,7 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
       ? '!border-rui-primary ring-1 ring-rui-primary bg-rui-primary/5'
       : 'hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900'"
     no-padding
-    content-class="overflow-hidden h-full"
+    :class-names="{ content: 'overflow-hidden h-full' }"
     data-testid="data-issues-panel-item"
     :data-active="active"
     @click="emit('open')"

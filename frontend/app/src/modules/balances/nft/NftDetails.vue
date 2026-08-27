@@ -96,7 +96,7 @@ const fallbackData = computed(() => {
           :disabled="shouldRender"
           :open-delay="400"
           class="w-full"
-          tooltip-class="max-w-[10rem]"
+          :class-names="{ tooltip: 'max-w-[10rem]' }"
         >
           <template #activator>
             <div

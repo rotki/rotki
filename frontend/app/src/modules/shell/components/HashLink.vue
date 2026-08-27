@@ -229,7 +229,7 @@ const tags = useAccountTags(() => text);
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       :open-delay="400"
       :disabled="truncateLength === 0"
-      tooltip-class="[&_*]:font-mono"
+      :class-names="{ tooltip: '[&_*]:font-mono' }"
       persist-on-tooltip-hover
     >
       <template #activator>

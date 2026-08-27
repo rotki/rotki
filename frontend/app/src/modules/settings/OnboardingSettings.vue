@@ -297,7 +297,7 @@ function showResetConfirmation() {
     <RuiAccordions>
       <RuiAccordion
         data-testid="onboarding-setting-advance"
-        header-class="py-4"
+        :class-names="{ header: 'py-4' }"
         eager
       >
         <template #header>

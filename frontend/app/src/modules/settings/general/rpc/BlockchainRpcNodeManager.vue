@@ -239,7 +239,7 @@ defineExpose({
                 size="sm"
                 color="primary"
                 class="!p-0.5 mt-2"
-                content-class="flex items-center gap-1 font-medium"
+                :class-names="{ content: 'flex items-center gap-1 font-medium' }"
               >
                 <RuiIcon
                   name="lu-check"
