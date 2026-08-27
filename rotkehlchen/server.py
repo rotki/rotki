@@ -115,7 +115,10 @@ class RotkehlchenServer:
     def main(self) -> None:
         # log version of some special dependencies
         log.info('sqlite version: %s', rsqlite.sqlite_version)
-        log.info('rotki-pysqlcipher version: %s', importlib.metadata.version('sqlcipher3'))
+        log.info(
+            'rotki-pysqlcipher version: %s',
+            importlib.metadata.version('rotki-pysqlcipher3'),
+        )
         log.info('SQLCipher version: %s', get_sqlcipher_version_string())
         log.info('GIL disabled: %s', not sys._is_gil_enabled())
         if os.name != 'nt':
