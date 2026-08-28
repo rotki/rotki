@@ -39,7 +39,7 @@ export interface StakingValidatorManage extends AccountManageMode {
   data: Eth2Validator;
 }
 
-interface AccountManageAdd extends AccountManageMode {
+export interface AccountManageAdd extends AccountManageMode {
   readonly mode: 'add';
   chain: string;
   type: 'account';
@@ -68,20 +68,6 @@ export interface AccountAgnosticManage extends AccountManageMode {
 export type AccountManage = AccountManageAdd | AccountManageEdit;
 
 export type AccountManageState = AccountManage | StakingValidatorManage | XpubManage | AccountAgnosticManage;
-
-export function createNewBlockchainAccount(): AccountManageAdd {
-  return {
-    chain: 'all',
-    data: [
-      {
-        address: '',
-        tags: null,
-      },
-    ],
-    mode: 'add',
-    type: 'account',
-  };
-}
 
 function buildValidatorManage(data: ValidatorData): StakingValidatorManage {
   const { index, ownershipPercentage = '100', publicKey } = data;
