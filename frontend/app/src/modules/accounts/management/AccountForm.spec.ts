@@ -1,9 +1,10 @@
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComponentPublicInstance, nextTick } from 'vue';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
-import { type AccountManageState, createNewBlockchainAccount } from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import AccountForm from '@/modules/accounts/management/AccountForm.vue';
 
 /**
@@ -195,6 +196,13 @@ describe('modules/accounts/management/AccountForm', () => {
       expect(states.length).toBeGreaterThan(0);
       for (const [state] of states)
         expect(state.type === 'validator').toBe(state.chain === Blockchain.ETH2);
+    });
+
+    it('should render the validator form for a validator seeded without a chain being chosen', () => {
+      wrapper = createWrapper({ chain: Blockchain.ETH2, data: {}, mode: 'add', type: 'validator' });
+
+      expect(wrapper.findComponent({ name: 'Eth2Input' }).exists()).toBe(true);
+      expect(wrapper.findComponent({ name: 'AddressInput' }).exists()).toBe(false);
     });
 
     it('should not report an edit the form never made', () => {

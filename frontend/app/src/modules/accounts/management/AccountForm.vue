@@ -1,15 +1,15 @@
 <script setup lang="ts">
+import type {
+  AccountManageState,
+  StakingValidatorManage,
+  XpubManage,
+} from '@/modules/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { camelCase } from 'es-toolkit';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
-import {
-  type AccountManageState,
-  createNewBlockchainAccount,
-  type StakingValidatorManage,
-  type XpubManage,
-} from '@/modules/accounts/blockchain/use-account-manage';
+import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import AccountFormApiKeyAlertContent from '@/modules/accounts/management/AccountFormApiKeyAlertContent.vue';
 import AccountSelector from '@/modules/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/modules/accounts/management/types/AddressAccountForm.vue';
@@ -279,21 +279,16 @@ function selectChain(next: string | undefined): void {
   if (get(inputMode) === InputMode.XPUB_ADD)
     set(inputMode, InputMode.MANUAL_ADD);
 
-  if (next === Blockchain.ETH2) {
-    set(modelValue, {
-      chain: Blockchain.ETH2,
-      data: {},
-      mode: 'add',
-      type: 'validator',
-    } satisfies StakingValidatorManage);
+  const state = createNewAccountForChain(next);
+  if (state.type === 'validator') {
+    set(modelValue, state);
     return;
   }
 
   // Only the chain was answered, so addresses already typed still answer a different question.
   const data = get(modelValue).data;
   set(modelValue, {
-    ...createNewBlockchainAccount(),
-    chain: next,
+    ...state,
     ...(Array.isArray(data) ? { data } : {}),
   });
 }
@@ -320,12 +315,7 @@ watch(inputMode, (mode) => {
     } satisfies XpubManage);
   }
   else {
-    const account = createNewBlockchainAccount();
-
-    set(modelValue, {
-      ...account,
-      chain: selectedChain,
-    });
+    set(modelValue, createNewAccountForChain(selectedChain));
   }
 });
 

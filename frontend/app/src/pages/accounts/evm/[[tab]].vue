@@ -6,6 +6,7 @@ import { useTemplateRef } from 'vue';
 import { msg } from '@/message-key';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountImportProgress from '@/modules/accounts/AccountImportProgress.vue';
+import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
 import EvmAccountPageButtons from '@/modules/accounts/EvmAccountPageButtons.vue';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
@@ -58,17 +59,12 @@ const usedChainIds = computed<string[]>(() => {
 });
 
 function createNewBlockchainAccount(address?: string): void {
-  set(account, {
-    chain: get(usedChainIds)[0],
-    data: [
-      {
-        address: address || '',
-        tags: null,
-      },
-    ],
-    mode: 'add',
-    type: 'account',
-  });
+  const state = createNewAccountForChain(get(usedChainIds)[0]);
+
+  if (address && state.type === 'account')
+    state.data = [{ address, tags: null }];
+
+  set(account, state);
 }
 
 function refresh(): void {
