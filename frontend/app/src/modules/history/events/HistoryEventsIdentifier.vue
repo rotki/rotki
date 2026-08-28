@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { Blockchain, HistoryEventEntryType, toSentenceCase } from '@rotki/common';
-import { type MessageKey, msg } from '@/message-key';
-import {
-  isAssetMovementEventRef,
-  isEthBlockEventRef,
-  isWithdrawalEventRef,
-} from '@/modules/history/event-utils';
+import { Blockchain, toSentenceCase } from '@rotki/common';
+import { useHistoryEventsIdentifier } from '@/modules/history/events/use-history-events-identifier';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { event, groupEvents } = defineProps<{
@@ -14,116 +9,22 @@ const { event, groupEvents } = defineProps<{
   groupEvents?: HistoryEventEntry[];
 }>();
 
-/**
- * Header message per entry type. Exhaustive on purpose: deriving the key with
- * `toSnakeCase(entryType)` meant a new entry type produced a key nobody had written, and `i18n-t`
- * renders a missing keypath verbatim, so bitcoin and solana events displayed the raw
- * `transactions.events.headers.*` string. Spelling the map out fails the build instead, and the
- * branded values are checked against the locale messages.
- */
-const HEADER_KEYS: Record<HistoryEventEntryType, MessageKey> = {
-  [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: msg.$t('transactions.events.headers.asset_movement_event'),
-  [HistoryEventEntryType.BITCOIN_EVENT]: msg.$t('transactions.events.headers.bitcoin_event'),
-  [HistoryEventEntryType.ETH_BLOCK_EVENT]: msg.$t('transactions.events.headers.eth_block_event'),
-  [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: msg.$t('transactions.events.headers.eth_deposit_event'),
-  [HistoryEventEntryType.ETH_WITHDRAWAL_EVENT]: msg.$t('transactions.events.headers.eth_withdrawal_event'),
-  [HistoryEventEntryType.EVM_EVENT]: msg.$t('transactions.events.headers.evm_event'),
-  [HistoryEventEntryType.EVM_SWAP_EVENT]: msg.$t('transactions.events.headers.evm_swap_event'),
-  [HistoryEventEntryType.HISTORY_EVENT]: msg.$t('transactions.events.headers.history_event'),
-  [HistoryEventEntryType.SOLANA_EVENT]: msg.$t('transactions.events.headers.solana_event'),
-  [HistoryEventEntryType.SOLANA_SWAP_EVENT]: msg.$t('transactions.events.headers.solana_swap_event'),
-  [HistoryEventEntryType.SWAP_EVENT]: msg.$t('transactions.events.headers.swap_event'),
-};
-
 const { t } = useI18n({ useScope: 'global' });
-
-const { is2xlAndUp, isMd } = useBreakpoint();
-
-const truncateLength = computed<number>(() => {
-  if (get(is2xlAndUp)) {
-    return 12;
-  }
-
-  if (get(isMd)) {
-    return 6;
-  }
-
-  return 8;
-});
-
-const blockEvent = isEthBlockEventRef(() => event);
-const withdrawEvent = isWithdrawalEventRef(() => event);
-const assetMovementEvent = isAssetMovementEventRef(() => event);
-
-const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
-  if ('txRef' in event && event.txRef) {
-    return {
-      location: event.location,
-      txRef: event.txRef,
-    };
-  }
-  return undefined;
-});
-
-const allTxRefs = computed<{ location: string; txRef: string }[]>(() => {
-  if (!get(assetMovementEvent) || !groupEvents)
-    return [];
-
-  const seen = new Set<string>();
-  const result: { location: string; txRef: string }[] = [];
-
-  for (const child of groupEvents) {
-    if (!('txRef' in child) || !child.txRef || seen.has(child.txRef))
-      continue;
-
-    seen.add(child.txRef);
-    result.push({
-      location: child.location,
-      txRef: child.txRef,
-    });
-  }
-
-  return result;
-});
-
-const extraHashCount = computed<number>(() => Math.max(get(allTxRefs).length - 1, 0));
 
 const hashMenuOpen = ref<boolean>(false);
 
-const translationKey = computed<MessageKey>(() => {
-  // consider an evm swap event as a case of evm event
-  // as they are both evm events and have the same header
-  let entryType = event.entryType;
-  const specialTypesWithTxRef: HistoryEventEntryType[] = [
-    HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-    HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-  ];
-
-  if (get(eventWithTxRef) && !specialTypesWithTxRef.includes(entryType)) {
-    entryType = HistoryEventEntryType.EVM_EVENT;
-  }
-
-  return HEADER_KEYS[entryType];
-});
-
-const assetMovementTransactionId = computed<string | undefined>(() => get(assetMovementEvent)?.extraData?.transactionId ?? undefined);
-
-/**
- * The key is used to avoid an issue where the block event identifier would be reused
- * to display a hash event identifier resulting in a numerical display instead.
- */
-const key = computed(() => {
-  if (get(eventWithTxRef))
-    return 'tx_hash';
-  else if (get(blockEvent))
-    return 'block';
-  else if (get(withdrawEvent))
-    return 'withdraw';
-  else if (get(assetMovementEvent))
-    return 'asset_movement';
-  else
-    return undefined;
-});
+const {
+  allTxRefs,
+  assetMovementEvent,
+  assetMovementTransactionId,
+  blockEvent,
+  eventWithTxRef,
+  extraHashCount,
+  key,
+  translationKey,
+  truncateLength,
+  withdrawEvent,
+} = useHistoryEventsIdentifier(() => event, () => groupEvents);
 </script>
 
 <template>
