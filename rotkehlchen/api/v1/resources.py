@@ -157,6 +157,7 @@ from rotkehlchen.api.v1.schemas import (
     OnchainHistoricalBalanceDivergenceSchema,
     OnchainHistoricalBalanceSchema,
     OptionalAddressesWithBlockchainsListSchema,
+    PatchFrontendSettingsSchema,
     PendingTransactionDecodingSchema,
     QueriedAddressesSchema,
     QueryAddressbookSchema,
@@ -574,6 +575,16 @@ class SettingsResource(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_settings()
+
+
+class FrontendSettingsResource(BaseMethodView):
+
+    patch_schema = PatchFrontendSettingsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, patch: dict[str, Any], remove: list[str]) -> Response:
+        return self.rest_api.patch_frontend_settings(patch=patch, remove=remove)
 
 
 class AsyncTasksResource(BaseMethodView):

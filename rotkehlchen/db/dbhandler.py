@@ -773,6 +773,58 @@ class DBHandler:
             )
         CachedSettings().update_entries(settings)
 
+    def patch_frontend_settings(
+            self,
+            write_cursor: DBCursor,
+            patch: dict[str, Any],
+            remove: list[str],
+    ) -> None:
+        """Merge patch into the frontend_settings blob server side.
+
+        Keys already in the blob that appear in neither argument are left untouched. That is the
+        whole point of doing this here: the client parses the blob against its own schema, so it
+        cannot preserve a key that a newer version wrote and it does not declare. Writing the whole
+        blob back from the client therefore deletes those keys.
+
+        Both statements are non-recursive on purpose. json_set replaces a top-level key wholesale,
+        which is what the client does today for the record valued keys (explorers, savedFilters,
+        the themes). json_patch would merge into them instead and silently change that.
+
+        Key names are validated by the API schema, so they cannot need $."key" quoting here.
+        """
+        # An UPDATE finds nothing if the row was never written, and the column defaults to the
+        # empty string rather than to '{}', which json_set turns into NULL. A blob that is not
+        # valid JSON would do the same. All three are settled here so the two statements below can
+        # assume a row holding a JSON object. Resetting an unparsable blob loses it, but the
+        # client already falls back to defaults when it cannot parse one, and the alternative is
+        # json_set writing NULL over it.
+        write_cursor.execute(
+            "INSERT INTO settings(name, value) VALUES('frontend_settings', '{}') "
+            "ON CONFLICT(name) DO UPDATE SET value='{}' WHERE value IS NULL OR json_valid(value)=0",  # noqa: E501
+        )
+        if len(patch) > 0:
+            # json_set takes repeated path/value pairs, so one statement carries the whole patch.
+            # json(?) parses each value so an object stays an object instead of becoming a string.
+            write_cursor.execute(
+                'UPDATE settings SET value = json_set(value, '
+                f"{', '.join(['?, json(?)'] * len(patch))}) WHERE name='frontend_settings'",
+                [x for key, value in patch.items() for x in (f'$.{key}', json.dumps(value))],
+            )
+
+        if len(remove) > 0:
+            write_cursor.execute(
+                f"UPDATE settings SET value = json_remove(value, {', '.join(['?'] * len(remove))}) "  # noqa: E501
+                "WHERE name='frontend_settings'",
+                [f'$.{key}' for key in remove],
+            )
+
+        # Read back so the cache holds the merged blob rather than the pre-patch one, the same way
+        # set_settings keeps it in step. Only the cache needs it: the merged blob is not returned
+        # to the client, which sends a patch precisely because it cannot hold the whole blob.
+        CachedSettings().update_entry('frontend_settings', write_cursor.execute(
+            "SELECT value FROM settings WHERE name='frontend_settings'",
+        ).fetchone()[0])
+
     def get_cache_for_api(self, cursor: DBCursor) -> dict[str, int]:
         """Returns a few key-value pairs that are used in the API
         from the `key_value_cache` table of the DB. Defaults to `Timestamp(0)` if not found"""

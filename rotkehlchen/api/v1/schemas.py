@@ -239,6 +239,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+# A frontend settings key ends up inside a json_set/json_remove path, where a '.', a '[' or a
+# quote would change what the path selects. Every key the frontend writes is a snake_cased
+# identifier, so requiring that is cheaper and safer than quoting the path.
+FRONTEND_SETTINGS_KEY_RE: Final = r'^[A-Za-z_][A-Za-z0-9_]*$'
 
 
 def validate_predicate(
@@ -1949,6 +1953,24 @@ class ModifiableSettingsSchema(Schema):
 
 class EditSettingsSchema(Schema):
     settings = fields.Nested(ModifiableSettingsSchema, required=True)
+
+
+class PatchFrontendSettingsSchema(Schema):
+    """Partial update of the frontend_settings blob.
+
+    The keys become json_set/json_remove paths, so they are held to a plain identifier. That is
+    what every key the frontend writes already looks like, and it means the paths never need
+    $."key" quoting, which is easier to get wrong than to forbid.
+    """
+    patch = fields.Dict(
+        keys=fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        values=fields.Raw(allow_none=True),
+        load_default=dict,
+    )
+    remove = fields.List(
+        fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        load_default=list,
+    )
 
 
 class BaseUserSchema(Schema):

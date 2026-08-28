@@ -696,6 +696,10 @@ class RestAPI:
         result_dict = _wrap_in_ok_result(new_settings)
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
+    def patch_frontend_settings(self, patch: dict[str, Any], remove: list[str]) -> Response:
+        self.settings_service.patch_frontend_settings(patch=patch, remove=remove)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     def get_settings(self) -> Response:
         settings = self.settings_service.get_settings()
         result_dict = _wrap_in_ok_result(settings)

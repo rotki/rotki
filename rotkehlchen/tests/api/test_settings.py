@@ -1,4 +1,5 @@
 import dataclasses
+import json
 from dataclasses import fields
 from http import HTTPStatus
 from operator import itemgetter
@@ -922,3 +923,71 @@ def test_suppress_missing_key_msg_services_not_overwritten(
     assert result['ui_floating_precision'] == 4
     assert result['suppress_missing_key_msg_services'] == ['etherscan']
     assert CachedSettings().get_settings().suppress_missing_key_msg_services == [ExternalService.ETHERSCAN]  # noqa: E501
+
+
+def test_patch_frontend_settings(rotkehlchen_api_server: APIServer) -> None:
+    """Test the partial update of the frontend settings blob.
+
+    The bug this endpoint exists for is the last section: a key the running client does not know
+    about has to survive a write, which it cannot if the client rebuilds the blob from its own
+    parsed view of it.
+    """
+    def patch_frontend(**kwargs: Any) -> dict[str, Any]:
+        """Patch, then read the blob back through GET /settings.
+
+        The endpoint answers `true` rather than echoing the merge, so every assertion below is
+        made against what was actually persisted and re-read, not against the write's own claim.
+        """
+        assert assert_proper_sync_response_with_result(requests.patch(
+            api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
+            json=kwargs,
+        )) is True
+        return json.loads(assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        ))['frontend_settings'])
+
+    # the blob starts out as the empty string rather than as an object, and there may be no row
+    assert patch_frontend(patch={'items_per_page': 10}) == {'items_per_page': 10}
+    assert patch_frontend() == {'items_per_page': 10}  # sending neither member is a no-op
+
+    # a record valued key is replaced wholesale, not merged into. This pins json_set over
+    # json_patch: the latter would keep the address entry below and change today's semantics.
+    assert patch_frontend(patch={'explorers': {
+        'eth': {'address': 'https://etherscan.io/address/', 'transaction': 'https://etherscan.io/tx/'},
+    }})['explorers']['eth']['address'] == 'https://etherscan.io/address/'
+    assert patch_frontend(patch={'explorers': {'eth': {'transaction': 'https://myexplorer.eth/'}}})['explorers'] == {  # noqa: E501
+        'eth': {'transaction': 'https://myexplorer.eth/'},
+    }
+
+    assert 'items_per_page' not in patch_frontend(remove=['items_per_page'])
+    assert patch_frontend(remove=['never_was_there']) == patch_frontend()  # removing an absent key
+
+    # the actual bug: a key written by a newer version, which this client's schema does not
+    # declare, must survive a write of a key it does declare.
+    assert patch_frontend(patch={'a_key_from_the_future': {'nested': [1, 2]}, 'scramble_data': True})['a_key_from_the_future'] == {'nested': [1, 2]}  # noqa: E501
+    merged = patch_frontend(patch={'scramble_data': False})
+    assert merged['a_key_from_the_future'] == {'nested': [1, 2]}
+    assert merged['scramble_data'] is False
+
+    # the cache holds the merged blob too, not the pre-patch one, the same way a whole-blob PUT
+    # leaves it. GET reads from the DB, so nothing else here would catch the cache going stale.
+    assert json.loads(CachedSettings().get_entry('frontend_settings')) == merged  # type: ignore[arg-type]  # it's a str
+
+
+def test_patch_frontend_settings_key_validation(rotkehlchen_api_server: APIServer) -> None:
+    """Keys reaching a json_set path are held to a plain identifier, so one carrying a '.' or a
+    quote cannot select a different node than the caller named."""
+    for payload in (
+        {'patch': {'has.a.dot': 1}},
+        {'patch': {'has"a"quote': 1}},
+        {'patch': {'has[0]': 1}},
+        {'patch': {'': 1}},
+        {'remove': ['has.a.dot']},
+    ):
+        assert_error_response(
+            response=requests.patch(
+                api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
+                json=payload,
+            ),
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
