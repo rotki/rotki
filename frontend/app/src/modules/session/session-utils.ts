@@ -9,7 +9,7 @@ const MIN_SCRAMBLE_MULTIPLIER = 1;
  * correctness boundary rather than the inputs. Small values are lifted rather than clamped flat,
  * so they stay distinct from one another.
  *
- * @param multiplier the raw setting value, which may be negative, zero or not a number
+ * @param multiplier - the raw setting value, which may be negative, zero or not a number
  * @returns a multiplier of at least {@link MIN_SCRAMBLE_MULTIPLIER}
  */
 export function normalizeScrambleMultiplier(multiplier: number): number {

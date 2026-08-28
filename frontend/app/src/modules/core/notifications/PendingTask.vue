@@ -35,7 +35,7 @@ const { scrambleAddress } = useScramble();
  * separators put back verbatim. `scrambleAddress` returns its input unchanged while privacy mode
  * is off, so this needs no condition of its own.
  *
- * @param value a subtitle param, which is only rewritten when it is a string
+ * @param value - a subtitle param, which is only rewritten when it is a string
  * @returns the value with each address replaced
  */
 function scrambleAddresses(value: unknown): unknown {
