@@ -99,6 +99,7 @@ describe('logLevelSetting', () => {
       setSettings: vi.fn(),
       getSettings: vi.fn(),
       getRawSettings: vi.fn(),
+      patchFrontendSettings: vi.fn(),
     });
 
     vi.useRealTimers();

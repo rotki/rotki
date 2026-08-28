@@ -263,6 +263,7 @@ describe('onboarding-settings', () => {
         setSettings: vi.fn(),
         getSettings: vi.fn(),
         getRawSettings: vi.fn(),
+        patchFrontendSettings: vi.fn(),
       });
 
       wrapper = await createWrapper();
