@@ -266,6 +266,7 @@ onMounted(() => refresh());
       <RuiButton
         color="error"
         :disabled="refreshing || isDecoding"
+        data-testid="redecode-all"
         @click="redecodeAllEvents()"
       >
         <template #prepend>
