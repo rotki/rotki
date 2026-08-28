@@ -1157,6 +1157,62 @@ Getting or modifying settings
    :statuscode 409: Tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
+Partially modifying the frontend settings
+============================================
+
+.. http:patch:: /api/(version)/settings/frontend
+
+   ``frontend_settings`` is an opaque JSON blob that the ``PUT /settings`` endpoint can only replace
+   in full, so changing one key means the client reads the blob, edits it and writes all of it back.
+   That deletes any key the writing client's schema does not declare, which is what happens whenever
+   an older rotki is opened after a newer one. Doing a PATCH here merges the given keys into the
+   stored blob server-side instead, leaving every other key untouched.
+
+   A key is replaced wholesale, never merged into recursively, which matches what a whole-blob write
+   does today: patching ``explorers`` with one chain replaces the whole ``explorers`` object.
+
+   Key names must match ``[A-Za-z_][A-Za-z0-9_]*``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/settings/frontend HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "patch": {
+              "date_display_format": "%d/%m/%Y",
+              "explorers": {"eth": {"transaction": "https://myexplorer.eth/"}}
+          },
+          "remove": ["some_retired_key"]
+      }
+
+   :reqjson object[optional] patch: Mapping of frontend settings keys to their new values. Each value is stored verbatim, replacing whatever the key held.
+   :reqjson list[optional] remove: List of frontend settings keys to delete from the blob. Removing a key that is not there is not an error.
+
+   Both members are optional; sending neither is a no-op.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: ``true`` if the merge was persisted. The merged blob is not returned; read it back with ``GET /settings`` if you need it.
+
+   :statuscode 200: Modifying the frontend settings was successful
+   :statuscode 400: Provided JSON is in some way malformed, or a key is not a valid identifier.
+   :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
+
 Getting or modifying backend arguments
 =========================================
 

@@ -241,6 +241,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+# Frontend settings keys become json paths, where '.', '[' or a quote would change what is selected
+FRONTEND_SETTINGS_KEY_RE: Final = r'^[A-Za-z_][A-Za-z0-9_]*$'
 
 
 def validate_predicate(
@@ -1969,6 +1971,19 @@ class ModifiableSettingsSchema(Schema):
 
 class EditSettingsSchema(Schema):
     settings = fields.Nested(ModifiableSettingsSchema, required=True)
+
+
+class PatchFrontendSettingsSchema(Schema):
+    """Partial update of the frontend_settings blob"""
+    patch = fields.Dict(
+        keys=fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        values=fields.Raw(allow_none=True),
+        load_default=dict,
+    )
+    remove = fields.List(
+        fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        load_default=list,
+    )
 
 
 class BaseUserSchema(Schema):
