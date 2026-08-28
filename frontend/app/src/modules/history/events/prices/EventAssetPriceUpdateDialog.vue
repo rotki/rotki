@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
-import { type BigNumber, toSentenceCase } from '@rotki/common';
-import { startPromise } from '@shared/utils';
+import { toSentenceCase } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { type EventPriceUpdateMode, useEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update';
-import { PriceOracle } from '@/modules/settings/types/price-oracle';
+import { useEventPriceUpdateDialog } from '@/modules/history/events/prices/use-event-price-update-dialog';
 import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -18,119 +11,21 @@ import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 const modelValue = defineModel<EventPriceUpdatePayload | undefined>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
-const { notifyError, notifyInfo } = useNotifications();
 const currencySymbol = useSetting('currencySymbol');
-const { fetchExistingEntry, updatePrice } = useEventPriceUpdate();
 
-const price = ref<string>('');
-const mode = ref<EventPriceUpdateMode>('manual');
-const existingEntry = ref<OraclePriceEntry>();
-const loading = ref<boolean>(false);
-const saving = ref<boolean>(false);
-
-const open = computed<boolean>(() => modelValue.value !== undefined);
-
-function close(): void {
-  set(modelValue, undefined);
-}
-
-const existingIsManual = computed<boolean>(() => get(existingEntry)?.sourceType === PriceOracle.MANUAL);
-const showModeChoice = computed<boolean>(() => Boolean(get(existingEntry)) && !get(existingIsManual));
-
-const parsedPrice = computed<BigNumber | undefined>(() => parseNumericInput(get(price).trim()));
-
-const priceValid = computed<boolean>(() => {
-  const parsed = get(parsedPrice);
-  return parsed !== undefined && parsed.isGreaterThan(0);
-});
-
-const priceErrors = computed<string[]>(() => {
-  const value = get(price).trim();
-  if (!value || get(priceValid))
-    return [];
-  return [t('event_asset_price_update.price_error')];
-});
-
-async function load(payload: EventPriceUpdatePayload): Promise<void> {
-  set(loading, true);
-  set(existingEntry, undefined);
-  set(price, '');
-  try {
-    const quote = get(currencySymbol);
-    const entry = await fetchExistingEntry(payload.asset, quote, payload.timestamp);
-    set(existingEntry, entry);
-    if (entry) {
-      set(price, entry.price.toFixed());
-      set(mode, entry.sourceType === PriceOracle.MANUAL ? 'manual' : 'oracle');
-    }
-    else {
-      set(mode, 'manual');
-    }
-  }
-  catch (error: unknown) {
-    logger.error('Failed to load existing oracle price entry:', error);
-    notifyError(
-      t('event_asset_price_update.fetch_error.title'),
-      t('event_asset_price_update.fetch_error.description', { error: getErrorMessage(error) }),
-    );
-  }
-  finally {
-    set(loading, false);
-  }
-}
-
-async function save(): Promise<void> {
-  const payload = get(modelValue);
-  if (!payload)
-    return;
-
-  const parsed = get(parsedPrice);
-  if (!parsed)
-    return;
-
-  const entry = get(existingEntry);
-  const nextPrice = get(price).trim();
-  const selectedMode = get(mode);
-  const unchanged = entry
-    && parsed.isEqualTo(entry.price)
-    && (selectedMode === 'oracle' || entry.sourceType === PriceOracle.MANUAL);
-  if (unchanged) {
-    close();
-    return;
-  }
-
-  set(saving, true);
-  try {
-    await updatePrice({
-      existingEntry: entry,
-      fromAsset: payload.asset,
-      mode: selectedMode,
-      price: nextPrice,
-      timestampMs: payload.timestamp,
-      toAsset: get(currencySymbol),
-    });
-    notifyInfo(
-      t('event_asset_price_update.success.title'),
-      t('event_asset_price_update.success.description'),
-    );
-    set(modelValue, undefined);
-  }
-  catch (error: unknown) {
-    logger.error('Failed to update event price:', error);
-    notifyError(
-      t('event_asset_price_update.save_error.title'),
-      t('event_asset_price_update.save_error.description', { error: getErrorMessage(error) }),
-    );
-  }
-  finally {
-    set(saving, false);
-  }
-}
-
-watch(modelValue, (payload) => {
-  if (payload)
-    startPromise(load(payload));
-}, { immediate: true });
+const {
+  close,
+  existingEntry,
+  loading,
+  modelMode: mode,
+  modelPrice: price,
+  open,
+  priceErrors,
+  priceValid,
+  save,
+  saving,
+  showModeChoice,
+} = useEventPriceUpdateDialog(modelValue);
 </script>
 
 <template>
