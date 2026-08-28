@@ -203,6 +203,7 @@ onBeforeMount(async () => {
         :class="{ 'h-[30px]': isPinned }"
         :disabled="!isAutoMatchAllowed || modelSelectedUnmatched.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
+        data-testid="ignore-selected"
         @click="confirmIgnoreSelected()"
       >
         {{ t('asset_movement_matching.actions.ignore_selected') }}
@@ -229,6 +230,7 @@ onBeforeMount(async () => {
             :class="{ 'h-[30px]': isPinned }"
             :disabled="!isAutoMatchAllowed || fiatMovements.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
+            data-testid="ignore-fiat"
             @click="confirmIgnoreAllFiat()"
           >
             {{ t('asset_movement_matching.actions.ignore_fiat') }}
@@ -254,6 +256,7 @@ onBeforeMount(async () => {
               :class="{ 'h-[30px] !px-3': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedMovements.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
+              data-testid="auto-match"
               @click="triggerAssetMovementAutoMatching()"
             >
               {{ t('asset_movement_matching.actions.auto_match') }}
@@ -278,6 +281,7 @@ onBeforeMount(async () => {
         :size="buttonSize"
         :disabled="!isAutoMatchAllowed || modelSelectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
+        data-testid="restore-selected"
         @click="confirmRestoreSelected()"
       >
         {{ t('asset_movement_matching.actions.restore_selected') }}
@@ -294,6 +298,7 @@ onBeforeMount(async () => {
     <RuiButton
       v-if="!isPinned"
       variant="text"
+      data-testid="close"
       @click="emit('close')"
     >
       {{ t('common.actions.close') }}
