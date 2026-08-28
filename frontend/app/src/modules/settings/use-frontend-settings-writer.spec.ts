@@ -1,19 +1,23 @@
+import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCurrentInstance } from 'vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
 
-const { mockSetSettings } = vi.hoisted(() => ({ mockSetSettings: vi.fn() }));
+const { mockPatchFrontendSettings } = vi.hoisted(() => ({ mockPatchFrontendSettings: vi.fn() }));
 
 vi.mock('@/modules/settings/api/use-settings-api', () => ({
-  useSettingsApi: vi.fn(() => ({ setSettings: mockSetSettings })),
+  useSettingsApi: vi.fn(() => ({ patchFrontendSettings: mockPatchFrontendSettings })),
 }));
 
+// The seam: this composable turns a payload of changed settings into one backend write and, once
+// that resolves, into a repo update. It is mocked at the api boundary, so the snake_casing of the
+// wire keys is not covered here - that belongs to the shared request transformer.
 describe('useFrontendSettingsWriter', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    mockSetSettings.mockReset().mockResolvedValue({});
+    mockPatchFrontendSettings.mockReset().mockResolvedValue(undefined);
   });
 
   it('should be usable outside a component setup', async () => {
@@ -25,17 +29,16 @@ describe('useFrontendSettingsWriter', () => {
     expect(status.success).toBe(true);
   });
 
-  it('should send the patch merged over the current settings', async () => {
+  // The whole reason the backend merges: a key this version's schema does not declare has already
+  // been parsed away by the time the repo holds it, so anything the client sends beyond the changed
+  // keys is a reduced view that would delete it. Sending only the patch is what keeps it alive.
+  it('should send only the changed keys, not the whole blob', async () => {
     const schedule = { 'NO_AVAILABLE_INDEXERS:optimism': { lastShown: 1, shownCount: 1 } };
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
     await updateFrontendSetting({ notificationSchedule: schedule });
 
-    const sent = JSON.parse(mockSetSettings.mock.calls[0][0].frontendSettings);
-    expect(sent.notification_schedule).toStrictEqual({
-      'NO_AVAILABLE_INDEXERS:optimism': { last_shown: 1, shown_count: 1 },
-    });
-    expect(Object.keys(sent).length).toBeGreaterThan(1);
+    expect(mockPatchFrontendSettings).toHaveBeenCalledWith({ notificationSchedule: schedule });
   });
 
   it('should apply the patch to the repo once it is persisted', async () => {
@@ -48,7 +51,7 @@ describe('useFrontendSettingsWriter', () => {
   });
 
   it('should report a failure instead of throwing', async () => {
-    mockSetSettings.mockRejectedValue(new Error('backend is down'));
+    mockPatchFrontendSettings.mockRejectedValue(new Error('backend is down'));
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
     const status = await updateFrontendSetting({ notificationSchedule: {} });
@@ -57,7 +60,7 @@ describe('useFrontendSettingsWriter', () => {
   });
 
   it('should not leave the repo updated when the write fails', async () => {
-    mockSetSettings.mockRejectedValue(new Error('backend is down'));
+    mockPatchFrontendSettings.mockRejectedValue(new Error('backend is down'));
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
     await updateFrontendSetting({ notificationSchedule: { 'MISSING_API_KEY:blockscout': { lastShown: 2, shownCount: 1 } } });
@@ -65,18 +68,29 @@ describe('useFrontendSettingsWriter', () => {
     expect(useSettingsRepo().frontend.notificationSchedule).toStrictEqual({});
   });
 
-  it('should not drop a concurrent write of another setting', async () => {
-    const sent: Record<string, unknown>[] = [];
+  /**
+   * Holds the first write open so the second one is issued while it is still unresolved, and
+   * records every patch that reaches the api.
+   */
+  function captureConcurrentWrites(): { patches: FrontendSettingsPayload[]; release: () => void } {
+    const patches: FrontendSettingsPayload[] = [];
     let release = (): void => {};
     const firstInFlight = new Promise<void>((resolve) => {
       release = resolve;
     });
-    mockSetSettings.mockImplementation(async (payload: { frontendSettings: string }) => {
-      sent.push(JSON.parse(payload.frontendSettings));
-      if (sent.length === 1)
+    mockPatchFrontendSettings.mockImplementation(async (payload: FrontendSettingsPayload) => {
+      patches.push(payload);
+      if (patches.length === 1)
         await firstInFlight;
-      return {};
     });
+    return { patches, release };
+  }
+
+  // Two settings changed within one round trip. Under the old whole-blob format each write rebuilt
+  // the object from the pre-update repo, so each carried the other's stale value and the later
+  // response won. A patch cannot carry a stale value for a key it does not mention.
+  it('should not drop a concurrent write of another setting', async () => {
+    const { patches, release } = captureConcurrentWrites();
 
     const { updateFrontendSetting } = useFrontendSettingsWriter();
     const first = updateFrontendSetting({ decimalSeparator: '#' });
@@ -87,32 +101,28 @@ describe('useFrontendSettingsWriter', () => {
     const repo = useSettingsRepo();
     expect(repo.frontend.decimalSeparator).toBe('#');
     expect(repo.frontend.thousandSeparator).toBe('@');
-    expect(sent.at(-1)).toMatchObject({ decimal_separator: '#', thousand_separator: '@' });
+    expect(patches).toStrictEqual([
+      { decimalSeparator: '#' },
+      { thousandSeparator: '@' },
+    ]);
   });
 
   it('should serialise writes issued from separate writer instances', async () => {
-    const sent: Record<string, unknown>[] = [];
-    let release = (): void => {};
-    const firstInFlight = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    mockSetSettings.mockImplementation(async (payload: { frontendSettings: string }) => {
-      sent.push(JSON.parse(payload.frontendSettings));
-      if (sent.length === 1)
-        await firstInFlight;
-      return {};
-    });
+    const { patches, release } = captureConcurrentWrites();
 
     const first = useFrontendSettingsWriter().updateFrontendSetting({ decimalSeparator: '#' });
     const second = useFrontendSettingsWriter().updateFrontendSetting({ thousandSeparator: '@' });
     release();
     await Promise.all([first, second]);
 
-    expect(sent.at(-1)).toMatchObject({ decimal_separator: '#', thousand_separator: '@' });
+    expect(patches).toStrictEqual([
+      { decimalSeparator: '#' },
+      { thousandSeparator: '@' },
+    ]);
   });
 
   it('should keep writing after a failed write', async () => {
-    mockSetSettings.mockRejectedValueOnce(new Error('backend is down'));
+    mockPatchFrontendSettings.mockRejectedValueOnce(new Error('backend is down'));
     const { updateFrontendSetting } = useFrontendSettingsWriter();
 
     const failed = await updateFrontendSetting({ decimalSeparator: '#' });

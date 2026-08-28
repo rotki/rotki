@@ -1,3 +1,4 @@
+import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { CHAIN_KEYED_SETTINGS, RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
@@ -6,6 +7,7 @@ import { BackendConfiguration, ColibriConfiguration } from '@/modules/shell/app/
 
 interface UseSettingsApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
+  patchFrontendSettings: (patch: FrontendSettingsPayload) => Promise<void>;
   getSettings: () => Promise<UserSettingsModel>;
   getRawSettings: () => Promise<SettingsUpdate>;
   backendSettings: () => Promise<BackendConfiguration>;
@@ -22,6 +24,19 @@ export function useSettingsApi(): UseSettingsApiReturn {
       { skipCamelCaseKeys: CHAIN_KEYED_SETTINGS },
     );
     return UserSettingsModel.parse(response);
+  };
+
+  /**
+   * Merges a partial update into the stored frontend settings blob, server-side.
+   *
+   * The whole point of merging on the server is that a key the running client's schema does not
+   * declare cannot be preserved by the client: it has already been parsed away. Sending only the
+   * changed keys leaves such a key untouched instead of overwriting it with a reduced view.
+   *
+   * @param patch - the changed keys only, in camelCase; the api layer snake_cases them on the way out
+   */
+  const patchFrontendSettings = async (patch: FrontendSettingsPayload): Promise<void> => {
+    await api.patch<boolean>('/settings/frontend', { patch });
   };
 
   const getSettings = async (): Promise<UserSettingsModel> => {
@@ -73,6 +88,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
     colibriSettings,
     getRawSettings,
     getSettings,
+    patchFrontendSettings,
     setSettings,
     updateBackendConfiguration,
     updateColibriConfiguration,
