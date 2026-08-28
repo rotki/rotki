@@ -1,38 +1,14 @@
 <script setup lang="ts">
-import type { Message } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { SkippedHistoryEventsSummary } from '@/modules/history/events/event-payloads';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { useSkippedHistoryEventsApi } from '@/modules/history/api/events/use-skipped-history-events-api';
+import { type SkippedEventsLocation, useSkippedEventsActions } from '@/modules/history/events/use-skipped-events-actions';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
-
-interface Location {
-  location: string;
-  number: number;
-}
-
-const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
-
-const { execute: refreshSkippedEvents, state: skippedEvents } = useAsyncState<SkippedHistoryEventsSummary>(
-  getSkippedEventsSummary,
-  {
-    locations: {},
-    total: 0,
-  },
-  {
-    delay: 0,
-    immediate: true,
-    resetOnExecute: false,
-  },
-);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const headers: DataTableColumn<Location>[] = [
+const { exportCSV, loading, locationsData, reProcessSkippedEvents, skippedEvents } = useSkippedEventsActions();
+
+const headers: DataTableColumn<SkippedEventsLocation>[] = [
   {
     align: 'center',
     cellClass: 'py-3',
@@ -47,115 +23,6 @@ const headers: DataTableColumn<Location>[] = [
     label: t('transactions.events.skipped.headers.number'),
   },
 ];
-
-const locationsData = computed<Location[]>(() =>
-  Object.entries(get(skippedEvents).locations).map(([location, number]) => ({
-    location,
-    number,
-  })),
-);
-
-const { appSession, openDirectory } = useInterop();
-
-const { downloadSkippedEventsCSV, exportSkippedEventsCSV } = useSkippedHistoryEventsApi();
-
-const { setMessage } = useMessageStore();
-
-function showExportCSVError(description: string) {
-  setMessage({
-    description,
-    success: false,
-    title: t('transactions.events.skipped.csv_export_error'),
-  });
-}
-
-async function createCsv(path: string): Promise<void> {
-  let message: Message;
-  try {
-    const success = await exportSkippedEventsCSV(path);
-    message = {
-      description: success
-        ? t('actions.online_events.skipped.csv_export.message.success')
-        : t('actions.online_events.skipped.csv_export.message.failure'),
-      success,
-      title: t('actions.online_events.skipped.csv_export.title'),
-    };
-  }
-  catch (error: unknown) {
-    message = {
-      description: getErrorMessage(error),
-      success: false,
-      title: t('actions.online_events.skipped.csv_export.title'),
-    };
-  }
-  setMessage(message);
-}
-
-async function exportCSV() {
-  try {
-    if (appSession) {
-      const directory = await openDirectory(t('common.select_directory'));
-      if (!directory)
-        return;
-
-      await createCsv(directory);
-    }
-    else {
-      const result = await downloadSkippedEventsCSV();
-      if (!result.success)
-        showExportCSVError(result.message ?? t('transactions.events.skipped.download_failed'));
-    }
-  }
-  catch (error: unknown) {
-    showExportCSVError(getErrorMessage(error));
-  }
-}
-
-const { reProcessSkippedEvents: reProcessSkippedEventsCaller } = useSkippedHistoryEventsApi();
-
-const loading = ref<boolean>(false);
-
-async function reProcessSkippedEvents() {
-  set(loading, true);
-  let message: Message;
-  try {
-    const { successful, total } = await reProcessSkippedEventsCaller();
-    if (successful === 0) {
-      message = {
-        description: t('transactions.events.skipped.reprocess.failed.no_processed_events'),
-        success: false,
-        title: t('transactions.events.skipped.reprocess.failed.title'),
-      };
-    }
-    else {
-      message = {
-        description:
-          successful < total
-            ? t('transactions.events.skipped.reprocess.success.some', {
-                successful,
-                total,
-              })
-            : t('transactions.events.skipped.reprocess.success.all'),
-        success: true,
-        title: t('transactions.events.skipped.reprocess.success.title'),
-      };
-    }
-  }
-  catch (error: unknown) {
-    logger.error(error);
-    message = {
-      description: getErrorMessage(error),
-      success: false,
-      title: t('transactions.events.skipped.reprocess.failed.title'),
-    };
-  }
-  finally {
-    set(loading, false);
-  }
-
-  setMessage(message);
-  await refreshSkippedEvents();
-}
 </script>
 
 <template>
