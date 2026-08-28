@@ -1,16 +1,7 @@
 <script setup lang="ts">
-import type { MatchingFlow, MatchSuggestions, PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
-import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
-import { bigNumberify } from '@rotki/common';
-import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
-import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
-import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
-import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { getEventEntryFromCollection } from '@/modules/history/event-utils';
+import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import { usePotentialMatches } from '@/modules/history/events/matching/use-potential-matches';
 import PotentialMatchesList from '@/modules/history/events/PotentialMatchesList.vue';
-import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
-import { useAssetMovementSettings } from '@/modules/settings/use-asset-movement-settings';
 
 const { flow, isPinned, movement } = defineProps<{
   movement: UnmatchedEventGroup;
@@ -37,142 +28,28 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const {
-  matchAssetMovement,
-  refreshUnmatchedAssetMovements,
-} = useUnmatchedAssetMovements();
+  confirmMatch,
+  matchingLoading,
+  modelOnlyExpectedAssets: onlyExpectedAssets,
+  modelSearchTimeRange: searchTimeRange,
+  modelSelectedMatchIds: selectedMatchIds,
+  modelTolerancePercentage: tolerancePercentage,
+  potentialMatches,
+  searchError,
+  searchLoading,
+  searchPotentialMatches,
+} = usePotentialMatches(() => movement, () => flow);
 
-const { fetchHistoryEvents } = useHistoryEventsApi();
-const { getAssetMovementMatches } = useAssetMovementMatchingApi();
-
-const { assetMovementAmountTolerance, assetMovementTimeRange } = useAssetMovementSettings();
-
-function getDefaultHourRange(): number {
-  return (flow?.defaultTimeRangeSeconds ?? get(assetMovementTimeRange)) / 3600;
-}
-
-function getDefaultTolerancePercentage(): string {
-  return bigNumberify(flow?.defaultTolerance ?? get(assetMovementAmountTolerance)).multipliedBy(100).toString();
-}
-
-const searchLoading = ref<boolean>(false);
-const matchingLoading = ref<boolean>(false);
-const searchError = ref<string>();
-const potentialMatches = ref<PotentialMatchRow[]>([]);
-const selectedMatchIds = ref<number[]>([]);
-const searchTimeRange = ref<string>(getDefaultHourRange().toString());
-const onlyExpectedAssets = ref<boolean>(true);
-const tolerancePercentage = ref<string>(getDefaultTolerancePercentage());
-
-// The tolerance is a free-text field, so a search started before it holds a number searches on the
-// default rather than on a parse that throws.
-function percentageToDecimal(percentage: string): string {
-  const value = parseNumericInput(percentage, bigNumberify(getDefaultTolerancePercentage()));
-  return value.dividedBy(100).toString();
-}
 const buttonSize = computed<'sm' | undefined>(() => isPinned ? 'sm' : undefined);
-
-function transformToMatchRow(row: HistoryEventCollectionRow, isCloseMatch: boolean): PotentialMatchRow {
-  const { entry, ...meta } = getEventEntryFromCollection(row);
-  const eventEntry = { ...entry, ...meta };
-  return {
-    entry: eventEntry,
-    identifier: eventEntry.identifier,
-    isCloseMatch,
-  };
-}
-
-async function searchPotentialMatches(): Promise<void> {
-  set(searchError, undefined);
-  set(potentialMatches, []);
-  set(searchLoading, true);
-
-  try {
-    const hours = Number.parseInt(get(searchTimeRange), 10) || getDefaultHourRange();
-    const timeRangeInSeconds = hours * 60 * 60;
-
-    const getSuggestions = flow?.getSuggestions
-      ?? (async (m: UnmatchedEventGroup, timeRange: number, onlyExpected: boolean, tolerance: string): Promise<MatchSuggestions> =>
-        getAssetMovementMatches(m.groupIdentifier, timeRange, onlyExpected, tolerance));
-    const suggestions = await getSuggestions(movement, timeRangeInSeconds, get(onlyExpectedAssets), percentageToDecimal(get(tolerancePercentage)));
-    const allIdentifiers = [...suggestions.closeMatches, ...suggestions.otherEvents];
-
-    if (allIdentifiers.length === 0) {
-      set(potentialMatches, []);
-      return;
-    }
-
-    const response = await fetchHistoryEvents({
-      aggregateByGroupIds: false,
-      identifiers: allIdentifiers.map(String),
-      limit: -1,
-      offset: 0,
-    });
-
-    const closeMatchSet = new Set(suggestions.closeMatches);
-    const matches = response.entries
-      .map(row => transformToMatchRow(row, closeMatchSet.has(getEventEntryFromCollection(row).entry.identifier)));
-
-    const identifierOrderMap = new Map(allIdentifiers.map((id, index) => [id, index]));
-    matches.sort((a, b) => {
-      const orderA = identifierOrderMap.get(a.entry.identifier) ?? Number.MAX_SAFE_INTEGER;
-      const orderB = identifierOrderMap.get(b.entry.identifier) ?? Number.MAX_SAFE_INTEGER;
-      return orderA - orderB;
-    });
-
-    set(potentialMatches, matches);
-  }
-  catch (error) {
-    logger.error('Failed to search potential matches:', error);
-    set(searchError, t('asset_movement_matching.dialog.search_error', { error: getErrorMessage(error) }));
-  }
-  finally {
-    set(searchLoading, false);
-  }
-}
-
-async function confirmMatch(): Promise<void> {
-  const matchIds = get(selectedMatchIds);
-
-  if (matchIds.length === 0)
-    return;
-
-  set(matchingLoading, true);
-
-  try {
-    const unmatchedId = movement.identifier ?? getEventEntryFromCollection(movement.events).entry.identifier;
-
-    if (!unmatchedId)
-      return;
-
-    const result = flow
-      ? await flow.match(unmatchedId, matchIds)
-      : await matchAssetMovement(unmatchedId, matchIds);
-
-    if (result.success) {
-      if (flow)
-        await flow.refresh(true);
-      else
-        await refreshUnmatchedAssetMovements(true);
-      emit('matched');
-    }
-  }
-  finally {
-    set(matchingLoading, false);
-  }
-}
 
 function close(): void {
   emit('close');
 }
 
-watchImmediate(() => movement, async () => {
-  set(potentialMatches, []);
-  set(selectedMatchIds, []);
-  set(searchTimeRange, getDefaultHourRange().toString());
-  set(onlyExpectedAssets, true);
-  set(tolerancePercentage, getDefaultTolerancePercentage());
-  await searchPotentialMatches();
-});
+async function onConfirm(): Promise<void> {
+  if (await confirmMatch())
+    emit('matched');
+}
 </script>
 
 <template>
@@ -216,7 +93,7 @@ watchImmediate(() => movement, async () => {
         :size="buttonSize"
         :disabled="selectedMatchIds.length === 0"
         :loading="matchingLoading"
-        @click="confirmMatch()"
+        @click="onConfirm()"
       >
         {{ t('asset_movement_matching.dialog.confirm_match') }}
         <RuiChip
