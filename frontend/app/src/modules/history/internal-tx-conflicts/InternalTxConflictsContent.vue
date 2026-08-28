@@ -225,6 +225,7 @@ defineExpose({
             color="primary"
             size="sm"
             :disabled="selectedCount === 0"
+            data-testid="resolve-selected"
             @click="onResolveSelected()"
           >
             {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
