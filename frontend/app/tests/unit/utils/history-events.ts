@@ -1,6 +1,8 @@
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import {
   type AssetMovementEvent,
+  type EthBlockEvent,
+  type EthWithdrawalEvent,
   type EvmHistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
@@ -44,6 +46,20 @@ export function createOnlineHistoryEvent(
   overrides: Partial<Omit<OnlineHistoryEvent, 'entryType'>> = {},
 ): HistoryEventEntry {
   return { ...commonFields, entryType: HistoryEventEntryType.HISTORY_EVENT, ...overrides };
+}
+
+/** Creates a block production event, whose identifier is a block number rather than a hash. */
+export function createEthBlockEvent(
+  overrides: Partial<Omit<EthBlockEvent, 'entryType'>> = {},
+): HistoryEventEntry {
+  return { ...commonFields, blockNumber: 1, validatorIndex: 1, entryType: HistoryEventEntryType.ETH_BLOCK_EVENT, ...overrides };
+}
+
+/** Creates a validator withdrawal, whose identifier is a validator index. */
+export function createWithdrawalEvent(
+  overrides: Partial<Omit<EthWithdrawalEvent, 'entryType'>> = {},
+): HistoryEventEntry {
+  return { ...commonFields, isExit: false, validatorIndex: 1, entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT, ...overrides };
 }
 
 /** Creates a decoded on-chain event. */
