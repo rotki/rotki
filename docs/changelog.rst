@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Claiming your Safenet staking rewards is now recorded as a staking reward.
 * :bug:`13027` Adding an ETH2 validator by index or public key works again. Since 1.44.0 the Add Account button on the validators tab opened the generic blockchain account form instead of the validator form, and saving from it did nothing, so a validator that was not picked up automatically from its deposit could not be added at all.
 * :bug:`-` Historical prices of a token that exists on several chains now come from the main asset it is grouped with, so WETH on Arbitrum, Optimism and Base is priced as ETH. They used to be priced on their own and could come back at roughly half of ETH's value.
 * :bug:`-` Changing the asset or chain in the send form while a gas estimate is still being fetched no longer makes the estimate look finished before it is. The spinner stopped as soon as the request you moved away from unwound, so the fee shown while the real request was still in flight read as the final one.

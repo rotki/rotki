@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC, DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -24,6 +24,7 @@ from .constants import (
     LOCKED,
     SAFE_LOCKING,
     SAFE_VESTING,
+    SAFENET_REWARDS_DISTRIBUTOR,
     SAFENET_STAKING,
     SAFEPASS_AIRDROP,
     STAKE_INCREASED,
@@ -249,6 +250,42 @@ class SafeDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_safenet_rewards_claim(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a SafeNet staking rewards claim from the merkle drop distributor. The SAFE
+        transfer to the claimer is logged before the Claimed event, so the already decoded
+        receive event is transformed in place."""
+        if (
+                context.tx_log.topics[0] != CLAIMED_TOPIC or
+                not self.base.is_tracked(claimer := bytes_to_address(context.tx_log.topics[1]))
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == claimer and
+                    event.asset == self.safe_token and
+                    event.amount == amount
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_SAFE
+                event.notes = f'Claim {amount} SAFE as SafeNet staking rewards'
+                break
+
+        else:  # transfer not found
+            log.error(
+                'Could not find the SAFE transfer of the SafeNet rewards claim for %s',
+                context.transaction.tx_hash,
+            )
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -257,6 +294,7 @@ class SafeDecoder(EvmDecoderInterface):
             SAFE_LOCKING: (self._decode_safe_locker,),
             SAFEPASS_AIRDROP: (self._decode_safpass_claim,),
             SAFENET_STAKING: (self._decode_safenet_staking,),
+            SAFENET_REWARDS_DISTRIBUTOR: (self._decode_safenet_rewards_claim,),
         }
 
     @staticmethod

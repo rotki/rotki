@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import (
     CPT_SAFE,
     SAFE_LOCKING,
     SAFE_VESTING,
+    SAFENET_REWARDS_DISTRIBUTOR,
     SAFENET_STAKING,
     SAFEPASS_AIRDROP,
 )
@@ -692,6 +693,42 @@ def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Unstake {amount} SAFE from SafeNet',
             counterparty=CPT_SAFE,
             address=SAFENET_STAKING,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x982Ee94031F6998A2DDc2C3FE1B3413bFbc61F30']])
+def test_safenet_rewards_claim(ethereum_inquirer, ethereum_accounts):
+    """Test claiming SafeNet staking rewards from the merkle drop distributor"""
+    tx_hash = deserialize_evm_tx_hash('0x48978f77327986a7aacaa0c020608e8a6776c3d5c61ae79222b9d12fb8e23753')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1787899751000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.000005389112828244'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=580,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            amount=FVal(amount := '12.660388766244482508'),
+            location_label=user_address,
+            notes=f'Claim {amount} SAFE as SafeNet staking rewards',
+            counterparty=CPT_SAFE,
+            address=SAFENET_REWARDS_DISTRIBUTOR,
         ),
     ]
 
