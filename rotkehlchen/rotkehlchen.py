@@ -1519,7 +1519,6 @@ class Rotkehlchen:
 
         if (
                 oracle_type is HistoricalPriceOracle and
-                oracles is not None and
                 HistoricalPriceOracle.COINBASE in oracles and
                 not self.exchange_manager.connected_exchanges.get(Location.COINBASE)
         ):

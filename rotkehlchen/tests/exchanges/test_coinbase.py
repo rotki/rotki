@@ -79,6 +79,58 @@ def test_advanced_trade_candle_request(mock_coinbase: Coinbase) -> None:
     assert get_mock.call_args.kwargs['headers'] == {'Authorization': 'Bearer jwt-token'}
 
 
+def test_advanced_trade_products_are_cached(mock_coinbase: Coinbase) -> None:
+    responses = (
+        MockResponse(200, json.dumps({
+            'products': [
+                {
+                    'product_id': 'ETH-USD',
+                    'base_currency_id': 'ETH',
+                    'quote_currency_id': 'USD',
+                    'product_type': 'SPOT',
+                }, {
+                    'product_id': 'ETH-USD-FUTURE',
+                    'base_currency_id': 'ETH',
+                    'quote_currency_id': 'USD',
+                    'product_type': 'FUTURE',
+                },
+            ],
+            'pagination': {'has_next': True, 'next_cursor': 'second-page'},
+        })),
+        MockResponse(200, json.dumps({
+            'products': [{
+                'product_id': 'BTC-EUR',
+                'base_currency_id': 'BTC',
+                'quote_currency_id': 'EUR',
+                'product_type': 'SPOT',
+            }],
+            'pagination': {'has_next': False},
+        })),
+    )
+    with (
+        patch.object(mock_coinbase, 'build_jwt', return_value='jwt-token') as jwt_mock,
+        patch.object(mock_coinbase.session, 'get', side_effect=responses) as get_mock,
+    ):
+        first = mock_coinbase.query_spot_products()
+        second = mock_coinbase.query_spot_products()
+
+    assert first == second == {
+        ('ETH', 'USD'): 'ETH-USD',
+        ('BTC', 'EUR'): 'BTC-EUR',
+    }
+    assert get_mock.call_count == 2
+    assert get_mock.call_args_list[0].kwargs['params'] == {
+        'product_type': 'SPOT',
+        'limit': 1000,
+    }
+    assert get_mock.call_args_list[1].kwargs['params'] == {
+        'product_type': 'SPOT',
+        'limit': 1000,
+        'cursor': 'second-page',
+    }
+    assert jwt_mock.call_count == 2
+
+
 def test_advanced_trade_jwt_supports_both_key_types(messages_aggregator) -> None:
     """Both legacy Ed25519 and current CDP ECDSA credentials sign the endpoint URI."""
     # types-cryptography predates this method, but it is part of cryptography's runtime API.

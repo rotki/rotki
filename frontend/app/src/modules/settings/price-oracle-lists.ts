@@ -1,8 +1,8 @@
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import {
   ALCHEMY_PRIO_LIST_ITEM,
-  COINGECKO_PRIO_LIST_ITEM,
   COINBASE_PRIO_LIST_ITEM,
+  COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
   KRAKEN_PRIO_LIST_ITEM,

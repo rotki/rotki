@@ -4,27 +4,43 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOracle
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import ChainID, Location, Price, Timestamp, TokenKind
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.updates import RotkiDataUpdater
     from rotkehlchen.exchanges.coinbase import Coinbase
     from rotkehlchen.history.price import PriceHistorian
 
 QUERY_TIMESTAMP = Timestamp(1724661234)
 CANDLE_START = Timestamp(1724659200)
+pytestmark = pytest.mark.parametrize('use_clean_caching_directory', [True])
 
 
 @pytest.fixture(name='coinbase_oracle')
 def fixture_coinbase_oracle(
+        data_updater: RotkiDataUpdater,
         exchange_manager,
         function_scope_coinbase: Coinbase,
 ) -> CoinbaseHistoricalPriceOracle:
+    data_updater.update_location_asset_mappings(data={'additions': [
+        {'asset': asset.identifier, 'location': 'coinbase', 'location_symbol': asset.identifier}
+        for asset in (A_BTC, A_ETH, A_EUR, A_USD)
+    ]}, version=17)
+    function_scope_coinbase._spot_products = {
+        ('BTC', 'USD'): 'BTC-USD',
+        ('ETH', 'EUR'): 'ETH-EUR',
+        ('ETH', 'USD'): 'ETH-USD',
+        ('ETH', 'USDC'): 'ETH-USDC',
+        ('ETH', 'USDT'): 'ETH-USDT',
+    }
     exchange_manager.connected_exchanges[Location.COINBASE].append(function_scope_coinbase)
     return CoinbaseHistoricalPriceOracle(exchange_manager=exchange_manager)
 
@@ -133,6 +149,31 @@ def test_unknown_product_and_malformed_candles(
         pytest.raises(NoPriceForGivenTimestamp),
     ):
         coinbase_oracle.query_historical_price(A_BTC, A_USD, QUERY_TIMESTAMP)
+
+
+def test_coinbase_only_queries_mapping_backed_assets(
+        coinbase_oracle: CoinbaseHistoricalPriceOracle,
+) -> None:
+    """A token cannot impersonate a Coinbase-listed asset by copying its symbol."""
+    fake_eth = EvmToken.initialize(
+        address=string_to_evm_address('0x0000000000000000000000000000000000000001'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='Fake Ether',
+        symbol='ETH',
+        decimals=18,
+    )
+    coinbase = coinbase_oracle._get_coinbase()
+    assert coinbase is not None
+    with (
+        patch.object(coinbase, 'query_spot_products') as products_mock,
+        patch.object(coinbase, 'query_product_candles') as candles_mock,
+        pytest.raises(PriceQueryUnsupportedAsset),
+    ):
+        coinbase_oracle.query_historical_price(fake_eth, A_USD, QUERY_TIMESTAMP)
+
+    products_mock.assert_not_called()
+    candles_mock.assert_not_called()
 
 
 def test_cached_coinbase_price_avoids_second_request(

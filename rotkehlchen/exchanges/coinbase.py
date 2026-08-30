@@ -6,6 +6,7 @@ import time
 from collections import defaultdict
 from enum import Enum
 from functools import partial
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -180,6 +181,7 @@ class Coinbase(ExchangeInterface):
         # skipped when both the debit and credit part of the trade is present.
         self.advanced_orders_to_currency: dict[str, str] = {}
         self.staking_events: set[tuple[TimestampMS, Asset, FVal]] = set()
+        self._spot_products: dict[tuple[str, str], str] | None = None
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -358,6 +360,78 @@ class Coinbase(ExchangeInterface):
                 break
 
         return all_items
+
+    @protect_with_lock()
+    def query_spot_products(self) -> dict[tuple[str, str], str]:
+        """Return Coinbase spot products keyed by base and quote symbols.
+
+        The complete catalogue is loaded at most once per connection. Symbols remain raw strings;
+        callers must match them against identity-safe asset mappings instead of resolving every
+        remote symbol into a local asset.
+        """
+        if self._spot_products is not None:
+            return self._spot_products
+
+        endpoint = f'{COINBASE_ADVANCED_TRADE_API_PATH}/products'
+        params: dict[str, str | int] = {'product_type': 'SPOT', 'limit': 1000}
+        products: dict[tuple[str, str], str] = {}
+        seen_cursors: set[str] = set()
+        while True:
+            token = self.build_jwt(uri=f'GET {self.host}{endpoint}')
+            try:
+                response = self.session.get(
+                    url=f'{self.base_uri}{endpoint}',
+                    params=params.copy(),
+                    headers={'Authorization': f'Bearer {token}'},
+                    timeout=CachedSettings().get_timeout_tuple(),
+                )
+            except requests.RequestException as e:
+                raise RemoteError('Coinbase Advanced Trade products request failed') from e
+
+            if response.status_code != HTTPStatus.OK:
+                raise RemoteError(
+                    message=(
+                        'Coinbase Advanced Trade products request failed with HTTP status '
+                        f'{response.status_code}'
+                    ),
+                    error_code=response.status_code,
+                )
+
+            try:
+                result = jsonloads_dict(response.text)
+            except JSONDecodeError as e:
+                raise RemoteError('Coinbase Advanced Trade returned invalid products JSON') from e
+
+            if not isinstance(page_products := result.get('products'), list):
+                raise RemoteError('Coinbase Advanced Trade response does not contain products')
+
+            for product in page_products:
+                if (
+                        not isinstance(product, dict) or
+                        product.get('product_type') != 'SPOT' or
+                        not isinstance(product_id := product.get('product_id'), str) or
+                        not isinstance(base_symbol := product.get('base_currency_id'), str) or
+                        not isinstance(quote_symbol := product.get('quote_currency_id'), str)
+                ):
+                    continue
+
+                products[base_symbol, quote_symbol] = product_id
+
+            pagination = result.get('pagination')
+            if not isinstance(pagination, dict) or pagination.get('has_next') is not True:
+                break
+            if (
+                    not isinstance(next_cursor := pagination.get('next_cursor'), str) or
+                    next_cursor == '' or
+                    next_cursor in seen_cursors
+            ):
+                raise RemoteError('Coinbase Advanced Trade products pagination is invalid')
+
+            seen_cursors.add(next_cursor)
+            params['cursor'] = next_cursor
+
+        self._spot_products = products
+        return products
 
     def query_product_candles(
             self,

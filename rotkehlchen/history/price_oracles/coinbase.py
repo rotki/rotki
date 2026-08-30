@@ -1,18 +1,19 @@
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.converters import asset_from_coinbase, asset_to_coinbase
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.assets import A_EUR, A_USD, A_USDC, A_USDT
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.coinbase import Coinbase
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.types import Location, Price, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset, AssetWithOracles
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.exchanges.manager import ExchangeManager
 
 COINBASE_CANDLE_GRANULARITY: Final = 'ONE_HOUR'
@@ -79,27 +80,49 @@ class CoinbaseHistoricalPriceOracle(HistoricalPriceOracleInterface):
             raise PriceQueryUnsupportedAsset(from_asset.identifier)
 
         try:
-            from_symbol = asset_to_coinbase(from_asset)
-            to_symbol = asset_to_coinbase(to_asset)
-        except UnknownAsset as e:
-            raise PriceQueryUnsupportedAsset(e.identifier) from e
+            resolved_from_asset = (
+                from_asset if isinstance(from_asset, AssetWithOracles)
+                else from_asset.resolve_to_asset_with_oracles()
+            )
+            resolved_to_asset = (
+                to_asset if isinstance(to_asset, AssetWithOracles)
+                else to_asset.resolve_to_asset_with_oracles()
+            )
+            quote_assets = tuple(dict.fromkeys((
+                resolved_to_asset,
+                A_USD.resolve_to_asset_with_oracles(),
+                A_EUR.resolve_to_asset_with_oracles(),
+                A_USDC.resolve_to_asset_with_oracles(),
+                A_USDT.resolve_to_asset_with_oracles(),
+            )))
+        except (UnknownAsset, WrongAssetType) as e:
+            raise PriceQueryUnsupportedAsset(from_asset.identifier) from e
 
-        quote_symbols = dict.fromkeys((
-            to_symbol,
-            asset_to_coinbase(A_USD),
-            asset_to_coinbase(A_EUR),
-            asset_to_coinbase(A_USDC),
-            asset_to_coinbase(A_USDT),
-        ))
+        asset_symbols = GlobalDBHandler.get_location_asset_symbols(
+            assets=[resolved_from_asset, *quote_assets],
+            location=Location.COINBASE,
+        )
+        if len(from_symbols := asset_symbols[resolved_from_asset]) == 0:
+            raise PriceQueryUnsupportedAsset(from_asset.identifier)
+
+        products = coinbase.query_spot_products()
         candle_start = Timestamp(timestamp - (timestamp % COINBASE_CANDLE_SECONDS))
         candle_end = Timestamp(candle_start + COINBASE_CANDLE_SECONDS - 1)
 
-        for quote_symbol in quote_symbols:
-            if quote_symbol == from_symbol:
+        for quote_asset in quote_assets:
+            if quote_asset == resolved_from_asset:
+                continue
+            quote_symbols = asset_symbols[quote_asset]
+            product_id = next((
+                product_id
+                for (base_symbol, quote_symbol), product_id in products.items()
+                if base_symbol in from_symbols and quote_symbol in quote_symbols
+            ), None)
+            if product_id is None:
                 continue
 
             candles = coinbase.query_product_candles(
-                product_id=f'{from_symbol}-{quote_symbol}',
+                product_id=product_id,
                 start=candle_start,
                 end=candle_end,
                 granularity=COINBASE_CANDLE_GRANULARITY,
@@ -107,13 +130,8 @@ class CoinbaseHistoricalPriceOracle(HistoricalPriceOracleInterface):
             )
             if (price := self._select_candle(candles=candles, timestamp=timestamp)) is None:
                 continue
-            if quote_symbol == to_symbol:
+            if quote_asset == resolved_to_asset:
                 return price
-
-            try:
-                quote_asset = asset_from_coinbase(quote_symbol, time=timestamp)
-            except (UnknownAsset, DeserializationError):
-                continue
 
             # Imported locally to avoid a module cycle with history.price.
             from rotkehlchen.history.price import PriceHistorian
