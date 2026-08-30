@@ -28,6 +28,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Self
 from uuid import uuid4
+from weakref import WeakSet
 
 import rsqlite
 from polyleven import levenshtein
@@ -274,7 +275,10 @@ class DBCursor:
     def close(self) -> None:
         self._prefetched_rows.clear()
         with self.connection.statement_lock:
-            self._cursor.close()
+            try:
+                self._cursor.close()
+            finally:
+                self.connection._cursors.discard(self)
 
 
 class DBConnectionType(Enum):
@@ -384,6 +388,7 @@ class DBConnection:
         self._conn: UnderlyingConnection
         self._path = path
         self._read_only = read_only
+        self._cursors: WeakSet[DBCursor] = WeakSet()
         # Pool of read-only connections configured by enable_read_pool() and created
         # lazily as concurrent reads need them. LIFO reuse keeps sequential reads on
         # the same warm SQLite page cache instead of rotating through every reader.
@@ -515,7 +520,9 @@ class DBConnection:
 
     def cursor(self) -> DBCursor:
         with self.statement_lock:
-            return DBCursor(connection=self, cursor=self._conn.cursor())
+            cursor = DBCursor(connection=self, cursor=self._conn.cursor())
+            self._cursors.add(cursor)
+            return cursor
 
     def interrupt(self) -> None:
         """Abort this connection's in-flight statements (sqlite3_interrupt). Safe
@@ -526,6 +533,8 @@ class DBConnection:
     def close(self) -> None:
         self.disable_read_pool()
         with self.statement_lock:
+            for cursor in tuple(self._cursors):
+                cursor.close()
             self._conn.close()
         if not self._read_only:  # a reader was never registered in the map
             CONNECTION_MAP.pop(self.connection_type, None)
