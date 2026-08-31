@@ -90,11 +90,17 @@ def fixture_use_in_memory_globaldb() -> bool:
     return True
 
 
+@pytest.fixture(name='globaldb_cached_statements')
+def fixture_globaldb_cached_statements() -> int | None:
+    return None
+
+
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
         messages_aggregator,
         perform_assets_updates=False,
+        cached_statements: int | None = None,
 ) -> GlobalDBHandler:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -106,6 +112,7 @@ def create_globaldb(
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         msg_aggregator=messages_aggregator,
         perform_assets_updates=perform_assets_updates,
+        cached_statements=cached_statements,
     )
 
 
@@ -123,6 +130,7 @@ def _initialize_fixture_globaldb(
         load_global_caches,
         messages_aggregator,
         use_in_memory_globaldb,
+        globaldb_cached_statements,
 ) -> tuple[GlobalDBHandler, Path]:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -144,11 +152,13 @@ def _initialize_fixture_globaldb(
                     global_dir: Path,
                     db_filename: str,
                     sql_vm_instructions_cb: int,
+                    cached_statements: int | None = None,
             ) -> tuple[DBConnection, bool]:
                 connection = DBConnection(
                     path=':memory:',
                     connection_type=DBConnectionType.GLOBAL,
                     sql_vm_instructions_cb=sql_vm_instructions_cb,
+                    cached_statements=cached_statements,
                 )
                 disk_conn = rsqlite.connect(
                     database=source_db_path,
@@ -192,6 +202,7 @@ def _initialize_fixture_globaldb(
             data_directory=new_data_dir,
             sql_vm_instructions_cb=0,
             messages_aggregator=messages_aggregator,
+            cached_statements=globaldb_cached_statements,
         )
 
     if empty_global_addressbook is True:
@@ -223,6 +234,7 @@ def fixture_globaldb(
         load_global_caches,
         messages_aggregator,
         use_in_memory_globaldb,
+        globaldb_cached_statements,
 ):
     globaldb, new_data_dir = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
@@ -238,6 +250,7 @@ def fixture_globaldb(
         load_global_caches=load_global_caches,
         messages_aggregator=messages_aggregator,
         use_in_memory_globaldb=use_in_memory_globaldb,
+        globaldb_cached_statements=globaldb_cached_statements,
     )
     yield globaldb
 

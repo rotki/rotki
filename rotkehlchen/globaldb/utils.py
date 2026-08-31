@@ -72,6 +72,7 @@ def initialize_globaldb(
         global_dir: Path,
         db_filename: str,
         sql_vm_instructions_cb: int,
+        cached_statements: int | None = None,
 ) -> tuple[DBConnection, bool]:
     """
     Checks the database whether there are any not finished upgrades and automatically uses a
@@ -89,6 +90,7 @@ def initialize_globaldb(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        cached_statements=cached_statements,
     )
     try:
         with connection.read_ctx() as cursor:
@@ -125,5 +127,6 @@ def initialize_globaldb(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        cached_statements=cached_statements,
     )
     return connection, True
