@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
@@ -26,6 +27,7 @@ from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -33,7 +35,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ChainID, EventMetricKey, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 pytestmark = pytest.mark.accounting_update
@@ -715,7 +717,7 @@ def test_empty_counterparty_does_not_create_protocol_bucket(
                 timestamp=TimestampMS(3000),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.GENERATE_DEBT,
+                event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 asset=A_ETH,
                 amount=FVal('1'),
                 location_label=TEST_ADDR1,
@@ -1556,6 +1558,138 @@ def test_swapped_for_asset_tracked_under_new_identifier(
             (glm.identifier, glm.identifier, '60'),  # spend 10 GLM -> 70 - 10 = 60
             (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
         ]
+
+
+def test_rebasing_token_deficit_records_yield_and_resolves_issue(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """A rebasing OUT deficit is yield in its bucket, not a negative balance."""
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal('10'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        spend_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal('12'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    process_historical_balances(database, messages_aggregator)
+    assert DataIssuesManager(database).list_issues()[0].state == 'open'
+
+    GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=True)
+    try:
+        get_rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag
+        with (
+            patch.object(
+                GlobalDBHandler,
+                'get_asset_ids_with_flag',
+                wraps=get_rebasing_assets,
+            ) as get_flags_mock,
+            patch.object(database.msg_aggregator, 'add_message') as msg_mock,
+        ):
+            process_historical_balances(database, messages_aggregator)
+
+        get_flags_mock.assert_called_once_with(AssetFlag.REBASING)
+        assert WSMessageType.NEGATIVE_BALANCE_DETECTED not in [
+            call.kwargs['message_type'] for call in msg_mock.call_args_list
+        ]
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT metric_key, metric_value, sort_key FROM event_metrics '
+                'WHERE event_identifier = ? ORDER BY sort_key',
+                (spend_id,),
+            ).fetchall() == [
+                (EventMetricKey.REBASE_YIELD.serialize(), '2', 4000),
+                (EventMetricKey.BALANCE.serialize(), '0', 4001),
+            ]
+        assert DataIssuesManager(database).list_issues()[0].state == 'resolved'
+    finally:
+        GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
+
+
+def test_rebasing_protocol_deficit_stays_metrics_only(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Rebasing yield in a protocol bucket must not create a synthetic history event."""
+    GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=True)
+    try:
+        with database.user_write() as write_cursor:
+            DBHistoryEvents(database).add_history_events(
+                write_cursor=write_cursor,
+                history=[EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(1000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_DAI,
+                    amount=FVal('10'),
+                    location_label=TEST_ADDR1,
+                ), EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(2000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.DEPOSIT,
+                    event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                    asset=A_DAI,
+                    amount=FVal('10'),
+                    location_label=TEST_ADDR1,
+                    counterparty=CPT_LIQUITY,
+                ), EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(3000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.WITHDRAWAL,
+                    event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+                    asset=A_DAI,
+                    amount=FVal('12'),
+                    location_label=TEST_ADDR1,
+                    counterparty=CPT_LIQUITY,
+                )],
+            )
+
+        process_historical_balances(database, messages_aggregator)
+
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 3
+            assert cursor.execute(
+                'SELECT protocol, metric_key, metric_value FROM event_metrics '
+                'WHERE timestamp = ? ORDER BY protocol NULLS FIRST, metric_key',
+                (TimestampMS(3000),),
+            ).fetchall() == [
+                (None, EventMetricKey.BALANCE.serialize(), '12'),
+                (CPT_LIQUITY, EventMetricKey.BALANCE.serialize(), '0'),
+                (CPT_LIQUITY, EventMetricKey.REBASE_YIELD.serialize(), '2'),
+            ]
+    finally:
+        GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
 
 
 def test_negative_balance_writes_data_issue(

@@ -58,6 +58,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import EthSyncError, InputError, NotERC20Conformant, RemoteError
@@ -261,11 +262,14 @@ class AssetsService:
         with self.rotkehlchen.data.db.user_write() as cursor:
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
         if is_rebasing is not None:
-            GlobalDBHandler.set_asset_flag(
+            flag_changed = GlobalDBHandler.set_asset_flag(
                 identifier=asset.identifier,
                 flag=AssetFlag.REBASING,
                 enabled=is_rebasing,
             )
+            if flag_changed:
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    DBHistoryEvents(self.rotkehlchen.data.db).mark_all_events_modified(write_cursor)
 
         return {
             'result': {'identifier': asset.identifier},
@@ -286,11 +290,14 @@ class AssetsService:
         AssetResolver.clean_memory_cache(asset.identifier)
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)
         if is_rebasing is not None:
-            GlobalDBHandler.set_asset_flag(
+            flag_changed = GlobalDBHandler.set_asset_flag(
                 identifier=asset.identifier,
                 flag=AssetFlag.REBASING,
                 enabled=is_rebasing,
             )
+            if flag_changed:
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    DBHistoryEvents(self.rotkehlchen.data.db).mark_all_events_modified(write_cursor)
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
