@@ -166,6 +166,7 @@ class GlobalDBHandler:
             sql_vm_instructions_cb: int | None = None,
             perform_assets_updates: bool | None = None,
             msg_aggregator: MessagesAggregator | None = None,
+            cached_statements: int | None = None,
     ) -> GlobalDBHandler:
         """
         Initializes the GlobalDB.
@@ -202,6 +203,7 @@ class GlobalDBHandler:
             global_dir=global_dir,
             db_filename=GLOBALDB_NAME,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
+            cached_statements=cached_statements,
         )
         GlobalDBHandler.__instance.packaged_db_lock = Lock()
 

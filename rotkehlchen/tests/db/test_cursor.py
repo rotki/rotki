@@ -1,8 +1,19 @@
 """Tests for DBCursor semantics that the prefetch buffer must preserve"""
+from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING
+
 import pytest
 import rsqlite
 
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+def _execute_query(connection: DBConnection) -> None:
+    with connection.read_ctx() as cursor:
+        cursor.execute('SELECT 1').fetchone()
 
 
 @pytest.fixture(name='conn')
@@ -55,3 +66,19 @@ def test_connection_close_closes_retained_cursor(conn: DBConnection) -> None:
 
     with pytest.raises(rsqlite.ProgrammingError, match='closed cursor'):
         cursor.fetchone()
+
+
+def test_cross_thread_statement_does_not_retain_database(tmp_path: Path) -> None:
+    database_path = tmp_path / 'cross-thread.db'
+    connection = DBConnection(
+        path=database_path,
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=100,
+        cached_statements=0,
+    )
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        executor.submit(_execute_query, connection).result()
+
+    connection.close()
+
+    database_path.unlink()

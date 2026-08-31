@@ -55,7 +55,7 @@ def _latest_released_version() -> Version:
     Read rather than hardcoded so a release can not leave this pointing at an older version
     than the one the remote updates gate themselves against.
     """
-    changelog = (Path(__file__).parents[4] / 'docs' / 'changelog.rst').read_text()
+    changelog = (Path(__file__).parents[4] / 'docs' / 'changelog.rst').read_text(encoding='utf8')
     if (match := re.search(r'^\* :release:`(\d+\.\d+\.\d+) <', changelog, re.MULTILINE)) is None:
         raise AssertionError('Could not find the latest release in docs/changelog.rst')
 
