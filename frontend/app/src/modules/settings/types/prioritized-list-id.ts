@@ -46,6 +46,11 @@ export const COINGECKO_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.COINGECKO,
 };
 
+export const COINBASE_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
+  icon: getPublicProtocolImagePath('coinbase.svg'),
+  identifier: PriceOracle.COINBASE,
+};
+
 export const DEFILAMA_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   icon: getPublicServiceImagePath('defillama.svg'),
   identifier: PriceOracle.DEFILLAMA,

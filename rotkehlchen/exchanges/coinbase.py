@@ -6,6 +6,7 @@ import time
 from collections import defaultdict
 from enum import Enum
 from functools import partial
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -81,6 +82,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CB_EVENTS_PREFIX = 'CBE_'
+COINBASE_ADVANCED_TRADE_API_PATH = '/api/v3/brokerage'
+COINBASE_CANDLES_MAX_LIMIT = 350
 ECDSA_KEY_RE: re.Pattern = re.compile(r'^organizations/[\w-]+/apiKeys/[\w-]+$')
 ECDSA_PRIVATE_KEY_RE: re.Pattern = re.compile(
     r'^-----BEGIN EC PRIVATE KEY-----\n'
@@ -107,11 +110,18 @@ class CoinbaseKeyType(Enum):
     ED25519 = 'EdDSA'
 
     @classmethod
-    def detect_type(cls, api_key: str) -> CoinbaseKeyType | None:
+    def detect_type(cls, api_key: str, secret: bytes | None = None) -> CoinbaseKeyType | None:
         """Detect the API key type of the given key.
         Returns the detected type or None if the format is invalid.
         """
         if ECDSA_KEY_RE.match(api_key):
+            if secret is not None:
+                try:
+                    if len(base64.b64decode(secret, validate=True)) in (32, 64):
+                        return cls.ED25519
+                except ValueError:
+                    pass
+
             return cls.ECDSA
 
         if len(api_key) == 36 and api_key.count('-') == 4:  # for ED25519, check uuid format
@@ -163,7 +173,7 @@ class Coinbase(ExchangeInterface):
             database=database,
             msg_aggregator=msg_aggregator,
         )
-        self.key_type = CoinbaseKeyType.detect_type(api_key)
+        self.key_type = CoinbaseKeyType.detect_type(api_key, secret)
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.host = 'api.coinbase.com'
@@ -171,6 +181,7 @@ class Coinbase(ExchangeInterface):
         # skipped when both the debit and credit part of the trade is present.
         self.advanced_orders_to_currency: dict[str, str] = {}
         self.staking_events: set[tuple[TimestampMS, Asset, FVal]] = set()
+        self._spot_products: dict[tuple[str, str], str] | None = None
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -180,7 +191,7 @@ class Coinbase(ExchangeInterface):
         The JWT token is built using the provided URI and the stored API key name and private key.
         The token includes the following claims:
         - 'sub': The API key name.
-        - 'iss': The issuer, which is set to "coinbase-cloud".
+        - 'iss': The issuer expected by the key's Coinbase API generation.
         - 'nbf': The "not before" timestamp, set to the current time.
         - 'exp': The expiration timestamp, set to 2 minutes from the current time.
         - 'uri': The provided URI.
@@ -209,7 +220,7 @@ class Coinbase(ExchangeInterface):
             current_time = int(time.time())
             jwt_payload = {
                 'sub': self.api_key,
-                'iss': 'coinbase-cloud',
+                'iss': 'cdp' if ECDSA_KEY_RE.match(self.api_key) else 'coinbase-cloud',
                 'nbf': current_time,
                 'exp': current_time + 120,
                 'uri': uri,
@@ -229,7 +240,7 @@ class Coinbase(ExchangeInterface):
         """Validates that the Coinbase API key is good for usage in rotki.
         Checks that the API key format is correct and the secret is properly formatted.
         """
-        self.key_type = CoinbaseKeyType.detect_type(self.api_key)
+        self.key_type = CoinbaseKeyType.detect_type(self.api_key, self.secret)
         if self.key_type is None:
             return False, f'Invalid API key format: {self.api_key}'
 
@@ -241,11 +252,8 @@ class Coinbase(ExchangeInterface):
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
-        if (
-                credentials.api_key is not None and
-                (new_key_type := CoinbaseKeyType.detect_type(credentials.api_key)) != self.key_type
-        ):
-            self.key_type = new_key_type
+        if changed:
+            self.key_type = CoinbaseKeyType.detect_type(self.api_key, self.secret)
 
         return changed
 
@@ -352,6 +360,134 @@ class Coinbase(ExchangeInterface):
                 break
 
         return all_items
+
+    @protect_with_lock()
+    def query_spot_products(self) -> dict[tuple[str, str], str]:
+        """Return Coinbase spot products keyed by base and quote symbols.
+
+        The complete catalogue is loaded at most once per connection. Symbols remain raw strings;
+        callers must match them against identity-safe asset mappings instead of resolving every
+        remote symbol into a local asset.
+        """
+        if self._spot_products is not None:
+            return self._spot_products
+
+        endpoint = f'{COINBASE_ADVANCED_TRADE_API_PATH}/products'
+        params: dict[str, str | int] = {'product_type': 'SPOT', 'limit': 1000}
+        products: dict[tuple[str, str], str] = {}
+        seen_cursors: set[str] = set()
+        while True:
+            token = self.build_jwt(uri=f'GET {self.host}{endpoint}')
+            try:
+                response = self.session.get(
+                    url=f'{self.base_uri}{endpoint}',
+                    params=params.copy(),
+                    headers={'Authorization': f'Bearer {token}'},
+                    timeout=CachedSettings().get_timeout_tuple(),
+                )
+            except requests.RequestException as e:
+                raise RemoteError('Coinbase Advanced Trade products request failed') from e
+
+            if response.status_code != HTTPStatus.OK:
+                raise RemoteError(
+                    message=(
+                        'Coinbase Advanced Trade products request failed with HTTP status '
+                        f'{response.status_code}'
+                    ),
+                    error_code=response.status_code,
+                )
+
+            try:
+                result = jsonloads_dict(response.text)
+            except JSONDecodeError as e:
+                raise RemoteError('Coinbase Advanced Trade returned invalid products JSON') from e
+
+            if not isinstance(page_products := result.get('products'), list):
+                raise RemoteError('Coinbase Advanced Trade response does not contain products')
+
+            for product in page_products:
+                if (
+                        not isinstance(product, dict) or
+                        product.get('product_type') != 'SPOT' or
+                        not isinstance(product_id := product.get('product_id'), str) or
+                        not isinstance(base_symbol := product.get('base_currency_id'), str) or
+                        not isinstance(quote_symbol := product.get('quote_currency_id'), str)
+                ):
+                    continue
+
+                products[base_symbol, quote_symbol] = product_id
+
+            pagination = result.get('pagination')
+            if not isinstance(pagination, dict) or pagination.get('has_next') is not True:
+                break
+            if (
+                    not isinstance(next_cursor := pagination.get('next_cursor'), str) or
+                    next_cursor == '' or
+                    next_cursor in seen_cursors
+            ):
+                raise RemoteError('Coinbase Advanced Trade products pagination is invalid')
+
+            seen_cursors.add(next_cursor)
+            params['cursor'] = next_cursor
+
+        self._spot_products = products
+        return products
+
+    def query_product_candles(
+            self,
+            product_id: str,
+            start: Timestamp,
+            end: Timestamp,
+            granularity: str,
+            limit: int = 1,
+    ) -> list[dict[str, Any]]:
+        """Query Coinbase Advanced Trade candles using this connection's credentials.
+
+        This deliberately does not use ``_api_query``: that helper is coupled to the v2 API,
+        while the JWT URI claim must contain the complete Advanced Trade endpoint path.
+
+        May raise RemoteError for authentication, permission, rate-limit, transport, and
+        malformed-response failures. An unavailable product returns an empty list.
+        """
+        endpoint = f'{COINBASE_ADVANCED_TRADE_API_PATH}/products/{product_id}/candles'
+        token = self.build_jwt(uri=f'GET {self.host}{endpoint}')
+        params: dict[str, str | int] = {
+            'start': str(start),
+            'end': str(end),
+            'granularity': granularity,
+            'limit': min(max(limit, 1), COINBASE_CANDLES_MAX_LIMIT),
+        }
+        try:
+            response = self.session.get(
+                url=f'{self.base_uri}{endpoint}',
+                params=params,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
+        except requests.RequestException as e:
+            raise RemoteError('Coinbase Advanced Trade candle request failed') from e
+
+        if response.status_code == 404:
+            return []
+        if response.status_code != 200:
+            raise RemoteError(
+                message=(
+                    'Coinbase Advanced Trade candle request failed with HTTP status '
+                    f'{response.status_code}'
+                ),
+                error_code=response.status_code,
+            )
+
+        try:
+            result = jsonloads_dict(response.text)
+        except JSONDecodeError as e:
+            raise RemoteError('Coinbase Advanced Trade returned invalid JSON') from e
+
+        candles = result.get('candles')
+        if not isinstance(candles, list):
+            raise RemoteError('Coinbase Advanced Trade response does not contain a candle list')
+
+        return candles
 
     @protect_with_lock()
     @cache_response_timewise()

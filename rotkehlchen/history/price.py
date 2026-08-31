@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
     from rotkehlchen.externalapis.moralis import Moralis
+    from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOracle
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,7 @@ class PriceHistorian:
     _defillama: Defillama
     _alchemy: Alchemy
     _moralis: Moralis
+    _coinbase: CoinbaseHistoricalPriceOracle | None
     _uniswapv2: UniswapV2Oracle
     _uniswapv3: UniswapV3Oracle
     _oracle_state: HistoricalOracleState | None = None
@@ -107,6 +109,7 @@ class PriceHistorian:
             defillama: Defillama | None = None,
             alchemy: Alchemy | None = None,
             moralis: Moralis | None = None,
+            coinbase: CoinbaseHistoricalPriceOracle | None = None,
             uniswapv2: UniswapV2Oracle | None = None,
             uniswapv3: UniswapV3Oracle | None = None,
     ) -> PriceHistorian:
@@ -129,6 +132,7 @@ class PriceHistorian:
         PriceHistorian._defillama = defillama
         PriceHistorian._alchemy = alchemy
         PriceHistorian._moralis = moralis
+        PriceHistorian._coinbase = coinbase
         PriceHistorian._uniswapv2 = uniswapv2
         PriceHistorian._uniswapv3 = uniswapv3
 
@@ -155,8 +159,13 @@ class PriceHistorian:
         new_oracles = tuple(
             oracle for oracle in oracles
             if (
-                oracle != HistoricalPriceOracle.CRYPTOCOMPARE or
-                instance._cryptocompare.has_api_key()
+                (
+                    oracle != HistoricalPriceOracle.CRYPTOCOMPARE or
+                    instance._cryptocompare.has_api_key()
+                ) and (
+                    oracle != HistoricalPriceOracle.COINBASE or
+                    instance._coinbase is not None
+                )
             )
         )
         instance._oracle_state = HistoricalOracleState(
