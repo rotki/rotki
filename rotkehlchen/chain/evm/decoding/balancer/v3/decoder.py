@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
     BALANCER_LABEL,
     BALANCER_VERSION_MAPPING,
     CPT_BALANCER_V3,
-        BalancerCounterparty,
+    BalancerCounterparty,
 )
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -30,7 +30,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -53,6 +52,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
@@ -128,7 +128,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         if context.tx_log.topics[0] == LIQUIDITY_ADDED_TOPIC:
             pool_token_event_type = HistoryEventType.RECEIVE
             pool_token_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            pool_token_notes_template = f'Receive {{amount}} {{symbol}} from a {self.protocol_label} pool'
+            pool_token_notes_template = f'Receive {{amount}} {{symbol}} from a {self.protocol_label} pool'  # noqa: E501
             from_event_type = HistoryEventType.SPEND
             to_event_type = HistoryEventType.DEPOSIT
             to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
@@ -136,7 +136,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         else:  # LIQUIDITY_REMOVED_TOPIC
             pool_token_event_type = HistoryEventType.SPEND
             pool_token_event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            pool_token_notes_template = f'Return {{amount}} {{symbol}} to a {self.protocol_label} pool'
+            pool_token_notes_template = f'Return {{amount}} {{symbol}} to a {self.protocol_label} pool'  # noqa: E501
             from_event_type = HistoryEventType.RECEIVE
             to_event_type = HistoryEventType.WITHDRAWAL
             to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED

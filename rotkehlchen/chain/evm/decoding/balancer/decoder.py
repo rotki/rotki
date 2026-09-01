@@ -64,7 +64,8 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
         )
         self.counterparty: BalancerCounterparty = counterparty
         self.implementation_version: Literal[1, 2, 3] = BALANCER_VERSION_MAPPING[counterparty]
-        self.protocol_label: str = ('Balancer' if counterparty.startswith('balancer') else 'Beets') + f' v{counterparty[-1:]}'
+        protocol = 'Balancer' if counterparty.startswith('balancer') else 'Beets'
+        self.protocol_label: str = f'{protocol} v{counterparty[-1:]}'
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
