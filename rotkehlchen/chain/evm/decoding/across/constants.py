@@ -4,6 +4,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.types import ChainID
 
 CPT_ACROSS: Final = 'across'
+ACROSS_SOLANA_CHAIN_ID: Final = 34268394551451
 ACROSS_CPT_DETAILS: Final = CounterpartyDetails(
     identifier=CPT_ACROSS,
     label='Across',

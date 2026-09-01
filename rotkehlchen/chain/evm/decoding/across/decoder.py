@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.across.constants import (
     ACROSS_CHAIN_MAPPING,
     ACROSS_CPT_DETAILS,
+    ACROSS_SOLANA_CHAIN_ID,
     CPT_ACROSS,
     DEPOSIT_TOPICS,
     FILL_TOPICS,
@@ -27,7 +28,8 @@ from rotkehlchen.chain.evm.decoding.utils import make_bridge_extra_data, set_bri
 from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import bytes_to_address
+from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.utils.misc import bytes_to_address, bytes_to_solana_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -39,6 +41,29 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _across_chain_label(chain_id: int) -> str | None:
+    """Return a display label for an Across chain supported by rotki."""
+    if chain_id == ACROSS_SOLANA_CHAIN_ID:
+        return 'Solana'
+    if (chain := ACROSS_CHAIN_MAPPING.get(chain_id)) is not None:
+        return chain.label()
+    return None
+
+
+def _serialize_across_chain(chain_id: int) -> int | str:
+    """Use rotki's serialized name for non-EVM chains in bridge metadata."""
+    if chain_id == ACROSS_SOLANA_CHAIN_ID:
+        return SupportedBlockchain.SOLANA.serialize()
+    return chain_id
+
+
+def _decode_across_address(value: bytes, chain_id: int) -> str:
+    """Decode an Across bytes32 address according to the chain it belongs to."""
+    if chain_id == ACROSS_SOLANA_CHAIN_ID:
+        return bytes_to_solana_address(value)
+    return bytes_to_address(value)
 
 
 class AcrossCommonDecoder(EvmDecoderInterface):
@@ -74,8 +99,8 @@ class AcrossCommonDecoder(EvmDecoderInterface):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         destination_chain_id = int.from_bytes(context.tx_log.topics[1])
-        if (to_chain := ACROSS_CHAIN_MAPPING.get(destination_chain_id)) is not None:
-            chain_info = f' from {self.node_inquirer.chain_id.label()} to {to_chain.label()}'
+        if (to_chain_label := _across_chain_label(destination_chain_id)) is not None:
+            chain_info = f' from {self.node_inquirer.chain_id.label()} to {to_chain_label}'
         else:
             chain_info = ''
 
@@ -96,9 +121,12 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                 set_bridge_extra_data(
                     event=event,
                     from_chain=self.node_inquirer.chain_id,
-                    to_chain=destination_chain_id,
+                    to_chain=_serialize_across_chain(destination_chain_id),
                     from_address=depositor,
-                    to_address=bytes_to_address(context.tx_log.data[224:256]),
+                    to_address=_decode_across_address(
+                        value=context.tx_log.data[224:256],
+                        chain_id=destination_chain_id,
+                    ),
                     transfer_id=str(int.from_bytes(context.tx_log.topics[2])),
                 )
                 break
@@ -137,15 +165,18 @@ class AcrossCommonDecoder(EvmDecoderInterface):
 
         if not self.base.is_tracked(recipient):
             return DEFAULT_EVM_DECODING_OUTPUT
-        if (from_chain := ACROSS_CHAIN_MAPPING.get(origin_chain_id)) is not None:
-            chain_info = f' from {from_chain.label()} to {self.node_inquirer.chain_id.label()}'
+        if (from_chain_label := _across_chain_label(origin_chain_id)) is not None:
+            chain_info = f' from {from_chain_label} to {self.node_inquirer.chain_id.label()}'
         else:
             chain_info = ''
 
         bridge_extra_data = make_bridge_extra_data(
-            from_chain=origin_chain_id,
+            from_chain=_serialize_across_chain(origin_chain_id),
             to_chain=self.node_inquirer.chain_id,
-            from_address=bytes_to_address(context.tx_log.data[256:288]),
+            from_address=_decode_across_address(
+                value=context.tx_log.data[256:288],
+                chain_id=origin_chain_id,
+            ),
             to_address=recipient,
             transfer_id=str(int.from_bytes(context.tx_log.topics[2])),
         )

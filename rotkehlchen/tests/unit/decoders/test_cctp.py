@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.cctp.constants import USDC_IDENTIFIER_ARB
+from rotkehlchen.chain.base.modules.cctp.constants import USDC_IDENTIFIER_BASE
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.cctp.constants import CPT_CCTP
@@ -13,13 +15,80 @@ from rotkehlchen.constants.assets import A_ETH, A_POL, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.base import BASE_MAINNET_NODE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
+@pytest.mark.parametrize('base_accounts', [['0x34B741a3D0ef8c8ef6dd490C305c5C5ca20aCa59']])
+def test_receive_usdc_on_base_from_solana_v2(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x2aeac6a78077f8a43886c282b00942285b8e607ea9099a7d4fd1b316b631b58c')  # noqa: E501
+    with patch('rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_parent_hash'):  # Base's indexers have not indexed this recent transaction's internal calls yet  # noqa: E501
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=base_inquirer,
+            tx_hash=tx_hash,
+        )
+    assert events == [EvmEvent(
+        sequence_index=460,
+        timestamp=TimestampMS(1788256855000),
+        location=Location.BASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=Asset(USDC_IDENTIFIER_BASE),
+        amount=FVal('7.269273'),
+        location_label=base_accounts[0],
+        notes='Bridge 7.269273 USDC from Solana to Base via CCTP',
+        tx_ref=tx_hash,
+        counterparty=CPT_CCTP,
+        address=ZERO_ADDRESS,
+        extra_data={'bridge': {
+            'from_chain': 'solana',
+            'to_chain': 8453,
+            'to_address': base_accounts[0],
+            'transfer_id': '0xd25fe41da9c2a8241548e59c92d2b4cccd0ebc26c9d73f7a95393dcad33d31b4',
+        }},
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xD156fFB54871F4562744d6Be5d6321B5BffCa3B6']])
+def test_deposit_usdc_from_ethereum_to_solana_v2(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x1ac8683e92b064b579244f4ca2161e54e01a343c879fb3b18ff29f69a5162dbe')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events[-1] == EvmEvent(
+        sequence_index=216,
+        timestamp=TimestampMS(1774849751000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_USDC,
+        amount=FVal('148.760322'),
+        location_label=ethereum_accounts[0],
+        notes='Bridge 148.760322 USDC from Ethereum to Solana via CCTP',
+        tx_ref=tx_hash,
+        counterparty=CPT_CCTP,
+        address=string_to_evm_address('0xfd78EE919681417d192449715b2594ab58f5D002'),
+        extra_data={'bridge': {
+            'from_chain': 1,
+            'to_chain': 'solana',
+            'from_address': ethereum_accounts[0],
+            'to_address': '3WzSRoiRj7GwrMzavq1Hu2TRQX2Y2qTVftnXeGZsxPUF',
+        }},
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

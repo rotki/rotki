@@ -33,7 +33,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DEFAULT_BRIDGE_MATCH_TIME_RANGE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tasks.bridges import (
     SYNTHETIC_BRIDGE_GROUP_PREFIX,
     get_unmatched_bridge_events,
@@ -46,6 +48,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 def _get_bridge_links(database: DBHandler) -> set[tuple[int, int]]:
@@ -56,7 +59,7 @@ def _get_bridge_links(database: DBHandler) -> set[tuple[int, int]]:
         ).fetchall())
 
 
-def _event_id(database: DBHandler, event: EvmEvent) -> int:
+def _event_id(database: DBHandler, event: HistoryBaseEntry) -> int:
     """The identifier assigned at insertion (add_history_events does not backfill it)."""
     with database.conn.read_ctx() as cursor:
         return cursor.execute(
@@ -140,6 +143,165 @@ def test_match_bridge_transactions_exact_transfer_id(database: DBHandler) -> Non
     # a second run must not create further links or messages about these
     match_bridge_transactions(database=database)
     assert _get_bridge_links(database) == {(_event_id(database, deposit), _event_id(database, withdrawal))}  # noqa: E501
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_across_arbitrum_to_solana(database: DBHandler) -> None:
+    """The real Across transfer ID and cross-chain addresses link its EVM and Solana legs."""
+    events_db = DBHistoryEvents(database)
+    recipient = '7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=1,
+                timestamp=TimestampMS(1762471058000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+                amount=FVal('120'),
+                location_label='0x56a1A34F0d33788ebA53e2706854A37A5F275536',
+                counterparty=CPT_ACROSS,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 'solana',
+                    'from_address': '0x56a1A34F0d33788ebA53e2706854A37A5F275536',
+                    'to_address': recipient,
+                    'transfer_id': '3982708',
+                }},
+            )), (withdrawal := SolanaEvent(
+                tx_ref=deserialize_tx_signature('3bg38hZgFD5xwnwf3gj3oik8F22kF3GtKZmQd3bj1syK7b9GCNqbGKnir4XuhjUXhpe4qQbeYPZjCzowLUH17Rx1'),
+                sequence_index=0,
+                timestamp=TimestampMS(1762471062000),
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+                amount=FVal('119.656776'),
+                location_label=recipient,
+                counterparty=CPT_ACROSS,
+                extra_data={'bridge': {
+                    'from_chain': 42161,
+                    'to_chain': 'solana',
+                    'from_address': '0x56a1A34F0d33788ebA53e2706854A37A5F275536',
+                    'to_address': recipient,
+                    'transfer_id': '3982708',
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_cctp_solana_to_base(database: DBHandler) -> None:
+    """CCTP V2 links by route metadata because its Solana source has no attested nonce."""
+    events_db = DBHistoryEvents(database)
+    depositor = 'DUZeRN6fpJKjVKMtiidk3Xf34kA8J41yjtktaXs3Y3ei'
+    recipient = '0x34B741a3D0ef8c8ef6dd490C305c5C5ca20aCa59'
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := SolanaEvent(
+                tx_ref=deserialize_tx_signature('4SNhUZz3FBijWYTqo35w414DaT1EfX3Whc931CcJRq5Vm7BMeW8VGTAq11DFmbLaT21Vg4Ds48eqr2oAXXZTXN6U'),
+                sequence_index=1,
+                timestamp=TimestampMS(1788256838000),
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+                amount=FVal('7.27'),
+                location_label=depositor,
+                counterparty=CPT_CCTP,
+                extra_data={'bridge': {
+                    'from_chain': 'solana',
+                    'to_chain': 8453,
+                    'from_address': depositor,
+                    'to_address': recipient,
+                }},
+            )), (withdrawal := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=460,
+                timestamp=TimestampMS(1788256855000),
+                location=Location.BASE,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+                amount=FVal('7.269273'),
+                location_label=recipient,
+                counterparty=CPT_CCTP,
+                extra_data={'bridge': {
+                    'from_chain': 'solana',
+                    'to_chain': 8453,
+                    'to_address': recipient,
+                    'transfer_id': (
+                        '0xd25fe41da9c2a8241548e59c92d2b4cccd0ebc26c9d73f7a95393dcad33d31b4'
+                    ),
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_match_cctp_ethereum_to_solana(database: DBHandler) -> None:
+    """CCTP links an EVM burn to the Solana token-account mint despite its owner label."""
+    events_db = DBHistoryEvents(database)
+    depositor = '0xD156fFB54871F4562744d6Be5d6321B5BffCa3B6'
+    recipient = '3WzSRoiRj7GwrMzavq1Hu2TRQX2Y2qTVftnXeGZsxPUF'
+    with database.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(deposit := EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=218,
+                timestamp=TimestampMS(1774849751000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_USDC,
+                amount=FVal('148.760322'),
+                location_label=depositor,
+                counterparty=CPT_CCTP,
+                extra_data={'bridge': {
+                    'from_chain': 1,
+                    'to_chain': 'solana',
+                    'from_address': depositor,
+                    'to_address': recipient,
+                }},
+            )), (withdrawal := SolanaEvent(
+                tx_ref=deserialize_tx_signature('eTsg8KMXGG5pgLRtXGrJcrGAGNa18xQMm6Pt2ERHhuCGUKiPiFzfVU8pF4vVTKeAb8rAKNBNLLyosJdbMHx3Tp2'),
+                sequence_index=0,
+                timestamp=TimestampMS(1774849772000),
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+                amount=FVal('148.745446'),
+                location_label='3NLEELDx3wvAtX1PcFteWRyNNJiKqA73QNnAnb9H852D',
+                counterparty=CPT_CCTP,
+                extra_data={'bridge': {
+                    'from_chain': 1,
+                    'to_chain': 'solana',
+                    'from_address': depositor,
+                    'to_address': recipient,
+                    'transfer_id': (
+                        '0x12ddf131fa86823e6247b1b71df376725044217ee3aca8b7d522235a44b5ad1b'
+                    ),
+                }},
+            ))],
+        )
+
+    match_bridge_transactions(database=database)
+    assert _get_bridge_links(database) == {
+        (_event_id(database, deposit), _event_id(database, withdrawal)),
+    }
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])

@@ -233,10 +233,14 @@ def _events_conflict_on_bridge_data(
     ):
         return True
 
-    return (
-        (to_address := deposit_data.get('to_address')) is not None and
-        candidate.location_label is not None and
-        candidate.location_label != to_address
+    if (to_address := deposit_data.get('to_address')) is None:
+        return False
+
+    candidate_to_address = candidate_data.get('to_address')
+    return to_address != (
+        candidate_to_address
+        if candidate_to_address is not None
+        else candidate.location_label
     )
 
 

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Across and CCTP bridges involving Solana are now decoded, and their Solana and EVM history events are matched as the two sides of the same bridge transfer.
 * :bug:`-` Claiming your Safenet staking rewards is now recorded as a staking reward.
 * :bug:`13027` Adding an ETH2 validator by index or public key works again. Since 1.44.0 the Add Account button on the validators tab opened the generic blockchain account form instead of the validator form, and saving from it did nothing, so a validator that was not picked up automatically from its deposit could not be added at all.
 * :bug:`-` Historical prices of a token that exists on several chains now come from the main asset it is grouped with, so WETH on Arbitrum, Optimism and Base is priced as ETH. They used to be priced on their own and could come back at roughly half of ETH's value.
