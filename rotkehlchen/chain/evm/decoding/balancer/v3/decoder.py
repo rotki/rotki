@@ -40,6 +40,7 @@ from .constants import (
     BALANCER_V3_POOL_ABI,
     CPT_BALANCER_SWAP_V3,
     LIQUIDITY_ADDED_TOPIC,
+    LIQUIDITY_AMOUNT_TOLERANCE,
     LIQUIDITY_REMOVED_TOPIC,
     SWAP_TOPIC,
     VAULT_ADDRESS,
@@ -196,7 +197,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                     event.event_type == from_event_type and
                     event.event_subtype == HistoryEventSubType.NONE and
                     # pool exit fees may leave the received transfer a few wei short
-                    abs(event.amount - amount) < FVal('0.000000000000001') and
+                    abs(event.amount - amount) < LIQUIDITY_AMOUNT_TOLERANCE and
                     (
                         event.asset == token or
                         (token == self.node_inquirer.wrapped_native_token and event.asset == self.node_inquirer.native_token)  # noqa: E501
