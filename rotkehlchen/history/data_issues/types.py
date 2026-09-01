@@ -7,6 +7,14 @@ class BaseIssuePayload(TypedDict):
     resolution: NotRequired[dict[str, Any]]
 
 
+class AutoRemediationAttempt(TypedDict):
+    attribution: str
+    strategy: str
+    success: bool
+    timestamp: int
+    reason: NotRequired[str]
+
+
 class NegativeBalanceIssuePayload(BaseIssuePayload):
     """Payload for an event-scoped issue where derived balance goes below zero."""
     event_identifier: int

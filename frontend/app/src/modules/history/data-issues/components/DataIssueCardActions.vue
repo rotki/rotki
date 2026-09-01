@@ -68,7 +68,7 @@ function onGoto(): void {
       {{ t('data_issues.action.dismiss.label') }}
     </RuiTooltip>
     <RuiTooltip
-      v-if="canRetry(issue.state)"
+      v-if="canRetry(issue.kind, issue.state)"
       :open-delay="300"
     >
       <template #activator>

@@ -80,7 +80,7 @@ export const KIND_META: Record<IssueKind, KindMeta> = {
  * transition rules (rotkehlchen/history/data_issues/manager.py):
  *  - dismiss: any non-terminal state (terminal states are already closed).
  *  - resolveManually: blocked once resolved or dismissed.
- *  - retry: blocked once dismissed; a no-op (still allowed) for open/auto_remediating.
+ *  - retry: available for rebasing issues that are open or previously unresolved.
  */
 export function canDismiss(state: IssueState): boolean {
   return state !== IssueState.RESOLVED && state !== IssueState.DISMISSED;
@@ -90,6 +90,7 @@ export function canResolveManually(state: IssueState): boolean {
   return state !== IssueState.RESOLVED && state !== IssueState.DISMISSED;
 }
 
-export function canRetry(state: IssueState): boolean {
-  return state !== IssueState.DISMISSED && state !== IssueState.RESOLVED;
+export function canRetry(kind: IssueKind, state: IssueState): boolean {
+  return kind === IssueKind.REBASING_TOKEN
+    && (state === IssueState.OPEN || state === IssueState.UNRESOLVED);
 }

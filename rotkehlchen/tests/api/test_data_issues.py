@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 def _write_issue(
         server: APIServer,
         event_identifier: int = 1,
+        kind: IssueKind = IssueKind.NEGATIVE_BALANCE,
         state: IssueState = IssueState.OPEN,
         location: Location = Location.ETHEREUM,
         location_label: str = '0x0000000000000000000000000000000000000001',
@@ -36,12 +38,16 @@ def _write_issue(
 ) -> int:
     manager = DataIssuesManager(server.rest_api.rotkehlchen.data.db)
     issue_id = manager.write_issue(
-        IssueKind.NEGATIVE_BALANCE,
+        kind,
         location=location.serialize_for_db(),
         location_label=location_label,
         protocol=None,
         asset=asset,
         payload={
+            'block_number': 1,
+            'event_identifier': event_identifier,
+            'reason': 'archive_node_unavailable',
+        } if kind == IssueKind.REBASING_TOKEN else {
             'event_identifier': event_identifier,
             'in_memory_negative_amount': '-1',
             'derived_balance_before_event': '1',
@@ -238,21 +244,68 @@ def test_data_issue_write_endpoints(rotkehlchen_api_server: APIServer) -> None:
         status_code=HTTPStatus.CONFLICT,
     )
 
-    result = assert_proper_sync_response_with_result(requests.post(api_url_for(
-        rotkehlchen_api_server,
-        'dataissueretryautoremediationresource',
-        issue_id=issue_id,
-    )))
-    assert result['state'] == 'open'
-    assert result['resolved_at'] is None
-    assert 'resolution' not in result['payload']
+    assert_error_response(
+        response=requests.post(api_url_for(
+            rotkehlchen_api_server,
+            'dataissueretryautoremediationresource',
+            issue_id=issue_id,
+        )),
+        contained_in_msg='Cannot retry auto-remediation for resolved data issue',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
-    result = assert_proper_sync_response_with_result(requests.post(api_url_for(
+    rebasing_issue_id = _write_issue(
         rotkehlchen_api_server,
-        'dataissueretryautoremediationresource',
-        issue_id=issue_id,
-    )))
-    assert result['state'] == 'open'
+        event_identifier=4,
+        kind=IssueKind.REBASING_TOKEN,
+    )
+    task_manager = rotkehlchen_api_server.rest_api.rotkehlchen.task_manager
+    assert task_manager is not None
+    with patch.object(
+        task_manager,
+        'retry_data_issue_auto_remediation',
+        return_value=True,
+    ) as retry_task:
+        result = assert_proper_sync_response_with_result(requests.post(api_url_for(
+            rotkehlchen_api_server,
+            'dataissueretryautoremediationresource',
+            issue_id=rebasing_issue_id,
+        )))
+        assert result['state'] == 'auto_remediating'
+        retry_task.assert_called_once_with(issue_id=rebasing_issue_id, from_ts=TimestampMS(1000))
+
+        result = assert_proper_sync_response_with_result(requests.post(api_url_for(
+            rotkehlchen_api_server,
+            'dataissueretryautoremediationresource',
+            issue_id=rebasing_issue_id,
+        )))
+        assert result['state'] == 'auto_remediating'
+        retry_task.assert_called_once()
+
+    busy_issue_id = _write_issue(
+        rotkehlchen_api_server,
+        event_identifier=5,
+        kind=IssueKind.REBASING_TOKEN,
+    )
+    with patch.object(
+        task_manager,
+        'retry_data_issue_auto_remediation',
+        return_value=False,
+    ):
+        assert_error_response(
+            response=requests.post(api_url_for(
+                rotkehlchen_api_server,
+                'dataissueretryautoremediationresource',
+                issue_id=busy_issue_id,
+            )),
+            contained_in_msg='Historical balance processing is already running',
+            status_code=HTTPStatus.CONFLICT,
+        )
+    busy_issue = DataIssuesManager(
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+    ).get_issue(busy_issue_id)
+    assert busy_issue.state == IssueState.UNRESOLVED
+    assert busy_issue.auto_remediation_attempts[0]['reason'] == 'processing_already_running'
 
     resolved_issue_id = _write_issue(
         rotkehlchen_api_server,

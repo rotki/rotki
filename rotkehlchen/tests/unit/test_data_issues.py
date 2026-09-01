@@ -73,6 +73,23 @@ def _write_current_balance_mismatch_issue(
     )
 
 
+def _write_rebasing_issue(manager: DataIssuesManager, event_identifier: int = 1) -> int:
+    return manager.write_issue(
+        IssueKind.REBASING_TOKEN,
+        location=Location.ETHEREUM.serialize_for_db(),
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+        payload={
+            'event_identifier': event_identifier,
+            'block_number': 1,
+            'reason': 'archive_node_unavailable',
+        },
+        ts_start=1000,
+        ts_end=1000,
+    )
+
+
 def test_write_and_list_issues(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
@@ -132,6 +149,31 @@ def test_state_transitions(database: DBHandler) -> None:
 
     with pytest.raises(InputError):
         manager.update_state(issue_id, IssueState.OPEN)
+
+
+def test_retry_auto_remediation(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_rebasing_issue(manager)
+
+    issue, should_schedule = manager.retry_auto_remediation(issue_id)
+    assert should_schedule is True
+    assert issue.state == IssueState.AUTO_REMEDIATING
+
+    issue, should_schedule = manager.retry_auto_remediation(issue_id)
+    assert should_schedule is False
+    assert issue.state == IssueState.AUTO_REMEDIATING
+
+    issue = manager.update_state(issue_id, IssueState.UNRESOLVED)
+    issue, should_schedule = manager.retry_auto_remediation(issue.id)
+    assert should_schedule is True
+    assert issue.state == IssueState.AUTO_REMEDIATING
+
+    issue = manager.append_auto_remediation_attempt(issue_id, {'strategy': 'test'})
+    assert issue.auto_remediation_attempts == [{'strategy': 'test'}]
+
+    unsupported_issue_id = _write_negative_balance_issue(manager, event_identifier=2)
+    with pytest.raises(InputError, match='Auto-remediation is not supported'):
+        manager.retry_auto_remediation(unsupported_issue_id)
 
 
 def test_dismiss_and_resolve_manually(database: DBHandler) -> None:

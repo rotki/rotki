@@ -150,7 +150,11 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.constants import IssueState
+from rotkehlchen.history.data_issues.manager import (
+    DataIssuesManager,
+    make_auto_remediation_attempt,
+)
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
@@ -237,6 +241,7 @@ from rotkehlchen.types import (
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     UserNote,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
@@ -3691,16 +3696,41 @@ class RestAPI:
 
     @accounting_update_required('Data issues are disabled', response=True)
     def retry_data_issue_auto_remediation(self, issue_id: int) -> Response:
+        if (task_manager := self.rotkehlchen.task_manager) is None:
+            return api_response(
+                wrap_in_fail_result('Cannot retry auto-remediation while logging out'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        issues_manager = DataIssuesManager(self.rotkehlchen.data.db)
         try:
-            result = self._serialize_data_issue(DataIssuesManager(
-                self.rotkehlchen.data.db,
-            ).retry_auto_remediation(issue_id))
+            issue, should_schedule = issues_manager.retry_auto_remediation(issue_id)
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+        if should_schedule and task_manager.retry_data_issue_auto_remediation(
+            issue_id=issue.id,
+            from_ts=TimestampMS(issue.ts_start),
+        ) is False:
+            issues_manager.update_state(
+                issue_id=issue.id,
+                state=IssueState.UNRESOLVED,
+                attempt=make_auto_remediation_attempt(
+                    success=False,
+                    reason='processing_already_running',
+                ),
+            )
+            return api_response(
+                wrap_in_fail_result('Historical balance processing is already running'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        return api_response(_wrap_in_ok_result(
+            result=self._serialize_data_issue(issue),
+            status_code=HTTPStatus.OK,
+        ))
 
     @async_api_call()
     @accounting_update_required('Historical balances are disabled')

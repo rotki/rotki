@@ -34,7 +34,10 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.tasks.historical_balances import (
+    process_historical_balances,
+    retry_rebasing_token_issue,
+)
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
@@ -1690,6 +1693,7 @@ def test_rebasing_token_deficit_uses_archive_balance_and_resolves_issue(
         assert [call.kwargs['block_number'] for call in (
             node_inquirer.get_historical_token_balance.call_args_list
         )] == [200]
+        chains_aggregator.get_evm_manager.assert_called_once_with(ChainID.ETHEREUM)
         assert WSMessageType.NEGATIVE_BALANCE_DETECTED not in [
             call.kwargs['message_type'] for call in msg_mock.call_args_list
         ]
@@ -1904,8 +1908,95 @@ def test_negative_rebasing_token_without_archive_node_writes_specific_issue(
             'reason': 'archive_node_unavailable',
         }
         node_inquirer.get_historical_token_balance.assert_called_once()
+
+        DataIssuesManager(database).retry_auto_remediation(issue.id)
+        process_historical_balances(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            chains_aggregator=chains_aggregator,
+        )
+        issue = DataIssuesManager(database).get_issue(issue.id)
+        assert issue.state == IssueState.UNRESOLVED
+        assert issue.auto_remediation_attempts[0]['reason'] == 'archive_node_unavailable'
+        assert issue.auto_remediation_attempts[0]['success'] is False
     finally:
         GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
+
+
+def test_retry_rebasing_issue_finishes_remediation_state(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    issues_manager = DataIssuesManager(database)
+    issue_id = issues_manager.write_issue(
+        kind=IssueKind.REBASING_TOKEN,
+        location=Location.ETHEREUM.serialize_for_db(),
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=A_DAI.identifier,
+        payload={
+            'event_identifier': 1,
+            'block_number': 100,
+            'reason': 'archive_node_unavailable',
+        },
+        ts_start=1000,
+        ts_end=1000,
+    )
+    issues_manager.retry_auto_remediation(issue_id)
+
+    with patch(
+        'rotkehlchen.tasks.historical_balances.process_historical_balances',
+        return_value=True,
+    ):
+        retry_rebasing_token_issue(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            chains_aggregator=MagicMock(),
+            issue_id=issue_id,
+            from_ts=TimestampMS(1000),
+        )
+
+    issue = issues_manager.get_issue(issue_id)
+    assert issue.state == IssueState.RESOLVED
+    assert issue.payload['resolution'] == {'reason': 'no_longer_reproduces'}
+    assert issue.auto_remediation_attempts[0] == {
+        'attribution': 'system',
+        'strategy': 'historical_balance_reprocessing',
+        'success': True,
+        'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
+    }
+
+    second_issue_id = issues_manager.write_issue(
+        kind=IssueKind.REBASING_TOKEN,
+        location=Location.ETHEREUM.serialize_for_db(),
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=A_DAI.identifier,
+        payload={
+            'event_identifier': 2,
+            'block_number': 200,
+            'reason': 'archive_node_unavailable',
+        },
+        ts_start=2000,
+        ts_end=2000,
+    )
+    issues_manager.retry_auto_remediation(second_issue_id)
+    with patch(
+        'rotkehlchen.tasks.historical_balances.process_historical_balances',
+        return_value=None,
+    ):
+        retry_rebasing_token_issue(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            chains_aggregator=MagicMock(),
+            issue_id=second_issue_id,
+            from_ts=TimestampMS(2000),
+        )
+
+    second_issue = issues_manager.get_issue(second_issue_id)
+    assert second_issue.state == IssueState.UNRESOLVED
+    assert second_issue.auto_remediation_attempts[0]['reason'] == 'processing_already_running'
+    assert second_issue.auto_remediation_attempts[0]['success'] is False
 
 
 def test_negative_balance_writes_data_issue(
