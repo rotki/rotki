@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
