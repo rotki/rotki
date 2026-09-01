@@ -16,6 +16,7 @@ from rotkehlchen.history.data_issues.types import (
     DataIssueFilters,
     DataIssuePayload,
     NegativeBalanceIssuePayload,
+    RebasingTokenIssuePayload,
     UnmatchedBridgeIssuePayload,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -132,9 +133,13 @@ class DataIssuesManager:
         issue_severity = severity if severity is not None else ISSUE_KIND_SEVERITY[kind]
         payload_json = json.dumps(payload, separators=(',', ':'))
         created_at = ts_now()
-        if kind in (IssueKind.NEGATIVE_BALANCE, IssueKind.UNMATCHED_BRIDGE):
+        if kind in (
+            IssueKind.NEGATIVE_BALANCE,
+            IssueKind.REBASING_TOKEN,
+            IssueKind.UNMATCHED_BRIDGE,
+        ):
             event_identifier = cast(
-                'NegativeBalanceIssuePayload | UnmatchedBridgeIssuePayload',
+                'NegativeBalanceIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
                 payload,
             )['event_identifier']
         else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
@@ -187,11 +192,12 @@ class DataIssuesManager:
                 )
         return issue_id
 
-    def resolve_negative_balance_issues(
+    def resolve_event_issues(
             self,
+            kind: IssueKind,
             issues: list[tuple[str, str | None, str | None, str, int]],
     ) -> None:
-        """Resolve negative-balance issues whose buckets processed successfully."""
+        """Resolve event-scoped issues whose buckets processed successfully."""
         if len(issues) == 0:
             return
 
@@ -204,7 +210,7 @@ class DataIssuesManager:
                 [(
                     IssueState.RESOLVED,
                     resolved_at,
-                    IssueKind.NEGATIVE_BALANCE,
+                    kind,
                     location,
                     location_label or '',
                     protocol or '',

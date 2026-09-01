@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, NotRequired, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 
 class BaseIssuePayload(TypedDict):
@@ -23,6 +23,18 @@ class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     latest_event_identifier: int | None
 
 
+class RebasingTokenIssuePayload(BaseIssuePayload):
+    """Payload for a rebasing balance that could not be verified on-chain."""
+    event_identifier: int
+    block_number: int | None
+    reason: Literal[
+        'archive_node_unavailable',
+        'historical_balance_query_failed',
+        'missing_transaction',
+        'unsupported_bucket',
+    ]
+
+
 class UnmatchedBridgeIssuePayload(BaseIssuePayload):
     """Payload for an event-scoped issue about a bridge leg with no matched counterpart.
 
@@ -40,6 +52,7 @@ class UnmatchedBridgeIssuePayload(BaseIssuePayload):
 type DataIssuePayload = (
     NegativeBalanceIssuePayload |
     CurrentBalanceMismatchIssuePayload |
+    RebasingTokenIssuePayload |
     UnmatchedBridgeIssuePayload
 )
 """Typed payload variants accepted when writing data issues."""

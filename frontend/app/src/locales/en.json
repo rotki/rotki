@@ -2680,6 +2680,7 @@
     "description": {
       "current_balance_mismatch": "rotki's calculated {asset} balance ({derived}) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
       "negative_balance": "An event spent more {asset} than rotki had tracked, so your balance went negative to {amount} (it was {before} just before). This usually means an earlier {asset} transaction is missing or was recorded incorrectly.",
+      "rebasing_token": "rotki could not verify the historical balance of rebasing token {asset} from authoritative on-chain data. The event-derived balance was not used.",
       "unknown": "rotki flagged a data issue. Open the details below to see what was recorded.",
       "unmatched_bridge_deposit": "A {asset} bridge deposit has no matched counterpart event on the destination chain. Match it manually or resolve it as an external payment.",
       "unmatched_bridge_withdrawal": "A {asset} bridge withdrawal has no matched counterpart deposit on the source chain. Match it manually to link the two legs."
@@ -2687,6 +2688,7 @@
     "description_short": {
       "current_balance_mismatch": "{asset} balance is off by {delta} from the on-chain amount.",
       "negative_balance": "{asset} balance went negative to {amount}, likely from a missing earlier transaction.",
+      "rebasing_token": "The historical balance of rebasing token {asset} could not be verified.",
       "unknown": "rotki flagged a data issue. Open the details for more.",
       "unmatched_bridge_deposit": "Unmatched {asset} bridge deposit. Match it manually.",
       "unmatched_bridge_withdrawal": "Unmatched {asset} bridge withdrawal. Match it manually."
@@ -2729,6 +2731,7 @@
     "kind": {
       "current_balance_mismatch": "Balance mismatch",
       "negative_balance": "Negative balance",
+      "rebasing_token": "Rebasing token",
       "unmatched_bridge": "Unmatched bridge"
     },
     "panel": {

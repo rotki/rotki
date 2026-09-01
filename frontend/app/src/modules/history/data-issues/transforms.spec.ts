@@ -92,6 +92,25 @@ describe('data-issues transforms', () => {
       expect(describeIssue(issue).eventIdentifier).toBeUndefined();
     });
 
+    it('should describe an unverifiable rebasing-token balance', () => {
+      const issue = createIssue({
+        asset: 'stETH',
+        kind: IssueKind.REBASING_TOKEN,
+        payload: {
+          blockNumber: 123,
+          eventIdentifier: 9,
+          reason: 'archive_node_unavailable',
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.rebasing_token');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.rebasing_token');
+      expect(result.eventIdentifier).toBe(9);
+      expect(result.asset).toBe('stETH');
+    });
+
     it('should describe an unmatched bridge leg with a direction-specific message', () => {
       const issue = createIssue({
         kind: IssueKind.UNMATCHED_BRIDGE,

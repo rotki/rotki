@@ -12,6 +12,7 @@ import {
   CurrentBalanceMismatchPayload,
   type DataIssue,
   NegativeBalancePayload,
+  RebasingTokenPayload,
   UnmatchedBridgePayload,
 } from '@/modules/history/data-issues/schemas';
 
@@ -71,6 +72,19 @@ function describeBalanceMismatch(issue: DataIssue): IssueDescription | undefined
   };
 }
 
+function describeRebasingToken(issue: DataIssue): IssueDescription | undefined {
+  const parsed = RebasingTokenPayload.safeParse(issue.payload);
+  if (!parsed.success)
+    return undefined;
+  return {
+    amounts: {},
+    asset: issue.asset ?? undefined,
+    eventIdentifier: parsed.data.eventIdentifier,
+    messageKey: msg.$t('data_issues.description.rebasing_token'),
+    shortMessageKey: msg.$t('data_issues.description_short.rebasing_token'),
+  };
+}
+
 function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined {
   const parsed = UnmatchedBridgePayload.safeParse(issue.payload);
   if (!parsed.success)
@@ -92,6 +106,7 @@ function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined
 const KIND_DESCRIBERS: Partial<Record<IssueKind, (issue: DataIssue) => IssueDescription | undefined>> = {
   [IssueKind.CURRENT_BALANCE_MISMATCH]: describeBalanceMismatch,
   [IssueKind.NEGATIVE_BALANCE]: describeNegativeBalance,
+  [IssueKind.REBASING_TOKEN]: describeRebasingToken,
   [IssueKind.UNMATCHED_BRIDGE]: describeUnmatchedBridge,
 };
 
