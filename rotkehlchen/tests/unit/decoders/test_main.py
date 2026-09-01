@@ -61,6 +61,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'BeefyFinance',
         'Blur',
         'Cctp',
+        'CctpV2',
         'Clipper',
         'Compoundv2',
         'Compoundv3',

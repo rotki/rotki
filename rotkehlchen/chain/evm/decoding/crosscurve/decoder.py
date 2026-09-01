@@ -141,7 +141,7 @@ class CrossCurveCommonDecoder(EvmDecoderInterface):
                     event=event,
                     from_chain=None,
                     to_chain=self.node_inquirer.chain_id,
-                    to_address=event.location_label,  # type: ignore[arg-type]  # tracked address checked above
+                    to_address=event.location_label,
                 )
                 found = True
 

@@ -209,6 +209,54 @@ def test_across_bridge_deposit_on_ethereum(ethereum_inquirer, ethereum_accounts)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
+def test_across_bridge_deposit_to_solana(
+        arbitrum_one_inquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xb8b7c18165533055bd9bd136b1bf67d817f4100725b6dfd051ed359cf7ea2182')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1762471058000)),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.0000008075'),
+            location_label=(user_address := arbitrum_one_accounts[0]),
+            notes='Burn 0.0000008075 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+            amount=FVal('120'),
+            location_label=user_address,
+            notes='Bridge 120 USDC from Arbitrum One to Solana via Across',
+            counterparty=CPT_ACROSS,
+            address=string_to_evm_address('0xe35e9842fceaCA96570B734083f4a58e8F7C5f2A'),
+            extra_data={'bridge': {
+                'from_chain': 42161,
+                'to_chain': 'solana',
+                'from_address': user_address,
+                'to_address': '7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY',
+                'transfer_id': '3982708',
+            }},
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2b0989d09867f9a54EcB7c1b5F2F5960f199e6a8']])
 def test_across_remove_liquidity_on_ethereum(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5a10ed0c32f81029b6693c60289817f24d45e937b926ff80b9732b9280651610')  # noqa: E501
