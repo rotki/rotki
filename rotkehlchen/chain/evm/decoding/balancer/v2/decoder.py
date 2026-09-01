@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
     BALANCER_LABEL,
     BALANCER_VERSION_MAPPING,
     CPT_BALANCER_V2,
+        BalancerCounterparty,
 )
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
@@ -51,7 +52,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             evm_inquirer: EvmNodeInquirer,
             base_tools: BaseEvmDecoderTools,
             msg_aggregator: MessagesAggregator,
-            counterparty: str = CPT_BALANCER_V2,
+            counterparty: BalancerCounterparty = CPT_BALANCER_V2,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
@@ -40,12 +40,12 @@ class BeetsBalances(ProtocolWithGauges):
             self,
             evm_inquirer: EvmNodeInquirer,
             tx_decoder: EVMTransactionDecoder,
-            counterparty: str,
+            counterparty: Literal['beets-v2', 'beets-v3'],
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
-            counterparty=counterparty,  # type: ignore  # beets counterparties added to PROTOCOLS_WITH_BALANCES
+            counterparty=counterparty,
             deposit_event_types={
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
             },
