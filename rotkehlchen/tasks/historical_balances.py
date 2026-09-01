@@ -328,17 +328,24 @@ def _get_rebasing_reconciliation_points(
         treat_eth2_as_eth: bool,
 ) -> RebasingReconciliationPoints:
     """Return the final rebasing event per block and bucket with its transaction block."""
+    if len(rebasing_assets) == 0:
+        return {}
+
     event_buckets: list[tuple[EvmEvent, list[Bucket]]] = []
     transaction_keys: set[tuple[bytes, int]] = set()
     for event in events:
-        if event.identifier is None or not isinstance(event, EvmEvent):
+        if (
+            event.identifier is None or
+            not isinstance(event, EvmEvent) or
+            event.asset.identifier not in rebasing_assets
+        ):
             continue
 
         if len(buckets := [
             bucket for bucket, _direction in Bucket.from_event(
                 event=event,
                 treat_eth2_as_eth=treat_eth2_as_eth,
-            ) if bucket.asset in rebasing_assets
+            )
         ]) == 0:
             continue
 
@@ -658,7 +665,11 @@ def retry_rebasing_token_issue(
             resolution={'reason': 'no_longer_reproduces'},
         )
     elif issue.state == IssueState.RESOLVED:
-        issues_manager.append_auto_remediation_attempt(issue_id, attempt)
+        issues_manager.append_auto_remediation_attempt(
+            issue_id=issue_id,
+            attempt=attempt,
+            resolution={'reason': 'no_longer_reproduces'},
+        )
 
 
 def _detect_unmatched_bridge_issues(database: DBHandler) -> None:

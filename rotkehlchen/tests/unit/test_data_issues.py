@@ -168,8 +168,13 @@ def test_retry_auto_remediation(database: DBHandler) -> None:
     assert should_schedule is True
     assert issue.state == IssueState.AUTO_REMEDIATING
 
-    issue = manager.append_auto_remediation_attempt(issue_id, {'strategy': 'test'})
+    issue = manager.append_auto_remediation_attempt(
+        issue_id=issue_id,
+        attempt={'strategy': 'test'},
+        resolution={'reason': 'fixed'},
+    )
     assert issue.auto_remediation_attempts == [{'strategy': 'test'}]
+    assert issue.payload['resolution'] == {'reason': 'fixed'}
 
     unsupported_issue_id = _write_negative_balance_issue(manager, event_identifier=2)
     with pytest.raises(InputError, match='Auto-remediation is not supported'):

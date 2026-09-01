@@ -92,21 +92,42 @@ describe('data-issues transforms', () => {
       expect(describeIssue(issue).eventIdentifier).toBeUndefined();
     });
 
-    it('should describe an unverifiable rebasing-token balance', () => {
+    it.each([
+      [
+        'archive_node_unavailable',
+        'data_issues.description.rebasing_token_archive_node_unavailable',
+        'data_issues.description_short.rebasing_token_archive_node_unavailable',
+      ],
+      [
+        'historical_balance_query_failed',
+        'data_issues.description.rebasing_token_historical_balance_query_failed',
+        'data_issues.description_short.rebasing_token_historical_balance_query_failed',
+      ],
+      [
+        'missing_transaction',
+        'data_issues.description.rebasing_token_missing_transaction',
+        'data_issues.description_short.rebasing_token_missing_transaction',
+      ],
+      [
+        'unsupported_bucket',
+        'data_issues.description.rebasing_token_unsupported_bucket',
+        'data_issues.description_short.rebasing_token_unsupported_bucket',
+      ],
+    ])('should describe the rebasing-token reason %s', (reason, messageKey, shortMessageKey) => {
       const issue = createIssue({
         asset: 'stETH',
         kind: IssueKind.REBASING_TOKEN,
         payload: {
           blockNumber: 123,
           eventIdentifier: 9,
-          reason: 'archive_node_unavailable',
+          reason,
         },
       });
 
       const result = describeIssue(issue);
 
-      expect(result.messageKey).toBe('data_issues.description.rebasing_token');
-      expect(result.shortMessageKey).toBe('data_issues.description_short.rebasing_token');
+      expect(result.messageKey).toBe(messageKey);
+      expect(result.shortMessageKey).toBe(shortMessageKey);
       expect(result.eventIdentifier).toBe(9);
       expect(result.asset).toBe('stETH');
     });

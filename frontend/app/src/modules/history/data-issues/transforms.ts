@@ -76,13 +76,39 @@ function describeRebasingToken(issue: DataIssue): IssueDescription | undefined {
   const parsed = RebasingTokenPayload.safeParse(issue.payload);
   if (!parsed.success)
     return undefined;
-  return {
+
+  const description = {
     amounts: {},
     asset: issue.asset ?? undefined,
     eventIdentifier: parsed.data.eventIdentifier,
-    messageKey: msg.$t('data_issues.description.rebasing_token'),
-    shortMessageKey: msg.$t('data_issues.description_short.rebasing_token'),
   };
+
+  switch (parsed.data.reason) {
+    case 'archive_node_unavailable':
+      return {
+        ...description,
+        messageKey: msg.$t('data_issues.description.rebasing_token_archive_node_unavailable'),
+        shortMessageKey: msg.$t('data_issues.description_short.rebasing_token_archive_node_unavailable'),
+      };
+    case 'historical_balance_query_failed':
+      return {
+        ...description,
+        messageKey: msg.$t('data_issues.description.rebasing_token_historical_balance_query_failed'),
+        shortMessageKey: msg.$t('data_issues.description_short.rebasing_token_historical_balance_query_failed'),
+      };
+    case 'missing_transaction':
+      return {
+        ...description,
+        messageKey: msg.$t('data_issues.description.rebasing_token_missing_transaction'),
+        shortMessageKey: msg.$t('data_issues.description_short.rebasing_token_missing_transaction'),
+      };
+    case 'unsupported_bucket':
+      return {
+        ...description,
+        messageKey: msg.$t('data_issues.description.rebasing_token_unsupported_bucket'),
+        shortMessageKey: msg.$t('data_issues.description_short.rebasing_token_unsupported_bucket'),
+      };
+  }
 }
 
 function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined {
