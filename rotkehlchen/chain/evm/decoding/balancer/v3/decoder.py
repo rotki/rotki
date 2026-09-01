@@ -127,19 +127,19 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         if context.tx_log.topics[0] == LIQUIDITY_ADDED_TOPIC:
             pool_token_event_type = HistoryEventType.RECEIVE
             pool_token_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            pool_token_notes_template = 'Receive {amount} {symbol} from a Balancer v3 pool'
+            pool_token_notes_template = f'Receive {{amount}} {{symbol}} from a {self.protocol_label} pool'
             from_event_type = HistoryEventType.SPEND
             to_event_type = HistoryEventType.DEPOSIT
             to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-            to_notes_template = 'Deposit {amount} {symbol} to a Balancer v3 pool'
+            to_notes_template = f'Deposit {{amount}} {{symbol}} to a {self.protocol_label} pool'
         else:  # LIQUIDITY_REMOVED_TOPIC
             pool_token_event_type = HistoryEventType.SPEND
             pool_token_event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            pool_token_notes_template = 'Return {amount} {symbol} to a Balancer v3 pool'
+            pool_token_notes_template = f'Return {{amount}} {{symbol}} to a {self.protocol_label} pool'
             from_event_type = HistoryEventType.RECEIVE
             to_event_type = HistoryEventType.WITHDRAWAL
             to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-            to_notes_template = 'Withdraw {amount} {symbol} from a Balancer v3 pool'
+            to_notes_template = f'Withdraw {{amount}} {{symbol}} from a {self.protocol_label} pool'
 
         pool_tokens = self.node_inquirer.call_contract(
             contract_address=(lp_token_address := bytes_to_address(context.tx_log.topics[1])),

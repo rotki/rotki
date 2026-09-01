@@ -77,6 +77,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
     def _decode_join_or_exit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes and processes Balancer v2 pool join/exit events"""
         send_events, receive_events = [], []
+        pool_label = self.protocol_label
         for event in context.decoded_events:
             token = event.asset.resolve_to_asset_with_symbol()
             if (
@@ -85,7 +86,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.address == ZERO_ADDRESS
             ):  # exit pool: return wrapped token
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Return {event.amount} {token.symbol} to a Balancer v2 pool'
+                event.notes = f'Return {event.amount} {token.symbol} to a {pool_label} pool'
                 event.counterparty = self.counterparty
                 send_events.append(event)
 
@@ -97,7 +98,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = self.counterparty
-                event.notes = f'Receive {event.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
+                event.notes = f'Receive {event.amount} {token.symbol} after removing liquidity from a {pool_label} pool'  # noqa: E501
                 receive_events.append(event)
 
             if (
@@ -107,7 +108,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             ):  # join pool: receive wrapped token
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = self.counterparty
-                event.notes = f'Receive {event.amount} {token.symbol} from a Balancer v2 pool'
+                event.notes = f'Receive {event.amount} {token.symbol} from a {pool_label} pool'
                 receive_events.append(event)
 
             if (
@@ -118,7 +119,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = self.counterparty
-                event.notes = f'Deposit {event.amount} {token.symbol} to a Balancer v2 pool'
+                event.notes = f'Deposit {event.amount} {token.symbol} to a {pool_label} pool'
                 send_events.append(event)
 
         # Keep receive last before grouping in _check_deposits_withdrawals.
@@ -181,7 +182,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 # but transfer events are netted into a single spend/receive transfer.
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} via Balancer v2'  # noqa: E501
+                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} via {self.protocol_label}'  # noqa: E501
                 event.counterparty = self.counterparty
                 spend_event = event
             elif (
@@ -190,7 +191,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap via Balancer v2'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap via {self.protocol_label}'  # noqa: E501
                 event.counterparty = self.counterparty
                 receive_event = event
 

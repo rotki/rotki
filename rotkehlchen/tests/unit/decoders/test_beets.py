@@ -54,7 +54,7 @@ def test_beets_v3_join(sonic_inquirer, sonic_accounts):
         asset=BW_S25,
         amount=FVal(deposit_amount := '57108698.517387971172847294'),
         location_label=user,
-        notes=f'Deposit {deposit_amount} bwS-25 to a Balancer v3 pool',
+        notes=f'Deposit {deposit_amount} bwS-25 to a Beets v3 pool',
         counterparty=CPT_BEETS_V3,
         address=SONIC_VAULT,
     ), EvmEvent(
@@ -67,7 +67,7 @@ def test_beets_v3_join(sonic_inquirer, sonic_accounts):
         asset=AN_S_SILO_WS,
         amount=FVal(receive_amount := '59117.322877638191625628'),
         location_label=user,
-        notes=f'Receive {receive_amount} bpt-anS-SiloWS from a Balancer v3 pool',
+        notes=f'Receive {receive_amount} bpt-anS-SiloWS from a Beets v3 pool',
         counterparty=CPT_BEETS_V3,
         address=ZERO_ADDRESS,
     )]
@@ -105,7 +105,7 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
         amount=FVal(spend_amount := '70000'),
         location_label=user,
-        notes=f'Swap {spend_amount} stS in Balancer v3',
+        notes=f'Swap {spend_amount} stS in Beets v3',
         counterparty=CPT_BEETS_V3,
         address=pool,
     ), EvmSwapEvent(
@@ -118,7 +118,7 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38',
         amount=FVal(receive_amount := '75338.927873086636250054'),
         location_label=user,
-        notes=f'Receive {receive_amount} wS as the result of a swap in Balancer v3',
+        notes=f'Receive {receive_amount} wS as the result of a swap in Beets v3',
         counterparty=CPT_BEETS_V3,
         address=pool,
     )]
@@ -156,7 +156,7 @@ def test_beets_v2_join(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0x3bcE5CB273F0F148010BbEa2470e7b5df84C7812',
         amount=FVal(sceth_amount := '0.037175112093163958'),
         location_label=user,
-        notes=f'Deposit {sceth_amount} scETH to a Balancer v2 pool',
+        notes=f'Deposit {sceth_amount} scETH to a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmEvent(
@@ -169,7 +169,7 @@ def test_beets_v2_join(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE',
         amount=FVal(scusd_amount := '94.143991'),
         location_label=user,
-        notes=f'Deposit {scusd_amount} scUSD to a Balancer v2 pool',
+        notes=f'Deposit {scusd_amount} scUSD to a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmEvent(
@@ -182,7 +182,7 @@ def test_beets_v2_join(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
         amount=FVal(sts_amount := '573.366037918215836679'),
         location_label=user,
-        notes=f'Deposit {sts_amount} stS to a Balancer v2 pool',
+        notes=f'Deposit {sts_amount} stS to a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmEvent(
@@ -195,7 +195,7 @@ def test_beets_v2_join(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0x32BAC522c4F97F4913d18D81Cf3bE119c8Cce26a',
         amount=FVal(pool_amount := '557231.474081683784771027'),
         location_label=user,
-        notes=f'Receive {pool_amount} 10stS-10scETH-10scUSD-70F from a Balancer v2 pool',
+        notes=f'Receive {pool_amount} 10stS-10scETH-10scUSD-70F from a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=ZERO_ADDRESS,
     )]
@@ -233,7 +233,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0x32BAC522c4F97F4913d18D81Cf3bE119c8Cce26a',
         amount=FVal(return_amount := '38952.503374014711216412'),
         location_label=user,
-        notes=f'Return {return_amount} 10stS-10scETH-10scUSD-70F to a Balancer v2 pool',
+        notes=f'Return {return_amount} 10stS-10scETH-10scUSD-70F to a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=ZERO_ADDRESS,
     ), EvmEvent(
@@ -246,7 +246,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0x3bcE5CB273F0F148010BbEa2470e7b5df84C7812',
         amount=FVal(sceth_amount := '0.000430940611224193'),
         location_label=user,
-        notes=f'Receive {sceth_amount} scETH after removing liquidity from a Balancer v2 pool',
+        notes=f'Receive {sceth_amount} scETH after removing liquidity from a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmEvent(
@@ -259,7 +259,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xBe422DD2F451348d5D0979D8ab25B4c6eAAd1eB2',
         amount=FVal(f_amount := '1125014.199838167776212026'),
         location_label=user,
-        notes=f'Receive {f_amount} F after removing liquidity from a Balancer v2 pool',
+        notes=f'Receive {f_amount} F after removing liquidity from a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmEvent(
@@ -272,7 +272,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE',
         amount=FVal(scusd_amount := '0.991061'),
         location_label=user,
-        notes=f'Receive {scusd_amount} scUSD after removing liquidity from a Balancer v2 pool',
+        notes=f'Receive {scusd_amount} scUSD after removing liquidity from a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmEvent(
@@ -285,7 +285,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
         amount=FVal(sts_amount := '19.123213205894685941'),
         location_label=user,
-        notes=f'Receive {sts_amount} stS after removing liquidity from a Balancer v2 pool',
+        notes=f'Receive {sts_amount} stS after removing liquidity from a Beets v2 pool',
         counterparty=CPT_BEETS_V2,
         address=vault,
     )]
@@ -423,7 +423,7 @@ def test_beets_v2_swap(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xE5DA20F15420aD15DE0fa650600aFc998bbE3955',
         amount=FVal(spend_amount := '230.76923'),
         location_label=user,
-        notes=f'Swap {spend_amount} stS in Balancer v2',
+        notes=f'Swap {spend_amount} stS in Beets v2',
         counterparty=CPT_BEETS_V2,
         address=vault,
     ), EvmSwapEvent(
@@ -436,7 +436,7 @@ def test_beets_v2_swap(sonic_inquirer, sonic_accounts):
         asset='eip155:146/erc20:0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE',
         amount=FVal(receive_amount := '5.643006'),
         location_label=user,
-        notes=f'Receive {receive_amount} scUSD as the result of a swap in Balancer v2',
+        notes=f'Receive {receive_amount} scUSD as the result of a swap in Beets v2',
         counterparty=CPT_BEETS_V2,
         address=vault,
     )]
@@ -474,7 +474,7 @@ def test_beets_v3_exit(sonic_inquirer, sonic_accounts):
         asset=AN_S_SILO_WS,
         amount=FVal(return_amount := '42627.56908477590344007'),
         location_label=user,
-        notes=f'Return {return_amount} bpt-anS-SiloWS to a Balancer v3 pool',
+        notes=f'Return {return_amount} bpt-anS-SiloWS to a Beets v3 pool',
         counterparty=CPT_BEETS_V3,
         address=ZERO_ADDRESS,
     ), EvmEvent(
@@ -487,7 +487,7 @@ def test_beets_v3_exit(sonic_inquirer, sonic_accounts):
         asset=AN_S,
         amount=FVal(withdraw_amount := '27686.422638507350115348'),
         location_label=user,
-        notes=f'Withdraw {withdraw_amount} anS from a Balancer v3 pool',
+        notes=f'Withdraw {withdraw_amount} anS from a Beets v3 pool',
         counterparty=CPT_BEETS_V3,
         address=SONIC_VAULT,
     )]
