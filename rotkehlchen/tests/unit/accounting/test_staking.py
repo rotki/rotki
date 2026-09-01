@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, WITHDRAWAL_REQUEST_CONTRACT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
@@ -30,7 +31,14 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process, check
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    Eth2PubKey,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -490,3 +498,66 @@ def test_accumulating_validator_exit_without_balance_history(
     # zero profit/loss amount, which records no taxable event.
     assert len(accountant.pots[0].processed_events) == 0
     assert accountant.pots[0].pnls.taxable == ZERO
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(3000)])  # ETH price at $3000
+@pytest.mark.parametrize('db_settings', [{
+    'eth_staking_taxable_after_withdrawal_enabled': True,
+}])
+def test_eth_withdrawal_to_untracked_address(
+        accountant: Accountant,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Withdrawals landing on an address we don't track are not the user's income, so they
+    must be skipped by accounting. Tracking that address later makes them count again."""
+    untracked_address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    events = [EthWithdrawalEvent(
+        validator_index=(v_tracked := 1001),
+        timestamp=TimestampMS(1689000000000),
+        amount=FVal(2),
+        withdrawal_address=ethereum_accounts[0],
+        is_exit=False,
+    ), EthWithdrawalEvent(
+        validator_index=(v_untracked := 1002),
+        timestamp=TimestampMS(1689000001000),
+        amount=FVal(3),
+        withdrawal_address=untracked_address,
+        is_exit=False,
+    )]
+    with accountant.db.conn.write_ctx() as write_cursor:
+        DBEth2(accountant.db).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=v_tracked,
+            public_key=Eth2PubKey('0xadf4b7a39b4e56a5f5a9e06550a8b9a3251c4a8d8b7c5c9e5d8e9f0a1b2c3d4'),
+            validator_type=ValidatorType.DISTRIBUTING,
+            withdrawal_address=ethereum_accounts[0],
+        ), ValidatorDetails(
+            validator_index=v_untracked,
+            public_key=Eth2PubKey('0xbeeff7a39b4e56a5f5a9e06550a8b9a3251c4a8d8b7c5c9e5d8e9f0a1b2c3d4'),
+            validator_type=ValidatorType.DISTRIBUTING,
+            withdrawal_address=untracked_address,
+        )])
+        DBHistoryEvents(accountant.db).add_history_events(write_cursor, events)
+
+    accountant.process_history(start_ts=Timestamp(0), end_ts=ts_now(), events=events)
+    assert [
+        (x.notes, x.pnl.taxable) for x in accountant.pots[0].processed_events
+    ] == [(f'Withdrawal of 2 ETH from validator {v_tracked}', FVal(2) * 3000)]
+
+    with accountant.db.user_write() as write_cursor:  # now track the withdrawal address
+        accountant.db.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=untracked_address,
+            )],
+        )
+
+    accountant.process_history(start_ts=Timestamp(0), end_ts=ts_now(), events=events)
+    assert [
+        (x.notes, x.pnl.taxable) for x in accountant.pots[0].processed_events
+    ] == [
+        (f'Withdrawal of 2 ETH from validator {v_tracked}', FVal(2) * 3000),
+        (f'Withdrawal of 3 ETH from validator {v_untracked}', FVal(3) * 3000),
+    ]

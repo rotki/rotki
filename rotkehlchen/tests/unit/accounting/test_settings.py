@@ -31,6 +31,7 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
     AssetAmount,
+    ChecksumEvmAddress,
     Eth2PubKey,
     Location,
     Timestamp,
@@ -277,7 +278,12 @@ def test_not_calculate_past_cost_basis(accountant, expected, google_service):
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('staking_taxable', [True, False])
-def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: bool) -> None:
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_eth_withdrawal_not_taxable(
+        accountant: Accountant,
+        staking_taxable: bool,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test that eth withdrawal events respect the accounting rules"""
     db = DBAccountingRules(accountant.db)
     db.add_accounting_rule(
@@ -300,7 +306,7 @@ def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: boo
             validator_index=1,
             timestamp=TimestampMS(1699319051000),
             amount=staking_reward,
-            withdrawal_address=make_evm_address(),
+            withdrawal_address=ethereum_accounts[0],
             is_exit=False,
         ),
     ]
@@ -329,9 +335,11 @@ def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: boo
     ({'eth_staking_taxable_after_withdrawal_enabled': False}, False),
     ({'eth_staking_taxable_after_withdrawal_enabled': True}, True),
 ])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_eth_withdrawal_respects_db_settings(
         accountant: Accountant,
         is_staking_taxable: bool,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that eth withdrawal events respect the user settings regarding taxation"""
     staking_reward = FVal('0.017197')
@@ -350,7 +358,7 @@ def test_eth_withdrawal_respects_db_settings(
             validator_index=vindex1,
             timestamp=TimestampMS(1699319051000),
             amount=staking_reward,
-            withdrawal_address=make_evm_address(),
+            withdrawal_address=ethereum_accounts[0],
             is_exit=False,
         ),
     ]

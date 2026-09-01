@@ -5,7 +5,7 @@ import typing
 from contextvars import ContextVar
 from itertools import zip_longest
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, cast, get_args
 
 import marshmallow
 import webargs
@@ -637,6 +637,9 @@ class HistoryEventFilterSchema(
     TimestampRangeSchema,
 ):
     """Base schema for filtering history events. Contains common filter fields and methods."""
+    # Withdrawals to an untracked address are not the user's, so they are kept out of every
+    # user facing query. Deletion turns this off so such events remain deletable.
+    EXCLUDE_UNTRACKED_WITHDRAWALS: ClassVar[bool] = True
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
@@ -733,6 +736,7 @@ class HistoryEventFilterSchema(
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
+            'exclude_untracked_withdrawals': self.EXCLUDE_UNTRACKED_WITHDRAWALS,
             'group_identifiers': data['group_identifiers'],
             'location_labels': location_labels,
             'assets': [data['asset']] if data['asset'] is not None else None,
@@ -3621,6 +3625,7 @@ class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
     All provided filters are combined (intersection) to determine which events to delete.
     At least one filter parameter must be provided to prevent accidental mass deletion.
     """
+    EXCLUDE_UNTRACKED_WITHDRAWALS: ClassVar[bool] = False  # we should be able to delete withdrawals of untracked addresses  # noqa: E501
     force_delete = fields.Boolean(load_default=False)
     exclude_ignored_assets = fields.Boolean(load_default=False)  # we should be able to delete events with ignored assets  # noqa: E501
 
