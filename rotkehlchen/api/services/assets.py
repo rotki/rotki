@@ -231,6 +231,17 @@ class AssetsService:
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return {'result': types, 'message': '', 'status_code': HTTPStatus.OK}
 
+    def _set_rebasing_flag(self, identifier: str, enabled: bool | None) -> None:
+        if enabled is None or GlobalDBHandler.set_asset_flag(
+            identifier=identifier,
+            flag=AssetFlag.REBASING,
+            enabled=enabled,
+        ) is False:
+            return
+
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            DBHistoryEvents(self.rotkehlchen.data.db).mark_all_events_modified(write_cursor)
+
     def add_user_asset(
             self,
             asset: AssetWithOracles,
@@ -261,15 +272,7 @@ class AssetsService:
 
         with self.rotkehlchen.data.db.user_write() as cursor:
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
-        if is_rebasing is not None:
-            flag_changed = GlobalDBHandler.set_asset_flag(
-                identifier=asset.identifier,
-                flag=AssetFlag.REBASING,
-                enabled=is_rebasing,
-            )
-            if flag_changed:
-                with self.rotkehlchen.data.db.user_write() as write_cursor:
-                    DBHistoryEvents(self.rotkehlchen.data.db).mark_all_events_modified(write_cursor)
+        self._set_rebasing_flag(identifier=asset.identifier, enabled=is_rebasing)
 
         return {
             'result': {'identifier': asset.identifier},
@@ -289,15 +292,7 @@ class AssetsService:
 
         AssetResolver.clean_memory_cache(asset.identifier)
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)
-        if is_rebasing is not None:
-            flag_changed = GlobalDBHandler.set_asset_flag(
-                identifier=asset.identifier,
-                flag=AssetFlag.REBASING,
-                enabled=is_rebasing,
-            )
-            if flag_changed:
-                with self.rotkehlchen.data.db.user_write() as write_cursor:
-                    DBHistoryEvents(self.rotkehlchen.data.db).mark_all_events_modified(write_cursor)
+        self._set_rebasing_flag(identifier=asset.identifier, enabled=is_rebasing)
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 

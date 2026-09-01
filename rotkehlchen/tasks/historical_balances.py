@@ -6,20 +6,30 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    SQL_VARIABLE_CHUNK_SIZE,
+    HistoryMappingState,
+)
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents, get_bitcoin_counterparty_addresses
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
-from rotkehlchen.history.data_issues.types import UnmatchedBridgeIssuePayload
+from rotkehlchen.history.data_issues.types import (
+    RebasingTokenIssuePayload,
+    UnmatchedBridgeIssuePayload,
+)
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -37,6 +47,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -256,7 +267,15 @@ class Bucket(NamedTuple):
 
 type ModifiedBucketData = tuple[TimestampMS, int]
 type ModifiedBuckets = dict[Bucket, ModifiedBucketData]
-type NegativeBalanceResolution = tuple[str, str | None, str | None, str, int]
+type EventIssueScope = tuple[str, str | None, str | None, str, int]
+type RebasingReconciliationPoints = dict[tuple[int, Bucket], int | None]
+type PendingRebasingEvents = dict[Bucket, HistoryBaseEntry]
+type RebasingQueryFailure = Literal[
+    'archive_node_unavailable',
+    'historical_balance_query_failed',
+    'missing_transaction',
+    'unsupported_bucket',
+]
 
 
 def _load_bucket_balances_before_ts(
@@ -292,18 +311,146 @@ def _load_bucket_balances_before_ts(
     return bucket_balances
 
 
+def _get_rebasing_reconciliation_points(
+        database: DBHandler,
+        events: list[HistoryBaseEntry],
+        rebasing_assets: frozenset[str],
+        treat_eth2_as_eth: bool,
+) -> RebasingReconciliationPoints:
+    """Return the final rebasing event per block and bucket with its transaction block."""
+    event_buckets: list[tuple[EvmEvent, list[Bucket]]] = []
+    transaction_keys: set[tuple[bytes, int]] = set()
+    for event in events:
+        if event.identifier is None or not isinstance(event, EvmEvent):
+            continue
+
+        if len(buckets := [
+            bucket for bucket, _direction in Bucket.from_event(
+                event=event,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            ) if bucket.asset in rebasing_assets
+        ]) == 0:
+            continue
+
+        event_buckets.append((event, buckets))
+        transaction_keys.add((
+            bytes(event.tx_ref),
+            event.location.to_chain_id(),
+        ))
+
+    transaction_blocks: dict[tuple[bytes, int], int] = {}
+    keys = list(transaction_keys)
+    chunk_size = SQL_VARIABLE_CHUNK_SIZE // 2
+    with database.conn.read_ctx() as cursor:
+        for start in range(0, len(keys), chunk_size):
+            chunk = keys[start:start + chunk_size]
+            conditions = ' OR '.join('(tx_hash=? AND chain_id=?)' for _ in chunk)
+            bindings = [value for key in chunk for value in key]
+            transaction_blocks.update({
+                (bytes(tx_hash), chain_id): block_number
+                for tx_hash, chain_id, block_number in cursor.execute(
+                    f'SELECT tx_hash, chain_id, block_number FROM evm_transactions WHERE {conditions}',  # noqa: E501
+                    bindings,
+                )
+            })
+
+    last_points: dict[tuple[int, int, Bucket], int] = {}
+    missing_points: dict[tuple[bytes, int, Bucket], int] = {}
+    for event, buckets in event_buckets:
+        assert event.identifier is not None
+        chain_id = event.location.to_chain_id()
+        tx_key = (bytes(event.tx_ref), chain_id)
+        if (block_number := transaction_blocks.get(tx_key)) is None:
+            for bucket in buckets:
+                missing_points[*tx_key, bucket] = event.identifier
+            continue
+
+        for bucket in buckets:
+            last_points[chain_id, block_number, bucket] = event.identifier
+
+    return {
+        **{(event_identifier, bucket): block_number for (
+            _chain_id, block_number, bucket,
+        ), event_identifier in last_points.items()},
+        **{(event_identifier, bucket): None for (
+            _tx_hash, _chain_id, bucket,
+        ), event_identifier in missing_points.items()},
+    }
+
+
+def _query_rebasing_balance(
+        event: HistoryBaseEntry,
+        bucket: Bucket,
+        block_number: int | None,
+        chains_aggregator: ChainsAggregator | None,
+) -> tuple[FVal | None, RebasingQueryFailure | None]:
+    """Return the cached or queried post-block token balance for a rebasing wallet bucket."""
+    if block_number is None:
+        return None, 'missing_transaction'
+    if (
+        chains_aggregator is None or
+        bucket.location_label is None or
+        bucket.protocol is not None or
+        not isinstance(event, EvmEvent)
+    ):
+        return None, 'unsupported_bucket'
+
+    try:
+        token = Asset(bucket.asset).resolve_to_evm_token()
+        evm_manager = chains_aggregator.get_evm_manager(
+            event.location.to_chain_id(),  # type: ignore[arg-type]  # EvmEvent locations always map to a supported EVM chain.
+        )
+    except (AttributeError, UnknownAsset, WrongAssetType):
+        return None, 'unsupported_bucket'
+
+    balance = evm_manager.node_inquirer.get_historical_token_balance(
+        address=string_to_evm_address(bucket.location_label),
+        token=token,
+        block_number=block_number,
+        queried_timestamp=ts_ms_to_sec(event.timestamp),
+    )
+    if balance is not None:
+        return balance, None
+    if evm_manager.node_inquirer.has_archive_node() is False:
+        return None, 'archive_node_unavailable'
+    return None, 'historical_balance_query_failed'
+
+
+def _write_rebasing_issue(
+        database: DBHandler,
+        event: HistoryBaseEntry,
+        bucket: Bucket,
+        block_number: int | None,
+        reason: RebasingQueryFailure,
+) -> None:
+    """Persist why a rebasing balance could not be verified."""
+    assert event.identifier is not None, 'Processed history events should have identifiers'
+    DataIssuesManager(database).write_issue(
+        kind=IssueKind.REBASING_TOKEN,
+        location=bucket.location,
+        location_label=bucket.location_label,
+        protocol=bucket.protocol,
+        asset=bucket.asset,
+        payload=RebasingTokenIssuePayload(
+            event_identifier=event.identifier,
+            block_number=block_number,
+            reason=reason,
+        ),
+        ts_start=event.timestamp,
+        ts_end=event.timestamp,
+    )
+
+
 @skip_if_running
 def process_historical_balances(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
         from_ts: TimestampMS | None = None,
+        chains_aggregator: ChainsAggregator | None = None,
 ) -> None:
     """Process events and compute balance metrics."""
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
-    rebasing_assets = frozenset(
-        Asset(identifier).resolve_swapped_for().identifier
-        for identifier in GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
-    )
+    rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
     bucket_balances: dict[Bucket, FVal] = {}
     if from_ts is not None:
         bucket_balances = _load_bucket_balances_before_ts(database, from_ts)
@@ -334,6 +481,13 @@ def process_historical_balances(
         )
         treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
 
+    rebasing_reconciliation_points = _get_rebasing_reconciliation_points(
+        database=database,
+        events=events,
+        rebasing_assets=rebasing_assets,
+        treat_eth2_as_eth=treat_eth2_as_eth,
+    )
+
     if (total_events := len(events)) == 0:
         log.debug('No events to process for historical balances')
         _finalize_processing(
@@ -344,7 +498,8 @@ def process_historical_balances(
 
     metrics_batch: list[MetricRow] = []
     modified_buckets: ModifiedBuckets = {}
-    negative_balance_resolutions: list[NegativeBalanceResolution] = []
+    pending_rebasing_events: PendingRebasingEvents = {}
+    resolved_rebasing_events: list[EventIssueScope] = []
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
         for event_to_apply in events_to_apply if (events_to_apply := _maybe_add_profit_event(
@@ -358,11 +513,14 @@ def process_historical_balances(
                 database=database,
                 event=event_to_apply,
                 bucket_balances=bucket_balances,
+                chains_aggregator=chains_aggregator,
                 metrics_batch=metrics_batch,
                 modified_buckets=modified_buckets,
-                negative_balance_resolutions=negative_balance_resolutions,
+                pending_rebasing_events=pending_rebasing_events,
+                resolved_rebasing_events=resolved_rebasing_events,
                 last_run_ts=last_run_ts,
                 rebasing_assets=rebasing_assets,
+                rebasing_reconciliation_points=rebasing_reconciliation_points,
                 treat_eth2_as_eth=treat_eth2_as_eth,
             )
 
@@ -400,7 +558,15 @@ def process_historical_balances(
                 first_batch_written=first_batch_written,
             )
 
-    DataIssuesManager(database).resolve_negative_balance_issues(negative_balance_resolutions)
+    issues_manager = DataIssuesManager(database)
+    issues_manager.resolve_event_issues(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        issues=resolved_rebasing_events,
+    )
+    issues_manager.resolve_event_issues(
+        kind=IssueKind.REBASING_TOKEN,
+        issues=resolved_rebasing_events,
+    )
 
     msg_aggregator.add_message(
         message_type=WSMessageType.PROGRESS_UPDATES,
@@ -554,11 +720,14 @@ def _apply_to_buckets(
         database: DBHandler,
         event: HistoryBaseEntry,
         bucket_balances: dict[Bucket, FVal],
+        chains_aggregator: ChainsAggregator | None,
         metrics_batch: list[MetricRow],
         modified_buckets: ModifiedBuckets,
-        negative_balance_resolutions: list[NegativeBalanceResolution],
+        pending_rebasing_events: PendingRebasingEvents,
+        resolved_rebasing_events: list[EventIssueScope],
         last_run_ts: Timestamp | None,
         rebasing_assets: frozenset[str],
+        rebasing_reconciliation_points: RebasingReconciliationPoints,
         treat_eth2_as_eth: bool,
 ) -> None:
     """Apply the given event to the buckets it affects."""
@@ -568,95 +737,122 @@ def _apply_to_buckets(
     )) == 0:
         return
 
-    for bucket, direction in bucket_directions:
-        if (current_balance := bucket_balances.get(bucket, ZERO)) < ZERO:
+    for bucket_idx, (bucket, direction) in enumerate(bucket_directions):
+        if (
+            (current_balance := bucket_balances.get(bucket, ZERO)) < ZERO and
+            bucket not in pending_rebasing_events
+        ):
             continue
 
-        if direction == EventDirection.IN:
-            new_balance = current_balance + event.amount
-        elif (new_balance := current_balance - event.amount) < ZERO:  # direction == EventDirection.OUT (direction from from_event will not be NEUTRAL) # noqa: E501
+        new_balance = (
+            current_balance + event.amount if direction == EventDirection.IN else
+            current_balance - event.amount
+        )
+        if bucket.asset in rebasing_assets:
             assert event.identifier is not None, 'Processed history events should have identifiers'
-            if bucket.asset in rebasing_assets:
-                metrics_batch.append(_make_metric_row(
+            if new_balance < ZERO and not isinstance(event, EvmEvent):
+                _write_rebasing_issue(
+                    database=database,
                     event=event,
                     bucket=bucket,
-                    metric_key=EventMetricKey.REBASE_YIELD,
-                    value=(rebase_yield := abs(new_balance)),
-                ))
-                negative_balance_resolutions.append((
-                    bucket.location,
-                    bucket.location_label,
-                    bucket.protocol,
-                    bucket.asset,
-                    event.identifier,
-                ))
-                new_balance = current_balance + rebase_yield - event.amount
-            else:
-                database.msg_aggregator.add_message(
-                    message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
-                    data={
-                        'event_identifier': event.identifier,
-                        'group_identifier': event.group_identifier,
-                        'asset': event.asset.identifier,
-                        'bucket': bucket.serialize(),
-                        'balance_before': str(current_balance),
-                        'last_run_ts': last_run_ts,
-                    },
-                )
-                DataIssuesManager(database).write_issue(
-                    IssueKind.NEGATIVE_BALANCE,
-                    location=bucket.location,
-                    location_label=bucket.location_label,
-                    protocol=bucket.protocol,
-                    asset=bucket.asset,
-                    payload={
-                        'event_identifier': event.identifier,
-                        'in_memory_negative_amount': str(new_balance),
-                        'derived_balance_before_event': str(current_balance),
-                    },
-                    ts_start=event.timestamp,
-                    ts_end=event.timestamp,
-                )
-                log.warning(
-                    'Negative balance detected for %s at event %s. Skipping %s.',
-                    event.asset.identifier,
-                    event.identifier,
-                    bucket,
+                    block_number=None,
+                    reason='unsupported_bucket',
                 )
                 bucket_balances[bucket] = new_balance
                 continue
 
+            if new_balance < ZERO:
+                pending_rebasing_events.setdefault(bucket, event)
+
+            if (negative_event := pending_rebasing_events.get(bucket)) is not None:
+                reconciliation_key = (event.identifier, bucket)
+                if (
+                    reconciliation_key not in rebasing_reconciliation_points or
+                    any(other_bucket == bucket for other_bucket, _direction in bucket_directions[bucket_idx + 1:])  # noqa: E501
+                ):
+                    bucket_balances[bucket] = new_balance
+                    continue  # balanceOf is end-of-block state; reconcile only at the final event
+
+                block_number = rebasing_reconciliation_points[reconciliation_key]
+                onchain_balance, failure = _query_rebasing_balance(
+                    event=event,
+                    bucket=bucket,
+                    block_number=block_number,
+                    chains_aggregator=chains_aggregator,
+                )
+                del pending_rebasing_events[bucket]
+                if failure is not None:
+                    _write_rebasing_issue(
+                        database=database,
+                        event=negative_event,
+                        bucket=bucket,
+                        block_number=block_number,
+                        reason=failure,
+                    )
+                    bucket_balances[bucket] = new_balance
+                    continue
+
+                assert onchain_balance is not None
+                assert negative_event.identifier is not None
+                resolved_rebasing_events.append((
+                    bucket.location,
+                    bucket.location_label,
+                    bucket.protocol,
+                    bucket.asset,
+                    negative_event.identifier,
+                ))
+                new_balance = onchain_balance
+        elif new_balance < ZERO:
+            assert event.identifier is not None, 'Processed history events should have identifiers'
+            database.msg_aggregator.add_message(
+                message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
+                data={
+                    'event_identifier': event.identifier,
+                    'group_identifier': event.group_identifier,
+                    'asset': event.asset.identifier,
+                    'bucket': bucket.serialize(),
+                    'balance_before': str(current_balance),
+                    'last_run_ts': last_run_ts,
+                },
+            )
+            DataIssuesManager(database).write_issue(
+                IssueKind.NEGATIVE_BALANCE,
+                location=bucket.location,
+                location_label=bucket.location_label,
+                protocol=bucket.protocol,
+                asset=bucket.asset,
+                payload={
+                    'event_identifier': event.identifier,
+                    'in_memory_negative_amount': str(new_balance),
+                    'derived_balance_before_event': str(current_balance),
+                },
+                ts_start=event.timestamp,
+                ts_end=event.timestamp,
+            )
+            log.warning(
+                'Negative balance detected for %s at event %s. Skipping %s.',
+                event.asset.identifier,
+                event.identifier,
+                bucket,
+            )
+            bucket_balances[bucket] = new_balance
+            continue
+
         bucket_balances[bucket] = new_balance
-        metrics_batch.append(_make_metric_row(
-            event=event,
-            bucket=bucket,
-            metric_key=EventMetricKey.BALANCE,
-            value=new_balance,
+        metrics_batch.append((
+            event.identifier,
+            bucket.location,
+            bucket.location_label,
+            bucket.protocol,
+            EventMetricKey.BALANCE.serialize(),
+            str(new_balance),
+            bucket.asset,
+            event.timestamp,
+            event.sequence_index,
+            event.timestamp + event.sequence_index,
         ))
         if event.identifier is not None:
             modified_buckets[bucket] = (event.timestamp, event.identifier)
-
-
-def _make_metric_row(
-        event: HistoryBaseEntry,
-        bucket: Bucket,
-        metric_key: EventMetricKey,
-        value: FVal,
-) -> MetricRow:
-    """Create a metric row, ordering adjustments immediately before the resulting balance."""
-    metric_order = 0 if metric_key == EventMetricKey.REBASE_YIELD else 1
-    return (
-        event.identifier,
-        bucket.location,
-        bucket.location_label,
-        bucket.protocol,
-        metric_key.serialize(),
-        str(value),
-        bucket.asset,
-        event.timestamp,
-        event.sequence_index,
-        (event.timestamp + event.sequence_index) * 2 + metric_order,
-    )
 
 
 def _maybe_add_profit_event(

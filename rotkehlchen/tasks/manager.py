@@ -599,6 +599,7 @@ class TaskManager:
             database=self.database,
             msg_aggregator=self.msg_aggregator,
             from_ts=from_ts,
+            chains_aggregator=self.chains_aggregator,
         )]
 
     def trigger_historical_balance_processing(self) -> list[Task] | None:

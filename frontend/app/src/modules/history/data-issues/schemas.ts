@@ -83,6 +83,19 @@ export const NegativeBalancePayload = z.object({
 
 export type NegativeBalancePayload = z.infer<typeof NegativeBalancePayload>;
 
+export const RebasingTokenPayload = z.object({
+  blockNumber: z.number().nullable(),
+  eventIdentifier: z.number(),
+  reason: z.enum([
+    'archive_node_unavailable',
+    'historical_balance_query_failed',
+    'missing_transaction',
+    'unsupported_bucket',
+  ]),
+});
+
+export type RebasingTokenPayload = z.infer<typeof RebasingTokenPayload>;
+
 export const CurrentBalanceMismatchPayload = z.object({
   delta: NumericString,
   derivedBalance: NumericString,

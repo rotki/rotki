@@ -7,6 +7,7 @@ import type { RuiIcons } from '@rotki/ui-library';
 export enum IssueKind {
   CURRENT_BALANCE_MISMATCH = 'current_balance_mismatch',
   NEGATIVE_BALANCE = 'negative_balance',
+  REBASING_TOKEN = 'rebasing_token',
   UNMATCHED_BRIDGE = 'unmatched_bridge',
 }
 
@@ -70,6 +71,7 @@ interface KindMeta {
 export const KIND_META: Record<IssueKind, KindMeta> = {
   [IssueKind.NEGATIVE_BALANCE]: { color: 'error', icon: 'lu-trending-down' },
   [IssueKind.CURRENT_BALANCE_MISMATCH]: { color: 'warning', icon: 'lu-scale' },
+  [IssueKind.REBASING_TOKEN]: { color: 'warning', icon: 'lu-refresh-cw' },
   [IssueKind.UNMATCHED_BRIDGE]: { color: 'warning', icon: 'lu-git-compare-arrows' },
 };
 
