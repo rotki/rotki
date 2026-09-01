@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class Balancerv3Decoder(Balancerv3CommonDecoder):
+class Beetsv3Decoder(Balancerv3CommonDecoder):
 
     def __init__(
             self,

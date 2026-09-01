@@ -33,15 +33,15 @@ def test_beets_counterparties() -> None:
     """The Sonic Beets decoders must surface the Beets label and icon."""
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BEETS_V2, CPT_BEETS_V3
-    from rotkehlchen.chain.sonic.modules.balancer.v2.decoder import Balancerv2Decoder
-    from rotkehlchen.chain.sonic.modules.balancer.v3.decoder import Balancerv3Decoder
+    from rotkehlchen.chain.sonic.modules.beets.v2.decoder import Beetsv2Decoder
+    from rotkehlchen.chain.sonic.modules.beets.v3.decoder import Beetsv3Decoder
 
-    assert Balancerv2Decoder.counterparties() == (CounterpartyDetails(
+    assert Beetsv2Decoder.counterparties() == (CounterpartyDetails(
         identifier=CPT_BEETS_V2,
         label='Beets',
         image='beets.svg',
     ),)
-    assert Balancerv3Decoder.counterparties() == (CounterpartyDetails(
+    assert Beetsv3Decoder.counterparties() == (CounterpartyDetails(
         identifier=CPT_BEETS_V3,
         label='Beets',
         image='beets.svg',

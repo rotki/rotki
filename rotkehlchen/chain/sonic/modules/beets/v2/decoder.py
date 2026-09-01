@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class Balancerv2Decoder(Balancerv2CommonDecoder):
+class Beetsv2Decoder(Balancerv2CommonDecoder):
 
     def __init__(
             self,
