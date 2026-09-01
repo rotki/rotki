@@ -4,6 +4,7 @@ import {
   canResolveManually,
   canRetry,
   DEFAULT_LIST_STATES,
+  IssueKind,
   IssueState,
   NON_TERMINAL_STATES,
 } from '@/modules/history/data-issues/constants';
@@ -56,13 +57,14 @@ describe('data-issues constants', () => {
     });
 
     it.each([
-      [IssueState.OPEN, true],
-      [IssueState.AUTO_REMEDIATING, true],
-      [IssueState.UNRESOLVED, true],
-      [IssueState.RESOLVED, false],
-      [IssueState.DISMISSED, false],
-    ])('canRetry(%s) === %s', (state, expected) => {
-      expect(canRetry(state)).toBe(expected);
+      [IssueKind.REBASING_TOKEN, IssueState.OPEN, true],
+      [IssueKind.REBASING_TOKEN, IssueState.AUTO_REMEDIATING, false],
+      [IssueKind.REBASING_TOKEN, IssueState.UNRESOLVED, true],
+      [IssueKind.REBASING_TOKEN, IssueState.RESOLVED, false],
+      [IssueKind.REBASING_TOKEN, IssueState.DISMISSED, false],
+      [IssueKind.NEGATIVE_BALANCE, IssueState.OPEN, false],
+    ])('canRetry(%s, %s) === %s', (kind, state, expected) => {
+      expect(canRetry(kind, state)).toBe(expected);
     });
   });
 });

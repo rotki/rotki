@@ -12,6 +12,7 @@ from rotkehlchen.history.data_issues.constants import (
     IssueState,
 )
 from rotkehlchen.history.data_issues.types import (
+    AutoRemediationAttempt,
     DataIssue,
     DataIssueFilters,
     DataIssuePayload,
@@ -23,6 +24,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -106,6 +109,21 @@ def _validate_state_transition(current_state: str | IssueState, new_state: Issue
         raise InputError(
             f'Invalid data issue state transition from {current_state} to {new_state}',
         )
+
+
+def make_auto_remediation_attempt(
+        success: bool,
+        reason: str | None = None,
+) -> AutoRemediationAttempt:
+    attempt = AutoRemediationAttempt(
+        attribution='system',
+        strategy='historical_balance_reprocessing',
+        success=success,
+        timestamp=ts_now(),
+    )
+    if reason is not None:
+        attempt['reason'] = reason
+    return attempt
 
 
 class DataIssuesManager:
@@ -275,7 +293,7 @@ class DataIssuesManager:
             self,
             issue_id: int,
             state: IssueState,
-            attempt: dict[str, Any] | None = None,
+            attempt: Mapping[str, Any] | None = None,
             resolution: dict[str, Any] | None = None,
     ) -> DataIssue:
         _validate_state_transition((issue := self.get_issue(issue_id)).state, state)
@@ -304,6 +322,25 @@ class DataIssuesManager:
                     json.dumps(attempts, separators=(',', ':')),
                     json.dumps(payload, separators=(',', ':')),
                     resolved_at,
+                    issue_id,
+                ),
+            ).fetchone()
+        if row is None:
+            raise NotFoundError(f'Data issue with id {issue_id} not found')
+        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
+
+    def append_auto_remediation_attempt(
+            self,
+            issue_id: int,
+            attempt: Mapping[str, Any],
+    ) -> DataIssue:
+        issue = self.get_issue(issue_id)
+        with self.db.user_write() as write_cursor:
+            row = write_cursor.execute(
+                'UPDATE data_issues SET auto_remediation_attempts_json = ? WHERE id = ? '
+                f'RETURNING {DATA_ISSUE_COLUMNS}',
+                (
+                    json.dumps([*issue.auto_remediation_attempts, attempt], separators=(',', ':')),
                     issue_id,
                 ),
             ).fetchone()
@@ -357,24 +394,19 @@ class DataIssuesManager:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
-    def retry_auto_remediation(self, issue_id: int) -> DataIssue:
+    def retry_auto_remediation(self, issue_id: int) -> tuple[DataIssue, bool]:
         issue = self.get_issue(issue_id)
-        if issue.state in {IssueState.OPEN, IssueState.AUTO_REMEDIATING}:
-            return issue
-        if issue.state == IssueState.DISMISSED:
-            raise InputError(f'Cannot retry auto-remediation for dismissed data issue. Current state is {issue.state}')  # noqa: E501
+        if issue.state == IssueState.AUTO_REMEDIATING:
+            return issue, False
+        if issue.state not in {IssueState.OPEN, IssueState.UNRESOLVED}:
+            raise InputError(
+                f'Cannot retry auto-remediation for {issue.state} data issue. '
+                f'Current state is {issue.state}',
+            )
+        if issue.kind != IssueKind.REBASING_TOKEN:
+            raise InputError(f'Auto-remediation is not supported for {issue.kind} data issues')
 
-        payload = dict(issue.payload)
-        payload.pop('resolution', None)
-        with self.db.user_write() as write_cursor:
-            row = write_cursor.execute(
-                'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = NULL '
-                f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
-                (IssueState.OPEN, json.dumps(payload, separators=(',', ':')), issue_id),
-            ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
-        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
+        return self.update_state(issue_id, IssueState.AUTO_REMEDIATING), True
 
     def _get_issue_id_and_state_by_natural_key(
             self,

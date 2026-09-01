@@ -54,7 +54,10 @@ from rotkehlchen.tasks.calendar import (
     maybe_create_calendar_reminders,
     notify_reminders,
 )
-from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.tasks.historical_balances import (
+    process_historical_balances,
+    retry_rebasing_token_issue,
+)
 from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
 )
@@ -605,10 +608,35 @@ class TaskManager:
     def trigger_historical_balance_processing(self) -> list[Task] | None:
         if (
             is_accounting_update_enabled() is False or
-            self.history_processing_coordinator.is_history_fetching()
+            self.history_processing_coordinator.is_history_fetching() or
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
         ):
             return None
         return self._spawn_historical_balance_processing(from_ts=None)
+
+    def retry_data_issue_auto_remediation(
+            self,
+            issue_id: int,
+            from_ts: TimestampMS,
+    ) -> bool:
+        if (
+            self.history_processing_coordinator.is_history_fetching() or
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+        ):
+            return False
+
+        self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name=f'{HISTORICAL_BALANCE_PROCESSING_TASK_NAME} for data issue {issue_id}',
+            exception_is_error=True,
+            method=retry_rebasing_token_issue,
+            database=self.database,
+            msg_aggregator=self.msg_aggregator,
+            chains_aggregator=self.chains_aggregator,
+            issue_id=issue_id,
+            from_ts=from_ts,
+        )
+        return True
 
     def _maybe_process_historical_balances(self) -> list[Task] | None:
         if self.history_processing_coordinator.is_history_fetching():

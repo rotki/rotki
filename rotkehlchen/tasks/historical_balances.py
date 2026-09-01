@@ -7,7 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.concurrency import checkpoint
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
@@ -24,7 +24,10 @@ from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
-from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.manager import (
+    DataIssuesManager,
+    make_auto_remediation_attempt,
+)
 from rotkehlchen.history.data_issues.types import (
     RebasingTokenIssuePayload,
     UnmatchedBridgeIssuePayload,
@@ -42,7 +45,14 @@ from rotkehlchen.tasks.bridges import (
     get_event_bridge_data,
     get_unmatched_bridge_events,
 )
-from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    ChainID,
+    EventMetricKey,
+    Location,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
@@ -397,11 +407,13 @@ def _query_rebasing_balance(
 
     try:
         token = Asset(bucket.asset).resolve_to_evm_token()
-        evm_manager = chains_aggregator.get_evm_manager(
-            event.location.to_chain_id(),  # type: ignore[arg-type]  # EvmEvent locations always map to a supported EVM chain.
-        )
-    except (AttributeError, UnknownAsset, WrongAssetType):
+        chain_id = ChainID(event.location.to_chain_id())
+    except (UnknownAsset, ValueError, WrongAssetType):
         return None, 'unsupported_bucket'
+
+    if chain_id not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+        return None, 'unsupported_bucket'
+    evm_manager = chains_aggregator.get_evm_manager(chain_id)
 
     balance = evm_manager.node_inquirer.get_historical_token_balance(
         address=string_to_evm_address(bucket.location_label),
@@ -425,7 +437,8 @@ def _write_rebasing_issue(
 ) -> None:
     """Persist why a rebasing balance could not be verified."""
     assert event.identifier is not None, 'Processed history events should have identifiers'
-    DataIssuesManager(database).write_issue(
+    issues_manager = DataIssuesManager(database)
+    issue_id = issues_manager.write_issue(
         kind=IssueKind.REBASING_TOKEN,
         location=bucket.location,
         location_label=bucket.location_label,
@@ -439,6 +452,12 @@ def _write_rebasing_issue(
         ts_start=event.timestamp,
         ts_end=event.timestamp,
     )
+    if issues_manager.get_issue(issue_id).state == IssueState.AUTO_REMEDIATING:
+        issues_manager.update_state(
+            issue_id=issue_id,
+            state=IssueState.UNRESOLVED,
+            attempt=make_auto_remediation_attempt(success=False, reason=reason),
+        )
 
 
 @skip_if_running
@@ -447,7 +466,7 @@ def process_historical_balances(
         msg_aggregator: MessagesAggregator,
         from_ts: TimestampMS | None = None,
         chains_aggregator: ChainsAggregator | None = None,
-) -> None:
+) -> bool:
     """Process events and compute balance metrics."""
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
     rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
@@ -494,7 +513,7 @@ def process_historical_balances(
             database=database,
             modification_ts_at_start=modification_ts_at_start,
         )
-        return
+        return True
 
     metrics_batch: list[MetricRow] = []
     modified_buckets: ModifiedBuckets = {}
@@ -583,6 +602,63 @@ def process_historical_balances(
         total_events,
         len(modified_buckets),
     )
+    return True
+
+
+def _fail_rebasing_remediation(
+        database: DBHandler,
+        issue_id: int,
+        reason: str,
+) -> None:
+    issues_manager = DataIssuesManager(database)
+    if issues_manager.get_issue(issue_id).state != IssueState.AUTO_REMEDIATING:
+        return
+
+    issues_manager.update_state(
+        issue_id=issue_id,
+        state=IssueState.UNRESOLVED,
+        attempt=make_auto_remediation_attempt(success=False, reason=reason),
+    )
+
+
+def retry_rebasing_token_issue(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        chains_aggregator: ChainsAggregator,
+        issue_id: int,
+        from_ts: TimestampMS,
+) -> None:
+    """Reprocess balances from a rebasing issue and finish its remediation attempt."""
+    try:
+        processing_completed = process_historical_balances(
+            database=database,
+            msg_aggregator=msg_aggregator,
+            from_ts=from_ts,
+            chains_aggregator=chains_aggregator,
+        )
+    except TaskCancelledError:
+        _fail_rebasing_remediation(database, issue_id, 'processing_cancelled')
+        raise
+    except Exception:
+        _fail_rebasing_remediation(database, issue_id, 'processing_failed')
+        raise
+
+    if processing_completed is None:
+        _fail_rebasing_remediation(database, issue_id, 'processing_already_running')
+        return
+
+    issues_manager = DataIssuesManager(database)
+    issue = issues_manager.get_issue(issue_id)
+    attempt = make_auto_remediation_attempt(success=True)
+    if issue.state == IssueState.AUTO_REMEDIATING:
+        issues_manager.update_state(
+            issue_id=issue_id,
+            state=IssueState.RESOLVED,
+            attempt=attempt,
+            resolution={'reason': 'no_longer_reproduces'},
+        )
+    elif issue.state == IssueState.RESOLVED:
+        issues_manager.append_auto_remediation_attempt(issue_id, attempt)
 
 
 def _detect_unmatched_bridge_issues(database: DBHandler) -> None:

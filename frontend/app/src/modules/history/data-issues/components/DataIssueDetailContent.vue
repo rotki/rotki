@@ -203,9 +203,10 @@ const resolutionNote = computed<string | undefined>(() => {
         {{ t('data_issues.action.dismiss.label') }}
       </RuiButton>
       <RuiButton
+        v-if="canRetry(issue.kind, issue.state)"
         variant="outlined"
         color="primary"
-        :disabled="busy || !canRetry(issue.state)"
+        :disabled="busy"
         data-testid="data-issue-detail-retry"
         @click="emit('retry', issue.id)"
       >
