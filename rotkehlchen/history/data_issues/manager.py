@@ -333,14 +333,21 @@ class DataIssuesManager:
             self,
             issue_id: int,
             attempt: Mapping[str, Any],
+            resolution: dict[str, Any] | None = None,
     ) -> DataIssue:
         issue = self.get_issue(issue_id)
+        payload = (
+            issue.payload if resolution is None else
+            {**issue.payload, 'resolution': resolution}
+        )
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
-                'UPDATE data_issues SET auto_remediation_attempts_json = ? WHERE id = ? '
+                'UPDATE data_issues SET auto_remediation_attempts_json = ?, payload_json = ? '
+                'WHERE id = ? '
                 f'RETURNING {DATA_ISSUE_COLUMNS}',
                 (
                     json.dumps([*issue.auto_remediation_attempts, attempt], separators=(',', ':')),
+                    json.dumps(payload, separators=(',', ':')),
                     issue_id,
                 ),
             ).fetchone()

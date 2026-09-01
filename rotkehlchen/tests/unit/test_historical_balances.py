@@ -35,6 +35,8 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.historical_balances import (
+    Bucket,
+    _get_rebasing_reconciliation_points,
     process_historical_balances,
     retry_rebasing_token_issue,
 )
@@ -71,6 +73,24 @@ def _make_balance_event(timestamp: int, amount: str = '10') -> EvmEvent:
         amount=FVal(amount),
         location_label=TEST_ADDR1,
     )
+
+
+@pytest.mark.parametrize('rebasing_assets', [frozenset(), frozenset({A_DAI.identifier})])
+def test_rebasing_reconciliation_skips_unrelated_events(
+        database: DBHandler,
+        rebasing_assets: frozenset[str],
+) -> None:
+    event = _make_balance_event(timestamp=1000)
+    event.identifier = 1
+    with patch.object(Bucket, 'from_event', wraps=Bucket.from_event) as from_event_mock:
+        assert _get_rebasing_reconciliation_points(
+            database=database,
+            events=[event],
+            rebasing_assets=rebasing_assets,
+            treat_eth2_as_eth=False,
+        ) == {}
+
+    from_event_mock.assert_not_called()
 
 
 def _add_test_evm_transactions(
@@ -1919,6 +1939,28 @@ def test_negative_rebasing_token_without_archive_node_writes_specific_issue(
         assert issue.state == IssueState.UNRESOLVED
         assert issue.auto_remediation_attempts[0]['reason'] == 'archive_node_unavailable'
         assert issue.auto_remediation_attempts[0]['success'] is False
+
+        node_inquirer.get_historical_token_balance.return_value = ZERO
+        node_inquirer.has_archive_node.return_value = True
+        DataIssuesManager(database).retry_auto_remediation(issue.id)
+        retry_rebasing_token_issue(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            chains_aggregator=chains_aggregator,
+            issue_id=issue.id,
+            from_ts=TimestampMS(issue.ts_start),
+        )
+
+        issue = DataIssuesManager(database).get_issue(issue.id)
+        assert issue.state == IssueState.RESOLVED
+        assert issue.payload['resolution'] == {'reason': 'no_longer_reproduces'}
+        assert len(issue.auto_remediation_attempts) == 2
+        assert issue.auto_remediation_attempts[1]['success'] is True
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT metric_value FROM event_metrics WHERE event_identifier=?',
+                (spend_id,),
+            ).fetchone()[0] == '0'
     finally:
         GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
 

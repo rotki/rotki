@@ -2680,7 +2680,10 @@
     "description": {
       "current_balance_mismatch": "rotki's calculated {asset} balance ({derived}) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
       "negative_balance": "An event spent more {asset} than rotki had tracked, so your balance went negative to {amount} (it was {before} just before). This usually means an earlier {asset} transaction is missing or was recorded incorrectly.",
-      "rebasing_token": "rotki could not verify the historical balance of rebasing token {asset} from authoritative on-chain data. The event-derived balance was not used.",
+      "rebasing_token_archive_node_unavailable": "rotki could not verify the historical balance of rebasing token {asset} because no archive node is available for this network. Configure an archive node and retry auto-remediation.",
+      "rebasing_token_historical_balance_query_failed": "rotki could not verify the historical balance of rebasing token {asset} because the archive-node query failed. Check the configured node or retry auto-remediation later.",
+      "rebasing_token_missing_transaction": "rotki could not verify the historical balance of rebasing token {asset} because its transaction block data is missing. Refresh the transaction history before retrying auto-remediation.",
+      "rebasing_token_unsupported_bucket": "rotki could not verify the historical balance of rebasing token {asset} because this balance bucket cannot be checked using the token contract's wallet balance. Review the related event and resolve the issue manually.",
       "unknown": "rotki flagged a data issue. Open the details below to see what was recorded.",
       "unmatched_bridge_deposit": "A {asset} bridge deposit has no matched counterpart event on the destination chain. Match it manually or resolve it as an external payment.",
       "unmatched_bridge_withdrawal": "A {asset} bridge withdrawal has no matched counterpart deposit on the source chain. Match it manually to link the two legs."
@@ -2688,7 +2691,10 @@
     "description_short": {
       "current_balance_mismatch": "{asset} balance is off by {delta} from the on-chain amount.",
       "negative_balance": "{asset} balance went negative to {amount}, likely from a missing earlier transaction.",
-      "rebasing_token": "The historical balance of rebasing token {asset} could not be verified.",
+      "rebasing_token_archive_node_unavailable": "No archive node is available to verify the historical {asset} balance.",
+      "rebasing_token_historical_balance_query_failed": "The historical on-chain query for {asset} failed.",
+      "rebasing_token_missing_transaction": "Transaction block data is missing for the {asset} balance check.",
+      "rebasing_token_unsupported_bucket": "The {asset} balance is held in a bucket that cannot be verified on-chain.",
       "unknown": "rotki flagged a data issue. Open the details for more.",
       "unmatched_bridge_deposit": "Unmatched {asset} bridge deposit. Match it manually.",
       "unmatched_bridge_withdrawal": "Unmatched {asset} bridge withdrawal. Match it manually."
