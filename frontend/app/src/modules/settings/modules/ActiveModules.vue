@@ -99,7 +99,7 @@ function showConfirmation() {
     <RuiCard
       no-padding
       class="px-1 py-0.5 bg-white dark:bg-rui-grey-900"
-      content-class="flex items-center justify-center"
+      :class-names="{ content: 'flex items-center justify-center' }"
     >
       <div
         v-for="module in moduleStatus"
@@ -107,7 +107,7 @@ function showConfirmation() {
         class="flex"
       >
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :open-delay="400"
         >
           <template #activator>

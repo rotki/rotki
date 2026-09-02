@@ -4,10 +4,14 @@ import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/mo
 import type { Collection } from '@/modules/core/common/collection';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
+import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
+import { err, ok } from 'plainfp/result';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
+import { Module } from '@/modules/core/common/modules';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');
@@ -15,6 +19,32 @@ vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   return {
     ...mod,
     onBeforeMount: vi.fn().mockImplementation((fn: () => void): void => fn()),
+  };
+});
+
+const submitTaskMock = vi.fn();
+const notifyErrorMock = vi.fn();
+
+vi.mock('@/modules/task-center/use-native-task', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/task-center/use-native-task')>();
+  return {
+    ...actual,
+    useNativeTask: (): ReturnType<typeof actual.useNativeTask> => ({
+      ...actual.useNativeTask(),
+      statusOf: () => ({ active: false, everCompleted: false, pending: false, running: false, status: undefined }),
+      submitTask: submitTaskMock,
+    }),
+  };
+});
+
+vi.mock('@/modules/core/notifications/use-notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/core/notifications/use-notifications')>();
+  return {
+    ...actual,
+    useNotifications: (): ReturnType<typeof actual.useNotifications> => ({
+      ...actual.useNotifications(),
+      notifyError: notifyErrorMock,
+    }),
   };
 });
 
@@ -30,9 +60,6 @@ describe('useNftBalances', () => {
   beforeEach(async (): Promise<void> => {
     scope = effectScope();
     setActivePinia(createPinia());
-    // Reset the shared route query (mutated by other tests' router.push). A fresh
-    // useRouter() call returns its own push mock, so this does not affect the
-    // push spy asserted on the describe-level router instance.
     await useRouter().push({ query: {} });
     fetchNonFungibleBalances = useNftBalances().fetchNonFungibleBalances;
   });
@@ -54,9 +81,6 @@ describe('useNftBalances', () => {
 
     beforeEach((): void => {
       set(mainPage, true);
-      // Reset shared filter state to the settled baseline (undefined) so each test
-      // starts identically. A first mount with an empty route sets this from 'none'
-      // to undefined; leaving the 'none' seed leaks across tests.
       set(ignoredAssetsHandling, undefined);
     });
 
@@ -172,6 +196,39 @@ describe('useNftBalances', () => {
         column: 'timestamp',
         direction: 'asc',
       }]);
+    });
+  });
+
+  describe('refreshNonFungibleBalances', () => {
+    beforeEach(() => {
+      updateGeneralSettings({ activeModules: [Module.NFTS] });
+      submitTaskMock.mockReset();
+      notifyErrorMock.mockReset();
+    });
+
+    it('should notify when the task fails', async () => {
+      submitTaskMock.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
+
+      await useNftBalances().refreshNonFungibleBalances(true);
+
+      expect(notifyErrorMock).toHaveBeenCalledOnce();
+      expect(notifyErrorMock.mock.calls[0][1]).toContain('boom');
+    });
+
+    it('should not notify when the task was cancelled', async () => {
+      submitTaskMock.mockResolvedValue(err(Cancelled({ message: 'stopped' })));
+
+      await useNftBalances().refreshNonFungibleBalances(true);
+
+      expect(notifyErrorMock).not.toHaveBeenCalled();
+    });
+
+    it('should not notify when the task succeeds', async () => {
+      submitTaskMock.mockResolvedValue(ok(undefined));
+
+      await useNftBalances().refreshNonFungibleBalances(true);
+
+      expect(notifyErrorMock).not.toHaveBeenCalled();
     });
   });
 });

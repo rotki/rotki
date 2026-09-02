@@ -77,9 +77,6 @@ watch(route, async (route) => {
   }
 }, { immediate: true });
 
-// Each field is read with `??` rather than by spreading the bag over a defaults object: a caller
-// forwarding its own optional value passes a present key holding `undefined`, which a spread takes
-// as the value and a default would be lost.
 const actionDisabled = computed<boolean>(() => action?.disabled ?? false);
 
 const actionHidden = computed<boolean>(() => action?.hidden ?? false);
@@ -110,7 +107,7 @@ defineExpose({
     no-padding
     class="h-full"
     :class="{ '!border-rui-success/50 bg-rui-success/5 dark:bg-rui-success/5': keySet }"
-    content-class="h-full flex flex-col"
+    :class-names="{ content: 'h-full flex flex-col' }"
   >
     <div class="grow">
       <div class="px-6 pt-6">

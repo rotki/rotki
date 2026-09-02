@@ -24,8 +24,8 @@ const stubs = {
   EnsAvatar: true,
   LocationIcon: true,
   RuiAutoComplete: {
-    props: ['menuClass', 'options'],
-    template: `<div data-testid="autocomplete" :data-menu-class="menuClass">
+    props: ['classNames', 'options'],
+    template: `<div data-testid="autocomplete" :data-menu-class="classNames?.menu">
       <slot />
       <template v-if="options.length > 0">
         <div data-testid="selection-slot"><slot name="selection" :item="options[0]" /></div>
@@ -48,17 +48,13 @@ describe('locationLabelSelector', () => {
     setActivePinia(createPinia());
   });
 
-  it('should constrain the dropdown menu to the field width', () => {
-    // The full address is used as text-attr, so without this the menu auto-sizes to the address
-    // length and overflows the field (see AssetSelect, which does the same).
+  it('should constrain the dropdown menu to the field width, which the full address would otherwise stretch past it', () => {
     const wrapper = createWrapper();
 
     expect(wrapper.find('[data-testid=autocomplete]').attributes('data-menu-class')).toBe('!min-w-full');
   });
 
-  it('should render the selection compactly and the dropdown item in full', () => {
-    // The `dense` binding decides between the one-line chip and the two-line dropdown row. It is
-    // forwarded through a reusable template, which drops boolean casting unless props are declared.
+  it('should render the selection compactly and the dropdown item in full, as the dense binding decides between them', () => {
     const wrapper = createWrapper([{ location: 'eth', locationLabel: address }]);
 
     expect(wrapper.find('[data-testid=selection-slot]').text()).toBe('0x1234...5678');

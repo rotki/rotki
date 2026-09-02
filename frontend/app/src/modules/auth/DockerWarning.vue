@@ -4,8 +4,6 @@ import { useMainStore } from '@/modules/core/common/use-main-store';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
-// Shown only when the deployment has neither session authentication nor an accepted
-// risk, so it is the place where the user picks between the two.
 const SESSION_KEY_VARIABLE = 'ROTKI_SESSION_KEY';
 const SESSION_KEY_COMMAND = `${SESSION_KEY_VARIABLE}=$(openssl rand -hex 32)`;
 const ACCEPT_VARIABLE = 'ROTKI_ACCEPT_UNAUTHENTICATED_API';

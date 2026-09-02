@@ -45,7 +45,7 @@ export function accountingRuleFormSchema(): ZodType<AccountingRuleFormState> {
   });
 }
 
-/** The rule as the API stores it -> what the inputs bind to. A missing counterparty shows as blank. */
+/** Maps the rule as the API stores it onto what the inputs bind to; a missing counterparty is blank. */
 export function accountingRuleFormState(rule: AccountingRuleEntry): AccountingRuleFormState {
   return {
     accountingTreatment: rule.accountingTreatment,
@@ -103,7 +103,7 @@ export function toLinkedPropertyState(property: AccountingRuleWithLinkedProperty
 }
 
 /**
- * ⭐ A link the user asked for but which names nothing yet reads back as no link at all, which is
+ * A link the user asked for but which names nothing yet reads back as no link at all, which is
  * how an empty option list leaves the checkbox off. That is the behaviour the pair of writable
  * computeds this replaced already had.
  */

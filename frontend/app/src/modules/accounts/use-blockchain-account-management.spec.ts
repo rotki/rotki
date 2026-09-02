@@ -82,10 +82,6 @@ describe('useBlockchainAccountManagement', () => {
       expect(h.addAccounts).not.toHaveBeenCalled();
     });
 
-    // The guard stops a user submitting the form twice, not a batch from proceeding. A CSV import
-    // fans its rows out at once, so from row two onwards an addition is always already running —
-    // without this the import silently dropped every row but the first while its progress bar and
-    // completion message both still counted them.
     it('should not skip a row of a batch that is already running', async () => {
       set(mockAddRunning, true);
       h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
@@ -107,9 +103,7 @@ describe('useBlockchainAccountManagement', () => {
       expect(h.addAccounts).not.toHaveBeenCalled();
     });
 
-    // The address count no longer selects a mechanism: one and many take the same call, and the
-    // batch decides whether an umbrella is warranted.
-    it('should delegate the filtered payload for one address and for many', async () => {
+    it('should delegate the filtered payload through the same call for one address and for many', async () => {
       h.addAccounts.mockResolvedValue(NOTHING);
       const many = [{ address: '0xabc', tags: null }, { address: '0xdef', tags: null }];
       h.getNewAccountPayload.mockReturnValue(many);
@@ -133,8 +127,7 @@ describe('useBlockchainAccountManagement', () => {
       expect(h.getNewAccountPayload).not.toHaveBeenCalled();
     });
 
-    // Without `wait` the addition is detached, so there is nothing to report back yet.
-    it('should return an empty summary when not awaiting', async () => {
+    it('should return an empty summary when not awaiting because the addition is left detached', async () => {
       h.getNewAccountPayload.mockReturnValue([{ address: '0xabc', tags: null }]);
       h.addAccounts.mockResolvedValue({ added: [{ address: '0xabc', chain: 'eth' }], cancelled: false, failed: [] });
       const { useBlockchainAccountManagement } = await importModule();

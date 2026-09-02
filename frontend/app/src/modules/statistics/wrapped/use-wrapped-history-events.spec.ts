@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWrappedHistoryEvents } from '@/modules/statistics/wrapped/use-wrapped-history-events';
 
 const mockGetEarliestEventTimestamp = vi.fn<() => Promise<number | undefined>>();
-// History freshness/liveness now come from the HISTORY_SYNC umbrella activity.
 const mockHistoryEverCompleted = ref<boolean>(true);
 const mockSectionLoading = ref<boolean>(false);
 
@@ -18,7 +17,6 @@ vi.mock('@/modules/history/events/use-history-events', () => ({
   }),
 }));
 
-// Decoding runs native (TX_DECODING kind); online events run native (ONLINE_EVENTS kind, W7).
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): Record<string, unknown> => ({
     useIsActive: (kind: string): ComputedRef<boolean> => computed<boolean>(() => {

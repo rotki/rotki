@@ -88,9 +88,6 @@ describe('use-internal-tx-conflicts', () => {
     vi.clearAllMocks();
     spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection());
     spies.fetchInternalTxConflictsCount.mockResolvedValue({ pending: 0, failed: 0 });
-    // `useInternalTxConflicts` is a `createSharedComposable` singleton; acquire it
-    // inside an owned scope so `afterEach` disposes it and its count/filter refs
-    // start fresh each test instead of carrying over.
     scope = effectScope();
     scope.run(() => {
       composable = useInternalTxConflicts();

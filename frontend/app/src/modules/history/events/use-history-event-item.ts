@@ -19,24 +19,26 @@ export interface UseHistoryEventItemProps {
 }
 
 export interface UseHistoryEventItemReturn {
-  // Asset state
   isIgnoredAsset: ComputedRef<boolean>;
   isSpam: ComputedRef<boolean>;
   hiddenEvent: ComputedRef<boolean>;
-  // Selection state
   showCheckbox: ComputedRef<boolean>;
   isCheckboxDisabled: ComputedRef<boolean>;
   isSelected: ComputedRef<boolean>;
   toggleSelected: () => void;
-  // Event state
   hasMissingRule: ComputedRef<boolean>;
   chain: ComputedRef<Blockchain>;
-  // Event data
   notes: ComputedRef<string | undefined>;
   counterparty: ComputedRef<string | undefined>;
   validatorIndex: ComputedRef<number | undefined>;
   blockNumber: ComputedRef<number | undefined>;
   extraData: ComputedRef<Record<string, any> | undefined>;
+}
+
+/** Recovers a block number from the first sibling in the group that carries one. */
+function blockNumberFromSibling(groupEvents: HistoryEventEntry[] | undefined): number | undefined {
+  const sibling = groupEvents?.find(other => 'blockNumber' in other);
+  return sibling && 'blockNumber' in sibling ? sibling.blockNumber : undefined;
 }
 
 /** `extraData` is declared loosely on the event schemas, so confirm it is indexable before use. */
@@ -106,12 +108,7 @@ export function useHistoryEventItem(
     if ('blockNumber' in ev)
       return ev.blockNumber;
 
-    // MEV reward transaction events are EVM events that get moved into a block
-    // production group. They don't carry a `blockNumber` field themselves, so
-    // recover it from a sibling block event in the same group to keep the note's
-    // block number linkable.
-    const sibling = toValue(groupEvents)?.find(other => 'blockNumber' in other);
-    return sibling && 'blockNumber' in sibling ? sibling.blockNumber : undefined;
+    return blockNumberFromSibling(toValue(groupEvents));
   });
 
   const extraData = computed<Record<string, any> | undefined>(() => {

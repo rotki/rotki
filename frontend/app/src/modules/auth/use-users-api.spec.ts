@@ -428,8 +428,6 @@ describe('composables/api/session/users', () => {
     it('should still log out of core when colibri is already locked', async () => {
       let coreCalled = false;
 
-      // colibri answers 400 "DB not unlocked" whenever it holds no user db client,
-      // which is the normal state after a resumed session.
       server.use(
         http.post(`${colibriUrl}/user/logout`, () =>
           HttpResponse.json({

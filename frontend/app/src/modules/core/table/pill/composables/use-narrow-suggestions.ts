@@ -38,6 +38,9 @@ interface NarrowSuggestionsReturn {
  *
  * Asset rows are appended after the synchronous ones rather than merged into their ranking: a
  * result landing mid-keystroke must not renumber the rows the keyboard highlight is pointing at.
+ *
+ * The debounced search runs immediately as well, so a bar created with a query already in it (a
+ * restored URL, a remounted menu) searches instead of waiting for the next keystroke.
  */
 export function useNarrowSuggestions(
   query: MaybeRefOrGetter<string>,
@@ -57,8 +60,6 @@ export function useNarrowSuggestions(
       chain: asset.evmChain ?? undefined,
       field,
       kind: 'value' as const,
-      // A custom or unknown asset can carry no symbol, and its raw identifier is far too long for
-      // a row; it falls back to the shortened address instead.
       label: assetDisplayLabel(asset.identifier, asset.symbol),
       value: asset.identifier,
     }));
@@ -92,8 +93,6 @@ export function useNarrowSuggestions(
     }
   }
 
-  // Immediate, so a bar created with a query already in it (a restored URL, a remounted menu)
-  // searches instead of waiting for the next keystroke.
   watchDebounced(() => toValue(query), () => {
     startPromise(searchAssets());
   }, { debounce: SEARCH_DEBOUNCE, immediate: true });
@@ -103,7 +102,6 @@ export function useNarrowSuggestions(
     const typed = toValue(query).trim();
     if (!typed)
       return fieldSuggestions(available);
-    // An asset field that already has a pill is no longer offered, and neither are its assets.
     const offersAssets = available.some(field => field.searchAsset);
     return [
       ...searchFieldsAndValues(toValue(query), available, get(operatorLabels), undefined, recentFor, get(syntaxHints)),

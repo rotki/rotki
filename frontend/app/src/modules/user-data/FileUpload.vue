@@ -29,18 +29,22 @@ const error = ref('');
 const select = useTemplateRef<HTMLInputElement>('select');
 const { t } = useI18n({ useScope: 'global' });
 
-function isValidFile(file: File, acceptString: string) {
-  // Extract the file extension
+/**
+ * Whether a picked file satisfies the `accept` attribute.
+ *
+ * @remarks
+ * `acceptString` is an `accept` attribute value, comma separated. A file matches on either its
+ * extension or its MIME type, since a browser reports no type for some files and checking either
+ * alone rejects files the user is allowed to pick. `image/*` is the one wildcard handled; other
+ * `type/*` forms are compared literally and will not match.
+ */
+function isValidFile(file: File, acceptString: string): boolean {
   const fileName = file.name;
   const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
-
-  // Extract the file MIME type
   const fileType = file.type;
 
-  // Parse the accept string
   const acceptTypes = acceptString.split(',').map(type => type.trim().toLowerCase());
 
-  // Check if the file extension or MIME type matches any of the accepted types
   for (const type of acceptTypes) {
     if (type === fileExtension || type === fileType || (type === 'image/*' && fileType.startsWith('image/')))
       return true;

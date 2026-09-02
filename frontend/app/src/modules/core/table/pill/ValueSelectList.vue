@@ -56,8 +56,7 @@ const filtered = computed<SelectOption[]>(() => {
   const query = get(search).toLowerCase().trim();
   if (noFilter || !query)
     return options;
-  // Lowercased here rather than trusted from the producer: the needle already is, and a field
-  // resolving its keywords from raw values (a checksummed address) would otherwise never match.
+  // Lowercased here, not trusted from the producer: raw keywords (a checksummed address) never match.
   return options.filter(option =>
     option.label.toLowerCase().includes(query) || (option.keywords?.toLowerCase().includes(query) ?? false),
   );
@@ -65,8 +64,7 @@ const filtered = computed<SelectOption[]>(() => {
 
 const selectedSet = computed<Set<string>>(() => new Set(get(selected)));
 
-// Selected values pinned above the list as removable chips, so what is chosen stays visible
-// even when the option list is long (and scrolled away).
+// Selected values pinned above the list as chips, so the choice stays visible once it scrolls away.
 const labelByValue = computed<Map<string, string>>(() => new Map(options.map(option => [option.value, option.label])));
 const selectedChips = computed<SelectOption[]>(() =>
   get(selected).map(value => ({ label: get(labelByValue).get(value) ?? value, value })),
@@ -78,21 +76,21 @@ const { containerProps, list, scrollTo, wrapperProps } = useVirtualList(filtered
 // The first row the highlight may land on: past any pinned rows, unless they are all there is.
 const firstSelectable = computed<number>(() => (pinned < get(filtered).length ? pinned : 0));
 
-// Which values the list holds, order-independent. Selecting a value can REORDER the list without
-// changing what is in it (the asset list pins the selection to the top), and that must not count
-// as a new list: it would yank the highlight off the row the user just picked.
+// Order-independent, so pinning a selection to the top never reads as a new list.
 const filteredValues = computed<string>(() => [...get(filtered).map(option => option.value)].sort().join(','));
 
-// Put the highlight on the first result whenever the list's contents change — that is, whenever a
-// search returns something different. The list is virtualized, so it has to be scrolled there
-// too: leaving it where it was scrolled would highlight a row that is nowhere on screen.
+// Virtualized, so the highlight has to be scrolled to as well or it lands off screen.
 watch(filteredValues, () => {
   set(highlighted, get(firstSelectable));
   scrollTo(get(highlighted));
 });
 
-// Checkbox squares for multi-select, radio circles for single-select: a checkbox on a
-// single-choice field wrongly implies several values can be ticked at once.
+/**
+ * Picks a row's indicator icon: checkbox squares when several values may be held, circles otherwise.
+ *
+ * @remarks
+ * A checkbox on a single-choice field wrongly implies several values can be ticked at once.
+ */
 function indicatorIcon(selected: boolean): string {
   if (multiple)
     return selected ? 'lu-square-check' : 'lu-square';
@@ -110,12 +108,7 @@ function toggle(value: string): void {
   }
 }
 
-// Last position the pointer was actually at.
-//
-// Any scroll slides rows under a cursor that never moved, and the browser reports that as a
-// mousemove at unchanged coordinates. Taking it at face value breaks both ways of moving through
-// this list: the arrow keys cannot advance past one row, because the row arriving under the pointer
-// hands the highlight straight back, and a wheel scroll drags the highlight along with it.
+// A wheel scroll slides rows under a stationary cursor and still reports a mousemove.
 let lastX = Number.NaN;
 let lastY = Number.NaN;
 
@@ -128,18 +121,23 @@ function onPointerMove(event: MouseEvent, index: number): void {
   set(highlighted, index);
 }
 
+/**
+ * Drives the list from the keyboard: dismiss, move the highlight, commit a row.
+ *
+ * @remarks
+ * Escape is handled here rather than left to the surrounding menu, and before anything else. The
+ * menu can only dismiss itself while its own content holds focus, and this list is what holds it;
+ * an empty list has to be dismissable too, so the check cannot sit behind the row count.
+ *
+ * A composing IME is left alone. Mid-word, Enter confirms the candidate and the arrows walk the
+ * candidate list, so acting on them commits a row and closes the list under the user.
+ */
 function onKeydown(event: KeyboardEvent): void {
-  // Escape comes first, and is handled here rather than left to the surrounding menu: dismissal by
-  // the menu only works while its own content holds focus, and this list is what holds it. An
-  // empty list has to be dismissable too, so this cannot sit behind the row check.
   if (event.key === 'Escape') {
     emit('close');
     return;
   }
 
-  // While an IME is composing, Enter confirms the candidate and the arrows walk the candidate
-  // list. Acting on them would commit a row and close the list mid-word. Same guard as the send
-  // form's token picker, the app's other virtualized picker.
   if (event.isComposing)
     return;
 

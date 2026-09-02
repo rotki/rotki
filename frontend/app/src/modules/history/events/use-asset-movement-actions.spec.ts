@@ -7,6 +7,7 @@ const { spies } = vi.hoisted(() => ({
     matchAssetMovements: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
     unlinkAssetMovement: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
     refreshUnmatchedAssetMovements: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    resolveExternal: vi.fn<(id: number) => Promise<{ message: string; success: boolean }>>().mockResolvedValue({ message: '', success: true }),
     showConfirm: vi.fn(),
   },
 }));
@@ -26,6 +27,7 @@ vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
     unmatchedMovements: computed<UnmatchedAssetMovement[]>(() => get(unmatchedMovementsRef)),
     ignoredMovements: computed<UnmatchedAssetMovement[]>(() => get(ignoredMovementsRef)),
     refreshUnmatchedAssetMovements: spies.refreshUnmatchedAssetMovements,
+    resolveExternal: spies.resolveExternal,
   }),
 }));
 
@@ -44,11 +46,12 @@ function createMockMovement(overrides: {
   identifier?: number;
   asset?: string;
   isFiat?: boolean;
+  eventSubtype?: string;
 } = {}): UnmatchedAssetMovement {
   return {
     groupIdentifier: overrides.groupIdentifier ?? 'group1',
-    // @ts-expect-error partial mock for testing - only identifier is needed
-    events: { entry: { identifier: overrides.identifier ?? 1 } },
+    // @ts-expect-error partial mock for testing - only identifier and subtype are read
+    events: { entry: { identifier: overrides.identifier ?? 1, eventSubtype: overrides.eventSubtype ?? 'spend' } },
     asset: overrides.asset ?? 'ETH',
     isFiat: overrides.isFiat ?? false,
   };
@@ -99,7 +102,11 @@ describe('use-asset-movement-actions', () => {
       expect(composable).toHaveProperty('confirmIgnoreSelected');
       expect(composable).toHaveProperty('confirmRestoreSelected');
       expect(composable).toHaveProperty('ignoreMovement');
+      expect(composable).toHaveProperty('markExternal');
       expect(composable).toHaveProperty('restoreMovement');
+      expect(composable).toHaveProperty('resolutionNotice');
+      expect(composable).toHaveProperty('dismissResolution');
+      expect(composable).toHaveProperty('undoResolution');
     });
 
     it('should initialize refs with default values', () => {
@@ -534,7 +541,103 @@ describe('use-asset-movement-actions', () => {
       expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
       expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
+  });
 
+  describe('markExternal', () => {
+    it('should resolve the movement as external and report it with an undo', async () => {
+      const { composable, onActionComplete } = setupWithCallback();
+      const movement = createMockMovement({ identifier: 7 });
+
+      await composable.markExternal(movement);
+
+      expect(spies.resolveExternal).toHaveBeenCalledWith(7);
+      expect(spies.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
+      expect(onActionComplete).toHaveBeenCalledOnce();
+      expect(get(composable.resolutionNotice)?.movement).toBe(movement);
+      expect(get(composable.ignoreLoading)).toBe(false);
+    });
+
+    it('should word the notice by direction, so a deposit does not read as a payment out', async () => {
+      const composable = setupWithoutCallback();
+
+      await composable.markExternal(createMockMovement({ eventSubtype: 'spend' }));
+      const withdrawalMessage = get(composable.resolutionNotice)?.message;
+
+      await composable.markExternal(createMockMovement({ eventSubtype: 'receive', groupIdentifier: 'g2' }));
+
+      expect(get(composable.resolutionNotice)?.message).not.toBe(withdrawalMessage);
+    });
+
+    it('should not report a resolution the backend rejected', async () => {
+      spies.resolveExternal.mockResolvedValueOnce({ message: 'nope', success: false });
+      const { composable, onActionComplete } = setupWithCallback();
+
+      await composable.markExternal(createMockMovement());
+
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+      expect(spies.refreshUnmatchedAssetMovements).not.toHaveBeenCalled();
+      expect(onActionComplete).not.toHaveBeenCalled();
+    });
+
+    it('should clear the loading flag when the resolution throws', async () => {
+      spies.resolveExternal.mockRejectedValueOnce(new Error('boom'));
+      const composable = setupWithoutCallback();
+
+      await expect(composable.markExternal(createMockMovement())).rejects.toThrow('boom');
+
+      expect(get(composable.ignoreLoading)).toBe(false);
+    });
+  });
+
+  describe('resolution notice', () => {
+    it('should restore the resolved movement when the notice is undone', async () => {
+      const composable = setupWithoutCallback();
+      await composable.markExternal(createMockMovement({ identifier: 7 }));
+
+      await composable.undoResolution();
+
+      expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(7);
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    it('should do nothing when undone with no notice held', async () => {
+      const composable = setupWithoutCallback();
+
+      await composable.undoResolution();
+
+      expect(spies.unlinkAssetMovement).not.toHaveBeenCalled();
+    });
+
+    it('should drop the notice when the resolved movement is restored from its own row', async () => {
+      const composable = setupWithoutCallback();
+      const movement = createMockMovement({ groupIdentifier: 'g1' });
+      await composable.markExternal(movement);
+
+      await composable.restoreMovement(movement);
+
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    it('should keep the notice when a different movement is restored', async () => {
+      const composable = setupWithoutCallback();
+      await composable.markExternal(createMockMovement({ groupIdentifier: 'g1' }));
+
+      await composable.restoreMovement(createMockMovement({ groupIdentifier: 'g2', identifier: 2 }));
+
+      expect(get(composable.resolutionNotice)).toBeDefined();
+    });
+
+    it('should drop the notice when dismissed', async () => {
+      const composable = setupWithoutCallback();
+      await composable.markExternal(createMockMovement());
+
+      composable.dismissResolution();
+
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+  });
+
+  describe('confirmIgnoreAllFiat batch loading', () => {
     it('should set ignoreLoading during batch operation', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 1 }),

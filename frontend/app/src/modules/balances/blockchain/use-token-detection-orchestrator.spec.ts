@@ -45,7 +45,6 @@ vi.mock('@/modules/balances/use-balance-hydration', () => ({
   }),
 }));
 
-// submitTask runs the spec body so the detection call is reached, mirroring an immediate run.
 const mockRunTask = vi.fn();
 const mockSubmitTask = vi.fn(runSpecWith(mockRunTask));
 vi.mock('@/modules/task-center/use-native-task', () => ({
@@ -75,7 +74,13 @@ function detectionActivity(chain: string, address: string, status: ActivityStatu
   };
 }
 
-// Must use dynamic import + resetModules because createSharedComposable caches the instance
+/**
+ * Imports the orchestrator module fresh for one case.
+ *
+ * @remarks
+ * `createSharedComposable` caches its instance for the lifetime of the module, so without a reset
+ * before the import a case gets the previous one's orchestrator and its already-submitted tasks.
+ */
 async function loadOrchestrator(): Promise<typeof import('./use-token-detection-orchestrator')> {
   vi.resetModules();
   return import('./use-token-detection-orchestrator');
@@ -97,7 +102,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
   describe('detectForChain', () => {
     /**
-     * 🔴🔴 Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
+     * Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
      * holds a balances slot for its whole body, and the cap is 2 — so children queued on the same
      * lane could never get one, and two chain jobs would sit waiting on addresses that cannot
      * start. A hang, not a slowdown, and no unit test that stubs `submitTask` can see it: the lane
@@ -126,7 +131,7 @@ describe('useTokenDetectionOrchestrator', () => {
     });
 
     /**
-     * ⭐ Every detection path queues through `queueDetectionForChain`, so filtering there covers
+     * Every detection path queues through `queueDetectionForChain`, so filtering there covers
      * `detectTokens` and `detectAllTokens` too — automated detection was still firing
      * `POST /blockchains/<chain>/tokens/detect` for chains the user had switched off.
      */
@@ -190,8 +195,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectTokens(['eth', 'optimism'], ['0xaddr1']);
 
       expect(mockSubmitTask).toHaveBeenCalledTimes(2);
-      // One hydration for the whole set, not one per chain: `hydrate` takes the chains and applies
-      // its own bound.
+      // One hydration for the whole set, not one per chain.
       expect(mockHydrate).toHaveBeenCalledWith({ blockchain: ['eth', 'optimism'] });
     });
   });
@@ -230,7 +234,7 @@ describe('useTokenDetectionOrchestrator', () => {
     it('should skip chains without addresses', async () => {
       set(mockAddresses, {
         eth: ['0xaddr1'],
-        // optimism has no addresses
+        optimism: [],
       });
 
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();

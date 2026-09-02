@@ -44,11 +44,10 @@ function hasRejectionCode(error: unknown): boolean {
 /**
  * Detects whether an error means the user rejected the wallet request.
  *
- * viem wraps provider errors in a `BaseError` chain, so we walk that chain for
- * either viem's typed `UserRejectedRequestError` or the raw EIP-1193 `4001`
- * code. Some wallets (e.g. MetaMask) surface the rejection as a generic
- * "unknown RPC error" whose original `4001` only survives in the cause chain,
- * which plain message matching used to miss.
+ * @remarks
+ * The whole `BaseError` cause chain is walked, for viem's typed `UserRejectedRequestError` or a
+ * raw EIP-1193 `4001`. Matching on the message is not enough: MetaMask surfaces a rejection as a
+ * generic "unknown RPC error" whose `4001` survives only in the cause chain.
  */
 export function isUserRejectedRequestError(error: unknown): boolean {
   if (error instanceof BaseError) {

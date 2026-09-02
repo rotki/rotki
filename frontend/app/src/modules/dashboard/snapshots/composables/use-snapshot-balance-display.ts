@@ -10,7 +10,7 @@ import { getSnapshotWarnings, type SnapshotWarning } from '@/modules/dashboard/s
 interface UseSnapshotBalanceDisplayReturn {
   /** The snapshot's balances, indexed so an edit can name the row it came from. */
   data: ComputedRef<IndexedBalanceSnapshot[]>;
-  /** Row index -> the sanity warnings drawn on it. */
+  /** Maps a row index to the sanity warnings drawn on it. */
   warningsByIndex: ComputedRef<Map<number, SnapshotWarning[]>>;
   /** The snapshot's net worth, which the share column is a fraction of. */
   total: ComputedRef<BigNumber>;

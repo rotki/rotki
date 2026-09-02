@@ -16,8 +16,6 @@ import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 
 const store = useKrakenStakingStore();
-// The filter bar writes straight into the query the reads are issued from, so no read can carry a
-// date that the user has since moved on from.
 const { dateFilter: filters, dateFilterKey, events } = storeToRefs(store);
 const { fetchEvents: load } = useKrakenStakingOperations();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());

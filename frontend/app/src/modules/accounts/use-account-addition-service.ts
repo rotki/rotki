@@ -30,19 +30,30 @@ export interface AccountAdditionFailure<T = AccountPayload | XpubAccountPayload>
   account: T;
 }
 
-// Callback types for account addition completion
+/**
+ * Carries what an addition produced into the follow-up work that has to run after it.
+ *
+ * @remarks
+ * Handed to the completion callback once every payload entry has settled, successes and failures
+ * alike, so the follow-up sees the whole addition rather than one address at a time.
+ */
 export interface AccountAdditionParams {
   addedAccounts: Account[];
   modulesToEnable?: Module[];
+  /**
+   * The chain the addition targeted, or `undefined` when it spanned every EVM chain. Absent means
+   * "all", not "unknown": it is what sends the follow-up down the fetch-everything branch.
+   */
   chain?: string;
   isXpub?: boolean;
 }
 
 /**
- * What an addition did, for the caller to present. Returned rather than thrown, so the *caller*
- * decides the experience instead of the address count deciding it: one address used to throw (form
- * dialog stays open) while two reported through a toast and closed the dialog as a success, even
- * when some of them failed.
+ * What an addition did, for the caller to present.
+ *
+ * @remarks
+ * Returned rather than thrown, so the caller decides the experience rather than the address count
+ * deciding it. A form can hold its dialog open on failure while a bulk import only tallies.
  */
 export interface AdditionSummary {
   readonly added: Account[];
@@ -97,6 +108,25 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     });
   };
 
+  /**
+   * Brings newly added accounts up to date: tags, balances, modules, then token detection.
+   *
+   * @remarks
+   * A chain that cannot hold tokens takes its balances from the refresh here; every other chain
+   * only reads accounts at this point and gets its balances from the chain job below, which has to
+   * run after the modules are enabled.
+   *
+   * That job detects before it queries, and the order is not interchangeable: detection's cache
+   * write deletes the address's default-label asset rows, the native coin among them, and only a
+   * query afterwards puts it back.
+   *
+   * The chain jobs run concurrently rather than one at a time. Each is a detection plus a full
+   * network query, so awaiting them in a loop would serialise around twenty of them on an
+   * every-EVM-chain addition; `BALANCES_LANE` is where that concurrency is capped.
+   *
+   * Tags are re-read before anything else, because the add itself can have created system tags
+   * (`Contract` among them) that nothing else would fetch.
+   */
   const completeAccountAddition = async (
     params: AccountAdditionParams,
     onRefreshAccounts: RefreshAccountsCallback,
@@ -109,14 +139,10 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       modulesToEnable,
     } = params;
 
-    // Refresh tags first in case new system tags (like 'Contract') were created
     await fetchTags();
 
     trackAddedAddresses(addedAccounts.map(item => item.address));
 
-    // A chain that cannot hold tokens gets its balances here — `refreshAccounts` reads the accounts
-    // and then runs a job narrowed to the added addresses. Everything else only reads accounts; its
-    // job runs below, after the modules are enabled, because detection is a stage inside it.
     if (chain !== undefined && !supportsTransactions(chain)) {
       await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     }
@@ -124,7 +150,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       await onFetchAccounts({ blockchain: chain, refreshEns: true });
     }
 
-    // Enable modules for ETH accounts
     if (modulesToEnable) {
       const ethAccounts = addedAccounts.filter(a => a.chain === Blockchain.ETH);
       for (const account of ethAccounts) {
@@ -135,7 +160,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       }
     }
 
-    // Group accounts by chain for token detection
     const accountsByChain = new Map<string, string[]>();
     for (const { address, chain: accountChain } of addedAccounts) {
       if (!supportsTransactions(accountChain))
@@ -146,16 +170,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       accountsByChain.set(accountChain, existing);
     }
 
-    // ⭐ One chain job per chain that gained addresses: detect the new addresses, then query. This
-    // was §6's "known exception" — addition skipped its own balance read because detection ended in
-    // one — and that premise is gone. The cached GET is cache-only now, so nothing escalates to a
-    // node query on its behalf; and detection's cache write *deletes* the address's default-label
-    // asset rows (`dbhandler.py:1321`), taking the native coin with them. Only a query after
-    // detection puts it back, which is exactly the chain job's body order.
-    //
-    // ⚠️ Concurrently, not one chain at a time. Each iteration is now detection *plus* a full
-    // network query, so an every-EVM-chain addition would serialise ~20 of them; `BALANCES_LANE`
-    // (cap 2) is where this is meant to be throttled, and awaiting in a loop never reaches it.
     await Promise.allSettled(Array.from(accountsByChain, async ([accountChain, chainAddresses]) =>
       refreshBlockchainBalances(
         { blockchain: accountChain },
@@ -164,6 +178,14 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       )));
   };
 
+  /**
+   * Adds one EVM address, resolving which chains it was actually added on.
+   *
+   * @remarks
+   * The backend's `added` is optional and may come back as `{}`, which is truthy but has no entry
+   * to destructure, so it is read through `Object.entries` and checked rather than destructured
+   * directly. An `all` entry stands for every EVM chain rather than naming them.
+   */
   const addSingleEvmAddress = async (
     account: AccountPayload,
     options?: AdditionOptions,
@@ -172,8 +194,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     const outcome = await addEvmAccount(account, options);
     if (isErr(outcome)) {
-      // Only a real failure is worth a log line. A cancelled bulk add would otherwise write one
-      // console error per in-flight address, which is the noise this branch exists to avoid.
       if (isActionable(outcome.error))
         logger.error(outcome.error.message);
 
@@ -182,9 +202,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     const { added, ...result } = outcome.value;
 
-    // `added` is an optional record, so `{}` is a valid response: truthy, but with no entry to
-    // destructure. That threw `undefined is not iterable`, which the removed try/catch used to
-    // turn into a failure result and now escapes as a rejection.
     const [addedEntry] = Object.entries(added ?? {});
 
     if (addedEntry) {
@@ -219,7 +236,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   ): ResultAsync<string, AccountAdditionFailure> => pipe(
     await addAccount(chain, 'xpub' in account ? account : [account], options),
     mapError((error: TaskError) => {
-      // As in `addSingleEvmAddress`: a cancellation is not a failure to log.
       if (isActionable(error))
         logger.error(error.message);
 
@@ -228,11 +244,12 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   );
 
   /**
-   * The one addition path. Every entry fans out through the batch — including a single one, where
-   * the batch suppresses the umbrella — so the address count no longer changes the mechanism, only
-   * how it is presented.
+   * The one addition path, whatever the address count.
    *
-   * No limiter here: the `accounts-add:<chain>` lane caps this at 2.
+   * @remarks
+   * Every entry fans out through the batch, a single one included, where the batch suppresses the
+   * umbrella rather than showing a parent over one child. No limiter here: the
+   * `accounts-add:<chain>` lane caps this at 2.
    */
   const addAccounts = async (
     chain: string,
@@ -248,14 +265,19 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     const isXpub = 'xpub' in payload;
     const everyEvmChain = isEveryEvmChain(chain);
 
+    /**
+     * Sorts one addition's outcome into the added, cancelled or failed tally.
+     *
+     * @remarks
+     * A cancellation is recorded but never reported: the user asked for it, so neither the failure
+     * list nor "failed to add N of M addresses" should mention it.
+     */
     const collect = (result: Result<Account[], AccountAdditionFailure<AccountPayload | XpubAccountPayload>>): void => {
       if (!isErr(result)) {
         addedAccounts.push(...result.value);
         return;
       }
 
-      // A cancellation is recorded, never reported: the user asked for it, so neither the failure
-      // list nor "failed to add N of M addresses" should mention it.
       if (!isActionable(result.error.error)) {
         cancelled = true;
         return;
@@ -265,8 +287,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     };
 
     if (isXpub) {
-      // One xpub is one unit of work, so there is nothing to fan out — but it still returns the
-      // same summary, so the caller has one shape to handle.
       collect(mapResult(
         await addSingleAccount(payload, chain, options),
         address => [{ address, chain }],
@@ -276,8 +296,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       const results = await runEvmAdditionBatch(
         payload,
         account => account.address,
-        // No options object when there is no umbrella: a single-item batch with no outer parent has
-        // nothing to attach to, and `{ parent: undefined }` would only be noise on the way down.
         async (account, parent) => addSingleEvmAddress(account, parent ? { parent } : undefined),
         options?.parent,
       );
@@ -294,8 +312,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       results.forEach(result => collect(mapResult(result, address => [{ address, chain }])));
     }
 
-    // The notification lists addresses, so an xpub failure is not one of its rows — the caller
-    // reports that from the summary instead.
     const failedAddresses = failed
       .map(failure => failure.account)
       .filter((account): account is AccountPayload => !('xpub' in account));

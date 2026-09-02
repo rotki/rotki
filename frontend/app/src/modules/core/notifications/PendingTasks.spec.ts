@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
 import { assembleActivityModel } from '@/modules/task-center/core/model';
@@ -15,8 +16,6 @@ import {
 const activities = ref<Activity[]>([]);
 const confirmCancel = vi.fn();
 
-// The real model and the real job derivation run; only the orchestrator underneath is faked, so
-// what the panel shows is what the tree actually produces.
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): { model: ComputedRef<ActivityModel> } => ({
     model: computed<ActivityModel>(() => assembleActivityModel(get(activities), (key: string): string => key)),
@@ -59,6 +58,7 @@ const umbrellaId = makeActivityId(ActivityKind.HISTORY_SYNC);
 
 describe('pendingTasks', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     set(activities, []);
     confirmCancel.mockClear();
   });

@@ -90,7 +90,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useSettingsRepo().updateFrontend({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 1.02 });
     });
 
     it('should scramble the value', async () => {
@@ -101,7 +101,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
           asset: 'ETH',
         },
       });
-      expect(wrapper.find('[data-testid="display-amount"]').text()).not.toBe('4,000.00');
+      expect(wrapper.find('[data-testid="display-amount"]').text()).toBe('4,080.00');
     });
   });
 

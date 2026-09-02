@@ -135,14 +135,6 @@ function onChange(change: { year?: string; quarter?: Quarter }) {
     quarter: change?.quarter ?? quarter,
     year: newYear,
   });
-  // Use the incoming `newYear` (not the stale `year` prop) to decide whether
-  // to emit a period. Reading the prop here returns the value before the
-  // parent re-renders, so switching to Custom would synchronously emit the
-  // previous year's period — the parent would briefly apply it as the
-  // model, the custom picker would mount against that stale window, and
-  // RuiDateTimePicker would latch its max-date validation (its
-  // `useDateTimeSelection` captures `maxDate` once at mount and never
-  // reacts to later prop changes). See DateTimeRangePicker.applyQuickOption.
   updatePeriod(newYear !== 'custom' ? get(periodEventPayload) : null);
 }
 
@@ -172,7 +164,7 @@ const quarterModel = computed({
         {{ t('generate.period') }}
       </div>
       <div class="flex gap-4">
-        <RuiMenu :popper="{ placement: 'bottom-end' }">
+        <RuiMenu :options="{ placement: 'bottom-end' }">
           <template #activator="{ attrs }">
             <RuiButtonGroup
               v-model="yearModel"

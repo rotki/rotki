@@ -98,9 +98,10 @@ export const ActivityKind = {
   CSV_IMPORT: 'csv-import',
   DB_UPGRADE: 'db-upgrade',
   DATA_MIGRATION: 'data-migration',
-  // Pre-login unlock work (login / account creation). Runs through the orchestrator like any
-  // other activity but is flagged {@link ActivitySpec.ephemeral}, so it never surfaces in the
-  // task center. Kept out of the `kinds.ts` display table for the same reason.
+  /**
+   * Marks pre-login unlock work, which must be submitted with {@link ActivitySpec.ephemeral} set
+   * so it never surfaces in the task center; it is absent from `kinds.ts` for the same reason.
+   */
   SESSION: 'session',
   OTHER: 'other',
 } as const;
@@ -142,13 +143,9 @@ export const ActivitySourceType = {
 export type ActivitySourceType = (typeof ActivitySourceType)[keyof typeof ActivitySourceType];
 
 /**
- * Carries what the controller needs to cancel/re-run an item. Every activity is owned by the
- * orchestrator, which addresses it by id, so the source only has to identify itself.
- *
- * A `BACKEND_TASK` arm existed while the floor surfaced un-migrated backend tasks; it went with
- * the floor once every producer was native. Seven further arms (TX_SYNC, DECODING,
- * EXCHANGE_EVENTS, PROTOCOL_CACHE, BALANCE_QUERY, REQUEST_TAG, INFO) were declared for a
- * per-producer routing scheme that native migration made unnecessary, and were deleted in W0.
+ * Carries what the controller needs to cancel or re-run an item. Every activity is owned by the
+ * orchestrator, which addresses it by id, so the source only has to identify itself. A single arm
+ * is therefore enough: routing per producer would need more, and nothing routes per producer.
  */
 interface ActivitySource {
   type: typeof ActivitySourceType.NATIVE;
@@ -199,7 +196,7 @@ export interface Activity {
   readonly resets?: boolean;
   /**
    * Scheduling priority, defaulted from the spec. Read by the eligibility rules to tell
-   * user-initiated work from background work; see {@link ./orchestrator/spec}'s `Priority`.
+   * user-initiated work from background work; see `Priority` in `orchestrator/spec.ts`.
    */
   readonly priority?: number;
 }
@@ -227,12 +224,12 @@ export interface ActivityModel {
   readonly pending: Activity[];
   /**
    * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
-   * out into. See {@link ./tree}; `children` holds the rest, keyed by parent id.
+   * out into. See `tree.ts`; `children` holds the rest, keyed by parent id.
    */
   readonly roots: Activity[];
   readonly children: ReadonlyMap<ActivityId, Activity[]>;
   readonly overall: ActivityOverall;
-  /** The single activity the header bar labels; see selection rule in {@link ./model}. */
+  /** The single activity the header bar labels; see the selection rule in `model.ts`. */
   readonly current?: Activity;
 }
 
@@ -313,9 +310,7 @@ export const ActivityPart = {
   BALANCES: 'balances',
   POOLS: 'pools',
   STATISTICS: 'statistics',
-  // The Liquity staking variant. A *part* named `staking` under the `LIQUITY` kind
-  // (`liquity:staking`); unrelated to the `STAKING` *kind* — parts and kinds are separate keyspaces.
-  STAKING: 'staking',
+  STAKE: 'stake',
   ERC20: 'erc20',
   VERSIONS: 'versions',
   UPDATE: 'update',
@@ -328,7 +323,7 @@ export const ActivityPart = {
    * kind alone is not an identity — see the ids in `use-history-transactions.ts`.
    */
   TRANSACTIONS: 'transactions',
-  EXCHANGE_EVENTS: 'exchange-events',
+  EXCHANGE: 'exchange',
   MATCH: 'match',
   BRIDGE: 'bridge',
   LOOKUP: 'lookup',
@@ -341,8 +336,10 @@ export const ActivityPart = {
   VERIFY: 'verify',
   LOGIN: 'login',
   CREATE: 'create',
-  // Scope facets: whether a flow covers everything or an explicit subset. The subset's members stay
-  // raw values appended after `CHAINS`.
+  /**
+   * Scope facets: whether a flow covers everything or an explicit subset. A subset's members stay
+   * raw values, appended after `CHAINS`.
+   */
   ALL: 'all',
   CHAINS: 'chains',
   /**
@@ -375,17 +372,18 @@ export function activityParts(id: ActivityId): string[] {
 }
 
 /**
- * True when `id` is `makeActivityId(kind, ...parts)` itself or one of its descendants — i.e. an
- * id built from the same kind and leading parts plus further ones.
+ * Whether `id` is `makeActivityId(kind, ...parts)` itself or one of its descendants.
  *
- * This is what lets a producer keep a *per-request* identity while a reader still asks a coarse
- * question. Historic prices submit one activity per `(fromAsset, toAsset, timestamp)`, so their
- * ids must differ or `submitTask` would dedup two distinct queries onto one promise; but the
- * spinner sites only care whether *any* historic fetch is in flight. Exact-id matching can't
- * express that, and whole-kind aggregation is too coarse (PRICES also covers latest prices,
- * exchange rates and the oracle cache).
+ * @remarks
+ * Lets a producer keep a *per-request* identity while a reader asks a coarse question: historic
+ * prices need one id per `(fromAsset, toAsset, timestamp)` or `submitTask` dedups distinct queries
+ * onto one promise, yet the spinner sites only care whether *any* historic fetch is in flight.
  *
- * Matches on a separator boundary, so `prices:historic` does not match `prices:historical-x`.
+ * @param id - the activity id to test
+ * @param kind - the kind the id must have been built with
+ * @param parts - a *leading* run of the id's parts; further parts on `id` still match
+ * @returns true on a separator boundary only, so `prices:historic` never matches
+ * `prices:historical-x`
  */
 export function activityIdHasPrefix(id: ActivityId, kind: ActivityKind, ...parts: (string | number)[]): boolean {
   const prefix = makeActivityId(kind, ...parts);

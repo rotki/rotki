@@ -97,10 +97,7 @@ describe('indexerOrderSetting', () => {
   });
 
   afterEach(() => {
-    // The menu teleports to the body; without unmounting, the next test's document query would
-    // read this test's leftover menu instead of its own.
     wrapper?.unmount();
-    document.body.innerHTML = '';
   });
 
   it('should render only the default tab when no chain has an override', async () => {

@@ -91,7 +91,7 @@ function deleteSnapshot(): void {
       <RuiMenu
         v-if="isDirty"
         v-model="reviewOpen"
-        :popper="{ placement: 'bottom-start' }"
+        :options="{ placement: 'bottom-start' }"
       >
         <template #activator="{ attrs }">
           <RuiChip
@@ -151,7 +151,7 @@ function deleteSnapshot(): void {
 
       <RuiMenu
         v-model="overflowOpen"
-        :popper="{ placement: 'bottom-end' }"
+        :options="{ placement: 'bottom-end' }"
       >
         <template #activator="{ attrs }">
           <RuiButton

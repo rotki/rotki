@@ -6,13 +6,13 @@ import { DisplayKinds, type FieldDef } from '@/modules/core/table/pill/core/type
 export interface AccountFieldOptions {
   /** The addresses offered as the field's values. */
   readonly suggest: () => string[];
-  /** Address -> the name shown on the pill, else the shortened address. */
+  /** Maps an address to the name shown on the pill, falling back to the shortened address. */
   readonly resolveLabel: (value: string) => string;
-  /** Address -> the muted address shown beside a name. */
+  /** Maps an address to the muted address shown beside a name. */
   readonly resolveCaption: (value: string) => string | undefined;
-  /** Address -> `address name tags`, so the bar can find an account by any of them. */
+  /** Maps an address to `address name tags`, so the bar can find an account by any of them. */
   readonly resolveKeywords: (value: string) => string | undefined;
-  /** Address -> whether its name is still resolving, so the row is a skeleton rather than a flash of address. */
+  /** Whether an address's name is still resolving, so the row is a skeleton rather than a flash of address. */
   readonly resolveLoading?: (value: string) => boolean;
 }
 
@@ -35,6 +35,8 @@ export interface AccountFieldBinding {
  * Which addresses exist, and what each is called, is the table's own business: history offers the
  * accounts its events mention, the balances table the accounts of the category being shown. Only
  * how they read is shared, which is the point — the two pills looked alike and were not.
+ *
+ * @packageDocumentation
  */
 /** What a filter-bound account field needs beyond how its accounts read. */
 export interface FilterAccountFieldBinding {
@@ -72,8 +74,6 @@ export function toFilterAccountField(
 
 export function toAccountField(binding: AccountFieldBinding, accounts: AccountFieldOptions): FieldDef {
   return toParamFieldDef({
-    // The accounts table's old matcher stored `label (address)`, or a bare address when the
-    // account had no name. Only the address survives into the field's own form.
     fromLegacy: (value: string): string => value.match(/^.+?\s*\(([^)]+)\)$/)?.[1] ?? value,
     display: DisplayKinds.ACCOUNT,
     key: 'account',

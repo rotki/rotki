@@ -30,20 +30,18 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
+async function parkSharedInstanceThenResetMocks(): Promise<void> {
+  set(logged, false);
+  set(allowed, false);
+  await flushPromises();
+  vi.clearAllMocks();
+  getStatus.mockResolvedValue({ authenticated: false });
+  completeOAuthApi.mockReset();
+  disconnectApi.mockReset();
+}
+
 describe('useMoneriumOAuth', () => {
-  beforeEach(async () => {
-    // useMoneriumOAuth is wrapped in createSharedComposable, so the shared
-    // instance persists across tests. Park it in the "skip" branch (logged or
-    // premium are false) before clearing mock history, so any prior async
-    // effect resolves first.
-    set(logged, false);
-    set(allowed, false);
-    await flushPromises();
-    vi.clearAllMocks();
-    getStatus.mockResolvedValue({ authenticated: false });
-    completeOAuthApi.mockReset();
-    disconnectApi.mockReset();
-  });
+  beforeEach(parkSharedInstanceThenResetMocks);
 
   it('should fetch status when user is logged in and premium feature is allowed', async () => {
     const statusResponse: MoneriumStatus = { authenticated: true, userEmail: 'a@b.com' };

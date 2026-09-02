@@ -40,7 +40,6 @@ export function useSpamAsset(): UseSpamAssetReturn {
         }
       }
 
-      // Display a warning message if any assets are included in manual balances
       if (includedInManualBalances.length > 0) {
         showErrorMessage(
           t('ignore.spam.warning.manual_balances_title'),

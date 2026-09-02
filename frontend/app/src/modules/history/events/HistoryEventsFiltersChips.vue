@@ -58,9 +58,9 @@ const {
     <RuiTooltip
       v-if="showNegativeBalance"
       class="pb-4"
-      :popper="{ placement: 'bottom' }"
+      :options="{ placement: 'bottom' }"
       :open-delay="400"
-      tooltip-class="max-w-80"
+      :class-names="{ tooltip: 'max-w-80' }"
     >
       <template #activator>
         <RuiChip
@@ -80,9 +80,9 @@ const {
     <RuiTooltip
       v-if="showAccountingEvent"
       class="pb-4"
-      :popper="{ placement: 'bottom' }"
+      :options="{ placement: 'bottom' }"
       :open-delay="400"
-      tooltip-class="max-w-80"
+      :class-names="{ tooltip: 'max-w-80' }"
     >
       <template #activator>
         <RuiChip

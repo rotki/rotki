@@ -15,6 +15,22 @@ type FormOutcome<TPayload, TMessage = string> =
   | { readonly outcome: 'invalid' }
   | { readonly message?: TMessage; readonly outcome: 'error' };
 
+/**
+ * The `submit` for a form that validates but never persists.
+ *
+ * @remarks
+ * Some forms exist only to gather and validate: an address input inside a larger account form, a
+ * settings control that writes through `SettingsOption`, a dialog that hands its value back through
+ * an emit. The screen above owns the write, so `submit()` here would have nothing to do and
+ * reporting failure would be a lie. Succeeding unconditionally lets `form.submit()` still run
+ * validation and reveal every field's errors, which is the part these forms want.
+ *
+ * @returns success, always, without touching the backend
+ */
+export async function noSubmit(): Promise<{ success: boolean }> {
+  return { success: true };
+}
+
 export interface FormOptions<TState extends object, TPayload, TMessage = string> {
   /** Create-default or edit seed. Called on construction and by `reset()`. */
   readonly initial: () => TState;
@@ -24,9 +40,15 @@ export interface FormOptions<TState extends object, TPayload, TMessage = string>
    * field that is only required while editing.
    */
   readonly schema: MaybeRefOrGetter<ZodType>;
-  /** UI state -> API payload (trim, empty->null, BigNumber, ...). Pure. */
+  /** Pure conversion of UI state into the API payload: trimming, empty to null, BigNumber, and so on. */
   readonly transform: (state: UnwrapNestedRefs<TState>) => TPayload;
-  /** Injected persistence, returning the store/API `ActionStatus`. */
+  /**
+   * Injected persistence, returning the store/API `ActionStatus`.
+   *
+   * @remarks
+   * A form that only validates passes {@link noSubmit}: it reports its state upwards and the screen
+   * that owns the dialog does the persisting.
+   */
   readonly submit: (payload: TPayload) => Promise<{ readonly message?: TMessage; readonly success: boolean }>;
   /**
    * State keys, at any depth, that must not count as an edit. For state the form carries but does
@@ -36,6 +58,14 @@ export interface FormOptions<TState extends object, TPayload, TMessage = string>
   readonly transientKeys?: readonly string[];
 }
 
+/**
+ * What a form exposes to the component that owns it.
+ *
+ * @remarks
+ * Destructure the refs before using them in a template. Vue unwraps a ref bound directly, but not
+ * one reached through a property, so `form.valid` renders as the ref object itself and reads as
+ * permanently truthy — a disabled button that is never disabled.
+ */
 export interface FormApi<TState extends object, TPayload, TMessage = string> {
   /** Reactive form state, bound directly with `v-model="form.state.txRef"`. */
   readonly state: UnwrapNestedRefs<TState>;
@@ -144,6 +174,14 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
 
   const valid = computed<boolean>(() => get(parsed).success);
 
+  /**
+   * The schema's validation messages, by field path, translated where they can be.
+   *
+   * @remarks
+   * A message written by one of our schemas is an i18n key, but zod's own built-in defaults are
+   * plain English sentences. Each is checked with `te` before `t`: translating every message
+   * blindly asks intlify for a key that cannot exist, which logs a warning on every keystroke.
+   */
   const schemaErrors = computed<Record<string, string[]>>(() => {
     const result = get(parsed);
     if (result.success)
@@ -152,8 +190,6 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     const map: Record<string, string[]> = {};
     for (const issue of result.error.issues) {
       const path = issue.path.map(segment => String(segment)).join('.');
-      // Schema messages are i18n keys, but zod's own defaults are plain English. Translating those
-      // blindly asks intlify for a key that cannot exist and logs a warning for every keystroke.
       (map[path] ??= []).push(i18n.te(issue.message) ? i18n.t(issue.message) : issue.message);
     }
     return map;

@@ -23,6 +23,15 @@ interface UseWalletProxyReturn {
   disconnectProxy: () => Promise<void>;
 }
 
+/**
+ * Drives the Electron wallet bridge proxy: setup, readiness waits, health check and teardown.
+ *
+ * @remarks
+ * Instantiate this inside a long-lived effect scope, which is what the wallet store gives it. Its
+ * teardown is bound with `onScopeDispose`, never a component lifecycle hook: because the instance
+ * is shared, a component hook would bind to whichever component happened to build the store first
+ * and tear the bridge down when that unrelated component unmounted.
+ */
 function _useWalletProxy(): UseWalletProxyReturn {
   const { isProxyClientConnected, isProxyClientReady, isProxyHttpListening, isProxyWebSocketListening, openProxyPageInDefaultBrowser, proxyStopServers } = useWalletBridge();
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
@@ -82,13 +91,19 @@ function _useWalletProxy(): UseWalletProxyReturn {
   };
 
   /**
-   * Start connection health monitoring
+   * Polls the connection and reports the first poll that finds it gone.
+   *
+   * @remarks
+   * Calling this again replaces the running check rather than adding a second one, so a
+   * reconnection does not end up with two intervals racing to report the same drop.
+   *
+   * @param isConnected - polled on each tick
+   * @param onDisconnect - called once, on the tick that first sees a disconnection
    */
   const startConnectionHealthCheck = (
     isConnected: () => boolean,
     onDisconnect: () => void,
   ): void => {
-    // Clear any existing interval
     stopConnectionHealthCheck();
 
     set(healthCheckInterval, setInterval(() => {
@@ -131,8 +146,7 @@ function _useWalletProxy(): UseWalletProxyReturn {
   function cleanupResources(): void {
     logger.debug('Cleaning up bridge resources...');
     stopConnectionHealthCheck();
-    // Only cleanup setup resources if setup is not currently in progress
-    // to avoid aborting an ongoing setup process
+    // Aborting mid-setup would kill the setup that is still running, so leave its resources alone.
     if (!activeResources.isSetupInProgress) {
       cleanupActiveResources();
     }
@@ -141,7 +155,13 @@ function _useWalletProxy(): UseWalletProxyReturn {
     }
   }
 
-  // Wait for servers to be listening before opening webpage
+  /**
+   * Resolves once both the HTTP and the WebSocket endpoint of the bridge accept connections.
+   *
+   * @remarks
+   * Either one alone is not enough: the page is served over HTTP but the client talks over the
+   * socket, so polling stops only when both answer. Rejects on timeout or on abort.
+   */
   const waitForServersListening = async (
     timeoutMs: number = PROXY_CONFIG.SERVER_TIMEOUT,
     signal?: AbortSignal,
@@ -164,7 +184,6 @@ function _useWalletProxy(): UseWalletProxyReturn {
     );
   };
 
-  // Initialize wallet bridge
   async function initializeProxy(): Promise<void> {
     const { walletBridge } = window;
     if (!walletBridge) {
@@ -186,7 +205,14 @@ function _useWalletProxy(): UseWalletProxyReturn {
     }
   }
 
-  // Start bridge servers and establish connection
+  /**
+   * Opens the bridge page in the default browser and waits out the three handshake stages.
+   *
+   * @remarks
+   * The servers are started by the page itself, so nothing is listening until the browser has
+   * loaded it. The stages must be awaited in order: listening, then client connected, then client
+   * ready for API calls. Any failure is rethrown as one setup error.
+   */
   const startProxyServers = async (signal?: AbortSignal): Promise<void> => {
     logger.debug('Starting bridge servers...');
 
@@ -206,9 +232,15 @@ function _useWalletProxy(): UseWalletProxyReturn {
     }
   };
 
-  // Main setup function with improved flow control and lifecycle management
+  /**
+   * Brings the bridge up: enables it, checks its state, and connects the client.
+   *
+   * @remarks
+   * A second call while one is still running returns without doing anything, rather than queueing.
+   * Two setups in flight would each enable the bridge and open a client against it, leaving one
+   * socket nothing ever closes.
+   */
   const setupProxy = async (): Promise<void> => {
-    // Prevent concurrent setup operations
     if (activeResources.isSetupInProgress) {
       logger.debug('Bridge setup already in progress, skipping...');
       return;
@@ -285,9 +317,6 @@ function _useWalletProxy(): UseWalletProxyReturn {
     }
   };
 
-  // Cleanup when the owning scope is disposed. This composable is created inside the wallet
-  // store, so a component hook would bind to whichever component happened to instantiate the
-  // store first and tear the bridge down when that unrelated component unmounted.
   if (getCurrentScope()) {
     onScopeDispose(() => {
       logger.debug('Scope disposed, cleaning up bridge resources...');

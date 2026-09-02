@@ -8,8 +8,10 @@ import { type ActivityId, type ActivityStatus, ActivityStatus as Status } from '
 
 /**
  * How a single activity runs and how its outcome becomes a status. Pure and orchestrator-agnostic,
- * like {@link ./projection}: nothing here reads or writes orchestrator state, which keeps the
+ * like `projection.ts`: nothing here reads or writes orchestrator state, which keeps the
  * orchestrator module about scheduling, control and the record map.
+ *
+ * @packageDocumentation
  */
 
 /** The subset of a record these helpers need — structurally satisfied by `ActivityRecord`. */
@@ -64,15 +66,18 @@ export function terminalStatus(cancelRequested: boolean, outcome: Result<unknown
 }
 
 /**
- * The user-facing reason an activity ended the way it did, or `undefined` when there is nothing
- * worth saying.
+ * The user-facing reason an activity ended the way it did.
  *
- * Only FAILED and SKIPPED get one. A cancellation carries a message too, but the user is the one
- * who asked for it, so repeating it on the row is noise; COMPLETE has nothing to explain.
+ * @remarks
+ * Only FAILED and SKIPPED get one: a cancellation is what the user asked for, and COMPLETE has
+ * nothing to explain.
  *
- * ⭐ SKIPPED is the case that needs this most. Notifications are raised per producer behind
- * `isActionable`, which `Skipped` deliberately is not, so a skip that drops its reason here drops
- * it everywhere — the row is the only surface it could ever have reached.
+ * SKIPPED needs it most. Notifications are raised behind `isActionable`, which `Skipped` is not,
+ * so a skip that drops its reason here drops it everywhere.
+ *
+ * @param status - the terminal status the activity settled on
+ * @param outcome - the run's result; a successful one never carries a reason
+ * @returns the message to show on the row, or `undefined` when there is nothing worth saying
  */
 export function terminalReason(
   status: ActivityStatus,
@@ -87,7 +92,7 @@ export function terminalReason(
 /**
  * Run a spec's body under its declared timeout and retry policy, as a value.
  *
- * ⚠️ The catch is not defensive dressing: a producer's `ResultAsync` should never reject, and one
+ * The catch is not defensive dressing: a producer's `ResultAsync` should never reject, and one
  * that does would otherwise leave its activity RUNNING for the life of the process.
  */
 export async function runActivity(

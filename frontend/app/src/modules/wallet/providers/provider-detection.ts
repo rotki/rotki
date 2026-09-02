@@ -51,12 +51,10 @@ async function detectLegacyProviders(): Promise<EnhancedProviderDetail[]> {
   const providers: EnhancedProviderDetail[] = [];
 
   if (typeof window !== 'undefined' && window.ethereum) {
-    // Check if this provider already announced via EIP-6963
     const isEIP6963Provider = window.ethereum.isRotkiBridge ??
       (await detectEIP6963Providers(100)).length > 0;
 
     if (!isEIP6963Provider) {
-      // Create a legacy provider detail
       providers.push({
         info: {
           icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="48" fill="%23f6851b"/><text x="48" y="52" text-anchor="middle" font-size="24" fill="white">W</text></svg>',
@@ -85,7 +83,11 @@ function detectEnvironment(): 'browser' | 'electron' {
 }
 
 /**
- * Detects providers available through the wallet bridge
+ * Detects providers available through the wallet bridge.
+ *
+ * @remarks
+ * They arrive serialized, without a provider object, so every one of them is given the same proxy
+ * to talk through. Without a proxy they are returned as they came, unusable but still listed.
  */
 async function detectProxyProviders(): Promise<EIP6963ProviderDetail[]> {
   const walletBridge = window.walletBridge;
@@ -94,10 +96,7 @@ async function detectProxyProviders(): Promise<EIP6963ProviderDetail[]> {
   }
 
   try {
-    // Get available providers from the bridge
     const bridgeProviders = await walletBridge.getAvailableProviders();
-
-    // Create a proxy provider to be used with bridge providers
     const proxyProvider = useProxyProvider();
 
     if (!proxyProvider) {
@@ -105,9 +104,6 @@ async function detectProxyProviders(): Promise<EIP6963ProviderDetail[]> {
       return bridgeProviders;
     }
 
-    // Enhance bridge providers with the proxy provider
-    // Since bridge providers come serialized without the provider object,
-    // we use the proxy provider for all of them
     return bridgeProviders.map(providerDetail => ({
       ...providerDetail,
       provider: proxyProvider,
@@ -120,7 +116,12 @@ async function detectProxyProviders(): Promise<EIP6963ProviderDetail[]> {
 }
 
 /**
- * Enhanced wallet provider detection - auto-detects environment
+ * Every wallet provider available here, with the environment deciding where to look.
+ *
+ * @remarks
+ * Electron reads them through the bridge. A browser reads EIP-6963 and falls back to legacy
+ * detection only when that finds nothing, since a wallet announcing itself over both protocols
+ * would otherwise be listed twice.
  */
 export async function getAllWalletProviders(
   options: ProviderDetectionOptions = {},
@@ -134,7 +135,6 @@ export async function getAllWalletProviders(
   const providers: EnhancedProviderDetail[] = [];
 
   try {
-    // Add bridge providers if in Electron environment
     if (isElectron) {
       const bridgeProviders = await detectProxyProviders();
       bridgeProviders.forEach((bridgeProvider) => {
@@ -146,11 +146,9 @@ export async function getAllWalletProviders(
       });
     }
     else {
-      // Always detect EIP-6963 providers
       const eip6963Providers = await detectEIP6963Providers(timeout);
       providers.push(...eip6963Providers);
 
-      // Add legacy providers if requested and no EIP-6963 providers found
       if (includeLegacy && eip6963Providers.length === 0) {
         const legacyProviders = await detectLegacyProviders();
         providers.push(...legacyProviders);
@@ -174,13 +172,16 @@ export async function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDet
 }
 
 /**
- * Get addresses from a wallet provider
+ * Requests the accounts a wallet is willing to share.
+ *
+ * @remarks
+ * Not a read: this is the call that opens the wallet's approval dialog, so calling it
+ * speculatively puts a prompt in front of the user.
  */
 export async function getAddressesFromWallet(provider: EIP1193Provider): Promise<string[]> {
   try {
     assert(provider, 'Provider is required');
 
-    // Request account access
     return await provider.request<string[]>({
       method: 'eth_requestAccounts',
     });

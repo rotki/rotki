@@ -3,20 +3,22 @@ import type { BigNumber } from '@rotki/common';
 /**
  * Snapshot FX helpers.
  *
- * Snapshots are stored USD-denominated. Converting to/from the user's display
- * currency is purely a display/input concern and must use the historic
- * USD -> fiat rate at the snapshot's timestamp (see #12277), not today's rate.
+ * @remarks
+ * Snapshots are stored USD-denominated, so converting into or out of the user's display currency is
+ * purely a display and input concern, and must use the historic rate at the snapshot's timestamp
+ * rather than today's.
  *
- * These functions are pure: rate in, value out. The caller is responsible for
- * supplying an appropriate (historic) rate and for short-circuiting when the
- * display currency already is USD.
+ * These are pure: rate in, value out. Supplying an appropriate historic rate, and
+ * short-circuiting when the display currency is already USD, are both the caller's job.
+ *
+ * @packageDocumentation
  */
 
 /**
  * Converts a USD-denominated value into the user's fiat currency.
  *
- * @param usdValue the stored USD value
- * @param rate the USD -> fiat rate at the relevant timestamp
+ * @param usdValue - the stored USD value
+ * @param rate - the USD-to-fiat rate at the relevant timestamp
  */
 export function convertUsdToFiat(usdValue: BigNumber, rate: BigNumber): BigNumber {
   return usdValue.multipliedBy(rate);
@@ -25,8 +27,8 @@ export function convertUsdToFiat(usdValue: BigNumber, rate: BigNumber): BigNumbe
 /**
  * Converts a fiat value entered by the user back into USD for storage.
  *
- * @param fiatValue the value in the user's display currency
- * @param rate the USD -> fiat rate at the relevant timestamp
+ * @param fiatValue - the value in the user's display currency
+ * @param rate - the USD-to-fiat rate at the relevant timestamp
  */
 export function convertFiatToUsd(fiatValue: BigNumber, rate: BigNumber): BigNumber {
   return fiatValue.dividedBy(rate);

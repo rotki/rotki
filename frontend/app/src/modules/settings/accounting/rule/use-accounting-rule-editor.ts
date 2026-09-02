@@ -134,8 +134,6 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
     const eventId = parseEventId(query);
 
     if (intent === 'add') {
-      // An event's own rule and the general one are both writable, so an add that names an event
-      // asks which is meant instead of guessing. Nothing is looked up: neither rule exists yet.
       if (eventId !== undefined) {
         set(context, { eventId });
         set(open, true);

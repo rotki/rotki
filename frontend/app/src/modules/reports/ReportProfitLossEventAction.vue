@@ -89,7 +89,7 @@ async function updatePrice(): Promise<void> {
 
 <template>
   <div class="flex justify-end">
-    <RuiMenu :popper="{ placement: 'bottom-end' }">
+    <RuiMenu :options="{ placement: 'bottom-end' }">
       <template #activator="{ attrs }">
         <RuiButton
           variant="text"

@@ -26,8 +26,6 @@ describe('grouped-import', () => {
         stubs: {
           RuiAutoComplete: {
             props: ['modelValue'],
-            // The marker sits on an inner node: the component under test passes its own
-            // `data-testid` down, and attribute fallthrough would land it on the root.
             template: '<div><span data-testid="selected-source">{{ modelValue?.key }}</span></div>',
           },
         },

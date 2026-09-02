@@ -85,10 +85,6 @@ export function useAssets(): UseAssetsReturn {
   };
 
   const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
-    // The result is the activity's return value: a deduped caller's `run` never executes, so a
-    // closure local stayed `undefined` and fell past the `typeof === 'boolean'` check into the
-    // conflicts branch — reporting `{ conflicts: undefined, done: false }`, which the caller reads
-    // as "the update produced conflicts" and hands to the conflict-resolution UI.
     const outcome = await submitTask<AssetUpdateResult>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.UPDATE),
       kind: ActivityKind.ASSETS,
@@ -205,8 +201,7 @@ export function useAssets(): UseAssetsReturn {
 
     if (!isErr(outcome)) {
       const filePath = outcome.value;
-      // For web case (no directory selected), download the file using the returned file path
-      if (!directory)
+      if (!appSession)
         await downloadCustomAssets(filePath);
 
       return { directory, filePath };

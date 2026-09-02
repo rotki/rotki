@@ -118,7 +118,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       };
     }
 
-    // Get the group IDs for the current page
     const paginatedGroupIds = groupIds.slice(offset, offset + limit);
 
     if (paginatedGroupIds.length === 0) {
@@ -172,7 +171,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
         }));
       }
 
-      // Refresh the list after fixing
       await fetchCustomizedEventDuplicates();
 
       return { success: true };

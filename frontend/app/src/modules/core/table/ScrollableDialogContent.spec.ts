@@ -20,10 +20,7 @@ describe('scrollable-dialog-content', () => {
     return body;
   }
 
-  it('should make the body region the scroll container', () => {
-    // The whole point of the component: the scrollable region must carry
-    // `flex-1 min-h-0 overflow-y-auto`. `min-h-0` is load-bearing — without it a
-    // flex child will not shrink below its content and never scrolls. Guard it.
+  it('should make the body region the scroll container, including the min-h-0 without which a flex child never shrinks below its content', () => {
     const region = bodyRegion(createWrapper());
     expect(region.className).toContain('flex-1');
     expect(region.className).toContain('min-h-0');

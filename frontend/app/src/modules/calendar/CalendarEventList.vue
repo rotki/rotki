@@ -67,10 +67,10 @@ function onEventClicked(calendarEvent: CalendarEvent) {
       </div>
       <RuiTooltip
         v-if="event.description"
-        :popper="{ placement: 'left' }"
+        :options="{ placement: 'left' }"
         :disabled="!showTooltip"
         :open-delay="400"
-        tooltip-class="max-w-[20rem] whitespace-break-spaces"
+        :class-names="{ tooltip: 'max-w-[20rem] whitespace-break-spaces' }"
       >
         <template #activator>
           <div class="text-body-2 text-rui-text-secondary">

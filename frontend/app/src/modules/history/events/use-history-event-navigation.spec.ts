@@ -44,7 +44,13 @@ describe('use-history-event-navigation', () => {
     await nextTick();
   });
 
-  // Re-import for each test to reset the module-level shared composable state
+  /**
+   * Imports the module under test with its shared state discarded.
+   *
+   * @remarks
+   * `useHistoryEventNavigation` is a shared composable, so its refs live as long as the module
+   * does. Reusing the import would let one test see the pending navigation another left behind.
+   */
   async function importFresh(): Promise<typeof import('./use-history-event-navigation')> {
     vi.resetModules();
     return import('./use-history-event-navigation');
@@ -99,14 +105,14 @@ describe('use-history-event-navigation', () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
-  it('should not navigate when on a sub-path of history events', async () => {
-    setupMockRoute('/history/events/');
+  it('should navigate from a sub-path, since the guard matches the route name exactly', async () => {
+    setupMockRoute('/history/events/transactions');
     const { useHistoryEventNavigation } = await importFresh();
     const { requestNavigation } = scope.run(() => useHistoryEventNavigation())!;
 
     requestNavigation({ targetGroupIdentifier: 'group-1' });
 
-    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({ name: '/history/events/' });
   });
 
   it('should set and clear highlight targets', async () => {
@@ -158,7 +164,6 @@ describe('use-history-event-navigation', () => {
     });
 
     it('should try candidates in priority order (green > yellow > red)', async () => {
-      // Green found at position 5
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(5);
 
       const { useHistoryEventNavigation } = await importFresh();
@@ -177,7 +182,6 @@ describe('use-history-event-navigation', () => {
     });
 
     it('should fall back to next candidate when position is -1', async () => {
-      // Green not found, yellow found at position 15
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(-1);
       mockGetHistoryEventGroupPosition.mockResolvedValueOnce(15);
 

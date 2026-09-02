@@ -12,8 +12,7 @@ vi.mock('@/modules/history/data-issues/api/use-data-issues-api', () => ({
   }),
 }));
 
-// Per-state counts the mocked backend reports; the "all states" query is the baseline total.
-const FOUND: Record<string, number> = {
+const FOUND_PER_STATE: Record<string, number> = {
   [IssueState.OPEN]: 3,
   [IssueState.AUTO_REMEDIATING]: 2,
   [IssueState.UNRESOLVED]: 5,
@@ -27,7 +26,7 @@ describe('useDataIssuesSummary', () => {
     listIssues.mockImplementation(async ({ state }: { state: IssueState[] }) => {
       const found = state.length === Object.values(IssueState).length
         ? BASELINE
-        : FOUND[state[0]] ?? 0;
+        : FOUND_PER_STATE[state[0]] ?? 0;
       return { ok: true, value: { found } };
     });
   });

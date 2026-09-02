@@ -9,12 +9,11 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useSnapshotAssetPrice } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-price';
 
-// ETH priced at $2000 and €1800 at the timestamp -> historic USD->EUR rate 0.9.
 const ETH_USD = 2000;
 const ETH_EUR = 1800;
+const USD_TO_EUR = ETH_EUR / ETH_USD;
 
-// The direct USD -> display-currency forex rate (the one SnapshotFiatDisplay uses).
-const directHistoricPrice = vi.fn();
+const usdToDisplayCurrencyRate = vi.fn();
 
 vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({ getHistoricPrice: vi.fn() }),
@@ -27,7 +26,7 @@ vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
 vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
   useHistoricPriceCache: vi.fn(() => ({
     createKey: (fromAsset: string, ts: number): string => `${fromAsset}#${ts}`,
-    getHistoricPrice: directHistoricPrice,
+    getHistoricPrice: usdToDisplayCurrencyRate,
     getIsPending: (): boolean => false,
     resetHistoricalPricesData: vi.fn(),
   })),
@@ -48,8 +47,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-asset-price', () 
       async ({ toAsset }: { toAsset: string }) => bigNumberify(toAsset === 'USD' ? ETH_USD : ETH_EUR),
     );
     vi.mocked(useAssetPricesApi().addHistoricalPrice).mockResolvedValue(true);
-    // Direct USD->EUR forex rate 0.9 (matches ETH's 1800/2000 ratio here).
-    directHistoricPrice.mockReturnValue(bigNumberify(0.9));
+    usdToDisplayCurrencyRate.mockReturnValue(bigNumberify(USD_TO_EUR));
   });
 
   afterEach(() => {
@@ -104,27 +102,36 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-asset-price', () 
 
   it('should store usdValue against the direct forex rate, not the asset price ratio', async () => {
     setCurrency('EUR');
-    // EUR-pegged asset: oracle says $1.25 / €1.00 (ratio 0.8), but the forex
-    // USD->EUR rate is 1.0 — the divergence that bit aGnoEURe.
     vi.mocked(usePriceTaskManager().getHistoricPrice).mockImplementation(
       async ({ toAsset }: { toAsset: string }) => bigNumberify(toAsset === 'USD' ? 1.25 : 1),
     );
-    directHistoricPrice.mockReturnValue(bigNumberify(1));
+    usdToDisplayCurrencyRate.mockReturnValue(bigNumberify(1));
 
     const { usdValue } = await setup('1000');
 
-    // fiatValue = 1000 * 1 = 1000 EUR; stored = 1000 / 1.0 (direct) = 1000,
-    // NOT 1000 / 0.8 (asset ratio) = 1250.
-    expect(get(usdValue)).toBe('1000');
+    expect(get(usdValue)).toBe('1000'); // 1000 EUR / 1.0 forex; the 0.8 asset ratio would give 1250
+  });
+
+  it('should not rewrite the stored USD value from the asset USD price in a non-USD currency', async () => {
+    setCurrency('EUR');
+    const { api, usdValue } = await setup();
+    expect(get(usdValue)).toBe('3000');
+
+    set(api.modelAssetToUsdPrice, '1000');
+    await nextTick();
+
+    expect(get(usdValue)).toBe('3000'); // unguarded, the edited price would give 1.5 * 1000
   });
 
   it('should apply the same direct-rate logic for any non-USD currency (GBP-pegged)', async () => {
     setCurrency('GBP');
-    // GBP-pegged asset: oracle $1.25 / £1.00 (ratio 0.8), forex USD->GBP = 1.0.
+    const peggedAssetInUsd = 1.25;
+    const peggedAssetInGbp = 1;
+    const usdToGbp = 1;
     vi.mocked(usePriceTaskManager().getHistoricPrice).mockImplementation(
-      async ({ toAsset }: { toAsset: string }) => bigNumberify(toAsset === 'USD' ? 1.25 : 1),
+      async ({ toAsset }: { toAsset: string }) => bigNumberify(toAsset === 'USD' ? peggedAssetInUsd : peggedAssetInGbp),
     );
-    directHistoricPrice.mockReturnValue(bigNumberify(1));
+    usdToDisplayCurrencyRate.mockReturnValue(bigNumberify(usdToGbp));
 
     const { usdValue } = await setup('1000');
 

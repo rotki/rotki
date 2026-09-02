@@ -51,9 +51,18 @@ export function useSettingModel<K extends WritableSettingKey>(
       set(model, value);
   });
 
+  /**
+   * Writes the draft, if it still differs from what is stored.
+   *
+   * @remarks
+   * The draft is read at fire time, not when the write was scheduled: a debounced fire can arrive
+   * after the draft moved again, and in particular after it was reverted to the persisted value, in
+   * which case there is nothing to write.
+   *
+   * A rejected write puts the draft back, so the UI stops showing a value the backend refused, but
+   * only when nothing changed it again while the write was in flight.
+   */
   const persist = async (): Promise<void> => {
-    // Read the live draft at fire time. A debounced fire can be stale: if the draft was changed again
-    // during the window (in particular reverted back to the persisted value), there is nothing to write.
     const value = get(model);
     if (isEqual(value, get(source)))
       return;
@@ -66,8 +75,6 @@ export function useSettingModel<K extends WritableSettingKey>(
       set(success, true);
     }
     else {
-      // Revert the draft so the UI doesn't keep showing a value that was rejected,
-      // but only if it wasn't changed again while the write was in flight.
       if (isEqual(get(model), value))
         set(model, get(source));
       set(error, result.message ?? '');

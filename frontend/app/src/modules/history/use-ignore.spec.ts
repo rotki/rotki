@@ -23,9 +23,6 @@ vi.mock('@/modules/history/api/use-history-ignoring-api', () => ({
   }),
 }));
 
-// Mocked outright rather than spread over `...actual`: importActual evaluates the real
-// notifications graph, which costs ~1.2s to import.
-// `getErrorMessage` is a pure helper re-exported from a light module, so take it from there.
 vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
     '@/modules/core/common/logging/error-handling',

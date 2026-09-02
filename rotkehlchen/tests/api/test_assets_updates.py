@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import re
 from http import HTTPStatus
@@ -31,6 +32,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.api.server import APIServer
+
+
+# These tests delete their disk-backed global DB immediately after shutdown. Windows refuses to
+# unlink it if sqlite's statement cache defers finalizing a statement past Connection.close().
+GLOBALDB_CACHED_STATEMENTS_FOR_FILE_CLEANUP = 0 if os.name == 'nt' else None
 
 
 def count_total_assets() -> int:
@@ -71,6 +77,10 @@ def mock_asset_updates(original_requests_get: Callable[..., requests.Response], 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
+@pytest.mark.parametrize(
+    'globaldb_cached_statements',
+    [GLOBALDB_CACHED_STATEMENTS_FOR_FILE_CLEANUP],
+)
 def test_simple_update(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHandler) -> None:
     """Test that the happy case of update works.
 
@@ -253,6 +263,10 @@ INSERT INTO assets(identifier, name, type) VALUES('EUR', 'Ευρώ', 'A'); INSER
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
+@pytest.mark.parametrize(
+    'globaldb_cached_statements',
+    [GLOBALDB_CACHED_STATEMENTS_FOR_FILE_CLEANUP],
+)
 def test_update_conflicts(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHandler) -> None:
     """Test that conflicts in an asset update are handled properly"""
     async_query = random.choice([False, True])
@@ -469,7 +483,6 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E890
                 status_code=HTTPStatus.OK,
             )
 
-        cursor = globaldb.conn.cursor()
         # check conflicts were solved as per the given choices and new asset also added
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999991
@@ -491,8 +504,6 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E890
         assert dai.decimals == 8
         assert dai.protocol == 'maker'
         # make sure data is in both tables
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
 
         dash = CryptoAsset('DASH')
         assert dash.identifier == 'DASH'
@@ -504,8 +515,6 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E890
         assert dash.swapped_for is None
         assert dash.coingecko == 'dash'
         assert dash.cryptocompare == 'DASH'
-        assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
 
         new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
@@ -517,8 +526,6 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E890
         assert new_asset.swapped_for is None
         assert new_asset.coingecko == ''
         assert new_asset.cryptocompare == ''
-        assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
 
         ctk = EvmToken('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f')
         assert ctk.name == 'Conflicting token'
@@ -532,8 +539,15 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1b175474E890
         assert ctk.evm_address == '0x1b175474E89094C44DA98B954EeDEAC495271d0f'
         assert ctk.decimals == 18
         assert ctk.protocol is None
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x1b175474E89094C44DA98B954EeDEAC495271d0f',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f',)).fetchone()[0] == 1  # noqa: E501
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x1b175474E89094C44DA98B954EeDEAC495271d0f',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x1b175474E89094C44DA98B954EeDEAC495271d0f',)).fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.skip('Broken after changes in the assets. Check #4876')
@@ -718,6 +732,10 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
+@pytest.mark.parametrize(
+    'globaldb_cached_statements',
+    [GLOBALDB_CACHED_STATEMENTS_FOR_FILE_CLEANUP],
+)
 def test_update_from_early_clean_db(
         rotkehlchen_api_server: APIServer,
         globaldb: GlobalDBHandler,
@@ -742,8 +760,8 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         }},
         sql_actions={'15': {'assets': update_15, 'collections': '', 'mappings': ''}},
     )
-    cursor = globaldb.conn.cursor()
-    cursor.execute('DELETE FROM settings WHERE name=?', (ASSETS_VERSION_KEY,))
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM settings WHERE name=?', (ASSETS_VERSION_KEY,))
     start_assets_num = count_total_assets()
     with update_patch:
         response = requests.get(
@@ -914,6 +932,10 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x5dbcF33D8c2E
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
+@pytest.mark.parametrize(
+    'globaldb_cached_statements',
+    [GLOBALDB_CACHED_STATEMENTS_FOR_FILE_CLEANUP],
+)
 def test_update_no_user_loggedin(rotkehlchen_api_server: APIServer) -> None:
     response = requests.post(
         api_url_for(

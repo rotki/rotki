@@ -14,7 +14,7 @@ export interface OraclePriceFieldOptions {
   readonly searchAsset: (value: string) => Promise<AssetsWithId>;
   /** The oracles offered as the source field's values. */
   readonly sources: () => string[];
-  /** An oracle id -> what the row it filters to calls it. */
+  /** Maps an oracle id to what the row it filters to calls it. */
   readonly resolveSourceLabel: (value: string) => string;
 }
 
@@ -44,8 +44,6 @@ export function toOraclePriceFields(
       key: OraclePriceFilterKeys.SOURCE,
       label: (): string => t('oracle_prices.filter_field_labels.source'),
       multiple: false,
-      // A raw oracle id (`cryptocompare`) is not what the table calls it, and the pill has to read
-      // the same as the source chip in the row it filters to.
       resolveLabel: resolveSourceLabel,
       suggest: sources,
       validate: (value: string): boolean => sources().includes(value),

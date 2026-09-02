@@ -150,14 +150,12 @@ describe('useHistoryDataFetching', () => {
   });
 
   describe('concurrent reads', () => {
-    it('should issue one request when the location set is read concurrently', async () => {
+    it('should issue one request when the location set is read concurrently, as a flow ending produces several boundary reads at once', async () => {
       let release: (value: string[]) => void = () => {};
       mockFetchAssociatedLocationsApi.mockReturnValue(new Promise<string[]>((resolve) => {
         release = resolve;
       }));
 
-      // A flow ending produces several boundary reads at once: the redecode handler fetches when it
-      // finishes and the auto-fetch fetches when the run settles, neither able to see the other.
       const { fetchAssociatedLocations } = useHistoryDataFetching();
       const first = fetchAssociatedLocations();
       const second = fetchAssociatedLocations();
@@ -170,11 +168,9 @@ describe('useHistoryDataFetching', () => {
       expect(get(storeToRefs(useHistoryStore()).associatedLocations)).toEqual(['kraken']);
     });
 
-    it('should read again once the previous read has settled', async () => {
+    it('should read again once the previous read has settled, so joining does not become caching', async () => {
       mockFetchAssociatedLocationsApi.mockResolvedValue(['kraken']);
 
-      // Joining must not become caching: a manual add that creates a location has to be read even
-      // if a redecode read the set a moment earlier.
       const { fetchAssociatedLocations } = useHistoryDataFetching();
       await fetchAssociatedLocations();
       await fetchAssociatedLocations();
@@ -193,12 +189,11 @@ describe('useHistoryDataFetching', () => {
       expect(mockFetchLocationLabelsApi).toHaveBeenCalledOnce();
     });
 
-    it('should recover after a failed read', async () => {
+    it('should clear the slot a failed read held, rather than leave later reads joining a dead promise', async () => {
       mockFetchAssociatedLocationsApi.mockRejectedValueOnce(new Error('boom'));
       const { fetchAssociatedLocations } = useHistoryDataFetching();
       await fetchAssociatedLocations();
 
-      // A rejected read must clear its slot, or every later read joins a dead promise.
       mockFetchAssociatedLocationsApi.mockResolvedValue(['kraken']);
       await fetchAssociatedLocations();
 

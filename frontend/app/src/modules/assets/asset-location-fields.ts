@@ -21,8 +21,7 @@ export interface AssetLocationFieldOptions {
 
 /**
  * The pill-bar fields for the per-asset locations table: where the asset is held, which account
- * holds it, and the tags on that account. All three used to be a selector of their own above the
- * table.
+ * holds it, and the tags on that account.
  *
  * Every field is param-bound, because this table has no filter bag: it filters the breakdown it
  * already has in memory rather than asking the backend. `to` is what a server-bound table would
@@ -41,8 +40,6 @@ export function toAssetLocationFields(
       toParamFieldDef({
         key: 'location',
         label: t('common.location'),
-        // A balance is held at one location, so narrowing to two would only ever widen back to the
-        // unfiltered table.
         multiple: false,
         paramKey: 'location',
         suggest: options.locations,

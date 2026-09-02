@@ -45,12 +45,12 @@ function defaultSessionSettings(): SessionSettings {
 }
 
 /**
- * Single source of truth for the four settings channels. Holds each channel's already-parsed
- * settings object (the same objects the four per-channel stores used to hold) and the imperative
- * update methods that mutate them. Feature code never reads these refs directly: it goes through
- * `useSetting` (reads) and `settingsWriter` / `useSettingModel` (writes), both of which route via
- * the settings registry. Only the read primitive, the write pipeline (`useSettingsOperations`,
- * `useSettingsWriter`) and login bootstrap (`useSessionSettings`) touch the repo.
+ * Holds the four settings channels and the methods that mutate them.
+ *
+ * @remarks
+ * Feature code must not read these refs or call these methods directly. Reads go through
+ * `useSetting`, writes through `settingsWriter` / `useSettingModel`, both routing via the settings
+ * registry. Only the read primitive, the write pipeline and login bootstrap touch the repo.
  */
 export const useSettingsRepo = defineStore('settings', () => {
   const { defaultCurrency } = useCurrencies();
@@ -63,11 +63,18 @@ export const useSettingsRepo = defineStore('settings', () => {
   const mirrors = resolveMirrors();
   const wireIndex = buildWireIndex();
 
-  // Runs the registry-declared effects and mirror syncs for the keys of a channel that just changed.
-  // `changedWireKeys` are the wire field names of the merged object; each is resolved to its logical
-  // registry entry via `wireIndex`. Effects (e.g. reconfiguring BigNumber's format) get the whole
-  // merged object; mirrors (e.g. the `itemsPerPage` global ref, or animations' localStorage) are
-  // pushed the new value, guarded to avoid a write echo.
+  /**
+   * Runs the registry-declared effects and mirror syncs for the keys a channel update changed.
+   *
+   * @remarks
+   * An effect takes the whole merged object, because reconfiguring something like BigNumber's
+   * format reads more than one field. A mirror is pushed the single new value, and only when it
+   * differs from what the mirror already holds, so a mirror write cannot echo back as a change.
+   *
+   * @param channel - the channel whose settings were merged
+   * @param changedWireKeys - wire field names, resolved to logical registry entries through the index
+   * @param merged - the channel's settings after the merge, handed to every effect
+   */
   const applySideEffects = (channel: SettingChannel, changedWireKeys: string[], merged: object): void => {
     for (const wireKey of changedWireKeys) {
       const found = wireIndex.get(`${channel}:${wireKey}`);

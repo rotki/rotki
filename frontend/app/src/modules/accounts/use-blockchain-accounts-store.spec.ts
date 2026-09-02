@@ -6,7 +6,6 @@ vi.mock('@/modules/accounts/account-utils', () => ({
   getAccountAddress: (account: { data: { address: string } }): string => account.data.address,
 }));
 
-// real objects (not createMock) because the store spreads accounts `{ ...account }`.
 function account(address: string, tags: string[] = [], label = ''): BlockchainAccount {
   return { chain: 'eth', data: { address, type: 'address' }, label, nativeAsset: 'ETH', tags };
 }

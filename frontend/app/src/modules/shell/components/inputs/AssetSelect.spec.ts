@@ -1,6 +1,8 @@
 import type { AssetSearchSource } from '@/modules/shell/components/inputs/use-asset-search';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
+import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import '@test/i18n';
 
@@ -9,29 +11,69 @@ type SearchOptions = Record<string, () => unknown>;
 
 const searchOptions = vi.fn<(options: SearchOptions) => void>();
 
+const { visibleAssets } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { visibleAssets: ref<{ assetType?: string; identifier: string; symbol?: string }[]>([]) };
+});
+
 vi.mock('@/modules/shell/components/inputs/use-asset-search', async (importOriginal) => {
   const original = await importOriginal<object>();
+  const { ref: vueRef } = await import('vue');
   return {
     ...original,
     useAssetSearch: (options: SearchOptions): object => {
       searchOptions(options);
       return {
-        error: ref(''),
+        error: vueRef(''),
         getVisibleAsset: (): undefined => undefined,
-        loading: ref(false),
-        modelSearch: ref(''),
+        loading: vueRef(false),
+        modelSearch: vueRef(''),
         preload: vi.fn(),
-        visibleAssets: computed(() => []),
+        visibleAssets,
       };
     },
   };
 });
 
-const RuiAutoComplete = {
+/**
+ * Mirrors `RuiAutoComplete`'s slot contract: `selection` renders the option matching the model,
+ * `item` renders once per option, and `no-data` stands in for an empty list.
+ *
+ * @remarks
+ * Keyed by `identifier`, matching the `key-attr` the component passes. A stub that renders no
+ * slots makes every assertion about the rendered asset pass whether or not it renders.
+ */
+const RuiAutoComplete = defineComponent({
   name: 'RuiAutoComplete',
-  props: ['label', 'options', 'dense', 'hideDetails', 'variant', 'errorMessages'],
-  template: '<div class="rui-auto-complete" :data-label="label" :data-variant="variant" />',
-};
+  props: {
+    dense: { default: false, type: Boolean },
+    errorMessages: { default: undefined, type: [String, Array] },
+    hideDetails: { default: false, type: Boolean },
+    label: { default: undefined, type: String },
+    modelValue: { default: undefined, type: String },
+    options: { default: () => [], type: Array },
+    variant: { default: undefined, type: String },
+  },
+  template: `<div
+    class="rui-auto-complete"
+    :data-label="label"
+    :data-variant="variant"
+    :data-dense="String(dense === true)"
+    :data-hide-details="String(hideDetails === true)"
+  >
+    <template v-for="option in options" :key="option.identifier">
+      <div v-if="option.identifier === modelValue" class="selection">
+        <slot name="selection" :item="option" />
+      </div>
+    </template>
+    <div class="menu">
+      <slot v-if="options.length === 0" name="no-data" />
+      <div v-for="option in options" :key="option.identifier" class="option">
+        <slot name="item" :item="option" />
+      </div>
+    </div>
+  </div>`,
+});
 
 function createWrapper(props: Record<string, unknown> = {}): VueWrapper {
   return mount(AssetSelect, {
@@ -62,10 +104,9 @@ function lastSource(): Record<string, unknown> {
 describe('assetSelect', () => {
   beforeEach(() => {
     searchOptions.mockClear();
+    set(visibleAssets, []);
   });
 
-  // Every field of the bag has to reach the search. It is one prop now, so a misspelled key
-  // fails silently at runtime rather than at the call site the way five props did.
   it('should pass every field of the source bag to the search', () => {
     const source: AssetSearchSource = {
       chain: 'eth',
@@ -102,7 +143,6 @@ describe('assetSelect', () => {
     wrapper.unmount();
   });
 
-  // The label used to default to a hardcoded English "Asset", which no locale could translate.
   it('should fall back to the translated label', () => {
     const wrapper = createWrapper();
 
@@ -119,8 +159,7 @@ describe('assetSelect', () => {
     wrapper.unmount();
   });
 
-  // The variant used to be an `outlined` boolean, which could not name `filled` at all.
-  it('should pass each variant through, defaulting to the plain one', () => {
+  it('should pass each of the three variants through, defaulting to the plain one', () => {
     const plain = createWrapper();
     expect(plain.get('.rui-auto-complete').attributes('data-variant')).toBe('default');
     plain.unmount();
@@ -130,5 +169,29 @@ describe('assetSelect', () => {
       expect(wrapper.get('.rui-auto-complete').attributes('data-variant')).toBe(variant);
       wrapper.unmount();
     }
+  });
+
+  it('should render the selected asset in the field and every option in the menu', () => {
+    set(visibleAssets, [{ identifier: 'ETH', symbol: 'ETH' }, { identifier: 'DAI', symbol: 'DAI' }]);
+    const wrapper = createWrapper({ modelValue: 'ETH' });
+
+    expect(wrapper.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(true);
+    expect(wrapper.findAll('.option')).toHaveLength(2);
+
+    wrapper.unmount();
+  });
+
+  it('should draw a dense selection without AssetDetailsBase, whose stacked lines grow the field back', () => {
+    set(visibleAssets, [{ identifier: 'ETH', symbol: 'ETH' }]);
+
+    const dense = createWrapper({ dense: true, modelValue: 'ETH' });
+    expect(dense.get('.rui-auto-complete').attributes('data-dense')).toBe('true');
+    expect(dense.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(false);
+    expect(dense.find('.selection').findComponent(AssetIcon).props('size')).toBe('20px');
+    dense.unmount();
+
+    const roomy = createWrapper({ modelValue: 'ETH' });
+    expect(roomy.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(true);
+    roomy.unmount();
   });
 });

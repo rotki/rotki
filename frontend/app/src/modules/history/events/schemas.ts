@@ -1,6 +1,7 @@
 import { type BigNumber, HistoryEventEntryType, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
+import { MatchedAssetMovementResolution } from '@/modules/history/events/asset-movement-resolution';
 import { EntryMeta } from '@/modules/history/meta';
 
 const CommonHistoryEvent = z.object({
@@ -31,6 +32,10 @@ export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
 
 export const OnlineHistoryEvent = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.HISTORY_EVENT),
+  /** Declared so the resolution stamp survives parsing: zod strips what a schema does not name. */
+  extraData: z.object({
+    matchedAssetMovement: MatchedAssetMovementResolution.nullish(),
+  }).nullish(),
   txRef: z.string().optional(),
 });
 
@@ -352,7 +357,7 @@ const HistoryEventMeta = z.object({
   states: z.array(HistoryEventStateEnum).optional(),
 });
 
-type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
+export type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
 
 const HistoryEventEntryWithMeta = z.object({
   entry: HistoryEvent,

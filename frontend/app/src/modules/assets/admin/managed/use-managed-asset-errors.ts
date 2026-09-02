@@ -9,11 +9,11 @@ interface ManagedAssetErrorsReturn {
 }
 
 /**
- * The server errors the form is holding.
+ * Manages the server errors the form is holding, dropping them in two ways.
  *
- * They are dropped wholesale when the asset type changes, because each type is checked against a
- * different set of rules and what the server said about the last one no longer describes this one.
- * Individual fields are cleared when something fills them in.
+ * @remarks
+ * Changing the asset type drops all of them, not just the fields the new type shares: each type is
+ * checked against its own rules.
  */
 export function useManagedAssetErrors(
   errors: Ref<ValidationErrors>,

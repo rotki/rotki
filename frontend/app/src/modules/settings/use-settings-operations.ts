@@ -55,8 +55,6 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
       return getErrorMessage(error);
     }
 
-    // The backend may return nested settings errors where `errors.settings` is a record of field→message(s).
-    // The ValidationErrors type doesn't capture this nesting, so we extract with a type guard.
     if (keys.length === 1) {
       const fieldError = extractSettingsFieldError(error.errors, keys[0]);
       if (fieldError)

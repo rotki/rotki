@@ -8,6 +8,7 @@ import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 // The pinned presentation of unmatched movements. Layout only - see UnmatchedMovementsList.
 const selected = defineModel<string[]>('selected', { required: true });
@@ -38,6 +39,7 @@ const { t } = useI18n({ useScope: 'global' });
     :items="rows"
     :row-key="(row: UnmatchedMovementRow) => row.groupIdentifier"
     :highlighted="(row: UnmatchedMovementRow) => row.groupIdentifier === highlightedGroupIdentifier"
+    :accented="(row: UnmatchedMovementRow) => row.untrackedDestination"
     :empty-description="emptyDescription"
     :loading="loading"
   >
@@ -53,6 +55,15 @@ const { t } = useI18n({ useScope: 'global' });
         <BadgeDisplay class="!normal-case">
           {{ item.typeLabel }}
         </BadgeDisplay>
+        <RuiChip
+          v-if="item.resolvedAsExternal"
+          size="sm"
+          color="info"
+          class="!py-0"
+          data-testid="unmatched-row-resolved"
+        >
+          {{ item.resolvedLabel }}
+        </RuiChip>
         <LocationDisplay
           class="[&_div]:!justify-start [&_span]:!text-caption [&_span]:!text-rui-text-secondary"
           size="16px"
@@ -62,8 +73,8 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiTooltip
           v-if="item.isFiat"
           :open-delay="400"
-          :popper="{ placement: 'top' }"
-          tooltip-class="max-w-80"
+          :options="{ placement: 'top' }"
+          :class-names="{ tooltip: 'max-w-80' }"
         >
           <template #activator>
             <RuiChip
@@ -81,6 +92,36 @@ const { t } = useI18n({ useScope: 'global' });
           :timestamp="item.timestamp"
           milliseconds
         />
+      </div>
+    </template>
+
+    <template #warning="{ item }">
+      <div
+        v-if="item.untrackedDestination"
+        class="flex items-start gap-1.5 rounded px-2 py-1 text-caption bg-rui-warning/10 text-rui-warning"
+        data-testid="unmatched-card-untracked-reason"
+      >
+        <RuiIcon
+          size="14"
+          name="lu-triangle-alert"
+          class="shrink-0 mt-0.5"
+        />
+        <div class="flex flex-col items-start gap-0.5 min-w-0">
+          <i18n-t
+            scope="global"
+            keypath="asset_movement_matching.dialog.untracked_reason"
+            tag="span"
+          >
+            <template #label>
+              <strong>{{ item.untrackedLabel }}</strong>
+            </template>
+          </i18n-t>
+          <HashLink
+            v-if="item.destinationAddress"
+            class="[&_span]:!text-caption"
+            :text="item.destinationAddress"
+          />
+        </div>
       </div>
     </template>
 

@@ -41,9 +41,6 @@ export type AccountingRuleQuery = z.infer<typeof AccountingRuleQuerySchema>;
 export function parseRuleQuery(query: LocationQuery): AccountingRuleQuery {
   return AccountingRuleQuerySchema.parse({
     counterparty: single(query.counterparty),
-    // Both are `z.string()`, whose default only covers `undefined`. A valueless parameter
-    // (`?eventType`) parses as `null`, which would otherwise be an invalid_type error thrown from
-    // inside `onMounted`, leaving the table empty for the rest of the session.
     eventSubtype: single(query.eventSubtype) ?? undefined,
     eventType: single(query.eventType) ?? undefined,
   });

@@ -30,8 +30,6 @@ interface UseLoginRememberOptionsReturn {
 export function useLoginRememberOptions(options: UseLoginRememberOptionsOptions): UseLoginRememberOptionsReturn {
   const { isDocker } = options;
 
-  // `model` prefix marks these as intentionally writable: they are bound with v-model in
-  // the template, so wrapping them in readonly() would break the binding.
   const modelRememberUsername = shallowRef<boolean>(false);
   const modelRememberPassword = shallowRef<boolean>(false);
 

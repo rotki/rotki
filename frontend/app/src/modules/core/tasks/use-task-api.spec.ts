@@ -93,8 +93,6 @@ describe('composables/api/task', () => {
     });
 
     it('should keep chain-keyed settings keyed by the chain id', async () => {
-      // Login and account creation return the user's settings as a task result, so this fetch is
-      // the only place the exemption can be declared for them.
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({

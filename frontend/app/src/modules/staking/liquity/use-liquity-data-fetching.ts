@@ -1,3 +1,4 @@
+import type { PendingTask } from '@/modules/core/tasks/types';
 import {
   LiquityBalancesWithCollateralInfo,
   LiquityPoolDetails,
@@ -24,6 +25,22 @@ interface UseLiquityDataFetchingReturn {
   fetchStatistics: (refresh?: boolean) => Promise<void>;
 }
 
+/** What separates one liquity fetch from another; everything else is shared. */
+interface FetchDefinition {
+  /** The user-facing failure description, given the backend's message. */
+  errorDescription: (message: string) => string;
+  /** The user-facing failure title. */
+  errorTitle: () => string;
+  /** Which part of the liquity activity this fetch reports as. */
+  part: ActivityPart;
+  /** Whether the fetch needs premium. Balances are free; the backend rejects the other three. */
+  premiumOnly: boolean;
+  /** Starts the backend query, which runs as a task. */
+  query: () => Promise<PendingTask>;
+  /** Validates the response and writes it to the store. */
+  store: (result: unknown) => void;
+}
+
 export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   const isPremium = usePremium();
   const activeModules = useSetting('activeModules');
@@ -43,8 +60,11 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   }
 
   /**
-   * Skip when the module is off, an activity for this part is already live, or it has completed
-   * before and this is not a refresh. The components read the same activity for their loading
+   * Whether a fetch should go ahead.
+   *
+   * @remarks
+   * Skipped when the module is off, an activity for this part is already live, or it has completed
+   * before and this is not a refresh. The components read that same activity for their loading
    * display, so there is no second copy of this state to keep in step.
    */
   function canFetch(part: ActivityPart, refresh: boolean): boolean {
@@ -52,151 +72,84 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
     return isModuleActive() && !status.active && (!status.everCompleted || refresh);
   }
 
-  function notifyFailure(part: ActivityPart, error: TaskError, errorTitle: string, errorMessage: string): void {
-    logger.error(`action failure for liquity ${part}:`, error);
-    notifyError(errorTitle, errorMessage);
-  }
+  /**
+   * Wraps one {@link FetchDefinition} in the task shape, the guards and the failure handling that
+   * all four liquity fetches share.
+   */
+  function createFetch(definition: FetchDefinition): (refresh?: boolean) => Promise<void> {
+    const { errorDescription, errorTitle, part, premiumOnly, query, store } = definition;
 
-  async function fetchBalances(refresh = false): Promise<void> {
-    if (!canFetch(ActivityPart.BALANCES, refresh))
-      return;
+    return async (refresh = false): Promise<void> => {
+      if (premiumOnly && !get(isPremium))
+        return;
 
-    const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.BALANCES),
-      kind: ActivityKind.LIQUITY,
-      rerunnable: true,
-      // Derived from decoded history events, so a completed decode makes this stale. Restores what
-      // `clearDependedSection` did before it was deleted.
-      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<LiquityBalancesWithCollateralInfo>(
-          async () => fetchLiquityBalances(),
+      if (!canFetch(part, refresh))
+        return;
+
+      const outcome = await submitTask({
+        id: makeActivityId(ActivityKind.LIQUITY, part),
+        kind: ActivityKind.LIQUITY,
+        rerunnable: true,
+        // Derived from decoded history events, so a completed decode makes this stale.
+        staleAfter: [{ kind: ActivityKind.TX_DECODING }],
+        run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+          await runTask<unknown>(async () => query()),
+          store,
         ),
-        (result) => {
-          set(balances, LiquityBalancesWithCollateralInfo.parse(result));
-        },
-      ),
-      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.BALANCES),
-      title: t('task_center.group.liquity'),
-    });
+        subtitle: activityLabel(ActivityKind.LIQUITY, part),
+        title: t('task_center.group.liquity'),
+      });
 
-    onActionableError(outcome, (error) => {
-      notifyFailure(
-        ActivityPart.BALANCES,
-        error,
-        t('actions.defi.liquity_balances.error.title'),
-        t('actions.defi.liquity_balances.error.description', { message: error.message }),
-      );
-    });
+      onActionableError(outcome, (error) => {
+        logger.error(`action failure for liquity ${part}:`, error);
+        notifyError(errorTitle(), errorDescription(error.message));
+      });
+    };
   }
 
-  async function fetchPools(refresh = false): Promise<void> {
-    if (!get(isPremium))
-      return;
+  const fetchBalances = createFetch({
+    errorDescription: (message: string) => t('actions.defi.liquity_balances.error.description', { message }),
+    errorTitle: () => t('actions.defi.liquity_balances.error.title'),
+    part: ActivityPart.BALANCES,
+    premiumOnly: false,
+    query: async () => fetchLiquityBalances(),
+    store: (result) => {
+      set(balances, LiquityBalancesWithCollateralInfo.parse(result));
+    },
+  });
 
-    if (!canFetch(ActivityPart.POOLS, refresh))
-      return;
+  const fetchPools = createFetch({
+    errorDescription: (message: string) => t('actions.defi.liquity_pools.error.description', { message }),
+    errorTitle: () => t('actions.defi.liquity_pools.error.title'),
+    part: ActivityPart.POOLS,
+    premiumOnly: true,
+    query: async () => fetchLiquityStakingPools(),
+    store: (result) => {
+      set(stakingPools, LiquityPoolDetails.parse(result));
+    },
+  });
 
-    const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.POOLS),
-      kind: ActivityKind.LIQUITY,
-      rerunnable: true,
-      // Derived from decoded history events, so a completed decode makes this stale. Restores what
-      // `clearDependedSection` did before it was deleted.
-      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<LiquityPoolDetails>(
-          async () => fetchLiquityStakingPools(),
-        ),
-        (result) => {
-          set(stakingPools, LiquityPoolDetails.parse(result));
-        },
-      ),
-      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.POOLS),
-      title: t('task_center.group.liquity'),
-    });
+  const fetchStaking = createFetch({
+    errorDescription: (message: string) => t('actions.defi.liquity_staking.error.description', { message }),
+    errorTitle: () => t('actions.defi.liquity_staking.error.title'),
+    part: ActivityPart.STAKE,
+    premiumOnly: true,
+    query: async () => fetchLiquityStaking(),
+    store: (result) => {
+      set(staking, LiquityStakingDetails.parse(result));
+    },
+  });
 
-    onActionableError(outcome, (error) => {
-      notifyFailure(
-        ActivityPart.POOLS,
-        error,
-        t('actions.defi.liquity_pools.error.title'),
-        t('actions.defi.liquity_pools.error.description', { message: error.message }),
-      );
-    });
-  }
-
-  async function fetchStaking(refresh = false): Promise<void> {
-    if (!get(isPremium))
-      return;
-
-    if (!canFetch(ActivityPart.STAKING, refresh))
-      return;
-
-    const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKING),
-      kind: ActivityKind.LIQUITY,
-      rerunnable: true,
-      // Derived from decoded history events, so a completed decode makes this stale. Restores what
-      // `clearDependedSection` did before it was deleted.
-      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<LiquityStakingDetails>(
-          async () => fetchLiquityStaking(),
-        ),
-        (result) => {
-          set(staking, LiquityStakingDetails.parse(result));
-        },
-      ),
-      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.STAKING),
-      title: t('task_center.group.liquity'),
-    });
-
-    onActionableError(outcome, (error) => {
-      notifyFailure(
-        ActivityPart.STAKING,
-        error,
-        t('actions.defi.liquity_staking.error.title'),
-        t('actions.defi.liquity_staking.error.description', { message: error.message }),
-      );
-    });
-  }
-
-  async function fetchStatistics(refresh = false): Promise<void> {
-    if (!get(isPremium))
-      return;
-
-    if (!canFetch(ActivityPart.STATISTICS, refresh))
-      return;
-
-    const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.LIQUITY, ActivityPart.STATISTICS),
-      kind: ActivityKind.LIQUITY,
-      rerunnable: true,
-      // Derived from decoded history events, so a completed decode makes this stale. Restores what
-      // `clearDependedSection` did before it was deleted.
-      staleAfter: [{ kind: ActivityKind.TX_DECODING }],
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<LiquityStatistics>(
-          async () => fetchLiquityStatistics(),
-        ),
-        (result) => {
-          set(statistics, LiquityStatistics.parse(result));
-        },
-      ),
-      subtitle: activityLabel(ActivityKind.LIQUITY, ActivityPart.STATISTICS),
-      title: t('task_center.group.liquity'),
-    });
-
-    onActionableError(outcome, (error) => {
-      notifyFailure(
-        ActivityPart.STATISTICS,
-        error,
-        t('actions.defi.liquity_statistics.error.title'),
-        t('actions.defi.liquity_statistics.error.description', { message: error.message }),
-      );
-    });
-  }
+  const fetchStatistics = createFetch({
+    errorDescription: (message: string) => t('actions.defi.liquity_statistics.error.description', { message }),
+    errorTitle: () => t('actions.defi.liquity_statistics.error.title'),
+    part: ActivityPart.STATISTICS,
+    premiumOnly: true,
+    query: async () => fetchLiquityStatistics(),
+    store: (result) => {
+      set(statistics, LiquityStatistics.parse(result));
+    },
+  });
 
   return {
     fetchBalances,

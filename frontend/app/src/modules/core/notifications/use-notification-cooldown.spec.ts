@@ -71,9 +71,7 @@ describe('useNotificationCooldown', () => {
     expect(cooldown.shouldSuppress(scheduled)).toBe(true);
   });
 
-  it('should not suppress a step of a flow the user just started', () => {
-    // Monerium's steps replace each other, so the second one is the outcome of the first, not a
-    // repeat of it: suppressing it would leave the user with "opening browser" and no result.
+  it('should not suppress a step of a flow the user just started, whose later steps are its outcome rather than a repeat of it', () => {
     cooldown.recordDisplay(NotificationGroup.MONERIUM_AUTH);
 
     vi.setSystemTime(START + 5000);
@@ -187,8 +185,6 @@ describe('useNotificationCooldown', () => {
     cooldown.recordDisplay(scheduled);
     await flush();
 
-    // Both displays land in one write, so the second has to read the count from the pending
-    // entry — reading the settings blob would persist 2 twice and hand back a free ramp step.
     expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({
       notificationSchedule: { [scheduled]: { lastShown: START + 2 * DAY, shownCount: 3 } },
     });
@@ -201,8 +197,6 @@ describe('useNotificationCooldown', () => {
 
     expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
 
-    // Past the burst cooldown the group is unscheduled again, rather than serving out the day
-    // the discarded entry would have imposed.
     vi.setSystemTime(START + 2 * 60_000);
     expect(cooldown.shouldSuppress(scheduled)).toBe(false);
   });

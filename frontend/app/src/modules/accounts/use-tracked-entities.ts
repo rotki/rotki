@@ -14,7 +14,7 @@ interface UseTrackedEntitiesReturn {
 /**
  * Whether the user tracks anything at all.
  *
- * ⚠️ Every source here can only ever *add* evidence that something is tracked, so the
+ * Every source here can only ever *add* evidence that something is tracked, so the
  * answer is only trustworthy once the accounts have been read - before that an empty
  * store is indistinguishable from an empty portfolio. That is what `loading` is for.
  *

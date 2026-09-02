@@ -6,7 +6,8 @@ import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common'
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { ref, type Ref } from 'vue';
+import { effectScope, nextTick, ref, type Ref } from 'vue';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useHistoryEventsActions } from './use-history-events-actions';
 
 const mockRefreshTransactions = vi.fn();
@@ -89,8 +90,10 @@ vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   })),
 }));
 
+const mockMarkStale = vi.fn();
+
 vi.mock('@/modules/history/events/use-history-events-auto-fetch', () => ({
-  useHistoryEventsAutoFetch: vi.fn(),
+  useHistoryEventsAutoFetch: vi.fn(() => ({ markStale: mockMarkStale })),
 }));
 
 describe('useHistoryEventsActions', () => {
@@ -121,6 +124,26 @@ describe('useHistoryEventsActions', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('event modifications', () => {
+    it('should route a modification through the auto-fetch reader rather than its own read', async () => {
+      const options = createOptions();
+      const scope = effectScope();
+      scope.run(() => useHistoryEventsActions({
+        ...options,
+        mainPage: ref(true),
+        shouldFetchEventsRegularly: ref(true),
+        showDialog: vi.fn(),
+      }));
+
+      useHistoryStore().signalEventsModified();
+      await nextTick();
+
+      expect(mockMarkStale).toHaveBeenCalledOnce();
+      expect(options.refetch).not.toHaveBeenCalled();
+      scope.stop();
+    });
   });
 
   describe('dialogHandlers.onRepullTransactions', () => {
@@ -273,16 +296,13 @@ describe('useHistoryEventsActions', () => {
       expect(mockFetchAssociatedLocations).toHaveBeenCalled();
     });
 
-    it('should refresh location labels after fetchAndRedecode with payload', async () => {
+    it('should refresh location labels exactly once after fetchAndRedecode with payload', async () => {
       const options = createOptions();
       const { fetch } = useHistoryEventsActions(options);
 
       await fetch.dataAndRedecode({ transactions: [{ location: 'ethereum', txRef: '0xabc' }] });
 
       expect(mockRedecodeTargeted).toHaveBeenCalled();
-      // Exactly once. This used to fetch before the redecode as well as after it, so one action
-      // read the table twice and the first read showed pre-redecode data that was immediately
-      // replaced. The redecode's own trailing fetch is the only one that can show a result.
       expect(mockFetchLocationLabels).toHaveBeenCalledTimes(1);
       expect(mockFetchAssociatedLocations).toHaveBeenCalledTimes(1);
     });

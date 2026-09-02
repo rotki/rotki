@@ -73,9 +73,7 @@ describe('assetDetails', () => {
       expect(resolveOptions).toHaveBeenLastCalledWith({ associate: true, collectionParent: true });
     });
 
-    // `options` is the escape hatch, so it has to win over what the two flags derive. Both
-    // NO_COLLECTION_RESOLVE and TradeAssetDisplay rely on that.
-    it('should let the options field override the derived flags', () => {
+    it('should let the options field override the derived flags, as NO_COLLECTION_RESOLVE and TradeAssetDisplay rely on', () => {
       createWrapper({ resolution: { isCollectionParent: true, options: { collectionParent: false } } });
 
       expect(resolveOptions).toHaveBeenLastCalledWith({ associate: true, collectionParent: false });

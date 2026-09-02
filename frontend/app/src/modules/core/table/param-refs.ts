@@ -42,8 +42,8 @@ function firstOf(raw: RawQueryValue): string | undefined {
 /**
  * A single written or picked string, e.g. a location or a chain.
  *
- * @param model the ref the key is stored in.
- * @param options `admit` rejects a value the table cannot honour, which the url can carry and the
+ * @param model - the ref the key is stored in.
+ * @param options - `admit` rejects a value the table cannot honour, which the url can carry and the
  * bar cannot produce.
  */
 export function stringParam(
@@ -67,8 +67,8 @@ export function stringParam(
  * Distinct from {@link stringParam} because the ref is the table's own: one holding `undefined`
  * cannot be handed an empty string without changing what the table reads as "nothing picked".
  *
- * @param model the ref the key is stored in.
- * @param options `admit` rejects a value the table cannot honour.
+ * @param model - the ref the key is stored in.
+ * @param options - `admit` rejects a value the table cannot honour.
  */
 export function optionalStringParam(
   model: Ref<string | undefined>,
@@ -94,8 +94,8 @@ export function optionalStringParam(
  * list and the url as `a,b` without this having to choose between them. Joining here instead would
  * put the joined string in the request payload too.
  *
- * @param model the ref the key is stored in.
- * @param options `admit` filters out values the table cannot honour. `separator` says the url
+ * @param model - the ref the key is stored in.
+ * @param options - `admit` filters out values the table cannot honour. `separator` says the url
  * carries this key as one joined string, which is the read side of the stringification above; a key
  * repeated in the query instead needs no separator.
  */
@@ -125,7 +125,7 @@ export function listParam(
  * A flag whose presence is its value. Absent, and anything other than `true`, reads as off: a
  * boolean param is written only by the thing that turns it on, so there is no third state to keep.
  *
- * @param model the ref the key is stored in.
+ * @param model - the ref the key is stored in.
  */
 export function boolParam(model: Ref<boolean>): ParamRef {
   return {
@@ -145,9 +145,9 @@ export function boolParam(model: Ref<boolean>): ParamRef {
  * The fallback matters more than it looks. Several of these keys reach both the request and a
  * label, so an unrecognised one would be sent on while the UI claimed something different.
  *
- * @param model the ref the key is stored in.
- * @param isValid whether a raw value names a member of the set.
- * @param fallback what an absent or unrecognised value reads as, which is the table's default.
+ * @param model - the ref the key is stored in.
+ * @param isValid - whether a raw value names a member of the set.
+ * @param fallback - what an absent or unrecognised value reads as, which is the table's default.
  */
 export function enumParam<T extends string>(
   model: Ref<T>,
@@ -155,8 +155,6 @@ export function enumParam<T extends string>(
   fallback: T,
 ): ParamRef {
   return {
-    // The default is stated by the pill's absence, so offering it as a value too would give the
-    // user two ways to say one thing, one of which reads as a filter.
     pill: (): T | undefined => get(model) === fallback ? undefined : get(model),
     read: (raw: RawQueryValue): void => {
       const value = firstOf(raw);

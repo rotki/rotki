@@ -12,6 +12,27 @@ import {
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 /**
+ * Talking to the starling supervisor, over whichever transport this runtime has.
+ *
+ * @remarks
+ * Four properties of the protocol shape most of the code here:
+ *
+ * A refusal arrives as JSON-RPC, meaning HTTP 200 with an `error` in the body. Checking the status
+ * alone reports a restart that never happened as done, so the body is always parsed. The
+ * supervisor's own message is relayed untranslated, the way backend errors are everywhere else.
+ *
+ * A transport-level refusal has no body at all, so its status is mapped to a translated message
+ * instead. The HTTP reason phrase would otherwise be the only thing to show, and it is neither
+ * translated nor meaningful to a user. A 404 among those is not a failure but an answer; see
+ * {@link ControlCapabilities}.
+ *
+ * Availability is cached only when it succeeds. A failure may well be the transient outage that
+ * brought the user to the connection-failure screen in the first place, so it is retried.
+ *
+ * @packageDocumentation
+ */
+
+/**
  * The one way the app drives the supervisor, whichever runtime it is in.
  *
  * Both transports end at the same control RPC; they differ only in the tunnel.
@@ -25,20 +46,13 @@ interface UseControlReturn {
   /** Whether any control operation can be attempted at all. */
   readonly available: Readonly<Ref<boolean>>;
   /**
-   * Whether this runtime accepts a restart that carries backend options — a data
-   * directory, a log level, a log-rotation size.
+   * Whether this runtime accepts a restart carrying backend options: data directory, log level,
+   * log-rotation size. Desktop only, since `sanitize_restart_options` rejects them on every
+   * transport but stdio.
    *
-   * Desktop only, and not an arbitrary restriction: `sanitize_restart_options`
-   * rejects options on every transport but stdio, because in a container those
-   * are fixed mounts and boot-time config.
-   *
-   * Auto-start is deliberately not in this set. It used to be, as an option
-   * riding along on a restart, which is why it was desktop-only; it now has its
-   * own `setServiceAutostart` method that every control surface accepts, so it is
-   * driven through {@link setServiceAutostart} rather than gated on this.
-   *
-   * Consumers use it to hide controls that could not work, rather than offering
-   * them and reporting a refusal.
+   * @remarks
+   * Auto-start is not one of these. It has its own {@link setServiceAutostart}, which every
+   * control surface accepts, so do not gate that toggle on this flag.
    */
   readonly supportsOptions: boolean;
   /** Resolve availability once per session. Safe to call repeatedly. */
@@ -93,15 +107,24 @@ export class ControlError extends Error {
 /** Translates a transport-level failure, which carries no message of its own. */
 type Translate = (key: MessageKey) => string;
 
+/**
+ * Calls one JSON-RPC method on the `/_control` endpoint.
+ *
+ * @remarks
+ * Uses `fetch` rather than the REST client, deliberately: `/_control` is not the rotki API. It sits
+ * outside the `/api/1` prefix, speaks JSON-RPC instead of the result/message envelope, and must not
+ * pass through the client's snake_case body rewriting or its session and task interceptors.
+ *
+ * A transport refusal carries only a status, so the user-facing message is written here rather than
+ * relayed. Never use the HTTP reason phrase: it is untranslated and says nothing useful.
+ *
+ * @throws ControlError on a transport refusal, carrying an already-translated message
+ */
 async function postRpc(
   t: Translate,
   method: StarlingMethod,
   params?: Record<string, unknown>,
 ): Promise<unknown> {
-  // Deliberately `fetch` rather than the REST client: `/_control` is not the
-  // rotki API. It sits outside the `/api/1` prefix, speaks JSON-RPC instead of
-  // the result/message envelope, and must not pass through the REST client's
-  // snake_case body rewriting or its session/task interceptors.
   const response = await fetch(CONTROL_ENDPOINT, {
     body: JSON.stringify({ id: 1, jsonrpc: '2.0', method, ...(params ? { params } : {}) }),
     credentials: 'same-origin',
@@ -109,16 +132,10 @@ async function postRpc(
     method: 'POST',
   });
 
-  if (!response.ok) {
-    // A transport-level refusal carries no body, only a status, so the message
-    // shown to the user has to be written here rather than relayed. The HTTP
-    // reason phrase is never used: it is untranslated and says nothing useful.
+  if (!response.ok)
     throw new ControlError(response.status, t(transportErrorKey(response.status)));
-  }
 
   const parsed = ControlRpcResponse.parse(await response.json());
-  // The supervisor's own message: relayed as-is, the way backend errors are
-  // everywhere else in the app.
   if (parsed.error)
     throw new ControlError(parsed.error.code, parsed.error.message);
 
@@ -140,10 +157,15 @@ function transportErrorKey(status: number): MessageKey {
   return msg.$t('control.errors.failed');
 }
 
+/**
+ * Reads one service out of a supervisor status report.
+ *
+ * @remarks
+ * A service the supervisor does not manage reports no autostart preference, and `false` is the
+ * honest answer for one: nothing is going to start it.
+ */
 function serviceInfoOf(status: ControlStatus, service: StarlingService): ControlServiceInfo {
   const found = status.services.find((entry: ControlServiceStatus) => entry.name === service);
-  // A service the supervisor does not manage has no preference to report, and
-  // `false` is the honest answer: nothing is going to start it.
   return { autostart: found?.autostart ?? false, state: found?.state ?? StarlingServiceStatus.UNAVAILABLE };
 }
 
@@ -170,13 +192,9 @@ export function useControl(): UseControlReturn {
 
     try {
       const response = await fetch(CONTROL_ENDPOINT, { credentials: 'same-origin' });
-      // A 404 is the honest answer from a deployment with no session cookie
-      // configured, not an error to report.
       set(available, response.ok && ControlCapabilities.safeParse(await response.json()).success);
     }
     catch {
-      // Offline, or nothing serving. Not cached: it may well be the transient
-      // outage that brought the user to the connection-failure screen.
       set(available, false);
     }
     return get(available);
@@ -187,8 +205,6 @@ export function useControl(): UseControlReturn {
       return { autostart: false, state: StarlingServiceStatus.UNAVAILABLE };
 
     if (isPackaged) {
-      // The desktop's preference is an Electron app setting, not a supervisor
-      // one, so it comes back from the same IPC call that reports the state.
       const status = await getMcpServerStatus();
       return { autostart: status.autoStart, state: status.state };
     }
@@ -211,13 +227,18 @@ export function useControl(): UseControlReturn {
     return (await serviceInfo(service)).state;
   };
 
+  /**
+   * Sets whether a service starts with the tree.
+   *
+   * @remarks
+   * The desktop keeps this in Electron's own app settings, where it rides along in the next start's
+   * options. Sending the RPC there as well would put the same value in two places with nothing
+   * keeping them in step.
+   */
   const setServiceAutostart = async (service: StarlingService, autostart: boolean): Promise<void> => {
     if (!await probe())
       return;
 
-    // The desktop keeps the preference in Electron's own app settings, where it
-    // rides along in the next start's options. Sending the RPC there would put
-    // the same value in two places with nothing keeping them in step.
     if (isPackaged) {
       await setMcpAutoStart(autostart);
       return;
@@ -226,14 +247,18 @@ export function useControl(): UseControlReturn {
     await postRpc(t, StarlingMethod.SET_SERVICE_AUTOSTART, { autostart, service });
   };
 
+  /**
+   * Restarts the backend, optionally changing the log level.
+   *
+   * @remarks
+   * The desktop keeps its own path: its restart carries the user's whole option set, data and log
+   * directories included, which only the stdio transport accepts. Do not flatten the two.
+   */
   const restart = async (loglevel?: LogLevel): Promise<void> => {
     if (!await probe())
       return;
 
     if (isPackaged) {
-      // The desktop restart carries the user's whole option set (data directory,
-      // log directory, log level), which only the stdio transport accepts; leave
-      // it on its own path rather than flattening it here.
       await restartBackend(loglevel ? { loglevel } : {}, true);
       return;
     }

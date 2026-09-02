@@ -16,7 +16,7 @@ import { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const {
@@ -91,8 +91,7 @@ const {
 } = useForm<LoginFormState, LoginFormState>({
   initial: (): LoginFormState => ({ customBackendUrl: '', password: '', username: '' }),
   schema,
-  // The screen above owns the attempt; this form only reports the credentials through its emit.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (current): LoginFormState => ({ ...current }),
 });
 
@@ -103,10 +102,6 @@ const hasServerError = computed<boolean>(() => Object.keys(get(serverErrors)).le
 
 const isLoggedInError = useArraySome(() => errors, error => error.includes('is already logged in'));
 
-// Note for anyone porting another form: `form.valid` read off the api object does NOT unwrap in a
-// template, so `:disabled="!form.valid"` would gate on a truthy ref and never engage. Destructuring
-// it, as here, makes it a setup binding the compiler unwraps, so that trap does not apply. This
-// computed exists only because the gate is four terms wide.
 const submitDisabled = computed<boolean>(() =>
   !get(parses) || loading || get(conflictExist) || get(customBackendDisplay),
 );
@@ -126,17 +121,17 @@ function updateFocus() {
   });
 }
 
-// Pre-fills the form and remember toggles for a manual login. The saved-password
-// auto-unlock is NOT driven from here anymore — it is a single flow started by
-// `useAutoLogin` on backend connect (see use-auto-login.ts / startAuto), so this
-// component can never race that flow.
+/**
+ * Pre-fills the form and its remember toggles for a manual login.
+ *
+ * @remarks
+ * Fills only. The saved-password auto-unlock is `useAutoLogin`'s, started on backend connect, so
+ * nothing here may trigger it or the two flows race.
+ */
 function loadSettings(): void {
   loadRememberSettings();
   if (!state.username) {
     state.username = resolveStoredUsername();
-    // A server error is remembered against the value it was reported for, so that editing the field
-    // retires it. Filling the name from the saved profile is not such an edit, and would otherwise
-    // drop a rejection the screen is still showing in its alert.
     setServerErrors(get(serverErrors));
   }
 
@@ -159,20 +154,29 @@ function abortLogin() {
 }
 
 watch(() => [state.username, state.password], ([username, password], [oldUsername, oldPassword]) => {
-  // touched should not be emitted when restoring from local storage
-  if (!oldUsername && username === get(storedUsername))
+  const restoredFromLocalStorage = !oldUsername && username === get(storedUsername);
+  if (restoredFromLocalStorage)
     return;
 
   if (username !== oldUsername || password !== oldPassword)
     touched();
 });
 
-// The url is owned by the backend panel's composable; the form carries a copy so it can be validated
-// alongside the credentials. Touch is deliberately not part of the immediate run: an untouched empty
-// url must stay silent until the user has actually been in the field.
-watchImmediate(customBackendUrl, (url) => {
+/**
+ * Copies the url the backend panel's composable owns into the form state, so it is validated
+ * alongside the credentials.
+ *
+ * @remarks
+ * Touch is deliberately left out of this: an untouched empty url has to stay silent until the user
+ * has actually been in the field.
+ *
+ * @param url - the url the panel currently holds
+ */
+function mirrorBackendUrl(url: string): void {
   state.customBackendUrl = url;
-});
+}
+
+watchImmediate(customBackendUrl, mirrorBackendUrl);
 
 watch(customBackendUrl, () => {
   touch('customBackendUrl');

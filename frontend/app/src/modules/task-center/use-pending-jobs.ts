@@ -33,11 +33,9 @@ function isRunning(activity: Activity): boolean {
  * The panel's view of the orchestrator: live work as a list of jobs rather than a flat list of
  * every activity in flight.
  *
- * A job is listed while **anything in its subtree is RUNNING**. That keeps the rule the flat panel
- * had — a fully queued tree is not shown, since producers declare every account of every chain up
- * front and listing those would bury the running work under dozens of rows that have not begun —
- * while fixing what it got wrong: cancelling the last running leaf no longer leaves a card headed
- * "0 pending tasks" spinning above its queued siblings, because the job goes with them.
+ * A job is listed while **anything in its subtree is RUNNING**. A fully queued tree stays hidden,
+ * because producers declare every account of every chain up front and listing those would bury the
+ * running work; and cancelling the last running leaf drops the job along with its queued siblings.
  */
 export function usePendingJobs(): UsePendingJobsReturn {
   const { model } = useTaskCenter();
@@ -59,9 +57,14 @@ export function usePendingJobs(): UsePendingJobsReturn {
     { current: 0, total: 0 },
   ));
 
-  // Weighted by leaves, so a one-leaf job does not count for as much as an eleven-chain refresh.
-  // A job nobody can quantify keeps its leaves in the denominator and contributes nothing, which is
-  // the same rule `subtreeProgress` applies inside one subtree — unknown work reads as unfinished.
+  /**
+   * Overall progress across every pending job.
+   *
+   * @remarks
+   * Weighted by leaves, so a one-leaf job does not count for as much as an eleven-chain refresh. A
+   * job nobody can quantify keeps its leaves in the denominator and contributes nothing, which is
+   * the rule `subtreeProgress` applies within one subtree: unknown work reads as unfinished.
+   */
   const percentage = computed<number>(() => {
     const list = get(jobs);
     const total = get(steps).total;

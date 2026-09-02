@@ -96,15 +96,10 @@ describe('toManagedAssetFields', () => {
     expect(fieldOf('evmChain')?.excludes).toStrictEqual(['assetType']);
   });
 
-  // `AssetsPostSchema` takes one of each of these; only `identifiers` is a list
-  // (`DelimitedOrNormalList`, matched with `IN (...)`), which is also what the url has always
-  // carried for it.
-  it('should let only the identifiers field take more than one value', () => {
+  it('should let only the identifiers field take more than one value, which is the only one the backend matches with IN (...)', () => {
     expect(fields().filter(field => field.multiple).map(field => field.key)).toStrictEqual(['identifiers']);
   });
 
-  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
-  // here rather than against a second hand-written declaration.
   it('should read identifiers as a list and everything else as one value', () => {
     const schema = routeSchemaFromFields(fields());
 

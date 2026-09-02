@@ -41,8 +41,6 @@ const form = useTemplateRef<
   | InstanceType<typeof BtcAccountForm>
 >('form');
 
-// Read-only, because a chain is chosen rather than edited: `selectChain` below is the only thing
-// that answers a choice, and it answers it with a whole state rather than a field.
 const chain = computed<string | undefined>(() => get(modelValue).chain);
 
 /**
@@ -289,12 +287,11 @@ function selectChain(next: string | undefined): void {
     return;
   }
 
-  // Only the chain was answered, so addresses already typed still answer a different question.
-  const data = get(modelValue).data;
+  const addressesTypedForTheOldChain = get(modelValue).data;
   set(modelValue, {
     ...createNewBlockchainAccount(),
     chain: next,
-    ...(Array.isArray(data) ? { data } : {}),
+    ...(Array.isArray(addressesTypedForTheOldChain) ? { data: addressesTypedForTheOldChain } : {}),
   });
 }
 

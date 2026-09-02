@@ -27,7 +27,7 @@ export type DisplayKind = typeof DisplayKinds[keyof typeof DisplayKinds];
 /**
  * One value's own display, for a field whose values are not all of the same kind. The history
  * account label is the case that needs it: it is an address on a chain and an exchange account
- * *name* everywhere else, drawn with a blockie in the first case and the exchange's logo in the
+ * name* everywhere else, drawn with a blockie in the first case and the exchange's logo in the
  * second, exactly as the table draws it (`HistoryEventAccount`).
  */
 export interface ValueDisplay {
@@ -71,6 +71,16 @@ type FieldBinding =
 /**
  * A filter as the bar shows and edits it, whichever way its value is transported. The one shape
  * the pill components read, so they never branch on where a field's value ends up.
+ *
+ * @remarks
+ * The resolver callbacks here — {@link FieldDef.resolveLabel}, {@link FieldDef.resolveCaption},
+ * {@link FieldDef.resolveKeywords}, {@link FieldDef.suggest} — are called once per candidate value
+ * on every keystroke while the bar narrows. Anything they need should be indexed or built once
+ * outside the callback: work done inside runs over the whole candidate list per character typed.
+ *
+ * A field's *absence* from the bar is how a filter is turned off, so a default must be expressed by
+ * having no pill rather than by a pill carrying the default value. Offering the default as a value
+ * too gives the user two ways to say one thing, and one of them reads as an active filter.
  */
 export interface FieldDef {
   readonly key: string;
@@ -84,6 +94,13 @@ export interface FieldDef {
   readonly operators: readonly FilterOp[];
   readonly multiple: boolean;
   readonly binding: FieldBinding;
+  /**
+   * Whether the pill offers a "not" operator.
+   *
+   * @remarks
+   * False unless the request has a form for an exclusion on this key. Offering one the backend
+   * cannot express builds a filter that silently returns the unfiltered set.
+   */
   readonly allowExclusion: boolean;
   /**
    * Keys of fields this one cannot coexist with, because they write the same wire keys. History's
@@ -147,11 +164,12 @@ export interface FieldDef {
    */
   readonly resolveLoading?: (value: string) => boolean;
   /**
-   * Reads a value stored by the old filter bar into the form this field now takes, for a field
-   * that used to be filter-bound and is now param-bound. Returning nothing drops the value.
-   * Only the accounts table needs it, whose account filter stored `label (address)` where the
-   * field now wants the address alone. Lives on the field because it is the only thing that knows
-   * both forms; without it a converted saved filter would lose that pill silently.
+   * Reads a value stored by the old filter bar into the form this field takes, for a field that
+   * moved from filter-bound to param-bound. Returning nothing drops the value.
+   *
+   * Only the accounts table needs it, whose account filter stores `label (address)` where the
+   * field wants the address alone. It lives on the field because that is the only thing knowing
+   * both forms; without it a converted saved filter loses that pill silently.
    */
   readonly fromLegacy?: (value: string) => string | undefined;
   /**
@@ -230,7 +248,7 @@ export interface FieldDef {
    * Whether what has been typed is on its way to a filter on this field, even though it does not
    * parse into one yet. The half-written counterpart of {@link parseTyped}: `after` and `15/01` are
    * both headed for a date, and answering yes here has the bar offer this field with its
-   * {@link hint} rather than the empty popover a non-parsing query used to get.
+   * {@link hint} instead of leaving a non-parsing query with an empty popover.
    */
   readonly matchesTyped?: (query: string) => boolean;
   /**

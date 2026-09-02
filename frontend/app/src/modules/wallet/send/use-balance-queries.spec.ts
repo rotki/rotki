@@ -18,15 +18,12 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
   })),
 }));
 
-// Bypass the 200ms debounce in tests
 vi.mock('@/modules/core/common/use-ref-debounce', () => ({
   useRefWithDebounce: vi.fn().mockImplementation((source: unknown) => source),
 }));
 
 describe('useBalanceQueries', () => {
   beforeEach(() => {
-    // `useBalancesLoading` reads hydration liveness off a pinia store now that hydration is not
-    // an activity the orchestrator can report on.
     setActivePinia(createPinia());
     set(addressesRef, {});
     set(workStatusRef, { active: false });

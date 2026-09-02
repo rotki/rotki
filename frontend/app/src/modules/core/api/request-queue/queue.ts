@@ -267,6 +267,15 @@ export class RequestQueue {
     }
   }
 
+  /**
+   * Runs one request, retrying it with backoff where the error allows.
+   *
+   * @remarks
+   * A retry releases its in-flight slot *before* sleeping, not after: a request sitting through an
+   * exponentially growing backoff is doing nothing, and holding one of the six would starve
+   * everything else for the whole delay. Its dedupe key is kept, so callers attached to it still
+   * settle from the retry.
+   */
   private async executeRequest<T>(request: QueuedRequest<T>): Promise<void> {
     try {
       const response = await this.fetchFn<T>(request.url, request.options);
@@ -276,10 +285,6 @@ export class RequestQueue {
     catch (error) {
       if (this.shouldRetry(error, request)) {
         request.retries++;
-        // The slot is released for the wait rather than after it. A request sleeping through its
-        // backoff is doing nothing, and holding one of the six in-flight budget while it sleeps
-        // starves everything else for the whole delay - which grows exponentially per attempt.
-        // Its dedupe key stays, so callers attached to it still settle from the retry.
         this.activeRequests.delete(request.id);
         setTimeout(() => {
           this.insertByPriority(request);

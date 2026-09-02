@@ -30,6 +30,15 @@ const hasInProgress = computed<boolean>(() => get(inProgressDecoding).length > 0
 const completedCount = computed<number>(() => get(completedDecoding).length);
 const hasCompleted = computed<boolean>(() => !!get(completedCount));
 
+const completedLabel = computed<string>(() => {
+  const count = get(completedCount);
+  return get(hasCancelledItems)
+    ? t('sync_progress.finished_decoding', { count }, count)
+    : t('sync_progress.completed_decoding', { count }, count);
+});
+
+const completedIcon = computed<string>(() => (get(hasCancelledItems) ? 'lu-circle-alert' : 'lu-circle-check'));
+
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
 }
@@ -54,11 +63,11 @@ function toggleCompleted(): void {
         @click="toggleCompleted()"
       >
         <RuiIcon
-          name="lu-circle-check"
+          :name="completedIcon"
           :class="completedIconColor"
           size="16"
         />
-        <span>{{ t('sync_progress.completed_decoding', { count: completedCount }, completedCount) }}</span>
+        <span>{{ completedLabel }}</span>
         <RuiIcon
           name="lu-chevron-down"
           size="16"
@@ -74,11 +83,11 @@ function toggleCompleted(): void {
           @click="toggleCompleted()"
         >
           <RuiIcon
-            name="lu-circle-check"
+            :name="completedIcon"
             :class="completedIconColor"
             size="16"
           />
-          <span>{{ t('sync_progress.completed_decoding', { count: completedCount }, completedCount) }}</span>
+          <span>{{ completedLabel }}</span>
           <RuiIcon
             name="lu-chevron-up"
             size="16"

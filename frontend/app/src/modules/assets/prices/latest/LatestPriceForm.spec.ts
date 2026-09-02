@@ -1,5 +1,6 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -11,9 +12,6 @@ vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
 }));
 
 const LatestPriceForm = (await import('@/modules/assets/prices/latest/LatestPriceForm.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 /** Every field is a third-party input, so they are stubbed down to the two things the form uses. */
 function inputStub(name: string): Record<string, unknown> {
@@ -131,7 +129,6 @@ describe('latestPriceForm', () => {
     await edit('latest-price-value', '');
 
     expect(messages('latest-price-value')).toEqual(['price_form.price_non_empty']);
-    // The untouched fields stay quiet.
     expect(messages('latest-price-from-asset')).toEqual([]);
   });
 
@@ -150,8 +147,7 @@ describe('latestPriceForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleMountedWork();
 
     await edit('latest-price-value', '3000');
 

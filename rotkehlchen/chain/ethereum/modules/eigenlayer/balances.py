@@ -128,6 +128,9 @@ class EigenlayerBalances(ProtocolWithBalance):
             addresses: list[ChecksumEvmAddress],
     ) -> BalancesSheetType:
         """Query any balances that are being withdrawn from Eigenlayer and are on the fly"""
+        if self.counterparty_is_absent_from_chain():
+            return balances  # no eigenlayer events at all, so no withdrawals in flight
+
         # First find if there is any completed withdrawals unmatched,
         # as that would lead to double counting of balances
         db_filter = EvmEventFilterQuery.make(

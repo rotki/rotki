@@ -1,33 +1,15 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, ref, type VNode } from 'vue';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import PasswordConfirmationDialog from '@/modules/auth/login/PasswordConfirmationDialog.vue';
 import '@test/i18n';
-
-/**
- * Characterization of the vuelidate rules, written before the zod migration.
- *
- * This dialog had no coverage of any kind - no unit spec, no e2e - and it guards the password
- * re-entry that unlocks a session, so the contract is pinned before anything moves.
- *
- * The seam is what the dialog exposes to `AppMessages.vue`: the `confirm` emit carrying the typed
- * password, the `display` model, and the `error-messages` the input receives. No markup assertions.
- *
- * NOT covered: the `@keydown.enter` submit path. The listener falls through onto the stubbed input,
- * where neither `trigger('keydown.enter')` nor a real dispatched `KeyboardEvent` reaches it, so the
- * only test that could be written for it is one that cannot fail. It runs the same
- * `confirmPassword()` as the button, so the validation contract below still covers the logic - but
- * the binding itself is unpinned and stays that way through the migration.
- */
 
 const getPassword = vi.fn<(username: string) => Promise<string>>();
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: (): { getPassword: typeof getPassword } => ({ getPassword }),
 }));
-
-/** The stub declares its props at runtime, so its instance is typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 const TextFieldStub = {
   emits: ['update:modelValue'],
@@ -43,9 +25,7 @@ const PassthroughStub = {
 
 interface Harness {
   wrapper: VueWrapper;
-  /** Passwords the dialog has confirmed, in order. */
   confirmed: () => string[];
-  /** The dialog's own visibility model. */
   display: () => boolean;
   setDisplay: (value: boolean) => void;
 }
@@ -56,10 +36,6 @@ describe('passwordConfirmationDialog', () => {
   beforeEach(() => {
     getPassword.mockReset();
     getPassword.mockResolvedValue('');
-  });
-
-  afterEach(() => {
-    harness?.wrapper.unmount();
   });
 
   function createHarness(props: { username?: string; errorMessage?: string } = {}): Harness {
@@ -150,7 +126,6 @@ describe('passwordConfirmationDialog', () => {
     expect(messages()).toStrictEqual([]);
   });
 
-  // Vuelidate's `required` trims, so a password of only spaces never reaches the backend.
   it('should not confirm a whitespace-only password', async () => {
     harness = createHarness();
     await type('   ');
@@ -170,7 +145,6 @@ describe('passwordConfirmationDialog', () => {
     expect(messages()).toStrictEqual([]);
   });
 
-  // The dialog stays mounted across a rejected attempt, so a second submission must be possible.
   it('should confirm again after a rejected attempt', async () => {
     harness = createHarness();
     await type('wrong');
@@ -182,9 +156,6 @@ describe('passwordConfirmationDialog', () => {
   });
 
   describe('when the backend has reported an error', () => {
-    // Deliberately flipped in the zod swap. The old computed returned `[errorMessage]` and threw the
-    // field's own messages away, so clearing the box while a rejection was on screen said nothing at
-    // all about the box now being empty. The core keys the two channels apart and shows both.
     it('should show that error alongside the local message', async () => {
       harness = createHarness({ errorMessage: 'Wrong password' });
       await confirm();
@@ -209,8 +180,6 @@ describe('passwordConfirmationDialog', () => {
       expect(harness.confirmed()).toStrictEqual([]);
     });
 
-    // New under the core: a rejection is reported against the value that earned it, so retyping
-    // retires it. The old computed kept showing it until the caller replaced the prop.
     it('should drop that error once the password is edited', async () => {
       harness = createHarness({ errorMessage: 'Wrong password' });
       await nextTick();

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 # 1. Go to assets repo and tweak the min/max schema of the updates
 # 2. Tweak ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
 # 3. Add the previous version to GLOBAL_DB_ASSETS_BREAKING_VERSIONS if it breaks asset updates compatibility  # noqa: E501
-GLOBAL_DB_VERSION = 17
+GLOBAL_DB_VERSION = 18
 ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS = (3, GLOBAL_DB_VERSION)
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 # Global DB versions that break compatibility with existing asset updates.
@@ -72,6 +72,7 @@ def initialize_globaldb(
         global_dir: Path,
         db_filename: str,
         sql_vm_instructions_cb: int,
+        cached_statements: int | None = None,
 ) -> tuple[DBConnection, bool]:
     """
     Checks the database whether there are any not finished upgrades and automatically uses a
@@ -89,6 +90,7 @@ def initialize_globaldb(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        cached_statements=cached_statements,
     )
     try:
         with connection.read_ctx() as cursor:
@@ -125,5 +127,6 @@ def initialize_globaldb(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        cached_statements=cached_statements,
     )
     return connection, True

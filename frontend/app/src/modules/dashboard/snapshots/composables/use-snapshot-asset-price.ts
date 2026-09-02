@@ -45,17 +45,14 @@ interface UseSnapshotAssetPriceReturn {
 }
 
 /**
- * Owns the asset <-> USD <-> display-currency price-sync state machine used by
- * the snapshot balance edit form.
+ * The price-sync state machine between asset, USD and display currency, for the snapshot balance
+ * edit form.
  *
- * Snapshots are stored in USD. In a non-USD main currency the user edits the
- * fiat price/value, so the stored `usdValue` must be kept in sync via the
- * historic USD -> fiat rate at the snapshot's timestamp (#12277). That rate is
- * derived from the two fetched asset prices (asset->fiat / asset->USD): it is
- * the rate that applied then and is stable across the user's edits.
- *
- * Extracted from EditBalancesSnapshotAssetPriceForm so this bidirectional,
- * rounding-sensitive logic can be unit-tested without mounting the component.
+ * @remarks
+ * Snapshots are stored in USD, so in another main currency the user edits the fiat price while the
+ * stored `usdValue` is kept in sync through the historic rate at the snapshot's timestamp. That rate
+ * is derived from the two fetched asset prices, asset-to-fiat over asset-to-USD, which is what
+ * applied then and stays stable across the user's edits.
  */
 export function useSnapshotAssetPrice(
   options: UseSnapshotAssetPriceOptions,
@@ -79,11 +76,7 @@ export function useSnapshotAssetPrice(
   const isCurrentCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
   const fetching = useIsActivePrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
 
-  // The historic USD -> display-currency rate, fetched directly — the SAME rate
-  // every snapshot display (SnapshotFiatDisplay) uses to convert the stored USD
-  // value back. Driving the fiat->USD storage off this rate (rather than the
-  // asset's own USD/fiat price ratio) makes the round-trip exact even for
-  // EUR-pegged assets, whose oracle USD price diverges from the forex rate.
+  // The same historic USD -> display-currency rate the snapshot display converts back with.
   const { rate: usdToFiatRate } = useHistoricFiatConversion(timestamp);
 
   const numericAssetToUsdPrice = bigNumberifyFromRef(modelAssetToUsdPrice);
@@ -98,9 +91,6 @@ export function useSnapshotAssetPrice(
   }
 
   function onAssetToUsdPriceChange(forceUpdate = false): void {
-    // USD main currency only: in a non-USD currency the stored USD value is
-    // driven from the fiat value via the direct rate (see syncUsdValueFromFiat),
-    // so this must not also write it from the asset's USD price.
     if (get(isCurrentCurrencyUsd) && get(amount) && get(modelAssetToUsdPrice) && (!get(modelFiatValueFocused) || forceUpdate))
       set(usdValue, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
   }
@@ -115,10 +105,15 @@ export function useSnapshotAssetPrice(
       set(modelAssetToUsdPrice, get(numericUsdValue).div(get(numericAmount)).toFixed());
   }
 
-  // Keep the stored USD value in sync with the fiat value, using the direct
-  // historic USD->fiat rate so it round-trips exactly through the display
-  // (#12277). Without this the user's fiat edit is dropped, or (for EUR-pegged
-  // assets) stored against the wrong rate.
+  /**
+   * Restates the edited fiat value as the USD value that actually gets stored.
+   *
+   * @remarks
+   * Divides by the historic USD to fiat rate rather than by the asset's own USD over fiat price
+   * ratio, so the stored value round-trips exactly through the display, which converts with that
+   * same rate. The two diverge for fiat-pegged assets, whose oracle USD price is not the forex
+   * rate. No-op while the display currency is USD, or before an amount is entered.
+   */
   function syncUsdValueFromFiat(): void {
     if (get(isCurrentCurrencyUsd) || !get(amount))
       return;
@@ -144,9 +139,7 @@ export function useSnapshotAssetPrice(
     if (!ts || !assetVal)
       return;
 
-    // Fallback price (used when a historic lookup is unavailable). Guard the
-    // division: an empty/zero amount would otherwise yield NaN/Infinity and
-    // poison the price fields.
+    // Fallback for when the historic lookup comes back empty.
     const currentAmount = get(numericAmount);
     const oldUsdPrice = currentAmount.isPositive()
       ? get(numericUsdValue).dividedBy(currentAmount)
@@ -217,8 +210,6 @@ export function useSnapshotAssetPrice(
     set(usdValue, '');
   }
 
-  // Re-fetch whenever the timestamp or asset changes (fetchHistoricPrices
-  // no-ops when there is no asset yet).
   watchImmediate([(): number => toValue(timestamp), asset], async (): Promise<void> => {
     await fetchHistoricPrices();
   });
@@ -259,8 +250,7 @@ export function useSnapshotAssetPrice(
     onUsdValueChange();
   });
 
-  // The direct rate resolves asynchronously; re-derive the stored USD value once
-  // it is available so a freshly-opened form isn't left with a stale value.
+  // The rate resolves asynchronously, after a freshly opened form has already derived its USD value.
   watch(usdToFiatRate, () => {
     syncUsdValueFromFiat();
   });

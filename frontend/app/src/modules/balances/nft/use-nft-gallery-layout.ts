@@ -14,14 +14,11 @@ interface UseNftGalleryLayoutReturn {
 export function useNftGalleryLayout(
   items: ComputedRef<GalleryNft[]>,
 ): UseNftGalleryLayoutReturn {
-  // State
   const page = shallowRef<number>(1);
   const itemsPerPage = shallowRef<number>(8);
 
-  // Breakpoint composable
   const { is2xl, isMd, isSm, isSmAndDown } = useBreakpoint();
 
-  // Computed properties
   const firstLimit = computed<number>(() => {
     if (get(isSmAndDown))
       return 1;
@@ -64,7 +61,6 @@ export function useNftGalleryLayout(
     return get(items).slice(start, start + perPage);
   });
 
-  // Watch for responsive changes
   watchImmediate(firstLimit, () => {
     set(itemsPerPage, get(firstLimit));
   });

@@ -15,8 +15,6 @@ export function useManualBalanceFields(
   filters: MaybeRefOrGetter<Filters>,
 ): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
-  // Asset and location resolution is the same for every table filtering on them, so it comes from
-  // one place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const tagOptions = useTagFieldOptions();
   const { assetSearch } = useAssetInfoRetrieval();
@@ -30,9 +28,6 @@ export function useManualBalanceFields(
     return (Array.isArray(picked) ? picked[0] : picked)?.toString();
   });
 
-  // One debounced search per scope rather than one per call: `assetSuggestions` builds the debounce,
-  // so rebuilding it inside the search would give every keystroke a fresh timer that cancels
-  // nothing. The wrapper stays stable so the field itself does not change with the location.
   const search = computed(() => assetSuggestions(assetSearch, get(location)));
   const searchAsset = async (value: string): Promise<AssetsWithId> => get(search)(value);
 

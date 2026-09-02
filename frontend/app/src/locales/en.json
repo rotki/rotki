@@ -762,7 +762,8 @@
             "success": "Skipped events exported to CSV successfully"
           },
           "title": "CSV Export"
-        }
+        },
+        "unavailable": "{queryType} is not available"
       },
       "warning": {
         "missing_api_key": {
@@ -1270,6 +1271,8 @@
     },
     "dialog": {
       "confirm_ignore": "Ignore this movement?",
+      "confirm_mark_external": "Resolve as an external payment?",
+      "confirm_mark_external_in": "Resolve as external income?",
       "confirm_match": "Confirm Match",
       "description": "Select an unmatched asset movement and find matching blockchain transactions to link them together.",
       "empty": {
@@ -1284,14 +1287,20 @@
       "ignore_tooltip": "Mark this asset movement as having no corresponding event.",
       "ignored_description": "These asset movements have been marked as having no corresponding event. Restore them to retry matching.",
       "manual_action": "Manual Action",
+      "mark_external": "Mark external",
+      "mark_external_in_tooltip": "Resolve this deposit as income from an untracked source, so its whole amount is accounted and not just the fee.",
+      "mark_external_tooltip": "Resolve this withdrawal as a payment to an untracked address, so its whole amount is accounted and not just the fee.",
       "matching_for": "Finding matches for the following asset movement.",
       "matching_hint": "You can select one or more events to link.",
       "no_ignored": "No ignored asset movements.",
+      "no_match_untracked_destination": "No matches can be found: the destination address {address} is not tracked by rotki, so no corresponding event can exist in your history. Mark this withdrawal as a payment instead.",
       "no_matches_found": "No potential matches found. Try adjusting the time range.",
       "no_unmatched": "All asset movements have been matched.",
       "only_expected_assets": "Only show \nsame assets",
       "only_expected_assets_hint": "When enabled, only show events that are from or to addresses that belong to your tracked accounts, with matching amounts and timestamps.",
       "recommended": "Recommended",
+      "resolved_income": "Resolved as income",
+      "resolved_payment": "Resolved as payment",
       "restore": "Restore",
       "restore_tooltip": "Restore this asset movement to the unmatched list.",
       "search_description": "Search for events within the specified criteria:",
@@ -1304,7 +1313,10 @@
       "time_range_short": "Range (h)",
       "title": "Match Asset Movements",
       "tolerance_short": "Tolerance (%)",
-      "transaction_column": "Transaction"
+      "transaction_column": "Transaction",
+      "untracked_destination": "Destination not tracked",
+      "untracked_destination_tooltip": "The destination address {address} is not tracked by rotki, so no corresponding event can exist in your history. Resolve this withdrawal by marking it as a payment.",
+      "untracked_reason": "{label}: no match can exist"
     },
     "fiat_hint": {
       "label": "Fiat",
@@ -1314,6 +1326,10 @@
       "free_tooltip": "Asset movement matching requires a minimum of {tier} tier. {link} to unlock this feature.",
       "link": "Upgrade",
       "premium_tooltip": "Asset movement matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+    },
+    "resolved": {
+      "external_deposit": "Deposit resolved as income from an untracked source.",
+      "external_withdrawal": "Withdrawal resolved as a payment to an untracked address."
     },
     "settings": {
       "amount_tolerance": {
@@ -1880,7 +1896,7 @@
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
       "ignored_description": "These bridge transactions have been marked as having no corresponding event. Restore them to retry matching.",
       "manual_action": "Manual Action",
-      "mark_external": "External",
+      "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",
       "mark_external_tooltip": "Resolve this bridge deposit as a payment to an external (untracked) address.",
       "matching_for_in": "Finding the counterpart for this bridge in.",
@@ -4191,10 +4207,10 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "Exclude",
-    "ignore_tooltip": "Excluded the selected actions from the profit/loss report",
-    "unignore": "Include",
-    "unignore_tooltip": "Included the selected actions in the profit/loss report"
+    "ignore": "Ignore",
+    "ignore_tooltip": "Ignore the selected assets",
+    "unignore": "Unignore",
+    "unignore_tooltip": "Stop ignoring the selected assets"
   },
   "import_data": {
     "binance": {
@@ -5912,6 +5928,7 @@
   "sync_progress": {
     "chains_label": "chain | chains",
     "complete": "Sync Complete",
+    "complete_cancelled": "Sync Cancelled",
     "complete_with_warnings": "Sync Complete with warnings",
     "completed_chains": "{count} chain complete | {count} chains complete",
     "completed_decoding": "{count} chain decoded | {count} chains decoded",
@@ -5923,6 +5940,10 @@
     "events": "Events",
     "explanation": "The first sync downloads and decodes your entire on-chain history locally. You can keep using rotki; results appear as they are ready.",
     "explanation_etherscan_hint": "A personal (free) Etherscan API key speeds this up significantly.",
+    "finished_chains": "{count} chain finished | {count} chains finished",
+    "finished_decoding": "{count} chain decoding finished | {count} chains decoding finished",
+    "finished_locations": "{count} location finished | {count} locations finished",
+    "finished_protocol_cache": "{count} protocol finished | {count} protocols finished",
     "locations_label": "location | locations",
     "period": {
       "beginning": "Beginning"

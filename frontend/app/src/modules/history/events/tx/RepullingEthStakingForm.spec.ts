@@ -1,5 +1,5 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
-import type { ComponentPublicInstance } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { RepullingEthStakingPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain, type Eth2ValidatorEntry } from '@rotki/common';
@@ -27,8 +27,6 @@ function stub(name: string, props: string[]): Record<string, unknown> {
     template: '<div />',
   };
 }
-
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function validatorAccount(): BlockchainAccount {
   return {
@@ -140,9 +138,7 @@ describe('history/events/tx/RepullingEthStakingForm.vue', () => {
     expect(value).not.toEqual([]);
   });
 
-  // Block productions are fetched whole rather than over a range, so the picker goes away and its
-  // rules go with it.
-  it('should drop the range and its rules for block productions', async () => {
+  it('should drop the range and its rules for block productions, which are fetched whole rather than over a range', async () => {
     harness = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 

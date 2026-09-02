@@ -39,7 +39,7 @@ function showInHistoryEvents(transaction: UnmatchedBridgeTransaction): void {
     max-width="1000"
   >
     <RuiCard
-      content-class="!py-0"
+      :class-names="{ content: '!py-0' }"
       divide
     >
       <template #custom-header>

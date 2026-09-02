@@ -1,3 +1,4 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingEthStakingPayload, RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
@@ -5,7 +6,7 @@ import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, useTemplateRef } from 'vue';
+import { defineComponent, useTemplateRef } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import RepullingTransactionForm, { type AccountType } from '@/modules/history/events/tx/RepullingTransactionForm.vue';
@@ -35,8 +36,6 @@ function stub(name: string, props: string[]): Record<string, unknown> {
     template: '<div />',
   };
 }
-
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function addressAccount(chain: string, address: string): BlockchainAccount {
   return {

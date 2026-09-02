@@ -1,7 +1,6 @@
 import type {
   GasFeeEstimation,
-  PrepareERC20TransferResponse,
-  PrepareNativeTransferResponse,
+  PreparedTransaction,
   RecentTransaction,
   TransactionParams,
 } from '@/modules/wallet/types';
@@ -35,7 +34,6 @@ interface DisconnectOptions {
   forgetProvider?: boolean;
 }
 
-// Lazy backend types
 type WalletConnectInstance = ReturnType<typeof import('./use-wallet-connect').useWalletConnect>;
 
 type InjectedWalletInstance = ReturnType<typeof import('./bridge/use-injected-wallet').useInjectedWallet>;
@@ -61,7 +59,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const unifiedProviders = useUnifiedProviders();
   const { isPackaged } = useInterop();
 
-  // Transaction management
   const transactionManager = useTransactionManager();
   const { recentTransactions, reset: resetTransactions, updateTransactionStatus } = transactionManager;
 
@@ -74,10 +71,15 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   let walletConnectInstance: WalletConnectInstance | undefined;
   let injectedWalletInstance: InjectedWalletInstance | undefined;
 
-  // Computed properties
   const isWalletConnect = computed<boolean>(() => get(walletMode) === WALLET_MODES.WALLET_CONNECT);
 
-  // Sync centralized state with active wallet composable
+  /**
+   * Copies the active wallet backend's connection state into the store's own refs.
+   *
+   * @remarks
+   * Does nothing while the backend for the current mode is not loaded. An injected wallet
+   * advertises no chain list, so `supportedChainIds` is cleared rather than left stale.
+   */
   const syncWalletState = (): void => {
     if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
       if (!walletConnectInstance)
@@ -122,11 +124,9 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     if (!injectedWalletInstance) {
       const { useInjectedWallet } = await import('./bridge/use-injected-wallet');
       injectedWalletInstance = useInjectedWallet();
-      // Mirror isConnecting into local ref
       watch(injectedWalletInstance.isConnecting, (v) => {
         set(isConnecting, v);
       });
-      // Set up state sync watcher (moved from eager watcher)
       watch(
         [
           injectedWalletInstance.connected,
@@ -161,7 +161,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const connect = async (): Promise<void> => {
     if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       try {
-        // Setup bridge if in packaged mode
         if (get(isPackaged)) {
           await walletProxy.setupProxy();
         }
@@ -204,15 +203,19 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     logger.debug('Resetting wallet state');
     set(preparing, false);
     set(waitingForWalletConfirmation, false);
-    // Clear centralized connection state
     set(connected, false);
     set(connectedAddress, undefined);
     set(connectedChainId, undefined);
     set(supportedChainIds, []);
   };
 
-  // Called by the store reset plugin on logout. `$patch` cannot clear the recent
-  // transactions since they are exposed as a getter, so they are reset here.
+  /**
+   * Clears the whole wallet state, connection and recent transactions alike.
+   *
+   * @remarks
+   * The store reset plugin calls this on logout. Its `$patch` cannot reach the recent
+   * transactions, exposed as a getter, so they are reset here instead.
+   */
   const reset = (): void => {
     resetState();
     resetTransactions();
@@ -275,9 +278,9 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     }
   };
 
-  const executeTransaction = async (client: ViemWalletClient, backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse): Promise<Hash> => {
+  const executeTransaction = async (client: ViemWalletClient, backendPayload: PreparedTransaction): Promise<Hash> => {
     set(waitingForWalletConfirmation, true);
-    const data = 'data' in backendPayload ? backendPayload.data : '0x';
+    const { data } = backendPayload;
     if (!isHex(data)) {
       throw new Error('Invalid transaction data');
     }
@@ -295,7 +298,6 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   };
 
   const sendTransaction = async (params: TransactionParams): Promise<Hash> => {
-    // Check WalletConnect connection if in WalletConnect mode
     if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
       const wc = await getWalletConnect();
       await wc.checkWalletConnection();
@@ -342,8 +344,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
     }
   };
 
-  // Watch for changes in wallet mode. The immediate run has no previous mode and nothing is
-  // connected yet, so disconnecting there would only clear the remembered provider.
+  // The immediate run has no previous mode and no connection, so only a real mode change disconnects.
   watch(walletMode, async (walletMode, previousWalletMode) => {
     if (previousWalletMode !== undefined && walletMode !== previousWalletMode) {
       await disconnect();
@@ -373,15 +374,14 @@ export const useWalletStore = defineStore(STORE_ID, () => {
 });
 
 /**
- * Disconnects the wallet only when the store already exists.
+ * Disconnects the wallet, but only when the store already exists.
  *
- * A session that never opened the wallet has nothing to disconnect, and calling
- * `useWalletStore()` would build the whole wallet graph (bridge proxy, providers, transaction
- * manager) just to tear it down. The auth flows use this so the login screen no longer
- * instantiates the store.
+ * @remarks
+ * Call this from the auth flows rather than `useWalletStore().disconnect()`, which would build the
+ * whole wallet graph (bridge proxy, providers, transaction manager) just to tear it down, on a
+ * session that may never have opened the wallet at all.
  *
- * The remembered provider is kept: logging out is not the user saying they no longer want
- * that wallet.
+ * The remembered provider is kept: logging out is not the user disowning that wallet.
  */
 export async function disconnectWalletIfActive(): Promise<void> {
   const pinia = getActivePinia();

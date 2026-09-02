@@ -1,13 +1,11 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { CexMapping } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import ManageCexMappingForm from '@/modules/assets/admin/cex-mapping/ManageCexMappingForm.vue';
 import '@test/i18n';
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -92,14 +90,10 @@ describe('manageCexMappingForm', () => {
     wrapper = createWrapper({ ...baseModel(), location: null });
     await vi.advanceTimersToNextTimerAsync();
 
-    // The location rule is the only conditional one in the form: it is required unless the mapping
-    // is being saved for every exchange.
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
   it('should fail validation once the exchange is cleared on a single-exchange mapping', async () => {
-    // The switch cannot be forced out of step with the payload: the form reads it off the location
-    // on mount. Clearing the field afterwards is what leaves the two disagreeing.
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
@@ -168,12 +162,10 @@ describe('manageCexMappingForm', () => {
     expect(wrapper.emitted('update:forAllExchanges')?.at(-1)).toEqual([expected]);
   });
 
-  it('should write a cleared exchange back as null', async () => {
+  it('should write a cleared exchange back as null, which is what "every exchange" means in this payload', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    // Null is what "every exchange" means in this payload, so unlike the counterparty mapping the
-    // field is nullable on purpose.
     await edit('ExchangeInput', undefined);
 
     expect(lastModel().location).toBeNull();
@@ -190,8 +182,7 @@ describe('manageCexMappingForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleMountedWork();
 
     await edit('RuiTextField', 'DAI');
 
@@ -240,8 +231,6 @@ describe('manageCexMappingForm', () => {
     expect(wrapper.findAllComponents({ name: 'LocationDisplay' })).toHaveLength(0);
   });
 
-  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
-  // rejected save said nothing at all on a field the user had not been in.
   it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { locationSymbol: ['already mapped'] };
     wrapper = createWrapper(baseModel(), { errorMessages });

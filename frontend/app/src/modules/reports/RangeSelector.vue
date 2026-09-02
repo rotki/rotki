@@ -56,11 +56,6 @@ function input(data: ReportRange): void {
 }
 
 async function onChanged(event: SelectionChangedEvent): Promise<void> {
-  // Reset the range before the persisted-setting API call so quick-option
-  // clicks inside the Custom picker land on a sane `end=now, start=undefined`
-  // baseline. Doing it after `await updateFrontendSetting` opens a race where
-  // a fast click on a preset gets the old year/quarter's end as the
-  // max-date constraint - see DateTimeRangePicker.applyQuickOption.
   if (event.year === 'custom') {
     input({ end: dayjs().unix(), start: undefined });
   }
@@ -73,10 +68,6 @@ async function onChanged(event: SelectionChangedEvent): Promise<void> {
 function onPeriodChange(period: PeriodChangedEvent | null): void {
   const now = dayjs().unix();
   if (period === null) {
-    // Custom period - leave start undefined so the picker renders empty
-    // instead of defaulting the field to 1970-01-01 (epoch). The schema
-    // catches this as a validation error until the user picks a date or hits
-    // a quick-option preset.
     input({ end: now, start: undefined });
     return;
   }
@@ -84,8 +75,7 @@ function onPeriodChange(period: PeriodChangedEvent | null): void {
   input({ end: Math.min(period.end, now), start: period.start });
 }
 
-// The validity is the only thing anything consumes: no field ever renders a message, because
-// nothing touches them, which reproduces vuelidate's $autoDirty: false exactly.
+// Validity is the only output anything consumes; no field renders a message, since none is touched.
 watchImmediate(form.valid, (valid) => {
   emit('update:valid', valid);
 });

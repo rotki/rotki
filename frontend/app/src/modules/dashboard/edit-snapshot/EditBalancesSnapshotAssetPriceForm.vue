@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import {
   type AssetPriceFormState,
   assetPriceSchema,
@@ -38,12 +38,14 @@ const schema = computed<ZodType>(() => assetPriceSchema({
 const form = useForm<AssetPriceFormState, AssetPriceFormState>({
   initial: (): AssetPriceFormState => ({ amount: get(amount), asset: get(asset), usdValue: get(usdValue) }),
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): AssetPriceFormState => ({ ...state }),
 });
 
-// The price state machine writes back to the fields it derives, so it is given the form's state to
-// drive rather than the parent's models, and the two are mirrored below.
+/**
+ * Driven by the form's own state rather than the parent's models, because the price machine writes
+ * back to the fields it derives. The two are mirrored below.
+ */
 const {
   modelAssetToFiatPrice,
   modelAssetToUsdPrice,

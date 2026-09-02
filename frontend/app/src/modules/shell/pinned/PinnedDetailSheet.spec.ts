@@ -49,8 +49,6 @@ describe('pinnedDetailSheet', () => {
   });
 
   it('should position itself absolutely so it stays inside the pinned panel', () => {
-    // The rail keeps backgrounded panels alive, so a teleported overlay would leak out of its
-    // panel. Absolute placement is what keeps the sheet scoped to its host.
     const wrapper = createWrapper(true);
 
     const classes = wrapper.find('[data-testid=pinned-detail-sheet]').classes();

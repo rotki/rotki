@@ -43,9 +43,9 @@ const tooltipMessage = computed<string>(() =>
 <template>
   <div class="flex justify-start items-center gap-2">
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
-      tooltip-class="max-w-[10rem]"
+      :class-names="{ tooltip: 'max-w-[10rem]' }"
       :disabled="!isIgnoringDisabled || isLoading"
     >
       <template #activator>
@@ -63,7 +63,7 @@ const tooltipMessage = computed<string>(() =>
 
     <RuiMenu
       v-if="showMoreOptions"
-      menu-class="w-[15rem]"
+      :class-names="{ menu: 'w-[15rem]' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

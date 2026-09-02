@@ -25,6 +25,10 @@ interface UseBridgeTransactionActionsReturn {
   ignoreLoading: Readonly<Ref<boolean>>;
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
+  /**
+   * A computed rather than a `readonly()` ref: the notice carries the leg itself, and deep-readonly
+   * does not survive the BigNumber fields its events hold.
+   */
   resolutionNotice: ComputedRef<BridgeResolutionNotice | undefined>;
   confirmCreateCounterpart: (transaction: UnmatchedBridgeTransaction) => void;
   confirmIgnoreSelected: () => void;
@@ -60,14 +64,13 @@ export function useBridgeTransactionActions(
   const modelSelectedUnmatched = ref<string[]>([]);
   const modelSelectedIgnored = ref<string[]>([]);
   const notice = shallowRef<BridgeResolutionNotice>();
-  // Exposed through a computed rather than readonly(): the notice carries the leg itself, and
-  // deep-readonly does not survive the BigNumber fields its events hold.
   const resolutionNotice = computed<BridgeResolutionNotice | undefined>(() => get(notice));
 
   /**
-   * A row that just left the list must not stay selected, otherwise the "ignore selected"
-   * count keeps counting a leg that is no longer actionable. Rows are keyed by the leg
-   * event identifier, since a transaction group can carry several bridge legs.
+   * Drops a row from both selections, so a row that has left the list stops being counted.
+   *
+   * @remarks
+   * Keyed by the leg's event identifier, not the transaction's: one group can carry several legs.
    */
   function deselect(transaction: UnmatchedBridgeTransaction): void {
     const rowId = transaction.identifier.toString();
@@ -84,15 +87,12 @@ export function useBridgeTransactionActions(
   }
 
   /**
-   * Reversible work reports itself with an undo affordance instead of asking first with a
-   * modal: both ignoring and resolving as external are undone by the same unlink call,
-   * which the backend uses to clear the marker and restore the event from its backup.
+   * Reversible work reports with an undo affordance rather than asking first with a modal: both
+   * ignoring and resolving as external are undone by the same unlink call.
    *
-   * It reports in the panel the action was taken from rather than as a notification, so the
-   * outcome and its undo sit next to the list they changed. Only the latest resolution is
-   * held, which costs nothing durable: resolving as external also writes the leg to
-   * `history_event_link_ignores`, so it lands in the ignored tab and keeps a Restore there
-   * long after the notice is gone.
+   * Reported in the panel the action came from, so the outcome and its undo sit beside the list they
+   * changed. Holding only the latest resolution costs nothing durable — resolving as external also
+   * writes the leg to `history_event_link_ignores`, which keeps a Restore in the ignored tab.
    */
   function reportResolution(message: string, transaction: UnmatchedBridgeTransaction): void {
     set(notice, { message, transaction });
@@ -138,8 +138,6 @@ export function useBridgeTransactionActions(
     try {
       await unlinkBridgeTransaction(transaction.identifier);
       deselect(transaction);
-      // Whether the restore came from the notice's undo or from the row's own action, the
-      // notice now describes something that is no longer true.
       if (get(notice)?.transaction.identifier === transaction.identifier)
         dismissResolution();
 

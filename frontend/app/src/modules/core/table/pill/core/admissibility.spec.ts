@@ -36,8 +36,7 @@ describe('pruneInadmissible', () => {
     ]);
   });
 
-  // An empty pill filters nothing, and leaving one behind would read as an active filter.
-  it('should remove the filter entirely when no value survives', () => {
+  it('should remove the filter entirely when no value survives, rather than leave an empty pill', () => {
     const pruned = pruneInadmissible(state(['spend'], ['airdrop']), fields(admitsSubtypes));
 
     expect(pruned).toStrictEqual([{ fieldKey: 'eventTypes', op: 'is', values: ['spend'] }]);
@@ -49,9 +48,7 @@ describe('pruneInadmissible', () => {
     expect(pruneInadmissible(input, fields(admitsSubtypes))).toBe(input);
   });
 
-  // The option lists are store-backed, so "nothing admitted" is indistinguishable from "the mapping
-  // has not loaded". Wiping the user's selection on a cold start is the worse reading.
-  it('should admit everything when the field knows of no values yet', () => {
+  it('should admit everything when the field knows of no values yet, rather than wipe the selection on a store that has not loaded', () => {
     const input = state(['spend'], ['fee', 'airdrop']);
 
     expect(pruneInadmissible(input, fields(() => []))).toBe(input);

@@ -22,7 +22,7 @@ defineSlots<{
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'bottom' }"
+    :options="{ placement: 'bottom' }"
     :open-delay="250"
     :close-delay="0"
   >

@@ -100,8 +100,6 @@ describe('route query schemas', () => {
     });
   });
 
-  // The url shape used to be restated per table beside a field list that already said the same
-  // thing, so the two could disagree with nothing to catch it.
   describe('routeSchemaFromFields', () => {
     const single: FieldDef = toMatchFieldDef({ key: 'location', label: 'Location', multiple: false });
     const many: FieldDef = toMatchFieldDef({ key: 'counterparties', label: 'Protocol', multiple: true });
@@ -118,17 +116,14 @@ describe('route query schemas', () => {
         .toStrictEqual({ counterparties: ['uniswap-v2', 'curve'] });
     });
 
-    // A collapsed range/date pill carries its own display key ('amount', 'period'), which is not a
-    // wire key: what the url and the request carry are its two bounds.
-    it('should expand a bounds field into its two wire keys and leave its own key out', () => {
+    it('should expand a bounds field into its two wire keys and leave its own key out, since a collapsed pill key is a display name rather than a wire one', () => {
       const amount = toRangeFieldDef({ key: 'amount', label: 'Amount', lowerKey: 'minAmount', upperKey: 'maxAmount' });
 
       expect(routeSchemaFromFields([amount]).parse({ amount: '5', maxAmount: '10', minAmount: '1' }))
         .toStrictEqual({ maxAmount: '10', minAmount: '1' });
     });
 
-    // A param-bound field is not part of the filter bag: its own source reads it back off the query.
-    it('should leave a param-bound field out of the filter bag', () => {
+    it('should leave a param-bound field out of the filter bag, its own source reading it back', () => {
       const owned = toParamFieldDef({
         key: 'owned',
         label: 'Owned',
@@ -155,8 +150,7 @@ describe('route query schemas', () => {
       expect(behaviourKeysFromFields(fields)).toStrictEqual(['entryTypes']);
     });
 
-    // A param carries a plain list with no form for the `!` negation, so it never wraps.
-    it('should never name a param-bound field', () => {
+    it('should never name a param-bound field, a param having no form for the `!` negation', () => {
       const state = toParamFieldDef({ key: 'state', label: 'State', paramKey: 'stateMarkers', to: 'request' });
 
       expect(behaviourKeysFromFields([state])).toStrictEqual([]);

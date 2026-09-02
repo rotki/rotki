@@ -114,7 +114,7 @@ onMounted(() => {
     persistent
   >
     <RuiCard
-      content-class="!pt-1.5"
+      :class-names="{ content: '!pt-1.5' }"
       class="max-h-[90vh]"
     >
       <template #header>

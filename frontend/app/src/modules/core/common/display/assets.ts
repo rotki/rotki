@@ -185,18 +185,17 @@ function levenshtein(a: string, b: string): number {
 }
 
 /**
+ * Ranks two strings by how well each matches a search keyword, as a comparator.
  *
- * @param {string} a - First string to compare
- * @param {string} b - Second string to compare
- * @param {string} keyword
+ * @remarks
+ * Levenshtein distance decides most of it, but two things outrank it, in order: a string that
+ * matches from the *beginning* (for `hop`, `hop-protocol` beats `hoo`), then a string that merely
+ * contains* the keyword (for `urv`, `curvy` beats `urw`).
  *
- * @return {number} - Rank comparison between string `a` to keyword and string `b` to keyword.
- *
- * @description
- * This method use levenshtein to compare the string, but with little modifications.
- * This method will prioritize this thing (in order) other than the value from levenshtein:
- * 1. It will prioritize string that match from beginning (i.e. for keyword `hop`, it prioritizes string `hop-protocol` higher than string `hoo`)
- * 2. It will prioritize string that contain the keyword (i.e. for keyword `urv`, it prioritizes string `curvy`, higher than string `urw`)
+ * @param a - the first candidate
+ * @param b - the second candidate
+ * @param keyword - the search term; lower-cased and trimmed before comparison
+ * @returns a negative number when `a` ranks higher, positive when `b` does, 0 when they tie
  */
 export function compareTextByKeyword(a: string, b: string, keyword: string): number {
   const search = keyword.toLocaleLowerCase().trim();
@@ -285,14 +284,6 @@ export function assetSearchTokens(
   identifier: string,
   info?: { name?: string | null; symbol?: string | null } | null,
 ): AssetSearchTokens {
-  // An asset the backend has no name for is given the `EVM Token: 0x…` stand-in, which is neither
-  // a name nor absent. Taken at face value it makes every such asset answer to "evm" and to "token",
-  // and it smuggles the raw address in as a name, past the minimum length that guards address
-  // matching. Treating it as no name at all leaves the address as the one way to find these.
-  //
-  // Only the stand-in is dropped, not everything `hasAssetMetadata` rejects: that also rejects a
-  // symbol equal to the identifier, which is what BTC, ETH and every non-EVM asset have, and those
-  // are exactly the symbols people type.
   const standIn = getAssetNameFallback(identifier);
   const searchable = (value?: string | null): string => {
     const trimmed = value?.trim() ?? '';
@@ -323,18 +314,19 @@ function addressMatchesKeyword(address: string, keyword: string): boolean {
 /**
  * Whether an asset matches a keyword, which must already be tokenized with `getTextToken`.
  *
+ * @remarks
  * Matching an asset by its contract address is deliberate: pasting an address is how you look up a
  * token you have no name for, and it is the only handle an asset without metadata has.
+ *
+ * Metadata arrives asynchronously, so every arm here has to keep an unresolved asset matchable:
+ * absent tokens fail open, a pasted identifier matches whole, and an asset with neither symbol nor
+ * name falls back to its identifier. Tightening any of them makes a row appear and then vanish as
+ * the asset resolves, or reports "no results" for something the list does contain.
  */
 export function assetTokensMatch(tokens: AssetSearchTokens | undefined, keyword: string): boolean {
-  // Nothing is known about this asset, so there is no ground to hide its row on. Failing open keeps
-  // a row the user can see rather than reporting no results for something the list does contain.
   if (!tokens)
     return true;
 
-  // Pasting a whole identifier is unambiguous, and it has to keep matching after the metadata
-  // lands: the identifier is longer than the address inside it, so no other arm can carry it, and
-  // the row would appear and then vanish as the asset resolves.
   if (keyword === tokens.identifier)
     return true;
 
@@ -347,9 +339,6 @@ export function assetTokensMatch(tokens: AssetSearchTokens | undefined, keyword:
   if (addressMatchesKeyword(tokens.address, keyword))
     return true;
 
-  // Metadata resolves asynchronously, so an asset can have neither a name nor a symbol yet. The
-  // identifier is then all there is; without it the row is dropped and the table reports "no
-  // results" for something the list does contain.
   if (!tokens.symbol && !tokens.name)
     return tokens.identifier.includes(keyword);
 
@@ -363,6 +352,17 @@ export function assetTokensExactlyMatch(tokens: AssetSearchTokens | undefined, k
   return tokens.symbol === keyword || tokens.name === keyword;
 }
 
+/**
+ * Builds the debounced inline asset suggester for a filter input.
+ *
+ * @remarks
+ * Ignored assets are filtered out, matching every other asset input. Leaving them in makes one
+ * field behave two ways: an asset offered while typing would be missing from the checklist the
+ * pill opens.
+ *
+ * Call this once and hold the result. The suggester owns the debounce timer, so rebuilding it
+ * per keystroke hands each one a fresh timer that cancels nothing.
+ */
 export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, location?: string): (keyword: string) => Promise<AssetsWithId> {
   let pending: AbortController | null = null;
 
@@ -389,11 +389,6 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
     });
     pending = null;
 
-    // Ignored assets are hidden by every asset input in the app - `AssetSelect` defaults
-    // `showIgnored` to false and only a fee entry opts in - and the pill bar's own asset editor
-    // goes through `useAssetSearch`, which filters them. Leaving them in the inline suggestions
-    // made one field behave two ways: a spam asset offered while typing in the bar could not be
-    // found in the checklist the pill opens.
     return result.filter(({ identifier }) => !isAssetIgnored(identifier));
   }, 200);
 }

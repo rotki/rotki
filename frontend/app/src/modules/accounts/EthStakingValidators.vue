@@ -24,7 +24,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Use composables
 const {
   cols,
   ethStakingValidators,
@@ -38,8 +37,13 @@ const {
 
 const pillLabels = usePillBarLabels();
 
-// Every pill on this table is filter-bound, so a saved view is its `matches` alone. `params` stays
-// in the stored shape because it is the bar's own serialized form, shared with the param-bound bars.
+/**
+ * The saved-view state for this table's bar.
+ *
+ * @remarks
+ * Every pill here is filter-bound, so a saved view is its `matches` alone. `params` stays in the
+ * shape the store expects, since that shape is shared with the param-bound bars.
+ */
 const pillState = computed<SavedViewState>(() => ({
   matches: get(filters),
   params: {},

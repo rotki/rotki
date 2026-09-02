@@ -86,11 +86,17 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     return true;
   };
 
+  /**
+   * Queries one online source as its own native activity.
+   *
+   * @remarks
+   * A source the user has switched off or never authenticated resolves as {@link Skipped} rather
+   * than a success: it submits no activity at all, so reporting it as one would let a refresh that
+   * ran nothing look complete.
+   */
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType, parent?: ActivityId): Promise<Result<void, TaskError>> => {
-    // A source the user has switched off or never authenticated is a skip, not a success: it submits
-    // no activity at all, so reporting it as one would let a refresh that ran nothing look complete.
     if (!(await canQueryOnlineEvent(queryType)))
-      return err(Skipped({ message: `${queryType} is not available` }));
+      return err(Skipped({ message: t('actions.online_events.skipped.unavailable', { queryType: queryTypeLabel(queryType) }) }));
 
     logger.debug(`querying for ${queryType} events`);
 

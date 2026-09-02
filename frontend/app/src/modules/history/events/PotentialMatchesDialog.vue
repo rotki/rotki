@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
+import { useMovementUnmatchableExplanation } from '@/modules/history/events/use-untracked-movement-destination';
 import { PinnedNames } from '@/modules/session/types';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 const { pin } = usePinnedPanel(PinnedNames.MATCH_ASSET_MOVEMENTS);
+const { unmatchableExplanation: emptyExplanation } = useMovementUnmatchableExplanation(() => movement);
 
 function closeDialog(): void {
   set(modelValue, false);
@@ -50,7 +52,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
     v-model="modelValue"
     max-width="1000"
   >
-    <RuiCard content-class="!pb-0">
+    <RuiCard :class-names="{ content: '!pb-0' }">
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 pt-2">
           <CardTitle>
@@ -68,6 +70,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
 
       <PotentialMatchesContent
         :movement="movement"
+        :empty-explanation="emptyExplanation"
         @close="closeDialog()"
         @matched="onMatched()"
         @show-in-events="showPotentialMatchInEvents($event)"

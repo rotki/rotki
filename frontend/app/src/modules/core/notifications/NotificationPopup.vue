@@ -63,7 +63,7 @@ watch(showNotificationBar, (showNotificationBar) => {
       <div class="flex justify-between p-2 items-center border-t border-default">
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'right' }"
+          :options="{ placement: 'right' }"
         >
           <template #activator>
             <RuiChip
@@ -79,7 +79,7 @@ watch(showNotificationBar, (showNotificationBar) => {
 
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'left' }"
+          :options="{ placement: 'left' }"
         >
           <template #activator>
             <RuiButton

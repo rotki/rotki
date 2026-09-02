@@ -43,8 +43,7 @@ describe('decorateSharedField', () => {
     expect(decorateSharedField(field(), SharedFieldKinds.LOCATION, resolvers).resolveLabel?.('kraken')).toBe('location:kraken');
   });
 
-  // Both are hex and both are shortened, but only an address is an identity worth a face.
-  it('should tell an address apart from a transaction hash', () => {
+  it('should tell an address apart from a transaction hash, only one being an identity worth a face', () => {
     const address = decorateSharedField(field(), SharedFieldKinds.ADDRESS, resolvers);
     const txHash = decorateSharedField(field(), SharedFieldKinds.TX_HASH, resolvers);
 
@@ -54,24 +53,18 @@ describe('decorateSharedField', () => {
     expect(txHash.resolveLabel?.('0xabc')).toBe('short:0xabc');
   });
 
-  // What a hash means to the backend stays with the table's matcher: history's transaction filter
-  // accepts a signature as well as a hash, which no shape check here would know about.
-  it('should leave transaction hash validation to the field it decorates', () => {
+  it('should leave transaction hash validation to the field it decorates, since history accepts a signature as well as a hash', () => {
     const validate = (value: string): boolean => value === 'only-this';
     const decorated = decorateSharedField(field({ validate }), SharedFieldKinds.TX_HASH, resolvers);
 
     expect(decorated.validate).toBe(validate);
   });
 
-  // An address is different: it is sent as an address, and the backend answers anything it cannot
-  // place with a 400. A table opting out of that (the address book matcher validated nothing) meant
-  // a half-typed address was both offered as a suggestion and applied on closing the editor.
-  it('should validate an address whatever the field says', () => {
+  it('should validate an address of any ecosystem whatever the field says, since the backend answers one it cannot place with a 400', () => {
     const decorated = decorateSharedField(field({ validate: () => true }), SharedFieldKinds.ADDRESS, resolvers);
 
     expect(decorated.validate?.('0x')).toBe(false);
     expect(decorated.validate?.('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbB')).toBe(true);
-    // Every ecosystem the backend accepts, not just EVM.
     expect(decorated.validate?.('13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB')).toBe(true);
     expect(decorated.validate?.('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')).toBe(true);
   });

@@ -17,9 +17,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const operatorLabels = useOperatorLabels();
 
-// The `autofocus` attribute is ignored for an input inserted into an already-loaded document, so
-// the first bound is focused explicitly once the popover exists: opening the editor should leave
-// the caret ready to type, not require a click.
+// `autofocus` is ignored for an input inserted into an already-loaded document, hence the explicit focus below.
 const firstField = useTemplateRef<{ focus?: () => void }>('firstField');
 
 onMounted(async () => {
@@ -31,8 +29,7 @@ const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
 const showMin = computed<boolean>(() => filter.op !== FilterOps.LT);
 const showMax = computed<boolean>(() => filter.op !== FilterOps.GT);
 
-// Local inputs so typing stays responsive; the filter update is debounced (below) rather than
-// pushed on every keystroke, so the table is not refetched mid-edit.
+// Local drafts: the committed filter is updated on a debounce, so the table is not refetched per keystroke.
 const minInput = ref<string>(filter.range?.min ?? '');
 const maxInput = ref<string>(filter.range?.max ?? '');
 
@@ -41,8 +38,7 @@ watch(() => filter.range, (range) => {
   set(maxInput, range?.max ?? '');
 });
 
-// A filled max below a filled min is rejected: the update is not pushed and the field shows an
-// inline error until it is corrected, so the bar never filters on an impossible range.
+// A half-filled or non-numeric range is not invalid, only a filled max below a filled min.
 const invalid = computed<boolean>(() => {
   const min = Number(get(minInput));
   const max = Number(get(maxInput));
@@ -54,9 +50,13 @@ const invalid = computed<boolean>(() => {
 // Both fields carry the error so the guard is visible whichever bound the user is editing.
 const rangeError = computed<string[]>(() => (get(invalid) ? [t('transactions.filter.range_max_below_min')] : []));
 
-// Enter commits straight away instead of waiting out the debounce, and closes the editor, so a
-// range can be typed and applied without reaching for the mouse. An invalid range stays open with
-// its error showing.
+/**
+ * Pushes the typed range without waiting out the debounce, then closes the editor.
+ *
+ * @remarks
+ * Bound to Enter. An invalid range is a no-op: the editor stays open showing its error rather than
+ * closing on a range that was never applied.
+ */
 function commitAndClose(): void {
   if (get(invalid))
     return;
@@ -94,9 +94,15 @@ onBeforeUnmount(() => {
     emitRange();
 });
 
-// Keep only the bound(s) the new operator shows, so a stale value can never leak into the pill
-// (a "greater than" pill must not still carry a max). Read from what is typed rather than what
-// was committed, or switching operators before the debounce lands would discard it.
+/**
+ * Drops whichever bound the given operator does not display, so a "greater than" pill cannot still
+ * carry a max.
+ *
+ * @remarks
+ * Reads the typed drafts, not the committed filter, so switching operators inside the debounce
+ * window keeps what was just typed.
+ * @param op - the operator being switched to, which decides which bounds survive
+ */
 function retainedRange(op: FilterOp): { min?: string; max?: string } {
   const current = currentRange();
   const range: { min?: string; max?: string } = {};

@@ -112,10 +112,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
       ? t('actions.repulling_transaction.task.description', messagePayload)
       : t('actions.repulling_transaction.task.no_address_or_chain_transaction', messagePayload);
 
-    // The operation *and* its payload are the identity. `REPULLING` covers three unrelated backend
-    // calls, and all three submitted under the bare kind: a second re-pull of any of them started
-    // while another was live was deduped onto it and returned "no new events" without doing any
-    // work, and cancelling "repulling" killed whichever of the three happened to own the record.
     const outcome = await submitTask<RepullingTransactionResponse | undefined>({
       id: repullTransactionsActivityId(payload),
       kind: ActivityKind.REPULLING,
@@ -157,7 +153,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const outcome = await submitTask<RepullingExchangeEventsResponse>({
       id: makeActivityId(
         ActivityKind.REPULLING,
-        ActivityPart.EXCHANGE_EVENTS,
+        ActivityPart.EXCHANGE,
         payload.location,
         payload.name,
         payload.fromTimestamp ?? 0,
@@ -206,7 +202,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const outcome = await submitTask<RepullingEthStakingResponse>({
       id: makeActivityId(
         ActivityKind.REPULLING,
-        ActivityPart.STAKING,
+        ActivityPart.STAKE,
         payload.entryType,
         payload.fromTimestamp ?? 0,
         payload.toTimestamp ?? 0,

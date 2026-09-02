@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
+import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useAssetMovementActions } from '@/modules/history/events/use-asset-movement-actions';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 
@@ -39,12 +40,16 @@ const {
   confirmIgnoreAllFiat,
   confirmIgnoreSelected,
   confirmRestoreSelected,
+  dismissResolution,
   fiatMovements,
   ignoreLoading,
   ignoreMovement,
+  markExternal,
   restoreMovement,
   modelSelectedIgnored,
   modelSelectedUnmatched,
+  resolutionNotice,
+  undoResolution,
 } = useAssetMovementActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
@@ -63,9 +68,10 @@ function handleAction({ action, item }: UnmatchedActionPayload<UnmatchedAssetMov
     case UNMATCHED_ACTIONS.SHOW_IN_EVENTS:
       emit('show-in-events', item);
       break;
-    // movements have no counterpart to create or mark external
-    case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
     case UNMATCHED_ACTIONS.MARK_EXTERNAL:
+      startPromise(markExternal(item));
+      break;
+    case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
       break;
   }
 }
@@ -104,6 +110,16 @@ onBeforeMount(async () => {
       </RuiChip>
     </RuiTab>
   </RuiTabs>
+
+  <UnmatchedResolutionStrip
+    v-if="resolutionNotice"
+    :message="resolutionNotice.message"
+    :loading="ignoreLoading"
+    class="shrink-0"
+    :class="isPinned ? 'mx-3 mt-3' : 'mt-4'"
+    @undo="startPromise(undoResolution())"
+    @dismiss="dismissResolution()"
+  />
 
   <!-- Pinned bypasses RuiTabItems: it sizes itself from its content and hides the overflow, so
        in a bounded column the bottom of the panel - the pager - is silently cut off. Rendering
@@ -187,6 +203,7 @@ onBeforeMount(async () => {
         :class="{ 'h-[30px]': isPinned }"
         :disabled="!isAutoMatchAllowed || modelSelectedUnmatched.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
+        data-testid="ignore-selected"
         @click="confirmIgnoreSelected()"
       >
         {{ t('asset_movement_matching.actions.ignore_selected') }}
@@ -201,8 +218,8 @@ onBeforeMount(async () => {
       </RuiButton>
       <RuiTooltip
         :open-delay="400"
-        :popper="{ placement: 'top' }"
-        tooltip-class="max-w-80"
+        :options="{ placement: 'top' }"
+        :class-names="{ tooltip: 'max-w-80' }"
       >
         <template #activator>
           <RuiButton
@@ -213,6 +230,7 @@ onBeforeMount(async () => {
             :class="{ 'h-[30px]': isPinned }"
             :disabled="!isAutoMatchAllowed || fiatMovements.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
+            data-testid="ignore-fiat"
             @click="confirmIgnoreAllFiat()"
           >
             {{ t('asset_movement_matching.actions.ignore_fiat') }}
@@ -227,8 +245,8 @@ onBeforeMount(async () => {
       >
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
-          tooltip-class="max-w-80"
+          :options="{ placement: 'top' }"
+          :class-names="{ tooltip: 'max-w-80' }"
         >
           <template #activator>
             <RuiButton
@@ -238,6 +256,7 @@ onBeforeMount(async () => {
               :class="{ 'h-[30px] !px-3': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedMovements.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
+              data-testid="auto-match"
               @click="triggerAssetMovementAutoMatching()"
             >
               {{ t('asset_movement_matching.actions.auto_match') }}
@@ -262,6 +281,7 @@ onBeforeMount(async () => {
         :size="buttonSize"
         :disabled="!isAutoMatchAllowed || modelSelectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
+        data-testid="restore-selected"
         @click="confirmRestoreSelected()"
       >
         {{ t('asset_movement_matching.actions.restore_selected') }}
@@ -278,6 +298,7 @@ onBeforeMount(async () => {
     <RuiButton
       v-if="!isPinned"
       variant="text"
+      data-testid="close"
       @click="emit('close')"
     >
       {{ t('common.actions.close') }}

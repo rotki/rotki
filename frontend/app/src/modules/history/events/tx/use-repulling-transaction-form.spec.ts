@@ -52,6 +52,29 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   })),
 }));
 
+const CONFIRMATION_THRESHOLD_ACCOUNT_DAYS = 1825;
+const ETH_ACCOUNTS = 2;
+const DECODABLE_CHAIN_ACCOUNTS = 4;
+const ONE_ACCOUNT = 1;
+const AN_ETH_ADDRESS = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
+const FROM_TIMESTAMP = 1704067200;
+
+function daysExceedingThreshold(accounts: number): number {
+  return Math.floor(CONFIRMATION_THRESHOLD_ACCOUNT_DAYS / accounts) + 1;
+}
+
+function daysWithinThreshold(accounts: number): number {
+  return Math.floor(CONFIRMATION_THRESHOLD_ACCOUNT_DAYS / accounts);
+}
+
+function spanning(days: number, rest: Partial<RepullingTransactionPayload> = {}): RepullingTransactionPayload {
+  return {
+    fromTimestamp: FROM_TIMESTAMP,
+    toTimestamp: FROM_TIMESTAMP + (days * SECONDS_PER_DAY),
+    ...rest,
+  };
+}
+
 describe('shouldShowDateRangePicker', () => {
   it('should return true for blockchain type regardless of exchange', () => {
     expect(shouldShowDateRangePicker(true, undefined)).toBe(true);
@@ -135,7 +158,6 @@ describe('useRepullingTransactionForm', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
 
-    // Reset mocks to default values
     set(mockAccountsPerChain, {
       eth2: [createMockAccount('0x1234567890123456789012345678901234567890', 'eth2')],
       eth: [
@@ -252,13 +274,7 @@ describe('useRepullingTransactionForm', () => {
     it('should return false when accounts * days is below threshold', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 1 account * 10 days = 10 < 1825
-      const data: RepullingTransactionPayload = {
-        address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-        chain: 'eth',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (10 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysWithinThreshold(ONE_ACCOUNT), { address: AN_ETH_ADDRESS, chain: 'eth' });
 
       expect(shouldShowConfirmation(data)).toBe(false);
     });
@@ -266,12 +282,7 @@ describe('useRepullingTransactionForm', () => {
     it('should return true when accounts * days is above threshold', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 2 eth accounts * 1000 days = 2000 > 1825
-      const data: RepullingTransactionPayload = {
-        chain: 'eth',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (1000 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysExceedingThreshold(ETH_ACCOUNTS), { chain: 'eth' });
 
       expect(shouldShowConfirmation(data)).toBe(true);
     });
@@ -279,11 +290,7 @@ describe('useRepullingTransactionForm', () => {
     it('should count all accounts across all chains when no chain specified', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 4 total accounts * 500 days = 2000 > 1825
-      const data: RepullingTransactionPayload = {
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (500 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysExceedingThreshold(DECODABLE_CHAIN_ACCOUNTS));
 
       expect(shouldShowConfirmation(data)).toBe(true);
     });
@@ -291,12 +298,7 @@ describe('useRepullingTransactionForm', () => {
     it('should count all accounts across all chains when chain is all', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 4 total accounts * 500 days = 2000 > 1825
-      const data: RepullingTransactionPayload = {
-        chain: 'all',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (500 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysExceedingThreshold(DECODABLE_CHAIN_ACCOUNTS), { chain: 'all' });
 
       expect(shouldShowConfirmation(data)).toBe(true);
     });
@@ -311,16 +313,10 @@ describe('useRepullingTransactionForm', () => {
       expect(shouldShowConfirmation(data)).toBe(false);
     });
 
-    it('should count 1 account when specific address is provided', () => {
+    it('should count 1 account when specific address is provided, not the whole chain', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 1 account * 100 days = 100 < 1825
-      const data: RepullingTransactionPayload = {
-        address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-        chain: 'eth',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (100 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysExceedingThreshold(ETH_ACCOUNTS), { address: AN_ETH_ADDRESS, chain: 'eth' });
 
       expect(shouldShowConfirmation(data)).toBe(false);
     });
@@ -328,13 +324,7 @@ describe('useRepullingTransactionForm', () => {
     it('should return true when single account exceeds threshold', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 1 account * 2000 days = 2000 > 1825
-      const data: RepullingTransactionPayload = {
-        address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-        chain: 'eth',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (2000 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysExceedingThreshold(ONE_ACCOUNT), { address: AN_ETH_ADDRESS, chain: 'eth' });
 
       expect(shouldShowConfirmation(data)).toBe(true);
     });
@@ -342,12 +332,7 @@ describe('useRepullingTransactionForm', () => {
     it('should return false at exact threshold boundary', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 2 eth accounts * 912 days = 1824 (not > 1825)
-      const data: RepullingTransactionPayload = {
-        chain: 'eth',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (912 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysWithinThreshold(ETH_ACCOUNTS), { chain: 'eth' });
 
       expect(shouldShowConfirmation(data)).toBe(false);
     });
@@ -355,12 +340,7 @@ describe('useRepullingTransactionForm', () => {
     it('should return true just above threshold boundary', () => {
       const { shouldShowConfirmation } = useRepullingTransactionForm();
 
-      // 2 eth accounts * 913 days = 1826 > 1825
-      const data: RepullingTransactionPayload = {
-        chain: 'eth',
-        fromTimestamp: 1704067200,
-        toTimestamp: 1704067200 + (913 * SECONDS_PER_DAY),
-      };
+      const data = spanning(daysExceedingThreshold(ETH_ACCOUNTS), { chain: 'eth' });
 
       expect(shouldShowConfirmation(data)).toBe(true);
     });

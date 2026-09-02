@@ -42,10 +42,6 @@ interface Harness {
   view: UseHistoryEventsViewActionsReturn;
 }
 
-// Every harness keeps its watchers alive, so an un-unmounted one from an earlier test would
-// answer this one's `backgroundLoading` too.
-const mounted: VueWrapper[] = [];
-
 function mountActions(): Harness {
   let view!: UseHistoryEventsViewActionsReturn;
   const Comp = defineComponent({
@@ -66,7 +62,6 @@ function mountActions(): Harness {
     },
   });
   const wrapper = mount(Comp);
-  mounted.push(wrapper);
   return { view, wrapper };
 }
 
@@ -84,8 +79,6 @@ describe('useHistoryEventsViewActions', () => {
   });
 
   afterEach(() => {
-    while (mounted.length > 0)
-      mounted.pop()?.unmount();
     vi.useRealTimers();
     vi.unstubAllEnvs();
   });

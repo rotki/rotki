@@ -218,9 +218,6 @@ describe('forms/SolanaEventForm.vue', () => {
     await wrapper.find('[data-testid=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
     await wrapper.find('[data-testid=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
 
-    // group.counterparty is null, so no counterparty field to set
-    // group.eventSubtype is '', so no eventSubtype field to set
-
     const saveMethod = wrapper.vm.save;
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
@@ -248,7 +245,7 @@ describe('forms/SolanaEventForm.vue', () => {
     });
   });
 
-  it('should not call editHistoryEvent when only updating the historic price', async () => {
+  it('should not call editHistoryEvent when nothing changed', async () => {
     wrapper = createWrapper({
       props: {
         data: {
@@ -259,21 +256,32 @@ describe('forms/SolanaEventForm.vue', () => {
       },
     });
     await vi.advanceTimersToNextTimerAsync();
-    const saveMethod = wrapper.vm.save;
 
-    // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoricalPriceMock.mockResolvedValueOnce(true);
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
 
-    // click save after changing the historic price
+  it('should not call editHistoryEvent when the historic price is the only edit', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event: group,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
     await wrapper.find('[data-testid=primary] input').setValue('1000');
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
   });
@@ -334,7 +342,6 @@ describe('forms/SolanaEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    // Change a field to make the form dirty
     await wrapper.find('[data-testid=amount] input').setValue('200');
 
     editHistoryEventMock.mockResolvedValueOnce({

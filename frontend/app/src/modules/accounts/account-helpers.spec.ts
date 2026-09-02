@@ -94,9 +94,7 @@ describe('sortAndFilterAccounts', () => {
     expect(result.data[0].data).toMatchObject({ address: '0xbbb' });
   });
 
-  // An account has exactly one address, so several picked ones are alternatives rather than
-  // requirements: requiring all of them would match nothing.
-  it('should keep every account among several picked addresses', () => {
+  it('should keep every account among several picked addresses, which are alternatives rather than requirements', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xaaa', '0xccc'] }), { getLabel: noLabel });
     expect(result.data.map(item => item.data)).toMatchObject([{ address: '0xaaa' }, { address: '0xccc' }]);
   });
@@ -107,9 +105,7 @@ describe('sortAndFilterAccounts', () => {
     expect(result.data[0].data).toMatchObject({ address: '0xbbb' });
   });
 
-  // The address is picked from a list, so a fragment of one is not a filter: it would silently
-  // widen what the user chose.
-  it('should not match a picked address by fragment', () => {
+  it('should not match a picked address by fragment, which would silently widen what the user chose', () => {
     const result = sortAndFilterAccounts(accounts(), payload({ addresses: ['0xbb'] }), { getLabel: noLabel });
     expect(result.data).toHaveLength(0);
   });

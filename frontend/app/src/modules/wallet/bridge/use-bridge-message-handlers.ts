@@ -12,7 +12,6 @@ interface BridgeMessageHandlersComposable {
   handleRequest: (message: WalletBridgeRequest) => Promise<WalletBridgeResponse>;
 }
 
-// Response creation helpers
 function createSuccessResponse(id: string | number, result: unknown): WalletBridgeResponse {
   return {
     id,
@@ -33,7 +32,6 @@ function createErrorResponse(id: string | number, code: number, message: string,
   };
 }
 
-// Configuration constants
 const REQUEST_CONFIG = {
   RETRY_DELAY: 500,
 } as const;
@@ -56,7 +54,6 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
   const { addLog } = useBridgeLogging();
   const { trackAccountsRequest } = useWalletConnectionState();
 
-  // Reset the flag when provider changes
   onProviderChanged((newProvider, oldProvider) => {
     hasSuccessfulAccountsRequest = false;
     logger.debug('Provider changed, reset accounts request flag');
@@ -184,9 +181,8 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       return createErrorResponse(message.id, BRIDGE_ERROR_CODES.NO_PROVIDER, 'No browser wallet provider found');
     }
 
-    // Helper function to execute the request
+    /** The provider is initialised lazily, on the first `eth_requestAccounts` and only once. */
     const executeRequest = async (): Promise<unknown> => {
-      // Initialize provider on first eth_requestAccounts call
       if (message.method === 'eth_requestAccounts' && !hasSuccessfulAccountsRequest && 'initialize' in provider && typeof provider.initialize === 'function') {
         try {
           logger.debug('Initializing provider before first eth_requestAccounts');
@@ -195,7 +191,6 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
         }
         catch (error) {
           logger.warn('Provider initialization failed, continuing anyway:', error);
-          // Continue anyway - initialization failure shouldn't block the request
         }
       }
 
@@ -206,12 +201,10 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     };
 
     try {
-      // Try the request - track eth_requestAccounts for connection state
       const result = message.method === 'eth_requestAccounts'
         ? await trackAccountsRequest(executeRequest())
         : await executeRequest();
 
-      // Mark successful eth_requestAccounts call
       if (message.method === 'eth_requestAccounts') {
         hasSuccessfulAccountsRequest = true;
         logger.debug('eth_requestAccounts succeeded, marking flag');
@@ -222,11 +215,9 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     catch (error: unknown) {
       const err = toRpcError(error);
 
-      // Only retry first eth_requestAccounts with 4001 error (proxy initialization issue)
       if (shouldRetryAccountsRequest(message, err))
         return retryAccountsRequest(message, executeRequest);
 
-      // For all other errors, subsequent eth_requestAccounts with 4001, or non-4001 errors
       logger.error('Error handling request:', err);
       return errorResponseFor(message.id, err);
     }
@@ -239,7 +230,6 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
         return rpcResponse;
       }
 
-      // Fall back to standard wallet methods
       return await handleStandardRpcRequest(message);
     }
     catch (error: unknown) {
@@ -268,7 +258,6 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
   };
 
-  // Helper to create event listener with consistent logging and forwarding
   const createEventListener = (eventType: string, logPrefix: string) => (...args: any[]): void => {
     logger.debug(`forwarding: ${logPrefix}:`, ...args);
     sendWalletEvent(eventType, args.length === 1 ? args[0] : args);
@@ -285,12 +274,10 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
       return;
     }
 
-    // Skip if listeners are already set up
     if (providerEventListeners.size > 0) {
       return;
     }
 
-    // Create event listeners with consistent pattern
     const eventConfigs = [
       { logPrefix: 'Wallet accounts changed', type: WALLET_EVENT_TYPES.ACCOUNTS_CHANGED },
       { logPrefix: 'Wallet chain changed', type: WALLET_EVENT_TYPES.CHAIN_CHANGED },

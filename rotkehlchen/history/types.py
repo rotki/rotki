@@ -13,8 +13,9 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
     from rotkehlchen.externalapis.moralis import Moralis
+    from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOracle
 
-HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'Defillama', 'Alchemy', 'Moralis', 'UniswapV2Oracle', 'UniswapV3Oracle']  # noqa: E501
+HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'Defillama', 'Alchemy', 'Moralis', 'CoinbaseHistoricalPriceOracle', 'UniswapV2Oracle', 'UniswapV3Oracle']  # noqa: E501
 
 
 class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
@@ -29,6 +30,7 @@ class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
     UNISWAPV3 = 8
     ALCHEMY = 9
     MORALIS = 10
+    COINBASE = 11
 
 
 NOT_EXPOSED_SOURCES = (

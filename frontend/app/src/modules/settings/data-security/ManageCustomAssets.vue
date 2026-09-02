@@ -33,30 +33,48 @@ async function importZip(): Promise<void> {
   set(zip, undefined);
 }
 
+/**
+ * The notification an export result deserves, if any.
+ *
+ * @remarks
+ * A success in the web build earns none. The browser shows its own download prompt, and a second
+ * confirmation from the app would only repeat it. A desktop export picks a directory first, so its
+ * path is worth reporting, because nothing else tells the user where the file went.
+ *
+ * @param result - what the export returned, which names either a failure or a written file
+ * @returns the payload to notify with, or `undefined` when the export should pass silently
+ */
+function exportNotification(result: Awaited<ReturnType<typeof exportCustomAssets>>): Parameters<typeof notify>[0] | undefined {
+  const title = t('manage_user_assets.export.title');
+
+  if ('success' in result && !result.success) {
+    return {
+      display: true,
+      message: t('manage_user_assets.export.error', { message: result.message }),
+      severity: Severity.ERROR,
+      title,
+    };
+  }
+
+  if ('filePath' in result && result.directory) {
+    return {
+      display: true,
+      message: t('manage_user_assets.export.success', { filePath: result.filePath }),
+      severity: Severity.INFO,
+      title,
+    };
+  }
+
+  return undefined;
+}
+
 async function exportZip(): Promise<void> {
   if (get(exporting))
     return;
 
-  const result = await exportCustomAssets();
-
-  // Only show notification for errors or when running in Electron (directory provided)
-  // In web case, user sees the browser download prompt
-  if ('success' in result && !result.success) {
-    notify({
-      display: true,
-      message: t('manage_user_assets.export.error', { message: result.message }),
-      severity: Severity.ERROR,
-      title: t('manage_user_assets.export.title'),
-    });
-  }
-  else if ('filePath' in result && result.directory) {
-    notify({
-      display: true,
-      message: t('manage_user_assets.export.success', { filePath: result.filePath }),
-      severity: Severity.INFO,
-      title: t('manage_user_assets.export.title'),
-    });
-  }
+  const notification = exportNotification(await exportCustomAssets());
+  if (notification)
+    notify(notification);
 }
 </script>
 

@@ -77,10 +77,9 @@ describe('snapshotSummary', () => {
     expect(mountSummary({ snapshot: withNft }).find('[data-testid=snapshot-summary-exclude-nfts]').exists()).toBe(true);
   });
 
-  it('should show the reconcile alert when a mismatch is provided', () => {
+  it('should show the reconcile alert, without offering the locations sum, when a mismatch is provided', () => {
     const wrapper = mountSummary({ mismatch: { balancesSum: bigNumberify(100), locationsSum: bigNumberify(90), storedTotal: bigNumberify(100) } });
     expect(wrapper.find('[data-testid=snapshot-summary-reconcile]').exists()).toBe(true);
-    // The stored total can no longer be set to the locations sum.
     expect(wrapper.find('[data-testid=snapshot-summary-use-locations]').exists()).toBe(false);
   });
 

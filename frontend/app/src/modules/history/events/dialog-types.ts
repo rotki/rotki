@@ -40,8 +40,6 @@ export type DialogShowOptions =
   | { type: typeof DIALOG_TYPES.REPULLING_TRANSACTION }
   | { type: typeof DIALOG_TYPES.TRANSACTION_FORM; data?: AddTransactionHashPayload };
 
-// Type-safe event handlers based on dialog types
-// Common toggle options for history events filtering
 export interface HistoryEventsToggles {
   matchExactEvents: boolean;
   showIgnoredAssets: boolean;

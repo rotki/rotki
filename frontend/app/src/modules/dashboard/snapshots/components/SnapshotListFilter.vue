@@ -9,9 +9,10 @@ const modelValue = defineModel<SnapshotListFilters>({ required: true });
 const fields = useSnapshotListFields();
 const pillLabels = usePillBarLabels();
 
-// The page's model is the `{ fromTimestamp, toTimestamp }` object the list filters on; the bar
-// speaks the flat keyword map. The bridge is why this component exists, the same way
-// `KrakenDateFilter` exists.
+/**
+ * The page's `{ fromTimestamp, toTimestamp }` model, as the flat keyword map the pill bar speaks.
+ * Bridging the two is why this component exists, the same way `KrakenDateFilter` does.
+ */
 const matches = toSnapshotListMatches(modelValue);
 </script>
 

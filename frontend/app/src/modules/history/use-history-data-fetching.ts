@@ -15,16 +15,11 @@ interface UseHistoryDataFetchingReturn {
 /**
  * In-flight reads, shared across every caller of this composable.
  *
- * The location set is read at flow boundaries, and a single flow ending produces several of them:
- * a redecode handler fetches when it finishes, the auto-fetch fetches when the run settles, and a
- * modification watcher may fire in between. Each is correct on its own, and none can see the
- * others — measured on a scoped redecode that did 3 decodes, they produced 5 reads of an identical
- * result, two of them in the same second.
+ * One flow ending produces several reads of the location set — the redecode handler, the auto-fetch
+ * and a modification watcher can all fire around the same boundary, and none can see the others.
  *
- * Joining rather than caching: a caller always gets a promise that resolves once the data is
- * current. Nothing is ever skipped, so a manual add that creates a location still reads it
- * immediately, even if a redecode read the set a moment earlier. Only genuinely concurrent reads
- * collapse.
+ * Joining rather than caching: a caller always gets a promise resolving once the data is current, so
+ * nothing is skipped and only genuinely concurrent reads collapse.
  *
  * Module scope, not composable scope: `useHistoryDataFetching` is a plain function, so each caller
  * gets its own closure and per-instance state would not be shared.

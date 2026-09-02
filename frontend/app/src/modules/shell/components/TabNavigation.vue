@@ -35,7 +35,6 @@ function getTabKey(route: RouteLocationRaw): string {
         :model-value="tab.route"
         link
         :to="tab.route"
-        :exact-path="false"
         data-testid="nav-tab"
         :data-key="getTabKey(tab.route)"
       >

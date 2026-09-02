@@ -54,9 +54,14 @@ vi.mock('@/modules/shell/layout/use-navigation', () => ({
   useAppNavigation: vi.fn(() => ({ navigateToUserCreation: vi.fn() })),
 }));
 
+function resetHoistedRefs(): void {
+  set(stateRef, { kind: UnlockPhase.idle });
+  set(upgradeVisibleRef, false);
+  set(errorsRef, []);
+  set(loadingRef, false);
+}
+
 function mountPage(pinia: Pinia): VueWrapper {
-  // UserHost wraps the form/stage in its default slot; render the slot so the children
-  // are mounted (as shallow stubs) and findable.
   return shallowMount(LoginPage, {
     global: { plugins: [pinia], stubs: { UserHost: { template: '<div><slot /></div>' } } },
   });
@@ -69,14 +74,7 @@ describe('pages/user/login', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
-    // These refs are hoisted module-level singletons shared by every test, so
-    // reset all of them (not just `stateRef`) to their initial values. Without
-    // this, a test that flips `upgradeVisibleRef`/`errorsRef`/`loadingRef`
-    // leaks that state into whichever test runs next under a shuffled order.
-    set(stateRef, { kind: UnlockPhase.idle });
-    set(upgradeVisibleRef, false);
-    set(errorsRef, []);
-    set(loadingRef, false);
+    resetHoistedRefs();
   });
 
   it('should show the login form on the idle phase', () => {

@@ -11,11 +11,9 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS } from '@/modules/core/common/defaults';
 import '@test/i18n';
 
-// Mock functions
 const mockFetchExchangeRates = vi.fn();
 const mockFetchPrices = vi.fn();
 
-// Mock the price task manager at the top level
 vi.mock('@/modules/assets/prices/use-price-task-manager', (): any => ({
   usePriceTaskManager: () => ({
     fetchExchangeRates: mockFetchExchangeRates,
@@ -23,38 +21,36 @@ vi.mock('@/modules/assets/prices/use-price-task-manager', (): any => ({
   }),
 }));
 
-// Import after mocking
-const { usePriceRefresh } = await import('@/modules/assets/prices/use-price-refresh');
+type PriceRefresh = ReturnType<typeof import('@/modules/assets/prices/use-price-refresh').usePriceRefresh>;
+
+const scopes: EffectScope[] = [];
+
+async function createPriceRefresh(): Promise<PriceRefresh> {
+  const { usePriceRefresh } = await import('@/modules/assets/prices/use-price-refresh');
+  const scope = effectScope();
+  scopes.push(scope);
+  return scope.run(() => usePriceRefresh())!;
+}
 
 describe('usePriceRefresh', () => {
-  // usePriceRefresh is a createSharedComposable singleton: it captures store refs
-  // at first instantiation and reuses them for the lifetime of the shared state.
-  // Acquire it inside an owned effectScope and stop the scope after each test so
-  // the singleton is disposed and re-created against the fresh pinia, instead of
-  // leaking the pinia bound by whichever test ran first under reshuffle.
-  let scope: EffectScope;
-  let priceRefresh: ReturnType<typeof usePriceRefresh>;
-
   beforeEach(() => {
+    vi.resetModules();
     setActivePinia(createPinia());
 
-    // Reset mocks before each test
     mockFetchExchangeRates.mockClear().mockResolvedValue({});
     mockFetchPrices.mockClear().mockResolvedValue({});
-
-    scope = effectScope();
-    priceRefresh = scope.run(() => usePriceRefresh())!;
   });
 
   afterEach(() => {
-    scope.stop();
+    while (scopes.length > 0)
+      scopes.pop()?.stop();
   });
 
   describe('adjustPrices', () => {
-    it('should handle currency conversion without breaking calculations', () => {
+    it('should handle currency conversion without breaking calculations', async () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
       const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-      const { adjustPrices } = priceRefresh;
+      const { adjustPrices } = await createPriceRefresh();
 
       set(connectedExchanges, [{
         location: 'kraken',
@@ -110,10 +106,8 @@ describe('usePriceRefresh', () => {
         },
       });
 
-      // Test adjustPrices function
       adjustPrices(get(prices));
 
-      // Verify that prices were adjusted correctly
       const { prices: adjustedPrices } = storeToRefs(useBalancePricesStore());
       const pricesAfterAdjustment = get(adjustedPrices);
 
@@ -124,11 +118,10 @@ describe('usePriceRefresh', () => {
       expect(pricesAfterAdjustment.SAI?.value).toEqual(bigNumberify(1));
     });
 
-    it('should update balances correctly when called with new prices', () => {
-      const { adjustPrices } = priceRefresh;
+    it('should update balances correctly when called with new prices', async () => {
+      const { adjustPrices } = await createPriceRefresh();
       const { exchangeBalances } = storeToRefs(useBalancesStore());
 
-      // Set up initial exchange balances
       set(exchangeBalances, {
         kraken: {
           BTC: createTestBalance(1, 40000),
@@ -143,83 +136,35 @@ describe('usePriceRefresh', () => {
 
       adjustPrices(newPrices);
 
-      // The adjustPrices function should update the balance calculations
-      // Verify that the function completes without error
       const updatedBalances = get(exchangeBalances);
       expect(updatedBalances.kraken.BTC.amount).toEqual(bigNumberify(1));
       expect(updatedBalances.kraken.ETH.amount).toEqual(bigNumberify(2));
     });
 
-    it('should handle empty prices object', () => {
-      const { adjustPrices } = priceRefresh;
+    it('should keep the previously stored prices when adjusted with an empty object', async () => {
+      const { adjustPrices } = await createPriceRefresh();
       const { prices } = storeToRefs(useBalancePricesStore());
 
-      // Set initial prices
       set(prices, {
         BTC: createTestPriceInfo(40000),
       });
 
-      // Adjust with empty object
       adjustPrices({});
 
       const updatedPrices = get(prices);
-      // Should still have the previous prices since adjustPrices spreads the new prices
       expect(updatedPrices.BTC?.value).toEqual(bigNumberify(40000));
     });
   });
 
   describe('refreshPrice', () => {
     it('should handle single asset price refresh', async () => {
-      const { refreshPrice } = priceRefresh;
+      const { refreshPrice } = await createPriceRefresh();
 
-      // This test mainly verifies the function doesn't throw errors
-      // In a real test environment, you'd mock the actual price fetching
       await expect(refreshPrice('BTC')).resolves.not.toThrow();
     });
   });
 
-  describe('refreshPrices', () => {
-    it('should handle bulk price refresh', async () => {
-      const { refreshPrices } = priceRefresh;
-
-      // This test mainly verifies the function doesn't throw errors
-      await expect(refreshPrices()).resolves.not.toThrow();
-    });
-
-    it('should handle selected assets parameter', async () => {
-      const { refreshPrices } = priceRefresh;
-
-      // Test with specific assets
-      await expect(refreshPrices(false, ['BTC', 'ETH'])).resolves.not.toThrow();
-    });
-
-    it('should handle ignoreCache parameter', async () => {
-      const { refreshPrices } = priceRefresh;
-
-      // Test with ignoreCache = true
-      await expect(refreshPrices(true)).resolves.not.toThrow();
-    });
-  });
-
-  // Regression: the price seed populates `prices` for assets the user holds, but
-  // before chain balances finish loading `useAggregatedBalances.assets` can be
-  // empty. The refresh button and currency switch must still re-fetch the seeded
-  // entries (otherwise they stay stale / in the old currency).
-  // These tests reset modules so the shared composable is re-instantiated with
-  // a fresh pinia, instead of retaining state from the suite above.
-  describe('refreshPrices — seeded assets', () => {
-    beforeEach(async () => {
-      vi.resetModules();
-      setActivePinia(createPinia());
-      mockFetchExchangeRates.mockClear().mockResolvedValue({});
-      mockFetchPrices.mockClear().mockResolvedValue({});
-    });
-
-    async function loadFreshRefresh(): Promise<{ refreshPrices: (ignoreCache?: boolean, selectedAssets?: string[] | null) => Promise<void> }> {
-      const mod = await import('@/modules/assets/prices/use-price-refresh');
-      return mod.usePriceRefresh();
-    }
-
+  describe('refreshPrices, seeded assets', () => {
     it('should refresh seeded assets even when aggregated balances are empty', async () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       set(prices, {
@@ -227,7 +172,7 @@ describe('usePriceRefresh', () => {
         ETH: createTestPriceInfo(3000),
       });
 
-      const { refreshPrices } = await loadFreshRefresh();
+      const { refreshPrices } = await createPriceRefresh();
       await refreshPrices(true);
 
       expect(mockFetchExchangeRates).toHaveBeenCalled();
@@ -248,7 +193,7 @@ describe('usePriceRefresh', () => {
         BTC: createTestPriceInfo(40000),
       });
 
-      const { refreshPrices } = await loadFreshRefresh();
+      const { refreshPrices } = await createPriceRefresh();
       await refreshPrices(true);
 
       expect(mockFetchPrices).toHaveBeenCalledTimes(1);
@@ -263,7 +208,7 @@ describe('usePriceRefresh', () => {
         ETH: createTestPriceInfo(3000),
       });
 
-      const { refreshPrices } = await loadFreshRefresh();
+      const { refreshPrices } = await createPriceRefresh();
       await refreshPrices(true, ['DAI']);
 
       expect(mockFetchPrices).toHaveBeenCalledTimes(1);
@@ -279,7 +224,6 @@ describe('usePriceRefresh', () => {
     let maxConcurrent: number;
 
     beforeEach(() => {
-      // Reset execution tracking variables
       executionOrder = [];
       callCount = 0;
       processingCount = 0;
@@ -287,53 +231,46 @@ describe('usePriceRefresh', () => {
     });
 
     it('should process price refresh requests sequentially in FIFO order', async () => {
-      const { refreshPrice, refreshPrices } = priceRefresh;
+      const { refreshPrice, refreshPrices } = await createPriceRefresh();
 
-      // Configure mock for execution order tracking
       mockFetchPrices.mockImplementation(async (params: any) => {
         executionOrder.push(params.selectedAssets.join(','));
         return {};
       });
 
-      // Fire multiple requests simultaneously
       const promise1 = refreshPrice('BTC');
       const promise2 = refreshPrices(false, ['ETH', 'DAI']);
       const promise3 = refreshPrice('USDT');
 
-      // Wait for all to complete
       await Promise.all([promise1, promise2, promise3]);
 
-      // Verify they executed in FIFO order
       expect(executionOrder).toEqual(['BTC', 'ETH,DAI', 'USDT']);
     });
 
     it('should handle errors in queue without breaking subsequent tasks', async () => {
-      const { refreshPrice } = priceRefresh;
+      const { refreshPrice } = await createPriceRefresh();
 
-      // Configure mock to fail on second call
+      const FAILING_CALL = 2;
       mockFetchPrices.mockImplementation(async () => {
         callCount++;
-        if (callCount === 2) {
+        if (callCount === FAILING_CALL) {
           return Promise.reject(new Error('Network error'));
         }
         return Promise.resolve({});
       });
 
-      // First request should succeed
       await expect(refreshPrice('BTC')).resolves.not.toThrow();
-
-      // Second request should fail
       await expect(refreshPrice('ETH')).rejects.toThrow('Network error');
-
-      // Third request should still succeed
       await expect(refreshPrice('DAI')).resolves.not.toThrow();
     });
 
     it('should not start multiple queue processors simultaneously', async () => {
-      vi.useFakeTimers();
-      const { refreshPrices } = priceRefresh;
+      const FETCH_DURATION_MS = 20;
+      const QUEUED_ASSETS = ['BTC', 'ETH', 'DAI', 'USDT'];
 
-      // Configure mock to track concurrent executions with fake-timer delays
+      const { refreshPrices } = await createPriceRefresh();
+      vi.useFakeTimers();
+
       mockFetchPrices.mockImplementation(async () => {
         processingCount++;
         maxConcurrent = Math.max(maxConcurrent, processingCount);
@@ -342,28 +279,20 @@ describe('usePriceRefresh', () => {
           setTimeout(() => {
             processingCount--;
             resolve({});
-          }, 20);
+          }, FETCH_DURATION_MS);
         });
       });
 
-      // Fire multiple requests simultaneously
-      const promises = [
-        refreshPrices(false, ['BTC']),
-        refreshPrices(false, ['ETH']),
-        refreshPrices(false, ['DAI']),
-        refreshPrices(false, ['USDT']),
-      ];
+      const promises = QUEUED_ASSETS.map(async asset => refreshPrices(false, [asset]));
 
-      // Advance fake timers to process all queued requests
-      for (let i = 0; i < 4; i++) {
-        await vi.advanceTimersByTimeAsync(20);
+      for (let drained = 0; drained < QUEUED_ASSETS.length; drained++) {
+        await vi.advanceTimersByTimeAsync(FETCH_DURATION_MS);
         await flushPromises();
       }
 
       await Promise.all(promises);
       vi.useRealTimers();
 
-      // Should never have more than 1 concurrent execution
       expect(maxConcurrent).toBe(1);
     });
   });

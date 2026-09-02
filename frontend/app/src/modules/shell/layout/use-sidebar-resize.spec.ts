@@ -14,8 +14,6 @@ function createPointerEvent(overrides: { clientX?: number } = {}): { event: Poin
     setPointerCapture: vi.fn<(pointerId: number) => void>(),
     releasePointerCapture: vi.fn<(pointerId: number) => void>(),
   };
-  // Use a real element so the source's `instanceof HTMLElement` guard passes,
-  // while keeping the spies for assertions.
   const target = document.createElement('div');
   target.setPointerCapture = mockTarget.setPointerCapture;
   target.releasePointerCapture = mockTarget.releasePointerCapture;

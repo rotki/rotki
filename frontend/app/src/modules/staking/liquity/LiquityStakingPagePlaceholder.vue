@@ -3,7 +3,10 @@ import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';
 
-const { t } = useI18n({ useScope: 'global' });
+const { text } = defineProps<{
+  text: string;
+}>();
+
 const { isMdAndDown } = useBreakpoint();
 
 const getFullPath = getPublicPlaceholderImagePath;
@@ -30,7 +33,7 @@ const getFullPath = getPublicPlaceholderImagePath;
 
     <GetPremiumPlaceholder
       class="absolute z-1 pt-40 top-0 left-1/2 transform -translate-x-1/2"
-      :title="t('eth2_page.no_premium')"
+      :title="text"
     />
   </div>
 </template>

@@ -10,9 +10,7 @@ describe('resolveText', () => {
     expect(resolveText(() => 'Asset')).toBe('Asset');
   });
 
-  // The whole point of the getter: a field can be built once and still follow the locale, because
-  // the call happens where the bar draws it rather than where the field was declared.
-  it('should call the getter every time rather than caching it', () => {
+  it('should call the getter every time rather than caching it, so a field built once still follows the locale', () => {
     let locale = 'en';
     const label = (): string => (locale === 'en' ? 'Asset' : 'Anlage');
 
@@ -21,8 +19,7 @@ describe('resolveText', () => {
     expect(resolveText(label)).toBe('Anlage');
   });
 
-  // An empty label is a label; only `undefined` means the field omitted the copy.
-  it('should keep an empty string', () => {
+  it('should keep an empty string, only `undefined` meaning the field omitted the copy', () => {
     expect(resolveText('')).toBe('');
     expect(resolveText(() => '')).toBe('');
   });
@@ -34,9 +31,7 @@ describe('resolveOptionalText', () => {
     expect(resolveOptionalText(() => 'hint')).toBe('hint');
   });
 
-  // The editors fall back to their generic message on undefined, so it must survive as undefined
-  // rather than becoming an empty string that reads as a supplied blank.
-  it('should leave omitted copy undefined', () => {
+  it('should leave omitted copy undefined rather than an empty string, so an editor still falls back to its generic message', () => {
     expect(resolveOptionalText(undefined)).toBeUndefined();
   });
 });

@@ -15,6 +15,12 @@ vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({}),
 }));
 
+const mockNotifyError = vi.fn();
+
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: vi.fn(() => ({ notifyError: mockNotifyError })),
+}));
+
 vi.mock('@/modules/balances/use-balances-store', () => ({
   useBalancesStore: vi.fn().mockReturnValue({
     updateBalances: vi.fn(),
@@ -63,8 +69,6 @@ function deferred<T>(): Deferred<T> {
 const pendingTasks = new Map<number, Deferred<Result<unknown, TaskError>>>();
 let nextTaskId = 1;
 
-// The service takes its runner from the activity that called it, so the spec passes this one in
-// rather than faking the handler module.
 const runTask = vi.fn().mockImplementation(async (taskFn: () => Promise<{ taskId: number }>) => {
   const { taskId } = await taskFn();
   const d = deferred<Result<unknown, TaskError>>();
@@ -104,14 +108,11 @@ describe('useBalanceProcessingService', () => {
   });
 
   /**
-   * ⭐ The guarantee that lets a DB data refresh and a network query overlap without being
+   * The guarantee that lets a DB data refresh and a network query overlap without being
    * serialised: whichever carries the older `lastRefreshTs` is discarded, whatever order they land
    * in. Without it the slower one wins and rolls the chain back to stale balances.
    */
   describe('stale payloads', () => {
-    // ⚠️ A chain of its own, not ETH. The orchestrator is a `createSharedComposable`, so its
-    // completion ledger survives `setActivePinia` and leaks between tests — marking ETH complete
-    // here makes a later test see `hasCachedData` already true.
     const CHAIN = 'gnosis';
 
     async function resolveCachedFetch(payload: BlockchainBalances): Promise<void> {
@@ -154,10 +155,11 @@ describe('useBalanceProcessingService', () => {
 
   describe('shouldQuery', () => {
     /**
-     * 🔴 eth2's "accounts" are validators, produced by a backend task rather than an accounts read,
+     * eth2's "accounts" are validators, produced by a backend task rather than an accounts read,
      * so `hasAccounts` is false until that task lands. Gating on it means a balance pass that
      * overtakes the validator fetch skips eth2 entirely — and the backend would have answered:
-     * `aggregator.py:727` exempts ETHEREUM_BEACONCHAIN from the same check.
+     * The backend's `ChainsAggregator.query_balances` exempts ETHEREUM_BEACONCHAIN from the same
+     * check.
      */
     it('should query eth2 even before its validators have loaded', () => {
       mockIsEth2Enabled.mockReturnValue(true);
@@ -167,7 +169,6 @@ describe('useBalanceProcessingService', () => {
       expect(service.shouldQuery(Blockchain.ETH2)).toBe(true);
     });
 
-    // The backend's other precondition: with the module off there is nothing to query.
     it('should not query eth2 when the module is disabled', () => {
       mockIsEth2Enabled.mockReturnValue(false);
       const service = useBalanceProcessingService();
@@ -213,7 +214,7 @@ describe('useBalanceProcessingService', () => {
     });
 
     /**
-     * 🔴 The destructive half. Every caller reaches `clearChainBalances` through
+     * The destructive half. Every caller reaches `clearChainBalances` through
      * `!hasAccounts(chain)`, which cannot tell "fetched, genuinely empty" from "not fetched yet".
      * Clearing on unknown *erases* a chain's balances whenever a refresh races the account walk,
      * rather than skipping it — and the balances are gone until something re-queries.
@@ -221,8 +222,6 @@ describe('useBalanceProcessingService', () => {
     it('should not erase balances for a chain whose accounts are not loaded yet', () => {
       const service = useBalanceProcessingService();
       const { updateBalances } = useBalancesStore();
-      // ⚠️ The spy comes from the module mock factory, so unlike the pinia stores (recreated in
-      // `beforeEach`) it carries the calls every earlier test in this file made through it.
       vi.mocked(updateBalances).mockClear();
 
       // `zksync_lite` was never written by the accounts fetch — unknown, not empty.
@@ -246,6 +245,18 @@ describe('useBalanceProcessingService', () => {
     });
   });
 
+  it('should not notify when the cached read fails', async () => {
+    mockQueryBlockchainBalances.mockRejectedValue(new Error('backend down'));
+
+    const service = useBalanceProcessingService();
+    await service.handleCachedFetch(
+      { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
+      undefined,
+    );
+
+    expect(mockNotifyError).not.toHaveBeenCalled();
+  });
+
   it('should flip hasCachedData when the cached GET resolves, before refresh POST completes', async () => {
     const cachedBalances = deferred<BlockchainBalances>();
     mockQueryBlockchainBalances.mockReturnValue(cachedBalances.promise);
@@ -263,7 +274,6 @@ describe('useBalanceProcessingService', () => {
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
     );
 
-    // Only the refresh registers a backend task. The cached GET is a direct request.
     await vi.waitFor(() => {
       expect(pendingTasks.size).toBe(1);
     });
@@ -282,6 +292,37 @@ describe('useBalanceProcessingService', () => {
 
     expect(get(hasCachedData)).toBe(true);
     expect(get(isRefreshing)).toBe(false);
+  });
+
+  it('should forget an earlier success when a later refresh fails', async () => {
+    const CHAIN = 'base';
+    mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+    useBlockchainAccountsStore().updateAccounts(CHAIN, [
+      createAccount({ address: '0x2', label: null, tags: null }, { chain: CHAIN, nativeAsset: 'ETH' }),
+    ]);
+
+    const service = useBalanceProcessingService();
+    const { statusOf } = useTaskOrchestrator();
+    const payload = { addresses: undefined, blockchain: CHAIN, isXpub: false };
+
+    const succeeding = service.handleRefresh(runTask, payload);
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(1)!.resolve(ok(emptyBalances(CHAIN)));
+    await succeeding;
+
+    expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(true);
+
+    pendingTasks.clear();
+    const failing = service.handleRefresh(runTask, payload);
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(2)!.resolve(err(Cancelled({ message: 'cancelled' })));
+    await failing;
+
+    expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(false);
   });
 
   it('should clear isRefreshing even when the refresh POST fails', async () => {

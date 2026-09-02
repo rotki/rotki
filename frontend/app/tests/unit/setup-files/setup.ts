@@ -5,7 +5,7 @@ import { RuiAlertStub } from '@test/stubs/RuiAlert';
 import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';
 import { RuiIconStub } from '@test/stubs/RuiIcon';
 import { RuiTooltipStub } from '@test/stubs/RuiTooltip';
-import { config } from '@vue/test-utils';
+import { config, enableAutoUnmount } from '@vue/test-utils';
 import consola, { type ConsolaReporter } from 'consola';
 import { afterAll, afterEach, beforeAll, beforeEach, onTestFailed, vi } from 'vitest';
 import { server } from './server';
@@ -197,7 +197,24 @@ afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
 
-// Global stub components
+/**
+ * Drops the nodes a teleport left on `document.body`.
+ *
+ * @remarks
+ * An overlay teleports out of the wrapper, so unmounting the wrapper does not reach it. A dialog or
+ * menu left behind answers the next test's document query, which then passes having rendered
+ * nothing of its own.
+ *
+ * This setup file is shared with the node-environment specs under `electron/` and `shared/`, which
+ * have no document at all.
+ */
+function clearTeleportedNodes(): void {
+  if (typeof document !== 'undefined')
+    document.body.innerHTML = '';
+}
+
+afterEach(clearTeleportedNodes);
+
 config.global.stubs.RuiAlert = RuiAlertStub;
 config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.RuiIcon = RuiIconStub;
@@ -206,3 +223,6 @@ config.global.stubs.I18nT = true;
 // JsonInput lazy-loads the heavy `vanilla-jsoneditor` on mount; no spec asserts its
 // DOM, so stub it globally to keep form mounts fast.
 config.global.stubs.JsonInput = true;
+
+// A leaked wrapper keeps reacting to module-level state during later tests.
+enableAutoUnmount(afterEach);

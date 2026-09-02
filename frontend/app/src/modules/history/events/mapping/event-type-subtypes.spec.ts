@@ -16,7 +16,6 @@ describe('subtypesForTypes', () => {
       .toStrictEqual(['fee', 'return wrapped', 'airdrop']);
   });
 
-  // No type picked narrows nothing, so every subtype is still on offer.
   it('should offer every known subtype when no type is picked', () => {
     expect(subtypesForTypes(mapping, [])).toStrictEqual(['airdrop', 'return wrapped', 'fee']);
   });
@@ -25,9 +24,7 @@ describe('subtypesForTypes', () => {
     expect(subtypesForTypes(mapping, ['nonsense'])).toStrictEqual([]);
   });
 
-  // The mapping is store-backed and starts empty. Callers read an empty result as "not known yet"
-  // and admit everything, so this must not be confused with "this type admits nothing".
-  it('should offer nothing while the mapping is empty', () => {
+  it('should offer nothing while the mapping is empty, which callers read as "not known yet" rather than "this type admits nothing"', () => {
     expect(subtypesForTypes({}, ['spend'])).toStrictEqual([]);
   });
 });

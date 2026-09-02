@@ -37,10 +37,12 @@ export function determineOriginalPeriodEnd(
 
 /**
  * Determines the original period start value for progress tracking.
- * - If period[0] > 0, uses that as the actual start
- * - If period[0] is 0 (beginning of time), captures the first non-zero period[1] as the effective start
- * - Preserves existing originalPeriodStart for subsequent updates
- * - Does not capture from STARTED status (where period[1] is the end boundary, not progress)
+ *
+ * @remarks
+ * A non-zero `period[0]` is the actual start. When it is `0` (the beginning of time), the first
+ * non-zero `period[1]` becomes the effective start instead. An existing `originalPeriodStart` is
+ * preserved across later updates, and nothing is captured from STARTED, where `period[1]` is the end
+ * boundary rather than progress.
  */
 export function determineOriginalPeriodStart(
   status: TransactionsQueryStatus,
@@ -64,17 +66,12 @@ export function determineOriginalPeriodStart(
 /**
  * The stored period, with `period[1]` normalised to mean the query's current cursor.
  *
- * ⚠️ The backend overloads that slot: it is the range's target end on STARTED, and the cursor
- * reached so far on every later message. Stored raw, STARTED reads as "already at the end" — it is
- * captured as `originalPeriodEnd` and compared against itself, so the bar renders 100% and the range
- * renders `to → to` before anything has been queried. Nothing has progressed yet, so the cursor
- * belongs at the start of the range.
+ * The backend overloads that slot: the range's target end on STARTED, the cursor reached so far
+ * on every later message. Stored raw, STARTED reads as "already at the end", so the bar renders 100%
+ * and the range `to → to` before anything is queried. EVM hides it (its cursor advances within
+ * milliseconds); bitcoin shows the wrong value for the whole query.
  *
- * EVM hides this: its cursor advances within milliseconds, so the wrong value is never seen. Bitcoin
- * sends one cursor update per block-height batch, after that batch has already been queried, and
- * none at all when a batch comes back empty, so it shows the wrong value for the whole query.
- *
- * ⚠️ Callers must still pass the *raw* period to `determineOriginalPeriodEnd`, which is what makes
+ * Callers must still pass the *raw* period to `determineOriginalPeriodEnd`, which is what makes
  * STARTED the message that establishes the target.
  */
 export function periodWithCursorAtStart(
@@ -87,7 +84,7 @@ export function periodWithCursorAtStart(
 /**
  * Period tracking for a bitcoin message, which is the one subtype whose `period` is optional.
  *
- * ⚠️ Carries `existing`'s values when the message has none: the entry is rebuilt from scratch per
+ * Carries `existing`'s values when the message has none: the entry is rebuilt from scratch per
  * message, so a period-less update would otherwise erase what an earlier one established and make
  * the progress bar vanish mid-query.
  */

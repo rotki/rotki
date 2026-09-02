@@ -2,7 +2,7 @@ import type { ProtocolCacheProgress } from '../types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setupSyncProgressMocks } from '../test-utils';
+import { isCompact, setupSyncProgressMocks } from '../test-utils';
 import ProtocolCacheProgressList from './ProtocolCacheProgressList.vue';
 
 setupSyncProgressMocks();
@@ -139,10 +139,8 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       const completedItem = wrapper.findAll('[data-testid="protocol-cache-item"]').find(
         item => item.attributes('data-chain') === 'optimism',
       );
-      // In-progress items are not compact
-      expect(inProgressItem?.attributes('data-compact')).toBe('false');
-      // Completed items are rendered in compact mode
-      expect(completedItem?.attributes('data-compact')).toBe('true');
+      expect(isCompact(inProgressItem)).toBe(false);
+      expect(isCompact(completedItem)).toBe(true);
     });
   });
 
@@ -154,13 +152,12 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       ];
       wrapper = createWrapper(protocolCache);
 
-      // Only non-cancelled in-progress item should show
       const items = wrapper.findAll('[data-testid="protocol-cache-item"]');
       expect(items).toHaveLength(1);
       expect(items[0].attributes('data-chain')).toBe('optimism');
 
-      // Cancelled item should be in the completed toggle
-      expect(wrapper.text()).toContain('sync_progress.completed_protocol_cache');
+      expect(wrapper.text()).toContain('sync_progress.finished_protocol_cache');
+      expect(wrapper.text()).not.toContain('sync_progress.completed_protocol_cache');
     });
 
     it('should show cancelled items when completed toggle is clicked', async () => {
@@ -171,7 +168,7 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       wrapper = createWrapper(protocolCache);
 
       const buttons = wrapper.findAll('button');
-      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.completed_protocol_cache'));
+      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.finished_protocol_cache'));
       await toggleButton?.trigger('click');
 
       const items = wrapper.findAll('[data-testid="protocol-cache-item"]');

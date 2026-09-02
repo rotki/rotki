@@ -72,7 +72,6 @@ export class CalendarPage {
   }
 
   async openEventByName(name: string): Promise<void> {
-    // Click "View details" on the matching event in the selected-events panel.
     const event = this.eventInPanel(this.selectedPanel(), name).first();
     await event.getByRole('button', { name: /view details/i }).click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });

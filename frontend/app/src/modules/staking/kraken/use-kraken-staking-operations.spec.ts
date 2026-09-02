@@ -40,8 +40,6 @@ vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   }),
 }));
 
-// The native `run` invokes the api call (so a rejecting refresh still surfaces) and yields a
-// plainfp Result; `submitTask` runs the spec inline so the real `run` body drives assertions.
 const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
 
 vi.mock('@/modules/task-center/use-native-task', async () => {
@@ -174,8 +172,6 @@ describe('useKrakenStakingOperations', () => {
       mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
       const { dateFilter } = storeToRefs(useKrakenStakingStore());
 
-      // The refresh is where the user gets time to move the filter, so it moves mid-task: the read
-      // that follows must send the new bounds, not the ones this call started with.
       mockRefreshKrakenStaking.mockImplementation(async () => {
         set(dateFilter, { fromTimestamp: 5000 });
         return { taskId: 1 };
@@ -195,7 +191,6 @@ describe('useKrakenStakingOperations', () => {
       const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       await fetchEvents();
 
-      // Dropping it would leave the table on rows the pills no longer describe.
       expect(mockFetchKrakenStakingEvents).toHaveBeenCalled();
       expect(mockRefreshKrakenStaking).not.toHaveBeenCalled();
     });
@@ -224,8 +219,6 @@ describe('useKrakenStakingOperations', () => {
 
       await fetchEvents();
 
-      // The read that replaced this one owns `loading`; clearing it here would hide the spinner
-      // while that newer read is still running.
       expect(get(store.loading)).toBe(true);
       expect(mockNotify).not.toHaveBeenCalled();
     });
@@ -233,7 +226,6 @@ describe('useKrakenStakingOperations', () => {
     it('should call refreshEvents on explicit refresh', async () => {
       const { useKrakenStakingStore } = await import('@/modules/staking/use-kraken-staking-store');
 
-      // Mark it already loaded so the explicit-refresh path, not the first-load path, is exercised.
       const { loadedOnce } = storeToRefs(useKrakenStakingStore());
       set(loadedOnce, true);
 

@@ -26,7 +26,7 @@ const chains = [Blockchain.ETH];
 </script>
 
 <template>
-  <RuiCard content-class="grid md:grid-cols-8 gap-4">
+  <RuiCard :class-names="{ content: 'grid md:grid-cols-8 gap-4' }">
     <BlockchainAccountSelector
       v-model="selectedAccounts"
       class="md:col-span-3"

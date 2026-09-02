@@ -1,6 +1,9 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { msg } from '@/message-key';
 import PendingTask from '@/modules/core/notifications/PendingTask.vue';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import {
   type Activity,
   ActivityKind,
@@ -38,6 +41,12 @@ function createWrapper(props: Partial<InstanceType<typeof PendingTask>['$props']
 }
 
 describe('pendingTask', () => {
+  const ADDRESS = '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1';
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   it('should show the title and subtitle at the top level', () => {
     const text = createWrapper({ activity: activity({ subtitle: 'Ethereum' }) }).text();
 
@@ -45,10 +54,6 @@ describe('pendingTask', () => {
     expect(text).toContain('Ethereum');
   });
 
-  /**
-   * A chain and its accounts carry the same title, so repeating it under a parent that already
-   * names the job produced three identical-looking rows told apart only by their subtitle.
-   */
   it('should show only its own identity when nested', () => {
     const text = createWrapper({
       activity: activity({ subtitle: 'Ethereum' }),
@@ -65,7 +70,6 @@ describe('pendingTask', () => {
     expect(text).toContain('14s');
   });
 
-  /** An absolute date on a live row answers a question nobody asked; a settled row has no elapsed at all. */
   it('should not render elapsed time once the work settled', () => {
     const text = createWrapper({
       activity: activity({ startedAt: NOW - 14_000, status: ActivityStatus.COMPLETE }),
@@ -84,10 +88,6 @@ describe('pendingTask', () => {
     expect(text).toContain('pending_task.steps::1, 4');
   });
 
-  /**
-   * The chip shows an icon and no text, so the label lives on `aria-label` (and in the tooltip).
-   * Asserting on it is also the only check that a status reaches the row at all.
-   */
   function outcomeLabel(wrapper: VueWrapper): string | undefined {
     return wrapper.find('[data-testid=activity-outcome]').attributes('aria-label');
   }
@@ -102,11 +102,6 @@ describe('pendingTask', () => {
     expect(outcomeLabel(createWrapper({ activity: activity({ status }) }))).toBe(key);
   });
 
-  /**
-   * The chip is icon-only, so the reason has to ride on the label the tooltip and `aria-label`
-   * share. A skip is the case that needs it: it raises no notification, so if the row stays a bare
-   * "Skipped" the user is never told the chain was disabled in settings.
-   */
   it.each([
     [ActivityStatus.FAILED, 'network unreachable after retries'],
     [ActivityStatus.SKIPPED, 'disabled in settings'],
@@ -117,17 +112,12 @@ describe('pendingTask', () => {
     expect(label).toContain('pending_task.status.with_reason');
   });
 
-  /** No reason, no colon — a plain status must not grow an empty suffix. */
-  it('should leave a row without a reason on the bare status', () => {
+  it('should leave a row without a reason on the bare status, with no empty suffix', () => {
     const label = outcomeLabel(createWrapper({ activity: activity({ status: ActivityStatus.FAILED }) }));
 
     expect(label).toBe('pending_task.status.failed');
   });
 
-  /**
-   * No spinner. A running row the producer never counted steps for shows a chip — the panel
-   * already has rings, and the elapsed counter beside the chip is what shows it is alive.
-   */
   it('should label a running row with no percentage instead of spinning', () => {
     const wrapper = createWrapper({ activity: activity({ status: ActivityStatus.RUNNING }), percentage: -1 });
 
@@ -135,7 +125,6 @@ describe('pendingTask', () => {
     expect(wrapper.findComponent({ name: 'RuiProgress' }).exists()).toBe(false);
   });
 
-  /** The chip carries no text of its own — the drawer is 400px and the label needs the room. */
   it('should show the outcome as an icon, not a word', () => {
     const wrapper = createWrapper({ activity: activity({ status: ActivityStatus.COMPLETE }) });
 
@@ -143,12 +132,7 @@ describe('pendingTask', () => {
     expect(wrapper.find('[data-testid=activity-outcome]').exists()).toBe(true);
   });
 
-  /**
-   * RuiChip hardcodes `role="button"` and `tabindex="0"` on its root regardless of `clickable`, so
-   * an untouched status chip is a focusable fake button — one extra tab stop and one "Done, button"
-   * announcement per settled child, on a decoration that does nothing.
-   */
-  it('should present the outcome as an image, not a focusable button', () => {
+  it('should present the outcome as an image, not a focusable button, since RuiChip defaults to both', () => {
     const chip = createWrapper({ activity: activity({ status: ActivityStatus.COMPLETE }) })
       .find('[data-testid=activity-outcome]');
 
@@ -165,8 +149,7 @@ describe('pendingTask', () => {
     expect(wrapper.find('[data-testid=activity-outcome]').exists()).toBe(false);
   });
 
-  /** A settled row keeps its outcome chip even when a percentage survives on the activity. */
-  it('should prefer the outcome chip to the ring once the work has settled', () => {
+  it('should prefer the outcome chip to the ring once the work has settled, percentage or not', () => {
     const wrapper = createWrapper({ activity: activity({ status: ActivityStatus.FAILED }), percentage: 40 });
 
     expect(outcomeLabel(wrapper)).toBe('pending_task.status.failed');
@@ -178,6 +161,44 @@ describe('pendingTask', () => {
     await wrapper.find('button').trigger('click');
 
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+  });
+
+  it('should scramble an address in the subtitle while privacy mode is on', () => {
+    useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
+
+    const text = createWrapper({
+      activity: activity({
+        subtitle: { key: msg.$t('task_center.activity.tx_sync.address'), params: { address: ADDRESS, chain: 'Ethereum' } },
+      }),
+    }).text();
+
+    expect(text).not.toContain(ADDRESS);
+  });
+
+  it('should leave the address alone while privacy mode is off', () => {
+    useSettingsRepo().updateFrontend({ scrambleData: false });
+
+    const text = createWrapper({
+      activity: activity({
+        subtitle: { key: msg.$t('task_center.activity.tx_sync.address'), params: { address: ADDRESS, chain: 'Ethereum' } },
+      }),
+    }).text();
+
+    expect(text).toContain(ADDRESS);
+  });
+
+  it('should scramble every address when a batch joins several into one param', () => {
+    const second = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
+    useSettingsRepo().updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
+
+    const text = createWrapper({
+      activity: activity({
+        subtitle: { key: msg.$t('task_center.activity.accounts.add'), params: { address: `${ADDRESS},\n${second}` } },
+      }),
+    }).text();
+
+    expect(text).not.toContain(ADDRESS);
+    expect(text).not.toContain(second);
   });
 
   it('should render no cancel control when the caller withholds it', () => {

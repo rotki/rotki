@@ -28,12 +28,12 @@ function cancel(): void {
 <template>
   <RuiMenu
     v-model="open"
-    menu-class="max-w-[14rem]"
-    :popper="{ placement: 'top' }"
+    :class-names="{ menu: 'max-w-[14rem]' }"
+    :options="{ placement: 'top' }"
   >
     <template #activator="{ attrs }">
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         :disabled="open"
       >

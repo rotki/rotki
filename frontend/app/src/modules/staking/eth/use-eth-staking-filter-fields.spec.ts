@@ -37,9 +37,7 @@ describe('useEthStakingFilterFields', () => {
     expect(status?.resolveLabel?.('consolidated')).toBe('Consolidated');
   });
 
-  // The caller computes this when validators are picked by hand: naming exact validators already
-  // decides which ones you get, so a status filter has nothing left to narrow.
-  it('should not offer status while validators are picked', () => {
+  it('should not offer status while validators are picked, which leaves it nothing to narrow', () => {
     expect(fieldsFor(true).map(field => field.key)).toStrictEqual(['period']);
   });
 });

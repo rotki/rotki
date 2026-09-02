@@ -48,7 +48,6 @@ describe('resolveManuallyDialog', () => {
 
   afterEach(() => {
     wrapper.unmount();
-    document.body.innerHTML = '';
   });
 
   it('should emit the trimmed note on confirm', async () => {

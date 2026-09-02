@@ -7,6 +7,8 @@ import { GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances
  * the chosen exchange and whether the form is adding or editing. Keeping those decisions here means
  * they are answerable without mounting anything, and that the rules and the template read from one
  * description rather than from a dozen inline `computed`s.
+ *
+ * @packageDocumentation
  */
 
 /** Exchanges that need more than the usual key and secret, or that render an extra section. */
@@ -112,7 +114,7 @@ export interface ExchangeKeysFormState {
  * The editable fields, taken out of the entry the dialog owns. The entry carries more than this —
  * the location and the mode — which the form reads but never writes.
  *
- * 🔴 It has to answer the same for the same entry: `useMappedModelForm` compares what this returns
+ * It has to answer the same for the same entry: `useMappedModelForm` compares what this returns
  * against the state it already holds to decide whether an outside edit is news, so a value invented
  * here would report every pass as a change and the two directions would never settle.
  */
@@ -176,8 +178,6 @@ export function exchangeKeysSchema(context: ExchangeKeysContext): ZodType<Exchan
     apiSecret: z.string(),
     binanceHistoryStartTs: z.number().optional(),
     binanceMarkets: z.array(z.string()).optional(),
-    // The three region/tier fields take their own enums rather than a bare string: none of them
-    // carries a rule, but naming the type here is what lets the state fold back over the entry.
     gateLocation: GateLocation.optional(),
     krakenAccountType: KrakenAccountType.optional(),
     krakenFuturesApiKey: z.string().optional(),
@@ -200,8 +200,6 @@ export function exchangeKeysSchema(context: ExchangeKeysContext): ZodType<Exchan
     demand(sensitiveEditable && requiresApiSecret(location, capabilities), 'apiSecret', nonEmpty);
     demand(sensitiveEditable && requiresPassphrase(location, capabilities), 'passphrase', nonEmpty);
 
-    // Each half is demanded only because the other was given, so both are read from the state in
-    // front of us rather than from whatever either field last held.
     demand(futuresEditable && isPresent(state.krakenFuturesApiSecret), 'krakenFuturesApiKey', bothFutures);
     demand(futuresEditable && isPresent(state.krakenFuturesApiKey), 'krakenFuturesApiSecret', bothFutures);
 

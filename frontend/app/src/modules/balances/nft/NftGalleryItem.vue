@@ -74,11 +74,11 @@ const mediaStyle = computed<StyleValue>(() => {
   >
     <div class="relative flex">
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :disabled="shouldRender"
         :open-delay="400"
         class="w-full"
-        tooltip-class="max-w-[10rem]"
+        :class-names="{ tooltip: 'max-w-[10rem]' }"
       >
         <template #activator>
           <ExternalLink
@@ -110,7 +110,7 @@ const mediaStyle = computed<StyleValue>(() => {
 
       <RuiTooltip
         v-if="!shouldRender"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="absolute right-2 bottom-2"
       >
@@ -132,9 +132,9 @@ const mediaStyle = computed<StyleValue>(() => {
     </div>
     <div class="p-4">
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
-        tooltip-class="max-w-[20rem]"
+        :class-names="{ tooltip: 'max-w-[20rem]' }"
         class="text-truncate block text-subtitle-1 font-medium"
       >
         <template #activator>
@@ -144,9 +144,9 @@ const mediaStyle = computed<StyleValue>(() => {
       </RuiTooltip>
       <RuiTooltip
         v-if="item.collection"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
-        tooltip-class="max-w-[20rem] text-truncate overflow-hidden"
+        :class-names="{ tooltip: 'max-w-[20rem] text-truncate overflow-hidden' }"
         class="pt-1 text-truncate max-w-full"
       >
         <template #activator>

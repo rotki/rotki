@@ -12,10 +12,6 @@ const getIsPending = vi.fn();
 const fetchNetValue = vi.fn();
 const netValue = ref<NetValue>({ data: [], times: [] });
 
-// The historic-price cache is mocked purely as a regression guard: the list
-// derivation must stay pure (USD-only) so it never hammers the forex endpoint.
-// If eager conversion is ever reintroduced, these spies would be called and the
-// "does not touch the historic-price cache" assertions would fail.
 vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
   useHistoricPriceCache: vi.fn(() => ({
     createKey: (fromAsset: string, timestamp: number): string => `${fromAsset}#${timestamp}`,
@@ -33,7 +29,6 @@ vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
 }));
 
 describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
-  // Snapshot timestamps are in seconds, matching the historic-price cache key.
   const day1 = 1_600_000_000;
   const day2 = 1_600_086_400;
   const day3 = 1_600_172_800;
@@ -133,11 +128,27 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-list', () => {
     expect(get(hasSnapshots)).toBe(true);
   });
 
+  it('should fetch on mount when the series is empty', async () => {
+    setCurrency('USD');
+    withSetup(() => useSnapshotList());
+    await flushPromises();
+
+    expect(fetchNetValue).toHaveBeenCalledOnce();
+  });
+
+  it('should not fetch on mount when the series is already loaded', async () => {
+    setCurrency('USD');
+    set(netValue, { data: [bigNumberify(100), bigNumberify(150)], times: [day1, day2] });
+
+    withSetup(() => useSnapshotList());
+    await flushPromises();
+
+    expect(fetchNetValue).not.toHaveBeenCalled();
+  });
+
   it('should reflect loading state across a refresh call', async () => {
     setCurrency('USD');
     const { loading, refresh } = withSetup(() => useSnapshotList()).result;
-    // netValue is empty at mount, so onMounted fires an initial refresh; let it
-    // settle and ignore it so the assertions target the explicit refresh below.
     await flushPromises();
     fetchNetValue.mockClear();
 

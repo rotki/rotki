@@ -15,8 +15,7 @@ const isComplete = computed<boolean>(() => address.status === AddressStatus.COMP
 const isQuerying = computed<boolean>(() => address.status === AddressStatus.QUERYING);
 const isDecoding = computed<boolean>(() => address.status === AddressStatus.DECODING);
 const isCancelled = computed<boolean>(() => address.status === AddressStatus.CANCELLED);
-// Without its own branch a failed address fell through to the neutral fallback and read as pending,
-// which is the opposite of what happened to it.
+/** Its own branch, so a failure does not fall through to the neutral fallback and read as pending. */
 const isFailed = computed<boolean>(() => address.status === AddressStatus.FAILED);
 
 const statusIcon = computed<string>(() => {
@@ -70,8 +69,13 @@ const statusText = computed<string>(() => {
   return t('sync_progress.status.pending');
 });
 
-// Keyed on the period itself rather than the subtype, so a chain renders a range as soon as it
-// sends one and nothing has to be taught which subtypes carry periods. Bitcoin now does.
+/**
+ * Whether to render a range for this address.
+ *
+ * @remarks
+ * Keyed on the period itself rather than on the subtype, so a chain gets a bar as soon as it sends
+ * one and nothing here has to be taught which subtypes carry periods.
+ */
 const hasPeriod = computed<boolean>(() => get(isQuerying) && !!address.period);
 
 // Current position is period[1], show "Beginning" if current is 0 or equals start (hasn't progressed)

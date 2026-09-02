@@ -152,8 +152,6 @@ describe('composables/api/history/events/skipped', () => {
     });
 
     it('should return error message on non-200 response', async () => {
-      // With ofetch, MSW properly intercepts blob responses and we can test
-      // the real error handling behavior where Flask returns JSON error
       server.use(
         http.patch(`${backendUrl}/api/1/history/skipped_external_events`, () =>
           HttpResponse.json(

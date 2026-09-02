@@ -13,7 +13,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 interface UseSnapshotFxOverrideReturn {
   /** Whether the display currency is USD (no FX needed; the control hides). */
   isUsd: ComputedRef<boolean>;
-  /** The resolved USD -> display-currency rate at the snapshot's timestamp. */
+  /** The resolved USD to display-currency rate at the snapshot's timestamp. */
   rate: ComputedRef<BigNumber>;
   /** Whether `rate` is usable (USD, or a positive resolved historic rate). */
   rateReady: ComputedRef<boolean>;
@@ -27,24 +27,25 @@ interface UseSnapshotFxOverrideReturn {
   currentOverride: ComputedRef<BigNumber | undefined>;
   /** Re-reads whether a manual override exists at this timestamp. */
   refreshOverride: () => Promise<void>;
-  /** Stores (or replaces) the manual USD -> currency rate and busts the cache. */
+  /** Stores, or replaces, the manual USD-to-currency rate and busts the cache. */
   setOverride: (value: BigNumber) => Promise<boolean>;
   /** Removes the manual rate at this timestamp and busts the cache. */
   clearOverride: () => Promise<boolean>;
 }
 
 /**
- * Lets the snapshot editor set a manual historic USD -> display-currency rate
- * for a snapshot whose forex rate the backend can't resolve (#12277 dead-end:
- * value inputs disable when no rate exists). Writes a MANUAL historical price
- * at the snapshot's exact timestamp, then resets the historic-price cache for
- * that asset within ±1h so the editor immediately re-reads the new rate.
+ * Lets the snapshot editor set a manual historic USD to display-currency rate, for a snapshot whose
+ * forex rate the backend cannot resolve and whose value inputs are therefore disabled.
  *
- * Because the cache reset spans ±1h (see `resetHistoricalPricesData`), a manual
- * override also affects any other historic lookup of that currency within an
- * hour of the snapshot — the control surfaces this caveat to the user.
+ * @remarks
+ * Writes a MANUAL historical price at the snapshot's exact timestamp, then resets the historic-price
+ * cache for that asset within ±1h so the editor re-reads the new rate immediately.
  *
- * @param timestamp the snapshot timestamp in SECONDS (value, ref or getter).
+ * That ±1h reset span (see `resetHistoricalPricesData`) means a manual override also affects any
+ * other historic lookup of the currency within an hour of the snapshot. The control surfaces this to
+ * the user.
+ *
+ * @param timestamp - the snapshot timestamp in **seconds**, as a value, ref or getter
  */
 export function useSnapshotFxOverride(timestamp: MaybeRefOrGetter<number>): UseSnapshotFxOverrideReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -87,8 +88,6 @@ export function useSnapshotFxOverride(timestamp: MaybeRefOrGetter<number>): UseS
     try {
       const success = await write();
       if (success) {
-        // Busts the cached rate for this currency within ±1h so the editor
-        // re-reads the new value on next access.
         resetHistoricalPricesData([{ fromAsset: CURRENCY_USD, timestamp: toValue(timestamp) }]);
         await refreshOverride();
       }

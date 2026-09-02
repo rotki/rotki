@@ -48,19 +48,10 @@ const {
   errorMessages?: string[];
   label?: string;
   disabled?: boolean;
-  /**
-   * Passed straight to `RuiAutoComplete`, whose own variant this mirrors. It used to be an
-   * `outlined` boolean, which could name only two of the three the field actually has.
-   */
   variant?: 'default' | 'filled' | 'outlined';
   clearable?: boolean;
   required?: boolean;
   hideDetails?: boolean;
-  /**
-   * Declared rather than left to `$attrs` so the asset itself draws dense too: it used to reach
-   * `RuiAutoComplete` and shrink the field while the picked asset stayed at its full size, which is
-   * what made the row taller than the input asked for.
-   */
   dense?: boolean;
 }>();
 
@@ -83,12 +74,12 @@ const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAsset
   showIgnored: () => source?.showIgnored ?? false,
 });
 
-// Defaulted here rather than on the prop, so the fallback is translated: a prop default is a
-// static value and cannot call `t`, which is why it used to read a hardcoded English "Asset".
 const fieldLabel = computed<string>(() => label ?? t('asset_select.label'));
 
-// Both slots render the asset without its context menu; hoisted so the bag is one stable identity
-// rather than a fresh object per rendered row.
+/**
+ * Shared by both slots, which render the asset without its context menu. Hoisted so this is one
+ * stable identity rather than a fresh object per rendered row.
+ */
 const noMenu: AssetActions = { hideMenu: true };
 
 const itemDisplay = computed<AssetDisplay>(() => ({ dense }));
@@ -115,7 +106,7 @@ function onUpdateModelValue(value: string): void {
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full [&_.group]:py-1.5"
-    menu-class="!min-w-full"
+    :class-names="{ menu: '!min-w-full' }"
     :hint="hint"
     :label="fieldLabel"
     :clearable="clearable"

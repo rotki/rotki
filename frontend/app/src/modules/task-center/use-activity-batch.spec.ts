@@ -3,7 +3,6 @@ import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useActivityBatch } from '@/modules/task-center/use-activity-batch';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
-// The orchestrator stays real; only the backend runner behind it is stubbed.
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   useTaskHandler: (): Record<string, unknown> => ({
     cancelTaskById: vi.fn(async () => true),
@@ -36,14 +35,10 @@ describe('useActivityBatch', () => {
     expect(parents).toStrictEqual([umbrellaId, umbrellaId]);
   });
 
-  // One child needs no parent: an umbrella over a single activity is a second row describing the
-  // same work. This is what lets callers stop branching on the item count themselves.
-  it('should submit no umbrella for a single item', async () => {
+  it('should submit no umbrella for a single item, which it would only describe twice', async () => {
     const { runActivityBatch } = useActivityBatch();
     const { statusOf } = useTaskOrchestrator();
     const parents: (string | undefined)[] = [];
-    // Its own id: the orchestrator is a shared singleton, so an umbrella another test in this file
-    // already completed would make "no umbrella was submitted" read as false.
     const soleId = makeActivityId(ActivityKind.ACCOUNTS, 'add', 'sole', 'batch');
 
     const results = await runActivityBatch({ ...umbrella(), id: soleId }, ['only'], async (item, parent) => {
@@ -64,9 +59,7 @@ describe('useActivityBatch', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  // allSettled, not all: the umbrella must not abandon the rest of the batch because one item
-  // failed, and it settles complete either way — a failure belongs to the item that failed.
-  it('should still settle when one item rejects', async () => {
+  it('should still settle when one item rejects, the failure belonging to that item', async () => {
     const { runActivityBatch } = useActivityBatch();
     const seen: string[] = [];
 
@@ -82,10 +75,7 @@ describe('useActivityBatch', () => {
     expect(seen).toStrictEqual(['b', 'c']);
   });
 
-  // ⚠️ `await runActivityBatch(...)` resolves when the umbrella's own promise settles, which is a
-  // tick before the orchestrator records the activity terminal. Asserting straight after the await
-  // reads it as still active — the same settle lag the task centre shows in the panel.
-  it('should settle the umbrella activity itself', async () => {
+  it('should settle the umbrella activity itself, a tick after its own promise resolves', async () => {
     const { runActivityBatch } = useActivityBatch();
     const { statusOf } = useTaskOrchestrator();
 

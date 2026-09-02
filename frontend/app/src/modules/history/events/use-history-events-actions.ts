@@ -34,7 +34,6 @@ interface UseHistoryEventsActionsOptions {
   onlyChains: MaybeRefOrGetter<Blockchain[]>;
   /** Entry types to filter on; when set, EVM events may be skipped during refresh. */
   entryTypes?: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
-  /** Tracks the current action state (e.g. querying, decoding). */
   /** Callback to fetch the current page of history events. */
   refetch: () => Promise<void>;
   /** The current collection of grouped history event rows. */
@@ -86,19 +85,15 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   /**
    * Serialises every read of the events table onto one chain.
    *
-   * `useTableData.refetch` opens with `api.cancelByTag`, so a second read started while the first is
-   * in flight cancels it, and both settle onto one shared `useAsyncState`. With several independent
-   * callers now able to ask for a read at once (an event save via `eventsVersion`, the auto-fetch
-   * when an activity completes, and `refresh.all`), that overlap became reachable, and the table can
-   * be left holding the loser's result. It renders whatever the collection says, so an empty result
-   * empties the table (`HistoryEventsVirtualTable` only falls back to its empty state when
-   * `groups.length === 0`; it does not hide rows merely because a read is running).
+   * `useTableData.refetch` opens with `api.cancelByTag`, so overlapping reads cancel each other
+   * onto one shared `useAsyncState` and the table can end up holding the loser's result — which,
+   * if empty, empties the table.
    *
-   * Queueing rather than cancelling: each caller wants the table to end up current, and none of them
-   * benefits from aborting a read that is nearly done. A rejected read does not poison the chain.
+   * Queueing rather than cancelling: every caller wants the table current, and none benefits from
+   * aborting a read that is nearly done. A rejected read does not poison the chain.
    *
    * The chaining assignment runs synchronously on call, before the first suspension point, so
-   * ordering is fixed by call order even though the function is `async`.
+   * ordering follows call order even though the function is `async`.
    */
   let reads: Promise<void> = Promise.resolve();
 
@@ -153,10 +148,15 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     await fetchDataAndLocations();
   }
 
+  /**
+   * Re-decodes events and reloads the table.
+   *
+   * @remarks
+   * With a payload, only the redecode's own trailing fetch runs: `forceRedecodeEvmEvents` fetches
+   * when it finishes, so fetching first as well reads the table twice for one action and the first
+   * read shows pre-redecode data that is immediately replaced.
+   */
   async function fetchAndRedecodeEvents(data?: PullLocationTransactionPayload): Promise<void> {
-    // `forceRedecodeEvmEvents` fetches when it finishes, so fetching first as well read the table
-    // twice for one action — and the first read showed pre-redecode data that was immediately
-    // replaced. With a payload the redecode's own fetch is the only one needed.
     if (data) {
       await forceRedecodeEvmEvents(data);
       return;
@@ -171,12 +171,11 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   /**
-   * Development-only: re-decode whatever the current page happens to show.
+   * Development-only: re-decodes whatever the current page shows.
    *
-   * A scope, not a flow of its own — it resolves the page to the transactions and block events it
-   * holds and hands both to the targeted re-decode as one request. Previously it made two separate
-   * calls, so a page holding both kinds produced two unrelated sets of activities with nothing
-   * naming the single thing the user asked for.
+   * @remarks
+   * Transactions and block events go to the targeted re-decode as one request, so a page holding
+   * both kinds produces a single set of activities naming the one thing the user asked for.
    */
   async function redecodePageTransactions(): Promise<void> {
     const events = get(groups).data.flat();
@@ -236,16 +235,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
       })
     : undefined;
 
-  // Refresh when events are modified (e.g., from pinned sidebar matching).
-  //
-  // Routed through the auto-fetch's reader rather than owning a second debounce: matching writes
-  // arrive in bursts alongside decode progress, and two independent debounces landed on the same
-  // instant and read the identical page twice. Falls back to a direct read on the pages that have
-  // no auto-fetch, where nothing else can be reading concurrently.
-  //
-  // Reads the events only: matching links existing events, so it can neither create the first nor
-  // remove the last event of a location. Manual add/delete goes through `onHistoryEventSaved`,
-  // which still fetches locations.
   if (mainPage) {
     watch(eventsVersion, (current, previous) => {
       if (!toValue(mainPage) || current <= previous)

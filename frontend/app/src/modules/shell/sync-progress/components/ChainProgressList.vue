@@ -11,8 +11,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const showCompleted = ref<boolean>(false);
 
-// Split on the same definition of "settled" the rest of the panel uses, so a chain cannot be in
-// progress here while the header counts it complete.
 const inProgressChains = computed<ChainProgress[]>(() =>
   chains.filter(chain => !isChainSettled(chain)),
 );
@@ -33,6 +31,17 @@ const completedIconColor = computed<string>(() => {
 
   return get(hasCancelledChains) ? 'text-rui-warning' : 'text-rui-success';
 });
+
+const cleanFinish = computed<boolean>(() => !get(hasFailedChains) && !get(hasCancelledChains));
+
+const completedLabel = computed<string>(() => {
+  const count = get(completedCount);
+  return get(cleanFinish)
+    ? t('sync_progress.completed_chains', { count }, count)
+    : t('sync_progress.finished_chains', { count }, count);
+});
+
+const completedIcon = computed<string>(() => (get(cleanFinish) ? 'lu-circle-check' : 'lu-circle-alert'));
 
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
@@ -58,11 +67,11 @@ function toggleCompleted(): void {
         @click="toggleCompleted()"
       >
         <RuiIcon
-          name="lu-circle-check"
+          :name="completedIcon"
           :class="completedIconColor"
           size="16"
         />
-        <span>{{ t('sync_progress.completed_chains', { count: completedCount }, completedCount) }}</span>
+        <span>{{ completedLabel }}</span>
         <RuiIcon
           name="lu-chevron-down"
           size="16"
@@ -78,11 +87,11 @@ function toggleCompleted(): void {
           @click="toggleCompleted()"
         >
           <RuiIcon
-            name="lu-circle-check"
+            :name="completedIcon"
             :class="completedIconColor"
             size="16"
           />
-          <span>{{ t('sync_progress.completed_chains', { count: completedCount }, completedCount) }}</span>
+          <span>{{ completedLabel }}</span>
           <RuiIcon
             name="lu-chevron-up"
             size="16"

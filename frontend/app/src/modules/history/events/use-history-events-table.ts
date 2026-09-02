@@ -189,9 +189,6 @@ export function useHistoryEventsTable(
     },
   };
 
-  // Mirrors the loaded events up to the view, which owns deletion and selection state. The
-  // inversion is known debt: the view is meant to become the data owner, at which point this
-  // watcher and the `update-event-ids` emit both go away.
   watch([data.events, data.completeEventsMapped, data.rawEvents], ([events, groupedEvents, rawEvents]) => {
     emit('update-event-ids', {
       eventIds: events.map(event => event.identifier),

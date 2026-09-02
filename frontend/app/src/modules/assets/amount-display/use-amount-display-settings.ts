@@ -7,12 +7,10 @@ import { type SettingValue, useSetting } from '@/modules/settings/use-setting';
  * union rather than widening to `string`).
  */
 export interface AmountDisplaySettings {
-  // General settings
   floatingPrecision: Readonly<Ref<SettingValue<'floatingPrecision'>>>;
   currency: Readonly<Ref<SettingValue<'currency'>>>;
   currencySymbol: Readonly<Ref<SettingValue<'currencySymbol'>>>;
 
-  // Frontend settings - formatting
   thousandSeparator: Readonly<Ref<SettingValue<'thousandSeparator'>>>;
   decimalSeparator: Readonly<Ref<SettingValue<'decimalSeparator'>>>;
   currencyLocation: Readonly<Ref<SettingValue<'currencyLocation'>>>;
@@ -20,11 +18,9 @@ export interface AmountDisplaySettings {
   minimumDigitToBeAbbreviated: Readonly<Ref<SettingValue<'minimumDigitToBeAbbreviated'>>>;
   subscriptDecimals: Readonly<Ref<SettingValue<'subscriptDecimals'>>>;
 
-  // Frontend settings - rounding
   amountRoundingMode: Readonly<Ref<SettingValue<'amountRoundingMode'>>>;
   valueRoundingMode: Readonly<Ref<SettingValue<'valueRoundingMode'>>>;
 
-  // Frontend settings - privacy
   scrambleData: Readonly<Ref<SettingValue<'scrambleData'>>>;
   scrambleMultiplier: Readonly<Ref<SettingValue<'scrambleMultiplier'>>>;
   shouldShowAmount: Readonly<Ref<SettingValue<'shouldShowAmount'>>>;

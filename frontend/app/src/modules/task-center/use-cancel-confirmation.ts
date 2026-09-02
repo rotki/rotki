@@ -29,16 +29,6 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
     const live = computed<boolean>(() => get(activities)
       .some(item => item.id === activity.id && !isTerminalStatus(item.status)));
 
-    // Every exit runs through `stop`, and there are three of them, because a watcher created here
-    // belongs to no component scope: one that outlives its dialog is never collected, and would go
-    // on calling `dismiss()` at every later settle, closing whatever confirmation happened to be
-    // open at the time.
-    //
-    // 1. `done` covers the debounce timer. Unwatching does not unschedule an already pending
-    //    `dismissWhenSettled`, so a user who acts inside the debounce window would still get a
-    //    `dismiss()` a second later, aimed at whatever dialog is open by then.
-    // 2. `unwatchOwnership` covers being superseded. `useConfirmStore` is a single global slot, so
-    //    any other `show()` overwrites the dismiss handler below and our own `stop` never runs.
     const stops: (() => void)[] = [];
     let done = false;
     const stop = (): void => {
@@ -47,8 +37,11 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
         off();
     };
 
-    // Debounced: a settle emits more than once in quick succession (the status, then the ledger
-    // write), and the dialog should not blink shut on the first of them.
+    /**
+     * Closes the dialog once the work it asks about has settled, debounced because a settle emits
+     * more than once in quick succession — the status, then the ledger write — and the dialog
+     * should not blink shut on the first of them.
+     */
     const dismissWhenSettled = useDebounceFn(async () => {
       if (done)
         return;
@@ -57,9 +50,6 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
       await dismiss();
     }, 1000);
 
-    // `immediate`, because the work can already be terminal by the time the row is clicked — the
-    // snapshot the row rendered from is one tick old. Without it `live` starts false, never
-    // transitions, and the dialog sits there asking to cancel something already finished.
     stops.push(watch(live, (isLive) => {
       if (!isLive)
         startPromise(dismissWhenSettled());
@@ -73,11 +63,6 @@ export function useCancelConfirmation(): UseCancelConfirmationReturn {
       type: 'warning' as const,
     };
 
-    // The slot is ours only until someone else claims it; identity, not visibility, is what says so.
-    // ⚠️ `toRaw` is load-bearing: the store holds the message in a plain `ref`, which deeply
-    // reactifies it, so `get(confirmation)` is a proxy *of* `message` and never `message` itself.
-    // Comparing them directly is always unequal — it stopped the self-dismiss the instant the
-    // dialog opened, disabling the whole composable.
     stops.push(watch([visible, confirmation], ([shown, current]) => {
       if (!shown || toRaw(current) !== message)
         stop();

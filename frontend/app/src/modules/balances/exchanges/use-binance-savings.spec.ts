@@ -29,8 +29,6 @@ vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   };
 });
 
-// Producer-only isolation: capture the native submission instead of driving the real orchestrator,
-// and feed a controllable work status. The pagination tests below don't touch either seam.
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: vi.fn(() => ({
     cancelByType: vi.fn(() => vi.fn()),
@@ -65,9 +63,6 @@ describe('useBinanceSavings', () => {
   beforeEach(async (): Promise<void> => {
     scope = effectScope();
     setActivePinia(createPinia());
-    // Reset the shared route query (mutated by other tests' router.push). A fresh
-    // useRouter() call returns its own push mock, so this does not affect the
-    // push spy asserted on the describe-level router instance.
     await useRouter().push({ query: {} });
     fetchExchangeSavings = useBinanceSavings().fetchExchangeSavings;
   });

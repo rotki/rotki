@@ -11,9 +11,11 @@ const { t } = useI18n({ useScope: 'global' });
 const { useLocationBreakdown } = useAggregatedBalances();
 const breakdown = useLocationBreakdown(() => identifier);
 
-// Sum the breakdown directly so the tile always matches the table below.
-// `balancesByLocation` doesn't expose chain-aliased keys (e.g. 'ethereum')
-// and would otherwise undercount when a manual balance shares the alias label.
+/**
+ * Summed from the breakdown, so the tile always agrees with the table beneath it. Reading
+ * `balancesByLocation` instead would undercount, since it exposes no chain-aliased key and so
+ * misses a manual balance tagged with that alias.
+ */
 const totalValue = computed<BigNumber>(() => bigNumberSum(get(breakdown).map(entry => entry.value)));
 </script>
 

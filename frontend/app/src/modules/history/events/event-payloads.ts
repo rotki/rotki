@@ -44,14 +44,11 @@ export interface PullEthBlockEventPayload {
 /**
  * What a re-decode request covers.
  *
- * Replaces a `'all' | 'page' | string[]` union that travelled through three components before
- * anything interpreted it: a bare array meant "these chains", and the two strings were separate
- * intents wearing the same type. Neither the emitting component nor the ones forwarding it could
- * say which of the three it held, so the meaning only existed at the far end of the chain.
+ * Discriminated so the intent is readable at every hop, rather than a `'all' | 'page' | string[]`
+ * union whose meaning only existed at the far end of the chain.
  *
  * `page` is a development-only convenience (`HistoryRedecodeButton` gates it on
- * `checkIfDevelopment()`), kept here so the scopes stay in one place rather than because it is a
- * user-facing intent.
+ * `checkIfDevelopment()`), kept here so the scopes stay in one place.
  */
 export type DecodeScope =
   | { readonly type: 'all' }

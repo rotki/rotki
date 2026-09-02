@@ -62,7 +62,6 @@ describe('disabledChainQueryRuleDialog', () => {
     set(canSave, true);
     set(kind, 'chain');
     set(scope, 'all');
-    document.body.innerHTML = '';
   });
 
   it('should call reset when the dialog opens', async () => {

@@ -16,8 +16,6 @@ class AsyncUtilityError extends Error {
   }
 }
 
-// The code lives on each subclass rather than travelling through the constructor, so `options` can be
-// forwarded to `super()` untouched and a native `cause` survives.
 class TimeoutError extends AsyncUtilityError {
   readonly code = 'TIMEOUT';
 
@@ -93,6 +91,13 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
     let isCompleted = false;
     let timeoutId: ReturnType<typeof setTimeout>;
 
+    /**
+     * Tears the poll down, in an order that decides which rejection the caller sees.
+     *
+     * @remarks
+     * The abort listener is removed before aborting. Aborting first fires `onAbort`, and the
+     * caller observes an `AbortedError` instead of whatever the caller of this was reporting.
+     */
     const cleanup = (): void => {
       isCompleted = true;
       clearTimeout(timeoutId);
@@ -107,9 +112,6 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
       reject(new AbortedError(name));
     }
 
-    // cleanup() removes the abort listener before aborting, so the TimeoutError
-    // below is the rejection callers observe (aborting first would fire onAbort
-    // and reject with an AbortedError instead).
     timeoutId = setTimeout(() => {
       cleanup();
       reject(new TimeoutError(name, { timeout }));

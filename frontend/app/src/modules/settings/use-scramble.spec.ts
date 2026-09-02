@@ -54,6 +54,13 @@ describe('useScramble', () => {
       expect(consistOfNumbers(result)).toBe(true);
     });
 
+    it('should keep identifiers distinct when the multiplier is zero', () => {
+      store.updateFrontend({ scrambleData: true, scrambleMultiplier: 0 });
+      const { scrambleIdentifier } = useScramble();
+
+      expect(scrambleIdentifier('123456')).not.toEqual(scrambleIdentifier('654321'));
+    });
+
     it('should scramble integer', () => {
       const { scrambleInteger } = useScramble();
       const result = scrambleInteger(42);
@@ -86,24 +93,31 @@ describe('useScramble', () => {
       expect(result).not.toEqual(timestamp);
     });
 
-    it('should preserve ordering: if A < B then scramble(A) < scramble(B)', () => {
+    it('should preserve ordering between two past dates', () => {
       const { scrambleTimestamp } = useScramble();
       const nowSeconds = Math.round(Date.now() / 1000);
+      const older = nowSeconds - 365 * 86400;
+      const newer = nowSeconds - 30 * 86400;
 
-      // past dates
-      const pastA = nowSeconds - 365 * 86400;
-      const pastB = nowSeconds - 30 * 86400;
+      expect(scrambleTimestamp(older)).toBeLessThan(scrambleTimestamp(newer));
+    });
 
-      expect(scrambleTimestamp(pastA)).toBeLessThan(scrambleTimestamp(pastB));
+    it('should preserve ordering between two future dates', () => {
+      const { scrambleTimestamp } = useScramble();
+      const nowSeconds = Math.round(Date.now() / 1000);
+      const sooner = nowSeconds + 30 * 86400;
+      const later = nowSeconds + 365 * 86400;
 
-      // future dates
-      const futureA = nowSeconds + 30 * 86400;
-      const futureB = nowSeconds + 365 * 86400;
+      expect(scrambleTimestamp(sooner)).toBeLessThan(scrambleTimestamp(later));
+    });
 
-      expect(scrambleTimestamp(futureA)).toBeLessThan(scrambleTimestamp(futureB));
+    it('should preserve ordering across the boundary between past and future', () => {
+      const { scrambleTimestamp } = useScramble();
+      const nowSeconds = Math.round(Date.now() / 1000);
+      const past = nowSeconds - 365 * 86400;
+      const future = nowSeconds + 365 * 86400;
 
-      // across past and future
-      expect(scrambleTimestamp(pastA)).toBeLessThan(scrambleTimestamp(futureB));
+      expect(scrambleTimestamp(past)).toBeLessThan(scrambleTimestamp(future));
     });
 
     it('should keep past dates in the past and future dates in the future', () => {

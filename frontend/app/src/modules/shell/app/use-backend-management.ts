@@ -70,9 +70,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const restartBackendWithOptions = async (options: Partial<BackendOptions>, forceRestart = false): Promise<void> => {
     setConnected(false);
     await interop.restartBackend(options, forceRestart);
-    // Re-enable connections in case a prior process termination disabled them
-    // (e.g. on Windows, taskkill exits the core process with a non-zero code, which
-    // is reported as a TERMINATED startup error and disables connection attempts).
     set(connectionEnabled, true);
     setWsConnectionEnabled(true);
     connect();
@@ -131,6 +128,10 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
    * reconnect and some session settling, so throwing would strand the UI mid-sequence -
    * but swallowing it, as this did, let a flow report success after a restart that never
    * happened, leaving the backend holding data it was supposed to reload.
+   *
+   * A resolved `restarted` means the connection is already back, so no caller needs to wait on
+   * readiness afterwards; `unavailable` means nothing was restarted at all, which is how the plain
+   * web build has always behaved and is not a failure.
    */
   const restartBackend = async (forceRestart = false): Promise<BackendRestartResult> => {
     if (interop.isPackaged) {
@@ -145,12 +146,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       return { status: BackendRestartStatus.restarted };
     }
 
-    // Docker: no Electron to ask, but starling exposes the same `restart` over
-    // `/_control` once a session cookie is configured (#2807). Until this
-    // existed the call simply returned, so every flow that needs a bounced
-    // backend — the asset-update unlock step, AssetUpdate, RestoreAssetDbButton
-    // — silently did nothing in a container. `available` is false where there is
-    // no control endpoint, which keeps the old no-op for the plain web build.
     if (!await controlProbe())
       return { status: BackendRestartStatus.unavailable };
 
@@ -163,8 +158,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       logger.error(error);
       result = { message: getErrorMessage(error), status: BackendRestartStatus.failed };
     }
-    // Reconnect either way. A refused restart leaves the backend up and serving, so
-    // staying disconnected would break an app that has nothing wrong with it.
     set(connectionEnabled, true);
     setWsConnectionEnabled(true);
     connect();
@@ -195,11 +188,6 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     if (!!url && !sessionOnly) {
       await backendChanged(url);
     }
-    // Boot only *starts* a backend where the app owns one. In docker the tree is
-    // already up before the page loads, so restarting here would bounce it on
-    // every reload — and before login the control endpoint would refuse anyway,
-    // stranding the user short of the login screen. Explicit restart flows call
-    // `restartBackend` directly; boot is not one of them.
     else if (interop.isPackaged) {
       await restartBackend();
     }

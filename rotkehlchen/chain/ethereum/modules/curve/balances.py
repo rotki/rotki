@@ -58,6 +58,9 @@ class CurveBalances(ProtocolWithGauges):
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Query gauge balances and CRV deposited in the veCRV contract"""
         balances = super().query_balances(addresses=addresses)  # gauge balances
+        if self.counterparty_is_absent_from_chain():
+            return balances  # no curve events at all, so nothing locked in veCRV either
+
         db_filter = EvmEventFilterQuery.make(
             assets=(A_CRV,),
             counterparties=[self.counterparty],

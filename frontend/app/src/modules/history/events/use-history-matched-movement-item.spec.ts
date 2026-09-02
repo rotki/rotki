@@ -401,11 +401,6 @@ describe('useHistoryMatchedMovementItem', () => {
       const { compactNotes } = useHistoryMatchedMovementItem({ events });
       const notes = get(compactNotes)!;
 
-      // The from_part should contain the exchange (Kraken Exchange)
-      expect(notes).toContain('Kraken Exchange');
-      // The to_part should contain the on-chain address
-      expect(notes).toContain('0x8454...3000');
-      // Verify from contains exchange and to contains address
       expect(notes).toContain('from_part::Kraken Exchange');
       expect(notes).toContain('to_part::0x8454...3000');
     });
@@ -434,15 +429,11 @@ describe('useHistoryMatchedMovementItem', () => {
       const { compactNotes } = useHistoryMatchedMovementItem({ events });
       const notes = get(compactNotes)!;
 
-      // The to_part should contain the exchange (Kraken Exchange)
       expect(notes).toContain('to_part::Kraken Exchange');
-      // The from_part should contain the on-chain address
       expect(notes).toContain('from_part::0x8454...3000');
     });
 
-    it('should select correct secondary event when adjustment events are present', () => {
-      // Simulates: primary is ASSET_MOVEMENT_EVENT (kraken withdrawal),
-      // there's a SEND adjustment event (also kraken), and the actual counterpart is an EVM_EVENT (ACCOUNT DEPOSIT)
+    it('should select the evm counterpart as the secondary event, not the same-location adjustment event sitting between it and the primary', () => {
       const events = ref([
         createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
           identifier: 1,

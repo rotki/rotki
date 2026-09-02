@@ -1,5 +1,5 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
-import type { ComponentPublicInstance } from 'vue';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
@@ -17,8 +17,6 @@ vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
     syncingExchanges: computed<Exchange[]>(() => [KRAKEN, BITMEX]),
   }),
 }));
-
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function stub(name: string, props: string[]): Record<string, unknown> {
   return {
@@ -105,8 +103,6 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     expect(await harness.validate()).toBe(false);
   });
 
-  // Bitmex is one of the exchanges that reports no date range, so the picker is hidden for it and
-  // its rules go with it. Kraken, used everywhere else here, is not.
   it('should accept a missing range for an exchange that has no picker', async () => {
     harness = createWrapper({ ...basePayload(), fromTimestamp: undefined, toTimestamp: undefined });
     await vi.advanceTimersToNextTimerAsync();
@@ -126,7 +122,7 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
     expect(harness.model().toTimestamp).toBeUndefined();
   });
 
-  it('should show the message for a missing exchange once validate runs', async () => {
+  it('should show the form\'s own empty-exchange message, not zod\'s wording, once validate runs', async () => {
     harness = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
@@ -135,8 +131,6 @@ describe('history/events/tx/RepullingExchangeForm.vue', () => {
 
     const value: unknown = autocomplete().props('errorMessages');
     assert(Array.isArray(value));
-    // The text, not just its presence: a schema that rejects a missing key rather than an empty
-    // value reports zod's own wording here and would pass a non-empty check.
     expect(value).toEqual(['transactions.repulling.validation.exchange_non_empty']);
   });
 

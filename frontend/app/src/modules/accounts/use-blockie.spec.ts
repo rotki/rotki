@@ -13,8 +13,6 @@ describe('useBlockie', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
     vi.clearAllMocks();
-    // `useBlockie` is a `createSharedComposable`; acquire it inside an owned scope so
-    // `afterEach` disposes the shared instance and each test starts with an empty cache.
     scope = effectScope();
     scope.run(() => {
       ({ cache, getBlockie } = useBlockie());

@@ -11,8 +11,13 @@ const { type, showInfo, showLabel, icon, highlight } = defineProps<{
   showInfo?: boolean;
 }>();
 
-// Spelled out rather than interpolated: an inline template literal in `t()` makes the rule treat
-// the whole prefix as used, which quietly exempts the subtree from unused-key reporting.
+/**
+ * Maps a direction onto its translated label key.
+ *
+ * @remarks Each key is spelled out rather than interpolated: an inline template literal in `t()`
+ * makes the linked-keys rule treat the whole prefix as used, which quietly exempts the subtree
+ * from unused-key reporting.
+ */
 const DIRECTION_KEYS: Record<HistoryEventCategoryDirection, MessageKey> = {
   in: msg.$t('backend_mappings.events.type_direction.directions.in'),
   neutral: msg.$t('backend_mappings.events.type_direction.directions.neutral'),
@@ -61,7 +66,7 @@ const { t } = useI18n({ useScope: 'global' });
         {{ type.label }}
       </div>
       <RuiTooltip
-        :popper="{ placement: 'top', scroll: false, resize: false }"
+        :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

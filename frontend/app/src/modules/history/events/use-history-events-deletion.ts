@@ -72,13 +72,10 @@ export function useHistoryEventsDeletion(
   ): Promise<{ message?: string; success: boolean }> {
     try {
       for (const [, { events: eventIds, groupIdentifier }] of transactions) {
-        // Use groupIdentifier to look up the events
         const txEvents = groupIdentifier ? toValue(groupedEventsByTxRef)[groupIdentifier] || [] : [];
 
-        // Flatten the events array
         const allEvents = txEvents.flat().filter((e: any) => !Array.isArray(e));
 
-        // Ignore each event that matches our selected IDs
         for (const eventId of eventIds) {
           const event = allEvents.find((e: HistoryEventEntry) => e.identifier === eventId);
           if (event)
@@ -126,8 +123,6 @@ export function useHistoryEventsDeletion(
 
     if (success) {
       showSuccessMessage(title, successMessage);
-      // Single choke point for every deletion path (events / transactions / ignore / filter):
-      // a removal makes computed P&L / historical balances stale (issue #6825).
       taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
     }
     else {
@@ -184,7 +179,6 @@ export function useHistoryEventsDeletion(
   async function deleteSelected(): Promise<void> {
     const state = get(selectionMode.state);
 
-    // Handle select all matching case
     if (state.selectAllMatching) {
       set(isDeleting, true);
       try {
@@ -209,7 +203,6 @@ export function useHistoryEventsDeletion(
         toValue(groupedEventsByTxRef),
       );
 
-      // Handle partial swap selection first
       if (partialSwapGroups.length > 0) {
         await handlePartialSwapDeletion(partialSwapGroups, partialEventIds, completeTransactions);
       }
@@ -241,7 +234,6 @@ export function useHistoryEventsDeletion(
     await new Promise<void>((resolve) => {
       showConfirm(
         confirmation,
-        // Primary: Delete transactions
         async () => {
           const txResult = await deleteCompleteTransactions(transactions);
           const eventsResult = await deletePartialEvents(remainingEventIds);
@@ -353,13 +345,11 @@ export function useHistoryEventsDeletion(
       showConfirm(
         confirmation,
         async () => {
-          // Delete complete transactions first if any
           let txResult: { message?: string; success: boolean } = { success: true };
           if (transactions.size > 0) {
             txResult = await deleteCompleteTransactions(transactions);
           }
 
-          // Then delete all the events (including full swap groups)
           const eventsResult = await deletePartialEvents(allEventIds);
 
           const success = txResult.success && eventsResult.success;

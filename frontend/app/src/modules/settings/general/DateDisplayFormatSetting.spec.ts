@@ -72,12 +72,11 @@ describe('dateDisplayFormatSetting', () => {
     expect(wrapper.find('.error').text()).toContain('general_settings.date_display.validation.invalid');
   });
 
-  it('should not persist an empty format', async () => {
+  it('should not persist an empty format, reporting both the empty and the format rule', async () => {
     const wrapper = createWrapper();
     await input(wrapper, '');
     expect(get(model)).toBe('%d/%m/%Y');
     expect(wrapper.find('.error').text()).toContain('general_settings.date_display.validation.empty');
-    // A blank value trips both rules under Vuelidate; the count is pinned so the migration keeps it.
     expect(wrapper.find('.error-count').text()).toBe('2');
   });
 

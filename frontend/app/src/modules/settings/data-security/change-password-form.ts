@@ -20,7 +20,7 @@ export function emptyChangePasswordState(): ChangePasswordFormState {
   };
 }
 
-/** Whitespace-only counts as missing, as the rule this replaces did. */
+/** Whitespace-only counts as missing, since a password of spaces is not one the user meant to set. */
 function isEmpty(value: string): boolean {
   return value.trim() === '';
 }
@@ -40,8 +40,6 @@ export function changePasswordSchema(messages: ChangePasswordFormMessages): ZodT
     if (isEmpty(state.newPasswordConfirm))
       ctx.addIssue({ code: 'custom', message: messages.emptyConfirmation, path: ['newPasswordConfirm'] });
 
-    // Reported independently of the rule above, as vuelidate did: a blank confirmation against a
-    // filled new password is both empty and different, and both messages were shown.
     if (state.newPasswordConfirm !== state.newPassword)
       ctx.addIssue({ code: 'custom', message: messages.mismatch, path: ['newPasswordConfirm'] });
   });

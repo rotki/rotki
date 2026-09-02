@@ -5,16 +5,13 @@ import { msg } from '@/message-key';
 /**
  * The zod counterparts of the shared event-form validation rules.
  *
- * Two deliberate differences from the Vuelidate rules they replace:
+ * - Messages are i18n **keys**, not resolved strings, so schemas stay free of Vue and i18n and are
+ *   testable as plain data; `useForm` resolves them at the Vue boundary. Branded with `msg.$t` so
+ *   the unused-key lint rule counts them.
+ * - The "valid" check tolerates an empty value, so an empty required field reports only "required".
  *
- * - Messages are i18n **keys**, not resolved strings. Schemas stay free of Vue and i18n so they can
- *   be unit-tested as plain data; `useForm` resolves the key with `t()` at the Vue boundary. They are
- *   branded with `msg.$t` so the unused-key lint rule still counts them as used.
- * - The "valid" check tolerates an empty value, so an empty required field reports only "required"
- *   rather than "required" and "invalid" at once.
- *
- * Each is a function rather than a constant because zod schemas are mutable builders; sharing one
- * instance across forms would let a `.refine()` in one leak into another.
+ * Each is a function, not a constant: zod schemas are mutable builders, so a shared instance would
+ * let a `.refine()` in one form leak into another.
  */
 
 export function requiredAmount(): z.ZodString {
@@ -142,7 +139,7 @@ export function validCounterparty(counterparties: () => string[]): z.ZodType<str
 
 /**
  * A field with no client-side constraint, kept as a named schema because these fields still receive
- * *server* errors. It replaces the Vuelidate `externalServerValidation` no-op rule, whose only job
+ * server* errors. It replaces the Vuelidate `externalServerValidation` no-op rule, whose only job
  * was to give `$externalResults` somewhere to attach.
  */
 export function serverValidatedOnly(): z.ZodString {

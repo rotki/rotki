@@ -43,8 +43,6 @@ const mockInterop = vi.hoisted(() => ({
   premiumUserLoggedIn: vi.fn(),
 }));
 
-// The overrides object is read on every property access, so the tests can keep
-// flipping `mockInterop.isPackaged` between cases.
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>(mockInterop)),
 }));
@@ -111,9 +109,6 @@ describe('useAccount', () => {
     });
 
     it('should not reset an in-flight flow (a background auto-unlock must survive `touched`)', () => {
-      // A background auto-unlock can be in flight while the form is interactive; `touched` →
-      // clearErrors must not reset it, or it would drop the flow's credentials and abort with
-      // "unlock without an active flow".
       const { clearErrors } = useAccountManagement();
 
       for (const kind of ['authenticating', 'connecting', 'checking-update', 'unlocking', 'idle'] as const) {
@@ -155,11 +150,6 @@ describe('useAccount', () => {
   describe('password confirmation', () => {
     beforeEach(() => {
       vi.clearAllMocks();
-      // Freeze the clock. These cases assert on an interval boundary, but the timestamp they store
-      // and the one `use-password-confirmation` compares it against are two independent reads of
-      // the wall clock. Crossing a second between them makes the elapsed time one greater than the
-      // interval, which flipped the boundary assertions at random on a loaded machine. Only `Date`
-      // is faked, so the async paths under test keep real timers.
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
       mockInterop.isPackaged = true;
@@ -268,7 +258,6 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue(undefined);
 
-      // Set lastPasswordConfirmed to an old timestamp so interval has elapsed
       const oldTimestamp = dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 1;
       frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
@@ -279,11 +268,10 @@ describe('useAccount', () => {
       const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
-      // Should not set needsPasswordConfirmation because no stored password
       expect(get(needsPasswordConfirmation)).toBe(false);
     });
 
-    it('should not set needsPasswordConfirmation when interval has not elapsed', async () => {
+    it('should not set needsPasswordConfirmation nor read the stored password when interval has not elapsed', async () => {
       const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
@@ -293,7 +281,7 @@ describe('useAccount', () => {
 
       frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
-        lastPasswordConfirmed: dayjs().unix(), // Just now
+        lastPasswordConfirmed: dayjs().unix(),
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
@@ -301,7 +289,6 @@ describe('useAccount', () => {
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
-      // getPassword should not be called when interval hasn't elapsed (optimization)
       expect(mockInterop.getPassword).not.toHaveBeenCalled();
     });
 
@@ -338,7 +325,7 @@ describe('useAccount', () => {
 
       frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
-        lastPasswordConfirmed: now - interval - 1, // Exactly 1 second past
+        lastPasswordConfirmed: now - interval - 1,
         passwordConfirmationInterval: interval,
       });
 
@@ -360,7 +347,7 @@ describe('useAccount', () => {
 
       frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
-        lastPasswordConfirmed: now - interval, // Exactly at boundary
+        lastPasswordConfirmed: now - interval,
         passwordConfirmationInterval: interval,
       });
 
@@ -423,7 +410,7 @@ describe('useAccount', () => {
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
       frontendStore.updateFrontend({
-        enablePasswordConfirmation: false, // Disabled
+        enablePasswordConfirmation: false,
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 1000,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
@@ -446,7 +433,7 @@ describe('useAccount', () => {
 
       frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
-        lastPasswordConfirmed: 0, // First time use
+        lastPasswordConfirmed: 0,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
@@ -454,9 +441,7 @@ describe('useAccount', () => {
       await checkIfPasswordConfirmationNeeded('testUser');
       const afterTime = dayjs().unix();
 
-      // Should not show dialog on first use
       expect(get(needsPasswordConfirmation)).toBe(false);
-      // Should have initialized the timestamp
       expect(frontendStore.frontend.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
       expect(frontendStore.frontend.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
     });

@@ -10,8 +10,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <RuiMenu
-    :popper="{ placement: 'right-start' }"
-    menu-class="max-w-[25rem]"
+    :options="{ placement: 'right-start' }"
+    :class-names="{ menu: 'max-w-[25rem]' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

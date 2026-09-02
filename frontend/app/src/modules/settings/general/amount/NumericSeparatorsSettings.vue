@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import { startPromise } from '@shared/utils';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { numericSeparatorsSchema, type NumericSeparatorsState } from '@/modules/settings/general/amount/numeric-separators';
 import { useSettingsWriter } from '@/modules/settings/settings-writer';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
@@ -42,8 +42,7 @@ const schema = computed<ZodType>(() => numericSeparatorsSchema({
 const form = useForm<NumericSeparatorsState, NumericSeparatorsState>({
   initial: (): NumericSeparatorsState => ({ decimal: get(decimalSource), thousand: get(thousandSource) }),
   schema,
-  // Unused: `submitPair` below owns the write so it can be debounced. The core requires a submit.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): NumericSeparatorsState => ({ decimal: state.decimal, thousand: state.thousand }),
 });
 

@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { assert, describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+import { assert, beforeEach, describe, expect, it } from 'vitest';
 import PendingTaskNode from '@/modules/core/notifications/PendingTaskNode.vue';
 import { buildTree } from '@/modules/task-center/core/tree';
 import {
@@ -53,6 +54,10 @@ function createWrapper(): VueWrapper {
 }
 
 describe('pendingTaskNode', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   /**
    * Collapsed at every level, the job's own fan-out included. The rolled-up row already says what
    * is running and how far along; unfolding eleven chains times four accounts into a 400px drawer
@@ -88,12 +93,7 @@ describe('pendingTaskNode', () => {
     expect(createWrapper().text()).toContain('pending_task.steps::1, 2');
   });
 
-  /**
-   * ⭐ The control is back now that `orchestrator.cancel` cascades. It was withheld while
-   * cancelling a parent settled its row and stopped nothing — the handle aborts a backend task id
-   * an umbrella never has.
-   */
-  it('should offer a cancel control on a parent', async () => {
+  it('should offer a cancel control on a parent, whose cancel cascades to the subtree', async () => {
     const wrapper = createWrapper();
     const control = wrapper.find('[data-testid=cancel-activity]');
     expect(control.exists()).toBe(true);

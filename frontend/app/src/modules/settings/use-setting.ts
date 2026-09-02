@@ -37,11 +37,16 @@ export function useSetting<K extends SettingKey>(key: K): Readonly<Ref<SettingVa
   const entry: RegistryEntry = settingsRegistry[key];
   const project = entry.project;
   const field = entry.wireKey ?? key;
+  /**
+   * Reads the key's current value out of its channel.
+   *
+   * @remarks
+   * `repo[entry.channel]` is the union of the four parsed channel objects, and `Reflect.get` reads
+   * the dynamic `field` off it without a `Record` cast. The registry guarantees the result is the
+   * key's value type, which cannot be proven for a generic `K`, so the assertion below is the single
+   * one behind this typed facade, on the same footing as pinia's `storeToRefs`.
+   */
   const read = (): SettingValue<K> => {
-    // `repo[entry.channel]` is the union of the four parsed channel objects; `Reflect.get` reads the
-    // dynamic `field` off it without a `Record` cast. The registry guarantees this resolves to the
-    // key's value type, but that can't be proven for a generic `K`, so assert once here (the only
-    // assertion behind this typed facade, same idea as pinia's storeToRefs).
     const value: unknown = project ? project(repo[entry.channel]) : Reflect.get(repo[entry.channel], field);
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- registry guarantees the resolved value is SettingValue<K>; use-setting.spec verifies the mapping at runtime
     return value as SettingValue<K>;

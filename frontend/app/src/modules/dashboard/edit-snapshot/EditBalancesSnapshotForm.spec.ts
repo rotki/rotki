@@ -62,9 +62,6 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
   });
 
   function createWrapper(modelValue: BalanceSnapshotPayloadAndLocation = baseModel(), hideLocation = false, disabledLocations: string[] = []): VueWrapper<FormInstance> {
-    // The model has to be fed back as a prop, not just captured: with an `onUpdate:modelValue`
-    // listener attached, `defineModel` reads the prop rather than a local value, so a harness that
-    // only records the emission leaves the form frozen on its initial model.
     wrapper = mount(EditBalancesSnapshotForm, {
       global: {
         plugins: [pinia],
@@ -97,9 +94,6 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     const model = baseModel();
     // @ts-expect-error category is required by type but we simulate invalid state
     model.category = undefined;
-    // Feeding undefined to BalanceTypeInput's required String model emits an
-    // expected Vue prop warning on mount; swallow only that one so it doesn't
-    // pollute output, while letting any other warning through.
     const originalWarn = console.warn;
     const warn = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]): void => {
       const first = args[0];
@@ -188,13 +182,10 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
       .toBe('dashboard.snapshot.edit.dialog.balances.rules.location_insufficient');
   });
 
-  // The price machine rewrites the value on mount, so a dirty check over the whole entry would
-  // arm the dialog's unsaved-changes prompt before the user has touched anything.
-  it('should not flag stateUpdated for the price fetched on mount', async () => {
+  it('should not flag stateUpdated for the price the mount fetch rewrites', async () => {
     const model = baseModel();
-    // Seed a value the mounted price fetch will overwrite (1.5 * 2000 = 3000), so this fails if the
-    // dirty check covers the fetched value rather than the fields the user edits.
-    model.usdValue = '1';
+    const overwrittenOnMount = '1';
+    model.usdValue = overwrittenOnMount;
     wrapper = createWrapper(model);
     await vi.advanceTimersByTimeAsync(600);
 

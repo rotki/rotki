@@ -5,15 +5,6 @@ import { defineComponent, h, ref, type VNode } from 'vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
 import '@test/i18n';
 
-/**
- * Guards the step's Continue button, with the REAL form mounted underneath.
- *
- * Same contract as [[CreateAccountCredentials.spec.ts]]: the form spec pins the rules and the `valid`
- * model, this one pins the step gating on it. Premium adds a case the credentials step does not
- * have - declining premium has to leave Continue enabled with both credential fields empty, so a
- * schema that forgets to stay conditional locks the user out of the wizard entirely.
- */
-
 function inputStub(name: string): Record<string, unknown> {
   return {
     emits: ['update:modelValue'],
@@ -88,8 +79,7 @@ describe('createAccountPremium', () => {
     await nextTick();
   }
 
-  // The case that locks a user out of the wizard if the schema stops being conditional.
-  it('should enable continue when premium is declined, with empty credentials', async () => {
+  it('should enable continue when premium is declined, with empty credentials, or the wizard locks the user out', async () => {
     wrapper = createWrapper({ premiumEnabled: false });
     await nextTick();
 
@@ -122,10 +112,6 @@ describe('createAccountPremium', () => {
 
     expect(continueDisabled()).toBe(true);
   });
-
-  // No loading assertion here, unlike the credentials step: this step's Continue binds only
-  // `:disabled="!valid"` and passes `loading` through to RuiButton, so whether it is clickable
-  // during a submit is RuiButton's business and the stub does not model it.
 
   it('should advance the wizard when continue is pressed', async () => {
     wrapper = createWrapper({ premiumEnabled: false });

@@ -50,12 +50,12 @@ function ruiRegister(app: App): void {
 }
 
 /**
- * Components registered here are also handed to the premium bundle, which renders them by name.
+ * Registers the components the premium bundle renders by name.
  *
- * Every entry below is used by components major 16. The per-component "first available in version
- * N" trail this list used to carry went back to version 1 (rotki 1.19) and is gone: a bundle now
- * refuses to render below host version 29, so no supported bundle can ask for anything older, and
- * git history holds the record for anyone who needs it.
+ * @remarks
+ * Removing an entry breaks a bundle that asks for it, so treat this list as the host's contract
+ * with components major 16. Per-entry version notes are not needed: a bundle refuses to render
+ * below host version 29, so none can ask for anything older.
  */
 export function registerComponents(app: App): void {
   app.component('HashLink', HashLink);

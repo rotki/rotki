@@ -39,6 +39,14 @@ interface UseAddressesNamesApiReturn {
 const ENS_REVERSE_TIMEOUT = 10_000;
 
 export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
+  /**
+   * Reverse-resolves ENS names, synchronously or as a backend task.
+   *
+   * @remarks
+   * Only the synchronous read is deduped, bounded and deprioritised: it is the one a re-render
+   * repeats. With `asyncQuery` it runs as a backend task instead, which is a user's explicit
+   * refresh and returns a task id rather than the names.
+   */
   const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => api.post<T>(
     '/names/ens/reverse',
     {
@@ -47,9 +55,6 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
       ignoreCache: asyncQuery,
     },
     {
-      // Only the synchronous read is bounded and shared. The task variant is user-initiated
-      // (an explicit refresh), returns a task id rather than the names, and is not what a
-      // re-render repeats.
       dedupe: !asyncQuery,
       priority: asyncQuery ? undefined : RequestPriority.LOW,
       timeout: asyncQuery ? undefined : ENS_REVERSE_TIMEOUT,
@@ -123,13 +128,18 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
     validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
   });
 
+  /**
+   * Resolves the display names for a set of addresses.
+   *
+   * @remarks
+   * Sent at low priority: these names decorate rows that already render without them, so this must
+   * never be the reason a user action waits behind the queue.
+   */
   const getAddressesNames = async (addresses: AddressBookSimplePayload[]): Promise<AddressBookEntries> => {
     const response = await api.post<AddressBookEntries>(
       '/names',
       { addresses },
       {
-        // Decoration for rows that already render without it, resolved on every render that
-        // shows an address. It must never be the reason a user action waits.
         priority: RequestPriority.LOW,
         validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },

@@ -21,9 +21,9 @@ import { router } from '@/router';
  * Any param NOT listed here is redacted to its placeholder name.
  */
 const SAFE_PARAMS: ReadonlySet<string> = new Set([
-  'location', // staking: eth2, liquity, lido-csm, kraken
-  'exchange', // balances/exchange: binance, kraken, etc.
-  'tab', // UI tab names: accounts, validators, etc.
+  'location',
+  'exchange',
+  'tab',
 ]);
 
 /**
@@ -84,14 +84,19 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
 
   let sessionReadyHandled = false;
 
+  /**
+   * Records the session's opening chronicle entries, once per session.
+   *
+   * @remarks
+   * The user is resolved here rather than in `activate()`, so an empty read means unset and never
+   * not-loaded-yet. The unlock flow happens to land the settings before it flips `logged`, which
+   * makes the two equivalent today; do not depend on that.
+   */
   async function onSessionReady(): Promise<void> {
     if (sessionReadyHandled)
       return;
     sessionReadyHandled = true;
 
-    // Here rather than in activate() to keep the dependency explicit: an empty read must mean
-    // unset, never not-loaded-yet. The unlock flow happens to land the settings before it flips
-    // `logged`, so today both are equivalent; this does not rely on that staying true.
     await resolveUser();
 
     chronicle('session_config', collectSessionConfig());
@@ -182,8 +187,6 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
     sigilBus.on('balances:loaded', onBalancesLoaded);
     sigilBus.on('history:ready', onHistoryReady);
 
-    // If the session is already active when sigil activates (e.g. the watcher
-    // ran after session:ready was emitted), collect the data immediately.
     if (get(logged))
       startPromise(onSessionReady());
   }
@@ -208,16 +211,22 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
     sessionReadyHandled = false;
   }
 
-  // Only activate on production builds with analytics opted in.
-  // VITE_SIGIL_DEBUG=true overrides the production-only gate for local testing.
+  /** Overrides the production-only gate, so analytics can be exercised in a local build. */
   const sigilDebug = !!import.meta.env.VITE_SIGIL_DEBUG;
 
-  // Reset one-shot events only when the user actually logs out,
-  // not on transient deactivate/reactivate cycles.
-  watch(logged, (isLogged) => {
+  /**
+   * Clears the one-shot events when the user logs out, so the next session emits them again.
+   *
+   * @remarks
+   * Keyed on the login state rather than on {@link deactivate}, which also runs on transient
+   * teardown: resetting there would let a reactivated session re-emit events it has already sent.
+   */
+  function resetSessionOnLogout(isLogged: boolean): void {
     if (!isLogged)
       resetSession();
-  });
+  }
+
+  watch(logged, resetSessionOnLogout);
 
   watchImmediate(
     () => !!WEBSITE_ID && get(logged) && get(submitUsageAnalytics) && (sigilDebug || !get(isDevelop)),

@@ -137,7 +137,7 @@ describe('useAccountDelete', () => {
       expect(useBlockchainAccountsStore().accounts).toMatchObject({ eth: [], optimism: [] });
     });
 
-    it('should remove a partially shown group chain by chain', async () => {
+    it('should remove a partially shown group chain by chain and leave the chains it did not show', async () => {
       seedChains(['eth', 'optimism', 'base']);
 
       await confirmRemoval(groupAccount(['eth', 'optimism'], ['eth', 'optimism', 'base']));
@@ -146,7 +146,6 @@ describe('useAccountDelete', () => {
       expect(mocks.removeAccount).toHaveBeenCalledTimes(2);
       expect(mocks.removeAccount).toHaveBeenCalledWith({ accounts: ['0x123'], chain: 'eth' });
       expect(mocks.removeAccount).toHaveBeenCalledWith({ accounts: ['0x123'], chain: 'optimism' });
-      // The chains the group did not show keep their account.
       expect(useBlockchainAccountsStore().accounts).toMatchObject({
         base: [{ chain: 'base' }],
         eth: [],
@@ -170,10 +169,6 @@ describe('useAccountDelete', () => {
 
       const removal = confirmRemoval(groupAccount(['eth', 'optimism'], ['eth', 'optimism', 'base']));
       await vi.waitFor(() => {
-        // Both reach `removeAccount` before either resolves: this composable submits them together
-        // and holds no limiter of its own. Ordering them is the removal lane's job, one level down
-        // — asserted where it can actually be seen, on the spec `submitTask` receives
-        // (`use-account-removals.spec.ts`). Asserting it here would only re-measure the mock.
         expect(started).toStrictEqual(['eth', 'optimism']);
       });
 

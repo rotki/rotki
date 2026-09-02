@@ -37,20 +37,25 @@ export function createAutoLogin(): UseAutoLoginReturn {
   const { resetSessionBackend } = useBackendManagement();
   const { checkIfPasswordConfirmationNeeded, confirmPassword, needsPasswordConfirmation } = usePasswordConfirmation();
 
-  // `immediate` so it also fires when this is created after the backend already connected
-  // (e.g. the login screen mounts post-connect) rather than only on a false→true transition.
-  watch(connected, async (isConnected) => {
+  /**
+   * Attempts to unlock the last profile as soon as the backend is reachable.
+   *
+   * @remarks
+   * Watched immediately rather than on a false-to-true transition, so it still runs where the
+   * backend connected before this was created, which is what the login screen mounting post-connect
+   * does. With no saved profile there is nothing to unlock, so the loader is dropped and the login
+   * form shown.
+   *
+   * @param isConnected - whether the backend is reachable
+   */
+  async function unlockLastProfile(isConnected: boolean): Promise<void> {
     if (!isConnected)
       return;
 
-    // Flag the auto-unlock immediately — before resetSessionBackend and before the flow
-    // starts — so the connection loader covers the whole attempt and the login form never
-    // flashes empty (with a disabled button and no spinner) in the gap.
     set(autolog, true);
 
     await resetSessionBackend();
 
-    // No saved profile ⇒ nothing to auto-unlock; drop the loader and show the login form.
     if (!get(lastLogin)) {
       set(autolog, false);
       return;
@@ -58,12 +63,11 @@ export function createAutoLogin(): UseAutoLoginReturn {
 
     await controller.startAuto();
 
-    // On success the flow is `ready` and navigation to the dashboard is under way (onReady still
-    // has an async settings write + nav to run) — keep the loader up until the route changes so
-    // the form doesn't reappear. Only drop it when startAuto fell back to the idle login form.
     if (get(controller.state).kind !== UnlockPhase.ready)
       set(autolog, false);
-  }, { immediate: true });
+  }
+
+  watch(connected, unlockLastProfile, { immediate: true });
 
   return {
     autolog: readonly(autolog),

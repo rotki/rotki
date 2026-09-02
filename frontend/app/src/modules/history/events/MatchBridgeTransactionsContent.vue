@@ -207,6 +207,7 @@ onBeforeMount(async () => {
         :class="{ 'h-[30px]': isPinned }"
         :disabled="ignoreLoading"
         :loading="ignoreLoading"
+        data-testid="ignore-selected"
         @click="confirmIgnoreSelected()"
       >
         {{ t('asset_movement_matching.actions.ignore_selected') }}
@@ -227,8 +228,8 @@ onBeforeMount(async () => {
       >
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
-          tooltip-class="max-w-80"
+          :options="{ placement: 'top' }"
+          :class-names="{ tooltip: 'max-w-80' }"
         >
           <template #activator>
             <RuiButton
@@ -238,6 +239,7 @@ onBeforeMount(async () => {
               :class="{ 'h-[30px] !px-3': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedTransactions.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
+              data-testid="auto-match"
               @click="triggerBridgeAutoMatching()"
             >
               {{ t('asset_movement_matching.actions.auto_match') }}
@@ -263,6 +265,7 @@ onBeforeMount(async () => {
         :size="buttonSize"
         :disabled="ignoreLoading"
         :loading="ignoreLoading"
+        data-testid="restore-selected"
         @click="confirmRestoreSelected()"
       >
         {{ t('asset_movement_matching.actions.restore_selected') }}
@@ -279,6 +282,7 @@ onBeforeMount(async () => {
     <RuiButton
       v-if="!isPinned"
       variant="text"
+      data-testid="close"
       @click="emit('close')"
     >
       {{ t('common.actions.close') }}

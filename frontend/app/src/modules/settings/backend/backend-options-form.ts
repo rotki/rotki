@@ -114,17 +114,14 @@ export interface BackendNumericMessages {
 
 /**
  * Digits with an optional fractional part, and no sign. This is vuelidate's
- * `numeric`, kept verbatim: it is the rule that actually rejects a bad value,
- * because a signed value never reaches the `minValue(0)` it was paired with.
- * Loosening it to a plain "is a number, and >= 0" would accept exponent
- * notation, which `parseValue` then truncates to its mantissa.
+ * `numeric` is kept verbatim: it is the rule that actually rejects a bad value, because a signed
+ * value never reaches the `minValue(0)` it was paired with. Loosening it to a plain "is a number and
+ * not negative" would accept exponent notation, which `parseValue` then truncates to its mantissa.
  */
 const DIGITS = /^\d*(?:\.\d+)?$/;
 
 function backendNumericField(messages: BackendNumericMessages): ZodType<string> {
   return z.string().superRefine((value, ctx) => {
-    // Both issues can fire at once, in this order, for a whitespace-only value:
-    // it is not digits, and it is empty once trimmed.
     if (!DIGITS.test(value))
       ctx.addIssue({ code: 'custom', message: messages.min });
 

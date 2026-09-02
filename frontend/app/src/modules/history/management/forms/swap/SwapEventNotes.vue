@@ -31,7 +31,7 @@ function feeLabel(index: number): string {
   <RuiAccordions>
     <RuiAccordion
       data-testid="advanced-accordion"
-      header-class="py-4"
+      :class-names="{ header: 'py-4' }"
       eager
     >
       <template #header>

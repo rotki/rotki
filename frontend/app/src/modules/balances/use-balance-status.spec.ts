@@ -1,5 +1,6 @@
 import type { Result } from 'plainfp/result';
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import { neverSettles } from '@test/utils/never-settles';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
@@ -12,7 +13,7 @@ function startFetch(chain: string, ...parts: string[]): void {
   useTaskOrchestrator().submit({
     id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ...parts),
     kind: ActivityKind.BLOCKCHAIN_BALANCES,
-    run: async (): Promise<Result<unknown, TaskError>> => new Promise(() => {}),
+    run: async (): Promise<Result<unknown, TaskError>> => neverSettles(),
     title: chain,
   });
 }
@@ -49,7 +50,7 @@ describe('useBalanceStatus', () => {
     });
 
     /**
-     * 🔴 Hydration is not an activity, so the orchestrator reports a chain being read from the DB
+     * Hydration is not an activity, so the orchestrator reports a chain being read from the DB
      * as idle. Without the store half, the whole cached phase renders settled-and-empty.
      */
     it('should cover a chain being hydrated as well as refreshed', () => {
@@ -136,8 +137,6 @@ describe('useBalanceStatus', () => {
       startFetch('optimism');
       expect(get(isInitialLoading)).toBe(true);
 
-      // There is now something to show, so the initial-loading screen has nothing left to cover
-      // even though optimism is still fetching. That chain's own spinner takes over.
       markLoaded('eth');
       expect(get(isInitialLoading)).toBe(false);
     });

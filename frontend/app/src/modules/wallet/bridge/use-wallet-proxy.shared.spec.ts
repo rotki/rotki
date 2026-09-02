@@ -3,7 +3,6 @@ import { withSetup } from '@test/utils/with-setup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletBridge } from '@/modules/shell/app/use-wallet-bridge';
 
-// Deliberately does NOT stub createSharedComposable: this file is about the sharing itself.
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
@@ -13,8 +12,6 @@ vi.mock('@/modules/shell/app/use-wallet-bridge', () => ({ useWalletBridge: vi.fn
 describe('modules/wallet/bridge/use-wallet-proxy sharing', () => {
   beforeEach(() => {
     vi.resetModules();
-    // reports the client as gone, so any health check that is still running WILL fire
-    // onDisconnect - that is what makes the "stopped" assertion below discriminating
     vi.mocked(useWalletBridge).mockReturnValue(createMock<ReturnType<typeof useWalletBridge>>({
       isProxyClientConnected: vi.fn(async () => false),
     }));
@@ -23,7 +20,6 @@ describe('modules/wallet/bridge/use-wallet-proxy sharing', () => {
   it('should hand every consumer the same instance', async () => {
     const { useWalletProxy } = await import('./use-wallet-proxy');
 
-    // the wallet store builds one inside its own scope, useInjectedWallet builds another
     const fromStore = withSetup(() => useWalletProxy()).result;
     const fromInjectedWallet = withSetup(() => useWalletProxy()).result;
 

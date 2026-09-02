@@ -16,8 +16,7 @@ vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
 }));
 
 describe('modules/dashboard/snapshots/composables/use-historic-fiat-conversion', () => {
-  // Snapshot timestamps are in seconds, matching the historic-price cache key.
-  const timestamp = 1_600_000_000;
+  const timestampInSeconds = 1_600_000_000;
 
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -33,7 +32,7 @@ describe('modules/dashboard/snapshots/composables/use-historic-fiat-conversion',
 
   it('should short-circuit to a rate of one when the display currency is USD', () => {
     setCurrency('USD');
-    const { isUsd, loading, rate, rateReady } = useHistoricFiatConversion(timestamp);
+    const { isUsd, loading, rate, rateReady } = useHistoricFiatConversion(timestampInSeconds);
 
     expect(get(isUsd)).toBe(true);
     expect(get(rate).toNumber()).toBe(1);
@@ -45,31 +44,45 @@ describe('modules/dashboard/snapshots/composables/use-historic-fiat-conversion',
   it('should resolve the historic USD rate for a non-USD currency', () => {
     setCurrency('EUR');
     getHistoricPrice.mockReturnValue(bigNumberify(0.85));
-    const { isUsd, rate, rateReady } = useHistoricFiatConversion(timestamp);
+    const { isUsd, rate, rateReady } = useHistoricFiatConversion(timestampInSeconds);
 
     expect(get(isUsd)).toBe(false);
     expect(get(rate).toNumber()).toBe(0.85);
     expect(get(rateReady)).toBe(true);
-    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestamp);
+    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestampInSeconds);
   });
 
   it('should report loading and a not-ready rate while the lookup is pending', () => {
     setCurrency('EUR');
     getHistoricPrice.mockReturnValue(NoPrice);
     getIsPending.mockReturnValue(true);
-    const { loading, rateReady } = useHistoricFiatConversion(timestamp);
+    const { loading, rateReady } = useHistoricFiatConversion(timestampInSeconds);
 
     expect(get(loading)).toBe(true);
     expect(get(rateReady)).toBe(false);
   });
 
+  it('should start the lookup without anything reading the rate', async () => {
+    setCurrency('EUR');
+    getHistoricPrice.mockReturnValue(bigNumberify(0.85));
+    const ts = ref<number>(timestampInSeconds);
+    useHistoricFiatConversion(() => get(ts));
+
+    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestampInSeconds);
+
+    set(ts, timestampInSeconds + 86_400);
+    await nextTick();
+
+    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestampInSeconds + 86_400);
+  });
+
   it('should accept a getter for the timestamp', () => {
     setCurrency('EUR');
     getHistoricPrice.mockReturnValue(bigNumberify(0.9));
-    const ts = ref<number>(timestamp);
+    const ts = ref<number>(timestampInSeconds);
     const { rate } = useHistoricFiatConversion(() => get(ts));
 
     expect(get(rate).toNumber()).toBe(0.9);
-    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestamp);
+    expect(getHistoricPrice).toHaveBeenCalledWith('USD', timestampInSeconds);
   });
 });

@@ -68,9 +68,6 @@ vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
-  // The task scheduler reads the connection from the main store, which pulls the
-  // rest of this module in; a partial mock fails at import time rather than in
-  // an assertion, so the whole surface has to be stubbed.
   getDefaultLogLevel: vi.fn(() => 'debug'),
   logger: {
     debug: vi.fn(),
@@ -105,9 +102,6 @@ describe('useMonitorService', () => {
     mockCheckIfPasswordConfirmationNeeded.mockResolvedValue(undefined);
 
     setActivePinia(createCustomPinia());
-    // Task polling is gated on the backend connection, and the store starts
-    // disconnected. The monitor is only ever started after login, when the app
-    // is connected, so that is the baseline these tests need.
     useMainStore().setConnected(true);
 
     const { useMonitorService } = await loadMonitorService();
@@ -128,8 +122,6 @@ describe('useMonitorService', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(mockConnect).toHaveBeenCalledOnce();
-    // check() is gated by canRequestData (false by default), so not called
-    // monitor() is called immediately when not restarting
     expect(mockMonitor).toHaveBeenCalledOnce();
   });
 

@@ -25,7 +25,7 @@ describe('swapSubEventSchema', () => {
   });
 
   it('should treat a blank location label as unset rather than invalid', () => {
-    expect(issuePaths({ ...emptySubEvent(), amount: '1', asset: 'ETH' })).toEqual([]);
+    expect(issuePaths({ ...emptySubEvent(), amount: '1', asset: 'ETH', locationLabel: '' })).toEqual([]);
   });
 
   it('should validate the location label against the solana address format', () => {

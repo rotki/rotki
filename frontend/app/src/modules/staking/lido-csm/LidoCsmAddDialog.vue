@@ -84,8 +84,6 @@ const form = useForm<NodeOperatorState, NodeOperatorPayload>({
   },
 });
 
-// Destructured, because a ref reached through `form.` in the template is not unwrapped and would
-// read as permanently truthy.
 const { submitting, valid } = form;
 
 function closeDialog(): void {
@@ -113,7 +111,7 @@ async function submitForm(): Promise<void> {
     <RuiCard
       divide
       no-padding
-      content-class="overflow-hidden"
+      :class-names="{ content: 'overflow-hidden' }"
     >
       <template #header>
         {{ t('staking_page.lido_csm.form.title') }}

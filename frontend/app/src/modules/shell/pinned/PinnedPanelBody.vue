@@ -1,10 +1,12 @@
 <script setup lang="ts">
-// The single body container every pinned panel renders into (the rail wraps each
-// panel in it). Owns the height/scroll contract centrally so a new pinnable area
-// cannot get it wrong. Panels provide their own content; the standard content
-// gutter is `px-3` (see the pinned panels/content components). Full-width bars
-// (tab rows, filters) are expected to span this box edge-to-edge, so the gutter
-// lives on the content areas, not here.
+/**
+ * The body container every pinned panel renders into, owning the height and scroll contract so a
+ * new pinnable area cannot get it wrong.
+ *
+ * @remarks
+ * No gutter here: full-width bars such as tab rows and filters span this box edge-to-edge, so
+ * the `px-3` content gutter lives on the content areas instead.
+ */
 defineSlots<{
   default: () => unknown;
 }>();

@@ -7,10 +7,13 @@ import { WALLET_MODES } from './constants';
 
 const txParams: TransactionParams = { amount: '1', chain: 'ethereum', native: true, to: '0xto' };
 
-// Stable mock fns + a per-test state bag. Because the store re-imports its
-// dependencies through `vi.resetModules()` and lazy dynamic imports, the mock
-// factories below return functions that read `mocks.state` at call time, so
-// each fresh import still sees the fakes wired up in beforeEach.
+/**
+ * Holds the stable mock functions plus the per-test state bag the mock factories read from.
+ *
+ * @remarks
+ * The store re-imports its dependencies on every `vi.resetModules()`, so the factories resolve
+ * `mocks.state` at call time and each fresh import still sees the fakes wired up in `beforeEach`.
+ */
 const mocks = vi.hoisted((): {
   handleTransactionError: ReturnType<typeof vi.fn>;
   prepareTransactionPayload: ReturnType<typeof vi.fn>;
@@ -68,9 +71,10 @@ function makeInjectedWallet(): Record<string, any> {
   };
 }
 
-// The chain list itself belongs to `use-wallet-chains`, which has its own spec.
-// What the store owns is the wiring: which chain ids it hands to a WalletConnect
-// pairing, and which ones it narrows the account's chains by.
+/**
+ * Builds the wallet-chains double, holding two chains and a `getSessionChains` that echoes back
+ * the ids it was handed as `session-<id>` so a test can assert which ids the store passed.
+ */
 function makeWalletChains(): Record<string, any> {
   const walletChains = ref([
     { chain: 'eth', chainId: 1 },
@@ -111,8 +115,7 @@ describe('modules/wallet/use-wallet-store', () => {
 
     mocks.state = {
       injectedWallet: makeInjectedWallet(),
-      // A plain boolean, as the real interop exposes it. The store reads it once
-      // at construction, so a test must set it before `getStore()`.
+      // Read once at construction, so a test must set it before `getStore()`.
       isPackaged: false,
       supportedChains: { getEvmChainName: vi.fn(() => 'ethereum') },
       tradeApi: { prepareERC20Transfer: vi.fn(), prepareNativeTransfer: vi.fn() },
@@ -318,8 +321,7 @@ describe('modules/wallet/use-wallet-store', () => {
     it('should not expose the recent transactions as patchable state', async () => {
       const store = await getStore();
 
-      // they are a getter over the transaction manager's readonly ref, so the store
-      // reset plugin must not try to `$patch` them
+      // a getter over the manager's readonly ref, so the reset plugin must not `$patch` it
       expect(store.$state).not.toHaveProperty('recentTransactions');
     });
   });
@@ -341,8 +343,13 @@ describe('modules/wallet/use-wallet-store', () => {
   });
 
   describe('supportedChainsForConnectedAccount', () => {
-    // The session namespaces only reach the store through the sync watcher that
-    // `getWalletConnect()` installs, so the store has to actually connect first.
+    /**
+     * Connects the store in WalletConnect mode, then publishes `namespaces` as the session chains.
+     *
+     * @remarks
+     * The namespaces only reach the store through the sync watcher `getWalletConnect()` installs,
+     * so a connect has to complete before setting them has any effect.
+     */
     async function connectWithNamespaces(namespaces: string[]): Promise<Awaited<ReturnType<typeof getStore>>> {
       const store = await getStore();
       store.walletMode = WALLET_MODES.WALLET_CONNECT;

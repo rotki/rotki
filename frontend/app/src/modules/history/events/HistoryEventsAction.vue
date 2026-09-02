@@ -66,8 +66,6 @@ const {
 });
 
 function addEvent(): void {
-  // `canAddEvent` already hides the action for a group-editable event; this narrows the
-  // row to the shape the event carries.
   if (isGroupEditableHistoryEvent(event))
     return;
 
@@ -122,8 +120,8 @@ function redecodeWithOptions(target: DecodableEventType): void {
     </RuiButton>
     <RuiMenu
       v-model="showMenu"
-      menu-class="max-w-[15rem] z-[100]"
-      :popper="{ placement: 'bottom-end', scroll: false, resize: false }"
+      :class-names="{ menu: 'max-w-[15rem] z-[100]' }"
+      :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

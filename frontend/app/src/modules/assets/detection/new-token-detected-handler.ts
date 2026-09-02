@@ -8,7 +8,6 @@ export function createNewTokenDetectedHandler(
   t: ReturnType<typeof useI18n>['t'],
   router: ReturnType<typeof useRouter>,
 ): MessageHandler<NewDetectedToken> {
-  // Capture functions and stores at handler creation time (in setup context)
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);

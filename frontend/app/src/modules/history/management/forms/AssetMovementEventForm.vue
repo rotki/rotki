@@ -50,9 +50,6 @@ const { form, save, seed } = useHistoryEventForm({
   schema: assetMovementSchema(),
   stateUpdated,
   toEditPayload: toAssetMovementEditPayload,
-  // A new movement needs an identifier of its own, which a pure transform cannot produce. An edit
-  // keeps whatever it already had, blank included: a movement whose extra data carries no reference
-  // must not be handed a fresh one on every save.
   transform: state => toAssetMovementPayload(
     state,
     data.type === 'edit-group' ? state.uniqueId : state.uniqueId || generateUUID(),
@@ -224,7 +221,7 @@ defineExpose({
     <RuiAccordions>
       <RuiAccordion
         data-testid="asset-movement-event-form-advance"
-        header-class="py-4"
+        :class-names="{ header: 'py-4' }"
         eager
       >
         <template #header>

@@ -7,12 +7,6 @@ import { defineComponent, h } from 'vue';
 import MatchAssetMovementsPinned from '@/modules/history/events/MatchAssetMovementsPinned.vue';
 import { PinnedNames } from '@/modules/session/types';
 
-/**
- * The seam: every decision this panel used to make now lives in `usePinnedMatchPanel`, which has
- * its own spec. What is left here is wiring - which rows the panel searches, how a row names its
- * event, and that the content components are handed the panel's state and report their events back.
- */
-
 const panel = {
   activeGroupIdentifier: ref<string | undefined>(),
   activePotentialMatchIdentifier: ref<number | undefined>(),

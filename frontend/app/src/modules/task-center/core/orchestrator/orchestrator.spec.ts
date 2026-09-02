@@ -97,11 +97,7 @@ describe('createTaskOrchestrator', () => {
 
     const activity = byId(orchestrator, id);
     expect(activity?.status).toBe(Status.FAILED);
-    // To an observer a failure is completed *with a failure status*: no further progress is coming,
-    // so a bar that excluded it would stall whenever a chain failed.
     expect(activity?.percentage).toBe(100);
-    // Freshness is the other axis — it stays stale so a later run retries this one and leaves the
-    // siblings that succeeded alone.
     expect(orchestrator.statusOf(Kind.OTHER, 'f2').everCompleted).toBe(false);
   });
 
@@ -132,8 +128,6 @@ describe('createTaskOrchestrator', () => {
     skipped.settle({ error: Skipped({ message: 'disabled in settings' }), ok: false });
     await flush();
 
-    // Without this the row renders a bare "Failed"/"Skipped" chip. A skip raises no notification
-    // either, so dropping it here drops the reason everywhere.
     expect(byId(orchestrator, failedId)?.reason).toBe('network unreachable after retries');
     expect(byId(orchestrator, skippedId)?.reason).toBe('disabled in settings');
   });
@@ -163,8 +157,6 @@ describe('createTaskOrchestrator', () => {
     await flush();
     expect(byId(orchestrator, id)?.reason).toBe('network unreachable after retries');
 
-    // `rerun` reuses the record, so a reason left behind would caption the new run — and survive it
-    // to caption a success.
     orchestrator.rerun(id);
     expect(byId(orchestrator, id)?.reason).toBeUndefined();
   });
@@ -418,8 +410,6 @@ describe('createTaskOrchestrator', () => {
     const parent = controllable('umbrella');
     const parentId = orchestrator.submit(parent.spec);
 
-    // An umbrella reports no steps of its own, so until it declares a subtree there is nothing to
-    // quantify it by.
     expect(byId(orchestrator, parentId)?.percentage).toBe(INDETERMINATE);
 
     const children = ['c1', 'c2', 'c3', 'c4'].map((name) => {
@@ -598,7 +588,6 @@ describe('createTaskOrchestrator', () => {
 
     it('should aggregate over a part prefix without matching siblings or a partial name', async () => {
       const orchestrator = createTaskOrchestrator();
-      // Two per-request historic fetches plus an unrelated PRICES sibling under another part.
       const btc = controllable('btc', { id: makeActivityId(Kind.PRICES, 'historic', 'BTC', 'USD', 1), kind: Kind.PRICES });
       const eth = controllable('eth', { id: makeActivityId(Kind.PRICES, 'historic', 'ETH', 'USD', 1), kind: Kind.PRICES });
       const rates = controllable('rates', { id: makeActivityId(Kind.PRICES, 'exchange-rates'), kind: Kind.PRICES });
@@ -633,7 +622,6 @@ describe('createTaskOrchestrator', () => {
       orchestrator.submit(other.spec);
       await flush();
 
-      // `prices:historic` must not match `prices:historical-daily`.
       expect(orchestrator.statusOfPrefix(Kind.PRICES, 'historic')).toMatchObject({ active: false, running: false });
       expect(orchestrator.statusOfPrefix(Kind.PRICES, 'historical-daily')).toMatchObject({ active: true, running: true });
     });
@@ -813,8 +801,6 @@ describe('createTaskOrchestrator', () => {
 
   describe('parent gating', () => {
     it('should hold a child until its parent starts', async () => {
-      // The parent's lane is full, so it cannot start — and neither may its child, even though the
-      // child's own lane is free. Without this a pre-submitted tree runs bottom-up.
       const orchestrator = createTaskOrchestrator({ caps: { 'chain-sync': 1 } });
       const first = controllable('first', { id: makeActivityId(Kind.TX_SYNC, 'eth'), kind: Kind.TX_SYNC, lane: 'chain-sync' });
       const parent = controllable('second', { id: makeActivityId(Kind.TX_SYNC, 'gnosis'), kind: Kind.TX_SYNC, lane: 'chain-sync' });
@@ -841,7 +827,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴🔴 The chain-job shape, against the real scheduler. A parent that *awaits its own children*
+     * The chain-job shape, against the real scheduler. A parent that *awaits its own children*
      * holds its lane slot for the whole body, so the children must not need a slot on that lane —
      * with a cap of 2, two such parents would wait forever on work that can never start.
      *
@@ -850,8 +836,8 @@ describe('createTaskOrchestrator', () => {
      * producer spec stubs `submitTask` to run inline, where lanes do not exist.
      */
     it('should let a parent awaiting children hold its lane without deadlocking them', async () => {
-      // Two balances slots, both taken by the chain jobs; the detect family has room of its own.
-      const orchestrator = createTaskOrchestrator({ caps: { balances: 2 }, defaultCap: 4 });
+      const bothBalancesSlotsGoToTheChainJobs = 2;
+      const orchestrator = createTaskOrchestrator({ caps: { balances: bothBalancesSlotsGoToTheChainJobs }, defaultCap: 4 });
       const children = new Map<ActivityId, Controllable>();
 
       /** Resolves when that activity reaches a terminal status — the parent's real await. */
@@ -894,8 +880,6 @@ describe('createTaskOrchestrator', () => {
         expect(children.size).toBe(4);
       });
 
-      // 🔴 The assertion that fails if detection shares the balances lane: with both slots held by
-      // the parents, every child would still be PENDING here and nothing could ever settle them.
       for (const child of children.values()) {
         expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
         child.settle(ok(undefined));
@@ -919,7 +903,7 @@ describe('createTaskOrchestrator', () => {
 
   describe('container activities', () => {
     /**
-     * 🔴🔴 A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
+     * A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
      * purpose, because a failure belongs to the subject that failed. Sharing its children's kind
      * then wrote a *success* to the completion ledger even when every child FAILED, and
      * `statusOf(kind)` aggregates by kind: the dashboard read "loaded" after a total failure.
@@ -975,7 +959,7 @@ describe('createTaskOrchestrator', () => {
     }
 
     /**
-     * 🔴 The bug this package exists for. Every native spec carries a cancel handle, so cancelling
+     * The bug this package exists for. Every native spec carries a cancel handle, so cancelling
      * a parent always "succeeded" — but the handle only aborts that activity's own backend task,
      * which an umbrella never has. The row settled CANCELLED and vanished while the whole subtree
      * carried on working.
@@ -1008,7 +992,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴 `eligible` only refused a child whose parent was still PENDING, so a queued child of a
+     * `eligible` only refused a child whose parent was still PENDING, so a queued child of a
      * cancelled parent started the moment a lane freed up — the cancel bought nothing.
      */
     it('should not start a queued child after its parent is cancelled', async () => {
@@ -1024,7 +1008,7 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.PENDING);
 
       orchestrator.cancel(parent.spec.id);
-      // Freeing the only lane is what used to let the orphaned child through.
+      // Frees the only lane, which is what would let an orphaned child through.
       blocker.settle(ok(undefined));
       await flush();
 
@@ -1032,7 +1016,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴🔴 The wedge `eligible` alone would create. A child submitted after its parent ended can
+     * The wedge `eligible` alone would create. A child submitted after its parent ended can
      * never become eligible, so leaving it PENDING would hold its caller's await open for the life
      * of the process. It has to be *settled*, not merely refused.
      */
@@ -1051,7 +1035,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * ⭐ The reason no new cancel handle is needed anywhere: a parent whose body awaits its
+     * The reason no new cancel handle is needed anywhere: a parent whose body awaits its
      * children resolves on its own once they settle, and `cancelRequested` maps that outcome to
      * CANCELLED however the body chose to return.
      */
@@ -1092,7 +1076,7 @@ describe('createTaskOrchestrator', () => {
     });
 
     /**
-     * 🔴🔴 The case an `eligible` guard could not have handled. `cancel` never runs here, so a
+     * The case an `eligible` guard could not have handled. `cancel` never runs here, so a
      * cascade hung off cancellation would leave these children queued — and refusing them in
      * `eligible` instead would wedge them PENDING for the life of the process, since nothing would
      * ever settle them. Hanging the walk off the settle is what makes one rule cover both.
@@ -1187,7 +1171,6 @@ describe('createTaskOrchestrator', () => {
       orchestrator.submit(second.spec);
       await flush();
 
-      // The superseded run finishes successfully, but it is no longer the record for this id.
       first.settle(ok(undefined));
       await flush();
 

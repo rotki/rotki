@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import type {
-  GroupEditableHistoryEvents,
   HistoryEvent,
   HistoryEventEntry,
 } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import {
-  isAssetMovementEvent,
   isEventMissingAccountingRule,
   isEvmEvent,
 } from '@/modules/history/event-utils';
@@ -16,11 +14,8 @@ import {
   hideEditAction,
   shouldDeleteGroup,
 } from '@/modules/history/events/event-action-visibility';
+import { editTargetFor } from '@/modules/history/events/history-event-edit-target';
 import HistoryEventAction from '@/modules/history/events/HistoryEventAction.vue';
-import {
-  isGroupEditableHistoryEvent,
-  isSwapTypeEvent,
-} from '@/modules/history/management/forms/form-guards';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { item, index, completeGroupEvents, canUnlink, collapsed, collapseAction } = defineProps<{
@@ -49,41 +44,8 @@ const COLLAPSE_ACTION_CLASSES = 'w-0 group-hover/row:w-auto 2xl:!w-24 2xl:opacit
 
 const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(item));
 
-function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
-  if (isSwapTypeEvent(item.entryType)) {
-    return {
-      // The whole group is handed to the form, which needs every leg of the swap.
-      // isGroupEditableHistoryEvent cannot narrow this: it declares GroupEditableHistoryEvents but
-      // only matches ASSET_MOVEMENT_EVENT and SWAP_EVENT, so filtering with it empties an evm or
-      // solana swap group and the form renders no fields. Widening that guard would change the four
-      // other decision points that rely on its current, narrower answer.
-
-      eventsInGroup: completeGroupEvents as GroupEditableHistoryEvents[],
-      type: 'edit-group',
-    };
-  }
-
-  if (isGroupEditableHistoryEvent(item)) {
-    const idx = completeGroupEvents.findIndex(e => e.identifier === item.identifier);
-    const eventsInGroup: GroupEditableHistoryEvents[] = [item];
-    const nextEvent = completeGroupEvents[idx + 1];
-    if (nextEvent && isAssetMovementEvent(nextEvent) && nextEvent.eventSubtype === 'fee')
-      eventsInGroup.push(nextEvent);
-
-    return {
-      eventsInGroup,
-      type: 'edit-group',
-    };
-  }
-  return {
-    event: item,
-    nextSequenceId: '',
-    type: 'edit',
-  };
-}
-
 function editEvent(item: HistoryEvent) {
-  emit('edit-event', getEmittedEvent(item));
+  emit('edit-event', editTargetFor(item, completeGroupEvents));
 }
 
 function deleteEvent(item: HistoryEventEntry) {
@@ -151,7 +113,7 @@ function deleteEvent(item: HistoryEventEntry) {
       variant="text"
       color="warning"
       icon
-      @click="emit('show:missing-rule-action', getEmittedEvent(item))"
+      @click="emit('show:missing-rule-action', editTargetFor(item, completeGroupEvents))"
     >
       <RuiIcon
         size="16"

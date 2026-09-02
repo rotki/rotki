@@ -197,7 +197,6 @@ describe('useSettingsOperations', () => {
       const calledModules = mockSetSettings.mock.calls[0][0].activeModules;
       expect(calledModules).toContain(Module.MAKERDAO_DSR);
       expect(calledModules).toContain(Module.UNISWAP);
-      // No duplicates
       expect(calledModules.filter((m: Module) => m === Module.MAKERDAO_DSR)).toHaveLength(1);
     });
   });

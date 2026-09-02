@@ -276,14 +276,19 @@ class DBHandler:
         # decoding so the periodic scheduler can skip its full-table "is there work?" scans
         self.pending_txs_tracker = PendingTransactionsTracker()
         self.password = password
-        self._connect()
-        self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
-        self._run_actions_after_first_connection()
-        with self.user_write() as cursor:
-            if initial_settings is not None:
-                self.set_settings(cursor, initial_settings)
-            self.update_owned_assets_in_globaldb(cursor)
-            self.sync_globaldb_assets(cursor)
+        try:
+            self._connect()
+            self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
+            self._run_actions_after_first_connection()
+            with self.user_write() as cursor:
+                if initial_settings is not None:
+                    self.set_settings(cursor, initial_settings)
+                self.update_owned_assets_in_globaldb(cursor)
+                self.sync_globaldb_assets(cursor)
+        except BaseException:
+            self.disconnect(conn_attribute='conn')
+            self.disconnect(conn_attribute='conn_transient')
+            raise
 
     def _check_unfinished_upgrades(self, resume_from_backup: bool) -> None:
         """

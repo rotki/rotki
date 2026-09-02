@@ -14,9 +14,7 @@ describe('isCustomRuleHandling', () => {
     expect(isCustomRuleHandling(CustomRuleHandling.ONLY)).toBe(true);
   });
 
-  // The url is the user's to write, and an unrecognised handling would be sent to the backend as a
-  // filter it refuses.
-  it('should refuse anything else', () => {
+  it('should refuse a handling the backend would not accept as a filter', () => {
     expect(isCustomRuleHandling('all')).toBe(false);
     expect(isCustomRuleHandling('')).toBe(false);
     expect(isCustomRuleHandling('ONLY')).toBe(false);
@@ -32,8 +30,7 @@ describe('parseRuleQuery', () => {
     });
   });
 
-  // The link is written by other pages, so a half-written one still has to open the form.
-  it('should default what a link leaves out', () => {
+  it('should default what a link leaves out, so a half-written one still opens the form', () => {
     expect(parseRuleQuery({ eventType: 'spend' })).toStrictEqual({
       counterparty: null,
       eventSubtype: '',
@@ -45,9 +42,7 @@ describe('parseRuleQuery', () => {
     expect(parseRuleQuery({})).toStrictEqual({ counterparty: null, eventSubtype: '', eventType: '' });
   });
 
-  // A repeated parameter arrives as an array, which is neither a rule identity nor something the
-  // form can use. Passing it through reached zod as an array and threw, taking the whole page down.
-  it('should ignore a repeated parameter', () => {
+  it('should ignore a repeated parameter, which arrives as an array', () => {
     expect(parseRuleQuery({ eventType: ['spend', 'receive'] })).toStrictEqual({
       counterparty: null,
       eventSubtype: '',
@@ -55,10 +50,7 @@ describe('parseRuleQuery', () => {
     });
   });
 
-  // vue-router parses a valueless parameter as null, and a `z.string()` default only covers
-  // undefined. Passing it through threw an invalid_type error from inside onMounted, which took
-  // the rest of the page's setup with it and left the table empty for the session.
-  it('should default a parameter written with no value', () => {
+  it('should default a parameter written with no value, which vue-router parses as null', () => {
     expect(parseRuleQuery({ eventSubtype: null, eventType: null })).toStrictEqual({
       counterparty: null,
       eventSubtype: '',
@@ -85,15 +77,12 @@ describe('parseEventId', () => {
     expect(parseEventId({ eventId: '' })).toBeUndefined();
   });
 
-  // `Number('abc')` is NaN, which used to flow on as an event id and query for events of rule NaN.
-  it('should read nothing when the link names nonsense', () => {
+  it('should read nothing when the link names nonsense, rather than passing on NaN', () => {
     expect(parseEventId({ eventId: 'abc' })).toBeUndefined();
     expect(parseEventId({ eventId: ['1', '2'] })).toBeUndefined();
   });
 
-  // Identifiers start at 1, and `Number(' ')` is a finite 0. Treating that as an event opened the
-  // "which rule did you mean" dialog for an event that cannot exist.
-  it('should read nothing for an id no event can have', () => {
+  it('should read nothing for an id no event can have, identifiers starting at 1', () => {
     expect(parseEventId({ eventId: '0' })).toBeUndefined();
     expect(parseEventId({ eventId: ' ' })).toBeUndefined();
     expect(parseEventId({ eventId: '-3' })).toBeUndefined();
@@ -107,9 +96,7 @@ describe('parseRuleIntent', () => {
     expect(parseRuleIntent({})).toBeUndefined();
   });
 
-  // Both at once is a link that cannot be honoured twice; adding is the safer of the two, since
-  // editing needs a rule that may not exist.
-  it('should prefer adding when a link asks for both', () => {
+  it('should prefer adding when a link asks for both, since editing needs a rule that may not exist', () => {
     expect(parseRuleIntent({ 'add-rule': 'true', 'edit-rule': 'true' })).toBe('add');
   });
 });

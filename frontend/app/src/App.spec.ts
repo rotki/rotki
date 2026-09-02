@@ -37,8 +37,6 @@ describe('app', () => {
     useAppQuitting().startQuitting();
     await nextTick();
 
-    // The whole tree goes, not just the page: the notification popup lives
-    // inside the layout, and it is what would surface the shutdown errors.
     expect(wrapper.findComponent(AppQuitting).exists()).toBe(true);
     expect(wrapper.findComponent(LayoutWrapper).exists()).toBe(false);
   });

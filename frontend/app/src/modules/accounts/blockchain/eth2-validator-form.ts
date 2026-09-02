@@ -48,8 +48,6 @@ interface FieldIssue {
 function identifierIssues(validatorIndex: string, publicKey: string, messages: Eth2ValidatorMessages): FieldIssue[] {
   const issues: FieldIssue[] = [];
 
-  // Reported in the order the vuelidate rules were declared: a field renders every message it
-  // collects, and the order is what the user reads.
   if (validatorIndex && !consistOfNumbers(validatorIndex))
     issues.push({ message: messages.validatorIndex, path: 'validatorIndex' });
 

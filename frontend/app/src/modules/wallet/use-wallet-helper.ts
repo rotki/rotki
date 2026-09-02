@@ -30,6 +30,16 @@ export function useWalletHelper(): UseWalletHelperReturn {
     return get(allEvmChains).find(item => item.id === id)?.name;
   }
 
+  /**
+   * The rotki blockchain behind a wallet-reported chain id, if rotki has one.
+   *
+   * @remarks
+   * `undefined` is the meaningful answer, and callers must carry it rather than substitute a
+   * default. It compares unequal to any selected chain, which is what makes the wrong-network
+   * warning fire, keeps an unsupported chain out of the picker, and stops a gas estimate being
+   * priced on a chain nothing has confirmed. Defaulting to ethereum made every one of those read as
+   * correct while the wallet sat somewhere else.
+   */
   function getChainFromChainId(chainId: number | bigint): Blockchain | undefined {
     const name = getEvmChainNameFromChainId(chainId);
     return name === undefined ? undefined : getChain(name);

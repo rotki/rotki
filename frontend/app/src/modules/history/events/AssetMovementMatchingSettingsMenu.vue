@@ -162,14 +162,14 @@ onMounted(() => {
 <template>
   <RuiMenu
     v-model="showMenu"
-    menu-class="w-full max-w-96"
-    :popper="{ placement: 'bottom-end' }"
+    :class-names="{ menu: 'w-full max-w-96' }"
+    :options="{ placement: 'bottom-end' }"
     :disabled="disabled"
     class="!border-l-0"
   >
     <template #activator="{ attrs }">
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

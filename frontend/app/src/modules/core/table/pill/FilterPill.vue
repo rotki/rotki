@@ -23,8 +23,7 @@ const emit = defineEmits<{
   remove: [];
 }>();
 
-// How many values get an icon on the pill before collapsing to a "+N" count: two, so a pill stays
-// a fixed, scannable width and the third value onwards reads as a count.
+// Values past this many collapse into a "+N" count, keeping a pill a scannable fixed width.
 const ICON_VALUE_CAP = 2;
 
 const operatorLabels = useOperatorLabels();
@@ -39,10 +38,7 @@ const caption = computed<string>(() => pillValueCaption(field, filter));
 
 const isAsset = computed<boolean>(() => field.display === DisplayKinds.ASSET);
 const isAddress = computed<boolean>(() => field.display === DisplayKinds.ADDRESS);
-// A value whose field has a display kind carries an identity its text cannot fully give: which
-// chain an asset is on, whose address it is, which protocol or location. Those render with the
-// same icon the value checklist uses, so a value looks the same wherever it appears. A field that
-// resolves a plain icon per value (e.g. the event state markers) renders the same way.
+// Icons come from the field's own resolvers, so a value looks the same on a pill as in its checklist.
 const hasValueIcons = computed<boolean>(() =>
   Boolean(field.display) || Boolean(field.resolveDisplay) || Boolean(field.resolveIcon) || Boolean(field.resolveSwatch),
 );
@@ -53,8 +49,6 @@ function chainOf(value: string): string | undefined {
   return get(isAsset) ? field.resolveChain?.(value) : undefined;
 }
 
-// Every display form (an address's scrambled short form included) comes from the field's own
-// resolver, so the pill never formats a domain value itself.
 function valueLabel(value: string): string {
   return field.resolveLabel?.(value) ?? value;
 }

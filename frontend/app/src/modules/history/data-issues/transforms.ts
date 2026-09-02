@@ -40,8 +40,6 @@ function describeNegativeBalance(issue: DataIssue): IssueDescription | undefined
   const payload = parsed.data;
   return {
     amounts: {
-      // Signed value: the i18n string no longer prepends a literal "-", so
-      // ValueDisplay renders the sign (avoids awkward output like "-< 0.001").
       amount: payload.inMemoryNegativeAmount,
       before: payload.derivedBalanceBeforeEvent,
     },
@@ -128,8 +126,6 @@ export function relatedEventRoute(
   const name = '/history/events/';
   const query: Record<string, string> = {};
 
-  // An unmatched bridge leg is fixed in the bridge match dialog, so deep-link
-  // straight into it (the events view opens it from this query param).
   if (kind === IssueKind.UNMATCHED_BRIDGE) {
     return { name, query: { openMatchBridgesDialog: 'true' } };
   }

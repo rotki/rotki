@@ -74,9 +74,9 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
 
         <RuiTooltip
           v-if="ignoredAssets"
-          :popper="{ placement: 'top', scroll: false, resize: false }"
+          :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
           :open-delay="400"
-          tooltip-class="max-w-60"
+          :class-names="{ tooltip: 'max-w-60' }"
         >
           <template #activator>
             <button
@@ -174,9 +174,9 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
 
     <RuiTooltip
       v-if="ignoredAssets"
-      :popper="{ placement: 'top', scroll: false, resize: false }"
+      :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       :open-delay="400"
-      tooltip-class="max-w-60"
+      :class-names="{ tooltip: 'max-w-60' }"
     >
       <template #activator>
         <button

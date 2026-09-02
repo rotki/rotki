@@ -81,14 +81,11 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationSplit', () => {
     await amounts[0].setValue('10');
     await amounts[1].setValue('10');
 
-    // The first row absorbs the remainder, so the emitted sum is still exact, but
-    // the entered values disagree with that remainder — invalid until reconciled.
     expect(lastSplits(wrapper).reduce((sum, s) => sum.plus(s.usdValue), bigNumberify(0)).toNumber()).toBe(100);
     expect(isValid(wrapper)).toBe(false);
   });
 
   it('should stay invalid when a row removes more than its location holds', async () => {
-    // kraken only holds 50, but the first row tries to remove 60 from it.
     const wrapper = mountSplit(100, { kraken: bigNumberify(50), ledger: bigNumberify(80) });
     const locations = wrapper.findAll('.loc');
     const amounts = wrapper.findAll('input:not(.loc)');
@@ -102,8 +99,6 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationSplit', () => {
     expect(isValid(wrapper)).toBe(false);
   });
 
-  // The totals run through every row on each keystroke, so a row holding something bignumber.js
-  // cannot parse used to take the whole dialog down mid-render. It counts as nothing allocated.
   it.each(['-', '1.2.3', '0,5'])('should read a row of %s as nothing allocated', async (typed) => {
     const wrapper = mountSplit(100);
     const locations = wrapper.findAll('.loc');

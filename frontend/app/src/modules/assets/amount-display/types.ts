@@ -1,9 +1,15 @@
 /**
- * Shared types for amount display components
+ * Shared types for amount display components.
+ *
+ * @packageDocumentation
  */
 
 /**
- * Timestamp: number = seconds, { ms: number } = milliseconds
+ * A point in time, in whichever unit the caller holds.
+ *
+ * @remarks
+ * A bare `number` is read as **seconds**; milliseconds must be wrapped as `\{ ms \}`. Passing
+ * milliseconds bare floors to a near-zero key, so a historic price lookup silently finds nothing.
  */
 export type Timestamp = number | { ms: number };
 

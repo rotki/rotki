@@ -45,9 +45,6 @@ function useWithdrawalAddressOptions(): AccountFieldOptions {
 
   return {
     ...accounts,
-    // An address only the validators know has no account behind it, so the shared resolution finds
-    // no keywords for it. Without the fallback it would be offered in the list and still not match
-    // when typed, which is the same dead end from one step further along.
     resolveKeywords: (address: string): string | undefined =>
       accounts.resolveKeywords(address) ?? address.toLowerCase(),
     suggest: (): string[] => {
@@ -61,12 +58,11 @@ function useWithdrawalAddressOptions(): AccountFieldOptions {
 }
 
 /**
- * The pill-bar fields for who the staking view is showing: a validator, or the address that
+ * Builds the pill-bar fields for who the staking view is showing: a validator, or the address that
  * withdrew for it.
  *
- * These used to be a `RuiButtonGroup` toggle deciding which of two inputs was rendered. The toggle
- * existed only to say the two cannot both apply, which is what `excludes` says here, declared on
- * both sides as the bar requires.
+ * @remarks
+ * The two cannot both apply, which `excludes` states. The bar requires it declared on both sides.
  */
 export function useEthStakingSelectionFields(): ComputedRef<FieldDef[]> {
   const { t } = useI18n({ useScope: 'global' });
@@ -74,33 +70,39 @@ export function useEthStakingSelectionFields(): ComputedRef<FieldDef[]> {
   const { scrambleAddress, scrambleIdentifier } = useScramble();
   const withdrawalAddresses = useWithdrawalAddressOptions();
 
-  /** Index -> the validator it names, for the label and caption. */
+  /** Maps a validator index to the validator it names, for the label and caption. */
   const byIndex = computed<Map<string, { publicKey: string }>>(() => new Map(
     get(ethStakingValidators).map(validator => [validator.index.toString(), { publicKey: validator.publicKey }]),
   ));
 
+  /**
+   * Picks validators by index, captioned with their public key.
+   *
+   * @remarks
+   * The caption is scoped to the list: while picking, the key is what tells two indices apart, but
+   * on a pill the index already names the validator and a key beside it pushes every other pill off
+   * the bar. It is truncated the way an account's address is, since a whole public key crowds the
+   * index it annotates off its own row.
+   *
+   * Keywords match the raw index and key rather than the shown ones, because what the user types is
+   * the real value, lowercased to meet the search box. The value likewise stays the real index,
+   * which is what the request carries; only its display follows privacy mode, exactly as an address
+   * does.
+   */
   const validatorField: FieldDef = toMatchFieldDef({
-    // The key tells two indices apart while picking; on the pill the index already names the
-    // validator, and a key beside it pushes every other pill off the bar.
     captionScope: 'list',
     excludes: [EthStakingSelectionKeys.WITHDRAWAL_ADDRESS],
     key: EthStakingSelectionKeys.VALIDATOR,
     label: (): string => t('eth2_page.filter.validator'),
     multiple: true,
-    // Shortened the way an account's address is: a whole public key is 66 characters and crowds
-    // the index it is meant to annotate off its own row.
     resolveCaption: (value: string): string | undefined => {
       const publicKey = get(byIndex).get(value)?.publicKey;
       return publicKey ? truncateAddress(scrambleAddress(publicKey), 4) : undefined;
     },
-    // Matched on the raw index and key, not the shown ones: what the user types is the real value,
-    // and lowercased because the search box lowercases what is typed.
     resolveKeywords: (value: string): string | undefined => {
       const publicKey = get(byIndex).get(value)?.publicKey;
       return `${value} ${publicKey ?? ''}`.toLowerCase();
     },
-    // The value stays the real index, which is what the request carries; only its display follows
-    // privacy mode, exactly as an address does.
     resolveLabel: (value: string): string => scrambleIdentifier(value),
     suggest: (): string[] => get(ethStakingValidators).map(validator => validator.index.toString()),
   });

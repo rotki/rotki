@@ -18,8 +18,6 @@ import { useTableSorting } from '@/modules/core/table/use-table-sorting';
 import { routeWhen, type UrlState, useUrlStateSync } from '@/modules/core/table/use-url-state-sync';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
-// Re-exported so the facade's public surface stays exactly what it was before the
-// provenance and URL-sync internals moved into their own modules.
 export type { ChangeSource };
 
 export { routeWhen };
@@ -29,7 +27,8 @@ interface TableSortOptions<TItem extends NonNullable<unknown>> {
   default?: DataTableSortData<TItem>;
   /**
    * Column used when neither the state nor `default` names one.
-   * Defaults to `timestamp`, which every table used to be hardcoded to.
+   *
+   * @defaultValue `timestamp`
    */
   fallbackColumn?: string;
 }
@@ -108,10 +107,7 @@ export function useServerTable<
   const {
     fetch: requestData,
     fields,
-    // An empty bag is the starting state of every table, including one that never filters (a dialog
-    // listing rows). Neither an empty object nor undefined is provably the `TFilter` the caller
-    // declared, so the hole is stated once here rather than at every read.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- an empty bag starts every table, and is not provably the caller's TFilter
     filters = ref({}) as Ref<TFilter>,
     params = [],
     persist,
@@ -122,16 +118,13 @@ export function useServerTable<
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
 
-  // Both derived from the declared fields, and cached against them: a gated field list can change
-  // while the table is mounted, and the URL must be read with the keys in play at that moment.
+  // Recomputed rather than captured: a gated field list can change while the table is mounted.
   const behaviourKeys = computed<string[]>(() => behaviourKeysFromFields(toValue(fields) ?? []));
   const routeFilterSchema = computed<Schema | undefined>(() => {
     const declared = toValue(fields);
     return declared ? routeSchemaFromFields(declared) : undefined;
   });
 
-  // Commit callbacks feed the reducer. They are defined before the sub-composables that
-  // receive them and call the hoisted `dispatch`.
   const commitSort = (sorting: DataTableSortData<TItem>): void => dispatch({ sorting, type: 'sort-set' });
   const commitPage = (page: number, source: ChangeSource = 'user'): void => dispatch({ page, source, type: 'page-set' });
   const commitLimit = (limit: number): void => dispatch({ limit, type: 'limit-set' });
@@ -152,9 +145,7 @@ export function useServerTable<
 
   const { collection, error, isLoading, refetch } = useTableData<TItem, TPayload>(
     requestData,
-    // Annotated because `requestPayload` is declared below: without it TypeScript walks
-    // the cycle (data -> pagination -> requestPayload -> data) and gives up with `any`.
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define -- lazy thunk; only invoked after requestPayload is defined below
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define -- lazy thunk, invoked only after requestPayload is defined below; the return type is annotated to break the data/pagination/requestPayload cycle, which otherwise infers `any`
     (): ComputedRef<TPayload> => requestPayload,
     cancelTag,
   );
@@ -173,10 +164,7 @@ export function useServerTable<
     const merged = mergeParams(params, 'request', get(filters) ?? {});
     const transformed = transformFilters(merged, get(behaviourKeys));
 
-    // The one assertion left here, and the boundary it belongs to: what a table sends is its
-    // filter bag plus whatever its param sources contribute, which only the caller's own payload
-    // type describes. Assembling it from typed parts is what would retire this.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- only the caller's payload type describes its filter bag plus its param sources
     return {
       ...transformed,
       limit,

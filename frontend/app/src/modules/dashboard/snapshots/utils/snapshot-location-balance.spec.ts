@@ -75,7 +75,6 @@ describe('modules/dashboard/snapshots/utils/snapshot-location-balance', () => {
     });
 
     it('should remove the previous balance then add the edited one', () => {
-      // existing asset of 40 in kraken, edited up to 70
       const snap = snapshot(
         [balance({ category: BalanceType.ASSET, usdValue: '40' })],
         [location('kraken', '100')],
@@ -145,8 +144,7 @@ describe('modules/dashboard/snapshots/utils/snapshot-location-balance', () => {
       [location('kraken', '100'), location('ledger', '40'), location('total', '140')],
     );
 
-    it('should flag locations that cannot absorb an asset removal', () => {
-      // Removing 60: kraken (100) survives, ledger (40) would go to -20.
+    it('should flag only the locations a removal would drive negative', () => {
       const ids = overdrawnLocationIds(snap, BalanceType.ASSET, location =>
         locationBalanceAfterDelete({ index: 0, location, snapshot: snap })?.after ?? null);
       expect(ids).toEqual(['ledger']);

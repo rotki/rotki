@@ -141,8 +141,6 @@ export function usePinnedMatchPanel<T extends PinnedMatchSubject>(
     }
   }
 
-  // The sheet is only open once a row is actually selected, so it never flashes empty while the
-  // close animation drains it. Closing routes through the same cleanup as the header button.
   const modelSheetOpen = computed<boolean>({
     get: () => get(drawerOpen) && !!get(subject),
     set: (value) => {
@@ -202,7 +200,6 @@ export function usePinnedMatchPanel<T extends PinnedMatchSubject>(
     const potentialMatch = highlightedPotentialMatchIdentifier();
     const potentialMatchGroup = potentialMatchGroupIdentifier();
 
-    // If a potential match is also asked for, open the drawer and navigate to it
     if (potentialMatch && potentialMatchGroup) {
       set(subject, target);
       set(drawerOpen, true);

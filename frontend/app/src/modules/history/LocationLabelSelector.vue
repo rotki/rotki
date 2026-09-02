@@ -32,8 +32,6 @@ const {
   locationLabelOptions,
 } = useLocationLabels(() => options);
 
-// The props declaration is required: without it the reuse component forwards raw attrs, so a
-// boolean shorthand (`dense`) arrives as an empty string instead of `true`.
 const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: LocationLabel; dense: boolean }>({
   props: {
     dense: Boolean,
@@ -119,7 +117,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     :filter="filter"
     :label="t('transactions.filter.account')"
     variant="outlined"
-    menu-class="!min-w-full"
+    :class-names="{ menu: '!min-w-full' }"
     v-bind="$attrs"
   >
     <template #selection="{ item }">

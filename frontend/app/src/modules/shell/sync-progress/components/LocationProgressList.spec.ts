@@ -1,7 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setupSyncProgressMocks } from '../test-utils';
+import { isCompact, setupSyncProgressMocks } from '../test-utils';
 import { type LocationProgress, LocationStatus } from '../types';
 import LocationProgressList from './LocationProgressList.vue';
 
@@ -145,38 +145,36 @@ describe('modules/sync-progress/components/LocationProgressList', () => {
       const completedItem = wrapper.findAll('[data-testid="location-item"]').find(
         item => item.attributes('data-location') === 'binance',
       );
-      // In-progress items are not compact
-      expect(inProgressItem?.attributes('data-compact')).toBe('false');
-      // Completed items are rendered in compact mode
-      expect(completedItem?.attributes('data-compact')).toBe('true');
+      expect(isCompact(inProgressItem)).toBe(false);
+      expect(isCompact(completedItem)).toBe(true);
     });
   });
 
   describe('cancelled locations', () => {
-    it('should treat cancelled locations as completed', () => {
+    it('should treat cancelled locations as settled', () => {
       const locations = [
         createLocationProgress('kraken', 'Kraken', LocationStatus.QUERYING),
         createLocationProgress('binance', 'Binance', LocationStatus.CANCELLED),
       ];
       wrapper = createWrapper(locations);
 
-      // binance is cancelled so it should be in the completed section
-      expect(wrapper.text()).toContain('sync_progress.completed_locations');
+      expect(wrapper.text()).toContain('sync_progress.finished_locations');
+      expect(wrapper.text()).not.toContain('sync_progress.completed_locations');
       const items = wrapper.findAll('[data-testid="location-item"]');
       expect(items).toHaveLength(1);
       expect(items[0].attributes('data-location')).toBe('kraken');
     });
 
-    it('should show warning color when completed section has cancelled locations', () => {
+    it('should show the alert icon in warning color when the group has cancelled locations', () => {
       const locations = [
         createLocationProgress('binance', 'Binance', LocationStatus.CANCELLED),
       ];
       wrapper = createWrapper(locations);
 
       const icons = wrapper.findAll('[data-testid="icon"]');
-      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
-      expect(checkIcon).toBeDefined();
-      expect(checkIcon?.classes()).toContain('text-rui-warning');
+      const alertIcon = icons.find(icon => icon.text() === 'lu-circle-alert');
+      expect(alertIcon).toBeDefined();
+      expect(alertIcon?.classes()).toContain('text-rui-warning');
     });
 
     it('should show success color when completed section has no cancelled locations', () => {

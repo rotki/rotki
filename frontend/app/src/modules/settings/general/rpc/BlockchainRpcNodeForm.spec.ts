@@ -80,9 +80,7 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
     expect(wrapper.find('[data-testid=node-endpoint] .details .text-rui-error').exists()).toBe(true);
   });
 
-  // Etherscan is reached through the api key rather than an endpoint, so it is the one node whose
-  // endpoint may stay empty.
-  it('should accept an etherscan node without an endpoint', async () => {
+  it('should accept an etherscan node without an endpoint, which its api key replaces', async () => {
     wrapper = createWrapper(stateFor({ endpoint: '', name: 'etherscan' }));
 
     expect(wrapper.vm.validate()).toBe(true);
@@ -94,8 +92,6 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
     expect(wrapper.vm.validate()).toBe(false);
   });
 
-  // The dialog reports the server's rejection after a failed save, which is the only time the form
-  // sees external errors.
   it('should display externally reported errors on the field they name', async () => {
     wrapper = createWrapper();
 

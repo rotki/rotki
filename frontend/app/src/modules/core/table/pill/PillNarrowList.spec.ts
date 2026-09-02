@@ -25,15 +25,12 @@ function createWrapper(highlighted = 0): VueWrapper<InstanceType<typeof PillNarr
 }
 
 describe('pillNarrowList', () => {
-  // jsdom has no layout and no `scrollIntoView`, so the call itself is what can be asserted.
   const scrollIntoView = vi.fn();
 
   beforeAll(() => {
     Element.prototype.scrollIntoView = scrollIntoView;
   });
 
-  // The bar owns the highlight and drives it from the input, so nothing else can bring a row that
-  // has scrolled out of sight back into view.
   it('should bring the highlighted row into view when the bar moves the highlight', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();
@@ -43,23 +40,18 @@ describe('pillNarrowList', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
 
-  // Hovering moves the highlight too, via the same prop. Scrolling for that pulls the list out
-  // from under the cursor, which puts a different row under it and moves the highlight again.
-  it('should not scroll when the pointer moves the highlight', async () => {
+  it('should not scroll when the bar echoes back a highlight the pointer moved, which would pull the list out from under the cursor', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();
 
     await wrapper.findAll('button')[2].trigger('mousemove');
-    // The bar echoes the emitted index straight back as the prop, which is what would otherwise
-    // be indistinguishable from a keyboard move.
     await wrapper.setProps({ highlighted: 2 });
 
     expect(wrapper.emitted('update:highlighted')?.[0]).toStrictEqual([2]);
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  // The flag is cleared by the echo, so the next keyboard move still scrolls.
-  it('should scroll again on the next keyboard move after a hover', async () => {
+  it('should scroll again on the next keyboard move after a hover, the echo clearing the flag', async () => {
     const wrapper = createWrapper();
 
     await wrapper.findAll('button')[1].trigger('mousemove');
@@ -71,8 +63,6 @@ describe('pillNarrowList', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
 
-  // The footer is the only place the typed syntax is ever stated: nothing else on screen says a
-  // date or an amount can be written into the bar at all.
   it('should show the typeable examples in the footer', () => {
     const wrapper = mount(PillNarrowList, {
       props: {
@@ -88,8 +78,6 @@ describe('pillNarrowList', () => {
     expect(footer.findAll('code').map(chip => chip.text())).toStrictEqual(['after 15/01/2024', '>100']);
   });
 
-  // The footer demonstrates rather than describes: clicking an example is what puts it in the bar,
-  // where the row it produces appears directly above it.
   it('should emit the example that was clicked', async () => {
     const wrapper = mount(PillNarrowList, {
       props: { examples: ['after 15/01/2024', '>100'], suggestions },
@@ -100,9 +88,7 @@ describe('pillNarrowList', () => {
     expect(wrapper.emitted('example')).toStrictEqual([['>100']]);
   });
 
-  // A chip is an action, so it has to be reachable and announced as one rather than being text
-  // that happens to respond to a click.
-  it('should render each example as a button', () => {
+  it('should render each example as a button rather than text that happens to respond to a click', () => {
     const wrapper = mount(PillNarrowList, {
       props: { examples: ['>100'], suggestions },
     });
@@ -112,12 +98,7 @@ describe('pillNarrowList', () => {
     expect(chip.attributes('type')).toBe('button');
   });
 
-  // Being a `button` is what the tag says, not what the user can do: nothing in the popover is ever
-  // focused (the caret stays in the bar's input) and the popover is teleported, so Tab never
-  // arrives here and a chip was mouse-only. It is reachable because the highlight runs on past the
-  // last row into the footer, which means the chip has to carry the id the input points its
-  // `aria-activedescendant` at, and be a `menuitem` like the rows in the same `role="menu"`.
-  it('should highlight the example the index past the last row names', () => {
+  it('should name the example the index past the last row points at as a highlighted menuitem, the only way the footer is keyboard-reachable', () => {
     const wrapper = mount(PillNarrowList, {
       props: { examples: ['after 15/01/2024', '>100'], highlighted: suggestions.length + 1, suggestions },
     });
@@ -137,9 +118,7 @@ describe('pillNarrowList', () => {
     expect(createWrapper().find('[data-testid=pill-narrow-syntax]').exists()).toBe(false);
   });
 
-  // The rows scroll and the footer does not: a hint that scrolls out of sight is one you have to
-  // already know about in order to find.
-  it('should keep the footer outside the scrolling row area', () => {
+  it('should keep the footer outside the scrolling row area, so the hint cannot scroll out of sight', () => {
     const wrapper = mount(PillNarrowList, {
       props: { examples: ['>100'], suggestions },
     });

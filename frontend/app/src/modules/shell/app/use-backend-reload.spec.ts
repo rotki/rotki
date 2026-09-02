@@ -59,13 +59,7 @@ describe('useBackendReload', () => {
     expect(result.status).toBe(BackendRestartStatus.restarted);
   });
 
-  /**
-   * The whole point of the outcome: a restart that never happened used to be
-   * indistinguishable from one that did, so the flow signed the user out and reported
-   * completion regardless, leaving them to sign back in to a backend still holding the
-   * data they had just replaced.
-   */
-  it('should report a refused restart instead of completing the flow', async () => {
+  it('should report a refused restart instead of signing the user out and reporting completion', async () => {
     restartBackend.mockResolvedValue({
       message: 'authentication required',
       status: BackendRestartStatus.failed,
@@ -75,8 +69,6 @@ describe('useBackendReload', () => {
 
     expect(notify).toHaveBeenCalled();
     expect(logout).not.toHaveBeenCalled();
-    // Still reconnected: the backend refused the restart rather than going away, so
-    // leaving the app disconnected would break something that is working.
     expect(connect).toHaveBeenCalled();
     expect(result.status).toBe(BackendRestartStatus.failed);
   });

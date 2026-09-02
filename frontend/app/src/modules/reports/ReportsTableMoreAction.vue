@@ -14,8 +14,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <RuiMenu
-    menu-class="max-w-[15rem]"
-    :popper="{ placement: 'bottom-end' }"
+    :class-names="{ menu: 'max-w-[15rem]' }"
+    :options="{ placement: 'bottom-end' }"
     close-on-content-click
   >
     <template #activator="{ attrs }">

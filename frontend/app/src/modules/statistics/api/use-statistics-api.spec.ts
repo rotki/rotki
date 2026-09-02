@@ -66,7 +66,6 @@ describe('composables/api/statistics/statistics-api', () => {
     it('should send POST request with snake_case payload for asset', async () => {
       let capturedBody: DefaultBodyType = null;
 
-      // TimedBalances is an array of TimedBalance objects
       const mockBalances = [
         { time: 1700000000, amount: '10.5', usd_value: '1050.00' },
       ];
@@ -90,8 +89,6 @@ describe('composables/api/statistics/statistics-api', () => {
         asset: 'ETH',
       });
       expect(result).toHaveLength(1);
-      // The endpoint sends usd_value, not value. Asserting the parsed number is what discriminates:
-      // the schema used to drop it and default to zero, and a length check could not see that (#12822).
       expect(result[0].usdValue.toString()).toBe('1050');
       expect(result[0].amount.toString()).toBe('10.5');
     });
@@ -127,7 +124,6 @@ describe('composables/api/statistics/statistics-api', () => {
       let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
-      // TimedAssetHistoricalBalances has times and values arrays
       const mockHistoricalBalances = {
         times: [1700000000, 1700100000],
         values: ['1000.00', '1500.00'],
@@ -187,7 +183,6 @@ describe('composables/api/statistics/statistics-api', () => {
     it('should fetch location distribution with correct param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
-      // LocationData is an array of LocationDataItem objects
       const mockLocationData = [
         { location: 'binance', time: 1700000000, usd_value: '5000.00' },
         { location: 'kraken', time: 1700000000, usd_value: '3000.00' },
@@ -217,7 +212,6 @@ describe('composables/api/statistics/statistics-api', () => {
     it('should fetch asset distribution with correct param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
-      // TimedAssetBalances is an array of TimedAssetBalance objects
       const mockAssetData = [
         {
           time: 1700000000,

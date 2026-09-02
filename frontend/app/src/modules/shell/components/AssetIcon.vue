@@ -28,8 +28,8 @@ interface AssetIconProps {
   chainIconSize?: string;
   forceChain?: string;
   /**
-   * Disables scroll event listeners on tooltip popper for better performance in virtualized lists.
-   * The tooltip still works on hover, but won't recalculate position during scroll.
+   * Disables the tooltip's ancestor scroll and resize listeners, for performance in virtualized
+   * lists. The tooltip still opens on hover, but will not recalculate its position during scroll.
    */
   optimizeForVirtualScroll?: boolean;
 }
@@ -124,9 +124,10 @@ const displayAsset = computed<string>(() => {
 /**
  * Whether the asset has anything to call itself by.
  *
- * The catch is that an asset with no metadata is still handed a name and a symbol: `EVM Token:
- * 0x…`. Both are non-empty, so a plain `name ?? symbol` check says "named" for exactly the assets
- * that have none, and every consumer of it would have to know that. It is asked once here instead.
+ * @remarks
+ * An asset with no metadata is still handed a name and a symbol, of the form `EVM Token: 0x…`.
+ * Both are non-empty, so a plain `name ?? symbol` check reports "named" for exactly the assets that
+ * have no name. Asked once here rather than in every consumer.
  */
 const hasAssetText = computed<boolean>(() => {
   if (get(currency))
@@ -147,8 +148,10 @@ const blockie = computed<string | undefined>(() => {
   return address ? getBlockie(address) : undefined;
 });
 
-// Without it the tooltip's `[{symbol}] {name}` renders as a bare `[]`; the address block below
-// still carries the useful part.
+/**
+ * Gates the tooltip's `[{symbol}] {name}` line, which without any asset text renders as a bare `[]`.
+ * The address block below it still carries the useful part.
+ */
 const hasTooltipText = hasAssetText;
 
 const tooltip = computed(() => {
@@ -176,11 +179,12 @@ const tooltip = computed(() => {
   };
 });
 
-// Popper options - disable scroll listeners for virtualized lists to prevent reflow during scroll
-const popperOptions = computed(() => ({
+const tooltipOptions = computed(() => ({
+  autoUpdate: {
+    resize: !optimizeForVirtualScroll,
+    scroll: !optimizeForVirtualScroll,
+  },
   placement: 'top' as const,
-  scroll: !optimizeForVirtualScroll,
-  resize: !optimizeForVirtualScroll,
 }));
 
 const usedChainIconSize = computed(() => chainIconSize || `${(Number.parseInt(size) * 50) / 100}px`);
@@ -226,7 +230,7 @@ const { copied, copy } = useCopy(() => identifier);
 
 <template>
   <RuiTooltip
-    :popper="popperOptions"
+    :options="tooltipOptions"
     :open-delay="400"
     :disabled="noTooltip || !shouldShowAmount"
     persist-on-tooltip-hover

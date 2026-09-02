@@ -40,6 +40,31 @@ describe('useKrakenStakingStore', () => {
     expect(get(store.events).assets).toEqual([]);
   });
 
+  describe('dateFilter', () => {
+    it('should read both bounds back out of pagination', () => {
+      const { dateFilter } = storeToRefs(useKrakenStakingStore());
+      set(dateFilter, { fromTimestamp: 100, toTimestamp: 200 });
+
+      expect(get(dateFilter)).toEqual({ fromTimestamp: 100, toTimestamp: 200 });
+    });
+
+    it('should omit an absent bound rather than send it as an explicit undefined', () => {
+      const { dateFilter, pagination } = storeToRefs(useKrakenStakingStore());
+      set(dateFilter, { fromTimestamp: 100, toTimestamp: undefined });
+
+      expect(Object.hasOwn(get(pagination), 'toTimestamp')).toBe(false);
+      expect(get(pagination)).toMatchObject({ fromTimestamp: 100 });
+    });
+
+    it('should drop a bound that was set and then cleared', () => {
+      const { dateFilter, pagination } = storeToRefs(useKrakenStakingStore());
+      set(dateFilter, { fromTimestamp: 100, toTimestamp: 200 });
+      set(dateFilter, { fromTimestamp: 100, toTimestamp: undefined });
+
+      expect(Object.hasOwn(get(pagination), 'toTimestamp')).toBe(false);
+    });
+  });
+
   it('should resolve asset identifiers and list them under assets', () => {
     const store = useKrakenStakingStore();
     store.rawEvents = events([

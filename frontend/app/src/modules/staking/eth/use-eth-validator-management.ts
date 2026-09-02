@@ -49,13 +49,27 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
     set(total, totalStakedAmount);
   }
 
+  /**
+   * Sets the total directly, as the page refresh does.
+   *
+   * @remarks
+   * Claims `wantedFilter`, so a query still in flight cannot land on top of this. A query that
+   * completes checks the slot instead of claiming it, which is why it calls {@link applyTotal}
+   * rather than coming back through here.
+   */
   function setTotal(validators?: Eth2Validators['entries']): void {
-    // Claims the slot, so a request still in flight cannot land on top of a caller that has just
-    // set the total directly (the page refresh does exactly that).
     wantedFilter = '';
     applyTotal(validators);
   }
 
+  /**
+   * Recomputes `total` for the filter and selection as they currently stand.
+   *
+   * @remarks
+   * Do not route the query through the task orchestrator. This runs on every filter change and the
+   * query behind it is a millisecond-scale database read, so an orchestrated task only adds the
+   * polling delay and leaves the total lagging the validator count beside it.
+   */
   async function fetchValidatorsWithFilter(): Promise<void> {
     const filterVal = get(modelFilter);
     const selectionVal = get(modelSelection);
@@ -75,25 +89,16 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
     const filterKey = JSON.stringify(combinedFilter);
     wantedFilter = filterKey;
 
-    // Deliberately not an async task. This recomputes on every filter change and the query behind
-    // it is a millisecond-scale database read, so going through the task orchestrator only buys the
-    // polling delay: the number lagged the validator count beside it by roughly two seconds.
     try {
       const validators = await queryEth2Validators(combinedFilter);
-      // Not `setTotal`: this must not claim the slot, it has to check whether the answer it carries
-      // is still the one being asked for.
       if (filterKey === wantedFilter)
         applyTotal(validators.entries);
     }
     catch (error: unknown) {
-      // Only logged. A failed recompute leaves the previous filter's number on screen with nothing
-      // on the page saying so, since the card's progress bar tracks performance and balances rather
-      // than this request.
       logger.error(`failed to compute the staked total for ${filterKey}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  // Watch for filter changes
   watch([modelSelection, modelFilter], async () => {
     await fetchValidatorsWithFilter();
   });

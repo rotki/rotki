@@ -1,26 +1,22 @@
 <script setup lang="ts">
 /**
- * FiatDisplay - Display a fiat value in user's currency.
+ * Displays a fiat value in the user's currency.
  *
- * If `from` is provided, converts from source currency to user's currency.
- * If `from` is omitted, displays value as-is in user's currency.
- * If `currency` is provided, displays using that currency's symbol instead of user's.
- * Values are scrambled for privacy when enabled in settings.
+ * @remarks
+ * `from` converts out of a source currency; without it the value is taken as already being in the
+ * user's. `currency` overrides which symbol is shown. Values are scrambled for privacy when the
+ * setting is on.
+ *
+ * Pairing `from` with a snapshot value means pairing it with the snapshot's timestamp too, or the
+ * conversion silently uses today's rate. `SnapshotFiatDisplay` is the safe spelling for that case.
  *
  * @example
+ * ```vue
  * <FiatDisplay :value="valueInUserCurrency" />
- *
- * @example
  * <FiatDisplay :value="usdValue" from="USD" />
- *
- * @example
  * <FiatDisplay :value="profit" from="USD" pnl />
- *
- * @example
- * <FiatDisplay :value="amount" symbol="ticker" />
- *
- * @example
  * <FiatDisplay :value="reportValue" :currency="report.profitCurrency" />
+ * ```
  */
 import type { BigNumber } from '@rotki/common';
 import type { SymbolDisplay, Timestamp } from '@/modules/assets/amount-display/types';
@@ -69,7 +65,6 @@ const {
 
 const [DefineAmountDisplay, ReuseAmountDisplay] = createReusableTemplate();
 
-// Composables
 const { converted, loading } = useFiatConversion({
   from: () => from,
   timestamp: () => timestamp,
@@ -95,7 +90,6 @@ const showAssetOracle = computed<boolean>(() =>
   get(hasPriceAsset) && isDefined(assetOracle),
 );
 
-// Computed
 const resolvedCurrency = computed<Currency>(() => {
   if (currencyProp)
     return findCurrency(currencyProp);

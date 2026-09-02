@@ -35,9 +35,6 @@ describe('useAddressBookOperations', () => {
     vi.clearAllMocks();
     api = useAddressesNamesApi();
     resolution = useAddressNameResolution();
-    // Re-establish default mock implementations: clearAllMocks only wipes call
-    // history, so per-test overrides (e.g. mockResolvedValue(false),
-    // mockRejectedValue) would otherwise leak into later tests under reshuffle.
     vi.mocked(api.addAddressBook).mockResolvedValue(true);
     vi.mocked(api.deleteAddressBook).mockResolvedValue(true);
     vi.mocked(api.fetchAddressBook).mockResolvedValue(defaultCollectionState());

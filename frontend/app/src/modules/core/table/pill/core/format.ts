@@ -18,19 +18,24 @@ function formatBound(field: FieldDef, value?: string): string | undefined {
   return field.formatBound ? field.formatBound(value) : value;
 }
 
+/**
+ * Renders a pair of bounds as the text beside the operator on a pill.
+ *
+ * @remarks
+ * A single-bound operator shows only its own bound, so the value agrees with the operator label:
+ * a "greater than" pill reads as `50` alone, never as "50 - 100". Under a two-bound operator with one
+ * bound filled, the summary becomes that bound rather than a range with a hole in it, since
+ * "01/07/2026 - " says nothing about which end is missing.
+ */
 function boundsSummary(field: FieldDef, op: FilterOp, lower?: string, upper?: string): string {
   const lo = formatBound(field, lower);
   const hi = formatBound(field, upper);
-  // Single-bound operators show only their bound, so the value matches the operator label (a
-  // "greater than" pill reads "> 50", never "50 - 100").
   if (LOWER_ONLY_OPS.has(op))
     return lo ?? '';
   if (UPPER_ONLY_OPS.has(op))
     return hi ?? '';
   if (!lo && !hi)
     return '';
-  // Only one bound filled under a two-bound operator: read it as that bound rather than as a
-  // range with a hole in it ("01/07/2026 - ..." says nothing about which end is missing).
   if (!hi)
     return `≥ ${lo}`;
   if (!lo)
@@ -68,10 +73,11 @@ export function pillValueCaption(field: FieldDef, filter: ActiveFilter): string 
 }
 
 /**
- * One line describing a whole stored filter set, for a saved view's row: every field it holds with
- * its value summary. Read from the transported form, since that is what a view stores, so the
- * fields decide what a view means exactly as they do for the live bar. A filter naming a field the
- * table no longer has is dropped by the decoder, so a stale view degrades to what still applies.
+ * Describes a whole stored filter set in one line, for a saved view's row.
+ *
+ * @remarks
+ * Read from the transported form, since that is what a view stores, so the fields decide what a
+ * view means exactly as they do for the live bar.
  */
 export function pillStateSummary(
   matches: MatchedKeywordWithBehaviour<string>,
@@ -96,8 +102,11 @@ export function pillStateSummary(
 }
 
 /**
- * A compact, presentation-only summary of a filter's value(s), shown on the pill. Display
- * resolution (e.g. asset identifier -> symbol) is layered on by the bar; this is the raw form.
+ * A compact, presentation-only summary of a filter's values, shown on the pill.
+ *
+ * @remarks
+ * This is the raw form. Resolving an identifier to something displayable, an asset to its symbol
+ * say, is layered on by the bar.
  */
 export function pillValueSummary(field: FieldDef, filter: ActiveFilter): string {
   switch (field.valueType) {

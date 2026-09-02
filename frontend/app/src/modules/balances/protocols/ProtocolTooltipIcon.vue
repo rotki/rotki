@@ -46,7 +46,7 @@ const name = computed<string>(() => {
     :disabled="!shouldShowAmount"
     :open-delay="100"
     persist-on-tooltip-hover
-    tooltip-class="!-ml-1"
+    :class-names="{ tooltip: '!-ml-1' }"
   >
     <template #activator>
       <ProtocolIcon

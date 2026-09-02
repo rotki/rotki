@@ -32,10 +32,16 @@ const { t } = useI18n({ useScope: 'global' });
 const selectedEventIds = ref<number[]>([]);
 const eventsDialogOpen = ref<boolean>(false);
 
+/**
+ * The table's columns, with an extra one in the custom-rule view.
+ *
+ * @remarks
+ * A custom rule gains an event-ids column and keeps the type, subtype and counterparty ones, so
+ * that view is the regular set plus one rather than a different set.
+ */
 const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
   const baseColumns: DataTableColumn<AccountingRuleEntry>[] = [];
 
-  // Regular view columns
   baseColumns.push(
     {
       cellClass: 'py-4',
@@ -57,7 +63,6 @@ const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
     },
   );
 
-  // For special rules view (custom rules with eventIds), show event IDs instead of event type/subtype/counterparty
   if (isCustom) {
     baseColumns.push({
       cellClass: 'py-4 border-r border-default',
@@ -67,7 +72,6 @@ const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
     });
   }
 
-  // Common columns for both views
   baseColumns.push(
     {
       align: 'center',
@@ -132,10 +136,10 @@ function openEventsDialog(eventIds: number[]) {
   >
     <template #header.taxable>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center h-full"
-        tooltip-class="max-w-[10rem]"
+        :class-names="{ tooltip: 'max-w-[10rem]' }"
       >
         <template #activator>
           <div class="flex items-center text-left gap-2">
@@ -152,10 +156,10 @@ function openEventsDialog(eventIds: number[]) {
     </template>
     <template #header.countEntireAmountSpend>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center"
-        tooltip-class="max-w-[10rem]"
+        :class-names="{ tooltip: 'max-w-[10rem]' }"
       >
         <template #activator>
           <div class="flex items-center text-left gap-2">
@@ -172,10 +176,10 @@ function openEventsDialog(eventIds: number[]) {
     </template>
     <template #header.countCostBasisPnl>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
         class="flex items-center"
-        tooltip-class="max-w-[10rem]"
+        :class-names="{ tooltip: 'max-w-[10rem]' }"
       >
         <template #activator>
           <div class="flex items-center text-left gap-2">

@@ -16,7 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div class="flex items-center justify-between">
     <RuiTooltip
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
@@ -33,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
       class="ml-2"
     >
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

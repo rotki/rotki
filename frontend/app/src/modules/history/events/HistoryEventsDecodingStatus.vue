@@ -32,10 +32,8 @@ defineSlots<{
 
 const { useIsActive } = useTaskCenter();
 const fetching = useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED);
-// Transaction decoding runs native (Phase 2): aggregate liveness across every per-chain activity.
 const isDecoding = useIsActive(ActivityKind.TX_DECODING);
 const usedIsDecoding = useRefWithDebounce(isDecoding, 500);
-// Transaction sync runs native (Phase 2): aggregate liveness across every {chain, address} activity.
 const isTransactionsLoading = useIsActive(ActivityKind.TX_SYNC);
 
 function redecodeAllEvents() {
@@ -266,6 +264,7 @@ onMounted(() => refresh());
       <RuiButton
         color="error"
         :disabled="refreshing || isDecoding"
+        data-testid="redecode-all"
         @click="redecodeAllEvents()"
       >
         <template #prepend>

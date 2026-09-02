@@ -83,6 +83,19 @@ describe('useBalanceDivergence', () => {
     expect(get(divergence.error)).toBeUndefined();
   });
 
+  it('should not dedup two runs that differ only by tolerance', async () => {
+    runTaskMock.mockReturnValue(ok(divergedResult()));
+    const divergence = useBalanceDivergence();
+
+    await Promise.all([
+      divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum' }),
+      divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum', tolerance: '5' }),
+    ]);
+    await flushPromises();
+
+    expect(mockFindDivergence).toHaveBeenCalledTimes(2);
+  });
+
   it('should surface the failure message on an actionable failure', async () => {
     runTaskMock.mockReturnValue(err(TaskFailed({ message: 'boom' })));
     const divergence = useBalanceDivergence();

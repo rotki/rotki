@@ -30,8 +30,10 @@ const saving = ref<boolean>(false);
 
 const list = useTemplateRef<HTMLDivElement>('list');
 const rows = useTemplateRef<HTMLDivElement[]>('rows');
-// Typed loosely on purpose: this is a component instance, and a stubbed button in a unit spec has
-// neither an element nor a focus method.
+/**
+ * The star that opens the menu, typed loosely because it is a component instance and a stubbed
+ * button in a unit spec has neither an element nor a focus method.
+ */
 const activator = useTemplateRef<{ $el?: { focus?: () => void } }>('activator');
 
 const { addView, deleteView, ensureConverted, views } = useSavedViews(() => location, () => fields);
@@ -57,15 +59,20 @@ function apply(view: SavedView): void {
   emit('apply', view);
 }
 
+/**
+ * Saves the current filter state as a named view.
+ *
+ * @remarks
+ * On success focus returns to the list, which now holds the new view and is where the arrow keys
+ * and Escape are handled. Leaving it on the save button strands the keyboard on a control with
+ * nothing left to do.
+ */
 async function save(): Promise<void> {
   set(saving, true);
   const status = await addView(get(name), state);
   set(saving, false);
   if (status.success) {
     reset();
-    // Focus goes back to the list, which now holds the new view: it is where the arrow keys and
-    // Escape are handled, and leaving focus on the save button strands the keyboard on a control
-    // that has nothing left to do.
     get(list)?.focus();
     return;
   }
@@ -81,12 +88,14 @@ async function remove(index: number): Promise<void> {
 }
 
 /**
- * The list owns the arrow keys, so a view can be picked without a mouse: the menu focuses it on
- * open, and the name field is a Tab away for saving. Enter on a highlighted row applies it.
+ * Handles the keys the list owns, so a view can be picked without a mouse.
+ *
+ * @remarks
+ * The menu focuses the list on open, the name field is a Tab away for saving, and Enter on a
+ * highlighted row applies it. Escape is handled here rather than left to the menu: dismissal by the
+ * menu depends on where focus sits, and an empty list would have nothing else to hand it to.
  */
 function onListKeydown(event: KeyboardEvent): void {
-  // Escape is handled here rather than left to the menu: dismissal by the menu depends on where
-  // focus sits, and an empty list would have nothing else to hand it to.
   if (event.key === 'Escape') {
     set(open, false);
     return;
@@ -112,41 +121,60 @@ function onListKeydown(event: KeyboardEvent): void {
   }
 }
 
-// Opening the menu starts from a clean slate, and is also when any legacy saved filters for this
-// table are migrated: doing it on mount put the write in the middle of the burst of settings
-// writes that logging in fires, and the whole frontend-settings blob is written at once, so the
-// conversion was clobbered by a later write built from a snapshot that predated it.
-watch(open, (isOpen: boolean): void => {
-  if (!isOpen)
-    return;
+/**
+ * Starts the menu from a clean slate and migrates this table's legacy saved filters.
+ *
+ * @remarks
+ * The conversion is tied to opening rather than to mounting: on mount the write lands in the burst
+ * of settings writes that logging in fires, and because the whole frontend-settings blob is written
+ * at once, a later write built from a snapshot that predates the conversion silently discards it.
+ */
+function onOpened(): void {
   reset();
   startPromise(ensureConverted());
+}
+
+watch(open, (isOpen: boolean): void => {
+  if (isOpen)
+    onOpened();
 });
 
-// The list scrolls past its height once a few views are stored, so the highlighted row has to be
-// brought back into view as the arrow keys move it, the same as every other list in the bar.
-// Scrolled from the key handler rather than from a watcher on the highlight: hovering also moves
-// the highlight, and scrolling then pulls the list out from under the cursor, which lands a
-// different row under it and moves the highlight again.
+/**
+ * Brings the highlighted row into view, scrolling as little as it takes.
+ *
+ * @remarks
+ * Belongs to the key handler and must stay there. Driving it from a watcher on the highlight
+ * would fire on hover as well, and the scroll then drags the list out from under a stationary
+ * cursor, which moves the highlight again.
+ */
 function scrollToHighlighted(): void {
   get(rows)?.[get(highlighted)]?.scrollIntoView({ block: 'nearest' });
 }
 
-// Focus lands on the list, so the arrow keys and Escape work without clicking into it first: a
-// menu that has to be reached with the mouse is not keyboard-navigable. Watched on the element as
-// well as on `open`, because the menu mounts its content later than the model flips.
-watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void => {
+/**
+ * Keeps the keyboard inside the menu: the list holds focus while it is open, and the star that
+ * opened it takes focus back once it closes.
+ *
+ * @remarks
+ * The list owns the arrow keys and Escape, so a menu that has to be reached with the mouse is not
+ * keyboard-navigable, and once the list unmounts focus would otherwise fall to the document body.
+ * `RuiMenu` returns focus to its activator itself, but only while `disable-auto-focus` is off, and
+ * it is on here so the menu does not take focus off the list the moment it opens: the one prop
+ * governs both directions.
+ *
+ * @param isOpen - the menu's model.
+ * @param element - the list, watched alongside `isOpen` rather than read on open, because `RuiMenu`
+ * mounts its content later than the model flips, so it does not exist yet at that point.
+ */
+function syncFocus(isOpen: boolean, element: HTMLDivElement | null): void {
   if (isOpen)
     element?.focus();
-});
-
-// Closing hands focus back to the star that opened it. `RuiMenu` does this itself, but only when
-// `disable-auto-focus` is off, and it is on here so the menu does not take focus off the list the
-// moment it opens — the one prop governs both directions. Without this, dismissing the menu leaves
-// focus on the document body, since the list that held it has unmounted.
-watch(open, (isOpen: boolean): void => {
-  if (!isOpen)
+  else
     get(activator)?.$el?.focus?.();
+}
+
+watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void => {
+  syncFocus(isOpen, element);
 });
 </script>
 

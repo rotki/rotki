@@ -181,8 +181,6 @@ describe('useGnosisPaySigning', () => {
 
     expect(removeMatching).toHaveBeenCalledTimes(1);
 
-    // Nothing else in this flow writes to that group, so the predicate has to single it out: the
-    // warning goes and an unrelated notification stays.
     const predicate = removeMatching.mock.calls[0][0];
     expect(predicate(createMock<NotificationData>({ group: NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED }))).toBe(true);
     expect(predicate(createMock<NotificationData>({ group: NotificationGroup.MISSING_API_KEY }))).toBe(false);
@@ -207,8 +205,6 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    // EIP-4361 line 1 is an authority, not a URL. Wallets compare it verbatim against the
-    // requesting origin's host, so a scheme here can never match any origin.
     const lines = String(signMessage.mock.calls[0][0].message).split('\n');
     expect(lines[0]).toBe('rotki.com wants you to sign in with your Ethereum account:');
     expect(lines).toContain('URI: https://rotki.com');

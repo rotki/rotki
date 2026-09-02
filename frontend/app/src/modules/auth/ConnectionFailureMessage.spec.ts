@@ -9,9 +9,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ConnectionFailureMessage from './ConnectionFailureMessage.vue';
 import '@test/i18n';
 
-// `available` is read through VueUse's `get`, which unwraps a plain value just
-// as happily as a ref — so it stays a boolean here. A `ref` cannot be built in
-// `vi.hoisted`: the auto-import is not resolved yet when the factory runs.
 const { control, interop, mocks, saveOptions } = vi.hoisted(() => ({
   control: {
     probe: vi.fn(async () => false),
@@ -73,13 +70,6 @@ describe('connectionFailureMessage', () => {
 
   const hasDebugButton = (wrapper: VueWrapper): boolean => findDebugButton(wrapper) !== undefined;
 
-  /**
-   * A debug retry restarts the backend *carrying a log level*, so it needs a
-   * runtime that will accept one. The plain web build has neither Electron's
-   * saved options nor a `/_control` endpoint, so offering the button there means
-   * offering one that cannot work — it used to render and then throw on the
-   * `window.interop` assertion behind it.
-   */
   it('should hide the debug retry where no runtime can carry a log level', async () => {
     const wrapper = createWrapper();
     await flushPromises();
@@ -87,9 +77,7 @@ describe('connectionFailureMessage', () => {
     expect(hasDebugButton(wrapper)).toBe(false);
   });
 
-  // Docker without a session key serves no `/_control`, so the probe says no and
-  // the button must stay hidden even though this is not the plain web build.
-  it('should hide the debug retry when the control endpoint is absent', async () => {
+  it('should hide the debug retry when the control endpoint is absent, whatever the build', async () => {
     control.probe.mockResolvedValue(false);
     mocks.available = false;
 

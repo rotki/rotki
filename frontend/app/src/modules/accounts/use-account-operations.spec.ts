@@ -1,4 +1,5 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -111,16 +112,14 @@ describe('useAccountOperations', () => {
     });
 
     /**
-     * 🔴 eth2 is not an accounts read — it is a backend task that re-queries validators, and the
-     * slowest leg of the walk. Inside the tracked `Promise.all` it gated everything downstream:
-     * observed after a re-login as all 17 chains' accounts landing and not one balance being
-     * fetched, because the walk never resolved.
+     * eth2 is not an accounts read but a backend task re-querying validators, and the slowest leg
+     * of the walk. Awaited with the rest it gates every chain's balances behind itself.
      */
     it('should not hold the full walk on eth2', async () => {
       h.chainIds = ['eth', 'btc', 'eth2'];
       h.fetch.mockImplementation(async (chain: string) => {
         if (chain === 'eth2')
-          return new Promise<void>(() => {});
+          return neverSettles<void>();
 
         return undefined;
       });
@@ -134,15 +133,13 @@ describe('useAccountOperations', () => {
       ]);
 
       expect(walk).toBe('resolved');
-      // Still read, just not waited on.
       expect(h.fetch).toHaveBeenCalledWith('eth2');
     });
 
     /**
-     * 🔴 `allWithConcurrency` short-circuits on the first `err`: in-flight factories finish and no
-     * new ones start. With a bound of 2 and eth rejecting, optimism is the chain that would never
-     * be read — silently, with no failure anywhere. The factories are infallible for exactly this,
-     * and the naive version passes every other test in this file.
+     * `allWithConcurrency` short-circuits on the first `err`, so the third chain is load-bearing:
+     * with a bound of 2 and eth rejecting, optimism is the one that would silently never be read.
+     * The naive version passes every other test in this file.
      */
     it('should read every chain even when one read rejects', async () => {
       h.chainIds = ['eth', 'btc', 'optimism'];
@@ -159,15 +156,9 @@ describe('useAccountOperations', () => {
 
       expect(h.fetch).toHaveBeenCalledWith('btc');
       expect(h.fetch).toHaveBeenCalledWith('optimism');
-      // The chain behind the rejection still gets its data refresh.
       expect(h.hydrate).toHaveBeenCalledWith({ blockchain: 'optimism' });
     });
 
-    /**
-     * ⭐ The point of the per-chain pipeline: a chain's balances are read when *its* accounts land,
-     * not when all of them have. Previously the whole sweep ran after the walk, so the slowest
-     * chain gated every other chain's balances.
-     */
     it('should read a chain\'s cached balances as that chain lands, not after the walk', async () => {
       h.chainIds = ['eth', 'btc'];
       let releaseBtc = (): void => {};
@@ -187,7 +178,6 @@ describe('useAccountOperations', () => {
         expect(h.hydrate).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
       });
 
-      // eth's balances were read while btc's accounts are still outstanding.
       expect(h.hydrate).not.toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
 
       releaseBtc();
@@ -199,12 +189,10 @@ describe('useAccountOperations', () => {
       await useAccountOperations().fetchAccounts({ refreshEns: true });
       await flushPromises();
 
-      // One read per chain, from the walk — not a second undirected sweep.
+      const undirectedSweep = expect.objectContaining({ blockchain: undefined });
       expect(h.hydrate).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'eth' }));
       expect(h.hydrate).toHaveBeenCalledWith(expect.objectContaining({ blockchain: 'btc' }));
-      expect(h.hydrate).not.toHaveBeenCalledWith(
-        expect.objectContaining({ blockchain: undefined }),
-      );
+      expect(h.hydrate).not.toHaveBeenCalledWith(undirectedSweep);
     });
 
     it('should fall back to every supported chain when no chain is given', async () => {

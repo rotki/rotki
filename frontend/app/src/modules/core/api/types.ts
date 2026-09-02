@@ -10,11 +10,7 @@ export interface NonEmptyPropertiesOptions {
   removeEmptyString?: boolean;
 }
 
-/**
- * `baseURL` is omitted deliberately: the api owns url resolution, and a caller
- * that could override it is how colibri's origin used to drift from core's.
- * Address a different backend with `target` instead.
- */
+/** `baseURL` is omitted deliberately: the api owns url resolution. Use `target` instead. */
 type OmittedFetchKeys = 'onRequest' | 'onResponse' | 'onResponseError' | 'retry' | 'priority' | 'baseURL';
 
 export interface RotkiFetchOptions<R extends ResponseType = 'json', T = unknown>

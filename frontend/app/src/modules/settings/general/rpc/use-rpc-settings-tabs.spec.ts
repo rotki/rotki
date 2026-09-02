@@ -113,8 +113,6 @@ describe('useRpcSettingsTabs', () => {
     });
 
     it('should preserve selection when txEvmChains populates after mount', async () => {
-      // Regression: the previous index-based selection lost the user's tab
-      // when the chain list arrived asynchronously.
       set(txEvmChainsRef, []);
       set(mockRoute, { query: { tab: 'eth_consensus_layer' } });
       const { result } = mountWithComposable();

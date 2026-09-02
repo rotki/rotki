@@ -7,9 +7,11 @@ import { PINNED_PANELS } from '@/modules/shell/pinned/pinned-registry';
 import PinnedPanelBody from '@/modules/shell/pinned/PinnedPanelBody.vue';
 import { usePinnedTabs } from '@/modules/shell/pinned/use-pinned-tabs';
 
+/**
+ * Two root nodes, the mini-bar and the drawer, so there is nowhere for a parent's attributes to
+ * fall through to. The rail's visibility comes from the store rather than from attributes.
+ */
 defineOptions({
-  // Two root nodes (mini-bar + drawer); the rail's visibility is driven by the
-  // store, so parent attribute fallthrough is intentionally dropped.
   inheritAttrs: false,
 });
 
@@ -55,7 +57,7 @@ function collapse(): void {
     <RuiTooltip
       v-for="tab in tabs"
       :key="tab.name"
-      :popper="{ placement: 'left' }"
+      :options="{ placement: 'left' }"
       :open-delay="300"
     >
       <template #activator>

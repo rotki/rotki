@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -22,9 +22,6 @@ vi.mock('@/modules/core/common/use-message-store', () => ({
 }));
 
 const LidoCsmAddDialog = (await import('@/modules/staking/lido-csm/LidoCsmAddDialog.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -90,8 +87,6 @@ describe('lidoCsmAddDialog', () => {
   }
 
   function messages(testId: string): string[] {
-    // The account selector carries its validation inside the `field` bag; the text inputs still
-    // take errorMessages at the top level.
     const props = field(testId).props();
     const bag: unknown = props.field;
     const value: unknown = typeof bag === 'object' && bag !== null
@@ -197,8 +192,6 @@ describe('lidoCsmAddDialog', () => {
     wrapper = createWrapper();
     await selectAccount();
 
-    // No blur: the submit button is gated on validity, and a disabled button cannot be clicked to
-    // blur the field, so waiting for blur would leave the user with no message at all.
     field('lido-csm-node-operator').vm.$emit('update:modelValue', 'abc');
     await vi.advanceTimersToNextTimerAsync();
 

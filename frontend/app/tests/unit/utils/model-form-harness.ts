@@ -1,5 +1,6 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { vi } from 'vitest';
 import { type Component, type ComponentPublicInstance, defineComponent, h, ref, shallowRef } from 'vue';
 
 interface ExposedForm {
@@ -94,4 +95,17 @@ export function mountModelForm<TPayload extends object>(
     },
     wrapper,
   };
+}
+
+/**
+ * Runs out the debounced work a form kicks off while mounting.
+ *
+ * @remarks
+ * Call this before the edit a test is actually about, so that edit is the only one in play.
+ * Without it the mount's own settling lands mid-test and the assertions read its writes instead.
+ *
+ * Requires `vi.useFakeTimers()`, and outlasts the 500ms validation debounce these forms share.
+ */
+export async function settleMountedWork(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(600);
 }

@@ -1,6 +1,7 @@
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
@@ -33,6 +34,25 @@ describe('useHistoryEventNotes', () => {
     setActivePinia(createCustomPinia());
     ({ formatNotes } = useHistoryEventNote());
     store = useSettingsRepo();
+  });
+
+  it('should degrade to plain text, rather than throw, when a word processor fails', () => {
+    const exploding = 'eip155:1/erc20:0x0000000000000000000000000000000000000BAD';
+    const { getAssetField } = useAssetInfoRetrieval();
+    const original = vi.mocked(getAssetField).getMockImplementation();
+    vi.mocked(getAssetField).mockImplementation((identifier?: string, ...rest) => {
+      if (identifier === exploding)
+        throw new Error('processor exploded');
+      return original?.(identifier, ...rest) ?? '';
+    });
+
+    try {
+      const formatted = get(formatNotes({ notes: `Swapped for ${exploding} today` }));
+      expect(formatted.length).toBeGreaterThan(0);
+    }
+    finally {
+      vi.mocked(getAssetField).mockImplementation(original!);
+    }
   });
 
   it('should parse normal text', () => {
@@ -70,11 +90,6 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  // An ENS registration note carries a date, and `parseFloat` reports 9 for `09/09/2026` because
-  // it stops at the first slash. Since bignumber.js 11 handing that whole string to BigNumber
-  // throws, and the throw escaped this computed mid-render: Vue abandoned the patch with vnodes
-  // left unmounted, every later patch died on them, and a history group rendered its header with
-  // none of its events.
   it('should leave a date-like word as plain text when an amount is present', () => {
     const notes = 'Register yabir.eth until 09/09/2026';
 
@@ -85,10 +100,6 @@ describe('useHistoryEventNotes', () => {
     ]);
   });
 
-  // The real note this was found on. It carries two words BigNumber rejects, the standalone `.`
-  // and the date, both of them *after* the amount. The throw discarded the whole computed result,
-  // so the GRT amount was parsed and then thrown away with everything else, which read as "the
-  // amount is not detected".
   it('should format the amount in a note that also contains a date and a bare period', () => {
     const notes = 'Undelegate 153.912179766381639129 GRT from indexer 0x089f78D8cF0a5ae1b7A581B1910a73F8CB3e4774 . Lock expires at 09/09/2026 15:04:56 CEST';
 
@@ -105,8 +116,6 @@ describe('useHistoryEventNotes', () => {
     expect(formatted.map(item => item.word).join(' ')).toContain('09/09/2026');
   });
 
-  // Defence in depth for the same failure: whatever a processor throws on, it must cost that one
-  // word and not the surrounding render.
   it('should keep formatting the rest of a note when one word cannot be parsed', () => {
     const notes = 'Receive 100 ETH before 01/02/2027';
 
@@ -489,11 +498,7 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  it('should link the block number in a combined mev reward transaction note', () => {
-    // Note produced by the backend when a MEV reward transaction event is moved
-    // into a block production group (see db/eth2.py combine_block_with_tx_events).
-    // The event itself is an EVM event without a block number field; the block
-    // number is recovered from the group and passed in here.
+  it('should link both the block number and the transaction hash in a combined mev reward note', () => {
     const blockNumber = 17173975;
     const txHash = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
     const notes = `Receive 0.05 ETH as mev reward for block ${blockNumber} in ${txHash}`;
@@ -505,7 +510,6 @@ describe('useHistoryEventNotes', () => {
       address: `${blockNumber}`,
       showHashLink: true,
     });
-    // the transaction hash should still be linked as a tx, not swallowed
     expect(formatted).toContainEqual(expect.objectContaining({
       type: NoteType.TX,
       address: txHash,

@@ -193,7 +193,7 @@ describe('use-event-analysis', () => {
       ]);
     });
 
-    it('should identify complete EVM swap transaction when all events are selected', () => {
+    it('should report a fully selected EVM swap as partial event ids rather than a complete transaction', () => {
       const selectedIds = [20, 21];
       const originalGroups: HistoryEventRow[] = [mockEvmSwapEvent1, mockEvmSwapEvent2];
       const groupedEventsByTxRef = {
@@ -202,8 +202,6 @@ describe('use-event-analysis', () => {
 
       const result = analyzeSelectedEvents(selectedIds, originalGroups, groupedEventsByTxRef);
 
-      // EVM swap events are processed via processSingleSwapEvent (since isSwapTypeEvent matches first)
-      // When all swap events are selected, they're NOT marked as processed and end up in partialEventIds
       expect(result.completeTransactions.size).toBe(0);
       expect(result.partialEventIds).toEqual([20, 21]);
       expect(result.partialSwapGroups).toEqual([]);
@@ -281,7 +279,7 @@ describe('use-event-analysis', () => {
       ]);
     });
 
-    it('should handle non-swap array groups', () => {
+    it('should leave nothing partial when every event of a non-swap array group is selected', () => {
       const mockGroupedEvent1: HistoryEventEntry = {
         ...mockEvmEvent1,
         identifier: 30,
@@ -297,14 +295,12 @@ describe('use-event-analysis', () => {
 
       const result = analyzeSelectedEvents(selectedIds, originalGroups, groupedEventsByTxRef);
 
-      // Non-swap array groups mark selected events as processed
-      // Since both are selected and processed, partialEventIds should be empty
       expect(result.completeTransactions.size).toBe(0);
       expect(result.partialEventIds).toEqual([]);
       expect(result.partialSwapGroups).toEqual([]);
     });
 
-    it('should not duplicate processing of already processed events', () => {
+    it('should report each swap event once when a swap group and its own events both appear in the selection', () => {
       const selectedIds = [10, 11];
       const swapGroup = [mockSwapEvent1, mockSwapEvent2];
       const originalGroups: HistoryEventRow[] = [swapGroup, mockSwapEvent1, mockSwapEvent2];
@@ -312,9 +308,6 @@ describe('use-event-analysis', () => {
 
       const result = analyzeSelectedEvents(selectedIds, originalGroups, groupedEventsByTxRef);
 
-      // The swapGroup array processes first - since all events are selected, they're not marked as processed
-      // Then each individual swap event is processed via processSingleSwapEvent
-      // Since all are selected and not processed, they end up in partialEventIds
       expect(result.completeTransactions.size).toBe(0);
       expect(result.partialEventIds).toEqual([10, 11]);
       expect(result.partialSwapGroups).toEqual([]);
@@ -332,7 +325,7 @@ describe('use-event-analysis', () => {
       expect(result.partialSwapGroups).toEqual([]);
     });
 
-    it('should handle complex scenario with multiple transaction types', () => {
+    it('should split a mixed selection into one complete EVM transaction, a partial swap group and partial EVM swap events', () => {
       const selectedIds = [1, 2, 10, 20, 21];
       const swapGroup = [mockSwapEvent1, mockSwapEvent2];
       const originalGroups: HistoryEventRow[] = [
@@ -349,9 +342,6 @@ describe('use-event-analysis', () => {
 
       const result = analyzeSelectedEvents(selectedIds, originalGroups, groupedEventsByTxRef);
 
-      // EVM events (1,2) are processed as complete transaction
-      // Swap group with partial selection (only 10 selected) creates partial swap group
-      // EVM swap events (20,21) are not processed and go to partialEventIds
       expect(result.completeTransactions.size).toBe(1);
       expect(result.completeTransactions.get('tx1')).toBeDefined();
       expect(result.partialEventIds).toEqual([20, 21]);

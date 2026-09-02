@@ -2,7 +2,7 @@ import type { MaybeRefOrGetter, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { toServerErrors } from '@/modules/core/form/server-errors';
-import { type FormApi, useForm } from '@/modules/core/form/use-form';
+import { type FormApi, noSubmit, useForm } from '@/modules/core/form/use-form';
 import { type ModelMirrorOptions, useModelMirror } from '@/modules/core/form/use-model-mirror';
 
 interface SharedModelFormOptions<TState extends object> {
@@ -50,6 +50,10 @@ export interface MappedModelFormOptions<
  *
  * For a form whose state is the payload, use `useModelForm`, which is this with both mappers set to
  * a copy.
+ *
+ * @param options - `seed` shapes the opening state, and is applied here rather than by writing the
+ * model first: a model write only reads back on the next tick, so a caller doing it by hand takes
+ * its baseline from the payload as it was before the write and the seeding counts as the first edit
  */
 export function useMappedModelForm<TModel extends object, TState extends object>(
   options: MappedModelFormOptions<TModel, TState>,
@@ -57,22 +61,16 @@ export function useMappedModelForm<TModel extends object, TState extends object>
   const { model, schema, seed, serverErrors, stateUpdated, toModel, toState, transientKeys } = options;
 
   const form = useForm<TState, UnwrapNestedRefs<TState>>({
-    // Seeded here rather than by the caller writing the model first: a write to the model is only
-    // readable back on the next tick, so a caller doing it by hand takes its baseline from the
-    // payload as it was before the write, and the seeding then counts as the first edit.
     initial: (): TState => {
       const current = toState(get(model));
       return seed ? seed(current) : current;
     },
     schema,
-    // The dialog owns the persist, so there is nothing to submit or reshape here.
-    submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+    submit: noSubmit,
     transform: (state): UnwrapNestedRefs<TState> => ({ ...state }),
     transientKeys,
   });
 
-  // The two shapes are kept in step by the mirror, which is this without the validation: the form
-  // adds rules, errors and a dirty flag on top of state that is already being mapped both ways.
   useModelMirror<TModel, TState>({
     model,
     seeded: Boolean(seed),
@@ -110,8 +108,6 @@ export function useModelForm<TState extends object>(
 ): FormApi<TState, UnwrapNestedRefs<TState>> {
   return useMappedModelForm<TState, TState>({
     ...options,
-    // Spread over the current payload rather than the state alone: it keeps the result typed as the
-    // payload, which the reactive state is not, without an assertion to bridge the two.
     toModel: (state, model): TState => ({ ...model, ...state }),
     toState: (model): TState => ({ ...model }),
   });

@@ -75,12 +75,13 @@ export function loginSchema(messages: LoginFormMessages, backendOpen: boolean): 
 /**
  * Routes the flat list of messages a failed login comes back with onto the field each one is about.
  *
- * The backend says which field it means only through the wording, so this is prefix matching and
- * cannot be anything better until the api reports errors per field. Keeping it in one named place is
- * the point: it used to be two inline searches, with the same two prefixes implicitly restated by
- * the alert deciding whether to call itself a credential problem.
+ * @remarks
+ * The backend names the field only through the wording, so this is prefix matching and cannot be
+ * better until the api reports errors per field. Match here rather than inline at a call site, so
+ * the alert and the fields agree on which prefixes mean a credential problem.
  *
- * Anything matching neither prefix belongs to no field and is left for the alert to show whole.
+ * @returns fields to their messages; anything matching neither prefix belongs to no field and is
+ * left out for the alert to show whole
  */
 export function classifyLoginErrors(errors: string[]): Record<string, string[]> {
   const classified: Record<string, string[]> = {};

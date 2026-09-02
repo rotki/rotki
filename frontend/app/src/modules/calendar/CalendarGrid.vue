@@ -51,7 +51,6 @@ const previousMonthDays = computed(() => {
   const firstDayOfTheMonthWeekday = getWeekday(get(currentMonthDays)[0].date);
   const previousMonth = dayjs(`${get(year)}-${get(month)}-01`).subtract(1, 'month');
 
-  // Cover first day of the month being sunday (firstDayOfTheMonthWeekday === 0)
   const visibleNumberOfDaysFromPreviousMonth = firstDayOfTheMonthWeekday ? firstDayOfTheMonthWeekday - 1 : 6;
 
   const previousMonthLastMondayDayOfMonth = dayjs(get(currentMonthDays)[0].date)

@@ -32,8 +32,11 @@ const { getEvmChainName } = useSupportedChains();
 const resolvedSymbol = useAssetField(() => data.asset, 'symbol', { collectionParent: false });
 const resolvedName = useAssetField(() => data.asset, 'name', { collectionParent: false });
 
-// Short-circuits, so a provided value leaves the resolution computed unevaluated rather than
-// merely unused: `computed` is lazy, and nothing else reads these.
+/**
+ * A provided value short-circuits the resolution, leaving it unevaluated rather than merely unused,
+ * since `computed` is lazy and nothing else reads it. That is what makes the pre-resolved props a
+ * real saving.
+ */
 const symbol = computed<string>(() => providedSymbol ?? get(resolvedSymbol));
 const name = computed<string>(() => providedName ?? get(resolvedName));
 </script>

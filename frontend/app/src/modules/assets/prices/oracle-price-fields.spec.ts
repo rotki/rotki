@@ -73,9 +73,7 @@ describe('toOraclePriceFields', () => {
     expect(source.validate?.('not-an-oracle')).toBe(false);
   });
 
-  // None of these keys is declared as behaviour-carrying, so the request has no form for an
-  // exclusion and the pill must not offer one.
-  it('should offer no exclusion on any field', () => {
+  it('should offer no exclusion on any field, since the request has no form for one', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);
       expect(field.operators).not.toContain('is_not');

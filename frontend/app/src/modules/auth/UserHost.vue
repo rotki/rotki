@@ -17,11 +17,17 @@ const { restarting } = useRestartingStatus();
 const { connected, connectionFailure, sessionAuthEnabled, unauthenticatedApiAccepted } = storeToRefs(useMainStore());
 
 const isDocker = import.meta.env.VITE_DOCKER === 'true';
-// Either the deployment configured session authentication, so there is no unauthenticated
-// exposure, or the operator accepted the risk (env var or the button on the warning itself).
+/**
+ * Whether this deployment is exposed unauthenticated and has not said so deliberately. Either half
+ * settles it: session authentication means there is no exposure, and the operator can accept the
+ * risk through the env var or the button on the warning itself.
+ */
 const showDockerWarning = logicAnd(isDocker, logicNot(sessionAuthEnabled), logicNot(unauthenticatedApiAccepted));
-// Hide the login form while an auto-unlock is running — the ConnectionLoading card is the
-// single loading state for the whole attempt, so the empty form never shows behind it.
+
+/**
+ * Held back during an auto-unlock as well as a restart, so the empty login form never shows behind
+ * the ConnectionLoading card, which is the single loading state for the whole attempt.
+ */
 const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDockerWarning), logicNot(restarting));
 </script>
 

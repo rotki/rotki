@@ -59,9 +59,7 @@ function convertKeysRecursively(data: unknown, options: ConvertKeysOptions): unk
 }
 
 function convertKeys<T>(data: T, options: ConvertKeysOptions): T {
-  // The one assertion for the whole transformer family lives here rather than at each caller;
-  // see the note on convertKeys above for what was tried instead.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- see above
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the one assertion for the whole transformer family, contained here rather than repeated at each caller
   return convertKeysRecursively(data, options) as T;
 }
 
@@ -77,12 +75,6 @@ export function noRootCamelCaseTransformer<T>(data: T, skipKeys?: string[]): T {
   return convertKeys(data, { camelCase: true, skipKeys, skipRoot: true });
 }
 
-/**
- * Transforms query parameters for URL serialization:
- * - Converts keys to snake_case
- * - Joins arrays with commas (e.g., ['USD', 'EUR'] -> 'USD,EUR')
- * - Removes null/undefined values
- */
 /**
  * A query string carries scalars, so arrays are joined and objects stringified. Anything else has no
  * query representation and is reported as undefined so the caller drops the key.
@@ -104,6 +96,16 @@ function toQueryValue(
   return undefined;
 }
 
+/**
+ * Transforms query parameters for URL serialization.
+ *
+ * @remarks
+ * Keys become snake_case, arrays are joined with commas so `['USD', 'EUR']` becomes `USD,EUR`, and
+ * null or undefined values are dropped rather than serialized.
+ *
+ * @param data - the parameters to serialize
+ * @param skipKeys - keys whose *nested* contents are left un-transformed
+ */
 export function queryTransformer(data: Record<string, unknown>, skipKeys?: string[]): Record<string, string | number | boolean> {
   const result: Record<string, string | number | boolean> = {};
 

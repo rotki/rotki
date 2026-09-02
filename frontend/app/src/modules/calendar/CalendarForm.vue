@@ -37,8 +37,6 @@ const schema = computed<ZodType>(() => calendarEventSchema({
 const form = useModelForm<CalendarEvent>({
   model: modelValue,
   schema,
-  // The dialog reports backend field errors here; the five fields that carried a no-op rule purely
-  // to hold them do not need one under zod.
   serverErrors: errors,
   stateUpdated,
   // Carried on the event but not edited here, so they must not arm the unsaved-changes prompt.
@@ -72,8 +70,7 @@ defineExpose({
     form.reset();
   },
   saveReminders: async (eventId: number): Promise<void> => get(reminderRef)?.save(eventId),
-  // The reminder rows are a separate form, so the gate says so rather than relying on vuelidate
-  // quietly collecting every child instance.
+  /** Gates on both forms: the reminder rows are their own, so their validity is combined here. */
   validate: (): boolean => {
     const event = form.validate();
     const reminders = get(reminderRef)?.validate() ?? true;

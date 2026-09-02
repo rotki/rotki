@@ -225,6 +225,7 @@ defineExpose({
             color="primary"
             size="sm"
             :disabled="selectedCount === 0"
+            data-testid="resolve-selected"
             @click="onResolveSelected()"
           >
             {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
@@ -329,9 +330,9 @@ defineExpose({
             class="flex items-center gap-1"
           >
             <RuiTooltip
-              :popper="{ placement: 'top' }"
+              :options="{ placement: 'top' }"
               :open-delay="400"
-              tooltip-class="max-w-80"
+              :class-names="{ tooltip: 'max-w-80' }"
             >
               <template #activator>
                 <span class="truncate max-w-48 inline-block align-bottom">

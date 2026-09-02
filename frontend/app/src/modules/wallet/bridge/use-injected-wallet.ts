@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { EIP1193Provider } from '@/types';
+import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -28,10 +28,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
   let injectedProvider: EIP1193Provider | undefined;
 
-  // Provider store for enhanced provider detection and selection
   const providerStore = useUnifiedProviders();
 
-  // Define event handlers as part of the composable scope (maintain same references)
   const handleAccountsChanged = (accounts: string[]): void => {
     logger.debug(`Injected provider accounts changed: ${accounts.length} account(s)`);
     if (accounts.length > 0) {
@@ -75,22 +73,36 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   const { isPackaged } = useInterop();
   const { disconnectProxy, startConnectionHealthCheck, stopConnectionHealthCheck } = useWalletProxy();
 
-  // Remove event listeners from the injected provider
+  /**
+   * Visits every provider event this composable subscribes to, with the handler bound to it.
+   *
+   * @remarks
+   * The single place the pairing is written down. Subscribing and unsubscribing both go through
+   * here, so they cannot drift apart and both necessarily pass the same function reference, which
+   * is what `removeListener` matches on. Adding an event means adding one line here.
+   *
+   * @param apply - run once per event; `on` and `removeListener` are what get passed in.
+   */
+  function eachProviderEvent(
+    apply: <K extends EIP1193EventName>(event: K, handler: (...args: EIP1193ProviderEvents[K]) => void) => void,
+  ): void {
+    apply('accountsChanged', handleAccountsChanged);
+    apply('chainChanged', handleChainChanged);
+    apply('connect', handleConnect);
+    apply('disconnect', handleDisconnect);
+    apply('error', handleError);
+  }
+
   const removeProviderEventListeners = (provider: EIP1193Provider): void => {
     logger.debug('Removing injected wallet event listeners from provider');
-    if (provider.removeListener) {
-      provider.removeListener('accountsChanged', handleAccountsChanged);
-      provider.removeListener('chainChanged', handleChainChanged);
-      provider.removeListener('connect', handleConnect);
-      provider.removeListener('disconnect', handleDisconnect);
-      provider.removeListener('error', handleError);
-    }
-    else {
+    if (!provider.removeListener) {
       logger.warn('Provider has no removeListener method');
+      return;
     }
+
+    eachProviderEvent((event, handler) => provider.removeListener?.(event, handler));
   };
 
-  // Connect to injected provider (request accounts)
   const connectInjectedProvider = async (): Promise<void> => {
     if (!injectedProvider) {
       throw new Error('Injected provider not initialized');
@@ -121,18 +133,21 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     }
   };
 
-  // Add event listeners to the injected provider
   const addProviderEventListeners = (provider: EIP1193Provider): void => {
     logger.debug('Adding injected wallet event listeners to provider');
 
-    provider.on?.('accountsChanged', handleAccountsChanged);
-    provider.on?.('chainChanged', handleChainChanged);
-    provider.on?.('connect', handleConnect);
-    provider.on?.('disconnect', handleDisconnect);
-    provider.on?.('error', handleError);
+    eachProviderEvent((event, handler) => provider.on?.(event, handler));
   };
 
-  // Connect to the selected provider (called after selection)
+  /**
+   * Wires up the provider the user picked, then asks it for accounts.
+   *
+   * @remarks
+   * The account request has to come last. Asking before the provider is wired prompts the user
+   * against whichever wallet happened to be active, which is not the one they chose. Listeners are
+   * removed before being added because a provider can be selected again without changing, and the
+   * second pass would otherwise leave two of each.
+   */
   async function connectToSelectedProvider(): Promise<void> {
     const selectedProvider = get(providerStore.selectedProvider);
     if (!selectedProvider) {
@@ -141,10 +156,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
     logger.debug('Connecting to selected provider:', selectedProvider.info.name);
 
-    // Always use the provider from the unified provider store
     const selectedEthereumProvider = selectedProvider.provider;
 
-    // Clean up previous provider if different
     if (injectedProvider && injectedProvider !== selectedEthereumProvider) {
       removeProviderEventListeners(injectedProvider);
     }
@@ -152,13 +165,10 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     injectedProvider = selectedEthereumProvider;
     logger.debug(`Using provider from unified store: ${selectedProvider.info.name} (source: ${selectedProvider.source})`);
 
-    // Always remove existing listeners first to prevent duplicates
     removeProviderEventListeners(injectedProvider);
 
-    // Add event listeners
     addProviderEventListeners(injectedProvider);
 
-    // Start health check if packaged
     if (isPackaged) {
       startConnectionHealthCheck(
         () => injectedProvider !== undefined && get(connected),
@@ -170,25 +180,31 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       );
     }
 
-    // CRITICAL: NOW request accounts - only after provider selection
     logger.debug('Provider setup complete, requesting accounts...');
     await connectInjectedProvider();
   }
 
+  /**
+   * Tells the wallet the session is over, as far as it is willing to be told.
+   *
+   * @remarks
+   * Neither method is universal: `wallet_revokePermissions` is the one that actually makes the
+   * wallet forget the approval, `disconnect` is the older fallback, and a wallet supporting
+   * neither leaves the user to disconnect from its own UI. Every failure here is logged and
+   * swallowed, since local disconnection must proceed either way.
+   */
   async function sendDisconnectToWallet(): Promise<void> {
     if (!injectedProvider) {
       return;
     }
 
     try {
-      // Try to revoke permissions if supported
       await injectedProvider.request({
         method: 'wallet_revokePermissions',
         params: [{ eth_accounts: {} }],
       });
     }
     catch (error: unknown) {
-      // wallet_revokePermissions is not widely supported
       logger.debug('wallet_revokePermissions not supported:', getErrorMessage(error));
       try {
         if ('disconnect' in injectedProvider && typeof injectedProvider.disconnect === 'function') {
@@ -208,10 +224,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       await sendDisconnectToWallet();
 
       try {
-        // Remove event listeners to prevent memory leaks
         removeProviderEventListeners(injectedProvider);
 
-        // Only disable wallet bridge if packaged
         if (isPackaged) {
           await disconnectProxy();
         }
@@ -222,7 +236,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       }
     }
 
-    // Reset state
     set(connected, false);
     set(connectedAddress, undefined);
     set(connectedChainId, undefined);
@@ -256,9 +269,6 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
         if (error instanceof Object && 'code' in error && error.code === 4902) {
           const { getWalletNetwork } = await import('../chains-viem');
           const network = getWalletNetwork(chainId);
-          // The chain list comes from the backend and can outrun the viem table,
-          // so a chain with no definition is normal. Nothing can be added for it:
-          // rethrow rather than return as if the switch had worked.
           if (!network)
             throw error;
 

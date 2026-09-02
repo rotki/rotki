@@ -205,7 +205,6 @@ describe('collectPendingSuggestions', () => {
 
     const skipDetection = result.find(s => s.key === 'evmchainsToSkipDetection');
     expect(skipDetection).toBeDefined();
-    // Only polygon_pos is missing, base is already there
     expect(skipDetection?.suggestedValue).toEqual(['base', 'optimism', 'polygon_pos']);
   });
 
@@ -226,9 +225,6 @@ describe('collectPendingSuggestions', () => {
     const general = createGeneralSettings();
     const result = collectPendingSuggestions(frontend, general, '1.43.0', testRegistry);
 
-    // itemsPerPage appears in both 1.42 and 1.43 — latest wins (50)
-    // graphZeroBased from 1.42
-    // evmchainsToSkipDetection from 1.43
     expect(result).toHaveLength(3);
 
     const itemsPerPage = result.find(s => s.key === 'itemsPerPage');
@@ -332,7 +328,6 @@ describe('collectPendingSuggestions', () => {
 
     const frontend = createFrontendSettings({ lastAppliedSettingsVersion: '1.42.0' });
 
-    // When current value matches — should not suggest
     const generalMatching = createGeneralSettings({
       currentPriceOracles: [PriceOracle.DEFILLAMA, PriceOracle.COINGECKO],
     });
@@ -344,7 +339,6 @@ describe('collectPendingSuggestions', () => {
     );
     expect(resultMatching).toHaveLength(0);
 
-    // When current value differs — should suggest
     const generalDifferent = createGeneralSettings({
       currentPriceOracles: [PriceOracle.COINGECKO, PriceOracle.DEFILLAMA],
     });
@@ -418,8 +412,6 @@ describe('useSettingsSuggestions', () => {
       expect(mockStore.showSuggestionsDialog).toBe(false);
       expect(mockStore.pendingSuggestions).toEqual([]);
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
-      // The short-circuit has to come before the registry, or a new account pays for probes it can
-      // never need.
       expect(resolve).not.toHaveBeenCalled();
     });
 
@@ -432,8 +424,6 @@ describe('useSettingsSuggestions', () => {
       await checkForSuggestions(createFrontendSettings(), createGeneralSettings(), true);
       const [created] = mockUpdateFrontendSetting.mock.calls[0];
 
-      // It then deliberately picks etherscan-first, which is exactly the state the 1.44 question
-      // looks for. Asking about it would be asking someone to reconsider a choice they just made.
       set(mockLogged, true);
       await checkForSuggestions(
         createFrontendSettings(created),

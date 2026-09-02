@@ -84,8 +84,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   // Mirrors the real predicate: only an actionable `TaskFailed` carries a `cause`.
   isActionable: (error: { _tag?: string }): boolean => error?._tag === 'TaskFailed',
   makeActivityId: (kind: string, ...parts: (string | number)[]): string => [kind, ...parts].join(':'),
-  // The real bridge runs the spec's `run` and returns its outcome; do the same so a test drives
-  // the flow purely through `runTaskResult`.
   useNativeTask: vi.fn(() => ({
     runTaskResult,
     submitTask: vi.fn(runSpecWith(runTaskResult)),
@@ -280,7 +278,6 @@ describe('useUnlockSteps', () => {
       const store = setupStore();
       const { syncConflict } = storeToRefs(store);
       const payload = { localLastModified: 1, remoteLastModified: 2 };
-      // the task monitor forwards the original error as the cause of an actionable TaskFailed
       runTaskResult.mockResolvedValue(err(TaskFailed({ cause: new SyncConflictError('conflict!', { payload }), message: 'conflict!' })));
 
       const { loginSteps } = useUnlockSteps();
@@ -327,6 +324,22 @@ describe('useUnlockSteps', () => {
       expect(colibriLogin).toHaveBeenCalledWith({ password: 'pw', username: 'new-user' });
     });
 
+    it('should treat a premium restore as an existing account, keeping the suggestions dialog', async () => {
+      setupStore();
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
+
+      const restore: CreateAccountPayload = {
+        ...payload,
+        premiumSetup: { apiKey: 'k', apiSecret: 's', syncDatabase: true },
+      };
+
+      const steps = useUnlockSteps().createSteps(restore);
+      await steps.login(restore.credentials);
+      await steps.loadSession();
+
+      expect(initialize).toHaveBeenCalledWith(expect.anything(), [], false);
+    });
+
     it('should return err(unknown) with the message when the create task fails', async () => {
       setupStore();
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'nope' })));
@@ -348,6 +361,17 @@ describe('useUnlockSteps', () => {
       expect(checkUpdate).not.toHaveBeenCalled();
     });
 
+    it('should offer no stored credentials and no resume, so create never auto-unlocks', async () => {
+      setupStore();
+
+      const steps = useUnlockSteps().createSteps(payload);
+
+      expect(await steps.resolveCredentials()).toEqual({ ok: true, value: { some: false } });
+      expect(resolveStoredCredentials).not.toHaveBeenCalled();
+      expect(await steps.resume(payload.credentials)).toEqual({ ok: true, value: undefined });
+      expect(getRawSettings).not.toHaveBeenCalled();
+    });
+
     it('should not open the socket on connect (deferred to post-ack)', async () => {
       setupStore();
       const { createSteps } = useUnlockSteps();
@@ -360,7 +384,6 @@ describe('useUnlockSteps', () => {
     it('should start the monitor only after the create ack sets the cookie', async () => {
       setupStore();
       callCreateAccount.mockResolvedValue({ taskId: 1 });
-      // run the executor so the ack→monitor ordering inside createUnlock is observable.
       runTaskResult.mockImplementation(async (executor: () => Promise<unknown>) => {
         await executor();
         return ok({ exchanges: [], settings: { frontendSettings: '{}' } });

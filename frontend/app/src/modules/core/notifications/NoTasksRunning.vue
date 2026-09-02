@@ -7,7 +7,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <RuiCard
     dense
-    content-class="flex items-center gap-4"
+    :class-names="{ content: 'flex items-center gap-4' }"
   >
     <SuccessDisplay success />
     <div class="font-medium">

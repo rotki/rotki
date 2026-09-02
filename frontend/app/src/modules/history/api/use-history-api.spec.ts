@@ -202,7 +202,6 @@ describe('composables/api/history/index', () => {
       const { fetchLocationLabels } = useHistoryApi();
       const result = await fetchLocationLabels();
 
-      // Empty labels should be filtered out
       expect(result).toHaveLength(2);
       expect(result[0].location).toBe('binance');
       expect(result[0].locationLabel).toBe('My Binance');

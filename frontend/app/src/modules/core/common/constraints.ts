@@ -1,5 +1,7 @@
 const MAX_MILLISECONDS_DELAY = 2 ** 31 - 1;
 
+export const SECONDS_PER_HOUR = 3600;
+
 export const SECONDS_PER_DAY = 86400;
 
 export const Constraints = {

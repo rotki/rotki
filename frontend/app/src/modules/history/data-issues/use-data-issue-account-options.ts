@@ -51,8 +51,6 @@ export function useDataIssueAccountOptions(): DataIssueAccountOptions {
       startPromise(fetchLocationLabels());
   });
 
-  // One pass over the list rather than a lookup per call: a resolver runs once per candidate value
-  // on every keystroke while the bar narrows.
   const byLabel = computed<Map<string, AccountOption>>(() => {
     const map = new Map<string, AccountOption>();
     for (const item of get(locationLabels)) {
@@ -82,8 +80,6 @@ export function useDataIssueAccountOptions(): DataIssueAccountOptions {
   }
 
   function resolveCaption(value: string): string | undefined {
-    // Shown muted under a name. With no name the label is the value itself, so a caption would
-    // only repeat it.
     const option = get(byLabel).get(value);
     return option?.name ? shorten(value, option) : undefined;
   }
@@ -92,8 +88,6 @@ export function useDataIssueAccountOptions(): DataIssueAccountOptions {
     const option = get(byLabel).get(value);
     if (!option)
       return undefined;
-    // The row shows a name or a shortened, scrambled address, so neither a full address nor a
-    // typed name would match what is drawn without these.
     return [value, option.name, ...option.tags].filter(Boolean).join(' ');
   }
 

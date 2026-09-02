@@ -1,4 +1,4 @@
-import time
+from threading import Barrier, Lock
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
@@ -468,17 +468,23 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
     started_workers = 0
     completion_count = 0
     started_at_fifth_completion: int | None = None
+    first_batch_barrier = Barrier(parties=5, timeout=1)
+    counters_lock = Lock()
 
     def worker(**kwargs) -> _RepullResult:
         nonlocal active_workers, max_workers, started_workers, completion_count, started_at_fifth_completion  # noqa: E501
-        started_workers += 1
-        active_workers += 1
-        max_workers = max(max_workers, active_workers)
-        time.sleep(0.01)
-        completion_count += 1
-        if completion_count == 5:
-            started_at_fifth_completion = started_workers
-        active_workers -= 1
+        with counters_lock:
+            started_workers += 1
+            active_workers += 1
+            max_workers = max(max_workers, active_workers)
+            is_first_batch = started_workers <= 5
+        if is_first_batch:
+            first_batch_barrier.wait()
+        with counters_lock:
+            completion_count += 1
+            if completion_count == 5:
+                started_at_fifth_completion = started_workers
+            active_workers -= 1
         return _RepullResult(
             chain_id=kwargs['chain_id'],
             tx_hash=kwargs['tx_hash'],

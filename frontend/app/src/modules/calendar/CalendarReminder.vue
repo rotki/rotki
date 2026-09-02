@@ -9,7 +9,7 @@ import { planReminderSync, type ReminderDraft } from '@/modules/calendar/reminde
 import { useCalendarReminderApi } from '@/modules/calendar/use-calendar-reminder-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
@@ -19,6 +19,8 @@ const { editMode } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const DEFAULT_REMINDER_SECONDS = 15 * 60;
 
 const showReminders = ref<boolean>(false);
 /** The reminders as the server has them. Empty for an event that does not exist yet. */
@@ -66,7 +68,7 @@ const schema = computed<ZodType>(() => reminderRowsSchema({
 const form = useForm<{ rows: EditableRow[] }, { rows: EditableRow[] }>({
   initial: (): { rows: EditableRow[] } => ({ rows: [] }),
   schema,
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: state => ({ rows: [...state.rows] }),
 });
 
@@ -102,8 +104,7 @@ async function loadStored(): Promise<void> {
   }
 }
 
-// 15 minutes as default value
-function addRow(secsBefore: number = 900): void {
+function addRow(secsBefore: number = DEFAULT_REMINDER_SECONDS): void {
   set(showReminders, true);
   const key = nextKey++;
   form.state.rows.push({ ...splitSeconds(secsBefore), key });
@@ -192,7 +193,6 @@ onBeforeMount(() => startPromise(loadStored()));
 
 defineExpose({
   save,
-  /** The event form gates on this: vuelidate used to collect the rows on its own, zod does not. */
   validate: (): boolean => form.validate(),
 });
 </script>

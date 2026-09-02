@@ -58,9 +58,13 @@ export const DataIssuesCollectionResponse = z
 
 export type DataIssuesCollectionResponse = z.infer<typeof DataIssuesCollectionResponse>;
 
-/** Request payload for listing data issues. Field names map 1:1 to the backend
- * query params after snake_case transformation (e.g. `locationLabel` ->
- * `location_label`). `state`/`kind` are multi-valued. */
+/**
+ * Request payload for listing data issues.
+ *
+ * @remarks
+ * Field names map 1:1 to the backend query params after snake_case transformation, so
+ * `locationLabel` becomes `location_label`. `state` and `kind` are multi-valued.
+ */
 export interface DataIssuesRequestPayload extends PaginationRequestPayload<DataIssue> {
   readonly state?: string | string[];
   readonly kind?: string | string[];
@@ -70,8 +74,6 @@ export interface DataIssuesRequestPayload extends PaginationRequestPayload<DataI
   readonly fromTimestamp?: number;
   readonly toTimestamp?: number;
 }
-
-// --- Typed payload variants (narrowed by `kind` in transforms) ---
 
 export const NegativeBalancePayload = z.object({
   derivedBalanceBeforeEvent: NumericString,

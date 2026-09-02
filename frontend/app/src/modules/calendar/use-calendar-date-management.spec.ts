@@ -90,8 +90,6 @@ describe('useCalendarDateManagement', () => {
     set(modelVisibleDate, dayjs('2026-01-15'));
     setSelectedDate(dayjs('2026-02-01'));
     await nextTick();
-    // modelSelectedDate watcher also updates modelVisibleDate, so by the time the second watcher runs the
-    // selected date does match modelVisibleDate — events should be cleared to empty array.
     expect(get(selectedDateEvents)).toEqual([]);
   });
 });

@@ -17,9 +17,11 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 const HOUR_MS = 60 * 60 * 1000;
 
 /**
- * The pass this composable wraps. It no longer runs detection itself — detection is a stage inside
- * each chain job — so what is under test is the gate and the cooldown bookkeeping: which value
- * `pass` is handed, and whether the sweep is recorded.
+ * Stands in for the pass this composable wraps.
+ *
+ * @remarks
+ * Nothing here detects anything, so what these tests pin is the gate and the cooldown bookkeeping:
+ * which value `pass` is handed, and whether the sweep is recorded.
  */
 function spyPass(): ReturnType<typeof vi.fn<(detect: boolean) => Promise<void>>> {
   return vi.fn<(detect: boolean) => Promise<void>>(async () => {});
@@ -45,7 +47,7 @@ describe('useAutoTokenDetection', () => {
   });
 
   /**
-   * 🔴 The pass still runs — the refresh must happen either way. Only its `detect` argument
+   * The pass still runs — the refresh must happen either way. Only its `detect` argument
    * changes, which is the whole point of threading the flag through rather than skipping the call.
    */
   it('should still run the pass, without detection, when auto-detect is disabled', async () => {
@@ -83,13 +85,12 @@ describe('useAutoTokenDetection', () => {
 
   it('should ask for detection only once when called concurrently', async () => {
     let release!: () => void;
-    // Only the detecting pass blocks, so the second call is free to observe the in-flight sweep.
-    const blocked = new Promise<void>((resolve) => {
+    const firstPassStillDetecting = new Promise<void>((resolve) => {
       release = resolve;
     });
     const pass = vi.fn<(detect: boolean) => Promise<void>>(async (detect) => {
       if (detect)
-        await blocked;
+        await firstPassStillDetecting;
     });
     const { withDetection } = useAutoTokenDetection();
 

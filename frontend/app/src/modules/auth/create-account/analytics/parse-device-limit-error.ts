@@ -12,7 +12,7 @@ const DEVICE_LIMIT_PLACEHOLDER = '_DEVICE_LIMIT_LINK_';
 /**
  * Splits a create-account error message around the device-limit link placeholder.
  *
- * @param error the raw error message from the backend
+ * @param error - the raw error message from the backend
  * @returns whether a link should be rendered, and the message parts to render around it
  */
 export function parseDeviceLimitError(error: string): ParsedDeviceLimitError {

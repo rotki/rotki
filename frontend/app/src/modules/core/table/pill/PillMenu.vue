@@ -22,8 +22,7 @@ const highlighted = ref<number>(0);
 // Keyboard-shortcut glyphs for the footer (symbols/key names, not translatable copy).
 const keyHints = ['↑', '↓', '↵', 'esc'];
 
-// The menu mounts fresh each time it opens, so focus its search on mount: clicking
-// `+ Add filter` lands the caret in the field search, ready to narrow by typing.
+// The menu mounts fresh on every open, so focusing on mount lands the caret ready to type.
 const searchField = useTemplateRef<HTMLInputElement>('searchField');
 
 onMounted(async () => {
@@ -41,22 +40,24 @@ const filtered = computed<FieldDef[]>(() => {
 // Keep the highlight in range as the list narrows while typing.
 watch(filtered, () => set(highlighted, 0));
 
-// The list scrolls past its height and the arrow keys are handled on the search box, so nothing
-// else can bring the highlighted row back into view: without this the highlight walks off the
-// bottom and the user is arrowing through rows they cannot see. `nearest` scrolls the list by the
-// least it can and leaves the page alone.
 const rows = useTemplateRef<HTMLButtonElement[]>('rows');
 
-// Scrolled from the key handler rather than from a watcher on the highlight: hovering also moves
-// the highlight, and scrolling then pulls the list out from under the cursor, which lands a
-// different row under it and moves the highlight again. Only the keyboard needs to chase a row
-// that is out of sight.
+/**
+ * Brings the highlighted row into view, scrolling the list rather than the page.
+ *
+ * @remarks
+ * Only the key handler may call this. Hovering moves the highlight as well, and scrolling on that
+ * would slide a different row under the cursor, which moves the highlight again.
+ */
 function scrollToHighlighted(): void {
   get(rows)?.[get(highlighted)]?.scrollIntoView({ block: 'nearest' });
 }
 
-// A short, muted kind label on the right of a row for the non-plain fields, so range/date/asset
-// pills read as more than a name. Plain text (enum) rows show nothing.
+/**
+ * Names the kind of value a field takes, so a row reads as more than a label.
+ *
+ * @returns an empty string for a plain enum field, which shows no kind at all
+ */
 function metaFor(field: FieldDef): string {
   switch (field.valueType) {
     case FilterValueTypes.ASSET:
@@ -72,8 +73,13 @@ function metaFor(field: FieldDef): string {
   }
 }
 
-// Arrow keys move the highlight, Enter picks it, so the whole flow is keyboard-only:
-// focus the search (auto), type to narrow, arrow to the field, Enter to add it.
+/**
+ * Moves the highlight with the arrow keys and emits the highlighted field on Enter.
+ *
+ * @remarks
+ * The highlight wraps at both ends, and an empty result list swallows every key rather than
+ * emitting a selection there is no field for.
+ */
 function onKeydown(event: KeyboardEvent): void {
   const items = get(filtered);
   if (items.length === 0)

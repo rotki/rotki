@@ -53,8 +53,8 @@ async function updateScramble(value: boolean): Promise<void> {
     <RuiMenu
       v-model="showPrivacyModeMenu"
       data-testid="privacy-menu-content"
-      menu-class="w-[22rem]"
-      :popper="{ placement: 'bottom-end' }"
+      :class-names="{ menu: 'w-[22rem]' }"
+      :options="{ placement: 'bottom-end' }"
       :persistent="settingMenuOpen"
     >
       <template #activator="{ attrs }">
@@ -91,8 +91,8 @@ async function updateScramble(value: boolean): Promise<void> {
       <div class="absolute right-4 top-4">
         <RuiMenu
           v-model="settingMenuOpen"
-          menu-class="w-[20rem]"
-          :popper="{ placement: 'bottom-end' }"
+          :class-names="{ menu: 'w-[20rem]' }"
+          :options="{ placement: 'bottom-end' }"
           :close-on-content-click="false"
         >
           <template #activator="{ attrs }">
@@ -141,8 +141,10 @@ async function updateScramble(value: boolean): Promise<void> {
           show-ticks
           hide-details
           :tick-size="12"
-          slider-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
-          tick-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
+          :class-names="{
+            slider: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
+            tick: '!bg-rui-grey-200 dark:!bg-rui-grey-800',
+          }"
           vertical
           @update:model-value="changePrivacyMode($event)"
         />

@@ -53,9 +53,6 @@ export function useEthStaking(): UseEthStakingReturn {
       };
     }
     const id = payload.publicKey ?? payload.validatorIndex;
-    // A validator add can succeed as a task yet return `false` (backend declined); that result is
-    // the activity's return value so a second, deduped add of the same validator is answered with
-    // the real outcome rather than a closure local's initial `false`.
     const outcome = await submitTask<boolean>({
       id: makeActivityId(ActivityKind.STAKING, ActivityPart.ADD, id ?? ''),
       kind: ActivityKind.STAKING,

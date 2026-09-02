@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
- * ValueDisplay - Display a raw numeric value.
+ * Displays a raw numeric value, with no symbol, scrambled for privacy when the setting is on.
  *
- * Shows a scrambled numeric value without any symbol.
- * Uses amountRoundingMode for rounding (typically ROUND_UP).
+ * @remarks
+ * Rounds by `amountRoundingMode`, which is usually `ROUND_UP`.
  *
  * @example
+ * ```vue
  * <ValueDisplay :value="bigNumberify(1.5)" />
- *
- * @example
  * <ValueDisplay :value="amount" :format="{ integer: true }" />
+ * ```
  */
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
@@ -35,10 +35,8 @@ defineOptions({
 
 const { value, noScramble, format } = defineProps<Props>();
 
-// Apply scrambling for privacy
 const { scrambledValue } = useScrambledValue({ value: () => value, noScramble: () => noScramble });
 
-// Merge format with amountRoundingMode
 const formatWithRounding = computed<FormatOptions>(() => ({
   ...format,
   rounding: 'amount',

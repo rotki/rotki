@@ -166,6 +166,7 @@ class GlobalDBHandler:
             sql_vm_instructions_cb: int | None = None,
             perform_assets_updates: bool | None = None,
             msg_aggregator: MessagesAggregator | None = None,
+            cached_statements: int | None = None,
     ) -> GlobalDBHandler:
         """
         Initializes the GlobalDB.
@@ -202,6 +203,7 @@ class GlobalDBHandler:
             global_dir=global_dir,
             db_filename=GLOBALDB_NAME,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
+            cached_statements=cached_statements,
         )
         GlobalDBHandler.__instance.packaged_db_lock = Lock()
 
@@ -2503,6 +2505,56 @@ class GlobalDBHandler:
         return collection_assets
 
     @staticmethod
+    def get_location_asset_symbols(
+            assets: Sequence[AssetWithOracles],
+            location: Location,
+    ) -> dict[AssetWithOracles, set[str]]:
+        """Return mapping-backed symbols for assets and members of their collections.
+
+        Both location-specific and common mappings are included. An asset's bare symbol is only
+        returned when the asset or a collection member has a matching location mapping row.
+        """
+        unique_assets = list(dict.fromkeys(assets))
+        symbols: dict[AssetWithOracles, set[str]] = {
+            asset: set() for asset in unique_assets
+        }
+        if len(unique_assets) == 0:
+            return symbols
+
+        assets_by_identifier = {asset.identifier.lower(): asset for asset in unique_assets}
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for start in range(0, len(unique_assets), 500):
+                chunk = unique_assets[start:start + 500]
+                values = ','.join(['(?)'] * len(chunk))
+                cursor.execute(
+                    f'WITH requested_assets(requested_identifier) AS (VALUES {values}), '
+                    'related_assets(requested_identifier, identifier) AS ('
+                    'SELECT requested_identifier, requested_identifier FROM requested_assets '
+                    'UNION SELECT requested.requested_identifier, related.asset '
+                    'FROM requested_assets AS requested '
+                    'JOIN multiasset_mappings AS requested_mapping '
+                    'ON requested_mapping.asset=requested.requested_identifier '
+                    'JOIN multiasset_mappings AS related '
+                    'ON related.collection_id=requested_mapping.collection_id'
+                    ') SELECT DISTINCT RA.requested_identifier, LM.exchange_symbol, CAD.symbol '
+                    'FROM related_assets AS RA '
+                    'JOIN location_asset_mappings AS LM ON LM.local_id=RA.identifier '
+                    'JOIN common_asset_details AS CAD ON CAD.identifier=LM.local_id '
+                    'WHERE LM.location=? OR LM.location IS NULL',
+                    (
+                        *(asset.identifier for asset in chunk),
+                        location.serialize_for_db(),
+                    ),
+                )
+                for requested_identifier, exchange_symbol, asset_symbol in cursor:
+                    symbols[assets_by_identifier[requested_identifier.lower()]].update((
+                        exchange_symbol,
+                        asset_symbol,
+                    ))
+
+        return symbols
+
+    @staticmethod
     def get_assetid_from_exchange_name(exchange: Location | None, symbol: str, default: str) -> str:  # noqa: E501
         """Returns the asset's identifier from the ticker symbol of the given exchange according to
         location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
@@ -2518,6 +2570,25 @@ class GlobalDBHandler:
             ).fetchone()
 
         return default if identifier is None else identifier[0]
+
+    @staticmethod
+    def get_exchange_name_from_assetid(
+            exchange: Location,
+            identifier: str,
+            default: str,
+    ) -> str:
+        """Return an exchange symbol for an asset identifier, or ``default`` if unmapped.
+
+        A location-specific mapping wins over a shared mapping.
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT exchange_symbol FROM location_asset_mappings WHERE local_id=? AND '
+                '(location=? OR location IS NULL) ORDER BY location IS NULL LIMIT 1',
+                (identifier, exchange.serialize_for_db()),
+            ).fetchone()
+
+        return default if result is None else result[0]
 
     @staticmethod
     def query_asset_mappings_by_type(

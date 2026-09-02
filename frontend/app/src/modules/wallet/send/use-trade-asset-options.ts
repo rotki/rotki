@@ -48,9 +48,10 @@ function shortenAddress(identifier: string): string {
  * Builds the option list the send form's token dialog shows: the owned assets narrowed to a chain,
  * matched against the search box, and ordered for reading.
  *
- * Symbol and name are resolved here, once per asset, rather than in each row. The dialog used to
- * mount two `useAssetField` computeds per row on top of the resolution `AssetDetails` does its own,
- * which is a cost paid for every option whether or not it is on screen.
+ * @remarks
+ * Symbol and name are resolved here, once per asset, rather than per row: a row that mounts its
+ * own `useAssetField` pays that cost for every option, on screen or not, on top of the resolution
+ * `AssetDetails` already does.
  */
 export function useTradeAssetOptions(
   assets: MaybeRefOrGetter<TradableAsset[]>,
@@ -75,6 +76,9 @@ export function useTradeAssetOptions(
    * The identifier is deliberately not the tiebreak: with no connected address nothing is priced,
    * so the tiebreak becomes the only live comparison, and ordering by `eip155:1/erc20:0x…` puts the
    * list in what reads as a random order. The symbol is what the row actually shows.
+   *
+   * An asset whose symbol has not resolved yet falls back to its identifier, so the order holds
+   * still while the asset info loads rather than shuffling as names arrive.
    */
   function compareForDisplay(a: TradeAssetOption, b: TradeAssetOption): number {
     const aNative = getNativeAsset(a.asset.chain) === a.asset.asset;
@@ -87,8 +91,6 @@ export function useTradeAssetOptions(
     if (byValue !== 0)
       return byValue;
 
-    // Fall back to the identifier when an asset has no resolved symbol yet, so the order stays
-    // stable while the asset info is still loading instead of shuffling as names arrive.
     return (a.symbol || a.asset.asset).localeCompare(b.symbol || b.asset.asset);
   }
 
@@ -106,6 +108,13 @@ export function useTradeAssetOptions(
       .sort(compareForDisplay);
   });
 
+  /**
+   * The options for the selected chain, each marked ambiguous where its symbol is not unique.
+   *
+   * @remarks
+   * Ambiguity is judged against what the list shows rather than the whole holding: two rows reading
+   * "ASK / GoAsk" are indistinguishable, and only rows visible together need telling apart.
+   */
   const byChain = computed<TradeAssetOption[]>(() => {
     const selected = toValue(chain);
     // Built once, not inside the predicate: a Set per option is a Set per asset on every recompute.
@@ -114,13 +123,8 @@ export function useTradeAssetOptions(
       ? get(orderedAssets).filter(option => allowed.has(option.asset.chain))
       : get(orderedAssets).filter(option => option.asset.chain === selected);
 
-    // Flagged against what the list shows rather than the whole holding: two rows reading "ASK /
-    // GoAsk" are indistinguishable, and only rows visible together need telling apart.
     const counts = new Map<string, number>();
     for (const option of narrowed) {
-      // Unresolved assets all carry an empty symbol. Counting those together would flag every one
-      // of them as a collision on first open, printing an address beside a blank symbol on every
-      // row until the names arrive and they all disappear again.
       if (option.symbol)
         counts.set(option.symbol, (counts.get(option.symbol) ?? 0) + 1);
     }

@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { firstQueryValue } from '@/modules/core/table/route';
 import ReportGenerator from '@/modules/reports/ReportGenerator.vue';
 import ReportsTable from '@/modules/reports/ReportsTable.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import FileUpload from '@/modules/user-data/FileUpload.vue';
-import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
+import { useReportsPage } from '@/pages/reports/use-reports-page';
 
 definePage({
   meta: {
@@ -20,66 +16,25 @@ definePage({
   },
 });
 
-const { useIsActive } = useTaskCenter();
+const { t } = useI18n({ useScope: 'global' });
+
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
 const { clearError } = reportsStore;
-const isRunning = useIsActive(ActivityKind.PNL_REPORT);
-const importDataDialog = ref<boolean>(false);
-const reportDebugData = ref<File>();
+
 const reportDebugDataUploader = useTemplateRef<InstanceType<typeof FileUpload>>('reportDebugDataUploader');
 
-const router = useRouter();
-const route = useRoute();
-
-const { t } = useI18n({ useScope: 'global' });
-const { getPath } = useInterop();
-
-function navigateToReport(reportId: number): void {
-  if (route.name === '/reports/') {
-    router.push({
-      name: '/reports/[id]',
-      params: {
-        id: reportId.toString(),
-      },
-      query: {
-        openReportActionable: 'true',
-      },
-    });
-  }
-}
-
-const { exportData, generate, importData, importDataLoading } = useReportsPageActions({
-  getPath,
-  onNavigateToReport: navigateToReport,
-  reportDebugData,
+const {
+  exportData,
+  generate,
+  handleImportComplete,
+  importDataLoading,
+  isRunning,
+  modelImportDataDialog,
+  modelReportDebugData,
+} = useReportsPage({
+  onResetUploader: () => get(reportDebugDataUploader)?.removeFile(),
 });
-
-onMounted(async () => {
-  const query = get(route).query;
-  if (!query.regenerate) {
-    return;
-  }
-
-  const start = firstQueryValue(query.start);
-  const end = firstQueryValue(query.end);
-  if (!(start && end)) {
-    return;
-  }
-  const period = {
-    end: Number.parseInt(end),
-    start: Number.parseInt(start),
-  };
-  await router.replace({ query: {} });
-  await generate(period);
-});
-
-async function handleImportComplete(): Promise<void> {
-  await importData();
-  set(importDataDialog, false);
-  get(reportDebugDataUploader)?.removeFile();
-  set(reportDebugData, undefined);
-}
 
 const processingState = computed(() => reportsStore.processingState);
 const progress = computed(() => reportsStore.progress);
@@ -91,7 +46,7 @@ const progress = computed(() => reportsStore.progress);
       v-show="!isRunning && !reportError.message"
       @generate="generate($event)"
       @export-data="exportData($event)"
-      @import-data="importDataDialog = true"
+      @import-data="modelImportDataDialog = true"
     />
     <ErrorScreen
       v-if="!isRunning && reportError.message"
@@ -105,6 +60,7 @@ const progress = computed(() => reportsStore.progress);
         <RuiButton
           variant="text"
           class="mt-2"
+          data-testid="clear-error"
           @click="clearError()"
         >
           {{ t('common.actions.close') }}
@@ -131,7 +87,7 @@ const progress = computed(() => reportsStore.progress);
       {{ t('profit_loss_report.loading_hint') }}
     </ProgressScreen>
     <RuiDialog
-      v-model="importDataDialog"
+      v-model="modelImportDataDialog"
       max-width="600"
     >
       <RuiCard>
@@ -140,7 +96,7 @@ const progress = computed(() => reportsStore.progress);
         </template>
         <FileUpload
           ref="reportDebugDataUploader"
-          v-model="reportDebugData"
+          v-model="modelReportDebugData"
           source="json"
           file-filter=".json"
         />
@@ -149,13 +105,14 @@ const progress = computed(() => reportsStore.progress);
           <RuiButton
             variant="text"
             color="primary"
-            @click="importDataDialog = false"
+            @click="modelImportDataDialog = false"
           >
             {{ t('common.actions.cancel') }}
           </RuiButton>
           <RuiButton
             color="primary"
-            :disabled="!reportDebugData"
+            data-testid="confirm-import"
+            :disabled="!modelReportDebugData"
             :loading="importDataLoading"
             @click="handleImportComplete()"
           >

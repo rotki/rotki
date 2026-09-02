@@ -34,7 +34,7 @@ function addBlockchainAccount(path: string) {
 </script>
 
 <template>
-  <RuiMenu wrapper-class="w-full">
+  <RuiMenu :class-names="{ wrapper: 'w-full' }">
     <template #activator="{ attrs }">
       <SummaryCardCreateButton v-bind="attrs">
         {{ t('dashboard.blockchain_balances.add') }}

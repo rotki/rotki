@@ -52,7 +52,7 @@ const { isDark } = useRotkiTheme();
   <div>
     <RuiMenu
       data-testid="user-menu"
-      menu-class="min-w-[10rem] max-w-[22rem]"
+      :class-names="{ menu: 'min-w-[10rem] max-w-[22rem]' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

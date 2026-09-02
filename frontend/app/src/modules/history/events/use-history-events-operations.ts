@@ -33,13 +33,11 @@ interface UseHistoryEventsOperationsOptions {
 }
 
 interface UseHistoryEventsOperationsReturn {
-  // State
   modelShowRedecodeConfirmation: Ref<boolean>;
   redecodePayload: Readonly<Ref<PullEventPayload | undefined>>;
   hasCustomEvents: Readonly<Ref<boolean>>;
   showIndexerOptions: Readonly<Ref<boolean>>;
 
-  // Functions
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   confirmUnlink: (payload: HistoryEventUnlinkPayload) => void;
@@ -226,9 +224,14 @@ export function useHistoryEventsOperations(
       || payload.type === HistoryEventEntryType.EVM_SWAP_EVENT;
   }
 
-  // Re-decoding rewrites a group's events, which makes any computed P&L / historical balances
-  // stale — let the Task Center offer to re-run them (issue #6825). Fired only at the points
-  // that actually trigger a redecode, not the ones that just open the confirmation dialog.
+  /**
+   * Tells the task center that a redecode rewrote a group's events, so it can offer to recompute
+   * the profit and loss report and the historical balances that just went stale.
+   *
+   * @remarks
+   * Call it only where a redecode is actually emitted. Calling it where the confirmation dialog is
+   * merely opened would offer a recompute for a redecode the user may still cancel.
+   */
   function notifyRedecoded(): void {
     taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_REDECODED });
   }
@@ -274,7 +277,6 @@ export function useHistoryEventsOperations(
     const movementEvent = groupEvents.find(item => isAssetMovementEvent(item));
     set(pendingLinkedMovement, movementEvent ? buildLinkedMovement(movementEvent, groupEvents) : undefined);
 
-    // Show dialog with indexer options (only for EVM events)
     set(hasCustomEvents, isAnyCustom);
     set(showIndexerOptions, isEvmPayload(payload));
     set(redecodePayload, payload);

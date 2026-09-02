@@ -6,14 +6,16 @@ export type CamelCase<S extends string> = S extends `${infer P1}_${infer P2}${in
   : S;
 
 /**
- * Transforms keys/text between camel and snake cases
- * @param {string} key - string to transform
- * @param {boolean} camelCase - flag to decide whether to return camelCase (true) or snake_case (false)
- * @returns {string}
+ * Transforms a key or text between camelCase and snake_case.
+ *
+ * @param key - the string to transform
+ * @param camelCase - `true` to produce camelCase, `false` (the default) to produce snake_case
+ * @returns the transformed string
  * @example
- * transformCase('loremIpsum'); // lorem_ipsum
- * @example
+ * ```ts
+ * transformCase('loremIpsum');       // lorem_ipsum
  * transformCase('lorem_ipsum', true); // loremIpsum
+ * ```
  */
 export function transformCase<S extends string>(key: S, camelCase: true): CamelCase<S>;
 

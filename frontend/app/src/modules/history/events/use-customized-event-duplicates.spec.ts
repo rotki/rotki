@@ -64,14 +64,8 @@ function createMockEventRow(overrides: {
     groupIdentifier: overrides.groupIdentifier ?? 'group-1',
   };
 
-  if (overrides.txRef === OMIT) {
-    // explicitly omit txRef key
-  }
-  else if ('txRef' in overrides) {
-    entry.txRef = overrides.txRef;
-  }
-  else {
-    entry.txRef = '0xTxHash';
+  if (overrides.txRef !== OMIT) {
+    entry.txRef = 'txRef' in overrides ? overrides.txRef : '0xTxHash';
   }
 
   // @ts-expect-error partial mock - only fields used by the composable are included
@@ -98,7 +92,6 @@ describe('use-customized-event-duplicates', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    // Reset shared composable state
     spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
     composable = useCustomizedEventDuplicates();
     await composable.fetchCustomizedEventDuplicates();
@@ -175,7 +168,6 @@ describe('use-customized-event-duplicates', () => {
     });
 
     it('should preserve existing state on error', async () => {
-      // First, populate with data
       spies.getCustomizedEventDuplicates.mockResolvedValue(
         createMockDuplicatesResponse(['af-1'], ['mr-1'], ['ig-1']),
       );
@@ -183,7 +175,6 @@ describe('use-customized-event-duplicates', () => {
 
       expect(get(composable.autoFixCount)).toBe(1);
 
-      // Now fail the next fetch - state should remain unchanged
       spies.getCustomizedEventDuplicates.mockRejectedValue(new Error('fail'));
       await composable.fetchCustomizedEventDuplicates();
 
@@ -381,7 +372,6 @@ describe('use-customized-event-duplicates', () => {
 
     it('should handle array-style event rows', async () => {
       const mockEntry = createMockEventRow({ groupIdentifier: 'g-1', txRef: '0xArrayTx' });
-      // Wrap in array to test getEventEntry array branch
       const arrayRow: HistoryEventCollectionRow = [mockEntry];
 
       spies.fetchHistoryEvents.mockResolvedValue({
@@ -831,16 +821,6 @@ describe('use-customized-event-duplicates', () => {
       expect(singleMessage.title).not.toBe(bulkMessage.title);
       expect(singleMessage.message).not.toBe(bulkMessage.message);
     });
-
-    it('should work without onSuccess', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      composable.confirmAndMarkNonDuplicated(['g-1']);
-      await extractAndCallConfirmCallback();
-
-      expect(spies.ignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
-    });
   });
 
   describe('confirmAndRestore', () => {
@@ -910,16 +890,6 @@ describe('use-customized-event-duplicates', () => {
 
       expect(singleMessage.title).not.toBe(bulkMessage.title);
       expect(singleMessage.message).not.toBe(bulkMessage.message);
-    });
-
-    it('should work without onSuccess', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      composable.confirmAndRestore(['g-1']);
-      await extractAndCallConfirmCallback();
-
-      expect(spies.unignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
   });
 });

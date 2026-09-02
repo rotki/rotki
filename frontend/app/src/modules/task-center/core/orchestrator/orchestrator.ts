@@ -71,12 +71,14 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
    * then emit. Guarded against post-reset orphans: an in-flight run settling after the record was
    * dropped writes nothing.
    *
-   * The guard compares record *identity*, not just the presence of the id. `submitTask` resolves
-   * its caller a tick before the run reaches here, so a caller that awaits and immediately
-   * re-submits the same id replaces `records[id]` while the old run is still in flight. Testing
-   * `has(id)` let that stale run settle the *new* record's id: it wrote a COMPLETE ledger entry
-   * and fired `markStaleAfter` for work that had barely started, so `everCompleted` read true and
-   * downstream consumers were invalidated off a run that was not theirs.
+   * The guard compares record *identity*, not just presence of the id. `submitTask` resolves its
+   * caller a tick before the run reaches here, so an await-then-resubmit replaces `records[id]`
+   * while the old run is still in flight; a `has(id)` test would let that stale run settle the
+   * new* record, writing a COMPLETE ledger entry for work that had barely started.
+   *
+   * Anything but COMPLETE brings the subtree down with it. That walk needs no seen-set: it only
+   * ever descends from a record this call has just made terminal, so a malformed parent cycle
+   * still terminates.
    */
   function settleTerminal(record: ActivityRecord, status: ActivityStatus, reason?: string): void {
     if (records.get(record.spec.id) !== record)
@@ -84,12 +86,8 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
 
     record.status = status;
     record.reason = reason;
-    // A container groups work and produces nothing of its own, so it never claims freshness for
-    // its kind — see {@link ActivitySpec.container}.
     if (!record.spec.container)
       recordSettlement(record.spec.id, record.spec.kind, status, now(), ledger);
-    // Tear down producer side resources once — settleTerminal may run twice (cancel then the
-    // aborted run resolving), so the flag keeps `cleanup` from double-firing.
     if (!record.cleanedUp) {
       record.cleanedUp = true;
       record.spec.cleanup?.();
@@ -99,13 +97,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (status === Status.COMPLETE && markStaleAfter(record.spec.id, staleEdges, ledger))
       emit();
 
-    // 🔴 An activity that ends without completing takes its subtree with it — cancelled, failed or
-    // skipped alike. Hanging the cascade off the settle rather than off `cancel` is what makes it
-    // one rule instead of two: a parent that fails mid-flight orphans its queued children exactly
-    // the way an explicit cancel used to.
-    //
-    // ⭐ Recursion terminates on a malformed parent cycle without a seen-set, because `status` is
-    // already terminal by the time this runs, so a node reached a second time is skipped.
     if (status !== Status.COMPLETE)
       cancelDescendantsOf(record.spec.id);
   }
@@ -114,7 +105,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
    * Cancel everything beneath `id`. Each child settles through {@link settleTerminal}, which walks
    * its own children in turn, so the whole subtree comes down from one call.
    *
-   * ⚠️ A child that cannot be cancelled never stops the walk. A RUNNING node with no cancel handle
+   * A child that cannot be cancelled never stops the walk. A RUNNING node with no cancel handle
    * is left alone and its siblings still come down; abandoning the rest of the subtree over one
    * such node is the bug this fixes, not a safety property.
    */
@@ -180,23 +171,24 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     return aggregateStatus(records, ledger, id => activityIdHasPrefix(id, kind, ...parts));
   }
 
+  /**
+   * Whether a pending record may start now: its parent has started, its deps have settled, and
+   * every rule passes.
+   *
+   * @remarks
+   * Do not add a check here for a parent that ended incomplete. Refusing is not settling, so a
+   * child nothing will ever make eligible sits PENDING for the life of the process, holding its
+   * caller's await open with it. {@link settleTerminal} cancels the subtree and `submit` settles a
+   * late arrival: both *end* such a child rather than leaving it queued.
+   */
   function eligible(record: ActivityRecord): boolean {
     if (record.status !== Status.PENDING || record.cancelRequested)
       return false;
 
-    // A child never starts before the activity it belongs to. A pre-submitted tree is queued all
-    // at once, so without this a chain's accounts could run while the chain itself is still
-    // PENDING — the tree would show a parent yet to start above children already working. An
-    // unknown parent does not gate, so a child can never be wedged by a parent that never existed.
     if (record.spec.parent !== undefined) {
       const parent = records.get(record.spec.parent);
       if (parent?.status === Status.PENDING)
         return false;
-
-      // ⛔ No check for a parent that ended incomplete belongs here. Refusing is not settling, so a
-      // child nothing will ever make eligible would sit PENDING for the life of the process,
-      // holding its caller's await open with it. `settleTerminal` cancels the subtree and `submit`
-      // settles a late arrival — both *end* the child rather than leaving it queued forever.
     }
 
     const depsSatisfied = (record.spec.deps ?? []).every((depId) => {
@@ -232,9 +224,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   }
 
   function submit<T>(spec: ActivitySpec<T>): ActivityId {
-    // Re-submitting an id whose previous run is still in flight abandons that run: `settleTerminal`
-    // will refuse it at the identity guard, so this is the last chance to release what it holds.
-    // Without it the identity guard would trade a corrupted ledger for a leaked producer resource.
     const superseded = records.get(spec.id);
     if (superseded && !isTerminalStatus(superseded.status) && !superseded.cleanedUp) {
       superseded.cleanedUp = true;
@@ -246,10 +235,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (spec.staleAfter?.length)
       staleEdges.set(spec.id, spec.staleAfter);
 
-    // A child arriving after its parent already ended without completing belongs to a subtree that
-    // is gone, so it is settled here rather than scheduled. `eligible` would refuse to start it
-    // either way — but refusing is not settling, and a record nothing will ever make eligible sits
-    // PENDING for the life of the process, holding its caller's await open with it.
     const parent = spec.parent === undefined ? undefined : records.get(spec.parent);
     if (parent !== undefined && endedIncomplete(parent)) {
       settleTerminal(record, Status.CANCELLED);
@@ -273,13 +258,10 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       return ok(undefined);
     }
 
-    // RUNNING: a cancel handle is required to interrupt in-flight work.
     if (!record.spec.cancel)
       return err(NotCancellable({ id }));
     record.cancelRequested = true;
     record.spec.cancel();
-    // Reflect the cancellation immediately; `cancelRequested` keeps it CANCELLED even if the
-    // aborting task later settles ok. The scheduler slot frees once `run` actually resolves.
     settleTerminal(record, Status.CANCELLED);
     return ok(undefined);
   }
@@ -287,16 +269,12 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   /**
    * Cancel an activity **and everything beneath it**. "Stop this refresh" is one act.
    *
-   * 🔴 Cancelling a parent alone settled its row and stopped nothing: the handle every native spec
-   * carries only aborts that activity's own backend task, which an umbrella never has, so the row
-   * went CANCELLED and vanished while its children kept running — and queued ones still started,
-   * because `eligible` only refused a child whose parent was still PENDING.
+   * Cancelling a parent alone stops nothing: a native spec's handle aborts only that activity's
+   * own backend task, which an umbrella never has, so the row goes CANCELLED while its children keep
+   * running. No extra handle is needed though — once the children settle, the parent's `Promise.all`
+   * resolves and `cancelRequested` maps that to CANCELLED.
    *
-   * ⭐ No new cancel handle is needed anywhere. Once the children settle, the parent's `Promise.all`
-   * resolves on its own and `cancelRequested` maps that outcome to CANCELLED.
-   *
-   * The walk itself lives in {@link settleTerminal}, so this is only the root's own cancellation:
-   * every path that ends an activity incomplete brings its subtree down, not just this one.
+   * The subtree walk lives in {@link settleTerminal}, so this is only the root's own cancellation.
    */
   function cancel(id: ActivityId): Result<void, ControlError> {
     const record = records.get(id);
@@ -304,7 +282,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       return err(NotFound({ id }));
 
     const outcome = cancelOne(record);
-    // Once, for the whole subtree: a cancelled dep may unblock dependents / rules.
     scheduler.pump();
     return outcome;
   }
@@ -326,8 +303,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     record.status = Status.PENDING;
     record.steps = undefined;
     record.startedAt = undefined;
-    // 🔴 The record is reused, so a stale reason would outlive the run it described and caption a
-    // re-run that succeeded with the previous attempt's failure.
     record.reason = undefined;
     record.cancelRequested = false;
     record.cleanedUp = false;
@@ -359,12 +334,16 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     reportProgress,
     reportProgressByPrefix,
     rerun,
+    /**
+     * Drops every record, for a session ending.
+     *
+     * @remarks
+     * Live producers are torn down *before* their records go. Clear `records` first and
+     * `settleTerminal` returns at its identity guard when the abandoned run resolves, so `cleanup`
+     * never fires and a producer's polling outlives the session. Settled inline rather than through
+     * `settleTerminal`, whose ledger write is cleared on the next line anyway.
+     */
     reset(): void {
-      // Tear down live producers before dropping their records. Clearing `records` first would
-      // make `settleTerminal` return at its identity guard when the abandoned run resolves, so
-      // `cleanup` never fired: a P&L report generated across a logout kept its 2s `getProgress()`
-      // poll hitting the backend for a session that had ended. Settled here rather than through
-      // `settleTerminal` because the ledger it would write is cleared on the next line anyway.
       for (const record of records.values()) {
         if (isTerminalStatus(record.status) || record.cleanedUp)
           continue;
@@ -372,13 +351,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
         record.cleanedUp = true;
         record.spec.cleanup?.();
       }
-      // ⚠️ Emit while the cancelled records are still in the map. A caller awaiting `submitTask`
-      // is released by a resolver that looks its activity up in the snapshot and settles it when
-      // it reads terminal; clearing first makes that lookup miss, so the caller never settles.
-      // Worse, the id is held in `inflight` until it settles, so it stays poisoned for the life of
-      // the process and every later submit dedups onto a promise that can no longer resolve. In
-      // the app that stalls `fetchCached()` on its first await after a re-login, so accounts are
-      // never fetched and the session sits on a spinner with nothing running.
       emit();
 
       records.clear();

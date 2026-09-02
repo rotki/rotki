@@ -21,9 +21,14 @@ const operatorLabels = useOperatorLabels();
 
 const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
 const showOperators = computed<boolean>(() => get(operators).length > 1);
-// Every option carries what the field can resolve for it, not just its label: an account's label
-// is a name, or a shortened and scrambled address, so without the caption two accounts sharing a
-// name are indistinguishable and without the keywords a pasted full address matches nothing.
+/**
+ * Builds the option list, carrying everything the field can resolve for a value rather than its
+ * label alone.
+ *
+ * @remarks An account's label is a name, or a shortened and scrambled address: without the caption
+ * two accounts sharing a name are indistinguishable, and without the keywords a pasted full address
+ * matches nothing.
+ */
 const enumOptions = computed<SelectOption[]>(
   () => (field.suggest?.() ?? []).map(value => ({
     caption: field.resolveCaption?.(value),

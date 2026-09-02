@@ -138,7 +138,7 @@ const limits = [10, 25, 50, 100];
           :options="limits"
           dense
           hide-details
-          label-class="!text-xs"
+          :class-names="{ label: '!text-xs' }"
           class="w-18"
         />
       </div>

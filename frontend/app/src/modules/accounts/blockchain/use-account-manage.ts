@@ -11,7 +11,7 @@ import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
-import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
+import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { additionError, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
@@ -71,7 +71,7 @@ export type AccountManageState = AccountManage | StakingValidatorManage | XpubMa
 
 export function createNewBlockchainAccount(): AccountManageAdd {
   return {
-    chain: 'all',
+    chain: ALL_EVM_CHAINS,
     data: [
       {
         address: '',
@@ -209,6 +209,13 @@ export function useAccountManage(): UseAccountManageReturn {
   const additionFallback = (count: number): string =>
     t('account_form.error.addition_failed', { count }, count);
 
+  /**
+   * Adds or edits an account.
+   *
+   * @returns whether the dialog should close. Nothing added with something failed keeps it open so
+   * the user can correct the input; a partial success closes it, because the failures have already
+   * been reported by the mechanism and the accounts that did land are real.
+   */
   async function saveAccount(state: AccountManage): Promise<boolean> {
     const edit = state.mode === 'edit';
     const isEth = state.chain === Blockchain.ETH;
@@ -220,17 +227,12 @@ export function useAccountManage(): UseAccountManageReturn {
         return true;
       }
 
-      // `'all'` is the form's word for every EVM chain; the mechanism's is the pseudo-chain.
-      const chain = state.chain === 'all' ? EVM_PSEUDO_CHAIN : state.chain;
+      const chain = state.chain === ALL_EVM_CHAINS ? EVM_PSEUDO_CHAIN : state.chain;
       const summary = await addAccounts(chain, {
-        modules: isEth || state.chain === 'all' ? state.modules : undefined,
+        modules: isEth || state.chain === ALL_EVM_CHAINS ? state.modules : undefined,
         payload: state.data,
       }, { wait: true });
 
-      // Nothing added and something failed: keep the dialog open so the user can correct it. A
-      // partial success closes it — the failures were already reported by the mechanism, and the
-      // accounts that did land are real. Previously the count decided this: one address threw, and
-      // two or more closed the dialog as a success even when some of them had failed.
       if (summary.added.length === 0 && summary.failed.length > 0) {
         handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)));
         return false;
@@ -276,9 +278,6 @@ export function useAccountManage(): UseAccountManageReturn {
         startPromise(fetchAccounts({ blockchain: chain }));
       }
       else {
-        // Awaited, so an xpub that fails to add keeps its dialog open rather than closing as if it
-        // had worked. `handleErrors` is given the xpub props so `ApiValidationError` can still fill
-        // in per-field errors.
         const summary = await addAccounts(chain, state.data, { wait: true });
         if (summary.added.length === 0 && summary.failed.length > 0) {
           handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)), {

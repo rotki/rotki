@@ -47,11 +47,9 @@ describe('cexMappingSchema', () => {
     ]);
   });
 
-  it('should keep an exchange the caller left set even when it covers all of them', () => {
+  it('should keep an exchange the caller left set even when it covers all of them, leaving what to do with it to the dialog', () => {
     const result = cexMappingSchema(messages, true).safeParse(valid);
 
-    // The switch does not clear the field, so the payload keeps whatever was chosen before it was
-    // flipped. What the api does with that is the dialog's business, not the schema's.
     expect(result.success && result.data).toEqual(valid);
   });
 });

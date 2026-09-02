@@ -103,8 +103,6 @@ describe('usePinnedHighlightNavigation', () => {
     set(routeQuery, { highlightedInternalTxConflict: 'g' });
     const pinned = ref<boolean>(true);
     const reset = vi.fn();
-    // The component stays mounted (as it does under <KeepAlive> when a backgrounded tab
-    // is closed); the unpin alone must trigger the cleanup.
     mountComposable(['highlightedInternalTxConflict'], reset, () => get(pinned));
 
     set(pinned, false);

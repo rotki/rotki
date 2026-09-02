@@ -1,10 +1,10 @@
 import semver from 'semver';
 
 /**
- * Checks if the version change is a major or minor update (not just a patch)
- * @param currentVersion The current version string
- * @param lastVersion The previous version string
- * @returns True if it's a major or minor update, false otherwise
+ * Whether a version change is a major or minor update rather than a patch.
+ *
+ * @param currentVersion - `null` when the version is not yet known
+ * @param lastVersion - `null` on a first run, with no previous version recorded
  */
 export function isMajorOrMinorUpdate(
   currentVersion: string | null,

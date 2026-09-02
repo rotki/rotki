@@ -13,7 +13,7 @@ export const ROW_HEIGHTS = {
   'load-more': 36,
 } as const;
 
-// Card heights for mobile layout
+/** Row heights for the mobile card layout, which stacks the same rows taller than the table does. */
 const CARD_HEIGHTS = {
   'group-header': 72,
   'event-row': 140,
@@ -39,9 +39,11 @@ interface EventDetailRow {
   groupId: string;
   data: HistoryEventEntry;
   index: number;
-  /** True when this row is a sub-event of an expanded linked subgroup
-   * (a matched movement or a matched bridge transfer). */
-  matchedMovement?: boolean;
+  /**
+   * True when this row is one leg of an expanded linked subgroup, which is either a matched
+   * movement or a matched bridge transfer.
+   */
+  linkedLeg?: boolean;
 }
 
 interface EventPlaceholderRow {
@@ -113,15 +115,12 @@ function isMatchedBridgeGroup(events: HistoryEventEntry[]): boolean {
 /**
  * Identity of a subgroup (a swap or a matched movement), for remembering that it is expanded.
  *
- * Keyed by the primary event rather than by the subgroup's position in its group. A positional key
- * does not survive the list changing underneath it: adding or deleting any event that shifts the
- * index silently collapsed an expanded subgroup — or handed its expanded state to whichever
- * subgroup landed on that index. Anything that refetches the table could do it, so a swap the user
- * had opened would snap shut on its own after a background refresh.
+ * Keyed by the primary event, never by position. A positional key does not survive the list
+ * changing underneath it: any shift collapses an expanded subgroup or hands its state to whichever
+ * subgroup landed on that index, and a background refetch is enough to do it.
  *
- * The primary event is the one the collapsed row represents, and it outlives the edits that used to
- * break this: deleting a swap's fee leaves the swap (and this key) intact, while deleting the
- * primary event takes the whole subgroup with it.
+ * The primary event outlives the edits that break a positional key: deleting a swap's fee leaves the
+ * swap intact, and deleting the primary event takes the whole subgroup with it.
  */
 function subgroupKey(groupId: string, events: HistoryEventEntry[]): string {
   return `${groupId}-${events[0]?.identifier ?? 0}`;
@@ -146,7 +145,6 @@ export function useVirtualRows(
 ): UseVirtualRowsReturn {
   // Track how many items are visible per group (beyond initial limit)
   const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
-  // Track which swap rows are expanded (key: see `subgroupKey`)
   const expandedSwaps = shallowRef<Set<string>>(new Set());
   // Track which matched movement rows are expanded (key: see `subgroupKey`)
   const expandedMovements = shallowRef<Set<string>>(new Set());
@@ -162,14 +160,12 @@ export function useVirtualRows(
     for (const group of groupsValue) {
       const groupId = group.groupIdentifier;
 
-      // 1. Group header (always)
       rows.push({
         type: 'group-header',
         groupId,
         data: group,
       });
 
-      // 2. Events for this group
       const allEvents = eventsMap[groupId] || [];
       const customLimit = visibleCounts.get(groupId);
       const limit = customLimit ?? INITIAL_EVENTS_LIMIT;
@@ -192,18 +188,15 @@ export function useVirtualRows(
       visibleEvents.forEach((event, i) => {
         // Handle array (subgroup - could be swap or matched movement)
         if (Array.isArray(event)) {
-          // When a subgroup has events hidden by ignored-asset filtering,
-          // always show individual event rows without collapse controls.
-          const incomplete = isSubgroupIncomplete(event);
+          const forcedOpenWithoutCollapseControls = isSubgroupIncomplete(event);
 
           // Check if this is a matched asset movement (not a swap)
           if (isMatchedMovementGroup(event)) {
             const movementKey = subgroupKey(groupId, event);
-            const isMovementExpanded = incomplete || expandedMovementsSet.has(movementKey);
+            const isMovementExpanded = forcedOpenWithoutCollapseControls || expandedMovementsSet.has(movementKey);
 
             if (isMovementExpanded) {
-              // Add collapse header row (skip when forced open due to incomplete subgroup)
-              if (!incomplete) {
+              if (!forcedOpenWithoutCollapseControls) {
                 rows.push({
                   type: 'matched-movement-collapse',
                   groupId,
@@ -212,15 +205,13 @@ export function useVirtualRows(
                 });
               }
 
-              // When expanded, show individual event rows for each event.
-              // subIndex is used so the first event (index 0) retains edit/delete actions.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
                   index: subIndex,
-                  matchedMovement: true,
+                  linkedLeg: true,
                 });
               });
             }
@@ -236,14 +227,12 @@ export function useVirtualRows(
             }
           }
           else {
-            // Regular swap or matched bridge transfer
             const swapKey = subgroupKey(groupId, event);
-            const isSwapExpanded = incomplete || expandedSwapsSet.has(swapKey);
+            const isSwapExpanded = forcedOpenWithoutCollapseControls || expandedSwapsSet.has(swapKey);
             const bridge = isMatchedBridgeGroup(event);
 
             if (isSwapExpanded) {
-              // Add collapse header row (skip when forced open due to incomplete subgroup)
-              if (!incomplete) {
+              if (!forcedOpenWithoutCollapseControls) {
                 rows.push({
                   type: 'swap-collapse',
                   groupId,
@@ -254,17 +243,13 @@ export function useVirtualRows(
                 });
               }
 
-              // When expanded, show individual event rows for each event in the swap.
-              // subIndex is used so the first event (index 0) retains edit/delete actions.
-              // Bridge legs come from different transactions on different chains, so mark
-              // them as linked sub-events to surface per-leg chain and transaction context.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
                   index: subIndex,
-                  matchedMovement: bridge,
+                  linkedLeg: bridge,
                 });
               });
             }

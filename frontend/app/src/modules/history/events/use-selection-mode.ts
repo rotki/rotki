@@ -41,7 +41,6 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
   const selectAllMatching = shallowRef<boolean>(false);
   const totalMatchingCount = shallowRef<number>(0);
 
-  // Unified state object
   const state = computed<SelectionState>(() => {
     const isSelectAll = get(selectAllMatching);
     const availableIdsLength = get(availableIds).length;
@@ -126,7 +125,6 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
     },
   };
 
-  // Public API
   const getSelectedIds = (): number[] => Array.from(get(selectedIds));
 
   const setAvailableIds = (ids: number[]): void => {

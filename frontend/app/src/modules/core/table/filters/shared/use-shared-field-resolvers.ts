@@ -20,23 +20,23 @@ import { useSetting } from '@/modules/settings/use-setting';
  * they are answered once here rather than per table.
  */
 export interface SharedFieldResolvers {
-  /** Raw location id (e.g. `polygon_pos`) -> its display name (e.g. `Polygon PoS`). */
+  /** Maps a raw location id such as `polygon_pos` to its display name, `Polygon PoS`. */
   readonly resolveLocationName: (value: string) => string;
-  /** Raw chain id (e.g. `optimism`) -> its display name (e.g. `Optimism`). */
+  /** Maps a raw chain id such as `optimism` to its display name, `Optimism`. */
   readonly resolveChainName: (value: string) => string;
-  /** Raw counterparty id (e.g. `uniswap-v2`) -> its display label (e.g. `Uniswap V2`). */
+  /** Maps a raw counterparty id such as `uniswap-v2` to its display label, `Uniswap V2`. */
   readonly resolveProtocolName: (value: string) => string;
-  /** Asset identifier -> its symbol, or a shortened address when it has no metadata. */
+  /** Maps an asset identifier to its symbol, or to a shortened address when it has no metadata. */
   readonly resolveAssetSymbol: (value: string) => string;
-  /** Asset identifier -> its chain (e.g. `base`), shown as a chain icon beside the symbol. */
+  /** Maps an asset identifier to its chain, such as `base`, shown as an icon beside the symbol. */
   readonly resolveAssetChain: (value: string) => string | undefined;
-  /** An address or transaction hash -> the short, privacy-respecting form shown on a pill. */
+  /** Maps an address or transaction hash to the short, privacy-respecting form shown on a pill. */
   readonly resolveHex: (value: string) => string;
-  /** A machine token that is already spaced words (`evm event`) -> its display casing. */
+  /** Maps a machine token that is already spaced words, `evm event`, to its display casing. */
   readonly resolveTokenName: (value: string) => string;
-  /** Unix-second timestamp -> a human date in the user's configured format. */
+  /** Formats a unix-second timestamp as a date in the user's configured format. */
   readonly formatDate: (value: string) => string;
-  /** The inverse: a written date -> the unix-second bound a filter stores. */
+  /** The inverse: parses a written date into the unix-second bound a filter stores. */
   readonly parseDate: ParseTimestamp;
 }
 
@@ -59,15 +59,6 @@ export function useSharedFieldResolvers(): SharedFieldResolvers {
   const resolveProtocolName = (value: string): string =>
     toHumanReadable(get(getCounterpartyData(value)).label, 'sentence');
 
-  // Both asset resolvers deliberately skip the collection parent. Asset info walks up to an asset's
-  // collection by default, which is right where the collection is what is meant (a balance row
-  // aggregating every DAI) but wrong on a filter pill: the filter targets one exact identifier, so
-  // a pill for XDAI on Gnosis read "DAI", the collection's symbol, while the editor's list, which
-  // reads the search result directly, said XDAI. The chain has the same problem.
-  //
-  // An asset with no info, unknown or simply not resolved yet, has no symbol, and its raw
-  // identifier is far too long for a pill: `eip155:1/erc20:0x214A…` swamped the whole bar. It falls
-  // back to the shortened contract address, which is how rotki shows any unnamed address anyway.
   const resolveAssetSymbol = (value: string): string =>
     assetDisplayLabel(value, getAssetField(value, 'symbol', NO_COLLECTION_RESOLVE));
 
@@ -76,7 +67,13 @@ export function useSharedFieldResolvers(): SharedFieldResolvers {
 
   const resolveHex = (value: string): string => truncateAddress(scrambleAddress(value), 4);
 
-  // Sentence-casing alone lowercases acronyms into `Evm event` / `Eth withdrawal event`.
+  /**
+   * Renders a snake-cased identifier as a display label.
+   *
+   * @remarks
+   * Sentence casing on its own lowercases acronyms, giving `Evm event` and `Eth withdrawal event`,
+   * so the acronyms are restored afterwards.
+   */
   const resolveTokenName = (value: string): string => capitalizeAcronyms(toHumanReadable(value, 'sentence'));
 
   return {

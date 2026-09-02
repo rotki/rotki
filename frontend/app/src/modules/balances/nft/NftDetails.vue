@@ -92,11 +92,11 @@ const fallbackData = computed(() => {
     <div class="flex items-center overflow-hidden">
       <div class="cursor-pointer">
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :disabled="shouldRender"
           :open-delay="400"
           class="w-full"
-          tooltip-class="max-w-[10rem]"
+          :class-names="{ tooltip: 'max-w-[10rem]' }"
         >
           <template #activator>
             <div

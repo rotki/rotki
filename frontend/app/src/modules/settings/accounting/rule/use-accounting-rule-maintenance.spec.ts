@@ -70,7 +70,6 @@ describe('useAccountingRuleMaintenance', () => {
     expect(deleteAccountingRule).toHaveBeenCalledWith(7);
   });
 
-  // Deleting the row and then not reloading would leave a rule on screen that no longer exists.
   it('should not reload when the backend reports the rule was not deleted', async () => {
     deleteAccountingRule.mockResolvedValue(false);
     const { confirmDelete, refetch } = createMaintenance();
@@ -89,8 +88,7 @@ describe('useAccountingRuleMaintenance', () => {
     expect(refetch).not.toHaveBeenCalled();
   });
 
-  // Resetting every rule can create conflicts, so it reloads the conflicts too, not just the table.
-  it('should re-count conflicts after a reset', async () => {
+  it('should re-count conflicts after a reset, which can create them', async () => {
     const { confirmReset, refetch, refresh } = createMaintenance();
     confirmReset();
     await vi.waitFor(() => expect(refresh).toHaveBeenCalledOnce());

@@ -165,9 +165,7 @@ describe('usePinnedPanel', () => {
     for (const name of names)
       usePinnedPanel(name).pin({});
 
-    // All four current panels fit; the cap is a forward-looking guard, so nothing
-    // is evicted and every name is present.
-    expect(get(pinnedPanels)).toHaveLength(4);
+    expect(get(pinnedPanels)).toHaveLength(names.length);
     expect(get(pinnedPanels).map(panel => panel.name).sort()).toEqual([...names].sort());
   });
 });

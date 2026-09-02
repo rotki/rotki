@@ -31,14 +31,14 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
     isSectionLoading,
   );
 
-  // A chain the category does not cover, or one that has already loaded, contributes nothing:
-  // `active && !everCompleted` is false for both, so no "has this chain been touched" filter is
-  // needed the way the status map required one. A category whose chain list is not resolved yet
-  // falls back to every chain, as it did before.
-  //
-  // 🔴 "Active" is both layers. Hydration is not an activity, so the orchestrator alone reports a
-  // chain being read from the DB as idle — and with nothing yet completed that renders an empty
-  // table instead of a loading one, for the whole cached phase.
+  /**
+   * Whether the table has nothing to show *yet*, as opposed to nothing to show.
+   *
+   * @remarks
+   * "Active" spans both layers: hydration is not an activity, so the orchestrator alone reports a
+   * chain being read from the DB as idle. A category whose chain list has not resolved falls back
+   * to every chain.
+   */
   const isInitialLoading = computed<boolean>(() => {
     get(version); // touch the change counter so this re-reads the non-reactive ledger
     const hydrating = get(hydratingChains);

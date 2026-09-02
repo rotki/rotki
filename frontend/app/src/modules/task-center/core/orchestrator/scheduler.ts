@@ -24,7 +24,7 @@ export interface Scheduler {
   /**
    * Drop every queued job *and* release every running job's lane slot. Used by orchestrator reset.
    *
-   * ⚠️ The slots must go too. A slot is freed from `run()`'s `finally`, and a reset abandons those
+   * The slots must go too. A slot is freed from `run()`'s `finally`, and a reset abandons those
    * runs rather than resolving them, so anything live at reset would hold its lane for the life of
    * the process and the work submitted after it would queue forever.
    */
@@ -56,8 +56,13 @@ export function createScheduler(
    * lane ran 3 jobs at a cap of 2) and whichever job finished first deleted the *other* one's slot.
    */
   const running = new Map<ScheduledJob, Lane>();
-  // Longest first, so a more specific family wins over a broader one. Declared caps are partial,
-  // so the entries are narrowed to the ones actually set rather than asserted.
+  /**
+   * Orders a family cap record longest prefix first, so a more specific family wins over a broader.
+   *
+   * @remarks
+   * The record is partial, so unset entries are filtered out and what remains is narrowed by a
+   * type guard rather than asserted.
+   */
   const declared = (entries: LaneFamilyCaps): [LaneFamily, number][] =>
     Object.entries(entries)
       .filter((entry): entry is [LaneFamily, number] => entry[1] !== undefined)
@@ -105,8 +110,7 @@ export function createScheduler(
 
   function start(job: ScheduledJob): void {
     running.set(job, job.lane);
-    // run() never rejects (orchestrator contract); when it settles, free the slot and pump.
-    // The trailing catch keeps the fire-and-forget chain from floating.
+    // `run()` never rejects; the trailing catch only keeps the fire-and-forget chain from floating.
     job.run()
       .finally(() => {
         running.delete(job);
@@ -116,10 +120,6 @@ export function createScheduler(
   }
 
   function pump(): void {
-    // Each round, start the single highest-priority startable job (free lane slot + eligible),
-    // ties broken by insertion order, then re-evaluate — starting it consumes a lane slot and
-    // may make others un-startable. Repeats until nothing more can start. The queue stays in
-    // FIFO order, so the index scan is the FIFO tie-break.
     for (;;) {
       let bestIndex = -1;
       let bestPriority = Number.NEGATIVE_INFINITY;
@@ -140,14 +140,6 @@ export function createScheduler(
   return {
     clear(): void {
       queue.length = 0;
-      // 🔴 The slots too, not just the queue. A slot is freed from `run()`'s `finally`, and a reset
-      // abandons those runs rather than resolving them — so anything live when a session ended held
-      // its lane forever, and lane caps are 1-2. The next session's work then queued behind ghosts
-      // and never started: observed as `prices:exchange-rates` being submitted and never running
-      // after a re-login, which stalled the whole session load on its first await.
-      //
-      // Safe against the abandoned run settling later: its `finally` deletes a job that is no
-      // longer in the map (a no-op) and pumps, which is what we want anyway.
       running.clear();
     },
     drop(id: string): boolean {

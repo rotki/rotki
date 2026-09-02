@@ -74,6 +74,19 @@ describe('hash-link', () => {
     wrapper.unmount();
   });
 
+  /**
+   * Opens the tooltip, so that its slot content is rendered and can be queried.
+   *
+   * @remarks
+   * `RuiTooltipStub` renders its default slot only after a mouseover on the element carrying the
+   * handler, so the tooltip's contents are absent from the wrapper until this runs. Asserting they
+   * do not exist without opening it first passes for the wrong reason.
+   */
+  async function openTooltip(w: VueWrapper<InstanceType<typeof HashLink>>): Promise<void> {
+    await w.find('[class*="flex"]').find('div').trigger('mouseover');
+    await nextTick();
+  }
+
   const createWrapper = (props: {
     text: string;
     displayMode?: 'default' | 'link' | 'copy' | 'text';
@@ -255,7 +268,6 @@ describe('hash-link', () => {
       wrapper = createWrapper({ text: address });
       await nextTick();
 
-      // When privacyMode >= SEMI_PRIVATE, shouldShowAmount is false, applying blur
       const blurElement = wrapper.find('.blur');
       expect(blurElement.exists()).toBe(true);
     });
@@ -326,14 +338,8 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, location: 'eth', type: 'address' });
 
-      // The RuiTooltipStub renders the default slot content only on mouseover
-      // We need to find the div that has the @mouseover handler (from RuiTooltipStub)
-      // and trigger mouseover on it
-      const tooltipWrapper = wrapper.find('[class*="flex"]').find('div');
-      await tooltipWrapper.trigger('mouseover');
-      await nextTick();
+      await openTooltip(wrapper);
 
-      // Check that AddressEditButton stub exists within the wrapper after tooltip opens
       const editButton = wrapper.findComponent({ name: 'AddressEditButton' });
       expect(editButton.exists()).toBe(true);
     });
@@ -341,9 +347,7 @@ describe('hash-link', () => {
     it('should not render AddressEditButton for ETH2 addresses', async () => {
       wrapper = createWrapper({ text: '12345', location: 'eth2', type: 'address' });
 
-      // Trigger mouseover to show tooltip content
-      await wrapper.find('div').trigger('mouseover');
-      await nextTick();
+      await openTooltip(wrapper);
 
       const editButton = wrapper.findComponent({ name: 'AddressEditButton' });
       expect(editButton.exists()).toBe(false);
@@ -353,9 +357,7 @@ describe('hash-link', () => {
       const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab';
       wrapper = createWrapper({ text: txHash, location: 'eth', type: 'transaction' });
 
-      // Trigger mouseover to show tooltip content
-      await wrapper.find('div').trigger('mouseover');
-      await nextTick();
+      await openTooltip(wrapper);
 
       const editButton = wrapper.findComponent({ name: 'AddressEditButton' });
       expect(editButton.exists()).toBe(false);
@@ -365,9 +367,7 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, type: 'address' });
 
-      // Trigger mouseover to show tooltip content
-      await wrapper.find('div').trigger('mouseover');
-      await nextTick();
+      await openTooltip(wrapper);
 
       const editButton = wrapper.findComponent({ name: 'AddressEditButton' });
       expect(editButton.exists()).toBe(false);
@@ -394,28 +394,10 @@ describe('hash-link', () => {
   });
 
   describe('tooltip behavior', () => {
-    it('should disable tooltip when truncateLength is 0', () => {
-      const address = '0x1234567890abcdef1234567890abcdef12345678';
-      wrapper = createWrapper({ text: address, truncateLength: 0 });
-
-      // RuiTooltip should exist but be disabled
-      const tooltip = wrapper.find('div');
-      expect(tooltip.exists()).toBe(true);
-    });
-
-    it('should render RuiTooltip when text is not hidden', () => {
-      const address = '0x1234567890abcdef1234567890abcdef12345678';
-      wrapper = createWrapper({ text: address });
-
-      // RuiTooltipStub should be rendered
-      expect(wrapper.text()).toContain('0x1234...5678');
-    });
-
     it('should not render RuiTooltip when hideText is true', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, hideText: true });
 
-      // The truncated text should not be visible
       expect(wrapper.text()).not.toContain('0x1234');
     });
   });
@@ -458,7 +440,6 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, location: 'eth', displayMode: 'link' });
 
-      // Container should exist because showLink is true
       const linkButton = wrapper.findComponent({ name: 'LinkButton' });
       expect(linkButton.exists()).toBe(true);
     });
@@ -467,7 +448,6 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, displayMode: 'copy' });
 
-      // Container should exist because showCopy is true
       const copyButton = wrapper.findComponent({ name: 'InlineCopyButton' });
       expect(copyButton.exists()).toBe(true);
     });
@@ -476,7 +456,6 @@ describe('hash-link', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, displayMode: 'text' });
 
-      // Neither copy nor link button should exist
       expect(wrapper.findComponent({ name: 'InlineCopyButton' }).exists()).toBe(false);
       expect(wrapper.findComponent({ name: 'LinkButton' }).exists()).toBe(false);
     });

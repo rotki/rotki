@@ -75,8 +75,8 @@ interface UseSnapshotDraftReturn {
  * Undo uses a bounded full-state stack (snapshot + the NFT flag) rather than
  * op-inversion — simpler and impossible to desync for the v1 editor.
  *
- * @param initial the loaded snapshot (value, ref or getter); re-seeds the draft
- *   whenever it changes (e.g. navigating to a different snapshot).
+ * @param initial - the loaded snapshot, as a value, ref or getter; the draft is re-seeded whenever
+ * it changes, such as on navigating to a different snapshot
  */
 export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>): UseSnapshotDraftReturn {
   const original = ref<Snapshot>();
@@ -97,6 +97,16 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     set(excludeNftsState, !tracksFullAssets && tracksAssetsExNfts);
   }
 
+  /**
+   * Opens a snapshot as the baseline and the draft alike.
+   *
+   * @remarks
+   * The stored total is re-tracked on the way in, since net worth always follows the balances and
+   * the backend value can be stale. Both copies hold the corrected snapshot, so a freshly opened
+   * one is never spuriously dirty.
+   *
+   * @param snapshot - the snapshot to open, or `undefined` to close the editor
+   */
   function reset(snapshot: Snapshot | undefined): void {
     if (!snapshot) {
       set(original, undefined);
@@ -105,9 +115,6 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
       return;
     }
     inferExcludeNfts(snapshot);
-    // Net worth always tracks the balances, so correct the stored total on load
-    // (the backend value can be stale). Baseline and draft both hold the
-    // corrected snapshot, so a freshly-opened snapshot is never spuriously dirty.
     const corrected = retrackTotal(cloneSnapshot(snapshot));
     set(original, cloneSnapshot(corrected));
     set(draft, cloneSnapshot(corrected));
@@ -131,13 +138,17 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     return applySetTotal(snapshot, trackedTotal(snapshot));
   }
 
-  /** Pushes the current draft + mode onto the undo stack before a mutation. */
+  /**
+   * Pushes the current draft and mode onto the undo stack before a mutation.
+   *
+   * @remarks
+   * The snapshot is cloned in, because the rebuild helpers mutate location rows in place and would
+   * otherwise corrupt a shared undo entry.
+   */
   function pushUndo(): void {
     const current = get(draft);
     if (!current)
       return;
-    // Clone for undo: the rebuild helpers mutate location rows in place, which
-    // would otherwise corrupt a shared undo entry.
     const entry: DraftState = {
       excludeNfts: get(excludeNftsState),
       snapshot: cloneSnapshot(current),
@@ -197,8 +208,13 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     return buildSnapshotChanges(a, b);
   });
 
-  // Compare against the *tracked* net worth (NFT-aware) rather than the full
-  // balances, so excluding NFTs doesn't read as a permanent total mismatch.
+  /**
+   * Where the locations stop summing to the total, if they do.
+   *
+   * @remarks
+   * Compared against the NFT-aware tracked net worth rather than the full balances, so excluding
+   * NFTs does not read as a permanent mismatch.
+   */
   const mismatch = computed<SnapshotSumMismatch | null>(() => {
     const current = get(draft);
     return current ? findSumMismatch(current, undefined, trackedTotal(current)) : null;
@@ -284,13 +300,21 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
       inferExcludeNfts(baseline);
   }
 
+  /**
+   * Saves the draft, and on success adopts it as the new baseline.
+   *
+   * @remarks
+   * A failed save leaves the draft and the undo stack standing, so the user keeps their work and
+   * can retry.
+   *
+   * @param saveFn - performs the write, reporting whether it landed
+   * @returns what `saveFn` reported
+   */
   async function commit(saveFn: (snapshot: Snapshot) => Promise<boolean>): Promise<boolean> {
     const current = get(draft);
     if (!current)
       return false;
 
-    // On failure the draft and undo stack are preserved so the user keeps their
-    // work and can retry.
     const success = await saveFn(current);
     if (success) {
       set(original, cloneSnapshot(current));

@@ -2,7 +2,6 @@ import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useWalletConnection } from '@/modules/wallet/bridge/use-wallet-connection';
 
-// A lowercase address and its checksummed form (real viem getAddress runs unmocked).
 const LOWER_ADDRESS = '0x5a0b54d5dc17e0aadc383d2db43b0a0d3e029c4c';
 const CHECKSUM_ADDRESS = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 

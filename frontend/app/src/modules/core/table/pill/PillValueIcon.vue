@@ -31,8 +31,10 @@ const { display, value, valueDisplay, icon, swatch, size = '16px' } = defineProp
   size?: string;
 }>();
 
-// A blockie is derived from the address bytes, so an unscrambled one leaks the identity just as
-// the text would. Privacy mode has to reach the icon too.
+/**
+ * Privacy mode has to reach the icon too: a blockie is derived from the address bytes, so an
+ * unscrambled one leaks the identity just as the text would.
+ */
 const { scrambleAddress } = useScramble();
 
 // The display-kind icons take a CSS length, `RuiIcon` takes a unitless pixel count.

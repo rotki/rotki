@@ -59,7 +59,12 @@ export class LogService {
     checkInterval: 60_000,
   };
 
-  private get logDirectory(): string {
+  /**
+   * The directory logs are actually written to. Follows `LOGDIR` and so can differ
+   * from {@link defaultLogDirectory} — anything pointing a user at their logs must
+   * read this, not the platform default.
+   */
+  get logDirectory(): string {
     return this._logDirectory;
   }
 

@@ -194,7 +194,7 @@ async function showInHistoryEvent(identifier: number) {
       <template #item.action="{ row }">
         <div class="flex items-center gap-1">
           <RuiMenu
-            :popper="{ placement: 'bottom-end' }"
+            :options="{ placement: 'bottom-end' }"
             close-on-content-click
           >
             <template #activator="{ attrs }">

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { fieldSuggestions, searchFieldsAndValues as search, syntaxExamples } from '@/modules/core/table/pill/core/narrowing';
 
-// Operator words come from the Vue layer; these stand in for them.
 const operatorLabels = {
   after: 'after',
   before: 'before',
@@ -62,8 +61,6 @@ const txHash = field({
   validate: (value: string): boolean => /^0x[a-f0-9]{6}$/i.test(value),
 });
 
-// The case keywords exist for: the label is a name or a shortened, scrambled address, so neither
-// the full address nor the ENS name is visible in it.
 const account = field({
   display: 'account',
   key: 'account',
@@ -74,8 +71,6 @@ const account = field({
   suggest: (): string[] => ['0xAAAA1111', '0xBBBB2222'],
 });
 
-// The two fields whose values are written, not picked. `parseTyped` is what a range/date field
-// carries in the real adapter; here it is stubbed so this spec is about ranking and labelling.
 const amount = field({
   formatBound: (value: string): string => `${value} ETH`,
   key: 'amount',
@@ -94,8 +89,6 @@ const amount = field({
 const period = field({
   key: 'period',
   label: 'Period',
-  // Claims `peri` too, so a query matching the label *and* the guidance is reachable: the two must
-  // not put the same field on screen twice.
   matchesTyped: (query: string): boolean =>
     query.startsWith('after') || query.startsWith('15/') || query.startsWith('peri'),
   operators: ['between', 'after', 'before'],
@@ -105,7 +98,6 @@ const period = field({
   valueType: FilterValueTypes.DATE,
 });
 
-// Stand in for the Vue layer's copy, which is where the real ones are built.
 const hints = {
   examples: { date: ['after 15/01/2024', '15/01/2024 - 20/01/2024'], range: ['>100'] },
   keywords: { date: 'date time when', range: 'amount number value' },
@@ -133,14 +125,11 @@ describe('syntaxExamples', () => {
     ]);
   });
 
-  // Advertising a syntax for a field that is not there sends the user typing something the bar
-  // will refuse; a field whose pill is already set is no longer among those passed in.
   it('should offer nothing for the types not on offer', () => {
     expect(syntaxExamples([protocol], hints)).toStrictEqual([]);
     expect(syntaxExamples([period], hints)).toStrictEqual(['after 15/01/2024', '15/01/2024 - 20/01/2024']);
   });
 
-  // A field that cannot read what is typed must not advertise a syntax it would then refuse.
   it('should ignore a field of a typed-into type that reads nothing typed', () => {
     const bare = field({ key: 'bare', label: 'Bare', valueType: FilterValueTypes.DATE });
     expect(syntaxExamples([bare], hints)).toStrictEqual([]);
@@ -167,7 +156,6 @@ describe('searchFieldsAndValues', () => {
   });
 
   it('should rank a field-label prefix above a value prefix', () => {
-    // 'as' prefixes the Asset field label and the protocol value 'aster'.
     const result = searchFieldsAndValues('as', [protocol, asset, field({
       key: 'other',
       label: 'Other',
@@ -181,7 +169,6 @@ describe('searchFieldsAndValues', () => {
   });
 
   it('should rank a value prefix above a field-label substring', () => {
-    // 'ave' prefixes no field label; it is inside 'Wave' and prefixes the value 'aveline'.
     const wave = field({ key: 'wave', label: 'Wave' });
     const other = field({ key: 'other', label: 'Other', suggest: (): string[] => ['aveline'] });
 
@@ -207,7 +194,6 @@ describe('searchFieldsAndValues', () => {
 
   it('should not offer list values for free-text or asset fields', () => {
     expect(searchFieldsAndValues('never', [asset])).toEqual([]);
-    // `notes` offers what was typed, never its (ignored) option list.
     expect(searchFieldsAndValues('never', [notes])).toEqual([
       { field: notes, kind: 'value', label: 'never', value: 'never' },
     ]);
@@ -295,7 +281,6 @@ describe('searchFieldsAndValues', () => {
   it('should keep the declared order within a rank', () => {
     const result = searchFieldsAndValues('a', [protocol]);
 
-    // 'aave' prefixes; 'uniswap' and 'ethena' only contain an 'a', and keep their option order.
     expect(result.map(entry => entry.label)).toEqual(['aave', 'uniswap', 'ethena']);
   });
 });
@@ -317,8 +302,6 @@ describe('searchFieldsAndValues account keywords', () => {
     expect(matches.map(match => match.kind === 'value' && match.value)).toStrictEqual(['0xAAAA1111', '0xBBBB2222']);
   });
 
-  // A hidden keyword hit must never outrank a visible label, or the list reorders around text
-  // the user cannot see.
   it('should rank a label match above a keyword-only match', () => {
     const matches = searchFieldsAndValues('wallet', [account]);
     expect(matches.every(match => match.kind === 'value')).toBe(true);
@@ -338,9 +321,7 @@ describe('searchFieldsAndValues account keywords', () => {
       ]);
     });
 
-    // The row has to read the way the pill it produces will, or the list promises one filter and
-    // applies another. A default operator is hidden on a pill, so it is hidden here too.
-    it('should hide the operator when it is the field default', () => {
+    it('should hide the operator when it is the field default, as the pill it produces does', () => {
       const between = field({
         key: 'amount',
         label: 'Amount',
@@ -356,24 +337,18 @@ describe('searchFieldsAndValues account keywords', () => {
       expect(searchFieldsAndValues('uniswap', [amount])).toStrictEqual([]);
     });
 
-    // A query heading for a filter it does not yet spell used to return an empty popover, which
-    // reads as "this field cannot be typed into" at exactly the moment the user is trying.
     it('should offer the field with its example for a half-written value', () => {
       expect(searchFieldsAndValues('after', [period], undefined, undefined, hints)).toStrictEqual([
         { field: period, kind: 'field', label: 'Period' },
       ]);
     });
 
-    // Once the query says a whole filter, the filter itself is the answer; repeating the field
-    // under it adds a row that says nothing the two above it do not.
     it('should not offer guidance once the query reads as a filter', () => {
       const matches = searchFieldsAndValues('15/01/2024', [period], undefined, undefined, hints);
       expect(matches).toHaveLength(1);
       expect(matches[0]).toMatchObject({ kind: 'filter' });
     });
 
-    // Guidance is the answer for a field with nothing to answer with, so anything that matched
-    // something concrete outranks it.
     it('should rank guidance below every real match', () => {
       const matches = searchFieldsAndValues('after', [period, field({
         key: 'protocol',
@@ -385,19 +360,13 @@ describe('searchFieldsAndValues account keywords', () => {
       expect(matches[1]).toMatchObject({ label: 'Period' });
     });
 
-    // The field is called `Period`, so the word people reach for found nothing at all.
-    it('should find a field by the words its value type is known by', () => {
+    it('should find a field by the words its value type is known by, which its label does not contain', () => {
       expect(searchFieldsAndValues('time', [period], undefined, undefined, hints)).toStrictEqual([
         { field: period, kind: 'field', label: 'Period' },
       ]);
     });
 
-    // The keyword blob is a bag of whole words, not a string to be searched inside: `in` sits in
-    // `since` and `an` in `range`, so a substring test hands back Period and Amount for a
-    // two-letter query and buries the real value matches under them. The fixture blobs above share
-    // no stem with the shipped ones, which is exactly why they never caught this — these are the
-    // strings the app actually passes in.
-    it('should not match a keyword on a fragment of one', () => {
+    it('should not match a keyword on a fragment of one, while the whole word and its prefixes still do', () => {
       const shipped = {
         keywords: {
           date: 'date time when period since after before until',
@@ -407,28 +376,26 @@ describe('searchFieldsAndValues account keywords', () => {
 
       expect(searchFieldsAndValues('in', [period], undefined, undefined, shipped)).toStrictEqual([]);
       expect(searchFieldsAndValues('an', [amount], undefined, undefined, shipped)).toStrictEqual([]);
-      // The word itself still finds the field; only the fragment stops doing so.
       expect(searchFieldsAndValues('since', [period], undefined, undefined, shipped)).toStrictEqual([
         { field: period, kind: 'field', label: 'Period' },
       ]);
-      // And a prefix of a keyword does too: the list narrows as the user types it out.
       expect(searchFieldsAndValues('num', [amount], undefined, undefined, shipped)).toStrictEqual([
         { field: amount, kind: 'field', label: 'Amount' },
       ]);
-      // The two-word keywords are reachable as written, part-way through included.
       expect(searchFieldsAndValues('at le', [amount], undefined, undefined, shipped)).toStrictEqual([
         { field: amount, kind: 'field', label: 'Amount' },
       ]);
     });
 
     it('should offer a field only once when its label and its guidance both match', () => {
+      expect(period.matchesTyped?.('peri')).toBe(true);
+
       const matches = searchFieldsAndValues('peri', [period], undefined, undefined, hints);
       expect(matches).toStrictEqual([
         { field: period, kind: 'field', label: 'Period' },
       ]);
     });
 
-    // It always matches, so like the typed free-text value it must never push a real match down.
     it('should rank a read-out filter below a matching field or value', () => {
       const matches = searchFieldsAndValues('100', [amount, field({
         key: 'validator',
@@ -439,10 +406,7 @@ describe('searchFieldsAndValues account keywords', () => {
       expect(matches[0]).toMatchObject({ kind: 'field' });
     });
   });
-  // A remembered value is matched on what was stored but shown through the field's resolver, which
-  // for an address is a shortened and, in privacy mode, scrambled form. Labelling the row with the
-  // raw value put the real address on screen while the pill it creates hid it.
-  it('should show a remembered value through the field resolver', () => {
+  it('should match a remembered value on what was stored but show it through the field resolver', () => {
     const address = field({
       freeText: true,
       key: 'addresses',

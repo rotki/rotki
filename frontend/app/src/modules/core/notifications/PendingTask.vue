@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { useScramble } from '@/modules/settings/use-scramble';
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type Activity, ActivityStatus, type ActivitySteps, resolveText } from '@/modules/task-center/core/types';
+import { type Activity, ActivityStatus, type ActivitySteps, type ActivityText, resolveText } from '@/modules/task-center/core/types';
 
 const { activity, cancellable, nested = false, now, percentage, steps } = defineProps<{
   activity: Activity;
@@ -24,11 +25,53 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Resolved here rather than at submit time, so a language change updates work already in flight.
-const subtitle = computed<string | undefined>(() => resolveText(t, activity.subtitle));
+const { scrambleAddress } = useScramble();
 
-// A child of "History refresh" reads better as "Ethereum" than as "Transaction sync / Ethereum":
-// a chain and its accounts carry the same title, so under a parent the subtitle is the identity.
+/**
+ * Rewrites a param that may hold one address or several.
+ *
+ * @remarks
+ * A batch joins several addresses into one string, so each is scrambled separately and the
+ * separators put back verbatim. `scrambleAddress` returns its input unchanged while privacy mode
+ * is off, so this needs no condition of its own.
+ *
+ * @param value - a subtitle param, which is only rewritten when it is a string
+ * @returns the value with each address replaced
+ */
+function scrambleAddresses(value: unknown): unknown {
+  if (typeof value !== 'string')
+    return value;
+
+  return value
+    .split(/([\s,]+)/)
+    .map(part => (/^[\s,]*$/.test(part) ? part : scrambleAddress(part)))
+    .join('');
+}
+
+/**
+ * The subtitle with its address param scrambled, before {@link resolveText} interpolates it —
+ * afterwards nothing can tell the address apart from the wording around it. Every producer that
+ * carries an address passes it as `address`, so that is the one key rewritten.
+ */
+const displaySubtitle = computed<ActivityText | undefined>(() => {
+  const value = activity.subtitle;
+  if (value === undefined || typeof value === 'string' || value.params?.address === undefined)
+    return value;
+
+  return { ...value, params: { ...value.params, address: scrambleAddresses(value.params.address) } };
+});
+
+// Resolved here rather than at submit time, so a language change updates work already in flight.
+const subtitle = computed<string | undefined>(() => resolveText(t, get(displaySubtitle)));
+
+/**
+ * What this row is called: its subtitle when nested under a parent, its title otherwise.
+ *
+ * @remarks
+ * Under a parent the subtitle is the identity. Every chain and account in one flow carries the same
+ * title, so a child of "History refresh" reads as "Ethereum" rather than "Transaction sync /
+ * Ethereum", where only the second half distinguishes it from its siblings.
+ */
 const label = computed<string>(() => (nested ? get(subtitle) ?? activity.title : activity.title));
 
 const secondary = computed<string | undefined>(() => (nested ? undefined : get(subtitle)));
@@ -71,8 +114,7 @@ const outcomeText = computed<string>(() => {
   return reason ? t('pending_task.status.with_reason', { reason, status }) : status;
 });
 
-// The ring only earns the slot when it has a real number to put in it. Everything else — including
-// a running row the producer never counted steps for — says its status in words instead.
+/** The ring earns the slot only with a real number to put in it; everything else says so in words. */
 const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminateProgress));
 </script>
 
@@ -124,12 +166,12 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
     -->
     <RuiTooltip
       v-else
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
         <!--
-          ⚠️ `role` and `tabindex` are overrides, not decoration. RuiChip hardcodes `role="button"`
+          `role` and `tabindex` are overrides, not decoration. RuiChip hardcodes `role="button"`
           and `tabindex="0"` on its root whether or not it is clickable, so an untouched status chip
           is a focusable fake button: a keyboard user tabs through a "Done" button on every row and
           hears one announced per settled child. `role="img"` makes the icon carry its `aria-label`.
@@ -156,7 +198,7 @@ const showRing = computed<boolean>(() => get(isRunning) && get(hasDeterminatePro
 
     <RuiTooltip
       v-if="cancellable"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>

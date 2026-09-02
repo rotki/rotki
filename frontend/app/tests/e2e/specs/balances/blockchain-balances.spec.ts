@@ -120,10 +120,8 @@ test.describe.serial('blockchain balances', () => {
 
     await blockchainAccountsPage.visit();
 
-    // Delete ETH entry
     await blockchainAccountsPage.deleteAccount(0);
 
-    // Delete BTC entry
     await blockchainAccountsPage.visit('bitcoin');
     await blockchainAccountsPage.deleteAccount(0);
   });

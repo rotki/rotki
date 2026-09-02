@@ -24,11 +24,6 @@ export function useNfts(): UseNftsReturn {
   const whitelist = useSetting('whitelistedDomainsForNftImages');
 
   const fetchNfts = async (ignoreCache: boolean): Promise<ActionResult<NftResponse | null>> => {
-    // `ignoreCache` is part of the identity: a force-refresh and a cache read are different work,
-    // and sharing one id handed the force-refresh the cache read's in-flight promise — the cache
-    // was never bypassed. The response is the activity's return value for the same reason: a
-    // deduped caller's `run` never executes, so a closure local stayed `null` and the caller
-    // reported `{ message: '', result: null }` — no data, no error, nothing to act on.
     const outcome = await submitTask<NftResponse>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.NFTS, ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED),
       kind: ActivityKind.ASSETS,

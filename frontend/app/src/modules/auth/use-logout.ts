@@ -30,6 +30,21 @@ interface UseLogoutReturn {
   logoutRemoteSession: () => Promise<ActionStatus>;
 }
 
+/** Long enough for the components to leave the DOM and the loading overlay to take over. */
+const DOM_TEARDOWN_MS = 1500;
+
+/**
+ * Drops every request still queued or in flight.
+ *
+ * @remarks
+ * The first thing a logout does. A response that lands after the session is torn down writes into
+ * stores the next user is about to inherit.
+ */
+function cancelInFlightRequests(): void {
+  api.cancelAllQueued();
+  api.cancel();
+}
+
 export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
@@ -38,22 +53,26 @@ export function useLogout(): UseLogoutReturn {
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { reset: resetSchedulerState } = useSchedulerState();
 
-  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
-    // Cancel all pending API requests first to prevent race conditions
-    api.cancelAllQueued();
-    api.cancel();
-
-    // Reset scheduler state (backend resets scheduler separately)
-    resetSchedulerState();
-
-    // Notify electron to cleanup wallet bridge connections BEFORE disconnecting
+  /**
+   * Tears the wallet bridge down, main process first.
+   *
+   * @remarks
+   * Electron has to be told before the renderer disconnects, or it is left holding bridge
+   * connections for a session that no longer exists.
+   */
+  const closeWalletBridge = async (): Promise<void> => {
     notifyUserLogout();
-
     await disconnectWalletIfActive();
+  };
+
+  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
+    cancelInFlightRequests();
+    resetSchedulerState();
+    await closeWalletBridge();
+
     set(logged, false);
     const user = get(username); // save the username, after the await below, it is reset
-    // allow some time for the components to leave the dom completely and show loading overlay
-    await promiseTimeout(1500);
+    await promiseTimeout(DOM_TEARDOWN_MS);
     resetTray();
 
     if (!options.skipBackendCall) {
@@ -79,9 +98,7 @@ export function useLogout(): UseLogoutReturn {
   };
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
-    // Cancel all pending API requests first to prevent race conditions
-    api.cancelAllQueued();
-    api.cancel();
+    cancelInFlightRequests();
 
     try {
       await disconnectWalletIfActive();

@@ -25,7 +25,7 @@ export interface HistoryEventFieldsOptions {
   restrictions: MaybeRefOrGetter<HistoryEventsRestrictions>;
   /**
    * The table's filter bag, writable: what is picked scopes the asset search and the offered
-   * subtypes, and a narrowing subtype set prunes what it no longer admits.
+   * subtypes, and a narrowing prunes the subtypes it stops admitting.
    */
   modelFilters: Ref<Filters>;
 }
@@ -63,11 +63,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { assetSearch } = useAssetInfoRetrieval();
   const { stateConfigs } = useHistoryEventStateMapping();
-  // The bar offers the same verbs the event form's action picker does, from the same model, so a
-  // filter and an edit speak of events in one vocabulary.
   const { rows: actionRows } = useEventActionPicker();
-  // Asset, location, protocol, address and date resolution is the same for every table that
-  // filters on them, so it comes from one place rather than being restated here.
   const shared = useSharedFieldResolvers();
 
   /**
@@ -94,24 +90,21 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
     return (Array.isArray(picked) ? picked[0] : picked)?.toString();
   });
 
-  // One debounced search per scope rather than one per call: `assetSuggestions` builds the
-  // debounce, so rebuilding it inside the search would give every keystroke a fresh timer that
-  // cancels nothing.
+  /**
+   * Holds one debounced asset search per scope, rebuilt only when the scoping location changes.
+   *
+   * @remarks `assetSuggestions` builds the debounce, so calling it inside `searchAsset` instead
+   * would give every keystroke a fresh timer that cancels nothing.
+   */
   const search = computed(() => assetSuggestions(assetSearch, get(location)));
   const searchAsset = async (value: string): Promise<AssetsWithId> => get(search)(value);
 
-  // The option list already carries `address name tags` per account for its own search box; the
-  // bar reuses it so an account is findable by any of them from the inline input too.
   const accountKeywords = computed<Map<string, string | undefined>>(
     () => new Map(get(accountOptions).map(option => [option.value, option.keywords])),
   );
-  // The option list knows which names are still resolving; the field passes that on so the
-  // checklist keeps drawing a skeleton for them now that it builds its own rows.
   const accountLoading = computed<Set<string>>(
     () => new Set(get(accountOptions).filter(option => option.loading).map(option => option.value)),
   );
-  // Computed rather than mapped on each call: `suggest` is read once per field per keystroke while
-  // the bar narrows, and this rebuilt the full address list every time.
   const accountValues = computed<string[]>(() => get(accountOptions).map(option => option.value));
   const accountField = toHistoryAccountField(t, {
     resolveCaption,
@@ -121,8 +114,6 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
     suggest: (): string[] => get(accountValues),
   });
   const ignoredField = toHistoryIgnoredField(t);
-  // An action's direction is what its icon colour carries, the same in/out reading the event rows
-  // use, so a verb looks the same on a pill as it does in the table.
   const directionColors = { in: 'success', neutral: 'secondary', out: 'error' } as const;
   const actionOptions = computed<ActionFieldOption[]>(() => get(actionRows).map(row => ({
     icon: { color: directionColors[row.direction], icon: row.icon },

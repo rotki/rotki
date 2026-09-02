@@ -26,22 +26,26 @@ const { t } = useI18n({ useScope: 'global' });
 const showTotal = computed<boolean>(() => buckets.length > 1);
 const total = computed<BigNumber>(() => buckets.reduce((sum, bucket) => sum.plus(bucket.balance), Zero));
 
-// No legitimate asset carries more than ~24 decimals, so we cap the displayed precision there: a
-// higher value is almost certainly a broken/hostile token and is shown rounded, with a warning.
+/**
+ * The most decimal places any amount is rendered with.
+ *
+ * @remarks
+ * No legitimate asset carries more than this, so a balance exceeding it is almost certainly a
+ * broken or hostile token. Such a value is shown rounded rather than in full, and flagged, so one
+ * token cannot stretch the column past everything beside it.
+ */
 const MAX_DISPLAY_DECIMALS = 24;
 
-// The widest precision actually present among the rows, before the display cap is applied.
+/** The widest precision actually present among the rows, before the display cap is applied. */
 const rawDecimals = computed<number>(() => {
   const values = [...buckets.map(bucket => bucket.balance), get(total)];
   return values.reduce((max, value) => Math.max(max, value.decimalPlaces() ?? 0), 0);
 });
 
-// Render every amount with the same number of decimals so their decimal points line up; the widest
-// precision among the rows wins, capped so an absurdly-precise token can't stretch the column.
+/** Shared by every amount, so their decimal points line up down the column. */
 const decimals = computed<number>(() => Math.min(get(rawDecimals), MAX_DISPLAY_DECIMALS));
 
-// A balance with more precision than we display: amounts are rounded to MAX_DISPLAY_DECIMALS, so the
-// user is warned the shown figure is not exact.
+/** Whether what is shown has been rounded, so the user can be told the figure is not exact. */
 const excessivePrecision = computed<boolean>(() => get(rawDecimals) > MAX_DISPLAY_DECIMALS);
 
 /**
@@ -74,7 +78,7 @@ const affectedIndex = computed<number>(() => {
         <RuiTooltip
           v-if="excessivePrecision"
           :open-delay="200"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiIcon
@@ -111,7 +115,7 @@ const affectedIndex = computed<number>(() => {
                address holding the same asset on several chains), so lead every row with its icon. -->
           <RuiTooltip
             :open-delay="200"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
           >
             <template #activator>
               <LocationIcon

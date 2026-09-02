@@ -13,8 +13,6 @@ export function toCustomAssetFields(types: () => string[], t: Translate): FieldD
       key: CustomAssetFilterKeys.CUSTOM_ASSET_TYPE,
       label: (): string => t('assets.filter_field_labels.type'),
       multiple: false,
-      // The types the user has actually created, which is also what a typed value is checked
-      // against so a type that does not exist is never applied.
       suggest: types,
       validate: (value: string): boolean => types().includes(value),
     }),

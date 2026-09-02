@@ -1,22 +1,15 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
 import { msg } from '@/message-key';
 import ExchangeAmountRow from '@/modules/accounts/exchanges/ExchangeAmountRow.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import ExchangeDetailPanel from '@/modules/balances/exchanges/ExchangeDetailPanel.vue';
-import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
-import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import { NoteLocation } from '@/modules/core/common/notes';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useExchangeBalancesPage } from '@/pages/balances/exchange/use-exchange-balances-page';
 
 definePage({
   meta: {
@@ -29,96 +22,21 @@ definePage({
 const { exchange } = defineProps<{ exchange?: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const selectedTab = ref<string | undefined>(exchange ?? undefined);
-const { useIsActive } = useTaskCenter();
-const { getExchangeBalances } = useAggregatedBalances();
-const { refreshExchangeSavings } = useBinanceSavings();
-const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
-const { refreshBalance, refreshExchangeBalance } = useBalanceRefresh();
-
-async function refreshExchangeBalances() {
-  await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
-}
-
-async function refreshSelectedExchangeBalances(exchangeLocation: string) {
-  if (isBinance(exchangeLocation))
-    await Promise.all([refreshExchangeBalance(exchangeLocation), refreshExchangeSavings(true)]);
-  else
-    await refreshExchangeBalance(exchangeLocation);
-}
-const selectedExchange = ref<string>('');
-const usedExchanges = computed<string[]>(() =>
-  get(connectedExchanges)
-    .map(({ location }) => location)
-    .filter(uniqueStrings),
-);
-
-const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
-
-const router = useRouter();
-const route = useRoute();
-
-function setSelectedExchange() {
-  set(selectedExchange, get(route).query.location);
-}
-
-onMounted(() => {
-  setSelectedExchange();
-});
-
-watch(route, () => {
-  setSelectedExchange();
-});
-
-function exchangeBalance(exchange: string): BigNumber {
-  const balances = getExchangeBalances(exchange);
-  return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.value), Zero);
-}
-
-const sortedExchanges = computed(() =>
-  get(usedExchanges).sort((a, b) => exchangeBalance(b).minus(exchangeBalance(a)).toNumber()),
-);
-
-function openExchangeDetails() {
-  router.push({
-    name: '/balances/exchange/[[exchange]]',
-    params: {
-      exchange: get(selectedExchange),
-    },
-  });
-}
-
-const balances = computed(() => {
-  const currentExchange = exchange;
-  if (!currentExchange)
-    return [];
-
-  return getExchangeBalances(currentExchange);
-});
-
-const vueRouter = useRouter();
-
-function navigate() {
-  vueRouter.push({
-    path: '/api-keys/exchanges',
-    query: { add: 'true' },
-  });
-}
-
-const exchangeDetailTabs = ref<number>(0);
-
-watch(() => exchange, () => {
-  set(exchangeDetailTabs, 0);
-});
-
-onMounted(() => {
-  refreshExchangeSavings();
-});
-
-function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
-  return !!exchange && ['binance', 'binanceus'].includes(exchange);
-}
+const {
+  balances,
+  exchangeBalance,
+  isExchangeLoading,
+  modelExchangeDetailTabs,
+  modelSelectedExchange,
+  modelSelectedTab,
+  navigateToExchangeSetup,
+  openExchangeDetails,
+  refreshExchangeBalances,
+  refreshSelectedExchangeBalances,
+  sortedExchanges,
+  usedExchanges,
+} = useExchangeBalancesPage(() => exchange);
 </script>
 
 <template>
@@ -130,8 +48,9 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
             color="primary"
             variant="outlined"
             size="lg"
-            :disabled="exchangeDetailTabs !== 0"
+            :disabled="modelExchangeDetailTabs !== 0"
             :loading="isExchangeLoading"
+            data-testid="refresh-exchange-balances"
             @click="refreshExchangeBalances()"
           >
             <template #prepend>
@@ -145,7 +64,8 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
       <RuiButton
         color="primary"
         size="lg"
-        @click="navigate()"
+        data-testid="add-exchange"
+        @click="navigateToExchangeSetup()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -161,7 +81,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
       >
         <div class="md:hidden mb-4">
           <RuiMenuSelect
-            v-model="selectedExchange"
+            v-model="modelSelectedExchange"
             :options="usedExchanges"
             :label="t('exchange_balances.select_exchange')"
             hide-details
@@ -185,7 +105,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         </div>
         <div class="hidden md:block w-40 shrink-0 border-r border-default">
           <RuiTabs
-            v-model="selectedTab"
+            v-model="modelSelectedTab"
             vertical
             align="end"
             color="primary"
@@ -221,7 +141,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         <div class="flex-1">
           <ExchangeDetailPanel
             v-if="exchange"
-            v-model="exchangeDetailTabs"
+            v-model="modelExchangeDetailTabs"
             :exchange="exchange"
             :loading="isExchangeLoading"
             :balances="balances"

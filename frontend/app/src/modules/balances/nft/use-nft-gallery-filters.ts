@@ -49,13 +49,11 @@ export function useNftGalleryFilters(
   nfts: ComputedRef<GalleryNft[]>,
   perAccount: MaybeRefOrGetter<Nfts | null>,
 ): UseNftGalleryFiltersReturn {
-  // State
   const modelSelectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
   const modelSelectedCollection = ref<string | undefined>();
   const modelSortBy = shallowRef<'name' | 'price' | 'collection'>('name');
   const modelSortDescending = shallowRef<boolean>(false);
 
-  // Computed properties
   const availableAddresses = computed<string[]>(() => {
     const accounts = toValue(perAccount);
     return accounts ? Object.keys(accounts) : [];
@@ -89,7 +87,6 @@ export function useNftGalleryFilters(
     return allNfts.sort((a, b) => sortNfts(modelSortBy, modelSortDescending, a, b));
   });
 
-  // Methods
   function updateSortBy(value: string): void {
     const sortKey = NFT_SORT_KEYS.find(key => key === value);
     assert(sortKey);

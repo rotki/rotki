@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { findAddressKnownPrefix } from '@/modules/core/common/display/truncate';
-import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
+import { generateRandomScrambleMultiplier, normalizeScrambleMultiplier } from '@/modules/session/session-utils';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseScrambleReturn {
@@ -29,13 +29,14 @@ export function useScramble(): UseScrambleReturn {
 
   const scrambleData = logicOr(scrambleSetting, logicNot(shouldShowAmount));
 
+  /** Every scramble function below reads the multiplier through here, never the raw setting. */
+  const boundedMultiplier = computed<number>(() => normalizeScrambleMultiplier(+get(scrambleMultiplier)));
+
   const scrambleAddress = (address: string): string => {
     if (!get(scrambleData))
       return address;
 
-    let multiplier = +get(scrambleMultiplier);
-    if (multiplier < 1)
-      multiplier += 1;
+    const multiplier = get(boundedMultiplier);
 
     const knownPrefix = findAddressKnownPrefix(address);
 
@@ -60,7 +61,7 @@ export function useScramble(): UseScrambleReturn {
   };
 
   const scrambleInteger = (number: number, min = 0, max = -1): number => {
-    const multiplied = Math.floor(number * number * get(scrambleMultiplier)) + min;
+    const multiplied = Math.floor(number * number * get(boundedMultiplier)) + min;
 
     if (max > -1)
       return (multiplied % (max - min)) + min;
@@ -83,15 +84,14 @@ export function useScramble(): UseScrambleReturn {
     if (!get(scrambleData))
       return timestamp;
 
-    let multiplier = +get(scrambleMultiplier);
-    if (multiplier < 1)
-      multiplier += 1;
+    const multiplier = get(boundedMultiplier);
 
     /**
-     * Deterministic offset using prime-based factors to ensure all date
-     * components (day, month, year, hour, minute, second) are scrambled.
-     * Past dates stay in the past, future dates stay in the future.
-     * Pure offset preserves ordering: if A < B then scramble(A) < scramble(B).
+     * Deterministic offset built from prime factors, so every date component is scrambled: day,
+     * month, year, hour, minute and second. Past dates stay past and future dates stay future.
+     *
+     * A pure offset also preserves ordering, so a date that sorted before another still does after
+     * scrambling.
      */
     const offsetSeconds = multiplier * 13 * 86400
       + multiplier * 7 * 3600

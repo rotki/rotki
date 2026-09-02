@@ -2,6 +2,14 @@ import type { UseNotificationCooldownReturn } from '../use-notification-cooldown
 import type { NotificationStrategy } from './types';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
+/**
+ * Collapses repeat notifications sharing a group into one row, updated in place.
+ *
+ * @remarks
+ * Whether a notification interrupts is the cooldown's decision, never the absence of an existing
+ * entry. The notification list starts empty on every login, so a group with no entry yet is not
+ * thereby new to the user, and treating it as new would re-interrupt on each login.
+ */
 export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownReturn): NotificationStrategy {
   return {
     process(payload, context): ReturnType<NotificationStrategy['process']> {
@@ -14,8 +22,6 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
       const suppressed = cooldown.shouldSuppress(groupToFind);
 
       if (existingIndex === -1) {
-        // Having no entry yet does not make this new to the user: the list starts empty on every
-        // login, which is why an unresolved condition used to interrupt again at each one.
         const notification = createNotification(context.getNextId(), {
           ...payload,
           display: (payload.display ?? false) && !suppressed,

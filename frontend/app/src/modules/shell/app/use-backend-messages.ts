@@ -100,15 +100,11 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   });
 
   onBeforeMount(() => {
-    // 1. First, synchronously check for any startup error that occurred before mount.
-    // This guarantees we don't miss errors that happened before the Vue app was ready.
     const pendingError = getStartupError();
     if (pendingError) {
       handleStartupError(pendingError.message, pendingError.code);
     }
 
-    // 2. Set up listeners for future async errors and other IPC messages.
-    // This also signals to the main process that the renderer is ready.
     setupListeners({
       onAbout: () => set(showAbout, true),
       onError: (message: string, code: BackendCode) => {
@@ -121,21 +117,22 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
           handler(oAuthResult);
         });
       },
+      /**
+       * Tears the app down for a quit the main process has already decided on.
+       *
+       * @remarks
+       * The order is load-bearing: `startQuitting` swaps the UI for the shutdown screen,
+       * which unmounts the notification popup. Halting activity or stopping requests before
+       * that lets requests unwinding against the dying backend surface errors over a window
+       * that is on its way out.
+       */
       onAppClosing: () => {
-        // The app is quitting. Swap the UI for the shutdown screen first: that
-        // unmounts the notification popup, so requests still unwinding against
-        // the dying backend cannot surface errors over a closing window.
         startQuitting();
         haltBackendActivity();
         api.stopRequests();
       },
       onResetDebugState: (group: DebugStateGroup) => {
-        // The storage-backed refs keep their value in memory, so the wipe only
-        // becomes visible after a reload. Nothing removed means nothing to show,
-        // including the unknown-group case, so don't throw the app through one.
-        // Best-effort rather than atomic: the reload is scheduled, not immediate,
-        // so a storage-backed ref that mutates before unload can write its key
-        // back. Acceptable for a development-only action.
+        // Storage-backed refs hold their value in memory, so a wipe only shows after a reload.
         if (resetDebugState(group).length > 0)
           window.location.reload();
       },

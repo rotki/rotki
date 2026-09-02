@@ -46,7 +46,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   };
 
   function handleBridgeNotification(notification: WalletBridgeNotification): void {
-    // Special handling for notifications
     if (notification.type === BRIDGE_NOTIFICATION_TYPES.CLOSE_TAB) {
       logger.info('Received close_tab notification, attempting to close browser tab');
       try {
@@ -90,7 +89,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
         return;
       }
 
-      // Handle RPC requests
       if (isWalletBridgeRequest(message)) {
         handleWalletBridgeRequest(message);
       }
@@ -113,7 +111,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   };
 
   const getWebSocketUrl = (): string => {
-    // Get the current window location to determine the HTTP port
     const currentPort = defaultWindow?.location.port;
     if (currentPort) {
       // WebSocket server runs on HTTP port + 1
@@ -198,12 +195,10 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
         set(ws, undefined);
         set(isConnected, false);
 
-        // Only retry if this wasn't an intentional disconnect and reconnection is not prevented
         if (!get(intentionalDisconnect) && !get(preventReconnect)) {
           scheduleRetry(retryCount);
         }
         else {
-          // Reset the flag for future connections
           set(intentionalDisconnect, false);
           set(isConnecting, false);
         }
@@ -238,7 +233,13 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     }
   }
 
-  // Create message handler with WebSocket sending capability
+  /**
+   * Sends one message over the bridge socket as JSON.
+   *
+   * @remarks
+   * The message is dropped without error while the socket is not open, so a return from here is
+   * not evidence that anything was delivered.
+   */
   function sendMessage(message: any): void {
     const wsInstance = get(ws);
     if (wsInstance?.readyState === WebSocket.OPEN) {

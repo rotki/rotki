@@ -11,13 +11,15 @@ import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components
 
 const TS = 1_600_000_000;
 
+const mockConversion = {
+  isUsd: ref<boolean>(true),
+  loading: ref<boolean>(false),
+  rate: ref<BigNumber>(One),
+  rateReady: ref<boolean>(true),
+};
+
 vi.mock('@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion', () => ({
-  useHistoricFiatConversion: (): { isUsd: Ref<boolean>; loading: Ref<boolean>; rate: Ref<BigNumber>; rateReady: Ref<boolean> } => ({
-    isUsd: ref(true),
-    loading: ref(false),
-    rate: ref(One),
-    rateReady: ref(true),
-  }),
+  useHistoricFiatConversion: (): { isUsd: Ref<boolean>; loading: Ref<boolean>; rate: Ref<BigNumber>; rateReady: Ref<boolean> } => mockConversion,
 }));
 
 function createSnapshot(): Snapshot {
@@ -111,6 +113,8 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog', ()
 
   beforeEach(() => {
     setActivePinia(createPinia());
+    set(mockConversion.isUsd, true);
+    set(mockConversion.rate, One);
     handlerErrors.length = 0;
     wrapper = createWrapper();
   });
@@ -128,9 +132,20 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog', ()
     expect(mutation.balance.usdValue.toNumber()).toBe(250);
   });
 
-  // The schema gates the category and the location only, so the save path is what has to hold the
-  // line on the two text fields. A cleared one used to throw on parse; a fallback would have
-  // written a nought nobody typed into the snapshot.
+  it('should pre-fill an edit with the stored USD value, unconverted', async () => {
+    set(mockConversion.isUsd, false);
+    set(mockConversion.rate, bigNumberify(0.85));
+    wrapper.unmount();
+    wrapper = createWrapper();
+
+    wrapper.vm.openEdit({ ...createSnapshot().balancesSnapshot[0], index: 0 });
+    await nextTick();
+
+    const model = wrapper.findComponent({ name: 'EditBalancesSnapshotForm' }).props('modelValue');
+    expect(model.usdValue).toBe('100');
+    expect(model.amount).toBe('1');
+  });
+
   it.each([
     ['a cleared amount', '', '250'],
     ['a cleared value', '2', ''],
@@ -159,12 +174,9 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog', ()
     expect(mutation.location).toEqual([{ location: 'kraken', usdValue: bigNumberify(250) }]);
   });
 
-  // The location preview and the overdrawn-location check read the same field on every keystroke,
-  // where a throw takes the dialog down rather than surfacing as a bad number.
   it('should keep rendering while the value field holds no number', async () => {
     await openAddWith('2', '1.2.3');
 
-    // Nothing readable was entered, so the location is previewed as unchanged.
     const preview = wrapper.findComponent({ name: 'EditBalancesSnapshotForm' }).props('previewLocationBalance');
     expect(preview.before.toNumber()).toBe(100);
     expect(preview.after.toNumber()).toBe(100);

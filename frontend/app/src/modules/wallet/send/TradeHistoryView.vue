@@ -75,7 +75,7 @@ const tabs = computed<{ label: string; transactions: RecentTransaction[] }[]>(()
       <RuiCard
         divide
         no-padding
-        content-class="overflow-hidden"
+        :class-names="{ content: 'overflow-hidden' }"
       >
         <template #header>
           {{ t('trade.recent_transactions.title') }}

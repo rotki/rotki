@@ -36,7 +36,6 @@ class FakeWebSocket {
     this.readyState = 3;
   }
 
-  // test helpers
   open(): void {
     this.readyState = FakeWebSocket.OPEN;
     this.onopen?.({});

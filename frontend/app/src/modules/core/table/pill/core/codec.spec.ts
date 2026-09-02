@@ -94,11 +94,7 @@ describe('pill codec', () => {
       expect(matchesFromState(state, fields).matches).toStrictEqual({ protocols: ['!aave'] });
     });
 
-    // The other half of the exclusion contract, and the reason a field must not offer `is_not`
-    // unless it declares `allowExclusion`: here the operator is silently dropped and the filter
-    // applies as `is`, which the user has no way of seeing. Enforced at the source in
-    // `toMatchFieldDef`, which does not offer the operator to a field that cannot express it.
-    it('should drop is_not on a field that does not allow exclusion', () => {
+    it('should drop is_not and apply as is on a field that does not allow exclusion', () => {
       const state: FilterState = [{ fieldKey: 'assets', op: 'is_not', values: ['ETH'] }];
 
       expect(matchesFromState(state, fields).matches).toStrictEqual({ assets: ['ETH'] });
@@ -109,9 +105,7 @@ describe('pill codec', () => {
       expect(matchesFromState(state, fields).matches).toStrictEqual({ excludeIgnoredAssets: true });
     });
 
-    // A param-bound boolean is consumed as a boolean (a toggle's model, a request flag), so it
-    // must not be stringified into `'true'` on the way out the way other param values are.
-    it('should route a param-bound boolean into params as a real boolean', () => {
+    it('should route a param-bound boolean into params as a real boolean, not a stringified one', () => {
       const state: FilterState = [{ fieldKey: 'ignored', op: 'is', values: [] }];
       expect(matchesFromState(state, [...fields, showIgnored])).toStrictEqual({
         matches: {},
@@ -210,6 +204,12 @@ describe('pill codec', () => {
       expect(stateFromMatches({ excludeIgnoredAssets: false }, {}, fields)).toStrictEqual([]);
     });
 
+    it('should drop a stored key naming a field the table does not have', () => {
+      const state = stateFromMatches({ gone: ['whatever'], protocols: ['aave'] }, { alsoGone: ['x'] }, fields);
+
+      expect(state).toStrictEqual([{ fieldKey: 'protocols', op: 'is', values: ['aave'] }]);
+    });
+
     it('should rebuild a param-bound field from params', () => {
       const state = stateFromMatches({}, { locationLabels: ['0xaaa', '0xbbb'] }, fields);
       expect(state).toStrictEqual([{ fieldKey: 'account', op: 'is', values: ['0xaaa', '0xbbb'] }]);
@@ -254,8 +254,7 @@ describe('pill codec', () => {
       expect(stateFromMatches(matches, params, fields)).toStrictEqual(state);
     });
   });
-  // What the bar asks before dropping a pill whose editor closed untouched, so "empty" means
-  // exactly what the serializer means by it.
+
   describe('hasWritableValue', () => {
     it('should call a field with no value empty', () => {
       expect(hasWritableValue(protocol, { fieldKey: 'protocols', op: 'is', values: [] })).toBe(false);
@@ -269,9 +268,7 @@ describe('pill codec', () => {
       expect(hasWritableValue(period, { fieldKey: 'period', op: 'before', date: { to: '1' }, values: [] })).toBe(true);
     });
 
-    // Presence is the whole value: a boolean field is on the moment it is added, so it is never
-    // the empty pill the bar cleans up.
-    it('should never call a boolean field empty', () => {
+    it('should never call a boolean field empty, since presence is the whole value', () => {
       expect(hasWritableValue(ignored, { fieldKey: 'ignored', op: 'is', values: [] })).toBe(true);
     });
   });

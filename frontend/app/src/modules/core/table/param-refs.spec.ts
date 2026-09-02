@@ -31,8 +31,7 @@ describe('stringParam', () => {
     expect(get(model)).toBe('');
   });
 
-  // The url is the user's to write, so a value the table cannot honour must not reach the request.
-  it('should refuse a value it does not admit', () => {
+  it('should refuse a value it does not admit, a url being the user\'s to write', () => {
     const model = ref<string>('');
     stringParam(model, { admit: value => value === 'kraken' }).read('nonsense');
     expect(get(model)).toBe('');
@@ -70,15 +69,12 @@ describe('listParam', () => {
     expect(get(model)).toStrictEqual(['0xabc', '0xdef']);
   });
 
-  // The url half stringifies an array to exactly this, so writing the list back joined would put
-  // the joined string in the request payload as well.
-  it('should write the list itself even when the url carries it joined', () => {
+  it('should write the list itself even when the url carries it joined, so the joined string never reaches the request payload', () => {
     const model = ref<string[]>(['0xabc', '0xdef']);
     expect(listParam(model, { separator: ',' }).write()).toStrictEqual(['0xabc', '0xdef']);
   });
 
-  // A trailing separator would otherwise read as an empty id and be sent on as one.
-  it('should drop empty entries when splitting', () => {
+  it('should drop empty entries when splitting, a trailing separator reading as an empty id', () => {
     const model = ref<string[]>([]);
     listParam(model, { separator: ',' }).read('0xabc,');
     expect(get(model)).toStrictEqual(['0xabc']);
@@ -109,8 +105,7 @@ describe('enumParam', () => {
     expect(get(model)).toBe(Handling.ONLY);
   });
 
-  // Sent on to the backend otherwise, while the pill claimed the default.
-  it('should fall back on a value the set does not contain', () => {
+  it('should fall back on a value the set does not contain, rather than send it on', () => {
     const model = ref<Handling>(Handling.ONLY);
     enumParam(model, isHandling, Handling.EXCLUDE).read('nonsense');
     expect(get(model)).toBe(Handling.EXCLUDE);
@@ -138,8 +133,7 @@ describe('refParams', () => {
     expect(toValue(source.values)).toStrictEqual({ strictBlockchain: true, tags: ['a'] });
   });
 
-  // The whole point: one declaration drives both halves, so they cannot describe different keys.
-  it('should round-trip a query back through the same keys', () => {
+  it('should round-trip a query back through the same keys, one declaration driving both halves', () => {
     const tags = ref<string[]>([]);
     const strict = ref<boolean>(false);
     const source = refParams({ strictBlockchain: boolParam(strict), tags: listParam(tags) }, { to: 'both' });
@@ -151,9 +145,7 @@ describe('refParams', () => {
     expect(toValue(source.values)).toStrictEqual({ strictBlockchain: true, tags: ['a', 'b'] });
   });
 
-  // The url carries a list joined and the request carries it as a list. Both come off one
-  // declaration, so the shape the source emits has to survive the trip through the url form.
-  it('should round-trip a list through its joined url form', () => {
+  it('should round-trip a list through its joined url form, since one declaration serves both the url and the request', () => {
     const tags = ref<string[]>(['a', 'b']);
     const source = refParams({ tags: listParam(tags, { separator: ',' }) }, { to: 'both' });
 
@@ -166,9 +158,7 @@ describe('refParams', () => {
     expect(get(tags)).toStrictEqual(['a', 'b']);
   });
 
-  // A key the query omits has to be cleared, not left holding what a previous route put there:
-  // removing a pill is how a filter is turned off.
-  it('should clear a key the query no longer carries', () => {
+  it('should clear a key the query no longer carries, rather than leave it holding what a previous route put there', () => {
     const tags = ref<string[]>(['stale']);
     const source = refParams({ tags: listParam(tags) }, { to: 'both' });
 

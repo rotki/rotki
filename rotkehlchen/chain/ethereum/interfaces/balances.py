@@ -1,7 +1,7 @@
 import abc
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -69,6 +69,10 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'beets-v3',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
+# The only entry type addresses_with_activity() can ever match. Shared with the caller that
+# builds the counterparty gate so the two cannot drift apart: a gate computed over fewer entry
+# types than the query it short-circuits would skip protocols the user actually has.
+ACTIVITY_ENTRY_TYPES: Final = (HistoryBaseEntryType.EVM_EVENT,)
 
 
 class ProtocolWithBalance(abc.ABC):
@@ -93,6 +97,25 @@ class ProtocolWithBalance(abc.ABC):
         self.tx_decoder = tx_decoder
         self.deposit_event_types = deposit_event_types
         self.excluded_addresses = excluded_addresses
+        # Counterparties the user has any events for on this chain, or None when the caller did
+        # not supply them. Set by query_protocols_with_balance so that the protocols the user
+        # never touched skip their activity query. None means "unknown", not "none": every
+        # query runs, which is what a caller constructing this class on its own gets.
+        self.chain_counterparties: set[str] | None = None
+
+    def counterparty_is_absent_from_chain(self) -> bool:
+        """Whether the chain is known to hold no events for this protocol's counterparty.
+
+        Guards the event queries that filter on `counterparty = self.counterparty`: those can
+        only come back empty here, and skipping them is what makes a balance refresh cost one
+        events query per chain rather than one per protocol.
+
+        False when the caller supplied no counterparties, since unknown is not absent.
+        """
+        return (
+            self.chain_counterparties is not None and
+            self.counterparty not in self.chain_counterparties
+        )
 
     def addresses_with_activity(
             self,
@@ -104,12 +127,15 @@ class ProtocolWithBalance(abc.ABC):
         Query events for addresses having performed a certain activity. It returns
         a mapping of the address that made the activity to the event returned by the filter.
         """
+        if self.counterparty_is_absent_from_chain():
+            return {}
+
         db_filter = EvmEventFilterQuery.make(
             assets=assets,
             counterparties=[self.counterparty],
             type_and_subtype_combinations=event_types,
             location=Location.from_chain_id(self.evm_inquirer.chain_id),
-            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT]),
+            entry_types=IncludeExcludeFilterData(values=list(ACTIVITY_ENTRY_TYPES)),
             excluded_addresses=self.excluded_addresses,
             location_labels=[str(address) for address in location_labels],
         )

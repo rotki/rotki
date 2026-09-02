@@ -30,7 +30,6 @@ export class ChainsSettingsPage {
     await expect(category.locator('[data-testid=chains-to-skip-detection]')).toBeVisible();
   }
 
-  // Indexer Order Settings
   getIndexerOrderSection() {
     return this.page.locator('[data-testid=indexer-order-setting]');
   }
@@ -69,7 +68,6 @@ export class ChainsSettingsPage {
     await expect(this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`)).not.toBeAttached();
   }
 
-  // Chains to Skip Detection Settings
   async selectChainToIgnore(value: string, waitForMessageToDisappear: boolean = true): Promise<void> {
     const field = this.page.locator('[data-testid=chains-to-skip-detection]');
     if (await field.locator(`[data-value=${value}]`).first().isVisible()) {
@@ -94,7 +92,6 @@ export class ChainsSettingsPage {
       'EVM Chains for which to skip automatic token detection saved successfully',
     );
 
-    // Only wait for message to disappear on the last chain
     if (waitForMessageToDisappear) {
       await expect(this.page.locator('[data-testid=chains-to-skip-detection] .details')).toBeEmpty();
     }

@@ -2,21 +2,12 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 
-// Re-exported here (the highlight-navigation module) so consumers that already depend on it can
-// pull in the route-derived highlight targets without an extra import dependency.
 export { useHistoryEventHighlights } from '@/modules/history/events/use-history-event-highlights';
 
 /**
- * Timing constants that coordinate highlight navigation with the pagination system.
- * Derived from a single base debounce so they stay in sync.
- *
- * - Loading-start timeout is 5x the filter debounce, giving the loading state
- *   enough headroom to become true before we wait for it to finish.
- *
- * There is no longer a table-fetch debounce: the Stage 3 reducer resets the page in the
- * same reduction as the filter change, so one user action produces one payload change
- * and one fetch. The old `HIGHLIGHT_FETCH_DEBOUNCE` (2x the base) existed only to
- * coalesce that cascade and is gone.
+ * Timing constants coordinating highlight navigation with pagination, derived from one base debounce
+ * so they stay in sync. The loading-start timeout is 5x the filter debounce, so the loading state
+ * has headroom to become true before we wait for it to finish.
  */
 export const HIGHLIGHT_FILTER_DEBOUNCE = 100;
 
@@ -105,9 +96,12 @@ export const useHistoryEventNavigation = createSharedComposable(() => {
 
   /**
    * Find the page containing the highest-priority highlighted event within the given filters.
-   * Uses highlightTargets as the sole source of truth for which candidates to check.
-   * Tries candidates in priority order (green > yellow > red).
-   * Returns the 1-based page number, or -1 if no highlighted event is found.
+   *
+   * @remarks
+   * `highlightTargets` is the sole source of truth for which candidates to check, and they are tried
+   * in priority order: green, then yellow, then red.
+   *
+   * @returns the 1-based page number, or `-1` when no highlighted event is found
    */
   async function findHighlightPage(
     filterPayload: HistoryEventRequestPayload,

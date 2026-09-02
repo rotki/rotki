@@ -236,6 +236,33 @@ describe('useUnlockFlowController', () => {
     expect(get(controller.state).kind).toBe(UnlockPhase.ready);
   });
 
+  it('should not report loading while the update prompt waits on the user', async () => {
+    h.checkUpdate.mockResolvedValue(ok(some({ upToVersion: 9 })));
+
+    await controller.startLogin({ password: 'p', username: 'alice' });
+    await flushPromises();
+
+    expect(get(controller.state).kind).toBe(UnlockPhase.updatePrompt);
+    expect(get(controller.loading)).toBe(false);
+  });
+
+  it('should not report loading while an auto-unlock runs in the background', async () => {
+    let release!: () => void;
+    h.login.mockImplementation(async () => new Promise((resolve) => {
+      release = (): void => resolve(ok(undefined));
+    }));
+
+    const pending = controller.startAuto();
+    await flushPromises();
+
+    expect(get(controller.state).kind).toBe(UnlockPhase.unlocking);
+    expect(get(controller.loading)).toBe(false);
+
+    release();
+    await pending;
+    await flushPromises();
+  });
+
   it('should ignore a second start while a flow is already in flight', async () => {
     h.checkUpdate.mockResolvedValue(ok(some({ upToVersion: 9 })));
 

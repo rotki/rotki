@@ -35,9 +35,7 @@ describe('toCounterpartyMappingFields', () => {
     ]);
   });
 
-  // The same protocol kind history and the accounting rules use, so a counterparty reads alike
-  // wherever it is filtered on.
-  it('should draw the counterparty as the shared protocol pill', () => {
+  it('should draw the counterparty as the shared protocol pill, the same one history and accounting rules use', () => {
     const [counterparty] = fields();
 
     expect(counterparty.display).toBe(DisplayKinds.COUNTERPARTY);

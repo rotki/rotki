@@ -36,10 +36,7 @@ interface UseBalanceDivergenceReturn {
   clear: () => void;
 }
 
-/**
- * Runs the balance divergence query as a task and exposes its state plus the derived boundary
- * events used to render (and navigate to) the last matching and first diverged history events.
- */
+/** Runs the balance divergence query as a task, exposing its state and the boundary events. */
 export function useBalanceDivergence(): UseBalanceDivergenceReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { findHistoricalBalanceDivergence } = useHistoricalBalancesApi();
@@ -109,11 +106,6 @@ export function useBalanceDivergence(): UseBalanceDivergenceReturn {
   async function run(
     payload: HistoricalBalanceDivergencePayload,
   ): Promise<Result<Option<HistoricalBalanceDivergenceResponse>, DivergenceError>> {
-    // Per-request id keyed by the divergence target *and the tolerance* so concurrent panels don't
-    // dedup, and so re-asking with a different tolerance is not answered by the previous request.
-    // The response rides on the outcome rather than a closure local: a deduped caller's `run` never
-    // executes, and the resulting `undefined` fell into the `ok(none)` branch — reporting "no
-    // divergence found" for a run that had found one.
     const outcome = await submitTask<HistoricalBalanceDivergenceResponse>({
       id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0),
       kind: ActivityKind.HISTORICAL_BALANCES,

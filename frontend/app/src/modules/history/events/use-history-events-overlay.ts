@@ -15,16 +15,16 @@ interface UseHistoryEventsOverlayReturn {
 /**
  * The accounting overlay: the known balance after each event.
  *
- * It keys off each event's own (account, asset) pair, so it needs no filter of its own. Gated by
- * VITE_ACCOUNTING_UPDATE, derived at build/dev time from the backend's ROTKI_ACCOUNTING_UPDATE (see
- * vite.config.ts), so it only appears where the backend serves it.
+ * Keys off each event's own (account, asset) pair, so it needs no filter. Gated by
+ * VITE_ACCOUNTING_UPDATE (from the backend's ROTKI_ACCOUNTING_UPDATE, see vite.config.ts), so it
+ * only appears where the backend serves it.
  *
- * `mode` is synced through the router query by useHistoryEventsFilters' queryParamsOnly: it rides
- * along with pagination instead of being clobbered by it, and is NOT persisted across sessions.
- * Fresh navigation to history resets it to 'none' (empty query), while browser/in-app back restores
- * it from the history entry's query. Only the main page syncs (history: 'router').
+ * `mode` rides the router query via `useHistoryEventsFilters`' `queryParamsOnly` rather than being
+ * clobbered by pagination, and is NOT persisted across sessions: fresh navigation resets it to
+ * 'none', back restores it from the history entry. Only the main page syncs.
  *
- * Provides itself to the rows that read it, so the caller only wires the toggles.
+ * A completed history sync lands new events whose historical balances may have shifted, so the
+ * whole overlay is refreshed then; a hidden overlay stays idle.
  */
 export function useHistoryEventsOverlay(
   mode: MaybeRefOrGetter<OverlayMode>,
@@ -32,8 +32,6 @@ export function useHistoryEventsOverlay(
 ): UseHistoryEventsOverlayReturn {
   const available = isAccountingUpdateEnabled();
 
-  // The build flag is required too, so the 'balance' choice cannot enable it where the backend
-  // would reject every call.
   const enabled = computed<boolean>(() => available && toValue(mode) === OverlayMode.BALANCE);
 
   const pairs = computed<OverlayPair[]>(() => {
@@ -51,9 +49,6 @@ export function useHistoryEventsOverlay(
 
   provideAccountingOverlay({ enabled, overlay });
 
-  // When the history sync (tx query + exchange events + decoding) completes, new events have landed
-  // and their historical balances may have shifted, so the whole overlay is refreshed to re-resolve
-  // every visible row against the updated series. Guarded so a hidden overlay stays idle.
   const { syncCompleted } = useSyncCompleted();
   watch(syncCompleted, async () => {
     if (get(enabled))

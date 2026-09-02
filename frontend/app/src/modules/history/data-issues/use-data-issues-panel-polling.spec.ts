@@ -106,10 +106,7 @@ describe('useDataIssuesPanelPolling', () => {
     panel.unmount();
   });
 
-  // Under <KeepAlive> the panel's reactivity stays live while hidden, so a row that
-  // starts remediating in the background still fires the watcher. Without the
-  // activation gate that would restart the poll on a panel nobody is looking at.
-  it('should not start polling for a row that begins remediating while hidden', async () => {
+  it('should not start polling for a row that begins remediating while hidden, since KeepAlive leaves the watcher live on a panel nobody is looking at', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
     const remediating = ref<boolean>(false);
     const panel = mountPanel(remediating, reload);

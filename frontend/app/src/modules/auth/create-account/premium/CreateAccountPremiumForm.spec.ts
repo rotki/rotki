@@ -1,20 +1,10 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { PremiumSetup } from '@/modules/auth/login';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, describe, expect, it } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, ref, type VNode } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import CreateAccountPremiumForm from '@/modules/auth/create-account/premium/CreateAccountPremiumForm.vue';
 import '@test/i18n';
-
-/**
- * Characterization of the vuelidate rules, written before the zod migration.
- *
- * The seam is what the form exposes to the step above it: the `valid` model that gates Continue in
- * `CreateAccountPremium.vue`, the `form` model the wizard submits, and the `error-messages` prop each
- * field receives. None of it is markup, so these tests survive the swap unchanged.
- */
-
-/** The stubs declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -27,15 +17,14 @@ function inputStub(name: string): Record<string, unknown> {
 
 interface Harness {
   wrapper: VueWrapper;
-  /** The credentials as the wizard step above holds them, after every write the form has made. */
   form: () => PremiumSetup;
-  /** The flag that gates the Continue button. */
   valid: () => boolean;
   setEnabled: (value: boolean) => void;
 }
 
 const KEY_FIELD = 'premium_credentials.label_api_key';
 const SECRET_FIELD = 'premium_credentials.label_api_secret';
+const VALID_SEED_AN_INVALID_FORM_MUST_OVERWRITE = true;
 
 describe('createAccountPremiumForm', () => {
   let harness: Harness;
@@ -50,8 +39,7 @@ describe('createAccountPremiumForm', () => {
 
   function createHarness(options: { enabled: boolean; setup?: PremiumSetup }): Harness {
     const form = ref<PremiumSetup>(options.setup ?? emptySetup());
-    // `valid` starts true so a test that asserts it turns false cannot pass on the initial value.
-    const valid = ref<boolean>(true);
+    const valid = ref<boolean>(VALID_SEED_AN_INVALID_FORM_MUST_OVERWRITE);
     const enabled = ref<boolean>(options.enabled);
 
     const parent = defineComponent({
@@ -162,10 +150,7 @@ describe('createAccountPremiumForm', () => {
       expect(messages(SECRET_FIELD)).toStrictEqual([]);
     });
 
-    // Vuelidate's `required` trims, so whitespace is the input that separates "present" from
-    // "non-empty". The `.trim` modifier on the template binding does not cover a value that
-    // arrives on the model from anywhere else.
-    it('should reject a whitespace-only api key', async () => {
+    it('should reject a whitespace-only api key arriving on the model rather than through the field', async () => {
       harness = createHarness({ enabled: true, setup: { apiKey: '   ', apiSecret: 'secret', syncDatabase: false } });
       await edit(KEY_FIELD, '   ');
 
@@ -188,8 +173,6 @@ describe('createAccountPremiumForm', () => {
     });
   });
 
-  // The rules read `enabled` through `requiredIf`, so they have to re-evaluate when the user
-  // changes their mind. Under zod this becomes a schema that must stay reactive.
   describe('when premium is toggled', () => {
     it('should turn valid on as soon as premium is declined', async () => {
       harness = createHarness({ enabled: true });

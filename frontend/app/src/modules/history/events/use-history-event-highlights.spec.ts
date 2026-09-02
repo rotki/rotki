@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { useHistoryEventHighlights } from './use-history-event-highlights';
 
-// `mock`-prefixed so it can be referenced inside the hoisted vi.mock factory.
 let mockQuery: Record<string, unknown> = {};
 
 vi.mock('vue-router', () => ({

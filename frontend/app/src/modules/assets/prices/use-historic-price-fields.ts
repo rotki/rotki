@@ -20,12 +20,9 @@ export const HistoricPriceFilterKeys = {
  */
 export function useHistoricPriceFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
-  // Asset resolution is the same for every table filtering on one, so it comes from one place.
   const shared = useSharedFieldResolvers();
   const { assetSearch } = useAssetInfoRetrieval();
 
-  // Built once: the search is debounced, and rebuilding it would hand each keystroke a fresh timer
-  // that cancels nothing.
   const searchAsset = assetSuggestions(assetSearch);
 
   return [

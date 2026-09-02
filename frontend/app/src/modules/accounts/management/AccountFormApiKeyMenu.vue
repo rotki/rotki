@@ -57,24 +57,30 @@ async function dismiss(): Promise<void> {
     logger.error(`failed to dismiss the ${service} api key notice: ${status.message}`);
 }
 
-// `RuiMenu` supplies neither the disclosure semantics nor the focus move, so both are wired here.
-// Without the move, the popover is teleported to the end of the document and a keyboard user
-// reaches its link only after tabbing through the rest of the page.
-watch(open, async (isOpen) => {
+/**
+ * Moves focus into the panel when it opens and back to the activator when it closes.
+ *
+ * @remarks
+ * `RuiMenu` does not do this itself. Without it the popover is teleported to the end of the
+ * document, so a keyboard user reaches its link only after tabbing through the rest of the page.
+ */
+async function followFocusIntoPanel(isOpen: boolean): Promise<void> {
   await nextTick();
   if (isOpen)
     get(panel)?.focus();
   else
     get(activator)?.focus();
-});
+}
+
+watch(open, followFocusIntoPanel);
 </script>
 
 <template>
   <RuiMenu
     v-if="visible"
     v-model="open"
-    menu-class="w-[26rem] max-w-[90vw]"
-    :popper="{ placement: 'bottom-end' }"
+    :class-names="{ menu: 'w-[26rem] max-w-[90vw]' }"
+    :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

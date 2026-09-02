@@ -13,8 +13,6 @@ const { breakdown } = defineProps<{
   breakdown?: AssetBreakdownOptions;
 }>();
 
-// Read per field with `??` rather than spreading the bag over defaults: a caller forwarding its own
-// optional value passes a present key holding `undefined`, which a spread would take as the value.
 const isLiability = computed<boolean>(() => breakdown?.isLiability ?? false);
 
 const hideBreakdown = computed<boolean>(() => breakdown?.hide ?? false);

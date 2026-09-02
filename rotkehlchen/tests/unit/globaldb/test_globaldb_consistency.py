@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -8,6 +9,7 @@ from urllib import request
 from warnings import warn
 
 import pytest
+from packaging.version import Version
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
@@ -45,6 +47,26 @@ ASSET_COLLECTION_UPDATE: Final = 'INSERT INTO asset_collections(id, name, symbol
 ASSET_MAPPING: Final = 'INSERT INTO multiasset_mappings(collection_id, asset) VALUES ({collection}, "{id}");'  # noqa: E501
 ASSET_UPDATE: Final = "[('{address}', Chain.{chain_name}, '{coingecko}', '{cryptocompare}', {field_updates}, '{protocol}', {underlying_token_addresses})],"  # noqa: E501
 NON_EVM_ASSET_INSERT = "INSERT INTO assets(identifier, name, type) VALUES('{identifier}', '{name}', '{type}'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('{identifier}', '{symbol}', '{coingecko}', '{cryptocompare}', {forked}, {started}, {swapped_for});"  # noqa: E501
+
+
+def _latest_released_version() -> Version:
+    """Read the latest released version out of the changelog.
+
+    Read rather than hardcoded so a release can not leave this pointing at an older version
+    than the one the remote updates gate themselves against.
+    """
+    changelog = (Path(__file__).parents[4] / 'docs' / 'changelog.rst').read_text(encoding='utf8')
+    if (match := re.search(r'^\* :release:`(\d+\.\d+\.\d+) <', changelog, re.MULTILINE)) is None:
+        raise AssertionError('Could not find the latest release in docs/changelog.rst')
+
+    return Version(match.group(1))
+
+
+_LATEST_RELEASE: Final = _latest_released_version()
+SHIPPABLE_VERSIONS: Final = (  # every version line that can still be released from here
+    f'{_LATEST_RELEASE.major}.{_LATEST_RELEASE.minor}.{_LATEST_RELEASE.micro + 1}',  # next patch, off bugfixes  # noqa: E501
+    f'{_LATEST_RELEASE.major}.{_LATEST_RELEASE.minor + 1}.0',  # next minor, off develop
+)
 IGNORED_PROTOCOLS: Final = {
     CPT_CURVE,
     CPT_YEARN_V1,
@@ -477,11 +499,12 @@ def test_oracle_ids_in_asset_collections(globaldb: GlobalDBHandler):
 
 
 @requires_env([TestEnvironment.STANDARD])  # skip in nightlies due to github api rate limits
-@pytest.mark.parametrize('our_version', ['1.43.0'])  # set latest version so data can be updated
+@pytest.mark.parametrize('target_version', SHIPPABLE_VERSIONS)
 def test_remote_updates_consistency_with_packaged_db(
         tmpdir_factory: pytest.TempdirFactory,
         messages_aggregator: MessagesAggregator,
         data_updater: RotkiDataUpdater,
+        target_version: str,
 ):
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
@@ -504,6 +527,7 @@ def test_remote_updates_consistency_with_packaged_db(
         sql_vm_instructions_cb=0,
         messages_aggregator=messages_aggregator,
     )
+    data_updater.version = Version(target_version)  # what update_single() gates min_version on
     data_updater.check_for_updates(updates=[
         UpdateType.LOCATION_ASSET_MAPPINGS,
         UpdateType.COUNTERPARTY_ASSET_MAPPINGS,

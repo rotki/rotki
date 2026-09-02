@@ -40,9 +40,6 @@ const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('ass
 
 const { allEvmChains } = useSupportedChains();
 
-// Read off the payload rather than the form state below, which keeps this side of the form free of
-// the state it has not created yet. Every edit is mirrored into the payload on a pre-flush watcher,
-// so what these answer is current by the time anything renders or validates.
 const identifier = computed<string>(() => get(modelValue).identifier);
 
 const {
@@ -71,8 +68,6 @@ const schema = computed<ZodType>(() => managedAssetSchema({
   requiresAddress: get(isTokenRequiresAddress),
 }));
 
-// The inputs bind into `form.state` directly. Mapping the optional text fields to a string once,
-// here, is what saves every one of them a writable computed of its own.
 const form = useMappedModelForm<SupportedAsset, ManagedAssetFormState>({
   model: modelValue,
   schema,
@@ -85,8 +80,6 @@ const form = useMappedModelForm<SupportedAsset, ManagedAssetFormState>({
 const startedModel = startedEpochModel(toRef(form.state, 'started'));
 const decimalsModel = decimalsTextModel(toRef(form.state, 'decimals'));
 
-// The lookup writes what it found into the payload, which the mirroring brings back into the state,
-// so a filled-in name lands in the input the same way a typed one does.
 const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup({
   address: () => form.state.address,
   asset: modelValue,
@@ -350,7 +343,7 @@ defineExpose({
       <RuiAccordions>
         <RuiAccordion
           header-grow
-          header-class="p-4"
+          :class-names="{ header: 'p-4' }"
         >
           <template #header>
             {{ t('asset_form.optional') }}

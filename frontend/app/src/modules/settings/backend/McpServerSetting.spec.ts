@@ -2,6 +2,7 @@ import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert } from '@rotki/common';
 import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { createMock } from '@test/utils/create-mock';
+import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -110,8 +111,6 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
         RuiSwitch: {
           emits: ['update:modelValue'],
           props: ['disabled', 'modelValue'],
-          // `data-model-value` exposes what the switch is bound to, so a test can
-          // tell the stored value from the one that was clicked.
           template: '<button v-bind="$attrs" class="rui-switch" :data-model-value="modelValue" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
         },
         GetPremiumPlaceholder: {
@@ -132,7 +131,6 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
  * asserting the wrong row.
  */
 function previewRow(wrapper: VueWrapper<InstanceType<typeof McpServerSetting>>, field: string): string[] {
-  // The group caption rows carry no header cell, hence the exists() guard before reading it.
   const row = wrapper.findAll('tbody tr').find((entry) => {
     const header = entry.find('th');
     return header.exists() && header.text() === field;
@@ -176,9 +174,6 @@ describe('mcpServerSetting', () => {
     grantMcpAccess(true);
     mocks.isPackaged = true;
     controlAvailable(true);
-    // The supervisor is the source of truth for both facts, so the stub keeps a
-    // stored preference the way starling does: a write changes what a later read
-    // answers, and the component is expected to read it back.
     storedAutoStart = false;
     control.serviceInfo.mockImplementation(async () => ({
       autostart: storedAutoStart,
@@ -221,8 +216,6 @@ describe('mcpServerSetting', () => {
     expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.balanced.description');
     expect(selector.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.raw.description');
     expect(wrapper.text()).toContain('backend_settings.settings.mcp_server.privacy_mode.preview.title');
-    // Balanced keeps the venue name readable under its own column, alongside the hash every
-    // identifier gets.
     expect(previewRow(wrapper, 'location_label')).toStrictEqual([
       'backend_settings.settings.mcp_server.privacy_mode.preview.not_set',
       'kraken',
@@ -243,15 +236,13 @@ describe('mcpServerSetting', () => {
    * location name, so the exchange row stays readable in balanced and is hashed in strict; the
    * on-chain row is address-shaped and is hashed in both.
    */
-  it('should mask the exchange account label only in strict mode', async () => {
+  it('should report the label as not sent in strict mode, which omits the column entirely', async () => {
     const repo = useSettingsRepo();
     repo.updateGeneral({ ...repo.general, mcpPrivacyMode: McpPrivacyMode.STRICT });
 
     const wrapper = createWrapper();
     await flushPromises();
 
-    // "not sent", not "not set": strict emits no such column, so querying it would fail rather
-    // than return null.
     expect(previewRow(wrapper, 'location_label')).toStrictEqual([
       'backend_settings.settings.mcp_server.privacy_mode.preview.not_sent',
       'backend_settings.settings.mcp_server.privacy_mode.preview.not_sent',
@@ -306,8 +297,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should leave the auto-start switch where it was when the write is refused', async () => {
-    // The failure mode this rules out: a switch that shows the new position while
-    // the next restart still uses the old one.
     control.setServiceAutostart.mockRejectedValueOnce(new Error('read-only file system'));
     const wrapper = createWrapper();
     await flushPromises();
@@ -350,8 +339,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should not offer the auto-start switch when the supervisor does not manage MCP', async () => {
-    // Offering it would post a write the supervisor refuses, and show the user
-    // its raw "invalid service" string.
     control.serviceInfo.mockResolvedValue({ autostart: false, state: StarlingServiceStatus.UNAVAILABLE });
     const wrapper = createWrapper();
     await flushPromises();
@@ -365,8 +352,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should keep the status chip current across an auto-start toggle', async () => {
-    // The read-back carries the state as well, so a server that stopped while the
-    // page was open is not reported as running afterwards.
     const wrapper = createWrapper();
     await flushPromises();
     control.serviceInfo.mockResolvedValue({ autostart: true, state: StarlingServiceStatus.READY });
@@ -400,7 +385,7 @@ describe('mcpServerSetting', () => {
   });
 
   it('should show a loading state before the initial status resolves', async () => {
-    control.serviceInfo.mockReturnValueOnce(new Promise(() => {}));
+    control.serviceInfo.mockReturnValueOnce(neverSettles());
 
     const wrapper = createWrapper();
     await nextTick();
@@ -420,8 +405,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should explain the absent control endpoint in an unauthenticated Docker deployment', async () => {
-    // starling only mounts `/_control` when a session key is configured, so the
-    // panel must say why rather than offer buttons that would 404.
     vi.stubEnv('VITE_DOCKER', 'true');
     mocks.isPackaged = false;
     controlUnavailable();
@@ -435,8 +418,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should drive the MCP lifecycle in Docker, not just describe it', async () => {
-    // The gap this closes: docker used to get a static notice saying the server
-    // is started for you, with no way to stop or restart it.
     vi.stubEnv('VITE_DOCKER', 'true');
     mocks.isPackaged = false;
     controlAvailable(false);
@@ -453,8 +434,6 @@ describe('mcpServerSetting', () => {
   });
 
   it('should let a Docker deployment opt out of starting MCP with the tree', async () => {
-    // Docker used to hardcode auto-start on, with no opt-out at any tier: the
-    // preference existed only as an Electron app setting.
     vi.stubEnv('VITE_DOCKER', 'true');
     mocks.isPackaged = false;
     controlAvailable(false);
@@ -589,8 +568,6 @@ describe('mcpServerSetting', () => {
     await flushPromises();
     expect(wrapper.find('[data-testid="mcp-lifecycle"]').exists()).toBe(false);
 
-    // capabilities arrive after mount, so the status is loaded regardless of the gate:
-    // unlocking must not leave the user with controls that have no state to act on
     grantMcpAccess(true);
     await flushPromises();
 

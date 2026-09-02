@@ -26,9 +26,7 @@ describe('autoDetectTokensCooldownSetting', () => {
     });
   }
 
-  // The visibility gate (v-if on autoDetectTokensOnLogin) now lives in GeneralSettingsCategory; this
-  // component always renders the field and only owns the numeric setting.
-  it('should render the cooldown input with the current value', async () => {
+  it('should always render the cooldown input, whose visibility gate the category owns', async () => {
     wrapper = createWrapper();
     await flushPromises();
 

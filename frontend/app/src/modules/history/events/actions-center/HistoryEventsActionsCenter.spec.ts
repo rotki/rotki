@@ -9,8 +9,6 @@ import HistoryEventsActionsCenter from '@/modules/history/events/actions-center/
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
 import { PinnedNames, toPinned } from '@/modules/session/types';
 
-// Declared at module scope (not `vi.hoisted`): the mock factories below only
-// dereference `state` from inside their inner arrows, which run once the tests do.
 const state = {
   categoryCount: ref(0),
   checking: ref(false),
@@ -59,16 +57,20 @@ function mountCenter(): VueWrapper<InstanceType<typeof HistoryEventsActionsCente
   return mount(HistoryEventsActionsCenter, { attachTo: document.body });
 }
 
-// The menu owns its open state internally, so tests drive it the way the menu
-// itself would: through the v-model the center binds to it.
+/**
+ * Opens the center's menu and resolves with its teleported list.
+ *
+ * @remarks
+ * The menu owns its open state, so it is driven through the v-model the center binds to it rather
+ * than by clicking the activator. The content is teleported and lands a tick or two after the open,
+ * hence the wait.
+ */
 async function openMenu(
   wrapper: VueWrapper<InstanceType<typeof HistoryEventsActionsCenter>>,
 ): Promise<VueWrapper> {
   wrapper.findComponent({ name: 'RuiMenu' }).vm.$emit('update:modelValue', true);
   await flushPromises();
-  // the menu teleports its content, which lands a tick or two after it opens.
-  // Found by name rather than by component: a generic SFC does not resolve as a
-  // constructor, so `findComponent(ActionCenterList)` types as a DOM wrapper.
+  // Found by name: a generic SFC is not a constructor, so passing it types as a DOM wrapper.
   return vi.waitFor(() => {
     const list = wrapper.findComponent({ name: 'ActionCenterList' });
     expect(list.exists()).toBe(true);
@@ -120,7 +122,7 @@ describe('modules/history/events/actions-center/HistoryEventsActionsCenter', () 
     expect(menu.find('[data-testid=actions-center-button]').exists()).toBe(true);
   });
 
-  it('should scan as soon as the history work is settled', () => {
+  it('should scan as soon as the history work is settled, including immediately on a page opened against an already-synced session', () => {
     mountCenter();
 
     expect(state.refreshAll).toHaveBeenCalledOnce();

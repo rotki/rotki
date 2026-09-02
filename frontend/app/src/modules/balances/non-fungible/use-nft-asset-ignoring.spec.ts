@@ -13,8 +13,6 @@ const { spies } = vi.hoisted(() => ({
   },
 }));
 
-// Mocked outright rather than spread over `...actual`: importActual evaluates the real
-// notifications graph, which costs ~1.2s to import.
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ showErrorMessage: spies.showErrorMessage }),
 }));

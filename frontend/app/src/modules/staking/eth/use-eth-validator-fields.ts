@@ -12,13 +12,23 @@ const selectableStatuses = validStatuses.filter(status => status !== 'all');
  * Declared directly rather than derived from matchers: a matcher exists to describe a field to the
  * old text bar, and this table only feeds the pill bar now.
  */
+/**
+ * Whether a value is a whole BLS public key, being 48 bytes of hex.
+ *
+ * @remarks
+ * Both this and the index are typed rather than picked, since an index is a number the user knows
+ * and neither has a list worth offering. Validating instead keeps a half-pasted key from being sent
+ * as a filter.
+ */
+function isBlsPublicKey(value: string): boolean {
+  return /^0x[\dA-Fa-f]{96}$/.test(value.trim());
+}
+
 export function useEthValidatorFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
 
   return [
     toMatchFieldDef({
-      // Typed, not picked: a validator index is a number the user knows, and there is no list of
-      // every index worth offering.
       freeText: true,
       key: EthValidatorFilterKeys.INDEX,
       label: (): string => t('common.validator_index'),
@@ -30,9 +40,7 @@ export function useEthValidatorFields(): FieldDef[] {
       key: EthValidatorFilterKeys.PUBLIC_KEY,
       label: (): string => t('eth2_input.public_key'),
       multiple: true,
-      // A BLS public key: 48 bytes of hex. Refusing anything else keeps a half-pasted key from
-      // being sent as a filter.
-      validate: (value: string): boolean => /^0x[\dA-Fa-f]{96}$/.test(value.trim()),
+      validate: isBlsPublicKey,
     }),
     toMatchFieldDef({
       key: EthValidatorFilterKeys.STATUS,

@@ -50,13 +50,9 @@ export function createStatusError(status: number, message?: string, data?: unkno
 /**
  * True when the error is the backend saying the session is gone.
  *
- * A 401 is already handled globally by `handleAuthFailure`, which cancels every in-flight request
- * and routes to the login screen. A producer that fans out over many subjects therefore has nothing
- * to add by narrating it: the requests that lost the race to the teardown each surface the same
- * "no user is currently logged in", and one notification per subject stacks over the UI describing
- * a session that no longer exists.
- *
- * The sibling of `isRequestCancellation` — both mark an outcome the user should not be told about.
+ * @remarks
+ * The sibling of {@link isRequestCancellation}: both mark an outcome the user should not be told
+ * about, `handleAuthFailure` having already torn the session down.
  */
 export function isSessionExpired(error: unknown): boolean {
   return error instanceof FetchError && error.status === HTTPStatus.UNAUTHORIZED;

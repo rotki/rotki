@@ -43,9 +43,11 @@ export function getBridgeExtraData(extraData: unknown): BridgeExtraData | undefi
 }
 
 /**
- * Extracts the original direction of a bridge leg that was resolved as external.
- * The resolution turns the event into a plain spend/receive, so the direction
- * can no longer be derived from the event type itself.
+ * Reads back the original direction of a bridge leg that was resolved as external.
+ *
+ * @remarks
+ * Resolution turns the event into a plain spend/receive, so the direction has to come from this
+ * stamp rather than from the event type.
  */
 export function getResolvedBridgeDirection(extraData: unknown): 'deposit' | 'withdrawal' | undefined {
   const parsed = BridgeEventExtraData.safeParse(extraData);
@@ -73,7 +75,7 @@ interface BridgeEntryMatch {
  * reports unresolved legs per event, and the exact event has to be acted on: a
  * transaction can carry more than one bridge leg (e.g. several bridged assets in one
  * transaction), so picking a leg positionally or by type heuristics would act on the
- * wrong — possibly already ignored — leg.
+ * wrong leg, possibly one that is already ignored.
  */
 function findBridgeEntry(rows: HistoryEventCollectionRow[], identifier: number): BridgeEntryMatch | undefined {
   for (const row of rows) {
@@ -164,8 +166,6 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
       const transactions: UnmatchedBridgeTransaction[] = [];
 
       for (const leg of legs) {
-        // The events of a group come back as separate rows, so the leg's event has to
-        // be looked for across all of them by its identifier.
         const bridgeMatch = findBridgeEntry(response.entries, leg.identifier);
 
         if (!bridgeMatch) {

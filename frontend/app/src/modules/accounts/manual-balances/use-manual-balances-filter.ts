@@ -16,8 +16,7 @@ export type Filters = MatchedKeyword<ManualBalanceFilterKey>;
 
 /**
  * The tags key, which is not part of the filter bag above: tags ride a param, to the request and to
- * the url alike, which is what lets the bar absorb the standalone tag selector this table used to
- * carry.
+ * the url alike, which is what lets the bar hold them at all.
  *
  * Declared once here so the request, the url and the bar's own bag come off one statement. The url
  * carries them comma-joined, which is what an array stringifies to.

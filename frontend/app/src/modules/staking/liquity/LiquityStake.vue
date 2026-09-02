@@ -11,7 +11,7 @@ const { stake = null } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { useIsActive } = useTaskCenter();
-const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKING);
+const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
 </script>
 
 <template>

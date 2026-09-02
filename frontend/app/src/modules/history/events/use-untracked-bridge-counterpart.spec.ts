@@ -86,8 +86,6 @@ describe('use-untracked-bridge-counterpart', () => {
     });
 
     it('should not offer it when the counterpart address is untracked', () => {
-      // reported by lefteris: an untracked destination showed both External and Create
-      // Counterpart, but the event belongs to someone else, so external is the only answer
       const transaction = createTransaction({ bridge: { fromChain: 1, toChain: 'zksync_lite', toAddress: '0xSomeoneElse' } });
 
       expect(canCreateBridgeCounterpart(transaction, true)).toBe(false);

@@ -28,6 +28,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Self
 from uuid import uuid4
+from weakref import WeakSet
 
 import rsqlite
 from polyleven import levenshtein
@@ -274,7 +275,10 @@ class DBCursor:
     def close(self) -> None:
         self._prefetched_rows.clear()
         with self.connection.statement_lock:
-            self._cursor.close()
+            try:
+                self._cursor.close()
+            finally:
+                self.connection._cursors.discard(self)
 
 
 class DBConnectionType(Enum):
@@ -376,6 +380,7 @@ class DBConnection:
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
             read_only: bool = False,
+            cached_statements: int | None = None,
     ) -> None:
         """A read_only connection is a pool reader: it is opened with mode=ro so
         sqlite rejects any write attempt, it is never registered in CONNECTION_MAP
@@ -384,6 +389,13 @@ class DBConnection:
         self._conn: UnderlyingConnection
         self._path = path
         self._read_only = read_only
+        # CPython can retain a Windows file handle when a statement outlives Connection.close():
+        # https://github.com/python/cpython/issues/135117
+        # Disabling the statement cache is also the documented workaround for a separate
+        # multithreaded cache bug: https://github.com/python/cpython/issues/118172
+        # Keep this optional so cleanup-sensitive tests can opt in without slowing production.
+        self._cached_statements = cached_statements
+        self._cursors: WeakSet[DBCursor] = WeakSet()
         # Pool of read-only connections configured by enable_read_pool() and created
         # lazily as concurrent reads need them. LIFO reuse keeps sequential reads on
         # the same warm SQLite page cache instead of rotating through every reader.
@@ -439,20 +451,24 @@ class DBConnection:
         # (False when the savepoints nest inside this task's own write transaction)
         self._savepoint_holds_transaction_lock = False
         if connection_type in (DBConnectionType.GLOBAL, DBConnectionType.PACKAGED_GLOBAL):
+            connect_kwargs: dict[str, Any] = {
+                'check_same_thread': False,
+                'isolation_level': None,
+            }
+            if cached_statements is not None:
+                connect_kwargs['cached_statements'] = cached_statements
             if read_only:
                 # as_uri() gives a percent-encoded file:// URI that sqlite accepts
                 # on all platforms (a plain f'file:{path}' breaks on windows paths)
                 self._conn = rsqlite.connect(
                     database=Path(path).absolute().as_uri() + '?mode=ro',
                     uri=True,
-                    check_same_thread=False,
-                    isolation_level=None,
+                    **connect_kwargs,
                 )
             else:
                 self._conn = rsqlite.connect(
                     database=path,
-                    check_same_thread=False,
-                    isolation_level=None,
+                    **connect_kwargs,
                 )
         elif read_only:
             # as_uri() gives a percent-encoded file:// URI that sqlite accepts
@@ -515,7 +531,9 @@ class DBConnection:
 
     def cursor(self) -> DBCursor:
         with self.statement_lock:
-            return DBCursor(connection=self, cursor=self._conn.cursor())
+            cursor = DBCursor(connection=self, cursor=self._conn.cursor())
+            self._cursors.add(cursor)
+            return cursor
 
     def interrupt(self) -> None:
         """Abort this connection's in-flight statements (sqlite3_interrupt). Safe
@@ -526,6 +544,8 @@ class DBConnection:
     def close(self) -> None:
         self.disable_read_pool()
         with self.statement_lock:
+            for cursor in tuple(self._cursors):
+                cursor.close()
             self._conn.close()
         if not self._read_only:  # a reader was never registered in the map
             CONNECTION_MAP.pop(self.connection_type, None)
@@ -625,6 +645,7 @@ class DBConnection:
             connection_type=self.connection_type,
             sql_vm_instructions_cb=self.sql_vm_instructions_cb,
             read_only=True,
+            cached_statements=self._cached_statements,
         )
         try:
             if reader_setup is not None:

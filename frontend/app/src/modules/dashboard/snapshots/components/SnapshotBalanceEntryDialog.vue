@@ -43,14 +43,7 @@ const splitValid = ref<boolean>(false);
 
 const form = useTemplateRef<InstanceType<typeof EditBalancesSnapshotForm>>('form');
 
-// In a non-USD currency the fiat price/value the user edits can only be stored
-// as USD via the historic forex rate; without it the stored value silently
-// stops tracking, so block the save and point at the summary's FX control (#12277).
-const { isUsd, loading, rateReady } = useHistoricFiatConversion(() => timestamp);
-const rateMissing = computed<boolean>(() => !get(isUsd) && !get(rateReady));
-// Only surface the dead-end once the lookup has settled, so it doesn't flash
-// while the historic rate is still being fetched.
-const showRateMissing = computed<boolean>(() => get(rateMissing) && !get(loading));
+const { rateMissing, showRateMissing } = useHistoricFiatConversion(() => timestamp);
 
 /** The balance's previous USD value (zero when adding). */
 const previousUsdValue = computed<BigNumber>(() => {
@@ -115,8 +108,6 @@ const previewLocationBalance = computed<LocationBalancePreview | null>(() => {
   if (!formVal?.amount || !formVal.usdValue || !formVal.location)
     return null;
 
-  // `formVal.usdValue` is already in USD (derived from the historic asset->USD
-  // price); the user-currency conversion happens at the UI level, so no FX here.
   return locationBalanceAfterEdit({
     category: formVal.category,
     editIndex: get(editIndex),
@@ -126,21 +117,25 @@ const previewLocationBalance = computed<LocationBalancePreview | null>(() => {
   });
 });
 
-// Auto-select the only location that can absorb the entered value: when exactly
-// one existing venue is eligible (not overdrawn) and the user hasn't picked one,
-// preselect it — both the lone-location case and "only one holds enough". Watches
-// value/category (not location), so a deliberate clear isn't immediately undone.
-watch([
-  (): string | undefined => get(formModel)?.usdValue,
-  (): BalanceType | undefined => get(formModel)?.category,
-], () => {
+/**
+ * Preselects the one location that can absorb the entered value, when exactly one existing venue is
+ * eligible and the user has picked none. Covers both the lone-location case and "only one holds
+ * enough".
+ */
+function preselectSoleEligibleLocation(): void {
   const formVal = get(formModel);
   if (!formVal || get(splitMode) || formVal.location)
     return;
+
   const sole = soleEligibleLocation(get(existingLocations), get(disabledLocations));
   if (sole)
     set(formModel, { ...formVal, location: sole });
-});
+}
+
+watch([
+  (): string | undefined => get(formModel)?.usdValue,
+  (): BalanceType | undefined => get(formModel)?.category,
+], preselectSoleEligibleLocation);
 
 function resetSplit(): void {
   set(splitMode, false);
@@ -176,10 +171,6 @@ function openEdit(item: EditableBalance): void {
   set(editIndex, item.index);
   resetSplit();
 
-  // Snapshots store USD. The asset-price form re-derives the display value from
-  // the historic asset->USD price, so pre-fill the raw USD value (no FX). This
-  // is also the form's fallback when the historic price fetch fails, where a
-  // main-currency-converted value would be persisted as USD and corrupt it.
   set(formModel, {
     ...item,
     amount: item.amount.toFixed(),
@@ -190,12 +181,20 @@ function openEdit(item: EditableBalance): void {
   set(open, true);
 }
 
+/**
+ * Flags an add that would duplicate a row the snapshot already holds.
+ *
+ * @remarks
+ * Only when adding, since an edit already targets a row. The match is on identifier *and* category,
+ * because the same asset held and owed are distinct rows, so adding one while the other exists is
+ * fine.
+ *
+ * @param asset - the identifier the user picked
+ */
 function checkAssetExist(asset: string): void {
-  // Only flag a conflict when adding (an edit already targets a row).
   if (get(editIndex) !== null)
     return;
-  // Match on identifier AND category: the same asset held (ASSET) and owed
-  // (LIABILITY) are distinct rows, so adding one when the other exists is fine.
+
   const category = get(formModel)?.category;
   const assetFound = snapshot.balancesSnapshot.find(
     item => item.assetIdentifier === asset && item.category === category,

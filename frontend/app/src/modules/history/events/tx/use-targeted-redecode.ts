@@ -45,21 +45,20 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
   const { getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
 
   /**
-   * Core decode function that throws on failure instead of notifying.
-   * Used by callers that need to handle errors themselves (e.g. conflict resolution).
+   * Pulls and re-decodes a named set of transactions, throwing on failure instead of notifying.
+   *
+   * @remarks
+   * For callers that handle their own errors, such as conflict resolution. The task's boolean
+   * result is whether the backend re-decoded anything, and a `false` throws, so a no-change is a
+   * failure here rather than a silent success.
    */
   const pullAndDecodeTransactionsRaw = async (payload: PullTransactionPayload, parent?: ActivityId): Promise<void> => {
-    // One tx names itself — truncated, since a full hash does not fit the row; a batch is only
-    // meaningful as a count.
     const count = payload.txRefs.length;
     const chain = getChainName(payload.chain);
     const subtitle = count === 1
       ? activityLabelFor(msg.$t('task_center.activity.tx_decoding.single'), { chain, tx: truncateAddress(payload.txRefs[0]) })
       : activityLabelFor(msg.$t('task_center.activity.tx_decoding.batch'), { chain, count }, count);
 
-    // Targeted re-decode of specific tx refs: a one-shot native TX_DECODING activity (not
-    // rerunnable — the payload is request-specific). `decoded` carries whether the backend
-    // actually re-decoded so the throw-on-no-change contract below is preserved.
     const outcome = await submitTask<boolean>({
       id: targetedDecodeActivityId(payload.chain, payload.txRefs),
       kind: ActivityKind.TX_DECODING,
@@ -160,10 +159,16 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
    * The user-facing targeted re-decode, as one activity with the per-chain decodes and the block
    * decode as its children.
    *
+   * @remarks
    * One umbrella for the whole request, so a page re-decode covering transactions *and* block
    * events is one named flow rather than N anonymous decodes plus a separate block activity. The
    * shape is read off {@link targetedRedecodeFlow} rather than rebuilt, so what a test asserts about
    * the declaration is what runs.
+   *
+   * The umbrella is submitted before its children so the parent gate applies to them, but its `run`
+   * needs their promises, which only exist once submitted; the `subtree` promise bridges the two.
+   * It settles on `allSettled`, never `all`, so one chain failing marks that child and leaves the
+   * others running, as it does for the chain sweep.
    */
   const redecodeTargeted = async ({
     blockNumbers = [],
@@ -187,8 +192,6 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
     const children = targetedRedecodeFlow.children(scope);
     const isEvm = (chain: string): boolean => !isEvmLikeChains(chain) && !isSolanaChains(chain);
 
-    // The flow is submitted before its children so the parent gate applies to them, but its `run`
-    // needs their promises — which only exist once submitted. Same handshake as the chain sweep.
     let declared!: (work: readonly Promise<void>[]) => void;
     const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
       declared = resolve;
@@ -201,8 +204,6 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       rerunnable: false,
       resets: targetedRedecodeFlow.resets,
       run: async (): Promise<Result<void, TaskError>> => {
-        // allSettled, never all: one chain failing must not abandon the others. A failure marks the
-        // child and leaves the umbrella complete, as it does for the chain sweep.
         await Promise.allSettled(await subtree);
         return ok(undefined);
       },

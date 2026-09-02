@@ -2,13 +2,8 @@ import type { EffectScope, Ref } from 'vue';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTradeNetworkMatch } from '@/modules/wallet/send/use-trade-network-match';
 
-// The seam: reconcile the chain the form is sending on with the chain the wallet
-// is on. The wallet is free to report a chain rotki does not support, and every
-// path here has to say so rather than resolve it to something plausible.
-
 const ETHEREUM_CHAIN_ID = 1;
 const OPTIMISM_CHAIN_ID = 10;
-// A chain a wallet can be on that rotki does not support, e.g. fantom.
 const UNSUPPORTED_CHAIN_ID = 250;
 
 const CHAIN_NAMES: Record<number, string | undefined> = {
@@ -22,7 +17,6 @@ const CHAIN_IDS: Record<string, number | undefined> = {
 
 const connected = ref<boolean>(true);
 const connectedChainId = ref<number>();
-// Async, as the store's is: the caller hands the promise to `startPromise`.
 const switchNetwork = vi.fn<(chainId: bigint) => Promise<void>>(async () => {});
 const error = vi.fn();
 
@@ -87,8 +81,6 @@ describe('useTradeNetworkMatch', () => {
 
     it('should be true while the wallet is on a chain rotki does not support', () => {
       const { wrongNetwork } = create();
-      // Resolving this to ethereum reported the right network, so no warning was
-      // shown and the user could send believing they were on mainnet.
       set(connectedChainId, UNSUPPORTED_CHAIN_ID);
 
       expect(get(wrongNetwork)).toBe(true);
@@ -116,8 +108,6 @@ describe('useTradeNetworkMatch', () => {
 
     it('should not pull the selection back while the wallet stays put', async () => {
       create();
-      // The user picks a different chain to send on. Writing connectedChainId
-      // with the value it already holds must not drag the selection back.
       set(selectedChain, 'optimism');
       set(connectedChainId, ETHEREUM_CHAIN_ID);
       await nextTick();
@@ -126,8 +116,6 @@ describe('useTradeNetworkMatch', () => {
     });
 
     it('should keep the selection when the wallet moves to an unsupported chain', async () => {
-      // Starting away from ethereum: the old fallback resolved there too, so a
-      // test starting on ethereum would pass either way.
       set(connectedChainId, OPTIMISM_CHAIN_ID);
       create();
       await nextTick();
@@ -156,8 +144,6 @@ describe('useTradeNetworkMatch', () => {
 
       switchToSelectedChain();
 
-      // BigInt(undefined) would throw; a silent return would hide a broken
-      // invariant behind a button that does nothing.
       expect(switchNetwork).not.toHaveBeenCalled();
       expect(error).toHaveBeenCalledWith(expect.stringContaining('newchain'));
     });

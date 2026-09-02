@@ -1,5 +1,6 @@
 import { DebugStateGroup } from '@shared/ipc';
 import { logger } from '@/modules/core/common/logging/logging';
+import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 
 /**
  * A group is matched by exact key, by suffix, and by prefix. Both partial forms
@@ -33,7 +34,7 @@ const DEBUG_STATE_GROUPS: Record<DebugStateGroup, GroupDefinition> = {
         'rotki.airdrops.hide_unknown_alert',
         'rotki.asset_update_check.day', // asset update throttle
         'rotki.asset_update_check.version',
-        'rotki_skip_asset_db_version',
+        SKIPPED_ASSET_VERSION_KEY,
       ],
       suffixes: [
         '.rotki_query_status', // `<userId>.rotki_query_status`, dismissed query status

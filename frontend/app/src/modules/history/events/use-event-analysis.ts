@@ -19,6 +19,19 @@ interface AnalyzedEvents {
   partialSwapGroups: SwapGroup[];
 }
 
+/**
+ * Sorts a selection into whole transactions, partly-selected swap groups, and loose events.
+ *
+ * @remarks
+ * Only a partial selection marks its group's ids as processed, because only a partial selection is
+ * widened to the whole group. A group the user selected in full is deliberately left unmarked, so
+ * its ids fall through to `partialEventIds` and are counted there once, rather than twice.
+ *
+ * @param selectedIds - the events the user ticked
+ * @param originalGroups - the rows as rendered, where an array is one group
+ * @param groupedEventsByTxRef - every event of a transaction, including ones not on screen
+ * @returns the three disjoint buckets the deletion flow acts on
+ */
 export function analyzeSelectedEvents(
   selectedIds: number[],
   originalGroups: HistoryEventRow[],
@@ -69,7 +82,6 @@ function processArrayGroup(
       // Mark all events as processed since we'll delete the entire group
       groupEventIds.forEach(id => processedIds.add(id));
     }
-    // If all events are selected, they'll be included in partialEventIds for correct counting
   }
   else {
     // Non-swap array group - process normally
@@ -111,7 +123,6 @@ function processSingleSwapEvent(
     });
     allSwapEventIds.forEach(id => processedIds.add(id));
   }
-  // If all events are selected, they'll be included in partialEventIds for correct counting
 }
 
 function processEvmTransaction(
@@ -126,7 +137,6 @@ function processEvmTransaction(
   const txEvents = groupedEvents[groupIdentifier];
 
   if (txEvents && txEvents.length > 0) {
-    // Check if this transaction contains swap events
     const hasSwapEvents = txEvents.some((event: HistoryEventRow) => {
       if (Array.isArray(event)) {
         return event.some(e => isSwapTypeEvent(e.entryType));
@@ -134,7 +144,6 @@ function processEvmTransaction(
       return isSwapTypeEvent(event.entryType);
     });
 
-    // Get all event IDs for this transaction
     const eventIds = txEvents.flatMap((event: HistoryEventRow) =>
       Array.isArray(event) ? event.map(e => e.identifier) : event.identifier,
     );

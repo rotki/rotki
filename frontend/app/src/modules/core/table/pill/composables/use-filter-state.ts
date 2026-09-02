@@ -35,14 +35,12 @@ export interface UseFilterStateReturn {
 }
 
 /**
- * The pill bar's Layer-2 state container (the plan's `use-filter-state`, the `ActiveFilter[]`
- * evolution of `useFilterModel`). Owns `state: ActiveFilter[]` and derives the transported
- * `matches` + `params` through the pure codec over the given `fields`. No DOM, no async: asset
- * search is the editor's concern, injected there, not called in a setter (Pinia sync-only rule).
+ * Holds the pill bar's active filters and derives what the table transports.
  *
- * Not yet wired into any bar. The old Suggestion-based `useFilterModel`/`useFilterSelection`
- * stay as they are; unifying the two happens with the pill components (Phase 2), where the
- * asset-display translation is verified in-app.
+ * @remarks
+ * Owns `state: ActiveFilter[]` and derives `matches` and `params` from it through the pure codec
+ * over the given `fields`. No DOM and no async: asset search is the editor's concern, injected
+ * there rather than called from a setter, which the sync-only store rule requires.
  */
 export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterStateReturn {
   const state = ref<FilterState>([]);
@@ -57,13 +55,6 @@ export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterS
    */
   function commit(next: FilterState): void {
     const pruned = pruneInadmissible(next, toValue(fields));
-    // A rebuild that changes nothing must not change identity. `matches`/`params` are derived from
-    // this ref, and the bar writes them back on every identity change, so an equal-but-new array is
-    // an update that produces another update. That is survivable while the two sides converge, but
-    // they cannot converge when a field is removed while its filter is still active: the codec
-    // skips a filter whose field is gone, so the derived bag permanently disagrees with the
-    // incoming one, `setFromMatches` rebuilds on every flush, and the bar recurses until Vue aborts
-    // the render. Comparing by value is what makes a no-op rebuild a no-op.
     if (isEqual(pruned, get(state)))
       return;
 

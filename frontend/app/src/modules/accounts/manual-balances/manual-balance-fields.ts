@@ -22,8 +22,8 @@ export interface ManualBalanceFieldOptions {
 
 /**
  * The pill-bar fields for the manual balances table: the location a balance is held in, the label
- * the user gave it, its asset, and the tags that used to sit in a selector of their own beside the
- * bar. Tags are param-bound (`tags`, to request and url), which is what lets the bar absorb them.
+ * the user gave it, its asset, and its tags. Tags are param-bound (`tags`, to request and url),
+ * which is what lets the bar hold them at all.
  */
 export function toManualBalanceFields(
   resolvers: SharedFieldResolvers,
@@ -39,8 +39,6 @@ export function toManualBalanceFields(
         label: (): string => t('common.location'),
         multiple: false,
         suggest: locations,
-        // Checked against the same list it offers, so a location the user has no balance in is
-        // never applied.
         validate: (value: string): boolean => locations().includes(value),
       }),
       SharedFieldKinds.LOCATION,

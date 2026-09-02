@@ -82,9 +82,6 @@ export function useXpubInput(
     }
   }
 
-  // The payload is the source of truth, so what it holds is written back into the fields. The
-  // derivation path is only overwritten when it means something different, or every apostrophe
-  // would be stripped from under the user as they type.
   watchImmediate(model, (payload) => {
     state.xpub = payload?.xpub ?? '';
 
@@ -97,8 +94,8 @@ export function useXpubInput(
 
     const detected = getPrefix(payload.xpubType);
     set(prefix, detected);
-    // A read-only field detects nothing, so the type it was saved with is stated instead.
-    if (toValue(disabled) && payload.xpub)
+    const readOnlyFieldDetectsNothing = toValue(disabled);
+    if (readOnlyFieldDetectsNothing && payload.xpub)
       set(detectedType, detected);
   });
 

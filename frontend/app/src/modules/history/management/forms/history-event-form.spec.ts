@@ -64,9 +64,6 @@ describe('component/HistoryEventForm.vue', () => {
 
   it.each(formTypesYouCanAddTo)('changes to proper form %s', async (value: string) => {
     wrapper = await createWrapper();
-    // RuiMenuSelect virtualizes its options, so the target option button is not
-    // guaranteed to be rendered in the test DOM. Drive the v-model directly to
-    // select the entry type instead of relying on clicking a virtualized button.
     await wrapper.findComponent({ name: 'RuiMenuSelect' }).setValue(value);
     await vi.advanceTimersToNextTimerAsync();
 

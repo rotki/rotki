@@ -95,8 +95,6 @@ describe('useForm', () => {
       form.touch('spend.1.amount');
       expect(form.errors('spend.1.amount')).toEqual(['amount_required']);
 
-      // Removing the first row shifts the second into index 0. Its touched flag has to travel with
-      // it: keyed by index it would stay on the now-removed row and decorate the wrong one.
       form.state.spend.splice(0, 1);
 
       expect(form.errors('spend.0.amount')).toEqual(['amount_required']);

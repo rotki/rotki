@@ -13,9 +13,10 @@ export const DEFAULT_OPERATORS: Record<FilterValueType, readonly FilterOp[]> = {
 /**
  * Already-translated label per operator, supplied by the Vue layer.
  *
- * The core cannot translate: it has no locale and no `t`. It used to carry English strings with a
- * note that the component layer would resolve them, which nothing did, so every non-English user
- * read `is not` and `greater than` on their pills.
+ * @remarks
+ * The core cannot translate, having no locale and no `t`, so it must be handed finished strings.
+ * Holding English here for the component layer to resolve later is how `is not` and `greater than`
+ * reach a non-English user's pills.
  */
 export type OperatorLabels = Record<FilterOp, string>;
 

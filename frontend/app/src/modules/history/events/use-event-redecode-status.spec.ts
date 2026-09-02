@@ -99,8 +99,6 @@ describe('useEventRedecodeStatus', () => {
   });
 
   it('should track the event it is given rather than the one it started with', () => {
-    // A getter over a plain ref of the tx ref, rather than a ref holding the mock itself: the mock
-    // is a Proxy and Vue's `toRaw` recurses forever on one placed in reactive state.
     const txRef = ref<string>('0xabc');
     const status = useEventRedecodeStatus(() => evmEvent(get(txRef)), () => []);
     get(status);

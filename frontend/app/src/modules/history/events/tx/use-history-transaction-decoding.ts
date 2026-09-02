@@ -51,8 +51,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     ignoreCache = false,
     placement: DecodePlacement = {},
   ): Promise<void> => {
-    // One native TX_DECODING activity per chain; the orchestrator owns liveness
-    // (`useWorkStatus(ActivityKind.TX_DECODING)`), cancellation and per-chain re-run.
+    // One activity per chain, so liveness, cancellation and rerun are all per-chain.
     const outcome = await submitTask({
       deps: placement.deps,
       id: decodeActivityId(chain, ignoreCache),
@@ -61,9 +60,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       parent: placement.parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => {
-        // Declared up front alongside the syncs it waits on, so the shape of a refresh does not
-        // depend on what the data turns out to be. When there is nothing left to decode it
-        // completes without calling the backend, rather than never appearing.
         if (placement.skipWhen?.())
           return ok(undefined);
 
@@ -98,20 +94,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
     const isEvmType = type === TransactionChainType.EVM;
-    // The store already keys on the canonical chain id, so no resolution is needed here.
-    //
-    // ⚠️ The evmlike test alone splits the world in two, so anything that is not evmlike counts as
-    // EVM. Bitcoin has no redecode endpoint at all: it decodes only as a phase inside its own
-    // `query_transactions`, and the backend's `CHAINS_WITH_TX_DECODING` covers EVM, evmlike and
-    // Solana only, so the schema rejects it. Without this guard it would be posted there anyway,
-    // since it reaches this store as soon as it reports decoding progress over the websocket.
     const chains = getUndecodedTransactionStatus()
       .filter(({ chain, processed, total }) =>
         processed < total && !isBtcChains(chain) && isEvmType === !isEvmLikeChains(chain),
       )
       .map(({ chain }) => chain);
-    // No wrapper: each of these submits onto DECODE_LANE, which is what bounds how many chains
-    // decode at once. Wrapping them in a second limiter only hid that.
+    // Unbounded on purpose: DECODE_LANE is what caps how many chains decode at once.
     await Promise.all(chains.map(async chain => decodeTransactionsTask(chain)));
   };
 
@@ -127,7 +115,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
    * run, bounded by {@link DECODE_LANE}.
    *
    * This resolves the scope and then reads the shape off {@link redecodeFlow} rather than rebuilding
-   * it, so what a test asserts about the declaration is what runs. ⚠️ The id carries the scope: a
+   * it, so what a test asserts about the declaration is what runs. The id carries the scope: a
    * scoped request identifying itself as the full run would be deduped onto a concurrent
    * redecode-all and silently handed that broader run's promise. A request naming every decodable
    * chain *is* the full run, so it takes the canonical id and dedups deliberately.
@@ -139,9 +127,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const flowId = redecodeFlow.id(coversEverything ? undefined : decodeChains);
     const children = redecodeFlow.children(decodeChains);
 
-    // The flow is submitted before its children so the parent gate applies to them, but its `run`
-    // needs their promises — which only exist once submitted. It waits on this rather than on an
-    // array that would still be empty when the run body first executes.
+    // The flow is submitted before its children, so its `run` awaits this rather than a still-empty array.
     let declared!: (work: readonly Promise<void>[]) => void;
     const subtree = new Promise<readonly Promise<void>[]>((resolve) => {
       declared = resolve;
@@ -152,18 +138,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       kind: redecodeFlow.kind,
       lane: UMBRELLA_LANE,
       rerunnable: false,
-      // Declared, not hardcoded: the flow is what knows it deletes before re-deriving, and the
-      // eligibility rules are what act on it by holding matching off the same rows.
       resets: redecodeFlow.resets,
       run: async (): Promise<Result<void, TaskError>> => {
-        // allSettled, never all: one chain failing must not abandon the others.
-        //
-        // The flow settles COMPLETE even when chains failed. A failure marks the child, never the
-        // parent: to an observer the flow did run to completion, and the chain that failed carries
-        // its own FAILED status and keeps its stale freshness, so a later run retries exactly that
-        // chain and leaves the ones that succeeded alone. Failing the umbrella instead would say
-        // the whole re-decode did not happen, and would leave nothing able to distinguish the
-        // chains that need retrying from the ones that do not.
         const outcomes = await Promise.allSettled(await subtree);
         const failed = outcomes.filter(outcome => outcome.status === 'rejected').length;
 
@@ -172,8 +148,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
         return ok(undefined);
       },
-      // The title names the flow; the scope only shows up as a subtitle, so a two-chain run is not
-      // presented identically to the full one.
+      // Only the subtitle carries the scope, so a partial run does not read as the full one.
       subtitle: coversEverything
         ? undefined
         : activityLabelFor(msg.$t('task_center.activity.redecode.chains'), { chains: decodeChains.map(chain => getChainName(chain)).join(', ') }),
@@ -185,8 +160,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     await flow;
   };
 
-  // Decoding submits under two id shapes at once (`tx_decoding:<chain>` for a chain sweep,
-  // `tx_decoding:<chain>:pull` for a targeted re-decode), so this cancels the whole kind.
+  /**
+   * Cancels every decode in flight, whatever submitted it.
+   *
+   * @remarks
+   * Decoding runs under two id shapes at once, `tx_decoding:&lt;chain&gt;` for a chain sweep and
+   * `tx_decoding:&lt;chain&gt;:pull` for a targeted re-decode, so cancelling by id would leave the
+   * other shape running.
+   */
   function cancelDecoding(): void {
     cancelByKind(ActivityKind.TX_DECODING);
   }
@@ -195,9 +176,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     cancelDecoding,
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
-    // Re-exported, not owned: a decode is always preceded by reading what is left to decode, so
-    // callers that drive one need both. Consumers that only want the counts take
-    // `useUndecodedTransactionsStatus` directly.
+    // Re-exported because a decode is always preceded by a read of what is left to decode.
     fetchUndecodedTransactionsBreakdown,
     redecodeTransactions,
   };

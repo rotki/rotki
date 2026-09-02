@@ -67,8 +67,6 @@ describe('calendarForm', () => {
     });
   }
 
-  // The form decides none of its own opening state, so nothing it does on mount may read back as an
-  // edit and prompt the user about unsaved changes before they have touched anything.
   it('should open without arming the unsaved-changes prompt', async () => {
     const harness = mountWithOwner();
     await nextTick();
@@ -78,8 +76,6 @@ describe('calendarForm', () => {
     harness.wrapper.unmount();
   });
 
-  // The dialog reads the payload it saves off the model, and the form writes every edit back into
-  // it, so a typed value has to survive the trip out and back.
   it('should keep a typed name when the owner echoes the model back', async () => {
     const harness = mountWithOwner({ ...baseModel(), name: '' });
 
@@ -121,8 +117,6 @@ describe('calendarForm', () => {
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
-  // Everything except the name is carried rather than validated, and most of it has no field bound
-  // to show a message, so a rule here would block the save with nothing on screen to explain it.
   it.each([
     ['autoDelete'],
     ['color'],
@@ -131,7 +125,7 @@ describe('calendarForm', () => {
     ['address'],
     ['blockchain'],
     ['identifier'],
-  ] as const)('should still validate when %s is absent', async (key) => {
+  ] as const)('should still validate when %s is absent, being carried rather than validated', async (key) => {
     const model = baseModel();
     Reflect.deleteProperty(model, key);
     wrapper = createWrapper(model);
@@ -159,9 +153,7 @@ describe('calendarForm', () => {
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
-  // The reminder rows run their own validation, and it reaches the parent's gate: a row above the
-  // thirty-day ceiling has to stop the event from saving.
-  it('should fail validation when a reminder row is out of range', async () => {
+  it('should fail validation when a reminder row is out of range, its gate reaching the parent', async () => {
     wrapper = createWrapper();
     await addReminderRow();
 

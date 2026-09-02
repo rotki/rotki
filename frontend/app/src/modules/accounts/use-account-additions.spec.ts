@@ -25,7 +25,12 @@ vi.mock('@/modules/task-center/use-native-task', async importOriginal => ({
   useNativeTask: vi.fn(() => ({ cancelByType: vi.fn(() => vi.fn()), runTaskResult, statusOf: vi.fn(), submitTask })),
 }));
 
-// runTaskResult is mocked and does not invoke its api callback; opt into invoking it when the API call must run.
+/**
+ * Stubs the task runner so the next addition succeeds with `value`.
+ *
+ * @param value - the payload the runner resolves with
+ * @param invoke - pass `false` to resolve without running the wrapped api callback at all
+ */
 function whenOk<R>(value: R, invoke = true): void {
   runTaskResult.mockImplementation(async (task: () => Promise<unknown>): Promise<Result<R, TaskError>> => {
     if (invoke)
@@ -76,8 +81,6 @@ describe('useAccountAdditions', () => {
       expect(result).toStrictEqual(ok('0xabc,\n0xdef'));
     });
 
-    // An empty array means nothing was added, so it must not read as a successful addition:
-    // `ok('')` put `{ address: '' }` into `addedAccounts` and refreshed on a blank address.
     it('should return an error when the result array is empty', async () => {
       whenOk<string[] | true>([]);
       const { useAccountAdditions } = await importModule();
@@ -95,11 +98,7 @@ describe('useAccountAdditions', () => {
       expect(mocks.addBlockchainAccount).toHaveBeenCalledWith('btc', xpubPayload);
     });
 
-    // `addMultipleAccounts` fans out over one chain at parallelism 2, so two addresses are in
-    // flight under the same activity id at once. `submitTask` dedups on id identity (proven in
-    // use-native-task.spec.ts), which would collapse the second address onto the first's promise
-    // and report it added without ever calling the API. The id has to carry the address.
-    it('should give each address its own activity id on the same chain', async () => {
+    it('should give each address its own activity id on the same chain, so neither dedups onto the other', async () => {
       whenOk<string[] | true>(true);
       const { useAccountAdditions } = await importModule();
       const accounts = useAccountAdditions();
@@ -117,8 +116,6 @@ describe('useAccountAdditions', () => {
       expect(isErr(await useAccountAdditions().addAccount('eth', payload))).toBe(true);
     });
 
-    // The regression guard: `''` used to mean cancelled, failed AND empty-but-successful, so the
-    // caller pushed a cancelled addition into `addedAccounts` as though it had been added.
     it('should return an error, not an empty string, on a cancelled task', async () => {
       whenCancelled();
       const { useAccountAdditions } = await importModule();
@@ -145,7 +142,6 @@ describe('useAccountAdditions', () => {
       expect(isErr(await useAccountAdditions().addEvmAccount(payload))).toBe(true);
     });
 
-    // As above: `{}` was indistinguishable from a genuinely empty result.
     it('should return an error, not an empty object, on a cancelled task', async () => {
       whenCancelled();
       const { useAccountAdditions } = await importModule();

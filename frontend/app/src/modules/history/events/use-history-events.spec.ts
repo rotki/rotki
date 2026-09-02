@@ -54,12 +54,6 @@ describe('useHistoryEvents', () => {
   const route = useRoute();
 
   beforeEach(async (): Promise<void> => {
-    // Fresh pinia per test plus a reset of every shared piece of mutable collection. The vue-router
-    // mock route query is a module-level singleton mutated by useRouter().push, and the refs
-    // below are mutated by individual tests (protocols, accounts via onUpdateFilters). Without
-    // resetting them here, collection from one test leaks into whichever test runs next under
-    // shuffle and breaks the default sort / filter assertions. A fresh useRouter() has its own
-    // push mock, so this reset does not inflate any push-spy the tests assert on.
     setActivePinia(createPinia());
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);
@@ -99,8 +93,6 @@ describe('useHistoryEvents', () => {
       locationLabels: get(accounts)[0].address,
     }));
 
-    // The old extraParams (request + url) and requestParams (request only,
-    // non-empty) bags, in their original precedence order.
     const sources: ParamSource[] = [
       { fromQuery: onUpdateFilters, to: 'both', values: extraParams },
       { skipEmpty: true, to: 'request', values: requestParams },
@@ -241,14 +233,11 @@ describe('useHistoryEvents', () => {
       expect(get(filter).counterparties).toStrictEqual(get(protocols));
     });
 
-    it('should handle exclusion filters', async () => {
-      // The composable hands `requestData` the live requestPayload ref, so asserting
-      // with toHaveBeenCalledWith would read the value at assertion time rather
-      // than at call time. Snapshot each payload instead.
-      const payloads: Partial<HistoryEventRequestPayload>[] = [];
+    it('should send exclusion filters in the request payload when the filter write is user-attributed', async () => {
+      const payloadsAtCallTime: Partial<HistoryEventRequestPayload>[] = [];
       const fetchHistoryEvents = vi.fn(
         async (payload: MaybeRef<HistoryEventRequestPayload>): Promise<Collection<HistoryEvent>> => {
-          payloads.push({ ...get(payload) });
+          payloadsAtCallTime.push({ ...get(payload) });
           return { data: [], found: 0, limit: -1, total: 0 };
         },
       );
@@ -269,18 +258,13 @@ describe('useHistoryEvents', () => {
         entryTypes: ['!evm event'],
       });
 
-      // Load-bearing, not ceremony: this is what makes the filter reach the URL.
-      // The route watcher applies url state asynchronously (it awaits
-      // restorePersistedFilter first), so without a user-attributed write the route
-      // query stays empty and that deferred applyUrlState clears the filter again
-      // before the fetch under assertion.
       markUserIntent();
       startPromise(refetch());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      expect(payloads.at(-1)).toMatchObject({
+      expect(payloadsAtCallTime.at(-1)).toMatchObject({
         entryTypes: {
           behaviour: FilterBehaviours.EXCLUDE,
           values: ['evm event'],

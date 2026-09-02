@@ -6,16 +6,18 @@ defineOptions({
   inheritAttrs: false,
 });
 
-// Bottom sheet for a detail surface opened from inside a pinned panel: it slides up over the
-// panel's own body rather than opening yet another drawer beside the rail.
-//
-// It is positioned `absolute` on purpose, so the host panel must be `relative`. A teleporting
-// overlay (RuiNavigationDrawer/RuiDialog) is NOT usable here: the rail keeps backgrounded panels
-// alive with <KeepAlive>, and a deactivated panel's teleported content leaks out of / empties its
-// target. Absolute positioning keeps the sheet inside the panel it belongs to.
-//
-// Only the behaviour lives here (scrim, slide-up, placement, modality). Panels bring their own
-// header and actions, because the detail surfaces differ too much to share chrome.
+/**
+ * Bottom sheet for a detail surface opened inside a pinned panel, sliding up over the panel's own
+ * body rather than opening another drawer beside the rail.
+ *
+ * @remarks
+ * Positioned `absolute`, so the host panel must be `relative`, and a teleporting overlay
+ * (`RuiNavigationDrawer`, `RuiDialog`) is **not** usable here: the rail keeps backgrounded panels
+ * alive with `KeepAlive`, and a deactivated panel's teleported content leaks out of its target.
+ *
+ * Carries only the behaviour — scrim, slide-up, placement, modality. Panels bring their own header
+ * and actions, since the detail surfaces differ too much to share chrome.
+ */
 const open = defineModel<boolean>({ required: true });
 
 const { height = '95%', label } = defineProps<{
@@ -44,12 +46,18 @@ let previouslyFocused: HTMLElement | undefined;
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/**
+ * Every focusable element the sheet holds.
+ *
+ * @remarks
+ * Deliberately unfiltered by visibility: everything the sheet renders while open is on screen, and
+ * the usual `offsetParent` test reports null for every element under jsdom.
+ */
 function focusable(): HTMLElement[] {
   const el = get(sheet);
   if (!el)
     return [];
-  // no visibility filter: everything the sheet renders while open is on screen, and the
-  // usual `offsetParent` test reports null for every element under jsdom
+
   return [...el.querySelectorAll<HTMLElement>(FOCUSABLE)];
 }
 
@@ -92,8 +100,6 @@ watch(open, async (isOpen) => {
   if (isOpen) {
     previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     await nextTick();
-    // the sheet itself takes focus first: its content may start with a scroll area rather
-    // than a control, and announcing the surface matters more than reaching a button fast
     (get(sheet) ?? focusable()[0])?.focus();
   }
   else {
@@ -134,7 +140,7 @@ watch(open, async (isOpen) => {
       tabindex="-1"
       :style="{ height }"
       class="absolute bottom-0 left-0 right-0 border-t-2 border-rui-primary flex flex-col shadow-lg !rounded-b-none z-10 overflow-hidden focus:outline-none"
-      content-class="h-full"
+      :class-names="{ content: 'h-full' }"
       data-testid="pinned-detail-sheet"
       v-bind="$attrs"
     >

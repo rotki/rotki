@@ -21,7 +21,6 @@ export class ManualBalancesPage {
     for (const tag of balance.tags) {
       const tagsField = this.page.locator('[data-testid=manual-balances-form-tags]');
       const tagsInput = tagsField.locator('input');
-      // Click activator to enable the input
       await tagsField.locator('[data-id=activator]').click();
       await tagsInput.fill(tag);
       await tagsInput.press('Enter');

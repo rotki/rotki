@@ -17,7 +17,7 @@ const { isLgAndDown } = useBreakpoint();
     class="mr-2"
   >
     <RuiTooltip
-      :popper="{ placement: 'bottom' }"
+      :options="{ placement: 'bottom' }"
       :disabled="!(isLgAndDown && hideOnSmallScreen)"
       :open-delay="400"
     >

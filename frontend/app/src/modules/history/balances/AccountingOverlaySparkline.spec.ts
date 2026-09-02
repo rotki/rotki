@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
 import AccountingOverlaySparkline from '@/modules/history/balances/AccountingOverlaySparkline.vue';
 
-// `mock`-prefixed so they can be read inside the hoisted factories.
 let mockAllowed = true;
 let mockShouldShowAmount = true;
 
@@ -21,7 +20,6 @@ vi.mock('@/modules/statistics/use-graph', () => ({
   useGraph: (): { baseColor: Ref<string>; gradient: Ref<object> } => ({ baseColor: ref('#000000'), gradient: ref({}) }),
 }));
 
-// Stub the echarts component so no real chart/canvas is initialized in jsdom.
 vi.mock('vue-echarts', () => ({
   default: { name: 'VChart', props: ['option'], template: '<div class="vchart" />' },
 }));

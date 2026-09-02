@@ -22,8 +22,8 @@ const tooltip = computed<string>(() => checking
 <template>
   <RuiMenu
     v-model="open"
-    :popper="{ placement: 'bottom-end' }"
-    menu-class="w-[36rem] max-w-[90vw]"
+    :options="{ placement: 'bottom-end' }"
+    :class-names="{ menu: 'w-[36rem] max-w-[90vw]' }"
   >
     <template #activator="{ attrs }">
       <RuiButton
@@ -56,7 +56,7 @@ const tooltip = computed<string>(() => checking
 
       <RuiTooltip
         v-else
-        :popper="{ placement: 'bottom' }"
+        :options="{ placement: 'bottom' }"
         :open-delay="400"
       >
         <template #activator>

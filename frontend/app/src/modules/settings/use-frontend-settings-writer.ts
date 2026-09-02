@@ -39,17 +39,24 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
   const repo = useSettingsRepo();
   const api = useSettingsApi();
 
+  /**
+   * Persists a patch over the frontend settings blob.
+   *
+   * @remarks
+   * The repo is read inside the queued turn, so a write builds on whatever the previous one
+   * persisted rather than on a snapshot taken before it ran. Only the patch goes back to the repo:
+   * it runs the registry's post-persist effects and mirror syncs for the keys that actually changed.
+   *
+   * @param payload - the keys to change, which are merged over the whole stored blob
+   * @returns whether the write reached the backend, carrying its message when it did not
+   */
   async function write(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     try {
-      // Read the repo here, inside the queued turn, so this write builds on whatever the previous
-      // one persisted rather than on a snapshot taken before it ran.
       const updatedSettings = { ...repo.frontend, ...payload };
       await api.setSettings({
         frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
       });
 
-      // Merge only the patch: the repo runs the registry's post-persist effects (BigNumber format)
-      // and mirror syncs for the keys that actually changed.
       repo.updateFrontend(payload);
 
       return {

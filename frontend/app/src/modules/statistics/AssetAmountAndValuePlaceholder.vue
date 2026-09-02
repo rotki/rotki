@@ -10,7 +10,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 </script>
 
 <template>
-  <RuiCard content-class="-mx-3 !pt-0">
+  <RuiCard :class-names="{ content: '-mx-3 !pt-0' }">
     <template #header>
       <div class="pt-2">
         {{ t('premium_components.statistics.asset_amount_and_value_over_time') }}

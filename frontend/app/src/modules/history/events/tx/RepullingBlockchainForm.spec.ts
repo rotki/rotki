@@ -1,5 +1,5 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
-import type { ComponentPublicInstance } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain } from '@rotki/common';
@@ -31,8 +31,6 @@ function stub(name: string, props: string[]): Record<string, unknown> {
     template: '<div />',
   };
 }
-
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function addressAccount(chain: string, address: string): BlockchainAccount {
   return {
@@ -142,8 +140,7 @@ describe('history/events/tx/RepullingBlockchainForm.vue', () => {
     expect(await harness.validate()).toBe(true);
   });
 
-  // The address carries no rule of its own; it exists only so the api can report against it.
-  it('should show a server error reported against the address', async () => {
+  it('should show a server error reported against the address, which carries no rule of its own', async () => {
     harness = createWrapper(basePayload(), { address: ['unknown address'] });
     await vi.advanceTimersToNextTimerAsync();
 

@@ -159,9 +159,7 @@ describe('dataIssuesPanelContent', () => {
     expect(wrapper.text()).not.toContain('data_issues.empty.all_clear_title');
   });
 
-  // The list is virtualised, so the rendered card count reflects the window, not the
-  // issue count. Assert on the issue each card was handed instead.
-  it('should hand each rendered card its issue', async () => {
+  it('should hand each rendered card its issue, the virtualised count reflecting the window rather than the data', async () => {
     state.issues = [createIssue(1), createIssue(2), createIssue(3)];
     const wrapper = await createWrapper();
 
@@ -202,8 +200,6 @@ describe('dataIssuesPanelContent', () => {
     expect(clearSelection).toHaveBeenCalledOnce();
   });
 
-  // The resolve dialog reads the selected issue, so a card-triggered resolve has to
-  // select before it opens, or it would resolve whatever was selected last.
   it('should select the issue before opening the resolve dialog from a card', async () => {
     state.issues = [createIssue(7)];
     const wrapper = await createWrapper();

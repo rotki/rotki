@@ -64,21 +64,18 @@ export function buildHistoryEventSources({
   usedLocationLabels,
   validators,
 }: HistoryEventSourceDeps): ParamSource[] {
-  // Resolved here rather than injected: `useHistoryEventsFilters` is at its dependency cap, and
-  // this is the file that owns the request keys an action expands into.
   const { rows: actionRows } = useEventActionPicker();
 
   /**
-   * The type and subtype keys one verb expands into.
+   * The type and subtype keys one verb expands into. They replace the type and subtype filters
+   * rather than narrowing them, which is why the two cannot be active beside a verb.
    *
-   * A verb names every type/subtype pair the global mapping resolves to it, which is regularly
-   * more than one, so taking the first pair filtered by a fraction of what the verb means and said
-   * nothing about the rest. Which pair that was even depended on the mapping's key order.
+   * A verb regularly names more than one type/subtype pair, so taking the first filters by a
+   * fraction of what the verb means — and which one that is depends on the mapping's key order.
    *
-   * The request has no way to name pairs, only a list of types and a list of subtypes, which it
-   * reads as a cross product. That is exact whenever the pairs form one (as they do when a verb
-   * varies in only one of the two), and otherwise matches a little more than the verb names.
-   * Erring wide keeps every event the user asked for on screen; erring narrow hid them silently.
+   * The request cannot name pairs, only a list of types and a list of subtypes read as a cross
+   * product. That is exact when the pairs form one, and otherwise matches slightly wide. Wide is the
+   * right way to err: narrow hides events the user asked for, silently.
    */
   const resolveActionKeys = (verbKey: string): { eventTypes: string[]; eventSubtypes: string[] } | undefined => {
     const combinations = get(actionRows).find(row => row.verbKey === verbKey)?.combinations;
@@ -125,8 +122,6 @@ export function buildHistoryEventSources({
           identifiers: get(missingAcquisitionFromQuery),
         };
 
-        // An action replaces the type and subtype filters rather than adding to them, which is
-        // why the two cannot be active beside it.
         const verb = get(action);
         const actionKeys = verb === undefined ? undefined : resolveActionKeys(verb);
         if (actionKeys) {
@@ -158,9 +153,7 @@ export function buildHistoryEventSources({
       }),
     },
     {
-      // The read direction of the keys this source and the ones above write:
-      // pulls locationLabels, state markers and the accounting-overlay mode back
-      // out of the route whenever URL state is (re)applied.
+      /** Reads back what the sources above write: location labels, state markers, overlay mode. */
       fromQuery(query): void {
         applyHistoryEventRouteQuery(query, { action, locationLabels, overlayMode, toggles });
       },
@@ -216,8 +209,6 @@ function applyHistoryEventRouteQuery(
     toggles: Ref<HistoryEventsToggles>;
   },
 ): void {
-  // A URL with no action simply has none: an older or hand-written link then reads as whatever
-  // event types it carries, rather than claiming an action it never expressed.
   const actionParam = query.action;
   set(target.action, typeof actionParam === 'string' && actionParam.length > 0 ? actionParam : undefined);
 
@@ -232,7 +223,5 @@ function applyHistoryEventRouteQuery(
       : [],
   });
 
-  // Restore the accounting-overlay mode from the route (e.g. on back navigation); an
-  // empty/absent param resets it to 'none', so a fresh visit starts with the overlay off.
   set(target.overlayMode, query.overlay === OverlayMode.BALANCE ? OverlayMode.BALANCE : OverlayMode.NONE);
 }

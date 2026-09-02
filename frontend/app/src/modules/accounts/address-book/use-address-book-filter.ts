@@ -13,11 +13,11 @@ type AddressBookFilterKey = typeof AddressBookFilterKeys[keyof typeof AddressBoo
 export type Filters = MatchedKeyword<AddressBookFilterKey>;
 
 /**
- * The chain and strict-chain keys, which ride params rather than the filter bag above: one is a
- * boolean, which the bag has no form for, and both replaced controls that stood beside the bar.
+ * The chain and strict-chain keys, which ride params rather than the filter bag above, because one
+ * is a boolean and the bag has no form for that.
  *
- * Declared once so the request, the url and the bar's own bag come off the same pair. They used to
- * be written to the url with nothing reading them back, so a shared link opened unfiltered.
+ * Declared once so the request, the url and the bar's own bag all come off the same pair. Writing
+ * to the url without reading back is what opens a shared link unfiltered.
  */
 export function addressBookChainParams(
   chain: Ref<string | undefined>,

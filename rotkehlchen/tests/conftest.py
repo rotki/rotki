@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import sys
+import sysconfig
 import tempfile
 import threading
 import warnings as test_warnings
@@ -112,6 +113,19 @@ log = RotkehlchenLogsAdapter(logger)
 TESTS_ROOT_DIR: Final = Path(__file__).parent
 SUBPROCESS_TIMEOUT: Final = 30
 DB_SETTINGS_REGEX: Final = re.compile(r'-db_settings[^]]*|\[db_settings[^]]*\]')
+
+
+def _assert_gil_remains_disabled() -> None:
+    if sysconfig.get_config_var('Py_GIL_DISABLED') == 1:
+        assert not sys._is_gil_enabled(), 'A native dependency enabled the GIL'
+
+
+@pytest.fixture(autouse=True, scope='session')
+def _fixture_gil_remains_disabled() -> Iterator[None]:
+    """Ensure native dependencies do not enable the GIL during the test session."""
+    _assert_gil_remains_disabled()
+    yield
+    _assert_gil_remains_disabled()
 
 
 def _normalize_solana_rpc_uri(uri: str) -> str:

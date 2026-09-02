@@ -19,14 +19,12 @@ export const EditKind = {
 export type EditKind = (typeof EditKind)[keyof typeof EditKind];
 
 /**
- * Every event mutation makes a computed P&L report and any historical balance series stale,
- * so an edit should offer to re-run them (issue #6825). Decoding/balances are *driven by* the
- * mutation itself (the redecode action re-decodes), so they are deliberately not listed here —
- * only the downstream work the user has to re-trigger.
+ * Every event mutation makes a computed P&L report and any historical balance series stale, so an
+ * edit offers to re-run them (#6825). Decoding and balances are driven by the mutation itself, so
+ * only downstream work the user must re-trigger belongs here.
  *
- * NOTE: `PNL_REPORT` is intentionally deferred for now. It runs native and is re-runnable from the
- * task center, but is kept out of smart re-run while the behaviour is validated — re-add
- * `ActivityKind.PNL_REPORT` here to switch it on.
+ * NOTE: `PNL_REPORT` is deferred while the behaviour is validated — add `ActivityKind.PNL_REPORT`
+ * here to switch it on.
  */
 const COMPUTED_DOWNSTREAM: readonly ActivityKind[] = [
   ActivityKind.HISTORICAL_BALANCES,

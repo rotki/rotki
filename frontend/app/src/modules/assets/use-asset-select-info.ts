@@ -25,14 +25,21 @@ interface UseAssetSelectInfoReturn {
 /**
  * How long queued identifiers are collected before a batch is sent.
  *
- * This coalesces the burst a list emits while it renders, so it only needs to outlast one render
- * pass. It used to be 1500ms, which is long enough for a user to type a search term and read an
- * empty table before the first request even leaves: an unresolved asset has no name or symbol to
- * match, so a cold cache filters everything out.
+ * @remarks
+ * This coalesces the burst a list emits while it renders, so it only has to outlast one render
+ * pass. Raising it much is worse than it looks: an unresolved asset has no name or symbol to match
+ * on, so until the batch returns a cold cache filters every row out, and the user reads an empty
+ * table while the first request has yet to leave.
  */
 const BATCH_DEBOUNCE_MS = 200;
 
-/** How many mapping requests may be in flight at once for one batch of queued identifiers. */
+/**
+ * How many mapping requests may be in flight at once for one batch of queued identifiers.
+ *
+ * @remarks
+ * Capped rather than released together: a large portfolio is 20 batches, more than one table
+ * prefetches its own list, and the backend serving them is a single local process.
+ */
 export const MAX_PARALLEL_ASSET_BATCHES = 4;
 
 /**
@@ -79,11 +86,6 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
     const collectionInfoMap: Record<string, AssetInfo | null> = {};
     const ids = identifiers.map(id => resolveAssetIdentifier(id));
 
-    // The batches are independent, so several are in flight at once: awaiting them one after the
-    // other made a large balance list wait for one round trip per 50 assets before the search could
-    // match anything. They are capped rather than all released together, because a large portfolio
-    // is 20 batches, more than one table prefetches its own list, and the backend serving them is a
-    // single local process.
     const batches = chunk(ids, 50);
     const responses = await mapWithConcurrency(
       batches,
@@ -130,10 +132,6 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
 
       const { assets, collections } = await retrieveAssetInfo(assetsToProcess);
 
-      // A round that retrieved nothing must not replace the ref. Every request failing is exactly
-      // when it would hold nothing new, and replacing it wakes every reader, each of which re-queues
-      // the identifiers it still cannot resolve, which fail again one debounce later. A backend
-      // returning errors would be polled for as long as the table stayed on screen.
       if (Object.keys(assets).length > 0)
         set(assetCache, Object.assign({}, get(assetCache), assets));
 
@@ -144,8 +142,6 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
       logger.error('Error processing asset info batch for AssetSelect', error);
     }
     finally {
-      // Only this batch is released. Clearing the whole set would let a concurrent batch's
-      // identifiers be queued a second time while their request is still in flight.
       assetsToProcess.forEach(asset => pendingAssets.delete(asset));
     }
   }, BATCH_DEBOUNCE_MS);

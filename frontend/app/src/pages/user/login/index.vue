@@ -37,10 +37,15 @@ const { showReleaseNotes } = useUpdateMessage();
 
 const isDocker = import.meta.env.VITE_DOCKER === 'true';
 
-// The stage only takes over for phases that need their own UI (asset update + a DB upgrade
-// during unlock). The login form stays mounted (with its loading state) through the transient
-// authenticate/connect/unlock phases — so a wrong-password error and the typed password survive
-// instead of remounting empty on the way back to the form.
+/**
+ * Whether the stage takes over from the login form.
+ *
+ * @remarks
+ * Only for the phases needing their own UI, being an asset update and a DB upgrade during unlock.
+ * The form stays mounted through the transient authenticate, connect and unlock phases, showing its
+ * own loading state, so that a wrong-password error and the typed password both survive rather than
+ * the form remounting empty on the way back.
+ */
 const showStage = computed<boolean>(() => {
   const kind = get(state).kind;
   return kind === UnlockPhase.updatePrompt
@@ -75,13 +80,20 @@ function onSkipUpdate(): void {
   startPromise(skipUpdate());
 }
 
-onMounted(async () => {
-  // The flow is a shared singleton that survives logout; clear any terminal state from a
-  // previous session so the form starts idle (not stuck in `ready`/loading or blocked by canStart).
+/**
+ * Starts the login screen from a clean slate.
+ *
+ * @remarks
+ * The unlock flow is a shared singleton that outlives a logout, so without the reset a previous
+ * session's terminal state leaves the form stuck in `ready` or blocked by `canStart`.
+ */
+async function startLoginScreen(): Promise<void> {
   reset();
   fetchMessages();
   await performInitialChecks();
-});
+}
+
+onMounted(startLoginScreen);
 </script>
 
 <template>

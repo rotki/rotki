@@ -171,7 +171,6 @@ describe('external-services', () => {
         wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').attributes(),
       ).toHaveProperty('disabled');
 
-      // Close the dialog
       await wrapper
         .find('[data-testid=bottom-dialog] [data-testid=cancel]')
         .trigger('click');
@@ -217,7 +216,6 @@ describe('external-services', () => {
       const etherscanKey = wrapper.find('[data-testid=bottom-dialog] [data-testid=etherscan]').findComponent(ServiceKey);
       expect(etherscanKey.vm.apiKey).toBe('123');
 
-      // Close the dialog
       await wrapper
         .find('[data-testid=bottom-dialog] [data-testid=cancel]')
         .trigger('click');

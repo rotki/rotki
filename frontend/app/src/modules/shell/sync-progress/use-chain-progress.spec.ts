@@ -1,6 +1,7 @@
 import type { TxQueryStatusData } from '@/modules/history/use-tx-query-status-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { AddressStatus, AddressStep } from './types';
 import { useChainProgress } from './use-chain-progress';
 
@@ -32,6 +33,11 @@ describe('useChainProgress', () => {
     status,
     subtype: 'bitcoin',
   });
+
+  function setDisabled(value: Record<string, string[]>): void {
+    const store = useSettingsRepo();
+    store.updateGeneral({ ...store.general, disabledChainQueries: value });
+  }
 
   beforeEach(() => {
     const pinia = createPinia();
@@ -154,11 +160,7 @@ describe('useChainProgress', () => {
   });
 
   describe('failed addresses', () => {
-    it('should keep a chain whose every address failed', () => {
-      // The regression this guards: a failed sync used to REMOVE its query-status entry, and the
-      // chain list is derived from those entries, so a chain that failed outright vanished from
-      // the panel along with its own denominator. A run with three failed gnosis addresses read
-      // "11/11 chains complete", all green.
+    it('should keep a chain whose every address failed, rather than dropping it from the list', () => {
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.FAILED),
         key2: createEvmStatusData('0x222', 'gnosis', TransactionsQueryStatus.FAILED),
@@ -174,8 +176,6 @@ describe('useChainProgress', () => {
     });
 
     it('should count a failed address as done so the chain can settle', () => {
-      // Same argument `percentageOf` makes for activities: no further progress is coming, so a bar
-      // that excluded failures would stall short of the end and never settle.
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.FAILED),
         key2: createEvmStatusData('0x222', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
@@ -184,6 +184,35 @@ describe('useChainProgress', () => {
       const chains = get(useChainProgress(queryStatus));
 
       expect(chains[0].progress).toBe(100);
+    });
+  });
+
+  describe('disabled chain queries', () => {
+    it('should drop an excluded address from its chain instead of padding the total', () => {
+      setDisabled({ eth: ['0x111'] });
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      });
+
+      const chains = get(useChainProgress(queryStatus));
+
+      expect(chains).toHaveLength(1);
+      expect(chains[0].addresses.map(a => a.address)).toStrictEqual(['0x222']);
+      expect(chains[0].total).toBe(1);
+      expect(chains[0].progress).toBe(100);
+    });
+
+    it('should leave no row at all for a chain switched off entirely', () => {
+      setDisabled({ gnosis: [] });
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x111', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      });
+
+      const chains = get(useChainProgress(queryStatus));
+
+      expect(chains.map(c => c.chain)).toStrictEqual(['eth']);
     });
   });
 
@@ -311,10 +340,6 @@ describe('useChainProgress', () => {
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      // effectiveStart = 200, current = 600, originalPeriodEnd = 1000
-      // totalRange = 1000 - 200 = 800
-      // progressRange = 600 - 200 = 400
-      // progress = (400 / 800) * 100 = 50
       expect(chains[0].addresses[0].periodProgress).toBe(50);
     });
 
@@ -354,24 +379,25 @@ describe('useChainProgress', () => {
       expect(chains[0].addresses[0].periodProgress).toBe(100);
     });
 
-    it('should ensure progress is at least 0', () => {
+    it('should report 0 rather than a negative progress when the cursor sits behind the period start', () => {
+      const periodStart = 500;
+      const cursorBehindTheStart = 100;
+      const periodEnd = 1000;
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createEvmStatusData(
           '0x123',
           'eth',
           TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          [500, 100],
-          1000,
-          500,
+          [periodStart, cursorBehindTheStart],
+          periodEnd,
+          periodStart,
         ),
       });
 
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      // effectiveStart = 500, current = 100, originalPeriodEnd = 1000
-      // progressRange = 100 - 500 = -400 (negative)
-      // Should be capped at 0
+      expect(cursorBehindTheStart - periodStart).toBeLessThan(0);
       expect(chains[0].addresses[0].periodProgress).toBe(0);
     });
   });
@@ -387,7 +413,6 @@ describe('useChainProgress', () => {
       const result = useChainProgress(queryStatus);
       const chains = get(result);
 
-      // eth has in-progress (QUERYING), should be first
       expect(chains[0].chain).toBe('eth');
     });
 
@@ -408,9 +433,6 @@ describe('useChainProgress', () => {
   });
 
   describe('period handling', () => {
-    // The store parks the cursor at the range start on STARTED, so the bar must read 0 there and
-    // climb from the later cursors. Read raw, STARTED compares the target end against itself and
-    // reports 100 before anything has been queried.
     it('should report evm progress from the cursor, starting at zero', () => {
       const cases: [period: [number, number], expected: number][] = [
         [[0, 0], 0],
@@ -428,9 +450,7 @@ describe('useChainProgress', () => {
       }
     });
 
-    // The progress bar is driven by the period alone, so an entry that carries none must produce
-    // neither a period nor a progress value rather than defaulting to one.
-    it('should leave period and progress unset for an entry without a period', () => {
+    it('should leave period and progress unset for an entry without a period, rather than defaulting them', () => {
       const queryStatus = ref<Record<string, TxQueryStatusData>>({
         key1: createBitcoinStatusData('bc1q...', 'btc', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       });
@@ -505,7 +525,7 @@ describe('useChainProgress', () => {
 
       const ethChain = chains.find(c => c.chain === 'eth');
       expect(ethChain?.pending).toBe(1);
-      expect(ethChain?.inProgress).toBe(2); // QUERYING + DECODING
+      expect(ethChain?.inProgress).toBe(2);
       expect(ethChain?.completed).toBe(1);
       expect(ethChain?.total).toBe(4);
     });
@@ -521,7 +541,6 @@ describe('useChainProgress', () => {
 
       expect(get(result)[0].addresses[0].status).toBe(AddressStatus.QUERYING);
 
-      // Update status
       set(queryStatus, {
         key1: createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
       });

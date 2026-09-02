@@ -25,10 +25,16 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
     set(previousCurrency, get(currencySymbol));
   }
 
-  // The hide-small-balances thresholds are stored and displayed in the user's main currency, so a
-  // currency switch must re-denominate them by the same exchange-rate ratio used for prices. Only
-  // the sources that actually have a threshold are converted, and the write is skipped entirely
-  // when nothing is set (an empty reset would needlessly re-trigger the balance watchers).
+  /**
+   * Re-denominates the hide-small-balances thresholds into the currency being switched to.
+   *
+   * @remarks
+   * The thresholds are stored in the user's main currency, so they have to move with it or a
+   * threshold set in one currency starts hiding a different slice of the balances in the next.
+   * Sources with no threshold stay absent, and when no source has one the setting is left
+   * untouched: writing an empty object would re-trigger the balance watchers for nothing.
+   * @param ratio - the new currency's rate over the old one, the same factor applied to prices
+   */
   function convertValueThresholds(ratio: BigNumber): void {
     const thresholds = get(balanceValueThreshold);
     const converted: BalanceValueThreshold = {};

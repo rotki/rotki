@@ -59,13 +59,15 @@ const endErrorMessagesComputed = computed<string[]>(() => {
   return endErrorMessages;
 });
 
+/**
+ * Applies a quick range such as "last 7 days".
+ *
+ * @remarks
+ * `end` is written before `start`, so the start picker's max-date constraint widens first.
+ * Reversed, the transient `start > end` latches a validation error that `RuiDateTimePicker` only
+ * clears on a `modelValue` change, never on a min/max prop change.
+ */
 function applyQuickOption(option: QuickOption): void {
-  // Update `end` before `start` so the start picker's max-date constraint
-  // (bound to `end`) widens before the new start is written. Otherwise a
-  // transient state where start > end can latch a validation error in the
-  // start picker that won't clear until the user changes modelValue again —
-  // see RuiDateTimePicker's isDateValid, which only re-runs on modelValue
-  // changes, not on min/max-date prop changes.
   const now = dayjs();
   set(end, now.unix());
   nextTick(() => {

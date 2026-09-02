@@ -110,8 +110,10 @@ export function buildSnapshotChanges(original: Snapshot, draft: Snapshot): Snaps
 }
 
 /**
- * Counts the structural differences between two snapshots. Drives `isDirty`
- * (count > 0) and the "N unsaved changes" badge.
+ * Counts the structural differences between two snapshots.
+ *
+ * @remarks
+ * Drives `isDirty`, which is a non-zero count, and the "N unsaved changes" badge.
  */
 export function countSnapshotChanges(original: Snapshot, draft: Snapshot): number {
   return buildSnapshotChanges(original, draft).length;

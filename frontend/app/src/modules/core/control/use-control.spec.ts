@@ -77,9 +77,7 @@ describe('modules/core/control/use-control', () => {
     expect(get(available)).toBe(true);
   });
 
-  it('should report control as unavailable when the endpoint is not mounted', async () => {
-    // The deployment has no session cookie configured, so starling never
-    // registered the route. The app must show its blocked state, not buttons.
+  it('should report control as unavailable when the endpoint is not mounted, so the app shows its blocked state rather than buttons', async () => {
     server.use(http.get(CONTROL_URL, () => new HttpResponse(null, { status: 404 })));
     const useControl = await freshUseControl();
     const { available, probe } = useControl();
@@ -131,9 +129,7 @@ describe('modules/core/control/use-control', () => {
     });
   });
 
-  it('should send the auto-start preference as its own rpc, not as a restart option', async () => {
-    // Routing it through `restart` would bounce core to record a preference, and
-    // the supervisor refuses options on this transport anyway.
+  it('should send the auto-start preference as its own rpc, since routing it through restart would bounce core to record a preference', async () => {
     capabilities();
     const sent: ControlFrame[] = [];
     server.use(http.post(CONTROL_URL, async ({ request }) => {
@@ -191,9 +187,7 @@ describe('modules/core/control/use-control', () => {
     expect(sent[2].params).toEqual({ service: 'mcp' });
   });
 
-  it('should surface a refused operation as an error rather than a silent success', async () => {
-    // JSON-RPC reports a refusal in a 200 body, so a client that only checks the
-    // HTTP status would report a restart that never happened as done.
+  it('should surface a refused operation as an error rather than a silent success, since JSON-RPC reports a refusal in a 200 body', async () => {
     capabilities();
     server.use(http.post(CONTROL_URL, () => HttpResponse.json({
       error: { code: -32001, message: 'method \'stop\' is not permitted on the http-control transport' },
@@ -205,9 +199,7 @@ describe('modules/core/control/use-control', () => {
     await expect(useControl().restart()).rejects.toThrow('is not permitted');
   });
 
-  it('should report a transport refusal with a translated message', async () => {
-    // A transport-level refusal has no body, so the HTTP reason phrase would be
-    // the only thing to show — untranslated, and meaningless to a user.
+  it('should report a transport refusal with a translated message, since it carries no body to take one from', async () => {
     capabilities();
     server.use(http.post(CONTROL_URL, () => new HttpResponse(null, { status: 401 })));
 
@@ -240,8 +232,6 @@ describe('modules/core/control/use-control', () => {
     await expect(setServiceRunning(StarlingService.MCP, true)).resolves.toBe(StarlingServiceStatus.READY);
     expect(mocks.startMcpServer).toHaveBeenCalledOnce();
 
-    // Electron owns the desktop preference, so it goes over IPC and never as the
-    // rpc — sending both would put the same value in two stores.
     await setServiceAutostart(StarlingService.MCP, false);
     expect(mocks.setMcpAutoStart).toHaveBeenCalledWith(false);
     await expect(serviceInfo(StarlingService.MCP)).resolves.toEqual({
@@ -254,9 +244,7 @@ describe('modules/core/control/use-control', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('should still report the desktop as the only runtime that takes restart options', async () => {
-    // Auto-start no longer rides on a restart, so this stays false in docker
-    // while the auto-start toggle is offered there.
+  it('should report the desktop as the only runtime that takes restart options, even where auto-start is offered', async () => {
     capabilities();
     const useControl = await freshUseControl();
     expect(useControl().supportsOptions).toBe(false);

@@ -9,6 +9,7 @@ import { useSettingsApi } from './use-settings-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 const ETH_ADDRESS = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
+const MULTI_WORD_CHAIN_ID = 'polygon_pos';
 
 interface CapturedRequest {
   body: unknown;
@@ -120,28 +121,23 @@ describe('composables/api/settings/settings-api', () => {
       expect(capturedRequest!.method).toBe('GET');
       expect(capturedRequest!.url).toBe(`${backendUrl}/api/1/settings`);
 
-      // Verify response was transformed to camelCase and parsed
       expect(result.general.mainCurrency).toBeDefined();
       expect(result.other.havePremium).toBe(false);
       expect(result.accounting.includeCrypto2crypto).toBe(true);
     });
 
     it('should keep chain-keyed settings keyed by the chain id', async () => {
-      // The response transformer renames every key of every nested object, and these two settings
-      // are maps keyed by chain id rather than by field name. Multi-word ids are the ones it
-      // mangles (`polygon_pos` -> `polygonPos`), which left the skip rules for exactly those chains
-      // matching nothing while `base` kept working.
       server.use(
         http.get(`${backendUrl}/api/1/settings`, () => HttpResponse.json(createSettingsResponse({
-          disabled_chain_queries: { base: [], binance_sc: [], polygon_pos: [] },
-          evm_indexers_order: { polygon_pos: ['etherscan'] },
+          disabled_chain_queries: { base: [], binance_sc: [], [MULTI_WORD_CHAIN_ID]: [] },
+          evm_indexers_order: { [MULTI_WORD_CHAIN_ID]: ['etherscan'] },
         }))),
       );
 
       const { general } = await useSettingsApi().getSettings();
 
-      expect(Object.keys(general.disabledChainQueries).sort()).toStrictEqual(['base', 'binance_sc', 'polygon_pos']);
-      expect(general.evmIndexersOrder).toStrictEqual({ polygon_pos: ['etherscan'] });
+      expect(Object.keys(general.disabledChainQueries).sort()).toStrictEqual(['base', 'binance_sc', MULTI_WORD_CHAIN_ID]);
+      expect(general.evmIndexersOrder).toStrictEqual({ [MULTI_WORD_CHAIN_ID]: ['etherscan'] });
     });
 
     it('should throw error when result is null', async () => {
@@ -183,7 +179,6 @@ describe('composables/api/settings/settings-api', () => {
       expect(capturedRequest).not.toBeNull();
       expect(capturedRequest!.method).toBe('PUT');
 
-      // Verify request payload was transformed to snake_case
       expect(capturedBody).toEqual({
         settings: {
           main_currency: 'GBP',
@@ -204,20 +199,19 @@ describe('composables/api/settings/settings-api', () => {
       const { setSettings } = useSettingsApi();
       const result = await setSettings({ mainCurrency: 'GBP' });
 
-      // Verify response was transformed and parsed correctly
       expect(result.general.uiFloatingPrecision).toBe(4);
     });
 
     it('should keep chain-keyed settings keyed by the chain id', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () => HttpResponse.json(createSettingsResponse({
-          disabled_chain_queries: { base: [], polygon_pos: [] },
+          disabled_chain_queries: { base: [], [MULTI_WORD_CHAIN_ID]: [] },
         }))),
       );
 
-      const { general } = await useSettingsApi().setSettings({ disabledChainQueries: { polygon_pos: [] } });
+      const { general } = await useSettingsApi().setSettings({ disabledChainQueries: { [MULTI_WORD_CHAIN_ID]: [] } });
 
-      expect(Object.keys(general.disabledChainQueries).sort()).toStrictEqual(['base', 'polygon_pos']);
+      expect(Object.keys(general.disabledChainQueries).sort()).toStrictEqual(['base', MULTI_WORD_CHAIN_ID]);
     });
 
     it('should throw ApiValidationError on 400 response', async () => {
@@ -236,7 +230,7 @@ describe('composables/api/settings/settings-api', () => {
         .toThrow(ApiValidationError);
     });
 
-    it('should throw ApiValidationError with parsed validation errors', async () => {
+    it('should throw ApiValidationError whose error keys are camelCased, not the wire snake_case', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json({
@@ -255,7 +249,6 @@ describe('composables/api/settings/settings-api', () => {
         expect(error).toBeInstanceOf(ApiValidationError);
         if (!(error instanceof ApiValidationError))
           throw new Error('Expected ApiValidationError');
-        // Errors should be transformed to camelCase
         expect(error.errors).toHaveProperty('uiFloatingPrecision');
       }
     });
@@ -287,39 +280,34 @@ describe('composables/api/settings/settings-api', () => {
       const { getRawSettings } = useSettingsApi();
       const result = await getRawSettings();
 
-      // Raw settings should have camelCase keys but not be wrapped in model structure
       expect(result).toHaveProperty('mainCurrency');
       expect(result).toHaveProperty('uiFloatingPrecision');
       expect(result).not.toHaveProperty('general');
       expect(result).not.toHaveProperty('accounting');
     });
 
-    it('should keep chain-keyed settings keyed by the chain id', async () => {
-      // The path a resumed session reads its settings on.
+    it('should keep chain-keyed settings keyed by the chain id on the path a resumed session reads', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/settings`, () => HttpResponse.json(createSettingsResponse({
-          disabled_chain_queries: { base: [], polygon_pos: [] },
+          disabled_chain_queries: { base: [], [MULTI_WORD_CHAIN_ID]: [] },
         }))),
       );
 
       const result = await useSettingsApi().getRawSettings();
 
-      expect(Object.keys(result.disabledChainQueries!).sort()).toStrictEqual(['base', 'polygon_pos']);
+      expect(Object.keys(result.disabledChainQueries!).sort()).toStrictEqual(['base', MULTI_WORD_CHAIN_ID]);
     });
   });
 
   describe('chain-keyed settings round trip', () => {
-    it('should send the chain ids the settings UI built, in snake_case', async () => {
-      // Drives the real rule state the settings page uses, so this covers the whole round trip:
-      // what the UI produces, what the request transformer puts on the wire, and what comes back.
-      // The empty array is load-bearing - it is what disables a chain entirely.
+    it('should send the chain ids the settings UI built, in snake_case, and read them back unchanged', async () => {
       let capturedBody: unknown = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/settings`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json(createSettingsResponse({
-            disabled_chain_queries: { binance_sc: [], polygon_pos: [ETH_ADDRESS] },
+            disabled_chain_queries: { binance_sc: [], [MULTI_WORD_CHAIN_ID]: [ETH_ADDRESS] },
           }));
         }),
       );
@@ -331,15 +319,15 @@ describe('composables/api/settings/settings-api', () => {
         source: ref({}),
       }))!;
       state.addRule({ chainId: 'binance_sc', kind: 'chain' });
-      state.addRule({ address: ETH_ADDRESS, chainIds: ['polygon_pos'], kind: 'address' });
+      state.addRule({ address: ETH_ADDRESS, chainIds: [MULTI_WORD_CHAIN_ID], kind: 'address' });
 
       const { general } = await useSettingsApi().setSettings({ disabledChainQueries: state.buildPayload() });
       scope.stop();
 
       expect(capturedBody).toStrictEqual({
-        settings: { disabled_chain_queries: { binance_sc: [], polygon_pos: [ETH_ADDRESS] } },
+        settings: { disabled_chain_queries: { binance_sc: [], [MULTI_WORD_CHAIN_ID]: [ETH_ADDRESS] } },
       });
-      expect(general.disabledChainQueries).toStrictEqual({ binance_sc: [], polygon_pos: [ETH_ADDRESS] });
+      expect(general.disabledChainQueries).toStrictEqual({ binance_sc: [], [MULTI_WORD_CHAIN_ID]: [ETH_ADDRESS] });
     });
   });
 
@@ -371,7 +359,6 @@ describe('composables/api/settings/settings-api', () => {
       const { backendSettings } = useSettingsApi();
       const result = await backendSettings();
 
-      // Verify snake_case was converted to camelCase
       expect(result.loglevel.isDefault).toBe(true);
       expect(result.maxLogfilesNum.value).toBe(3);
       expect(result.maxSizeInMbAllLogs.value).toBe(300);
@@ -393,13 +380,12 @@ describe('composables/api/settings/settings-api', () => {
       const { updateBackendConfiguration } = useSettingsApi();
       await updateBackendConfiguration('debug');
 
-      // Verify loglevel is converted to uppercase
       expect(capturedBody).toEqual({
         loglevel: 'DEBUG',
       });
     });
 
-    it('should return parsed BackendConfiguration', async () => {
+    it('should return parsed BackendConfiguration with the loglevel lowercased', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings/configuration`, () =>
           HttpResponse.json({
@@ -416,7 +402,6 @@ describe('composables/api/settings/settings-api', () => {
       const { updateBackendConfiguration } = useSettingsApi();
       const result = await updateBackendConfiguration('warning');
 
-      // ActiveLogLevel schema preprocesses to lowercase
       expect(result.loglevel.value).toBe('warning');
       expect(result.loglevel.isDefault).toBe(false);
     });

@@ -43,7 +43,7 @@ interface FilterSuggestion {
 
 export type NarrowSuggestion = FieldSuggestion | ValueSuggestion | FilterSuggestion;
 
-/** Previously used values per field key, offered to fields that have no option list. */
+/** The values already filtered by, per field, offered to fields that have no option list. */
 export type RecentValues = (field: FieldDef) => string[];
 
 /**
@@ -88,15 +88,16 @@ const DEFAULT_LIMITS: NarrowLimits = { perField: 5, total: 20 };
 /**
  * Match rank, lower is better: a label that starts with the query beats one that merely
  * contains it, and a field beats one of its own values (the field is the broader answer).
+ *
+ * @remarks
+ * The last two ranks answer without matching anything, so they sit below everything that did: a
+ * typed value always matches, and guidance only says what the field's syntax is.
  */
 const RANK_FIELD_PREFIX = 0;
 const RANK_VALUE_PREFIX = 1;
 const RANK_FIELD_SUBSTRING = 2;
 const RANK_VALUE_SUBSTRING = 3;
-// A typed-value offer is ranked last: it always matches, so it must never crowd out a real one.
 const RANK_TYPED_VALUE = 4;
-// Below everything that matched something concrete: guidance is what a field offers when it has
-// nothing to answer with yet, so any real match is a better answer than telling the user the syntax.
 const RANK_GUIDANCE = 5;
 
 /**
@@ -183,9 +184,9 @@ function fieldRow(field: FieldDef, label: string): FieldSuggestion {
  *
  * Pure: options and their display labels come off the `FieldDef`, never from a store.
  *
- * @param query what the user typed; blank yields nothing (the bar shows no popover)
- * @param fields the fields still available (callers pass the ones without an active filter)
- * @param limits caps on how many suggestions come back
+ * @param query - what the user typed; blank yields nothing, so the bar shows no popover
+ * @param fields - the fields still available; callers pass the ones without an active filter
+ * @param limits - caps on how many suggestions come back
  * @returns suggestions, best match first
  */
 interface Ranked {
@@ -268,7 +269,7 @@ function listMatches(field: FieldDef, needle: string, perField: number): Ranked[
 }
 
 /**
- * Matches among the values this field was previously filtered by.
+ * Matches among the values this field has already been filtered by.
  *
  * Matched on the stored value but shown through the field's resolver, like every other value row.
  * The two differ for exactly the fields this list serves: an address resolves to a shortened and,
@@ -299,15 +300,19 @@ interface RankContext {
   readonly hints?: SyntaxHints;
 }
 
-/** Every way one field can answer the query, in one list. */
+/**
+ * Gathers every way one field can answer the query, in one list.
+ *
+ * @remarks
+ * Guidance is offered only when nothing else on this field matched: a query that already reads as
+ * a filter gets the filter itself, and repeating the field beneath it says nothing new.
+ */
 function rankField(field: FieldDef, context: RankContext): Ranked[] {
   const { hints, limits, needle, operatorLabels, recentValues, typed } = context;
   const remembered = recentValues?.(field) ?? [];
   const matched = fieldMatch(field, needle, hints);
   // Read as a whole filter, for the fields whose values are written rather than picked.
   const parsed = typedFilterMatches(field, typed, operatorLabels);
-  // Guidance only when the query yielded nothing on this field: a query that already reads as a
-  // filter gets the filter itself, and repeating the field beneath it says nothing new.
   const guidance = parsed.length === 0 && !matched ? guidanceMatch(field, typed) : undefined;
   const typedValue = typedValueSuggestion(field, typed);
 
@@ -330,12 +335,12 @@ function rankField(field: FieldDef, context: RankContext): Ranked[] {
  *
  * Pure: options, display labels and remembered values all arrive as parameters, never from a store.
  *
- * @param query what the user typed; blank yields nothing (the bar shows no popover)
- * @param fields the fields still available (callers pass the ones without an active filter)
- * @param operatorLabels already-translated operator labels, for the rows read out of the query
- * @param limits caps on how many suggestions come back
- * @param recentValues previously used values per field, for the fields that have no option list
- * @param hints per-value-type keywords and syntax examples for the fields that are typed into
+ * @param query - what the user typed; blank yields nothing, so the bar shows no popover
+ * @param fields - the fields still available; callers pass the ones without an active filter
+ * @param operatorLabels - already-translated operator labels, for the rows read out of the query
+ * @param limits - caps on how many suggestions come back
+ * @param recentValues - values already filtered by, per field, for those with no option list
+ * @param hints - per-value-type keywords and syntax examples for the fields that are typed into
  * @returns suggestions, best match first
  */
 export function searchFieldsAndValues(

@@ -61,22 +61,27 @@ const evmChainName = computed<string | undefined>(() => {
   return undefined;
 });
 
+/**
+ * The indexer order this dialog opens with: the chain's own order, else the default one, else
+ * every indexer.
+ *
+ * @remarks
+ * The final fallback is listed here rather than read from a setting, so the dialog still offers a
+ * choice on an account that has never configured one.
+ */
 function getInitialIndexerOrder(): PrioritizedListId[] {
   const chainName = get(evmChainName);
   const chainOrders = get(evmIndexersOrder);
 
-  // Check for chain-specific order first
   if (chainName && chainOrders && chainOrders[chainName]) {
     return [...chainOrders[chainName]];
   }
 
-  // Fall back to default order
   const defaultOrder = get(defaultEvmIndexerOrder);
   if (defaultOrder && defaultOrder.length > 0) {
     return [...defaultOrder];
   }
 
-  // Use all indexers if no setting is configured
   return [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN];
 }
 
@@ -110,7 +115,7 @@ watch(show, (value) => {
     v-model="show"
     :max-width="700"
   >
-    <RuiCard content-class="!pt-0">
+    <RuiCard :class-names="{ content: '!pt-0' }">
       <template #header>
         {{ t('transactions.actions.redecode_events') }}
       </template>

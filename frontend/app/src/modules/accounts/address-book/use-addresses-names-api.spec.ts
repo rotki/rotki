@@ -13,8 +13,6 @@ describe('composables/api/blockchain/addresses-names', () => {
     vi.clearAllMocks();
   });
 
-  // Restored here rather than at the end of each test: a failing assertion throws past an inline
-  // restore, and the leaked spy then fails unrelated tests further down the file.
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -511,7 +509,7 @@ describe('composables/api/blockchain/addresses-names', () => {
      * repeatedly asks for the same address over and over. The request queue allows six requests in
      * flight; a slow backend once parked all six on identical lookups and every other request in
      * the app stopped, including the DELETE behind a user's confirmed delete
-     * (`history-events.spec.ts:334`, CI only). Identical lookups must therefore share one request.
+     * (seen in the history-events e2e spec, CI only). Identical lookups must share one request.
      */
     it('should share one request between identical concurrent lookups', async () => {
       let started = 0;
@@ -545,9 +543,6 @@ describe('composables/api/blockchain/addresses-names', () => {
         expect(started).toBeGreaterThan(0);
       });
 
-      // The lookups are still unresolved, so this is the assertion that matters: an unrelated
-      // request must not be stuck behind them. Raced rather than awaited outright, so starvation
-      // reports itself instead of hanging until the test times out.
       const starved = new Promise<string>((resolve) => {
         setTimeout(resolve, 1000, 'starved behind the ens lookups');
       });

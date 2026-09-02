@@ -128,7 +128,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
     <template #item.actions="{ row }">
       <RuiTooltip
         :open-delay="400"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
       >
         <template #activator>
           <RuiButton
@@ -147,7 +147,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
       </RuiTooltip>
       <RuiTooltip
         :open-delay="400"
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
       >
         <template #activator>
           <RuiButton

@@ -37,7 +37,6 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
 
   const performanceStatus = useWorkStatus(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
 
-  // `isFirstLoad()` on the performance section is now the orchestrator's freshness ledger.
   function isFirstLoad(): boolean {
     return !get(performanceStatus).everCompleted;
   }
@@ -48,10 +47,8 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
 
   const lastRefresh = createLastRefreshStorage(get(username));
 
-  // Loading states
   const performanceRefreshing = computed<boolean>(() => get(performanceStatus).active);
-  // Both layers: eth2's balances are read from the DB as well as queried, and hydration is not an
-  // activity the orchestrator can report on.
+  // Both layers: hydration reads eth2 balances from the DB and is not an activity the orchestrator sees.
   const eth2Loading = logicOr(
     useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
     useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
@@ -68,8 +65,7 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
     const refreshValidators = async (userInitiated: boolean): Promise<void> => {
       const shouldRefresh = userInitiated || isFirstLoad();
       if (shouldRefresh) {
-        // Only the user's own press supersedes; a first load has nothing to supersede and should
-        // join whatever is already querying eth2.
+        // Only a user's press supersedes; a first load joins whatever is already querying eth2.
         await refreshBlockchainBalances({
           blockchain: Blockchain.ETH2,
         }, userInitiated ? RefreshMode.USER : RefreshMode.BACKGROUND);
@@ -86,8 +82,7 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
 
     const updatePerformance = async (userInitiated = false): Promise<void> => {
       await callbacks.refreshPerformance(userInitiated);
-      // if the number of validators is bigger than the total entries in performance
-      // force a refresh of performance to pick the missing performance entries.
+      // More validators than performance entries means the cache predates a validator; force a refetch.
       const totalValidators = get(stakingValidatorsLimits)?.total ?? 0;
       const performance = callbacks.getPerformance();
       const totalPerformanceEntries = performance.entriesTotal ?? 0;

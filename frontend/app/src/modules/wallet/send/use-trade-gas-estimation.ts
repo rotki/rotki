@@ -5,7 +5,6 @@ import { getWalletErrorMessage } from '@/modules/wallet/constants';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
-/** Rejection used to unwind an estimation the user has already moved past. */
 const CANCELLED = 'Gas estimation cancelled';
 
 interface UseTradeGasEstimationOptions {
@@ -59,11 +58,7 @@ export function useTradeGasEstimation(options: UseTradeGasEstimationOptions): Us
     get(connected) && !!get(chain) && !!get(asset) && get(isAssetResolved),
   );
 
-  async function estimate(currentAsset: string): Promise<GasFeeEstimation | undefined> {
-    const abortController = new AbortController();
-    set(controller, abortController);
-    set(estimatingGas, true);
-
+  async function estimate(currentAsset: string, abortController: AbortController): Promise<GasFeeEstimation | undefined> {
     const aborted = new Promise<GasFeeEstimation>((_, reject) => {
       abortController.signal.addEventListener('abort', () => {
         reject(new Error(CANCELLED));
@@ -72,7 +67,6 @@ export function useTradeGasEstimation(options: UseTradeGasEstimationOptions): Us
 
     const estimation = await Promise.race([getGasFeeForChain(), aborted]);
 
-    // The selection moved on while this was in flight, so the answer is no longer about it.
     if (currentAsset !== get(asset))
       return undefined;
 
@@ -90,13 +84,14 @@ export function useTradeGasEstimation(options: UseTradeGasEstimationOptions): Us
       return;
     }
 
+    const abortController = new AbortController();
+    set(controller, abortController);
+    set(estimatingGas, true);
+
     try {
-      // Both sides can be undefined (an unresolvable chain, a wallet that has not
-      // reported its chain yet). That is not a match: estimating then would price
-      // the transaction on a chain nothing has confirmed.
       const selectedChainId = getChainIdFromChain(currentChain);
       if (selectedChainId !== undefined && selectedChainId === currentChainId) {
-        const estimation = await estimate(currentAsset);
+        const estimation = await estimate(currentAsset, abortController);
         if (estimation) {
           set(estimatedGasFee, estimation.gasFee);
           return;
@@ -112,8 +107,10 @@ export function useTradeGasEstimation(options: UseTradeGasEstimationOptions): Us
       }
     }
     finally {
-      set(controller, undefined);
-      set(estimatingGas, false);
+      if (get(controller) === abortController) {
+        set(controller, undefined);
+        set(estimatingGas, false);
+      }
     }
   });
 

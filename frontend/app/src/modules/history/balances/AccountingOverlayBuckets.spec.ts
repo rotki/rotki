@@ -87,9 +87,7 @@ describe('accountingOverlayBuckets.vue', () => {
     expect(highlighted.at(0)?.text()).toContain('aave-v3');
   });
 
-  it('should highlight the only bucket even when the protocol does not match', () => {
-    // A deposit-into-protocol event carries the protocol counterparty, but the moved asset may live
-    // in the plain wallet (one bucket); the single position is unambiguously the affected one.
+  it('should highlight the only bucket even when the protocol does not match, a single position being unambiguously the one the event moved', () => {
     const wrapper = mount(AccountingOverlayBuckets, {
       global: { stubs },
       props: { asset: 'ETH', buckets: [bucket(null, '5')], eventLocation: 'ethereum', eventProtocol: 'aave-v3' },

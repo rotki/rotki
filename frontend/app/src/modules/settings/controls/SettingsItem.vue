@@ -35,8 +35,10 @@ const anchor = computed<string | undefined>(() => {
   return key ? anchorId(key) : undefined;
 });
 
-// The row's title, sourced from its registry search block or action entry so it is not restated in the
-// template. A `#title` slot still overrides it (for rich content).
+/**
+ * The row's title, taken from its registry search block or its action entry so that no template
+ * restates it. A `#title` slot still wins, for rich content.
+ */
 const registryTitle = computed<string | undefined>(() => {
   let titleKey: MessageKey | undefined;
   if (settingKey)

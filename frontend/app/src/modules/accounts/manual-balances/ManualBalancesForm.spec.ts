@@ -1,5 +1,5 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
-import type { ComponentPublicInstance } from 'vue';
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
@@ -28,8 +28,6 @@ vi.mock('@/modules/assets/api/use-asset-management-api', () => ({
   }),
 }));
 
-// Reactive rather than a plain object: `storeToRefs` only picks up a key whose raw value is a ref,
-// and only hands back the array through a proxy that unwraps it.
 vi.mock('@/modules/core/common/use-location-store', () => ({
   useLocationStore: vi.fn().mockImplementation(() => reactive({
     tradeLocations: computed(() => get(tradeLocations)),
@@ -37,9 +35,6 @@ vi.mock('@/modules/core/common/use-location-store', () => ({
 }));
 
 const ManualBalancesForm = (await import('@/modules/accounts/manual-balances/ManualBalancesForm.vue')).default;
-
-/** The stubs declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function fieldStub(name: string): Record<string, unknown> {
   return {
@@ -64,8 +59,7 @@ const STUBS = {
   TagInput: fieldStub('TagInput'),
 };
 
-/** What the balances page hands the dialog for a new entry: a zero amount and a default location. */
-function payload(overrides: Partial<RawManualBalance> = {}): RawManualBalance {
+function newEntryPayload(overrides: Partial<RawManualBalance> = {}): RawManualBalance {
   return {
     amount: bigNumberify(0),
     asset: '',
@@ -78,7 +72,7 @@ function payload(overrides: Partial<RawManualBalance> = {}): RawManualBalance {
 }
 
 function filled(): RawManualBalance {
-  return payload({
+  return newEntryPayload({
     amount: bigNumberify(10),
     asset: 'ETH',
     label: 'my wallet',
@@ -101,7 +95,7 @@ describe('modules/accounts/manual-balances/ManualBalancesForm', () => {
   });
 
   function createHarness(
-    value: RawManualBalance | ManualBalance = payload(),
+    value: RawManualBalance | ManualBalance = newEntryPayload(),
     errors: Record<string, string[]> = {},
   ): ModelFormHarness<RawManualBalance | ManualBalance> {
     return mountModelForm<RawManualBalance | ManualBalance>(ManualBalancesForm, {
@@ -127,16 +121,17 @@ describe('modules/accounts/manual-balances/ManualBalancesForm', () => {
     await nextTick();
   }
 
-  it('should reject a new balance with nothing filled in', async () => {
+  it('should reject a new balance with nothing filled in, while the seeded amount and location stay silent', async () => {
     harness = createHarness();
+
+    expect(harness.model().amount.isZero()).toBe(true);
+    expect(harness.model().location).toBe('external');
 
     expect(await harness.validate()).toBe(false);
     await nextTick();
 
     expect(messages('manual-balances-form-label')).toEqual(['manual_balances_form.validation.label_empty']);
     expect(messages('manual-balances-form-asset')).toEqual(['manual_balances_form.validation.asset']);
-    // The page opens the dialog with a zero amount and a default location, so neither of those two
-    // rules can fire until the user clears the field.
     expect(messages('manual-balances-form-amount')).toEqual([]);
     expect(messages('manual-balances-form-location')).toEqual([]);
   });
@@ -151,8 +146,6 @@ describe('modules/accounts/manual-balances/ManualBalancesForm', () => {
     await nextTick();
 
     expect(messages('manual-balances-form-amount')).toEqual(['manual_balances_form.validation.amount']);
-    // FLIP: the rule carried no message of its own, so vuelidate's untranslated "Value is required"
-    // showed here. It has a key of its own now, saying which field is meant.
     expect(messages('manual-balances-form-location')).toEqual(['manual_balances_form.validation.location']);
   });
 
@@ -177,12 +170,10 @@ describe('modules/accounts/manual-balances/ManualBalancesForm', () => {
     ]);
   });
 
-  it('should let an edited balance keep its own label', async () => {
+  it('should skip the label uniqueness check entirely while editing', async () => {
     set(manualLabels, ['my wallet']);
     harness = createHarness({ ...filled(), identifier: 4 });
 
-    // The uniqueness check is skipped entirely while editing, so the label it already holds - and
-    // any other taken one - passes.
     expect(await harness.validate()).toBe(true);
     await nextTick();
 
@@ -223,8 +214,6 @@ describe('modules/accounts/manual-balances/ManualBalancesForm', () => {
   it('should arm the unsaved-changes prompt on an edit, however early', async () => {
     harness = createHarness();
 
-    // FLIP: `useFormStateWatcher` installed its watcher behind a 500 ms timer and never saw an
-    // edit made before it arrived.
     await edit('manual-balances-form-label', 'my wallet');
 
     expect(harness.stateUpdated()).toBe(true);
@@ -234,8 +223,6 @@ describe('modules/accounts/manual-balances/ManualBalancesForm', () => {
     harness = createHarness(filled(), { label: ['Label is already taken'] });
     await nextTick();
 
-    // FLIP: external results reached `$errors` only once the field was dirty, which is why the
-    // dialog validates again after a failed save.
     expect(messages('manual-balances-form-label')).toEqual(['Label is already taken']);
   });
 

@@ -1,3 +1,4 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import type { LoginCredentials } from '@/modules/auth/login';
 import type { useCustomBackend } from '@/modules/auth/login/use-custom-backend';
 import type { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember-options';
@@ -7,27 +8,14 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, ref } from 'vue';
+import { ref } from 'vue';
 import '@test/i18n';
-
-/**
- * Characterization of the vuelidate rules, written before the zod migration.
- *
- * The seam is what the form exposes to `LoginScreen`: the `login` emit and its payload, the state of
- * the submit button, and the `error-messages` each field receives. The form has no `valid` model and
- * exposes no `validate()` - it gates its own submit button on `v$.$invalid` - so the button's
- * disabled state IS the validity contract here.
- *
- * `:disabled="v$.$invalid || ..."` is exactly the binding that breaks under the zod core, where
- * `form.valid` does not unwrap in a template. These tests fail loudly if that happens.
- */
 
 const backendDisplay = ref<boolean>(false);
 const backendUrl = ref<string>('');
 const savedUsernames = ref<string[]>(['saved-user']);
 const storedUsername = ref<string>('');
 
-/** Typed off the real composables so a drift in any of them fails the typecheck rather than a test. */
 type SavedProfilesMock = ReturnType<typeof useSavedProfiles>;
 
 type RememberOptionsMock = ReturnType<typeof useLoginRememberOptions>;
@@ -77,9 +65,6 @@ vi.mock('@/modules/auth/use-logout', () => ({
 
 const LoginForm = (await import('@/modules/auth/login/LoginForm.vue')).default;
 
-/** The stubs declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
-
 function inputStub(name: string): Record<string, unknown> {
   return {
     emits: ['update:modelValue'],
@@ -97,6 +82,7 @@ const ButtonStub = {
 
 const USERNAME = 'LoginUsernameField';
 const PASSWORD = 'password-input';
+const URL_MAX_LENGTH = 300;
 
 describe('loginForm', () => {
   let wrapper: VueWrapper<InstanceType<typeof LoginForm>>;
@@ -122,7 +108,6 @@ describe('loginForm', () => {
           LoginBackendToggle: true,
           LoginCustomBackendFields: inputStub('LoginCustomBackendFields'),
           LoginRememberOptions: true,
-          // The form focuses this one through its template ref on mount.
           LoginUsernameField: { ...inputStub('LoginUsernameField'), methods: { focus: (): void => {} } },
           LoginWelcomeMessageDialog: true,
           PremiumSyncConflictAlert: true,
@@ -174,10 +159,11 @@ describe('loginForm', () => {
     });
   }
 
-  it('should keep submit disabled on an empty form', async () => {
+  it('should keep submit disabled on an empty form, exposing no validate() of its own', async () => {
     wrapper = createWrapper();
     await nextTick();
 
+    expect('validate' in wrapper.vm).toBe(false);
     expect(submitDisabled()).toBe(true);
   });
 
@@ -253,7 +239,6 @@ describe('loginForm', () => {
       expect(messagesOf(passwordField())).toStrictEqual(['login.validation.non_empty_password']);
     });
 
-    // `required` trims, so a password of only spaces is treated as absent.
     it('should reject a whitespace-only password', async () => {
       wrapper = createWrapper();
       await fill('user', '   ');
@@ -273,8 +258,6 @@ describe('loginForm', () => {
       expect(submitDisabled()).toBe(true);
     });
 
-    // The url rules are `$autoDirty`, so an untouched empty field shows nothing at all: the message
-    // only appears once a value has been entered and taken away again.
     it('should show nothing on an untouched empty url', async () => {
       wrapper = createWrapper();
       set(backendDisplay, true);
@@ -319,8 +302,6 @@ describe('loginForm', () => {
       expect(messagesOf(field)).toStrictEqual([]);
     });
 
-    // Was pinned as rejected while the rule used the shared dotted-host regex, which took
-    // `http://127.0.0.1:4242` and refused the name for the same machine. Fixed deliberately.
     it('should accept http://localhost:4242', async () => {
       wrapper = createWrapper();
       set(backendDisplay, true);
@@ -331,11 +312,10 @@ describe('loginForm', () => {
       expect(messagesOf(field)).toStrictEqual([]);
     });
 
-    // The length bound sits in the same rule as the url check, so it reports the same message.
-    it('should reject a url of 300 characters or more', async () => {
+    it('should reject an over-long url with the same message as a malformed one', async () => {
       wrapper = createWrapper();
       set(backendDisplay, true);
-      set(backendUrl, `http://localhost/${'a'.repeat(300)}`);
+      set(backendUrl, `http://localhost/${'a'.repeat(URL_MAX_LENGTH)}`);
       await nextTick();
 
       const field = wrapper.findComponent<StubInstance>({ name: 'LoginCustomBackendFields' });
@@ -351,8 +331,6 @@ describe('loginForm', () => {
     });
   });
 
-  // The server errors arrive as a flat string list and are routed to a field by prefix. Both the
-  // prefixes and the ordering (local messages first) are contract.
   describe('server errors', () => {
     it('should append a username error to that field', async () => {
       wrapper = createWrapper({ errors: ['User user does not exist'] });
@@ -379,10 +357,7 @@ describe('loginForm', () => {
       ]);
     });
 
-    // The core retires a server error once the field it was reported against is edited. Filling the
-    // name from the saved profile happens after the error is recorded and is not a user edit, so it
-    // must not count as one: the alert would go on naming the user while the field said nothing.
-    it('should keep a username error through the restore from storage', async () => {
+    it('should keep a username error through the restore from storage, which is not a user edit', async () => {
       set(storedUsername, 'saved-user');
       wrapper = createWrapper({ errors: ['User saved-user does not exist'] });
       await flushPromises();
@@ -408,7 +383,6 @@ describe('loginForm', () => {
       expect(wrapper.emitted('touched')).toHaveLength(1);
     });
 
-    // Restoring a remembered username is not a user edit, so it must stay silent.
     it('should stay silent when the username is restored from storage', async () => {
       set(storedUsername, 'saved-user');
       wrapper = createWrapper();

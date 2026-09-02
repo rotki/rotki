@@ -69,8 +69,7 @@ describe('toDataIssueFields', () => {
     expect(kind.resolveIcon?.('negative_balance')).toStrictEqual({ color: 'error', icon: 'lu-trending-down' });
   });
 
-  // Both are picked from the states and kinds the app knows, and more than one may be applied.
-  it('should offer the states and kinds, and apply only those', () => {
+  it('should offer the states and kinds the app knows, and apply only those, more than one at a time', () => {
     const [state, kind] = fields();
 
     expect(state.multiple).toBe(true);
@@ -100,20 +99,16 @@ describe('toDataIssueFields', () => {
     expect(account.resolveLabel?.('Kraken 1')).toBe('Kraken 1');
   });
 
-  // Not checked against the option list, which is fetched when the bar is first built: a value
-  // restored from the URL can arrive before it, and has to be applied rather than dropped.
-  it('should apply an account the option list has not loaded yet', () => {
+  it('should apply an account the option list has not loaded yet, since a value restored from the URL can arrive before the list is fetched', () => {
     const account = fieldOf('locationLabel');
 
     expect(account.validate?.('Kraken 1')).toBe(true);
     expect(account.validate?.('')).toBe(false);
   });
 
-  it('should draw each account in its own kind, since one can be an exchange', () => {
+  it('should draw each account in its own kind, since one can be an exchange name rather than an address and a blockie would claim otherwise', () => {
     const account = fieldOf('locationLabel');
 
-    // No field-wide display: the kind is per value, since `locationLabel` is an address on a chain
-    // and an exchange account name elsewhere. A blockie would claim the name is an address.
     expect(account.display).toBeUndefined();
     expect(account.resolveDisplay?.('0x9531C059098e3d194fF87FebB587aB07B30B1306')).toStrictEqual({
       kind: DisplayKinds.ADDRESS,
@@ -121,9 +116,7 @@ describe('toDataIssueFields', () => {
     expect(account.resolveDisplay?.('Kraken 1')).toStrictEqual({ kind: DisplayKinds.LOCATION, source: 'kraken' });
   });
 
-  // None of these keys is declared as behaviour-carrying, so the request has no form for an
-  // exclusion and the pill must not offer one.
-  it('should offer no exclusion on any field', () => {
+  it('should offer no exclusion on any field, since the request has no form for one', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);
       expect(field.operators).not.toContain('is_not');

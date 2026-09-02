@@ -2,9 +2,12 @@ import path from 'node:path';
 
 import rotki from '@rotki/eslint-config';
 import { translationKeys } from '@rotki/ui-library';
+import jsdoc from 'eslint-plugin-jsdoc';
+import tsdoc from 'eslint-plugin-tsdoc';
 
 import { backendMappingKeys } from './app/backend-strings.generated.js';
 import { premiumComponentKeys } from './app/premium-keys.generated.js';
+import { localRules } from './eslint-local-rules.js';
 
 // Pre-load the ESM-only ESLint parsers before the config factories run.
 // @intlify/eslint-plugin-vue-i18n require()s them while eslint composes configs
@@ -244,6 +247,48 @@ export default rotki({
       message: 'Query on `data-testid`. `data-cy` is a Cypress-era leftover.',
       selector: 'TemplateElement[value.raw=/data-cy/]',
     }],
+  },
+}, {
+  // A `/** */` block is only TSDoc if it parses as TSDoc. Unvalidated, the blocks here had drifted
+  // into JSDoc: `@param {Type}` duplicating the TypeScript type, and `@return` for `@returns`.
+  //
+  // Nothing here *requires* a tag. Params are typed and named already, so a tag is worth writing
+  // only when it says what the signature cannot; these rules police the tags that do exist.
+  files: ['app/src/**/*.ts', 'app/src/**/*.vue', 'common/src/**/*.ts'],
+  plugins: {
+    jsdoc,
+    local: { rules: localRules },
+    tsdoc,
+  },
+  // Errors, not warnings: the tree is at zero, so anything these report is newly introduced.
+  rules: {
+    // A renamed parameter leaves its tag behind, still describing the old name. Nothing else notices.
+    'jsdoc/check-alignment': 'error',
+    'jsdoc/check-param-names': ['error', { checkDestructured: false }],
+    // A modifier tag carrying prose is prose nothing will read.
+    'jsdoc/empty-tags': 'error',
+    'jsdoc/escape-inline-tags': 'error',
+    // A doc whose words only restate the identifier is the shape this audit exists to remove.
+    'jsdoc/informative-docs': 'error',
+    // `/* @param */` with one asterisk is not a doc block, and nothing else reads it as one.
+    'jsdoc/no-bad-blocks': 'error',
+    // Tags with nothing above them: the block documents its parts and not the thing itself.
+    'jsdoc/no-blank-block-descriptions': 'error',
+    'jsdoc/no-blank-blocks': 'error',
+    'jsdoc/no-multi-asterisks': 'error',
+    // `{Type}` duplicates the TypeScript signature and drifts from it silently.
+    'jsdoc/no-types': 'error',
+    'jsdoc/require-asterisk-prefix': 'error',
+    // `@param name - description`, which is what TSDoc parses and what this repo writes.
+    'jsdoc/require-hyphen-before-param-description': 'error',
+    // A bare `@param name` restates the signature. Tag it only to say what the signature cannot.
+    'jsdoc/require-param-description': 'error',
+    'jsdoc/require-returns-check': 'error',
+    'jsdoc/require-returns-description': 'error',
+    'local/no-closure-result-in-activity-run': 'error',
+    'local/no-comment-run': 'error',
+    'local/tsdoc-on-declaration': 'error',
+    'tsdoc/syntax': 'error',
   },
 }, {
   files: ['**/locales/**/*.json'],

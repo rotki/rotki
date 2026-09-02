@@ -59,9 +59,15 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
     return mapCollectionResponse(response);
   };
 
-  // One native activity per binance location; the orchestrator owns liveness/freshness, read off
-  // `useWorkStatus(ActivityKind.EXCHANGE_SAVINGS)`. The savings sync only triggers the backend
-  // refresh — the cached events are re-read by the detail view once the activity settles.
+  /**
+   * Asks the backend to refresh one location's savings interest, as a task center activity.
+   *
+   * @remarks
+   * Nothing is returned to the caller: the task only refills the backend cache, which the detail
+   * view re-reads through `fetchExchangeSavings` once the activity settles. The activity id is
+   * keyed by location, so each connected exchange gets its own row and its own rerun.
+   * @param location - a connected exchange location, which must be one of `SAVINGS_LOCATIONS`
+   */
   const syncExchangeSavings = async (location: string): Promise<void> => {
     const defaults: ExchangeSavingsRequestPayload = {
       ascending: [false],

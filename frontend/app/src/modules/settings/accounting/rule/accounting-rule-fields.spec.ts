@@ -34,8 +34,6 @@ const options: AccountingRuleFieldOptions = {
 const fields = (): FieldDef[] => toAccountingRuleFields(resolvers, t, options);
 
 describe('toAccountingRuleFields', () => {
-  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
-  // here rather than against a second hand-written declaration.
   describe('route query', () => {
     it('should coerce single route values into arrays', () => {
       expect(routeSchemaFromFields(fields()).parse({ counterparties: 'uniswap', eventTypes: 'spend' }))
@@ -78,9 +76,6 @@ describe('toAccountingRuleFields', () => {
     expect(subtype.suggest?.()).toStrictEqual(['deposit asset']);
   });
 
-  // A rule is written for a type/subtype pair and the request reads the two as a cross product, so
-  // a subtype the selected types do not admit matches no rule. The bar drops it through
-  // `pruneInadmissible`; here it is the declaration that is pinned.
   it('should admit only the subtypes of the types it is asked about', () => {
     const [, subtype] = fields();
 
@@ -88,10 +83,7 @@ describe('toAccountingRuleFields', () => {
     expect(subtype.admits?.({ eventTypes: ['spend'] })).toStrictEqual([]);
   });
 
-  // The table names the same values through the backend's event mappings, so the pill uses them
-  // too. Casing the raw token instead read "Deposit asset" beside a row saying "Deposit Asset",
-  // and would have stayed English in every other locale.
-  it('should name the type and subtype the way the table does', () => {
+  it('should name the type and subtype through the backend mappings, as the table does', () => {
     const [type, subtype] = fields();
 
     expect(type.resolveLabel?.('deposit')).toBe('Deposit');
@@ -103,9 +95,7 @@ describe('toAccountingRuleFields', () => {
     expect(fields().every(field => field.multiple)).toBe(true);
   });
 
-  // None of these keys is declared as behaviour-carrying, so the request has no form for an
-  // exclusion and the pill must not offer one.
-  it('should offer no exclusion on any field', () => {
+  it('should offer no exclusion on any field, which the request has no form for', () => {
     for (const field of fields()) {
       expect(field.allowExclusion).toBe(false);
       expect(field.operators).not.toContain('is_not');

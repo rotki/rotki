@@ -50,30 +50,29 @@ export function useAccountMigration(): UseAccountMigrationReturn {
       }
     });
 
+    /**
+     * Reads the accounts for a chain, then queries the balances of the addresses migrated onto it.
+     *
+     * @remarks
+     * A migrated address is new to this chain, so nothing about it is in the balance cache and a
+     * cache-only read cannot fetch it. Detection has to run before the query, the same order an
+     * addition needs and for the same reason.
+     */
+    const detectThenQuery = async (chain: string, chainAddresses: string[]): Promise<void> => {
+      await fetchAccounts({ blockchain: chain });
+      await refreshBlockchainBalances(
+        { blockchain: chain },
+        RefreshMode.BACKGROUND,
+        isEvm(chain) ? { detect: true, detectAddresses: chainAddresses } : {},
+      );
+    };
+
     const promises: Promise<void>[] = [];
     const notifications: Notification[] = [];
     for (const chain in addresses) {
       const chainAddresses = addresses[chain];
       const chainName = getChainName(chain);
-      // A migrated address is new to this chain, so its balances are not in the cache and the
-      // cache-only read cannot fetch them. Same reason as an addition: detect, then query.
-      //
-      // 🔴 The accounts read is awaited *before* the job, not raced with it. The job's own
-      // `shouldQuery` reads the accounts store, so on a chain whose first account this is, a job
-      // that starts first sees none, clears the chain and settles SKIPPED — no detection, no
-      // query, and nothing to retry it.
-      //
-      // ⚠️ `isEvm` gates detection only. `tokenChains` comes from `evmAndEvmLikeTxChainsInfo`, so
-      // evm-*like* chains (zksync_lite) reach this loop and `isEvm` is false for them; gating the
-      // query too would leave their migrated addresses with no balances at all.
-      promises.push((async (): Promise<void> => {
-        await fetchAccounts({ blockchain: chain });
-        await refreshBlockchainBalances(
-          { blockchain: chain },
-          RefreshMode.BACKGROUND,
-          isEvm(chain) ? { detect: true, detectAddresses: chainAddresses } : {},
-        );
-      })());
+      promises.push(detectThenQuery(chain, chainAddresses));
 
       notifications.push({
         category: NotificationCategory.ADDRESS_MIGRATION,

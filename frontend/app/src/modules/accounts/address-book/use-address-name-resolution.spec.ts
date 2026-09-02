@@ -44,9 +44,6 @@ describe('useAddressNameResolution', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
     vi.useFakeTimers();
-    // `useAddressNameResolution` is a `createSharedComposable` singleton; acquire it
-    // inside an owned scope so `afterEach` can dispose it and force a fresh instance
-    // (bound to the new pinia) for the next test.
     scope = effectScope();
     scope.run(() => {
       resolution = useAddressNameResolution();
@@ -125,6 +122,63 @@ describe('useAddressNameResolution', () => {
       await flushPromises();
 
       expect(get(addressName)).toBe('eth_name');
+    });
+
+    it('should leave every address of a rejected batch unresolved', async () => {
+      enableAliasNames(true);
+      vi.mocked(api.getAddressesNames).mockRejectedValue(new Error('Given value Kraken 1 is not a valid ethereum address'));
+
+      const firstName = resolution.useAddressName(() => '0xCC00000000000000000000000000000000000003');
+      const secondName = resolution.useAddressName(() => '0xCC00000000000000000000000000000000000004');
+
+      expect(get(firstName)).toBeUndefined();
+      expect(get(secondName)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).toHaveBeenCalledWith([
+        { address: '0xCC00000000000000000000000000000000000003', blockchain: Blockchain.ETH },
+        { address: '0xCC00000000000000000000000000000000000004', blockchain: Blockchain.ETH },
+      ]);
+      expect(get(firstName)).toBeUndefined();
+      expect(get(secondName)).toBeUndefined();
+      expect(resolution.isAddressNamePending('0xCC00000000000000000000000000000000000003')).toBe(false);
+    });
+
+    it('should keep a label that is not an address out of the request', async () => {
+      enableAliasNames(true);
+      const address = '0xDD00000000000000000000000000000000000005';
+      vi.mocked(api.getAddressesNames).mockResolvedValue([
+        { address, blockchain: Blockchain.ETH, name: 'kept_name' },
+      ]);
+
+      const addressName = resolution.useAddressName(() => address, () => Blockchain.ETH);
+      const labelName = resolution.useAddressName(() => 'Kraken 1', () => Blockchain.ETH);
+
+      expect(get(addressName)).toBeUndefined();
+      expect(get(labelName)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).toHaveBeenCalledWith([{ address, blockchain: Blockchain.ETH }]);
+      expect(get(addressName)).toBe('kept_name');
+      expect(get(labelName)).toBeUndefined();
+    });
+
+    it('should keep an address of the wrong ecosystem out of the request', async () => {
+      enableAliasNames(true);
+      vi.mocked(api.getAddressesNames).mockResolvedValue([]);
+
+      const wrongEcosystem = resolution.useAddressName(() => '1Dk75NPu6QXxMxRECfz6VM6oXq3XwprsDF', () => Blockchain.ETH);
+
+      expect(get(wrongEcosystem)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).not.toHaveBeenCalled();
     });
 
     it('should return undefined when enableAliasNames is false', async () => {
@@ -237,8 +291,6 @@ describe('useAddressNameResolution', () => {
       const store = useAddressNamesStore();
       store.setEnsNames({ '0xAddr1': 'same.eth' });
 
-      // Calling with the same value should not trigger cache invalidation
-      // We verify by checking the function doesn't throw and completes
       resolution.updateEnsNamesAndReset({ '0xAddr1': 'same.eth' });
 
       const { ensNames } = storeToRefs(store);
@@ -269,7 +321,6 @@ describe('useAddressNameResolution', () => {
 
       expect(get(name)).toBe('stored_name');
 
-      // The cache lives in the app-lifetime store, not a composable-scoped map.
       const { addressNameStorage } = useAddressNamesStore();
       expect(get(addressNameStorage.cache)[`${address}#${Blockchain.ETH}`]?.name).toBe('stored_name');
     });

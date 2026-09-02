@@ -86,14 +86,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <RuiCard content-class="!pt-0">
+  <RuiCard :class-names="{ content: '!pt-0' }">
     <template #custom-header>
       <div class="flex justify-between px-4 py-2">
         <CardTitle>
           {{ t('common.actions.generate') }}
         </CardTitle>
         <RuiTooltip
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
           :open-delay="400"
         >
           <template #activator>

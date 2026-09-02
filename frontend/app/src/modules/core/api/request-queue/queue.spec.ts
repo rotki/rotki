@@ -1,8 +1,20 @@
 import { startPromise } from '@shared/utils';
+import { neverSettles } from '@test/utils/never-settles';
 import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 import { QueueOverflowError, RequestCancelledError } from './errors';
 import { type QueueFetchFn, RequestQueue } from './queue';
 import { RequestPriority } from './request-priority';
+
+const ACTIVE_SLOTS = 2;
+const QUEUE_SLOTS = 5;
+const OVERLOAD_THRESHOLD = 3;
+const CAPACITY = ACTIVE_SLOTS + QUEUE_SLOTS;
+const RATE_LIMIT_WINDOW_MS = 1000;
+const PAST_THE_RATE_LIMIT_WINDOW_MS = RATE_LIMIT_WINDOW_MS + 100;
+
+/** How often the queue sweeps for entries that have waited past their `maxQueueTime`. */
+const TIMEOUT_SWEEP_INTERVAL_MS = 5000;
+const MAX_QUEUE_TIME_MS = 1000;
 
 describe('requestQueue', () => {
   let queue: RequestQueue;
@@ -21,11 +33,11 @@ describe('requestQueue', () => {
     vi.useFakeTimers();
     mockFetch = vi.fn().mockResolvedValue({ data: 'success' });
     queue = new RequestQueue(mockFetchWrapper, {
-      maxConcurrent: 2,
+      maxConcurrent: ACTIVE_SLOTS,
       maxPerSecond: 10,
-      maxQueueSize: 5,
+      maxQueueSize: QUEUE_SLOTS,
       maxQueueTime: 5000,
-      overloadThreshold: 3,
+      overloadThreshold: OVERLOAD_THRESHOLD,
     });
   });
 
@@ -38,7 +50,6 @@ describe('requestQueue', () => {
     it('should process a single request', async () => {
       const promise = queue.enqueue('/test');
 
-      // Advance timer to trigger the setTimeout in flushPromises and allow processQueue
       await vi.advanceTimersByTimeAsync(10);
 
       const result = await promise;
@@ -48,7 +59,6 @@ describe('requestQueue', () => {
     });
 
     it('should process multiple requests in parallel up to maxConcurrent', async () => {
-      // Make fetch return a pending promise that we control
       const resolvers: Array<(value: { data: string }) => void> = [];
       mockFetch.mockImplementation(async () => new Promise((resolve) => {
         resolvers.push(resolve);
@@ -60,22 +70,17 @@ describe('requestQueue', () => {
         queue.enqueue('/test3'),
       ];
 
-      // Allow processQueue to run
       await vi.advanceTimersByTimeAsync(10);
 
-      // First 2 should be processing, 1 should be queued
       expect(queue.state.active).toBe(2);
       expect(queue.state.queued).toBe(1);
 
-      // Resolve first two to allow third to start
       resolvers[0]({ data: 'done' });
       resolvers[1]({ data: 'done' });
       await vi.advanceTimersByTimeAsync(10);
 
-      // Third request should now be active and have a resolver
       expect(resolvers).toHaveLength(3);
 
-      // Resolve third
       resolvers[2]({ data: 'done' });
       await vi.advanceTimersByTimeAsync(10);
 
@@ -88,7 +93,6 @@ describe('requestQueue', () => {
       expect(queue.state.queued).toBe(0);
       expect(queue.state.active).toBe(0);
 
-      // Make fetch return a pending promise
       let resolver: (value: { data: string }) => void;
       mockFetch.mockImplementation(async () => new Promise((resolve) => {
         resolver = resolve;
@@ -96,12 +100,10 @@ describe('requestQueue', () => {
 
       const promise = queue.enqueue('/test');
 
-      // Allow processQueue to run
       await vi.advanceTimersByTimeAsync(10);
 
       expect(queue.state.active).toBe(1);
 
-      // Resolve and complete
       resolver!({ data: 'done' });
       await vi.advanceTimersByTimeAsync(10);
       await promise;
@@ -114,7 +116,6 @@ describe('requestQueue', () => {
     it('should process high priority requests first', async () => {
       const order: string[] = [];
 
-      // Create controlled promises for each request
       const resolvers: Map<string, (value: { data: string }) => void> = new Map();
       mockFetch.mockImplementation(async (url: string) => {
         order.push(url);
@@ -123,40 +124,32 @@ describe('requestQueue', () => {
         });
       });
 
-      // Start 2 requests to fill active slots
       startPromise(queue.enqueue('/first1'));
       startPromise(queue.enqueue('/first2'));
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Verify first 2 are active
       expect(queue.state.active).toBe(2);
 
-      // Queue more with different priorities
       startPromise(queue.enqueue('/low', { priority: RequestPriority.LOW }));
       startPromise(queue.enqueue('/high', { priority: RequestPriority.HIGH }));
       startPromise(queue.enqueue('/normal', { priority: RequestPriority.NORMAL }));
 
-      // Complete first batch to allow queued requests to process
       resolvers.get('/first1')!({ data: 'done' });
       resolvers.get('/first2')!({ data: 'done' });
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // High and normal should now be processing (2 slots), low queued
       expect(order).toContain('/high');
       expect(order).toContain('/normal');
 
-      // Complete high and normal to allow low to process
       resolvers.get('/high')!({ data: 'done' });
       resolvers.get('/normal')!({ data: 'done' });
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Low should now be processed
       expect(order).toContain('/low');
 
-      // Verify order: high should come before normal and low
       expect(order.indexOf('/high')).toBeLessThan(order.indexOf('/low'));
       expect(order.indexOf('/normal')).toBeLessThan(order.indexOf('/low'));
     });
@@ -177,7 +170,7 @@ describe('requestQueue', () => {
         if (url === '/flaky' && started.filter(u => u === '/flaky').length === 1)
           throw new TypeError('network down');
 
-        return new Promise(() => {}); // holds the slot once it does run
+        return neverSettles();
       });
 
       startPromise(retrying.enqueue('/flaky').catch(() => {}));
@@ -198,7 +191,7 @@ describe('requestQueue', () => {
     /**
      * Six identical ENS reverse lookups once hung for ~100s each and filled every slot, so the
      * DELETE behind a user's confirmed delete never left the queue and the app went silent
-     * (`history-events.spec.ts:334`, CI only). Priority cannot fix that on its own: it orders the
+     * (seen in the history-events e2e spec, CI only). Priority cannot fix that alone: it orders the
      * queue, and by then there was nothing left to order. Background work must not be able to take
      * the whole budget in the first place.
      */
@@ -206,7 +199,7 @@ describe('requestQueue', () => {
       const started: string[] = [];
       mockFetch.mockImplementation(async (url: string) => {
         started.push(url);
-        return new Promise(() => {}); // never settles, like the hanging lookups
+        return neverSettles();
       });
 
       const capped = new RequestQueue(mockFetchWrapper, {
@@ -234,7 +227,7 @@ describe('requestQueue', () => {
       const started: string[] = [];
       mockFetch.mockImplementation(async (url: string) => {
         started.push(url);
-        return new Promise(() => {});
+        return neverSettles();
       });
 
       const capped = new RequestQueue(mockFetchWrapper, {
@@ -319,8 +312,7 @@ describe('requestQueue', () => {
 
   describe('cancellation', () => {
     it('should cancel requests by tag', async () => {
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       const promise = queue.enqueue('/test', { tags: ['my-tag'] });
 
@@ -332,8 +324,7 @@ describe('requestQueue', () => {
     });
 
     it('should cancel all requests', async () => {
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       const promises = [
         queue.enqueue('/test1'),
@@ -349,42 +340,28 @@ describe('requestQueue', () => {
       }
     });
 
-    it('should cancel specific request by id', async () => {
-      // This test would require exposing the request ID, which we don't currently do
-      // Skip for now
-    });
+    it.todo('should cancel specific request by id, once the queue exposes one');
   });
 
   describe('overflow handling', () => {
     it('should reject when queue is full with reject strategy', async () => {
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
-      // Fill active slots (2) and queue (5) = 7 total
-      for (let i = 0; i < 7; i++) {
-        try {
-          startPromise(queue.enqueue(`/test${i}`));
-        }
-        catch {
-          // Expected to throw on overflow
-        }
+      for (let i = 0; i < CAPACITY; i++) {
+        startPromise(queue.enqueue(`/test${i}`));
       }
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Should throw on overflow (queue is full at 5)
       await expect(queue.enqueue('/overflow')).rejects.toThrow(QueueOverflowError);
     });
 
     it('should update isOverloaded state', async () => {
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       expect(queue.state.isOverloaded).toBe(false);
 
-      // Fill beyond overload threshold (3)
-      // 2 will go active, 3 will be queued (>= overloadThreshold of 3)
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < ACTIVE_SLOTS + OVERLOAD_THRESHOLD; i++) {
         startPromise(queue.enqueue(`/test${i}`));
       }
 
@@ -408,16 +385,12 @@ describe('requestQueue', () => {
         promises.push(fastQueue.enqueue(`/test${i}`));
       }
 
-      // Allow initial processing
       await vi.advanceTimersByTimeAsync(10);
 
-      // Only 3 should be processed due to rate limit
       expect(mockFetch).toHaveBeenCalledTimes(3);
 
-      // Advance time to allow rate limit to recover (> 1 second)
-      await vi.advanceTimersByTimeAsync(1100);
+      await vi.advanceTimersByTimeAsync(PAST_THE_RATE_LIMIT_WINDOW_MS);
 
-      // Remaining 2 should be processed
       expect(mockFetch).toHaveBeenCalledTimes(5);
 
       await Promise.all(promises);
@@ -428,8 +401,7 @@ describe('requestQueue', () => {
 
   describe('getMetrics', () => {
     it('should return current queue metrics', async () => {
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       startPromise(queue.enqueue('/test1'));
       startPromise(queue.enqueue('/test2'));
@@ -448,19 +420,16 @@ describe('requestQueue', () => {
   });
 
   describe('deduplication with circular references', () => {
-    it('should handle circular references in body gracefully', async () => {
+    it('should handle circular references in body gracefully, deduping them onto one request via safeStringify shared fallback', async () => {
       const circularObj: Record<string, unknown> = { name: 'test' };
       circularObj.self = circularObj;
 
-      // Same circular object used twice - they dedupe because safeStringify
-      // returns the same fallback string for both
       const promise1 = queue.enqueue('/test', { dedupe: true, body: circularObj });
       const promise2 = queue.enqueue('/test', { dedupe: true, body: circularObj });
 
       await vi.advanceTimersByTimeAsync(10);
       await Promise.all([promise1, promise2]);
 
-      // Should not throw and should dedupe identical circular objects
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
@@ -471,15 +440,12 @@ describe('requestQueue', () => {
       const circular2: Record<string, unknown> = { name: 'second' };
       circular2.self = circular2;
 
-      // Different circular objects - both fall back to same unstringifiable key
-      // but since they have the same fallback, they will dedupe
       const promise1 = queue.enqueue('/test', { dedupe: true, body: circular1 });
       const promise2 = queue.enqueue('/test', { dedupe: true, body: circular2 });
 
       await vi.advanceTimersByTimeAsync(10);
       await Promise.all([promise1, promise2]);
 
-      // Both fall back to [unstringifiable:object], so they dedupe
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
@@ -498,25 +464,21 @@ describe('requestQueue', () => {
 
   describe('queue timeout', () => {
     it('should timeout requests that wait too long in queue', async () => {
-      // Create a queue with short timeout
       const timeoutQueue = new RequestQueue(mockFetchWrapper, {
         maxConcurrent: 1,
         maxPerSecond: 100,
         maxQueueSize: 10,
-        maxQueueTime: 1000, // 1 second timeout
+        maxQueueTime: MAX_QUEUE_TIME_MS,
       });
 
-      // Make fetch return a pending promise to block the queue
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
-      // First request will be active
       startPromise(timeoutQueue.enqueue('/blocking'));
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Second request will be queued - set up rejection handler immediately
       let timeoutError: Error | undefined;
-      const queuedPromise = timeoutQueue.enqueue('/queued', { maxQueueTime: 1000 })
+      const queuedPromise = timeoutQueue.enqueue('/queued', { maxQueueTime: MAX_QUEUE_TIME_MS })
         .catch((error: Error) => {
           timeoutError = error;
         });
@@ -525,13 +487,11 @@ describe('requestQueue', () => {
 
       expect(timeoutQueue.state.queued).toBe(1);
 
-      // Advance past the timeout check interval (5000ms) + queue time (1000ms)
-      await vi.advanceTimersByTimeAsync(6000);
+      await vi.advanceTimersByTimeAsync(TIMEOUT_SWEEP_INTERVAL_MS + MAX_QUEUE_TIME_MS);
       await queuedPromise;
 
-      // The queued request should be rejected due to timeout
       expect(timeoutError).toBeDefined();
-      expect(timeoutError?.message).toBe('Request waited 1000ms in queue');
+      expect(timeoutError?.message).toBe(`Request waited ${MAX_QUEUE_TIME_MS}ms in queue`);
 
       expect(timeoutQueue.state.queued).toBe(0);
 
@@ -562,8 +522,7 @@ describe('requestQueue', () => {
 
   describe('destroy', () => {
     it('should abort all pending requests without rejecting', async () => {
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
       startPromise(queue.enqueue('/test1'));
       startPromise(queue.enqueue('/test2'));
@@ -572,7 +531,6 @@ describe('requestQueue', () => {
 
       expect(queue.state.active).toBe(2);
 
-      // Destroy should not throw and should clear state
       queue.destroy();
 
       expect(queue.state.active).toBe(0);
@@ -601,14 +559,11 @@ describe('requestQueue', () => {
         overflowStrategy: 'dropLowest',
       });
 
-      // Make fetch return a pending promise
-      mockFetch.mockImplementation(async () => new Promise(() => {}));
+      mockFetch.mockImplementation(async () => neverSettles());
 
-      // First goes active
       startPromise(dropQueue.enqueue('/active'));
       await vi.advanceTimersByTimeAsync(10);
 
-      // These go to queue - set up rejection handler for low priority immediately
       let dropError: Error | undefined;
       const lowPromise = dropQueue.enqueue('/low', { priority: RequestPriority.LOW })
         .catch((error: Error) => {
@@ -620,13 +575,10 @@ describe('requestQueue', () => {
 
       expect(dropQueue.state.queued).toBe(2);
 
-      // This should trigger drop of lowest priority
       startPromise(dropQueue.enqueue('/high', { priority: RequestPriority.HIGH }));
 
-      // Wait for the drop to process
       await lowPromise;
 
-      // Low priority should be dropped with overflow error
       expect(dropError).toBeInstanceOf(QueueOverflowError);
 
       await vi.advanceTimersByTimeAsync(10);

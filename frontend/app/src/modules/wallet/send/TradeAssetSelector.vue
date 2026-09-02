@@ -52,8 +52,7 @@ const chainOptions = computed<string[]>(() => [
   ...get(supportedChainsForConnectedAccount),
 ]);
 
-// Latched rather than tracking `openDialog`: once the names are resolved they are cached, and
-// dropping back to identifier ordering on close would reshuffle the list between openings.
+// Latched, not tracking `openDialog`: unlatching would reshuffle the list back to identifier order.
 const namesNeeded = ref<boolean>(false);
 
 const { options: assetOptions, orderedAssets } = useTradeAssetOptions(
@@ -95,8 +94,13 @@ function setMax() {
   emit('set-max');
 }
 
-// Both halves, not just the identifier: a native token id is shared across chains, so comparing on
-// the identifier alone ticks the ETH row of every chain at once.
+/**
+ * Reports whether an option is the selected asset on the selected chain.
+ *
+ * @remarks
+ * Both halves have to match. A native token's identifier is shared across chains, so comparing the
+ * identifier alone ticks the ETH row of every chain at once.
+ */
 function isSelected(option: TradeAssetOption): boolean {
   return option.asset.asset === get(asset) && option.asset.chain === get(chain);
 }
@@ -104,15 +108,14 @@ function isSelected(option: TradeAssetOption): boolean {
 /**
  * Keeps the selection valid for the chain in play.
  *
- * This was two overlapping `watchImmediate` blocks that both assigned `asset`, one of which also
- * assigned `chain` and so re-triggered the other. One watcher covers both cases: with a chain, hold
- * the selection if it is still owned there and otherwise take the head of that chain's list; with
- * no chain, take the head of the whole list, which is already ordered native-first.
+ * @remarks
+ * One watcher covers both cases, because splitting them lets the branch that assigns `chain`
+ * re-trigger the branch that assigns `asset`. With a chain, the selection is held if it is still
+ * owned there and otherwise falls to the head of that chain's list; with no chain, to the head of
+ * the whole list, which is already ordered native-first.
  */
 watchImmediate([() => address, chain, orderedAssets], ([, currentChain]) => {
-  // Drawn from the display order, not from the raw owned list: picking the default off a different
-  // ordering than the dialog shows meant the form opened on an asset nowhere near the top of the
-  // list the user then saw.
+  // The display order, so the default is the row the dialog would show first.
   const owned = get(orderedAssets);
 
   if (!currentChain) {
@@ -147,8 +150,7 @@ watch(openDialog, async (open) => {
   set(namesNeeded, true);
   await nextTick();
   get(searchField)?.focus();
-  // Opens on what is currently selected rather than at the top, so the active asset is both visible
-  // and the row Enter would commit.
+  // Opens on the selection, not the top, so the active asset is the row Enter would commit.
   highlight(get(asset), get(chain));
 });
 
@@ -206,7 +208,7 @@ function redetectTokens(): void {
     <RuiCard
       divide
       no-padding
-      content-class="overflow-hidden"
+      :class-names="{ content: 'overflow-hidden' }"
     >
       <template #header>
         {{ t('trade.select_asset.select_token') }}
@@ -242,7 +244,7 @@ function redetectTokens(): void {
           />
           <RuiTooltip
             :open-delay="400"
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
           >
             <template #activator>
               <RuiButton

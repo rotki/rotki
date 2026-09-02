@@ -38,8 +38,13 @@ const {
   success: privacyModeSuccess,
 } = useSettingModel('mcpPrivacyMode');
 
-// `useSettingModel` keeps `success` true until the next write, which beside a heading would read as
-// a permanent label rather than a confirmation. Show it only for as long as it is news.
+/**
+ * Whether the saved confirmation is still news.
+ *
+ * @remarks
+ * `useSettingModel` holds `success` true until the next write, which beside a heading would read as
+ * a permanent label rather than a confirmation, so it is shown on its own timer instead.
+ */
 const savedVisible = ref<boolean>(false);
 const { start: hideSaved } = useTimeoutFn(() => {
   set(savedVisible, false);
@@ -54,8 +59,16 @@ interface PrivacyModeOption {
   readonly value: McpPrivacyModeValue;
 }
 
-// Raw is the only mode that sends anything unmasked, so selecting it carries the warning tone
-// rather than the ordinary selected tint.
+/**
+ * Picks the border and fill one privacy-mode option is drawn with.
+ *
+ * @remarks
+ * Raw is tinted with the warning colour instead of the ordinary selected tint, because it is the
+ * only mode that sends anything unmasked and picking it should not look like a routine choice.
+ *
+ * @param value - the option being drawn.
+ * @param selected - the mode in effect; anything else gets the plain unselected border.
+ */
 function optionClasses(value: McpPrivacyModeValue, selected: McpPrivacyModeValue): string {
   if (value !== selected)
     return 'border-default';
@@ -99,8 +112,14 @@ const transitioningStates: ReadonlySet<StarlingServiceStatus> = new Set([
   StarlingServiceStatus.WAITING_READY,
 ]);
 
-// Docker reaches MCP through the proxy on the page's own origin; the desktop
-// binds it on loopback, and only Electron knows the address it actually used.
+/**
+ * The address an MCP client connects to.
+ *
+ * @remarks
+ * Docker reaches MCP through the proxy on this page's own origin, so it is known up front. The
+ * desktop binds it on loopback, and only Electron knows which address it settled on, so that one
+ * stays empty until {@link loadStatus} asks.
+ */
 const endpoint = ref<string>(isDocker ? `${window.location.origin}/mcp` : '');
 
 const isRunning = computed<boolean>(() => get(state) === StarlingServiceStatus.READY);
@@ -130,23 +149,33 @@ const isLifecycleDisabled = computed<boolean>(() => {
     || current === StarlingServiceStatus.UNAVAILABLE
     || transitioningStates.has(current);
 });
-// A preference is settable while the server is mid-transition, unlike start/stop,
-// but not when the supervisor does not manage MCP at all: the write would be
-// refused and the user would be shown the supervisor's raw "invalid service".
+/**
+ * Whether the auto-start preference can be written right now.
+ *
+ * @remarks
+ * A preference is settable mid-transition, unlike start and stop, but not when the supervisor does
+ * not manage MCP at all: it refuses the write, and the user is shown its raw "invalid service".
+ */
 const isAutoStartDisabled = computed<boolean>(() => {
   const current = get(state);
   return get(loading) || current === undefined || current === StarlingServiceStatus.UNAVAILABLE;
 });
-// Nothing to drive the server with. In the plain web build that is simply the
-// truth (no supervisor is reachable); in docker it means the deployment has no
-// session cookie configured, so starling never mounted `/_control`.
+/**
+ * Why there is nothing here to drive the server with.
+ *
+ * @remarks
+ * In the plain web build that is simply the truth, as no supervisor is reachable. In docker it means
+ * the deployment configured no session cookie, so starling never mounted `/_control`.
+ */
 const unavailableMessage = computed<string>(() => (
   isPackaged || isDocker
     ? t('backend_settings.settings.mcp_server.control_unavailable')
     : t('backend_settings.settings.mcp_server.desktop_only')
 ));
-// a premium subscriber whose tier is too low needs a different answer than someone
-// with no subscription at all: one has to upgrade, the other has to subscribe.
+/**
+ * The heading of the premium gate, which asks for the step the viewer actually has to take: a
+ * subscriber on too low a tier upgrades, while someone with no subscription subscribes.
+ */
 const gateTitle = computed<string>(() => (
   get(premium)
     ? t('backend_settings.settings.mcp_server.premium_plan_title')
@@ -159,6 +188,29 @@ function statusLabel(current: StarlingServiceStatus | undefined): string {
   return get(statusLabels)[current ?? StarlingServiceStatus.UNAVAILABLE];
 }
 
+/**
+ * Takes the supervisor's own view of the service and applies it to the panel.
+ *
+ * @remarks
+ * Read back after a write rather than trusting what was clicked. A refused write leaves the control
+ * showing what is stored, and one the supervisor applied but could not persist shows the new value
+ * beside the error saying it will not survive a restart. Both facts come from a single snapshot, so
+ * the status chip cannot go stale across a toggle.
+ */
+async function applyServiceSnapshot(): Promise<void> {
+  const info = await serviceInfo(StarlingService.MCP);
+  set(state, info.state);
+  set(autoStart, info.autostart);
+}
+
+/**
+ * Loads the panel's initial view of the server.
+ *
+ * @remarks
+ * Runs regardless of the premium gate. The probe is what decides whether a supervisor exists at all,
+ * and that answer is shown ahead of any upsell; gating it on the entitlement would leave a user who
+ * unlocks mid-session with controls and no state to act on.
+ */
 async function loadStatus(): Promise<void> {
   set(loading, true);
   set(serverError, undefined);
@@ -166,11 +218,7 @@ async function loadStatus(): Promise<void> {
     if (!await probe())
       return;
 
-    const info = await serviceInfo(StarlingService.MCP);
-    set(state, info.state);
-    set(autoStart, info.autostart);
-    // The loopback endpoint is the one thing only Electron knows: docker's is
-    // this page's own origin, fixed at the top of the file.
+    await applyServiceSnapshot();
     if (isPackaged)
       set(endpoint, (await getMcpServerStatus()).endpoint);
   }
@@ -194,14 +242,7 @@ async function updateAutoStart(enabled: boolean): Promise<void> {
   }
 
   try {
-    // Read back rather than trust the click: a refused write leaves the switch
-    // showing what is stored, and one the supervisor applied but could not save
-    // shows the new value beside the error saying it will not survive a restart.
-    // The state comes from the same snapshot, so the status chip cannot go stale
-    // across a toggle.
-    const info = await serviceInfo(StarlingService.MCP);
-    set(autoStart, info.autostart);
-    set(state, info.state);
+    await applyServiceSnapshot();
   }
   catch (error_: unknown) {
     failure ??= getErrorMessage(error_);
@@ -257,9 +298,6 @@ watch(mcpServerState, (pushed) => {
     set(state, pushed);
 });
 
-// Runs regardless of the premium gate: the probe is what decides whether there is a
-// supervisor at all, and that answer is shown ahead of any upsell. Gating it on
-// `mcpAllowed` would also leave a user who unlocks mid-session without a status.
 onBeforeMount(() => {
   startPromise(loadStatus());
 });

@@ -29,8 +29,13 @@ function makeMarquee(scrollWidth: number, clientWidth: number, withChild = true)
 describe('useMarqueeAnimation', () => {
   let marquee: ReturnType<typeof useMarqueeAnimation>;
 
-  // Dispatch a real event so `currentTarget` is populated by the DOM (it is a
-  // read-only accessor that can only be set during actual event dispatch).
+  /**
+   * Dispatches a real `mouseenter` on the wrapper rather than calling the handler directly.
+   *
+   * @remarks
+   * The handler reads `currentTarget`, a read-only accessor the DOM populates only for the
+   * duration of an actual dispatch, so a hand-built event carries nothing there.
+   */
   function fireEnter(wrapper: HTMLElement): void {
     wrapper.addEventListener('mouseenter', marquee.onMarqueeEnter, { once: true });
     wrapper.dispatchEvent(new MouseEvent('mouseenter'));

@@ -115,9 +115,7 @@ describe('buildManagedAssetPayload', () => {
     expect(payload).toMatchObject({ forked: 'ETC', protocol: 'uniswap-v3', swappedFor: 'DAI' });
   });
 
-  it('should send empty oracle identifiers as empty strings', () => {
-    // The api reads an empty string here as "no identifier", and the form has no way to express
-    // the difference, so both absent and cleared arrive the same way.
+  it('should send empty oracle identifiers as empty strings, which the api reads as "no identifier"', () => {
     const payload = buildManagedAssetPayload(evmToken(), []);
 
     expect(payload).toMatchObject({ coingecko: '', cryptocompare: '' });

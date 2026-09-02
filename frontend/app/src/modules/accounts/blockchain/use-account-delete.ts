@@ -46,6 +46,18 @@ type Payload = {
   };
 };
 
+/**
+ * Builds the delete request a confirmed deletion should send.
+ *
+ * @remarks
+ * What the user is deleting depends on how the row was displayed, not only on what it holds. A
+ * group is deleted per chain when it shows exactly one, and agnostically (every chain, including
+ * ones not on screen) when `chains` covers all of `allChains`. Between those, a group showing a
+ * subset deletes only the chains it shows, so `includeAllChains` has to be false or the user loses
+ * chains they could not see. Validators and xpubs have their own endpoints and short-circuit
+ * before any of that. Virtual chains are filtered out throughout, since the backend has no such
+ * chain to delete from.
+ */
 function toPayload(params: ShowConfirmationParams): Payload {
   if (params.type === 'validator') {
     return {
@@ -70,11 +82,9 @@ function toPayload(params: ShowConfirmationParams): Payload {
 
     const { allChains, chains } = account;
 
-    // Only allow Blockchain values, filtering out virtual chains.
     const allFilteredChains = allChains?.filter(isBlockchain);
     const filteredChains = chains.filter(isBlockchain);
 
-    // A group but only has 1 chain
     if (filteredChains.length === 1) {
       return {
         data: {
@@ -85,7 +95,6 @@ function toPayload(params: ShowConfirmationParams): Payload {
       };
     }
 
-    // A group that showing multiple chains, but not all
     if (allFilteredChains && allFilteredChains.length > filteredChains.length) {
       return {
         data: {
@@ -97,7 +106,6 @@ function toPayload(params: ShowConfirmationParams): Payload {
       };
     }
 
-    // A group that showing all its chains
     return {
       data: {
         address,
@@ -108,7 +116,6 @@ function toPayload(params: ShowConfirmationParams): Payload {
     };
   }
 
-  // Single account inside the group
   return {
     data: {
       address,
@@ -171,8 +178,6 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     set(accounts, knownAccounts);
     set(balances, knownBalances);
 
-    // A chain read already in flight is carrying a pre-delete snapshot; marking the chain makes
-    // it drop its write instead of replacing the chain wholesale and resurrecting the account.
     chains.forEach(chain => invalidateChain(chain));
   };
 
@@ -193,21 +198,17 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       removeAccounts({ addresses: [address], chains });
     }
     else {
-      // Submitted together, serialized by the removal lane rather than by a limiter here: one
-      // per chain and one active chain at a time is the shape this call always had, now declared
-      // once where the activity is, as the warning on `DECODE_LANE` requires.
       const outcomes = await Promise.all(chains.map(
         async chain => [chain, await removeAccount({ accounts: [address], chain })] as const,
       ));
 
-      // A partial failure keeps the chains it could not delete, rather than dropping the whole row.
-      const removed = outcomes.filter(([, outcome]) => !isErr(outcome)).map(([chain]) => chain);
-      if (removed.length === 0)
+      const goneFromTheBackend = outcomes.filter(([, outcome]) => !isErr(outcome)).map(([chain]) => chain);
+      if (goneFromTheBackend.length === 0)
         return;
 
       removeAccounts({
         addresses: [address],
-        chains: removed,
+        chains: goneFromTheBackend,
       });
     }
   }
@@ -218,8 +219,8 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       chain,
     });
 
-    // A failed or cancelled removal leaves the account on the backend, so the row has to stay.
-    if (isErr(outcome))
+    const stillOnTheBackend = isErr(outcome);
+    if (stillOnTheBackend)
       return;
 
     removeAccounts({
@@ -239,6 +240,13 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     });
   }
 
+  /**
+   * Builds the confirmation wording, naming exactly what {@link toPayload} will delete.
+   *
+   * @remarks
+   * This repeats that function's case analysis, so a change to one that is not mirrored in the
+   * other tells the user it is deleting something other than what it deletes.
+   */
   function getConfirmationMessage(params: ShowConfirmationParams): string {
     if (params.type === 'validator') {
       const length = params.data.length;
@@ -260,23 +268,18 @@ export function useAccountDelete(): UseAccountDeleteReturn {
 
       const { allChains, chains } = account;
 
-      // Only allow Blockchain values, filtering out virtual chains.
       const allFilteredChains = allChains?.filter(isBlockchain);
       const filteredChains = chains.filter(isBlockchain);
 
-      // A group but only has 1 chain
       if (filteredChains.length === 1)
         return t('account_balances.confirm_delete.description_address', { address, chain: getChainName(filteredChains[0]) });
 
-      // A group that showing multiple chains, but not all
       if (allFilteredChains && allFilteredChains.length > filteredChains.length)
         return t('account_balances.confirm_delete.description_multiple_address', { address, chains: filteredChains.map(item => getChainName(item)).join(', '), length: filteredChains.length });
 
-      // A group that showing all its chains
       return t('account_balances.confirm_delete.agnostic.description', { address });
     }
 
-    // Single account inside the group
     return t('account_balances.confirm_delete.description_address', { address, chain: getChainName(account.chain) });
   }
 

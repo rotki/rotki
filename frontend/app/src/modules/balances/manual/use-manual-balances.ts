@@ -19,6 +19,7 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { isActionable, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { shouldSkipFetch } from '@/modules/task-center/core/status';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -56,10 +57,8 @@ export function useManualBalances(): UseManualBalancesReturn {
   }
 
   const fetchManualBalances = async (userInitiated = false): Promise<void> => {
-    // `fetchDisabled(refresh)` was `!(isFirstLoad || refresh) || loading`; on the orchestrator's
-    // projection that is `(everCompleted && !userInitiated) || active`.
     const status = statusOf(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
-    if ((status.everCompleted && !userInitiated) || status.active) {
+    if (shouldSkipFetch(status, userInitiated)) {
       logger.debug('skipping manual balance refresh');
       return;
     }
@@ -104,11 +103,6 @@ export function useManualBalances(): UseManualBalancesReturn {
     title: string,
     apiCall: () => Promise<{ taskId: number }>,
   ): Promise<ActionStatus<ValidationErrors | string>> {
-    // A save supersedes an in-flight list refresh, which would otherwise clobber the new data.
-    // Cancelling by activity (not by task type) settles the FETCH activity terminal right away:
-    // the backend routinely refuses the abort, and the old `cancelTaskByTaskType` left nothing to
-    // settle the native activity, so its `active` status — and every spinner reading it — stayed
-    // stuck until the monitor reaped the task ~30s later.
     cancelActivity(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
 
     const outcome = await submitTask({

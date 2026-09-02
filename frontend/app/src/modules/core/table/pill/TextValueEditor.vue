@@ -17,12 +17,20 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+/** How long typing settles before a single-value field pushes it, so the table is not refetched per keystroke. */
+const KEYSTROKE_COMMIT_DEBOUNCE_MS = 300;
+
 const { t } = useI18n({ useScope: 'global' });
 const operatorLabels = useOperatorLabels();
 const { scrambleAddress } = useScramble();
 
-// Focused explicitly rather than through `autofocus`, which browsers ignore for an input added to
-// an already-loaded document.
+/**
+ * The entry field, focused explicitly once the editor mounts.
+ *
+ * @remarks
+ * `autofocus` is ignored by browsers for an input added to an already-loaded document, so the
+ * editor has to take the focus itself.
+ */
 const textField = useTemplateRef<{ focus?: () => void }>('textField');
 
 onMounted(async () => {
@@ -30,8 +38,14 @@ onMounted(async () => {
   get(textField)?.focus?.();
 });
 
-// A committed token reads exactly as it does on the pill: the field's resolver owns the form,
-// which for an address means scrambled and shortened.
+/**
+ * Renders one committed token the way the collapsed pill renders it.
+ *
+ * @remarks
+ * The field's own resolver owns the form, so a chip in the editor and the same value on the pill
+ * cannot disagree; for an address that is what scrambles and shortens it. A field that declares no
+ * resolver shows the raw value.
+ */
 function chipLabel(value: string): string {
   return field.resolveLabel?.(value) ?? value;
 }
@@ -40,8 +54,6 @@ const isAddress = computed<boolean>(() => field.display === DisplayKinds.ADDRESS
 const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
 const showOperators = computed<boolean>(() => get(operators).length > 1);
 
-// A single-value field (notes) two-way binds to its one value; a multi field (tx hashes,
-// addresses) accumulates typed tokens as chips.
 const input = ref<string>(field.multiple ? '' : (filter.values[0] ?? ''));
 
 const validAddressPreview = computed<boolean>(() => get(isAddress) && isValidEthAddress(get(input).trim()));
@@ -52,13 +64,13 @@ const invalid = computed<boolean>(() => {
   return token.length > 0 && field.validate !== undefined && !field.validate(token);
 });
 
-// A value already among the committed tokens is a no-op rather than a silent one: say so instead
-// of swallowing the enter press.
-//
-// Multi-value fields only. A single-value field's input IS its committed value, so once the
-// debounce below has banked what was typed, the field would be flagged as a duplicate of itself:
-// the notes filter said "Already added" about the text sitting in its own box, and refused to
-// commit any edit of it.
+/**
+ * Whether the entry repeats a token a multi-value field has already committed.
+ *
+ * @remarks
+ * Single-value fields are exempt: their input *is* the committed value, so every keystroke would
+ * read as a duplicate of itself.
+ */
 const duplicate = computed<boolean>(() => {
   const token = get(input).trim();
   return field.multiple && token.length > 0 && filter.values.includes(token);
@@ -74,8 +86,12 @@ const errorMessages = computed<string[]>(() => {
   return [];
 });
 
-// A validated field confirms a good entry too, so it is clear the value will be accepted before
-// enter is pressed. Fields with no validator have nothing to confirm.
+/**
+ * Whether a validated field should confirm the entry as acceptable before enter is pressed.
+ *
+ * @remarks
+ * A field with no validator has nothing to confirm, so it never shows the mark.
+ */
 const validEntry = computed<boolean>(() => {
   const token = get(input).trim();
   return token.length > 0 && field.validate !== undefined && !get(rejected);
@@ -93,8 +109,16 @@ function addToken(): void {
   set(input, '');
 }
 
-// Enter commits: a multi field banks the token and stays open for the next one, a single-value
-// field is done and closes, so neither needs the mouse.
+/**
+ * Commits the typed entry, in whichever way the field's arity calls for.
+ *
+ * @remarks
+ * A multi-value field banks the token and stays open for the next one; a single-value field is
+ * finished and closes, so neither needs the mouse. The single-value path emits here rather than
+ * leaving it to the debounced watch below, which Enter can outrun: closing unmounts the editor
+ * with the debounce still pending and silently drops what was typed. A rejected entry commits
+ * nothing either way.
+ */
 function onEnter(): void {
   if (field.multiple) {
     addToken();
@@ -102,9 +126,7 @@ function onEnter(): void {
   }
   if (get(rejected))
     return;
-  // A single-value field otherwise commits through the debounced watch below, and Enter can beat
-  // it: closing unmounts the editor with the debounce still pending, silently dropping what was
-  // typed. Banking the value here makes Enter commit in its own right.
+
   const token = get(input).trim();
   emitValues(token ? [token] : []);
   emit('close');
@@ -119,14 +141,12 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
     emit('update', { ...filter, op });
 }
 
-// Single-value fields push the typed value directly (debounced so the table is not refetched on
-// every keystroke); multi fields only commit on Enter via addToken.
 watchDebounced(input, (value) => {
   if (field.multiple || get(rejected))
     return;
   const token = value.trim();
   emitValues(token ? [token] : []);
-}, { debounce: 300 });
+}, { debounce: KEYSTROKE_COMMIT_DEBOUNCE_MS });
 
 /**
  * Closing commits rather than cancels, the same as enter does: a value typed and then dismissed

@@ -126,7 +126,6 @@ describe('forms/HistoryEventTypeForm.vue', () => {
     expect(push).not.toHaveBeenCalled();
     expect(show).toHaveBeenCalledTimes(1);
 
-    // invoking the confirm callback performs the navigation
     const onConfirm = show.mock.calls[0][1];
     onConfirm();
     expect(push).toHaveBeenCalledWith({

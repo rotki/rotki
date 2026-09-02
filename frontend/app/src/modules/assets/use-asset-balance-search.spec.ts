@@ -131,9 +131,8 @@ describe('useAssetBalanceSearch', () => {
   describe('prioritizeExactMatches', () => {
     it('should float an exact symbol match above better-ranked rows', () => {
       const { matches, prioritizeExactMatches } = useAssetBalanceSearch(ROWS, 'link');
-      // The column sort put LINKA first; LINK is what was typed.
-      const sorted = [...get(matches)].sort((a, b) => b.value.minus(a.value).toNumber());
-      expect(sorted.map(r => r.asset)).toEqual([LINK, 'LINKA']);
+      const byColumnSort = [...get(matches)].sort((a, b) => b.value.minus(a.value).toNumber());
+      expect(byColumnSort.map(r => r.asset)).toEqual([LINK, 'LINKA']);
 
       const prioritized = prioritizeExactMatches([balance('LINKA', 50), balance(LINK, 200)]);
       expect(prioritized.map(r => r.asset)).toEqual([LINK, 'LINKA']);

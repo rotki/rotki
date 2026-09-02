@@ -44,10 +44,7 @@ describe('useEthStakingSelectionFields', () => {
     expect(selectionFields().map(field => field.key)).toStrictEqual(['validator', 'withdrawalAddress']);
   });
 
-  // The two are one axis, not two filters: the page model holds either validators or accounts, so
-  // a pair that could both be active would have no model to write into. The bar reads the pair
-  // from both sides, so a one-sided declaration would only half-close the door.
-  it('should declare the two as mutually exclusive from both sides', () => {
+  it('should declare the two as mutually exclusive from both sides, the bar reading each', () => {
     const [validator, withdrawalAddress] = selectionFields();
 
     expect(validator.excludes).toStrictEqual(['withdrawalAddress']);
@@ -58,9 +55,7 @@ describe('useEthStakingSelectionFields', () => {
     expect(selectionFields().every(field => field.multiple)).toBe(true);
   });
 
-  // The withdrawal address is an account like any other, and the shared account field is what
-  // makes it read like one: an avatar, a name, and the address underneath.
-  it('should draw a withdrawal address as an account', () => {
+  it('should draw a withdrawal address as an account, with avatar, name and address', () => {
     const withdrawalAddress = selectionFields().find(field => field.key === 'withdrawalAddress');
 
     expect(withdrawalAddress?.display).toBe('account');
@@ -75,9 +70,6 @@ describe('useEthStakingSelectionFields', () => {
     expect(withdrawalAddress.suggest?.()).toStrictEqual([]);
   });
 
-  // The address a validator withdraws to is the subject of this filter, and tracking it as an
-  // ethereum account as well is a separate decision. While only tracked accounts were offered,
-  // typing the withdrawal address of a validator the user holds found nothing at all.
   it('should offer a withdrawal address that is not a tracked account', () => {
     const field = withdrawalAddressField(() => {
       useBlockchainAccountsStore().updateAccounts(Blockchain.ETH2, [
@@ -89,9 +81,7 @@ describe('useEthStakingSelectionFields', () => {
     expect(field.suggest?.()).toStrictEqual([WITHDRAWAL_ADDRESS]);
   });
 
-  // Offering it is only half the fix: the bar matches on keywords, and an address with no account
-  // behind it has none, so it would sit in the list and still not answer to being typed.
-  it('should match an untracked withdrawal address on the address itself', () => {
+  it('should match an untracked withdrawal address on the address itself, having no account keywords', () => {
     const field = withdrawalAddressField(() => {
       useBlockchainAccountsStore().updateAccounts(Blockchain.ETH2, [validatorAccount(993, WITHDRAWAL_ADDRESS)]);
     });

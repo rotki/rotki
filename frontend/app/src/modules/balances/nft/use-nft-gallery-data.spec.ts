@@ -19,7 +19,13 @@ vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: (): object => ({ fetchNftsPrices: spies.fetchNftsPrices }),
 }));
 
-// these nfts are spread (`{ ...nft }`) by the composable, so they must be real objects.
+/**
+ * Builds one fully populated NFT fixture.
+ *
+ * @remarks
+ * A real object rather than a stub: the composable copies each entry with `{ ...nft }`, and a
+ * proxy-backed stand-in answers properties without owning any keys, so spreading one yields `{}`.
+ */
 function nft(tokenIdentifier: string): Nft {
   return {
     backgroundColor: null,

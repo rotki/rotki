@@ -17,7 +17,7 @@ const { getColor } = useEthValidatorUtils();
   <RuiChip
     size="sm"
     :color="getColor(validator.status)"
-    content-class="text-xs inline-flex gap-1 items-center"
+    :class-names="{ content: 'text-xs inline-flex gap-1 items-center' }"
     class="uppercase font-semibold"
   >
     {{ validator.status }}

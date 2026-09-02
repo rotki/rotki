@@ -149,20 +149,15 @@ describe('modules/accounts/blockchain/BtcAddressInput', () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue('   ');
 
-    // The payload is assembled from the trimmed key and fed straight back into the field, so the
-    // blanks are wiped and what is left is an empty key with no payload behind it.
     expect(await lastEmittedXpub(wrapper)).toBeUndefined();
     expect(await wrapper.vm.validate()).toBe(false);
   });
 
-  it('should show a server error reported against the derivation path', async () => {
+  it('should show a server error reported against the derivation path, whose only rule always passes so the message has somewhere to render', async () => {
     wrapper = createWrapper(Blockchain.BTC);
     await setXpubValue(ZPUB_KEY);
-    // The derivation path has a rule that always passes, which exists only to give the backend's
-    // errors for that field somewhere to render.
     await wrapper.setProps({ errorMessages: { derivationPath: ['Invalid derivation path'] } });
-    // Emitted rather than clicked: the toggle sits in the tooltip's activator slot, where a
-    // dispatched DOM event does not reach the listener the parent bound on the stub.
+    // Emitted rather than clicked: in an activator slot, a dispatched DOM event reaches no listener.
     wrapper.findComponent<ComponentPublicInstance>('[data-testid=xpub-advanced-toggle] button').vm.$emit('click');
     await nextTick();
 

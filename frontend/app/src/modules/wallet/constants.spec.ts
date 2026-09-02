@@ -13,8 +13,6 @@ describe('isUserRejectedError', () => {
   });
 
   it('should detect a 4001 code nested in a viem error cause chain', () => {
-    // Mirrors the real bug: MetaMask rejection surfaces as a generic
-    // "unknown RPC error" whose original 4001 only survives in the cause chain.
     const cause = Object.assign(
       new Error('MetaMask Tx Signature: User denied transaction signature.'),
       { code: 4001 },

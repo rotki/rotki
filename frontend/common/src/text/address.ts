@@ -5,32 +5,26 @@ export function isValidEthAddress(address?: string): boolean {
   return /^0x[\dA-Fa-f]{40}$/.test(address);
 }
 
+const P2PKH_OR_P2SH = /^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/;
+const BECH32 = /^bc1[02-9ac-hj-np-z]{7,87}$/;
+const CASH_ADDR_WITH_PREFIX = /^bitcoincash:[02-9ac-hj-np-z]{42,}$/;
+const CASH_ADDR_WITHOUT_PREFIX = /^[pq][02-9ac-hj-np-z]{41,}$/;
+const SIXTY_FOUR_HEX_CHARS = /^[\dA-Fa-f]{64}$/;
+
 export function isValidBtcAddress(address?: string): boolean {
   if (!address)
     return false;
 
-  // P2PKH addresses (starts with 1) and P2SH addresses (starts with 3)
-  if (/^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address))
-    return true;
-
-  // Bech32 addresses (starts with bc1)
-  return /^bc1[02-9ac-hj-np-z]{7,87}$/.test(address);
+  return P2PKH_OR_P2SH.test(address) || BECH32.test(address);
 }
 
 export function isValidBchAddress(address?: string): boolean {
   if (!address)
     return false;
 
-  // Legacy format (same as Bitcoin P2PKH and P2SH)
-  if (/^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address))
-    return true;
-
-  // CashAddr format (starts with bitcoincash:)
-  if (/^bitcoincash:[02-9ac-hj-np-z]{42,}$/.test(address))
-    return true;
-
-  // CashAddr format without prefix
-  return /^[pq][02-9ac-hj-np-z]{41,}$/.test(address);
+  return P2PKH_OR_P2SH.test(address)
+    || CASH_ADDR_WITH_PREFIX.test(address)
+    || CASH_ADDR_WITHOUT_PREFIX.test(address);
 }
 
 const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -50,7 +44,16 @@ function countLeadingChars(str: string, leader: string): number {
   return count;
 }
 
-// Trim leading zero bytes from the base256 buffer, then prepend the counted zeros.
+/**
+ * Copies the significant tail of the scratch buffer out, re-attaching the leading zero bytes.
+ *
+ * @remarks
+ * The scratch buffer is over-allocated and right-aligned, so its head is padding that must be
+ * skipped, while the zero bytes the encoding dropped have to be restored in front.
+ * @param b256 - the over-allocated big-endian scratch buffer written by the decode loop
+ * @param length - how many bytes at the tail of `b256` the loop actually touched
+ * @param zeroes - how many zero bytes to prepend, one per leading '1' in the input
+ */
 function buildDecodedResult(b256: Uint8Array, length: number, zeroes: number): Uint8Array {
   const size = b256.length;
   let it = size - length;
@@ -63,7 +66,15 @@ function buildDecodedResult(b256: Uint8Array, length: number, zeroes: number): U
   return vch;
 }
 
-// Logic taken from https://github.com/cryptocoinjs/base-x/blob/master/src/esm/index.js
+/**
+ * Converts a base58 string into the big-endian bytes it encodes, leading zero bytes included.
+ *
+ * @remarks
+ * Rejects rather than tolerates: every caller here treats a throw as "not a valid address", so
+ * malformed input must never come back as a short or empty buffer.
+ * @throws Error when a character is outside the base58 alphabet, or the carry does not clear.
+ * @see https://github.com/cryptocoinjs/base-x/blob/master/src/esm/index.js
+ */
 function decodeBase58(str: string): Uint8Array {
   if (str.length === 0)
     return new Uint8Array();
@@ -71,27 +82,21 @@ function decodeBase58(str: string): Uint8Array {
   const BASE_MAP = createBase58Map(BASE58_ALPHABET);
   const FACTOR = Math.log(BASE58_BASE) / Math.log(256);
 
-  // Skip and count leading '1's (zeros)
   const zeroes = countLeadingChars(str, BASE58_ALPHABET.charAt(0));
   let psz = zeroes;
   let length = 0;
 
-  // Allocate enough space in big-endian base256 representation
   const size = (((str.length - psz) * FACTOR) + 1) >>> 0;
   const b256 = new Uint8Array(size);
 
-  // Process the characters
   while (psz < str.length) {
     const charCode = str.charCodeAt(psz);
 
-    // Base map cannot be indexed using char code > 255
-    if (charCode > 255)
+    if (charCode > BASE_MAP.length - 1)
       throw new Error('Invalid character');
 
-    // Decode character
     let carry = BASE_MAP[charCode];
 
-    // Invalid character
     if (carry === 255)
       throw new Error('Invalid character');
 
@@ -170,9 +175,7 @@ export function isValidBtcTxHash(txHash?: string): boolean {
   if (!txHash)
     return false;
 
-  // BTC transaction hashes are 64 hexadecimal characters
-  const btcTxRegex = /^[\dA-Fa-f]{64}$/;
-  return btcTxRegex.test(txHash);
+  return SIXTY_FOUR_HEX_CHARS.test(txHash);
 }
 
 export function isValidSolanaSignature(signature?: string): boolean {

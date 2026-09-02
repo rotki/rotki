@@ -22,9 +22,7 @@ describe('toCustomAssetFields', () => {
     expect(type.suggest?.()).toStrictEqual(['vehicle']);
   });
 
-  // The types come from what the user created, so a type that does not exist is refused rather
-  // than sent as a filter that matches nothing.
-  it('should refuse a type the user has not created', () => {
+  it('should refuse a type the user has not created, rather than send a filter that matches nothing', () => {
     const [, type] = toCustomAssetFields(types, t);
     expect(type.validate?.('vehicle')).toBe(true);
     expect(type.validate?.('spaceship')).toBe(false);
@@ -34,8 +32,6 @@ describe('toCustomAssetFields', () => {
     expect(toCustomAssetFields(types, t).map(field => field.key)).toStrictEqual(['name', 'custom_asset_type']);
   });
 
-  // The url shape of the filter bag is derived from these fields, so the round-trip is asserted
-  // here rather than against a second hand-written declaration.
   it('should keep name and type route values as optional strings', () => {
     const schema = routeSchemaFromFields(toCustomAssetFields(types, t));
 

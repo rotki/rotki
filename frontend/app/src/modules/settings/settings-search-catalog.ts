@@ -15,9 +15,9 @@ export interface SearchCategory {
   readonly titleKey: MessageKey;
   readonly keywords?: readonly MessageKey[];
   /**
-   * When set, the category's member rows omit the category title from their breadcrumb (tab > row
-   * instead of tab > category > row). The header row still shows. Matches a flat settings page whose
-   * settings are not visually nested under a category heading (the interface tab).
+   * When set, the category's member rows omit the category title from their breadcrumb, leaving just
+   * tab and row. The header row still shows. Matches a flat settings page, such as the interface tab,
+   * whose settings are not visually nested under a category heading.
    */
   readonly flat?: boolean;
 }
@@ -34,7 +34,6 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
     tab: '/settings/account/',
     titleKey: msg.$t('settings.security_settings.title'),
   },
-  // general
   {
     id: SettingsCategoryIds.GENERAL,
     keywords: [msg.$t('general_settings.subtitle')],
@@ -70,7 +69,6 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
     tab: '/settings/general/',
     titleKey: msg.$t('backend_settings.title'),
   },
-  // database
   {
     id: SettingsCategoryIds.DATABASE_INFO,
     keywords: [msg.$t('database_settings.database_info.subtitle')],
@@ -119,7 +117,6 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
     tab: '/settings/chains/',
     titleKey: msg.$t('evm_settings.indexer.title'),
   },
-  // oracle
   {
     id: SettingsCategoryIds.PRICE_ORACLE,
     keywords: [msg.$t('price_oracle_settings.subtitle')],
@@ -132,8 +129,10 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
     tab: '/settings/oracle/',
     titleKey: msg.$t('oracle_cache_management.penalty.title'),
   },
-  // interface - a flat page: its top-level settings sit directly under the tab (no category segment),
-  // while the graph and newly-detected-tokens panels nest their settings under a header as usual.
+  /**
+   * A flat page: its top-level settings sit directly under the tab with no category segment, while
+   * the graph and newly-detected-tokens panels still nest theirs under a header as usual.
+   */
   {
     flat: true,
     id: SettingsCategoryIds.INTERFACE_ONLY,

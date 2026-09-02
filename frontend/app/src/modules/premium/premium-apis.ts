@@ -70,8 +70,6 @@ export function statisticsApi(): StatisticsApi {
       cancelByPrefix(ActivityKind.PRICES, ActivityPart.DAILY);
     },
     async cancelHistoricPriceTask(): Promise<void> {
-      // Covers both the per-lookup activities and the cache's batched fetches: every producer
-      // gives its work an id under the `prices:historic` prefix.
       cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
     },
     failedDailyPrices,

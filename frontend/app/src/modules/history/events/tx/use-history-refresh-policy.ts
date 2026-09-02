@@ -5,6 +5,7 @@ import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data'
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { Purgeable } from '@/modules/session/purge';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -37,6 +38,8 @@ export const HISTORY_STALE_AFTER: readonly StaleAfterEdge[] = [
 interface ResolveOptions {
   chains: string[];
   fullRefresh: boolean;
+  /** The caller's accounts as {@link resolveInputAccounts} left them, never the raw payload. */
+  inputAccounts: ChainAddress[];
   usedExchanges: Exchange[];
   userInitiated: boolean;
   /** Whether history has been refreshed before; drives the sync-progress display. */
@@ -48,7 +51,7 @@ interface UseHistoryRefreshPolicyReturn {
   filterSyncingExchanges: (exchanges: Exchange[] | undefined) => Exchange[];
   resolveInputAccounts: (accounts: ChainAddress[] | undefined, fullRefresh: boolean, chains: string[]) => ChainAddress[];
   resolveRefreshTargets: (
-    payload: { accounts?: ChainAddress[]; exchanges?: Exchange[] },
+    payload: { exchanges?: Exchange[] },
     novelty: NoveltyDetection,
     opts: ResolveOptions,
   ) => RefreshTargets;
@@ -62,7 +65,8 @@ interface UseHistoryRefreshPolicyReturn {
  */
 export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   const { isSameExchange, syncingExchanges } = useExchangeData();
-  const { filterDisabledChainAccounts, getAllAccounts } = useHistoryTransactionAccounts();
+  const { getAllAccounts } = useHistoryTransactionAccounts();
+  const { filterAccounts } = useDisabledChains();
   const { isDecodableChains } = useSupportedChains();
   const { statusOf } = useNativeTask();
 
@@ -71,7 +75,7 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
    * when a refresh *started*, not when it succeeded. So this asks the completion ledger whether the
    * activity ever settled — in any outcome — rather than whether it ever succeeded.
    *
-   * ⚠️ Keying this on `everCompleted` instead would leave a failed or cancelled sync novel forever,
+   * Keying this on `everCompleted` instead would leave a failed or cancelled sync novel forever,
    * and `resolveForFullRefresh` escalates any novelty into a full re-sync of every account.
    */
   function neverAttempted(kind: ActivityKind, ...parts: string[]): boolean {
@@ -84,9 +88,13 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
       : get(syncingExchanges);
   }
 
+  /**
+   * The one door accounts enter this module through, so it is where the user's disabled chains are
+   * removed. `getAllAccounts` filters its own; a caller-supplied list is filtered here.
+   */
   function resolveInputAccounts(accounts: ChainAddress[] | undefined, fullRefresh: boolean, chains: string[]): ChainAddress[] {
     if (accounts?.length)
-      return accounts;
+      return filterAccounts(accounts);
     if (fullRefresh)
       return getAllAccounts(chains);
     return [];
@@ -104,12 +112,13 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   }
 
   /**
-   * ⚠️ `!everRefreshed` is a scope condition, not a duplicate of the entry guard. Novelty is "never
-   * attempted", so an account whose sync *failed* is no longer novel — which meant a first load
-   * where every account failed resolved to an empty account set on every later background refresh,
-   * and history only recovered if the user pressed refresh. Reaching here at all already means
-   * history has never loaded (`shouldNotRefresh` returns before this once it has), so the honest
-   * scope for that case is the full first load.
+   * Resolves the accounts and exchanges a full refresh should cover.
+   *
+   * @remarks
+   * `!everRefreshed` widens the scope and is not a duplicate of the entry guard: novelty means
+   * "never attempted", so an account whose sync *failed* is not novel. Without it, a first load
+   * where every account failed leaves every later background refresh with an empty account set,
+   * and only a manual refresh recovers. Reaching here already means history has never loaded.
    */
   function resolveForFullRefresh(novelty: NoveltyDetection, chains: string[], opts: { userInitiated: boolean; everRefreshed: boolean }): { accounts: ChainAddress[]; exchanges: Exchange[] } {
     const wantsAllAccounts = novelty.newAccounts.length > 0 || opts.userInitiated || !opts.everRefreshed;
@@ -127,11 +136,11 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   }
 
   function resolveRefreshTargets(
-    payload: { accounts?: ChainAddress[]; exchanges?: Exchange[] },
+    payload: { exchanges?: Exchange[] },
     novelty: NoveltyDetection,
     opts: ResolveOptions,
   ): RefreshTargets {
-    const { chains, everRefreshed, fullRefresh, usedExchanges, userInitiated } = opts;
+    const { chains, everRefreshed, fullRefresh, inputAccounts, usedExchanges, userInitiated } = opts;
     const hasNovelty = novelty.newAccounts.length > 0 || novelty.newExchanges.length > 0;
 
     let resolved: { accounts: ChainAddress[]; exchanges: Exchange[] };
@@ -141,11 +150,9 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
     else if (hasNovelty)
       resolved = resolveForNovelItems(novelty);
     else
-      resolved = { accounts: payload.accounts ?? [], exchanges: payload.exchanges ?? [] };
+      resolved = { accounts: inputAccounts, exchanges: payload.exchanges ?? [] };
 
-    // Must stay ahead of everything downstream: a disabled-chain account that reaches novelty
-    // detection is queued as a pending refresh the backend then silently skips.
-    const accounts = filterDisabledChainAccounts(resolved.accounts);
+    const { accounts } = resolved;
 
     return {
       accounts,

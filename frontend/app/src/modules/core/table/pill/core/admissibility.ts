@@ -1,19 +1,30 @@
 import type { FieldDef, FilterState } from '@/modules/core/table/pill/core/types';
 
+/**
+ * Reports whether a field's option list has yet to load, rather than admitting nothing.
+ *
+ * @remarks
+ * The option lists are store-backed, so an empty `admits` result is "not known yet" and must leave
+ * the user's picks alone.
+ */
+function optionsNotLoadedYet(allowed: readonly string[]): boolean {
+  return allowed.length === 0;
+}
+
 /** Every active filter's values, keyed by field, as a field's `admits` reads them. */
 function valuesByField(state: FilterState): Record<string, readonly string[]> {
   return Object.fromEntries(state.map(filter => [filter.fieldKey, filter.values]));
 }
 
 /**
- * Drops the values a field no longer admits, given what the other fields hold.
+ * Prunes the values a narrowing has made inadmissible, given what the other fields hold.
  *
- * The other half of `FieldDef.admits`: narrowing an option list only governs what can be *added*,
- * so without this a value picked before the narrowing stays in the filter and keeps being sent. A
- * filter left with no values at all is removed, since an empty pill filters nothing.
+ * @remarks
+ * The other half of `FieldDef.admits`, which governs only what can be *added*: without this, a
+ * value picked before the narrowing stays in the filter and keeps being sent.
  *
- * Returns the state unchanged, by reference, when nothing was inadmissible. Callers set this
- * straight back onto a ref, so preserving identity is what keeps a no-op from being an update.
+ * @returns the same state by reference when nothing was pruned, so callers can set it back onto a
+ * ref without that counting as an update
  */
 export function pruneInadmissible(state: FilterState, fields: readonly FieldDef[]): FilterState {
   if (!fields.some(field => field.admits))
@@ -28,9 +39,7 @@ export function pruneInadmissible(state: FilterState, fields: readonly FieldDef[
       return [filter];
 
     const allowed = admits(values);
-    // An empty list is "not known yet", not "nothing is allowed": the option lists are store-backed
-    // and a mapping that has not loaded must not wipe what the user picked.
-    if (allowed.length === 0)
+    if (optionsNotLoadedYet(allowed))
       return [filter];
 
     const kept = filter.values.filter(value => allowed.includes(value));

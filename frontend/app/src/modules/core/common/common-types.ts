@@ -12,7 +12,15 @@ export type WritableRef<T> = Ref<T>;
 export interface PaginationRequestPayload<T> {
   readonly limit: number;
   readonly offset: number;
-  readonly orderByAttributes?: (keyof T)[];
+  /**
+   * Column names in the snake_case the wire uses, which is what `getApiSortingParams` produces.
+   *
+   * @remarks
+   * Not `keyof T`: the sorting is run through `transformCase` on the way in, so a camelCase key
+   * never reaches a payload. Typing it as `keyof T` made every consumer convert back and forced a
+   * cast at the one place that builds it.
+   */
+  readonly orderByAttributes?: ToSnakeCase<keyof T & string>[];
   readonly ascending?: boolean[];
   readonly ignoreCache?: boolean;
   readonly onlyCache?: boolean;

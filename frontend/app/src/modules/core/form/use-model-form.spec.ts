@@ -53,10 +53,7 @@ describe('useModelForm', () => {
     expect(form.state.price).toBe('4000');
   });
 
-  // Pins convergence, not the equality guard: removing the guard leaves this green, because the
-  // copy is shallow and re-assigning the same nested reference is not a reactive change. Written
-  // with a nested value on purpose, since that is the only shape that could echo at all.
-  it('should settle rather than echo between the two directions', async () => {
+  it('should settle rather than echo between the two directions, pinning convergence rather than the equality guard that produces it', async () => {
     const model = ref<PriceState>(baseModel());
     const form = useModelForm<PriceState>({ model, schema: PriceSchema });
 
@@ -102,10 +99,7 @@ describe('useModelForm', () => {
       expect(get(stateUpdated)).toBe(false);
     });
 
-    // A dialog holds its prompt-on-close flag in its own ref, which outlives the form it passes it
-    // to. Reopening it after an abandoned edit used to rely on the form disarming the flag as it
-    // unmounted; the sync being immediate covers it from the other end.
-    it('should disarm a flag left armed by a previous edit', () => {
+    it('should disarm, on creation, a flag left armed by a previous edit', () => {
       const stateUpdated = ref<boolean>(true);
       createWithFlag(stateUpdated);
 
@@ -253,8 +247,7 @@ describe('useModelForm', () => {
         schema: PriceSchema,
         stateUpdated: overrides.stateUpdated,
         toModel: (state, model): PriceModel => ({ ...model, ...state }),
-        // A new array every call on purpose: the mirroring has to notice that it holds the same
-        // values rather than that it is the same reference.
+        // A new array every call, so the mirroring has to compare values rather than references.
         toState: (model): PriceState => ({
           fromAsset: model.fromAsset,
           price: model.price ?? '',

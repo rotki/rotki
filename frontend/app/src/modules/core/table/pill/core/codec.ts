@@ -4,14 +4,18 @@ import { FilterBehaviours, type FilterObjectWithBehaviour, FilterOps, FilterValu
 
 /**
  * The pure bridge between the `ActiveFilter[]` editing model and the transported form.
- * Supersedes `filter-codec.ts` (`Suggestion[]`-based): the emitted `matches` object is the
- * SAME shape `TableFilter` produces (`!`-prefixed exclusion, `keyValue` keys, asset ->
- * identifier, boolean -> true), so consumers and the URL are unaffected. Param-bound fields
- * (external filters like the history account `locationLabels`) are routed to a separate
- * `params` bag keyed by their param key, ready for a `useServerTable` param source.
+ *
+ * @remarks
+ * The emitted `matches` object keeps the exact shape `TableFilter` produces, so consumers and the
+ * URL are unaffected: `!`-prefixed exclusion, `keyValue` keys, an asset carried as its identifier
+ * and a boolean as `true`. Param-bound fields, such as the history account `locationLabels`, are
+ * routed instead into a separate `params` bag keyed by their param key, ready for a
+ * `useServerTable` param source.
  *
  * Scope: `enum` / `asset` / `boolean` value types + binding routing. `range` / `date`
  * collapse lands with the events-filter rewrite, when the field carries its wire-key mapping.
+ *
+ * @packageDocumentation
  */
 
 /** The transported form of a filter state: filter-bound `matches` + param-bound `params`. */
@@ -31,10 +35,15 @@ function isBehaviourWrapped(value: unknown): value is FilterObjectWithBehaviour<
   return typeof value === 'object' && value !== null && !Array.isArray(value) && 'values' in value;
 }
 
+/**
+ * Writes one serialized value into the half of the transported form its field is bound to.
+ *
+ * @remarks
+ * A param-bound boolean stays a boolean, because it is consumed as one (a toggle's model, a request
+ * flag); stringifying it to `'true'` would make every reader parse it back.
+ */
 function writeTarget(field: FieldDef, target: SerializedState, value: WireValue): void {
   if (field.binding.kind === 'param') {
-    // Booleans stay booleans: a param-bound boolean is consumed as one (a toggle's model, a
-    // request flag), and stringifying it to `'true'` would make every reader parse it back.
     target.params[field.binding.paramKey] = typeof value === 'boolean' || Array.isArray(value) ? value : String(value);
   }
   else {
@@ -123,7 +132,7 @@ export function hasWritableValue(field: FieldDef, filter: ActiveFilter): boolean
   }
 }
 
-/** ActiveFilter[] -> transported form. Fields with no usable value are dropped. */
+/** Converts `ActiveFilter[]` into the transported form, dropping fields with no usable value. */
 export function matchesFromState(state: FilterState, fields: FieldDef[]): SerializedState {
   const lookup = buildLookup(fields);
   const result: SerializedState = { matches: {}, params: {} };
@@ -227,9 +236,12 @@ function decodeField(field: FieldDef, raw: unknown): ActiveFilter | undefined {
 }
 
 /**
- * Transported form -> ActiveFilter[]. Reads each field from `matches` (filter-bound) or
- * `params` (param-bound), decoding `!`-prefixed / behaviour-wrapped exclusion into the
- * field-level `is_not` operator. Iterates `fields` so the output order is stable.
+ * Converts the transported form back into `ActiveFilter[]`.
+ *
+ * @remarks
+ * Reads each field from `matches` when it is filter-bound and from `params` when it is param-bound,
+ * decoding `!`-prefixed and behaviour-wrapped exclusion into the field-level `is_not` operator.
+ * Iterates `fields` rather than the payload, so the output order is stable.
  */
 export function stateFromMatches(
   matches: MatchedKeywordWithBehaviour<string>,

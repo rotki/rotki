@@ -103,9 +103,8 @@ function navigateToAccountingRule(): void {
   startPromise(router.push({ name: '/settings/accounting/', query }));
 }
 
+/** Navigating away discards unsaved edits, so a dirty form gets the dialog's prompt-on-close. */
 function viewAccountingRule(): void {
-  // Leaving the editor discards unsaved edits, so confirm first when the form
-  // is dirty (mirrors the dialog's prompt-on-close behaviour).
   if (dirty) {
     show({
       message: t('big_dialog.prompt_close.message'),

@@ -41,24 +41,26 @@ export function useEnsOperations(): UseEnsOperationsReturn {
     let newResult: Record<string, string | null> = {};
 
     if (forceUpdate) {
-      const outcome = await submitTask({
+      const outcome = await submitTask<EthNames>({
         id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ENS),
         kind: ActivityKind.ACCOUNTS,
         rerunnable: true,
-        run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
+        run: async ({ runTask }): Promise<Result<EthNames, TaskError>> => mapResult(
           await runTask<EthNames>(
             async () => getEnsNamesTask(filteredAddresses),
           ),
-          (value) => {
-            newResult = value;
-          },
+          value => value,
         ),
         subtitle: activityLabel(ActivityKind.ACCOUNTS, ActivityPart.ENS, { count: filteredAddresses.length }, filteredAddresses.length),
         title: t('task_center.group.accounts'),
       });
 
-      if (isErr(outcome) && isActionable(outcome.error)) {
-        notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: outcome.error.message }));
+      if (isErr(outcome)) {
+        if (isActionable(outcome.error))
+          notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: outcome.error.message }));
+      }
+      else {
+        newResult = outcome.value;
       }
     }
     else {

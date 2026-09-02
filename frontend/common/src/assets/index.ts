@@ -31,25 +31,27 @@ export function isEvmIdentifier(identifier?: string): boolean {
   return !(!address || !isValidEthAddress(address));
 }
 
+/**
+ * Whether an identifier is an EVM one carrying an nft id, as `eip155:1/erc721:0xabc/42`.
+ *
+ * @remarks
+ * Checked by stripping the `/nftId` suffix and validating what remains as a standard EVM
+ * identifier, so the two halves cannot drift apart.
+ */
 export function isEvmIdentifierWithNftId(identifier?: string): boolean {
   if (!identifier)
     return false;
 
-  // Check if it's a valid EVM identifier format (eip155:chainId/erc721:address/nftId)
-  // by temporarily removing the /nftId suffix
   const { address, nftId } = getAddressAndNftIdFromIdentifier(identifier);
   if (!nftId || !/^\d+$/.test(nftId))
     return false;
 
-  // Reconstruct without the nftId to validate as a standard EVM identifier
   const parts = identifier.split(':');
   if (parts.length !== 3)
     return false;
 
-  const baseIdentifier = `${parts[0]}:${parts[1]}:${address}`;
-
-  // Check if base format is valid and protocol is erc721
-  if (!isEvmIdentifier(baseIdentifier))
+  const withoutNftId = `${parts[0]}:${parts[1]}:${address}`;
+  if (!isEvmIdentifier(withoutNftId))
     return false;
 
   const protocol = parts[1]?.split('/')[1];

@@ -24,7 +24,7 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
   const { fetchEthStakingValidators } = useEthStaking();
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { useIsActivePrefix } = useTaskCenter();
-  // Both layers — hydration is not an activity, so the orchestrator alone reports a DB read as idle.
+  // Both layers: hydration is not an activity, so the orchestrator alone reports a DB read as idle.
   const loading = logicOr(
     useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
     useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
@@ -50,8 +50,14 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
     };
   }
 
-  // Reached only from the accounts page's refresh button (exposed through `EthStakingValidators`),
-  // hence `user`: it supersedes a background eth2 query rather than joining it.
+  /**
+   * Re-reads the validator list and their eth2 balances, bypassing every cache.
+   *
+   * @remarks
+   * Submitted at user priority, which supersedes an eth2 query already in flight instead of
+   * queueing behind it. That is what a refresh button owes the user: they said the numbers on
+   * screen are stale, and joining a background pass would hand back the same ones.
+   */
   async function refresh(): Promise<void> {
     await fetchEthStakingValidators({ ignoreCache: true });
     await refreshBlockchainBalances({

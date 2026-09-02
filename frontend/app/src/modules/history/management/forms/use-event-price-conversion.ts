@@ -63,9 +63,6 @@ export function useEventPriceConversion({
     const time = toValue(timestamp);
     const assetVal = get(asset);
     if (!time || !assetVal) {
-      // There is nothing to price, so the fields have to be cleared rather than left showing the
-      // last asset's number. The parent used to do this by reaching in through a template ref once
-      // its own reset had run.
       reset();
       return;
     }

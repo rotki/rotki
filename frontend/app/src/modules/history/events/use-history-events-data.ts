@@ -31,19 +31,16 @@ interface UseHistoryEventsDataOptions {
 }
 
 interface UseHistoryEventsDataReturn {
-  // Loading states
   eventsLoading: Readonly<Ref<boolean>>;
   sectionLoading: ComputedRef<boolean>;
   loading: Readonly<Ref<boolean>>;
 
-  // Collection data
   entriesFoundTotal: ComputedRef<number | undefined>;
   found: ComputedRef<number>;
   limit: ComputedRef<number>;
   total: ComputedRef<number>;
   showUpgradeRow: ComputedRef<boolean>;
 
-  // Event data
   /**
    * All events grouped by groupIdentifier, including events with ignored assets.
    * Only hidden events are excluded. Used for operations like editing and redecoding
@@ -61,7 +58,6 @@ interface UseHistoryEventsDataReturn {
   fetchEvents: () => Promise<void>;
   toggleShowIgnoredAssets: (groupId: string) => void;
 
-  // Complete events helpers
   getGroupEvents: (groupId: string) => HistoryEventEntry[];
   getCompleteSubgroupEvents: (displayedEvents: HistoryEventEntry[]) => HistoryEventEntry[];
   getCompleteEventsForItem: (groupId: string, event: HistoryEventEntry) => HistoryEventEntry[];
@@ -82,7 +78,6 @@ export function useHistoryEventsData(
   const events = ref<HistoryEventRow[]>([]);
   let fetchVersion = 0;
 
-  // Extract collection data
   const itemsPerPage = useSetting('itemsPerPage');
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
@@ -98,9 +93,14 @@ export function useHistoryEventsData(
 
   const EVENTS_CANCEL_TAG = 'history-events-detail';
 
-  // Fetches all events for the currently displayed groups.
-  // limit: -1 fetches all matching events, but the scope is bounded by groupIdentifiers
-  // which only includes groups visible on the current page.
+  /**
+   * Fetches every event belonging to the groups currently on screen.
+   *
+   * @remarks
+   * `limit: -1` lifts the page bound, which stays safe because `groupIdentifiers` already narrows
+   * the request to the groups the visible page holds. A later call supersedes an in-flight one:
+   * the response is discarded unless its version is still the current one.
+   */
   async function fetchEvents(): Promise<void> {
     const groupIds = get(groupIdentifiers);
     if (groupIds.length === 0) {
@@ -140,6 +140,11 @@ export function useHistoryEventsData(
    * All events grouped by groupIdentifier, including events with ignored assets.
    * Only hidden events are excluded. Used for operations like editing and redecoding
    * where the complete set of events is needed.
+   *
+   * @remarks
+   * A swap group is wrapped as a single subgroup here: the backend does not subgroup one, every
+   * event in it already belonging to the same subgroup, and `HistoryEventsSwapItem` renders it
+   * that way.
    */
   const completeEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
     const eventsList = get(events);
@@ -161,9 +166,6 @@ export function useHistoryEventsData(
       }
     }
 
-    // For swap event groups, the backend doesn't subgroup because all events
-    // in the group are guaranteed to be in the same subgroup. Wrap them as a
-    // single subgroup array so the frontend renders them with HistoryEventsSwapItem.
     for (const [groupId, groupEvents] of Object.entries(mapping)) {
       if (isSwapOnlyGroup(groupEvents))
         mapping[groupId] = [groupEvents];
@@ -172,8 +174,7 @@ export function useHistoryEventsData(
     return mapping;
   });
 
-  // User intent: which groups the user has toggled to reveal their ignored
-  // assets. This is the only mutable piece of state; everything else is derived.
+  // The only mutable state here: which groups the user toggled open. The rest is derived.
   const showIgnoredAssetsIntent = shallowRef<Set<string>>(new Set());
 
   // Groups that currently contain at least one event with an ignored asset.
@@ -189,16 +190,13 @@ export function useHistoryEventsData(
     return result;
   });
 
-  // Effective showing state: the user's intent intersected with the groups that
-  // still actually have an ignored asset. Deriving (rather than mutating) means
-  // stale state is impossible — unignoring an asset drops it automatically.
+  // Intent intersected with reality, so unignoring an asset drops the group with no cleanup.
   const groupsShowingIgnoredAssets = computed<Set<string>>(() => {
     const valid = get(groupsWithIgnoredAssets);
     return new Set([...get(showIgnoredAssetsIntent)].filter(groupId => valid.has(groupId)));
   });
 
-  // Groups that have an ignored-asset event currently hidden: those with an
-  // ignored asset that the user has not revealed via the per-group toggle.
+  // Groups holding an ignored asset the per-group toggle has not revealed.
   const groupsWithHiddenIgnoredAssets = computed<Set<string>>(() => {
     if (!toValue(excludeIgnored))
       return new Set();
@@ -227,7 +225,6 @@ export function useHistoryEventsData(
     const mapping: Record<string, HistoryEventRow[]> = {};
 
     for (const [groupId, groupEvents] of Object.entries(base)) {
-      // If this group is showing ignored assets, include all events
       if (showingIgnored.has(groupId)) {
         mapping[groupId] = groupEvents;
         continue;
@@ -307,9 +304,7 @@ export function useHistoryEventsData(
     startPromise(fetchEvents());
   });
 
-  // Refresh when ignored assets change (e.g. mark-as-spam from context menu).
-  // The emit from the child component is lost because the row is destroyed
-  // before the emit propagates, so we watch the store directly.
+  // Watched on the store, not the child's emit: marking spam destroys the row before it propagates.
   watch(ignoredAssets, () => {
     emit('refresh');
   });

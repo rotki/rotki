@@ -42,8 +42,7 @@ describe('toAssetField', () => {
     expect(field.freeText).toBeUndefined();
   });
 
-  // The request carries a plain identifier, so there is no form for an excluded asset.
-  it('should not offer exclusion', () => {
+  it('should not offer exclusion, the request carrying a plain identifier', () => {
     const field = toAssetField({ key: 'asset', label: 'Asset', searchAsset }, resolvers);
 
     expect(field.allowExclusion).toBe(false);

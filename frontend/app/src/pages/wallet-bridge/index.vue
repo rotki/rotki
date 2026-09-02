@@ -22,10 +22,8 @@ const showTakeoverMessage = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Logging
 const { addLog, logs } = useBridgeLogging();
 
-// WebSocket integration
 const {
   cleanup,
   connect: connectToElectron,
@@ -50,7 +48,6 @@ onTakeOver(() => {
   addLog('Another bridge is now active', 'error');
 });
 
-// Cleanup on unmount
 onBeforeUnmount(() => {
   cleanup();
 });

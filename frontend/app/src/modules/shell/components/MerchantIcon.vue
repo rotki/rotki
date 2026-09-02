@@ -7,27 +7,51 @@ const { code } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+/** ISO 18245 merchant category codes, which are opaque numbers on the wire. */
+const MerchantCategory = {
+  BAKERIES: 5462,
+  BARS: 5813,
+  BOOK_STORES: 5942,
+  CLOTHING_STORES: 5691,
+  COSMETIC_STORES: 5977,
+  DEPARTMENT_STORES: 5311,
+  DISCOUNT_STORES: 5310,
+  DRUG_STORES: 5912,
+  ELECTRONICS_STORES: 5732,
+  FAMILY_CLOTHING_STORES: 5651,
+  FAST_FOOD_RESTAURANTS: 5814,
+  GROCERY_STORES: 5411,
+  HOME_SUPPLY_WAREHOUSE_STORES: 5200,
+  HOTELS: 7011,
+  MISCELLANEOUS_RETAIL_STORES: 5999,
+  RESTAURANTS: 5812,
+  SERVICE_STATIONS: 5541,
+  TAXICABS_AND_RIDESHARES: 4121,
+  VARIETY_STORES: 5331,
+  WOMEN_READY_TO_WEAR_STORES: 5621,
+} as const;
+
 const mccIconMap: Record<string, RuiIcons> = {
-  4121: 'lu-car', // Taxicabs and Rideshares
-  5200: 'lu-hammer', // Home Supply Warehouse Stores
-  5310: 'lu-percent', // Discount Stores
-  5311: 'lu-store', // Department Stores
-  5331: 'lu-coins', // Variety Stores (Dollar Stores)
-  5411: 'lu-shopping-cart', // Grocery Stores, Supermarkets
-  5462: 'lu-croissant', // Bakeries
-  5541: 'lu-fuel', // Service Stations (Gas Stations)
-  5621: 'lu-shopping-bag', // Women's Ready-to-Wear Stores
-  5651: 'lu-users', // Family Clothing Stores
-  5691: 'lu-shirt', // Clothing Stores
-  5732: 'lu-smartphone', // Electronics Stores
-  5812: 'lu-utensils', // Eating Places, Restaurants
-  5813: 'lu-wine', // Bars, Cocktail Lounges, Taverns
-  5814: 'lu-hamburger', // Fast Food Restaurants
-  5912: 'lu-pill', // Drug Stores, Pharmacies
-  5942: 'lu-book-open', // Book Stores
-  5977: 'lu-sparkles', // Cosmetic Stores
-  5999: 'lu-shopping-bag', // Miscellaneous Retail Stores
-  7011: 'lu-bed', // Hotels, Motels, Resorts
+  [MerchantCategory.BAKERIES]: 'lu-croissant',
+  [MerchantCategory.BARS]: 'lu-wine',
+  [MerchantCategory.BOOK_STORES]: 'lu-book-open',
+  [MerchantCategory.CLOTHING_STORES]: 'lu-shirt',
+  [MerchantCategory.COSMETIC_STORES]: 'lu-sparkles',
+  [MerchantCategory.DEPARTMENT_STORES]: 'lu-store',
+  [MerchantCategory.DISCOUNT_STORES]: 'lu-percent',
+  [MerchantCategory.DRUG_STORES]: 'lu-pill',
+  [MerchantCategory.ELECTRONICS_STORES]: 'lu-smartphone',
+  [MerchantCategory.FAMILY_CLOTHING_STORES]: 'lu-users',
+  [MerchantCategory.FAST_FOOD_RESTAURANTS]: 'lu-hamburger',
+  [MerchantCategory.GROCERY_STORES]: 'lu-shopping-cart',
+  [MerchantCategory.HOME_SUPPLY_WAREHOUSE_STORES]: 'lu-hammer',
+  [MerchantCategory.HOTELS]: 'lu-bed',
+  [MerchantCategory.MISCELLANEOUS_RETAIL_STORES]: 'lu-shopping-bag',
+  [MerchantCategory.RESTAURANTS]: 'lu-utensils',
+  [MerchantCategory.SERVICE_STATIONS]: 'lu-fuel',
+  [MerchantCategory.TAXICABS_AND_RIDESHARES]: 'lu-car',
+  [MerchantCategory.VARIETY_STORES]: 'lu-coins',
+  [MerchantCategory.WOMEN_READY_TO_WEAR_STORES]: 'lu-shopping-bag',
 };
 
 const DEFAULT_ICON = 'lu-store';
@@ -37,7 +61,7 @@ const iconName = computed<string>(() => mccIconMap[code] ?? DEFAULT_ICON);
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>

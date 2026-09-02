@@ -72,17 +72,14 @@ describe('useCompleteEvents', () => {
       const swapOut = createMockEvent({ groupIdentifier: 'group1', identifier: 3, eventSubtype: 'receive' });
       const hiddenEvent = createMockEvent({ groupIdentifier: 'group1', identifier: 4, eventSubtype: 'receive' });
 
-      // Complete subgroup has 3 events, but displayed only shows 2
       const completeEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => ({
         group1: [[swapIn, swapOut, hiddenEvent]],
       }));
 
       const { getCompleteSubgroupEvents } = useCompleteEvents(completeEventsMapped);
 
-      // Displayed events only contain swapIn and swapOut
       const result = getCompleteSubgroupEvents([swapIn, swapOut]);
 
-      // Should return the complete subgroup (including hiddenEvent)
       expect(result).toEqual([swapIn, swapOut, hiddenEvent]);
     });
 
@@ -98,9 +95,7 @@ describe('useCompleteEvents', () => {
 
       const { getCompleteSubgroupEvents } = useCompleteEvents(completeEventsMapped);
 
-      // Should return only the first subgroup
       expect(getCompleteSubgroupEvents([swap1In, swap1Out])).toEqual([swap1In, swap1Out]);
-      // Should return only the second subgroup
       expect(getCompleteSubgroupEvents([swap2In, swap2Out])).toEqual([swap2In, swap2Out]);
     });
 
@@ -153,9 +148,7 @@ describe('useCompleteEvents', () => {
 
       const { getCompleteEventsForItem } = useCompleteEvents(completeEventsMapped);
 
-      // When asking for swapIn, should return only the swap subgroup
       expect(getCompleteEventsForItem('group1', swapIn)).toEqual([swapIn, swapOut]);
-      // When asking for swapOut, should return the same swap subgroup
       expect(getCompleteEventsForItem('group1', swapOut)).toEqual([swapIn, swapOut]);
     });
 

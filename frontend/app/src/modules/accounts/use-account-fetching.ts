@@ -24,11 +24,12 @@ export function useAccountFetching(): UseAccountFetchingReturn {
   const { getNativeAsset } = useSupportedChains();
 
   /**
-   * A cancelled request is not a failure to report: it is the queue dropping work the user moved
-   * away from. Neither is an expired session — this fans out over every supported chain, so a
-   * logout mid-flight would otherwise raise one "no user is currently logged in" per chain, and
-   * they stack over the UI describing a session that `handleAuthFailure` has already torn down.
-   * Everything else is surfaced.
+   * Reports a chain's fetch failure, unless it is one the user should not be told about.
+   *
+   * @remarks
+   * This fans out over every supported chain, so a logout mid-flight would otherwise raise one
+   * "no user is currently logged in" per chain. A cancelled request is likewise the queue dropping
+   * work the user moved away from. Everything else is surfaced.
    */
   const notifyFetchFailure = (chain: string, error: unknown): void => {
     if (isRequestCancellation(error) || isSessionExpired(error))

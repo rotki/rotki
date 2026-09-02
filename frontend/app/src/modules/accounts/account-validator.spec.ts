@@ -24,7 +24,6 @@ function payload(overrides: Partial<EthereumValidatorRequestPayload> = {}): Ethe
 }
 
 describe('sortAndFilterValidators', () => {
-  // sortAndFilterValidators sorts the input array in place, so build a fresh set per test.
   const validators = (): EthereumValidator[] => [
     validator({ amount: bigNumberify(10), index: 1, publicKey: '0xaaa', status: 'active', value: bigNumberify(100) }),
     validator({ amount: bigNumberify(20), index: 2, publicKey: '0xbbb', status: 'exited', value: bigNumberify(200) }),

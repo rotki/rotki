@@ -3,11 +3,17 @@ import { defaultWindow } from '@vueuse/core';
 import { logger } from '@/modules/core/common/logging/logging';
 
 /**
- * Creates a proxy provider using the walletBridge API from preload
- * This solves the context bridge function reference issue by managing event listeners in renderer context
+ * An EIP-1193 provider that talks through the preload `walletBridge`.
+ *
+ * @remarks
+ * The listener list lives here in the renderer rather than across the context bridge. A function
+ * sent over that bridge arrives as a different reference each time, so the bridge itself could
+ * never match a listener back to the one that registered it, and removal would silently do
+ * nothing. Only one forwarder per event type is registered on the bridge; this map fans it out.
+ *
+ * @returns undefined outside Electron, where there is no bridge to proxy.
  */
 export function useProxyProvider(): EIP1193Provider | undefined {
-  // Only set up if walletBridge is available
   const walletBridge = defaultWindow?.walletBridge;
   if (!walletBridge) {
     return undefined;
@@ -15,12 +21,8 @@ export function useProxyProvider(): EIP1193Provider | undefined {
 
   logger.debug('Creating proxy provider from wallet bridge');
 
-  // Event listeners managed purely in renderer context - no context bridge issues
   const eventListeners = new Map<EIP1193EventName, ((...args: any[]) => void)[]>();
 
-  // Bridge forwarding is registered lazily per event type in `on` and released in `removeListener`
-  // once an event's last listener goes. If the owning scope dies while listeners are still attached
-  // nothing would call that path, so the bridge would keep forwarding into a dead provider.
   onScopeDispose(() => {
     for (const event of eventListeners.keys())
       walletBridge.removeEventListener(event);
@@ -28,7 +30,6 @@ export function useProxyProvider(): EIP1193Provider | undefined {
     eventListeners.clear();
   }, true);
 
-  // Create EIP1193Provider implementation
   const proxyProvider: EIP1193Provider = {
     get connected(): boolean {
       return walletBridge?.isEnabled() && walletBridge?.isConnected();
@@ -44,7 +45,6 @@ export function useProxyProvider(): EIP1193Provider | undefined {
       event: K,
       callback: (...args: EIP1193ProviderEvents[K]) => void,
     ) => {
-      // Alias for removeListener
       proxyProvider.removeListener!(event, callback);
     },
 
@@ -55,13 +55,11 @@ export function useProxyProvider(): EIP1193Provider | undefined {
       if (!eventListeners.has(event)) {
         eventListeners.set(event, []);
 
-        // Set up bridge event forwarding for this event type
         walletBridge.addEventListener(event, (data: any) => {
           const listeners = eventListeners.get(event) ?? [];
           listeners.forEach((listener) => {
             try {
               if (event === 'disconnect' && !data) {
-                // Disconnect events don't have data
                 listener();
               }
               else {
@@ -89,7 +87,6 @@ export function useProxyProvider(): EIP1193Provider | undefined {
         if (index !== -1) {
           listeners.splice(index, 1);
 
-          // If no more listeners for this event, clean up bridge forwarding
           if (listeners.length === 0) {
             walletBridge.removeEventListener(event);
             eventListeners.delete(event);

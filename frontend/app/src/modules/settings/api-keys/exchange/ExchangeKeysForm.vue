@@ -86,9 +86,14 @@ const form = useMappedModelForm<ExchangeFormData, ExchangeKeysFormState>({
   toState: toExchangeKeysFormState,
 });
 
-// Coinbase pastes its secret with literal `\n`. Normalised as it is written rather than on the way
-// to the entry, so the field shows what will actually be sent instead of correcting itself a tick
-// after the paste.
+/**
+ * The secret, normalised as it is typed.
+ *
+ * @remarks
+ * Coinbase hands out a secret containing a literal `\n`. Normalising on write rather than on the way
+ * to the entry means the field shows what will actually be sent, instead of appearing to correct
+ * itself a tick after the paste.
+ */
 const apiSecret = computed<string>({
   get: () => form.state.apiSecret,
   set: (value: string) => {
@@ -128,8 +133,10 @@ const apiKeyModel = createRefWithAsterisk(toRef(form.state, 'apiKey'), editKeys)
 const apiSecretModel = createRefWithAsterisk(apiSecret, editKeys);
 const sensitiveInputComponent = createSensitiveInputComponent(editKeys);
 
-// An edit renames the connection through a second field, so that the name it is currently stored
-// under stays readable while the new one is being typed.
+/**
+ * The connection's name, which an edit writes to a second field so that the name it is currently
+ * stored under stays readable while the new one is being typed.
+ */
 const name = computed<string>({
   get() {
     return get(editMode) ? (form.state.newName ?? '') : form.state.name;
@@ -144,8 +151,13 @@ const name = computed<string>({
   },
 });
 
-// Captured once rather than read per call: the picker opens on "now" for an entry that has no start
-// date yet, and a default that moved on every read would make the form look edited by itself.
+/**
+ * Where the history picker opens for an entry with no start date yet, in seconds.
+ *
+ * @remarks
+ * Captured once at setup rather than read per call. A default that moved on every read would make
+ * the form look as though it had edited itself.
+ */
 const defaultHistoryStart = Math.floor(Date.now() / 1000);
 
 const binanceHistoryStartTsModel = computed<number>({
@@ -171,9 +183,11 @@ function toggleEdit() {
   }
 }
 
-// Exhaustive per option rather than an interpolated key, so adding an option fails typecheck here
-// instead of silently falling back to the raw identifier, and so the keys are visible to the lint
-// rules. Adding an option to any of these enums requires a matching message.
+/**
+ * Spelled out per option rather than built by interpolation, so that adding one fails typecheck here
+ * instead of silently falling back to the raw identifier, and so the keys stay visible to the i18n
+ * lint rules. The same holds for the two records below it.
+ */
 const GATE_LOCATION_KEYS: Record<GateLocation, MessageKey> = {
   europe: msg.$t('backend_mappings.exchanges.gate.location.europe'),
   global: msg.$t('backend_mappings.exchanges.gate.location.global'),
@@ -227,8 +241,6 @@ function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
   const isKraken = name === 'kraken';
 
-  // Picking a different exchange starts a different connection, so the errors from the last one
-  // must not be left decorating the new form.
   replaceEntry({
     apiKey: '',
     apiSecret: '',
@@ -247,6 +259,18 @@ function onExchangeChange(exchange?: string) {
   });
 }
 
+/**
+ * Fills the name field with the suggestion for the chosen exchange, once, on mount.
+ *
+ * @remarks
+ * Goes through `replaceEntry` because seeding lands after `useForm` took its baseline. Writing the
+ * state directly would leave a dialog the user has not touched counting as dirty, prompting to
+ * discard on close.
+ *
+ * The locations come from the backend, so the store holds none until that fetch lands and the
+ * suggestion comes back empty. Since this runs once, writing an empty suggestion over the name would
+ * leave the field blank with nothing left to restore it.
+ */
 function seedName(): void {
   const model = get(modelValue);
 
@@ -255,9 +279,6 @@ function seedName(): void {
     return;
   }
 
-  // The locations come from the backend, so the store holds none until that fetch lands and the
-  // suggestion comes back empty. This runs once, so writing that over the name would leave the
-  // field blank with nothing left to restore it.
   const suggestion = suggestedName(model.location);
   if (!suggestion)
     return;
@@ -265,8 +286,6 @@ function seedName(): void {
   replaceEntry({ ...model, name: suggestion });
 }
 
-// Seeding lands after `useForm` took its baseline, so `replaceEntry` takes it again. Otherwise a
-// dialog the user has not touched counts as dirty and prompts to discard on close.
 onMounted(seedName);
 
 defineExpose({
@@ -364,7 +383,7 @@ defineExpose({
     >
       {{ t('exchange_settings.keys') }}
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :options="{ placement: 'top' }"
         :open-delay="400"
       >
         <template #activator>

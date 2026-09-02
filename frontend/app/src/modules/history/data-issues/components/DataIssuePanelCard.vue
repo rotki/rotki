@@ -28,9 +28,6 @@ const emit = defineEmits<{
   resolve: [issue: DataIssue];
 }>();
 
-// The description is clamped to two lines; only show the full-text tooltip when it
-// actually overflows. Re-checked on resize and on content changes (the amounts and
-// resolved asset symbol arrive asynchronously and can change the height).
 const descriptionRef = useTemplateRef<HTMLElement>('descriptionRef');
 const descriptionTruncated = ref<boolean>(false);
 
@@ -55,7 +52,7 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
       ? '!border-rui-primary ring-1 ring-rui-primary bg-rui-primary/5'
       : 'hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900'"
     no-padding
-    content-class="overflow-hidden h-full"
+    :class-names="{ content: 'overflow-hidden h-full' }"
     data-testid="data-issues-panel-item"
     :data-active="active"
     @click="emit('open')"

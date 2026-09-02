@@ -38,8 +38,6 @@ async function persistEvent(payload: CalendarEvent, formRef: CalendarFormInstanc
     ? await editCalendarEvent(payload)
     : await addCalendarEvent(omit(payload, ['identifier']));
 
-  // The reminders are held in the form until here, because one can only be attached to an event
-  // that has an id, and because a row must not reach the server before the user has saved.
   const eventId = result.entryId;
   if (isDefined(eventId)) {
     formRef?.reset();

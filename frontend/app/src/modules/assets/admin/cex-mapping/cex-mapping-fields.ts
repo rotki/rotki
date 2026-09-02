@@ -27,12 +27,9 @@ export function toCexMappingFields(
     decorateSharedField(
       toMatchFieldDef({
         key: CexMappingFilterKeys.LOCATION,
-        // The pill says what the column says.
         label: (): string => t('common.exchange'),
         multiple: false,
         suggest: exchanges,
-        // Checked against the same list it offers: the backend reads an unknown location as the
-        // common mappings rather than as nothing, so a typo would quietly show the wrong rows.
         validate: (value: string): boolean => exchanges().includes(value),
       }),
       SharedFieldKinds.LOCATION,

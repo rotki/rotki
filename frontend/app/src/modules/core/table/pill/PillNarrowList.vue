@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NarrowSuggestion } from '@/modules/core/table/pill/core/narrowing';
+import { narrowExampleId, narrowRowId } from '@/modules/core/table/pill/core/narrow-ids';
 import { resolveText } from '@/modules/core/table/pill/core/text';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
@@ -36,25 +37,40 @@ const emit = defineEmits<{
   'example': [example: string];
 }>();
 
+/**
+ * Builds a list key that is unique across the suggestions one query can produce.
+ *
+ * @remarks
+ * A filter row is keyed by its operator as well as its field: one query can offer the same field
+ * twice (a bare number means either bound), so the field key alone would collide.
+ */
 function keyOf(suggestion: NarrowSuggestion): string {
   if (suggestion.kind === 'field')
     return `field-${suggestion.field.key}`;
-  // A filter row is identified by its operator: one query can offer the same field twice (a bare
-  // number means either bound), so the field key alone would collide.
   if (suggestion.kind === 'filter')
     return `filter-${suggestion.field.key}-${suggestion.filter.op}`;
   return `value-${suggestion.field.key}-${suggestion.value}`;
 }
 
-// The list scrolls past its max height, and the bar drives the highlight from the input with the
-// arrow keys, so the highlighted row has to be brought into view here — nothing else can. `nearest`
-// scrolls the list by the minimum needed and leaves the page alone.
+/**
+ * The suggestion rows, scrolled to follow the highlight.
+ *
+ * @remarks
+ * The list scrolls past its max height and the bar drives the highlight from the input with the
+ * arrow keys, so nothing but this list can bring the highlighted row into view. `nearest` scrolls
+ * the list by the minimum needed and leaves the page alone.
+ */
 const rows = useTemplateRef<HTMLButtonElement[]>('rows');
 
-// Hovering moves the highlight too, and scrolling then pulls the list out from under the cursor,
-// which lands a different row under it and moves the highlight again. The bar owns the highlight,
-// so the source is not visible here — but the pointer changes are the ones this list emits, so
-// flagging them on the way out identifies them when they come back as a prop.
+/**
+ * Whether the incoming highlight is this list's own pointer change coming back as a prop.
+ *
+ * @remarks
+ * Hovering moves the highlight too, and scrolling then pulls the list out from under the cursor,
+ * lands a different row under it and moves the highlight again. The bar owns the highlight, so its
+ * source is not visible here; flagging the pointer changes on the way out identifies them on
+ * return so they scroll nothing.
+ */
 let fromPointer = false;
 
 function highlightFromPointer(index: number): void {
@@ -78,7 +94,7 @@ watch(() => highlighted, (index) => {
     <div class="flex flex-col gap-0.5 p-1.5 max-h-[17rem] overflow-y-auto">
       <button
         v-for="(suggestion, index) in suggestions"
-        :id="`pill-narrow-row-${index}`"
+        :id="narrowRowId(index)"
         :key="keyOf(suggestion)"
         ref="rows"
         type="button"
@@ -166,7 +182,7 @@ watch(() => highlighted, (index) => {
       <span class="text-xs text-rui-text-secondary shrink-0">{{ examplesLabel }}</span>
       <button
         v-for="(example, index) in examples"
-        :id="`pill-narrow-example-${index}`"
+        :id="narrowExampleId(index)"
         :key="example"
         type="button"
         role="menuitem"

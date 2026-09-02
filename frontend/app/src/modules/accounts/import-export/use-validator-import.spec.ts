@@ -19,8 +19,6 @@ function row(publicKey: string): CSVRow {
     addressExtras: { ownershipPercentage: '100' },
     chain: 'eth2',
     label: '',
-    // `CSVRow` is the schema's *output*, so the transforms have already run: `tags` is a list here,
-    // not the raw `;`-joined string the CSV carries.
     tags: [],
   };
 }
@@ -40,8 +38,6 @@ describe('useValidatorImport', () => {
     expect(mocks.save.mock.calls.map(([action]) => action.data.publicKey)).toStrictEqual(['0xaaa', '0xbbb']);
   });
 
-  // Adding a validator is a write and the backend rejects an overlapping one, so each save must
-  // finish before the next starts.
   it('should save them one at a time', async () => {
     let active = 0;
     let maxActive = 0;
@@ -59,8 +55,7 @@ describe('useValidatorImport', () => {
     expect(maxActive).toBe(1);
   });
 
-  // Counted after the save, so the bar never shows a validator as imported before it is.
-  it('should count a validator only once it has been saved', async () => {
+  it('should count a validator only once it has been saved, so the bar never runs ahead', async () => {
     const seen: number[] = [];
     let progress = 0;
     mocks.save.mockImplementation(async () => {
@@ -78,8 +73,6 @@ describe('useValidatorImport', () => {
     expect(progress).toBe(2);
   });
 
-  // Duplicate keys used to be coalesced by the queue's identifier map, so one row was silently
-  // dropped. Every row in the file is now attempted.
   it('should attempt a duplicated public key rather than dropping it', async () => {
     const { useValidatorImport } = await importModule();
 

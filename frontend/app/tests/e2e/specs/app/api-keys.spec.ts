@@ -9,7 +9,6 @@ test.describe.serial('api keys', () => {
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request);
 
-    // Navigate to API keys page once
     apiKeysPage = new ApiKeysPage(ctx.sharedPage);
     await apiKeysPage.visit('api-keys-exchanges');
   });

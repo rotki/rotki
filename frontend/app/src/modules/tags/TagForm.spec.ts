@@ -5,8 +5,6 @@ import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 
-// The shuffle is random, and `invertColor` of a light colour is legitimately '000000', so a test
-// asserting "the colour changed" against the real generator passes or fails on the draw.
 vi.mock('@rotki/common', async importOriginal => ({
   ...await importOriginal<typeof import('@rotki/common')>(),
   randomColor: vi.fn<() => string>().mockReturnValue('123456'),
@@ -77,8 +75,7 @@ describe('tagForm', () => {
     expect(await wrapper.vm.validate()).toBe(false);
   });
 
-  // The description carries a placeholder that always passes, not a rule.
-  it('should not require a description', async () => {
+  it('should not require a description, its placeholder being no rule', async () => {
     wrapper = createWrapper({ ...baseModel(), description: '' });
     await vi.advanceTimersToNextTimerAsync();
 
@@ -122,8 +119,7 @@ describe('tagForm', () => {
     expect(lastModel().name).toBe('renamed');
   });
 
-  // The backend column is nullable, and the form is what decides between "" and null.
-  it('should trim a description on the way into the model', async () => {
+  it('should trim a description on the way into the model, choosing between "" and null', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
@@ -159,15 +155,11 @@ describe('tagForm', () => {
 
     const model = lastModel();
     expect(model.backgroundColor).toBe('123456');
-    // The foreground is always derived from the background, never chosen independently. Compared
-    // case-insensitively because the colour picker echoes the value back lower-cased.
     expect(model.foregroundColor?.toLowerCase()).toBe(invertColor('123456').toLowerCase());
     expect(model.name).toBe('a tag');
   });
 
-  // Two of the four watched keys carry no rule at all: changing only a colour still has to arm the
-  // dialog's unsaved-changes prompt.
-  it('should flag stateUpdated when only a colour is shuffled', async () => {
+  it('should flag stateUpdated when only a colour is shuffled, which no rule validates', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersByTimeAsync(600);
 

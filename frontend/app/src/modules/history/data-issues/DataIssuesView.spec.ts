@@ -7,8 +7,13 @@ import DataIssuesTable from '@/modules/history/data-issues/components/DataIssues
 import DataIssuesView from '@/modules/history/data-issues/DataIssuesView.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 
-// Shared, per-test-mutable state backing the mocked composables. Plain values set
-// before each mount; the factories snapshot them into refs when the view mounts.
+/**
+ * Backs the mocked composables with plain values a case sets before it mounts the view.
+ *
+ * @remarks
+ * The mock factories snapshot these into refs at mount time, so writing one afterwards does not
+ * reach the mounted view.
+ */
 interface MockState {
   baselineTotal: number;
   filters: Record<string, unknown>;

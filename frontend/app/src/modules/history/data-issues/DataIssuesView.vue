@@ -56,9 +56,7 @@ const {
 
 const pillLabels = usePillBarLabels();
 
-// Tracks whether the first load has finished. The all-clear screen keys off this
-// (plus `hasAnyIssues`) instead of the list's transient `isLoading`, so a refresh
-// on an empty inbox does not briefly flash the table between loading states.
+// The all-clear screen keys off this, not the transient `isLoading`, so a refresh cannot flash the table.
 const loadedOnce = ref<boolean>(false);
 
 async function reloadAll(): Promise<void> {
@@ -103,9 +101,7 @@ const hasRemediatingRows = computed<boolean>(() =>
   get(state).data.some(issue => issue.state === IssueState.AUTO_REMEDIATING),
 );
 
-// Show the loading indicator immediately, but keep it up for a minimum time so a
-// fetch that finishes almost instantly (or the 10s auto-remediation poll) does not
-// make the spinner flicker on and straight back off.
+// Holding the indicator this long keeps a fast fetch, or the remediation poll, from flickering it.
 const MIN_LOADING_MS = 500;
 const showLoading = ref<boolean>(false);
 const canHide = ref<boolean>(true);
@@ -115,7 +111,17 @@ const { start: startMinLoading } = useTimeoutFn(() => {
     set(showLoading, false);
 }, MIN_LOADING_MS, { immediate: false });
 
-watch(isLoading, (loading) => {
+/**
+ * Holds the spinner up for at least {@link MIN_LOADING_MS}, so a fast query does not flash it.
+ *
+ * @remarks
+ * A load that finishes inside that window leaves the spinner up and hides nothing: `canHide` is
+ * still false, and the timer takes it down when it fires. Only a load still running when the timer
+ * fires, or one that finishes after it, is hidden here.
+ *
+ * @param loading - whether a query is in flight
+ */
+function trackLoading(loading: boolean): void {
   if (loading) {
     set(showLoading, true);
     set(canHide, false);
@@ -124,8 +130,9 @@ watch(isLoading, (loading) => {
   else if (get(canHide)) {
     set(showLoading, false);
   }
-  // else: finished within the minimum window, so the timer clears it.
-});
+}
+
+watch(isLoading, trackLoading);
 
 function selectState(issueState: IssueState): void {
   updateFilter({ ...get(filters), state: [issueState] });
@@ -139,8 +146,13 @@ async function goToEvent(route: RouteLocationRaw): Promise<void> {
   await router.push(route);
 }
 
-// Resolving reads the selected issue (the resolve dialog is shared), so a row-level
-// resolve selects the issue first, then opens the dialog.
+/**
+ * Opens the resolve dialog against one row's issue.
+ *
+ * @remarks
+ * A single resolve dialog serves every row and acts on whichever issue is selected, so the
+ * selection has to be set before it opens.
+ */
 function onResolveFromRow(issue: DataIssue): void {
   set(modelSelectedIssue, issue);
   onResolveRequest();
@@ -155,15 +167,13 @@ watch(hasRemediatingRows, (remediating) => {
     pause();
 });
 
-// Reload when the history sync finishes so the table and its all-clear shield reflect
-// the freshly detected issues without waiting for the slow poll or a manual refresh.
+// A finished sync is what detects new issues, so reload rather than wait for the 10s poll.
 watch(syncCompleted, () => {
   startPromise(reloadAll());
 });
 
 onMounted(async () => {
-  // The dedicated page supersedes the overlay/pinned copies of the inbox; close
-  // them so the same list is not shown twice.
+  // The dedicated page supersedes the overlay and pinned copies, which would show the same list twice.
   if (mainPage)
     dismissInlinePanels();
   await reloadAll();

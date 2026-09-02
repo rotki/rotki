@@ -36,13 +36,11 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     queryFiatExchangeRates,
     queryHistoricalRate,
   } = usePriceApi();
-  // Latest-price fetching runs as a native orchestrator activity; see use-fetch-prices.
   const { fetchPrices } = useFetchPrices();
 
   const fetchExchangeRates = async (symbol?: SupportedCurrency): Promise<void> => {
     const selectedCurrency = symbol ?? get(currencySymbol);
 
-    // One native PRICES activity (`prices:exchange-rates`); liveness is read off the orchestrator.
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES),
       kind: ActivityKind.PRICES,
@@ -78,15 +76,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       return One;
     }
 
-    // One native PRICES activity per (fromAsset, toAsset, timestamp). The id must carry all
-    // three: `submitTask` dedups by id, so a shared id would hand two distinct queries the same
-    // promise and return one the other's price. Readers aggregate with `useWorkStatusPrefix`.
-    //
-    // The price is the activity's *return value*, not a variable in this closure. Two identical
-    // concurrent lookups legitimately dedup onto one activity, and the second caller's `run`
-    // never executes — reading a local left it at `One.negated()`, which
-    // `use-snapshot-asset-price.ts` treats as "no historic price" and silently replaces with
-    // `usdValue/amount`. A fabricated price is worse than a slow one.
     const outcome = await submitTask<BigNumber>({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, fromAsset, toAsset, timestamp),
       kind: ActivityKind.PRICES,
@@ -112,7 +101,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     source,
     toAsset,
   }: OracleCachePayload): Promise<ActionStatus> => {
-    // Single shared id ⇒ only one oracle-cache build at a time, preserving the old type-wide guard.
     if (statusOf(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE).active) {
       return {
         message: t('actions.balances.create_oracle_cache.already_running'),

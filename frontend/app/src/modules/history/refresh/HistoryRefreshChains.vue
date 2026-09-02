@@ -1,15 +1,8 @@
 <script lang="ts" setup>
-import type { ChainData } from '@/modules/history/refresh/types';
-import { getTextToken } from '@rotki/common';
-import { cloneDeep, isEqual } from 'es-toolkit';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import {
-  type ChainAddress,
-  TransactionChainType,
-} from '@/modules/history/events/event-payloads';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
 import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';
+import { useHistoryRefreshChainSelection } from '@/modules/history/refresh/use-history-refresh-chain-selection';
 
 const modelValue = defineModel<ChainAddress[]>({ required: true });
 const selectedChain = defineModel<string | undefined>('chain', { required: true });
@@ -21,137 +14,18 @@ defineProps<{
 
 const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 
-const selection = ref<Record<string, string[]>>({});
-
-const { bitcoinChainsData, evmLikeChainsData, solanaChainsData, txEvmChains } = useSupportedChains();
-const { getAddresses } = useAccountAddresses();
 const { t } = useI18n({ useScope: 'global' });
 
-const refreshChains = computed<ChainData[]>(() => [
-  ...get(txEvmChains).map(item => ({
-    chain: item.id,
-    id: item.id,
-    name: item.name,
-    type: TransactionChainType.EVM,
-  })),
-  ...get(evmLikeChainsData).map(item => ({
-    chain: item.id,
-    id: item.id,
-    name: item.name,
-    type: TransactionChainType.EVMLIKE,
-  })),
-  ...get(bitcoinChainsData).map(item => ({
-    chain: item.id,
-    id: item.id,
-    name: item.name,
-    type: TransactionChainType.BITCOIN,
-  })),
-  ...get(solanaChainsData).map(item => ({
-    chain: item.id,
-    id: item.id,
-    name: item.name,
-    type: TransactionChainType.SOLANA,
-  })),
-]);
-
-const filtered = computed<ChainData[]>(() => {
-  const chains = get(refreshChains).filter(item => getAddresses(item.id)?.length > 0);
-  const query = getTextToken(get(search));
-  if (!query)
-    return chains;
-
-  return chains.filter(item => getTextToken(item.chain).includes(query) || getTextToken(item.name).includes(query));
-});
-
-const chainAddresses = computed<Record<string, string[]>>(() => {
-  const chains = [...get(refreshChains)];
-  const record: Record<string, string[]> = {};
-  return chains.reduce((acc, item) => {
-    acc[item.chain] = getAddresses(item.id) ?? [];
-    return acc;
-  }, record);
-});
-
-const selected = computed<number>(() => getAccounts(get(selection)).length);
-
-function getAccounts(record: Record<string, string[]>): ChainAddress[] {
-  return Object.entries(record).flatMap(([chainKey, addresses]) => addresses.map((address): ChainAddress => ({
-    address,
-    chain: chainKey,
-  })));
-}
-
-function emptySelection(): Record<string, string[]> {
-  return Object.fromEntries(get(refreshChains).map(item => [item.chain, []]));
-}
-
-function toggleSelectAll() {
-  if (isDefined(selectedChain)) {
-    toggleSpecificChain(get(selectedChain));
-  }
-  else {
-    toggleAllChains();
-  }
-}
-
-function toggleSpecificChain(chain: string) {
-  const currentSelection = get(selection);
-  if (currentSelection[chain].length === 0) {
-    updateSelection({
-      ...currentSelection,
-      [chain]: get(chainAddresses)[chain],
-    });
-  }
-  else {
-    updateSelection({
-      ...currentSelection,
-      [chain]: [],
-    });
-  }
-}
-
-function toggleAllChains() {
-  if (get(selected) === 0) {
-    updateSelection(cloneDeep(get(chainAddresses)));
-  }
-  else {
-    updateSelection(emptySelection());
-  }
-}
-
-function updateAllSelected() {
-  if (isDefined(selectedChain)) {
-    const selected = get(selection);
-    const evmChain = get(selectedChain);
-    emit('update:all-selected', isEqual(get(chainAddresses)[evmChain], selected[evmChain]));
-  }
-  else {
-    const all = getAccounts(get(chainAddresses));
-    const selected = getAccounts(get(selection));
-    emit('update:all-selected', isEqual(all, selected));
-  }
-}
-
-function updateSelection(newSelection: Record<string, string[]>) {
-  set(selection, newSelection);
-  set(modelValue, getAccounts(newSelection));
-  updateAllSelected();
-}
-
-watch(selectedChain, () => {
-  set(search, '');
-  updateAllSelected();
-});
-
-watch(selection, (newSelection) => {
-  set(modelValue, getAccounts(newSelection));
-  updateAllSelected();
-}, {
-  deep: true,
-});
-
-onBeforeMount(() => {
-  updateSelection(emptySelection());
+const {
+  chainAddresses,
+  filtered,
+  modelSelection: selection,
+  toggleSelectAll,
+} = useHistoryRefreshChainSelection({
+  chain: selectedChain,
+  modelValue,
+  onAllSelected: allSelected => emit('update:all-selected', allSelected),
+  search,
 });
 
 defineExpose({

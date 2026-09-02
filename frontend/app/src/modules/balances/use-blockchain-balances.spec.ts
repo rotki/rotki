@@ -41,7 +41,6 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
-    // Blockchain balances run native via runTaskResult (plainfp Result).
     runTaskResult: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>) => {
       await taskFn();
       const { ok } = await import('plainfp/result');
@@ -56,13 +55,6 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   }),
 }));
 
-// The balance processing service takes its runner from the activity, so the stub passes one that
-// resolves like the backend task would.
-//
-// `submitTask` and `supersedeTask` are separate stubs that both run the spec inline. The real
-// difference between them (cancel, await the cancelled promise, resubmit) belongs to
-// `useNativeTask` and is covered by its own spec; what this file owns is which of the two a given
-// refresh mode routes to.
 const { runTask } = vi.hoisted(() => ({ runTask: vi.fn() }));
 const submitTask = vi.fn();
 const supersedeTask = vi.fn();
@@ -134,8 +126,6 @@ describe('useBlockchainBalances', () => {
 
   describe('refreshBlockchainBalances', () => {
     beforeEach(() => {
-      // refresh only calls the api when the chain has an account (see executeBalanceQuery);
-      // add one per test so these cases don't rely on state left by a sibling test.
       const { updateAccounts } = useBlockchainAccountsStore();
       updateAccounts(Blockchain.ETH, [
         createAccount(
@@ -200,15 +190,7 @@ describe('useBlockchainBalances', () => {
       assert(1);
     });
 
-    /**
-     * ⭐ §7. A user pressing refresh on a busy chain supersedes the run in flight instead of
-     * joining it, so they get a fresh query with their own parameters rather than the background
-     * run's. This replaced an `until(() => isChainRefreshing(chain)).toBe(false)` poll that reached
-     * a similar outcome by waiting out work the user had already superseded.
-     *
-     * The cancel/await/resubmit mechanics live in `useNativeTask` and are covered there; the
-     * routing decision is what belongs here.
-     */
+    /** The cancel/await/resubmit mechanics belong to `useNativeTask`; only the routing is asserted here. */
     it('should supersede a running refresh when the user asks for one', async () => {
       const call = async (mode: RefreshMode): Promise<void> => {
         await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, mode);
@@ -231,10 +213,7 @@ describe('useBlockchainBalances', () => {
       expect(supersedeTask).not.toHaveBeenCalled();
     });
 
-    /**
-     * ⭐ §3. The chain job's body is statement order: detection, then the query that reads what it
-     * found. Not a `deps` edge between two activities — one job, two stages.
-     */
+    /** Statement order inside one job, not a `deps` edge between two activities. */
     it('should detect before querying, as children of the chain job', async () => {
       const order: string[] = [];
       detectForChain.mockImplementation(async () => {
@@ -248,9 +227,6 @@ describe('useBlockchainBalances', () => {
       await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
 
       expect(order).toStrictEqual(['detect', 'query']);
-      // Parented to the chain job, which is what makes cancelling the chain stop its addresses.
-      // 🔴 The id carries `detect`: sharing it with a plain refresh let `submitTask`'s dedup join
-      // this run to one that does no detection, silently skipping the sweep for that chain.
       expect(detectForChain).toHaveBeenCalledWith(
         Blockchain.ETH,
         makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH, ActivityPart.DETECT),
@@ -259,7 +235,7 @@ describe('useBlockchainBalances', () => {
     });
 
     /**
-     * ⭐ Account addition and account migration are the flows that know which addresses are new, and
+     * Account addition and account migration are the flows that know which addresses are new, and
      * detecting the chain's other fifty on their behalf is work nobody asked for. Without the
      * forward the option is silently inert — the call still succeeds and still detects everything.
      */
@@ -270,14 +246,12 @@ describe('useBlockchainBalances', () => {
         { detect: true, detectAddresses: ['0xabc'] },
       );
 
-      // The id carries a digest of the narrowing, so match the parent the job actually submitted
-      // rather than restating the id here.
       const [[spec]] = submitTask.mock.calls;
       expect(detectForChain).toHaveBeenCalledWith(Blockchain.ETH, spec.id, ['0xabc']);
     });
 
     /**
-     * 🔴🔴 Two additions on one chain differ only in their narrowing, so a shared id makes the
+     * Two additions on one chain differ only in their narrowing, so a shared id makes the
      * second dedup onto the first and its addresses are never detected. A CSV import starts every
      * row in the same tick, which is exactly this shape.
      */
@@ -310,7 +284,7 @@ describe('useBlockchainBalances', () => {
     });
 
     /**
-     * 🔴🔴 A detecting run and a plain one must not share an id. `submitTask` dedups by id, so a
+     * A detecting run and a plain one must not share an id. `submitTask` dedups by id, so a
      * login sweep landing while any background refresh is in flight (wallet transaction, websocket
      * refresh, eth2 watcher) would join it and never detect — no row, no log, no error — while
      * `withDetection` still recorded the sweep, suppressing the next login's too.
@@ -323,10 +297,7 @@ describe('useBlockchainBalances', () => {
       expect(new Set(ids).size).toBe(2);
     });
 
-    /**
-     * ⭐ §5. The fan-out is a *run*, and its identity is scope + mode — so two identical runs dedup
-     * onto one umbrella while a full refresh and a single-chain one coexist.
-     */
+    /** A run's identity is scope + mode, which is why the mode is asserted on the umbrella id. */
     it('should declare the chain jobs under a run umbrella', async () => {
       await blockchainBalances.refreshBlockchainBalances({}, 'background');
 
@@ -344,7 +315,7 @@ describe('useBlockchainBalances', () => {
     });
 
     /**
-     * 🔴🔴 The umbrella settles COMPLETE whenever its children settle — `allSettled`, so even when
+     * The umbrella settles COMPLETE whenever its children settle — `allSettled`, so even when
      * every one of them FAILED. Sharing its children's kind meant it wrote a success to the
      * completion ledger, and `statusOf(BLOCKCHAIN_BALANCES).everCompleted` aggregates by kind: the
      * dashboard then read "loaded" after a total failure and showed a settled, empty portfolio.
@@ -358,7 +329,6 @@ describe('useBlockchainBalances', () => {
       assert(umbrella !== undefined);
       expect(umbrella.container).toBe(true);
 
-      // The chains themselves are subjects and must keep writing their own entries.
       const chainSpec = submitTask.mock.calls
         .map(([spec]) => spec)
         .find(spec => spec.id === makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
@@ -390,22 +360,15 @@ describe('useBlockchainBalances', () => {
       expect(submitted).toContain(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH));
     });
 
-    /**
-     * 🔴🔴 §5. A chain with nothing to query used to return before submitting anything, so it
-     * vanished from its run's denominator — "11 of 11" over a scope of 17. It now settles SKIPPED
-     * with a reason, which is terminal-but-not-successful and raises no notification.
-     */
     it('should settle a chain with no accounts as skipped, not drop it', async () => {
-      // btc is in scope but has no accounts in this fixture.
+      const chainInScopeWithNoAccounts = Blockchain.BTC;
       submitTask.mockImplementation(async (spec: SubmittedSpec) => spec.run({ cancelled: () => false, report: () => {}, runTask }));
 
-      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.BTC }, 'background');
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: chainInScopeWithNoAccounts }, 'background');
 
-      // The chain still gets its own activity, so the run's denominator counts it...
       const [spec] = submitTask.mock.calls[0];
-      expect(spec.id).toBe(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.BTC));
+      expect(spec.id).toBe(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chainInScopeWithNoAccounts));
 
-      // ...and it settles terminal-but-not-successful, with a reason the task centre can render.
       const result = await submitTask.mock.results[0].value;
       assert(!result.ok);
       expect(hasTag(result.error, 'Skipped')).toBe(true);
@@ -413,7 +376,7 @@ describe('useBlockchainBalances', () => {
     });
 
     /**
-     * 🔴🔴 Seen against a real backend. Cancelling Ethereum mid-detection aborted both running
+     * Seen against a real backend. Cancelling Ethereum mid-detection aborted both running
      * children (`DELETE /api/1/tasks/424` and `/425`) and left the other seven addresses never
      * attempted — the cascade doing its job — and then the chain job's own body carried straight
      * on and issued `POST /balances/blockchains/eth` anyway, writing balances and recording a
@@ -440,7 +403,7 @@ describe('useBlockchainBalances', () => {
     });
 
     /**
-     * ⭐ `disabledChainQueries` reaches the query path, not just the sync panel. Without this the
+     * `disabledChainQueries` reaches the query path, not just the sync panel. Without this the
      * app kept issuing `POST /balances/blockchains/<chain>` and `tokens/detect` for a chain the
      * user switched off — observed against a real backend.
      */
@@ -452,7 +415,6 @@ describe('useBlockchainBalances', () => {
       expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
       expect(detectForChain).not.toHaveBeenCalled();
 
-      // Submitted, not dropped: the chain is still in the run's scope, so it owes it a row.
       const result = await submitTask.mock.results[0].value;
       assert(!result.ok);
       expect(hasTag(result.error, 'Skipped')).toBe(true);
@@ -513,7 +475,6 @@ describe('useBlockchainBalances', () => {
     it('should refresh balances with isXpub flag set to true', async () => {
       const { updateAccounts } = useBlockchainAccountsStore();
 
-      // Add a BTC account first
       updateAccounts(Blockchain.BTC, [
         createAccount(
           { address: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz', label: null, tags: null },

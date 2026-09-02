@@ -29,8 +29,13 @@ const assetDetails = useAssetInfo(() => event.asset, NO_COLLECTION_RESOLVE);
 
 const showBalance = computed<boolean>(() => event.eventType !== 'informational');
 
-// Computed, not a template literal: these rows are virtualized, so a fresh bag identity per render
-// would re-render every asset cell on every scroll tick.
+/**
+ * Holds the display options passed to the asset cell.
+ *
+ * @remarks
+ * Computed rather than an inline object literal in the template: these rows are virtualized, so a
+ * fresh bag identity per render would re-render every asset cell on every scroll tick.
+ */
 const assetDisplay = computed<AssetDisplay>(() => ({
   iconOnly: true,
   optimizeForVirtualScroll: true,
@@ -59,9 +64,8 @@ watch(menuOpened, (menuOpened) => {
   <RuiMenu
     v-model="menuOpened"
     class="flex"
-    menu-class="w-[16rem] max-w-[90%] z-[100]"
+    :class-names="{ menu: 'w-[16rem] max-w-[90%] z-[100]', wrapper: 'w-full' }"
     :disabled="disableOptions"
-    wrapper-class="w-full"
     :options="{
       placement: 'bottom-start',
       strategy: 'fixed',

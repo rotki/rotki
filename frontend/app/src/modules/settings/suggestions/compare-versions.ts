@@ -1,8 +1,11 @@
 import semver from 'semver';
 
 /**
- * Compares two version strings using semver.
- * @returns negative if a < b, 0 if equal, positive if a > b. Returns 0 if either is invalid.
+ * Compares two version strings with semver, coercing each first.
+ *
+ * @returns a standard comparator result: negative when `a` sorts first, positive when `b` does, 0
+ * when they are equal. Also 0 when *either* string fails to coerce, so an unparsable version
+ * reads as equal rather than raising.
  */
 export function compareVersions(a: string, b: string): number {
   const coercedA = semver.coerce(a);

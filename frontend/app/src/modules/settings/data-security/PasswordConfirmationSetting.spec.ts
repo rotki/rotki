@@ -31,9 +31,6 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
 
   afterEach(() => {
     wrapper?.unmount();
-    // The confirm dialog is teleported into the body; a leftover one would let the next test click a
-    // stale button and pass without rendering its own.
-    document.body.innerHTML = '';
   });
 
   function createWrapper(): VueWrapper<SettingInstance> {
@@ -107,8 +104,6 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
     expect(saveButton().attributes('disabled')).toBeDefined();
   });
 
-  // Turning the confirmation off weakens the account, so it goes through a ConfirmDialog rather than
-  // applying straight away.
   it('should not disable the confirmation until the warning is accepted', async () => {
     wrapper = createWrapper();
 

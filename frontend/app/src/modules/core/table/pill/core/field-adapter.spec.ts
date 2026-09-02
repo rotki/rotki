@@ -45,9 +45,7 @@ describe('field-adapter', () => {
       expect(f.operators).toStrictEqual(['is']);
     });
 
-    // The codec writes the `!` negation only for a field that allows exclusion, so offering
-    // `is_not` without it gives the user an operator that silently applies as `is`.
-    it('should not offer is_not to a field that cannot express it', () => {
+    it('should not offer is_not to a field that cannot express it, since the codec writes ! only where exclusion is allowed', () => {
       expect(toMatchFieldDef({ key: 'name', label: 'Name' }).operators).toStrictEqual(['is']);
       expect(toMatchFieldDef({ key: 'asset', label: 'Asset', valueType: 'asset' }).operators).toStrictEqual(['is']);
     });
@@ -85,9 +83,7 @@ describe('field-adapter', () => {
       expect(f.multiple).toBe(true);
     });
 
-    // A param sends a plain list, so there is no place to put the `!` the codec writes for an
-    // excluding matcher. Offering `is not` would render a chip that silently drops the filter.
-    it('should not offer exclusion it cannot serialize', () => {
+    it('should not offer exclusion it cannot serialize, since a param sends a plain list with no place for the ! marker', () => {
       const f = toParamFieldDef({ key: 'x', label: 'X', paramKey: 'x', to: 'request' });
       expect(f.allowExclusion).toBe(false);
       expect(f.operators).toStrictEqual(['is']);

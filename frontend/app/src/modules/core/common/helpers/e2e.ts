@@ -16,7 +16,7 @@ export function attemptPolyfillResizeObserver(): void {
 
   /**
    * ResizeObserver wrapper with "enforced batches"
-   **/
+   */
   class ResizeObserverPolyfill {
     private readonly callback: ResizeObserverCallback;
     private readonly observer: ResizeObserver;

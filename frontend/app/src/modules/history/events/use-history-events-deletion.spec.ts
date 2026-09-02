@@ -27,9 +27,6 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({ getChain: spies.getChain }),
 }));
-// Mocked outright rather than spread over `...actual`: importActual evaluates the real
-// notifications graph, which costs ~1.2s to import.
-// `getErrorMessage` is a pure helper re-exported from a light module, so take it from there.
 vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
     '@/modules/core/common/logging/error-handling',
@@ -70,8 +67,13 @@ function setup(requestPayload?: HistoryEventRequestPayload): {
   return { deletion, refreshCallback, selectionMode };
 }
 
-// `deleteSelected` blocks on a confirm dialog whose callback resolves the inner
-// promise, so we start it, invoke the callback (index 1 = primary), then await it.
+/**
+ * Answers the confirm dialog a deletion is waiting on, then awaits the deletion itself.
+ *
+ * @param run - the deletion call, started but not awaited, since it settles only once answered
+ * @param index - argument position of the callback in `show(message, onConfirm, onDismiss)`, so
+ * 1 confirms and 2 dismisses
+ */
 async function drive(run: Promise<void>, index = 1): Promise<void> {
   await spies.showConfirm.mock.calls[0][index]();
   await run;

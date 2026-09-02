@@ -69,6 +69,18 @@ export const PrepareNativeTransferResponse = z.object({
 
 export type PrepareNativeTransferResponse = z.infer<typeof PrepareNativeTransferResponse>;
 
+/**
+ * A transfer the backend has prepared, ready to hand to the wallet.
+ *
+ * @remarks
+ * Both arms carry `data`: the ERC20 response brings its own, and a native transfer is given the
+ * empty `0x` by `prepareTransactionPayload`. The native response alone does not declare it, which
+ * is why this alias exists rather than the bare union.
+ */
+export type PreparedTransaction =
+  | PrepareERC20TransferResponse
+  | (PrepareNativeTransferResponse & { data: string });
+
 export interface GetAssetBalancePayload {
   evmChain: string;
   address: string;

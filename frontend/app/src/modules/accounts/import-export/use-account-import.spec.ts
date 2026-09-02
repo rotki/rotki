@@ -38,7 +38,12 @@ vi.mock('@/modules/tags/use-tags-api', async () => {
   };
 });
 
-// A failed addition is an `err` value now, not a rejection: `addAccount` no longer throws.
+/**
+ * Stands in for `addAccount`, which reports a failed addition as an `err` value and never throws.
+ *
+ * @param failOnAddress - addresses to fail; only a single-address payload can be failed, matching
+ * the granularity the real call reports at
+ */
 function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: AccountPayload[] | XpubAccountPayload) => ResultAsync<string, TaskError> {
   return async (_chain, payload) => {
     if (Array.isArray(payload)) {
@@ -82,8 +87,6 @@ vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
 vi.mock('@/modules/accounts/use-account-addition-notifications', () => ({
   useAccountAdditionNotifications: vi.fn(() => ({
     createFailureNotification: vi.fn(),
-    // Reached now that every import row goes through the one addition path; the old single-address
-    // shortcut never called it.
     notifyFailedToAddAddress: vi.fn(),
     notifyUser: vi.fn(),
   })),
@@ -219,8 +222,6 @@ describe('useAccountImport', () => {
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
-    // A one-row import needs no umbrella, so this addition has no parent — the batch suppresses the
-    // umbrella rather than showing a parent over a single child.
     expect(addAccount).toHaveBeenCalledWith('btc', {
       label: 'Test Pub',
       tags: ['tag1'],

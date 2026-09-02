@@ -53,12 +53,16 @@ function contributes(source: ParamSource, destination: 'request' | 'url'): boole
   return source.to === 'both' || source.to === destination;
 }
 
+/**
+ * What one source contributes to the request payload or the url query.
+ *
+ * @remarks
+ * A url value is stringified before it is stripped, and the order matters: an empty array has to
+ * become `''` for `removeEmptyString` to drop it, so stripping first leaves `[]` in the query.
+ */
 function contribution(source: ParamSource, destination: 'request' | 'url'): object {
   const values = toValue(source.values);
 
-  // URL values are always stringified first and then stripped: an empty array has
-  // to become '' before `removeEmptyString` can drop it. Stripping first would
-  // leave `[]` in the query as an empty param.
   if (destination === 'url')
     return nonEmptyProperties(stringifyValues(values), { removeEmptyString: true });
 
@@ -152,8 +156,8 @@ function isFilterValue(data: unknown): data is FilterValue {
  * as behaviour-carrying, resolving a leading `!` into an EXCLUDE behaviour.
  *
  * Takes and returns a plain bag rather than the table's filter type: by the time it is called the
- * filter has already been merged with the param sources, so the keys are no longer only the
- * filter's own. Typing it as the filter type only ever meant asserting that at the call site.
+ * filter has already been merged with the param sources, so the keys are not only the filter's
+ * own, and typing it as the filter type would mean asserting that at the call site.
  */
 export function transformFilters(
   filters: Record<string, unknown>,

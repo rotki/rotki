@@ -31,9 +31,14 @@ export function useTradeAssetNavigation(
 ): UseTradeAssetNavigationReturn {
   const highlighted = shallowRef<number>(0);
 
-  // Matched on asset AND chain. A native token id is shared across chains (ETH is the native asset
-  // of ethereum, optimism, base and more), so with the chain filter on "all" the identifier alone
-  // matches the wrong row and Enter would commit a different network than the one shown.
+  /**
+   * Highlights the row for one asset on one chain, falling back to the first row when it is absent.
+   *
+   * @remarks
+   * Both halves of the key are required. A native token identifier repeats across chains (ETH is
+   * native to ethereum, optimism and base alike), so with the chain filter on "all" the identifier
+   * alone lands on the wrong row and Enter commits a different network than the one on screen.
+   */
   function highlight(identifier: string, chain: string): void {
     const index = toValue(options)
       .findIndex(option => option.asset.asset === identifier && option.asset.chain === chain);
@@ -42,17 +47,23 @@ export function useTradeAssetNavigation(
     scrollTo(target);
   }
 
-  // Last position the pointer was actually at.
-  //
-  // Any scroll slides rows under a cursor that never moved, and the browser reports that as a
-  // mousemove at unchanged coordinates. Taking it at face value breaks both ways of scrolling:
-  // arrow keys cannot move more than one row, because the row arriving under the pointer hands the
-  // highlight straight back, and a wheel scroll drags the highlight along with it.
   let lastX = Number.NaN;
   let lastY = Number.NaN;
 
-  // Takes the row's index rather than its identifier: the template already knows which row it is,
-  // and a native token id is not unique across chains.
+  /**
+   * Highlights the row under the pointer, unless the pointer itself has not moved.
+   *
+   * @remarks
+   * Scrolling slides rows beneath a stationary cursor and the browser reports that as a mousemove
+   * at unchanged coordinates, so the last real position is tracked and repeats are dropped.
+   * Without that, arrow keys cannot advance more than one row (the row arriving under the pointer
+   * hands the highlight straight back) and a wheel scroll drags the highlight along with it. The
+   * highlight is not scrolled into view here, since the row is already under the cursor and
+   * scrolling would shift the list out from under it.
+   *
+   * @param event - the raw `mousemove`; its coordinates are what distinguishes a move from a scroll.
+   * @param index - position in the current option list; out-of-range values are ignored.
+   */
   function onPointerMove(event: MouseEvent, index: number): void {
     if (event.clientX === lastX && event.clientY === lastY)
       return;
@@ -60,24 +71,31 @@ export function useTradeAssetNavigation(
     lastX = event.clientX;
     lastY = event.clientY;
 
-    // No scrolling: the row is already under the cursor, and scrolling to it would shift the list
-    // out from under the pointer.
     if (index >= 0 && index < toValue(options).length)
       set(highlighted, index);
   }
 
-  // Which options the list holds, order-independent: picking a value can reorder the list without
-  // changing its contents, and that must not count as a new list or the highlight jumps off the row
-  // the user was on.
+  /**
+   * Identifies the option list by its contents, ignoring their order.
+   *
+   * @remarks
+   * Sorting before joining is what makes it order-independent, and that is the point: picking a
+   * value reorders the list without changing what is in it, which must not read as a new list or
+   * the highlight jumps off the row the user was on.
+   */
   const identifiers = computed<string>(() =>
     [...toValue(options).map(option => option.asset.asset)].sort().join(','));
 
-  // A search that returns something different should highlight its first result, not keep an index
-  // pointing into the previous list.
-  watch(identifiers, () => {
+  /**
+   * Highlights the first result whenever the list's contents change, rather than keeping an index
+   * that points into the previous list.
+   */
+  function highlightFirstResult(): void {
     set(highlighted, 0);
     scrollTo(0);
-  });
+  }
+
+  watch(identifiers, highlightFirstResult);
 
   function move(delta: number): void {
     const items = toValue(options);
@@ -88,16 +106,23 @@ export function useTradeAssetNavigation(
     scrollTo(next);
   }
 
+  /**
+   * Drives the list from the search field, which is where focus sits.
+   *
+   * @remarks
+   * Escape is answered here rather than left to the dialog, ahead of the row check, since an empty
+   * list has to be dismissable too. A composing IME is left entirely alone: there, Enter confirms
+   * the candidate and the arrows walk the candidate list, so acting on either would commit a row
+   * and close the dialog mid-word.
+   *
+   * @param event - the keydown from the search input
+   */
   function onKeydown(event: KeyboardEvent): void {
-    // Escape is handled here rather than left to the dialog: the search field holds focus, and an
-    // empty list has to be dismissable too, so this cannot sit behind the row check.
     if (event.key === 'Escape') {
       onClose();
       return;
     }
 
-    // While an IME is composing, Enter confirms the candidate and the arrows walk the candidate
-    // list. Acting on them would commit a row and close the dialog mid-word.
     if (event.isComposing)
       return;
 

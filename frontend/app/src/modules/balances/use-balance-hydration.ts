@@ -31,7 +31,7 @@ interface UseBalanceHydrationReturn {
    */
   hydrate: (payload?: BlockchainBalancePayload) => Promise<void>;
   /**
-   * Forget every read in flight. 🔴 Must run when a session ends: this map is app-scoped, so a
+   * Forget every read in flight. Must run when a session ends: this map is app-scoped, so a
    * read that can never settle (its request belongs to a session that is gone) would
    * otherwise be handed to the next session's caller for that chain, which then never hydrates.
    */
@@ -39,24 +39,14 @@ interface UseBalanceHydrationReturn {
 }
 
 /**
- * Layer 1 — the data refresh.
+ * Repopulates the store from the user's own database, so the view paints before any network query.
  *
- * ⭐ **Not a job, and deliberately not an activity.** It repopulates the store from the user's own
- * database so the view paints fast: no task-centre row, no cancel, no progress, no umbrella. It
- * never blocks work and is never blocked by it. Seventeen task-centre rows describing a read of
- * local data was the symptom; conflating the two classes of operation was the cause.
+ * @remarks
+ * Deliberately not an activity: no task-centre row, cancel or progress. Do not give it one.
  *
- * ⭐ Deduplicated by subject (the chain), so two callers racing the same chain share one read —
- * the guarantee `submitTask`'s id dedup used to provide. A second caller for a live chain joins
- * the read in flight and therefore its parameters, which is right for a data refresh: the rows it
- * reads back are the same either way.
- *
- * ⭐ The GET is cache-only and returns directly. An empty cache returns empty balances instead of
- * escalating to a node query, so hydration does not need the backend task monitor.
- *
- * 🔴 Overlapping a network refresh is harmless by construction rather than by exclusion:
- * `processBalanceResult` discards a payload older than what the chain already holds, whichever
- * order the two land in. That is what lets this layer stop being serialised against work at all.
+ * Deduplicated by chain, so a second caller for a live chain joins the read in flight and its
+ * parameters. Overlapping a network refresh is safe because `processBalanceResult` discards a
+ * payload older than what the chain already holds, whichever order they land in.
  */
 export const useBalanceHydration = createSharedComposable((): UseBalanceHydrationReturn => {
   const { supportedChains } = useSupportedChains();
@@ -83,7 +73,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     /**
      * One attempt, with its outcome placed in the channel `retry` reads.
      *
-     * 🔴 `retry` takes no predicate — it retries anything in the `err` channel. A read that was
+     * `retry` takes no predicate — it retries anything in the `err` channel. A read that was
      * cancelled (a logout mid-walk, a request the queue dropped) must settle where it is rather
      * than be tried twice more against a session that is gone, so only an *actionable* failure
      * goes in `err`; everything else short-circuits as `ok`.
@@ -98,9 +88,6 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
       await retry(readOnce, HYDRATION_RETRY);
     }
     finally {
-      // 🔴 Only if this read is still the current one. A read abandoned by `reset()` settles
-      // whenever its request does — possibly long into the *next* session — and clearing the
-      // flag then drops the new session's dashboard out of its loading state mid-load.
       if (era === generation)
         stopHydration(chain);
     }
@@ -118,9 +105,6 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
 
     const era = generation;
     const read = readChain(payload, chain, era).finally(() => {
-      // 🔴 Same hazard on the dedup map: an abandoned read deleting the entry would drop the *new*
-      // session's read for this chain, so a later caller starts a second concurrent GET. Guarded on
-      // identity rather than key, the way `settleTerminal` compares the record and not just the id.
       if (inflight.get(chain) === read)
         inflight.delete(chain);
     });
@@ -133,28 +117,25 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
     /**
-     * 🔴 `allWithConcurrency` **short-circuits on the first `err`**: in-flight factories finish and
+     * `allWithConcurrency` **short-circuits on the first `err`**: in-flight factories finish and
      * no new ones start. One chain's read failing must not abandon the rest, so every factory is
      * infallible — `ResultAsync<void, never>`. Nothing in the package enforces that, and the naive
      * call site silently drops chains while looking entirely correct.
+     *
+     * That is what the swallowed throw below buys, and it costs nothing: `handleCachedFetch` has
+     * already reported whatever it owns, so only a throw on the way to it reaches here.
      */
     const factories = chains.map(chain => async (): ResultAsync<void, never> => {
       try {
         await hydrateChain(payload, chain);
       }
       catch (error: unknown) {
-        // A rejection here is a rejection of the whole batch, so it never leaves this factory.
-        // `handleCachedFetch` reports what it owns; this covers a throw on the way to it.
         logger.error(error);
       }
       return ok(undefined);
     });
 
     await allWithConcurrency(factories, HYDRATION_CONCURRENCY);
-    // A cache-only backend read deliberately avoids price oracles, so balances without a local
-    // backend price arrive with a zero value. Reapply the frontend's already-fetched prices once
-    // the batch settles; otherwise a late hydration response can zero a correctly priced chain
-    // and make it disappear from the dashboard until the next price refresh.
     updatePrices(get(prices));
   };
 

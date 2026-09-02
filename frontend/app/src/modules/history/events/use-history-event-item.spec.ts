@@ -32,14 +32,19 @@ vi.mock('@/modules/history/event-utils', () => ({
     event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
 }));
 
-// Pick specific properties from the event types that have them
 type EventSpecificOverrides =
   & Partial<Pick<EvmHistoryEvent, 'counterparty' | 'extraData'>>
   & Partial<Pick<EthBlockEvent, 'validatorIndex' | 'blockNumber'>>;
 
 type Overrides = Omit<Partial<HistoryEventEntry>, 'entryType'> & EventSpecificOverrides;
 
-// Create EvmHistoryEvent which has counterparty, address, etc.
+/**
+ * Builds an EVM history event fixture.
+ *
+ * @remarks
+ * The entry type is fixed: `overrides` may carry EVM and block-event fields, but cannot change
+ * which entry type comes back.
+ */
 function createMockEvent(overrides: Overrides = {}): HistoryEventEntry {
   return {
     identifier: 1,
@@ -301,7 +306,6 @@ describe('useHistoryEventItem', () => {
       const event = ref(createMockEvent());
       const { hiddenEvent, isIgnoredAsset, isSpam } = useHistoryEventItem({ event });
 
-      // With mocks returning false for both, hiddenEvent should be false
       expect(get(hiddenEvent)).toBe(false);
       expect(get(isIgnoredAsset)).toBe(false);
       expect(get(isSpam)).toBe(false);

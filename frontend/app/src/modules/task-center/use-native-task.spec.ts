@@ -1,4 +1,5 @@
 import type { ResultAsync } from 'plainfp/result-async';
+import { neverSettles } from '@test/utils/never-settles';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
@@ -7,8 +8,6 @@ import { ActivityKind, makeActivityId } from './core/types';
 import { useNativeTask } from './use-native-task';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 
-// The handler backs the runner the facade binds to each activity, and the backend abort behind
-// `cancel`; the orchestrator stays real.
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   useTaskHandler: (): Record<string, unknown> => ({
     cancelTaskById: vi.fn(async () => true),
@@ -74,7 +73,7 @@ describe('useNativeTask', () => {
 
   describe('ctx.cancelled', () => {
     /**
-     * 🔴🔴 Cancelling settles the *record*; it cannot interrupt a running async body, because
+     * Cancelling settles the *record*; it cannot interrupt a running async body, because
      * nothing in JavaScript can. A body with more than one stage therefore runs to completion after
      * the row already says CANCELLED — observed against a real backend as a cancelled chain going
      * on to issue its balance query, `POST /balances/blockchains/eth` landing after the `DELETE`s
@@ -164,7 +163,7 @@ describe('useNativeTask', () => {
     const stalls = async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>(() => {});
 
     /**
-     * ⭐ `submitTask` dedups, so a user asking for fresh data while a background run is in flight
+     * `submitTask` dedups, so a user asking for fresh data while a background run is in flight
      * would be handed that run's promise *and its parameters*. Superseding replaces it instead.
      */
     it('should replace a run already in flight', async () => {
@@ -183,7 +182,7 @@ describe('useNativeTask', () => {
     });
 
     /**
-     * 🔴 The regression this helper exists to prevent. `finish()` is what frees the id, and it runs
+     * The regression this helper exists to prevent. `finish()` is what frees the id, and it runs
      * when the cancelled activity settles — so submitting without awaiting dedups onto the corpse
      * and the new spec never runs. Dropping the `await` in `supersedeTask` fails this.
      */
@@ -218,20 +217,12 @@ describe('useNativeTask', () => {
 
   describe('reset', () => {
     /** Only the orchestrator can settle this, which is the whole point of the two tests below. */
-    const neverSettles = async (): ResultAsync<void, TaskError> => new Promise<Result<void, TaskError>>(() => {});
 
-    // Logout resets the orchestrator while work is still in flight. The caller of that work is
-    // awaiting a promise only the orchestrator can settle, and the id is held in `inflight` until
-    // it settles — so if reset drops the record without settling the caller, that id is poisoned
-    // for the life of the process and every later submit dedups onto a promise that never
-    // resolves. In the app that stalls `fetchCached()` on its first await, so the accounts are
-    // never fetched and the whole post-login session sits on a spinner.
-    it('should settle a caller waiting on work that reset dropped', async () => {
+    it('should settle a caller waiting on work that reset dropped, which would poison the id', async () => {
       const { submitTask } = useNativeTask();
       const orchestrator = useTaskOrchestrator();
       const id = makeActivityId(ActivityKind.PRICES, 'reset-settles');
 
-      // Nothing but the orchestrator can settle this.
       const outcome = submitTask({
         id,
         kind: ActivityKind.PRICES,
@@ -251,12 +242,11 @@ describe('useNativeTask', () => {
       expect(raced).toBe('settled');
     });
 
-    it('should let the same activity run again after reset', async () => {
+    it('should free the activity id on reset, so the same activity runs again instead of dedupping onto the abandoned promise', async () => {
       const { submitTask } = useNativeTask();
       const orchestrator = useTaskOrchestrator();
       const id = makeActivityId(ActivityKind.PRICES, 'reset-reruns');
 
-      // Awaited only after the reset releases it; the assertion is about the SECOND submit.
       const abandoned = submitTask({
         id,
         kind: ActivityKind.PRICES,
@@ -267,29 +257,16 @@ describe('useNativeTask', () => {
       orchestrator.reset();
       await abandoned;
 
-      // The id must be free again, or this dedups onto the abandoned promise and never runs.
       const run = vi.fn(async () => ok(undefined));
       await submitTask({ id, kind: ActivityKind.PRICES, run, title: 'prices' });
 
       expect(run).toHaveBeenCalledOnce();
     });
 
-    /**
-     * 🔴 The two tests above prove the *abandoned* caller settles and its id is freed. Neither
-     * proves the *next* session can start anything, and that is where this actually broke: a lane
-     * slot is released from `run()`'s `finally`, and a reset abandons those runs rather than
-     * resolving them, so every activity live at logout held its lane for the life of the process.
-     * With the lane full, the next session's submit queued behind jobs belonging to a session that
-     * no longer existed and never ran at all.
-     *
-     * In the app: `prices:exchange-rates` was submitted after a re-login and never started, which
-     * stalled `fetchCached()` on its first await — no exchange rates, no account read, no balances.
-     */
     it('should start new work after reset even when every lane slot was taken', async () => {
       const { submitTask } = useNativeTask();
       const orchestrator = useTaskOrchestrator();
 
-      // Saturate the default lane with work only the orchestrator can settle.
       const abandoned = [1, 2, 3, 4].map(async n => submitTask({
         id: makeActivityId(ActivityKind.PRICES, `slot-${n}`),
         kind: ActivityKind.PRICES,

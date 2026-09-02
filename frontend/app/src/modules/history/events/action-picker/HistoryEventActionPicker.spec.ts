@@ -79,9 +79,15 @@ const RuiCategoryPickerStub = defineComponent((props: {
     slots.item ? [slots.item({ active: false, item, selected: false })] : [item.label],
   );
 
-  // NOT kebab-cased: the grouping test tells the display label ('Trade') apart from the raw group
-  // id ('trade') by case alone, so normalising here would collapse both into one selector. The raw
-  // value rides on `data-key`, and attribute values match case-sensitively, so the pair stays apart.
+  /**
+   * Renders one category node of the stub, with the items belonging to it nested underneath.
+   *
+   * @remarks
+   * The category reaches `data-key` verbatim and must not be kebab-cased on the way. The grouping
+   * tests tell the display label ('Trade') from the raw group id ('trade') by case alone, and
+   * attribute selectors match case-sensitively, so normalising here collapses the pair into one
+   * selector and the tests stop distinguishing them.
+   */
   const renderCategory = (category: string): VNode => h('div', { 'data-key': category, 'data-testid': 'category' }, [
     slots.category ? slots.category({ active: false, category, count: 0, label: category }) : null,
     ...visible.filter(item => categoryLabel(item) === category).map(renderItem),
@@ -145,10 +151,7 @@ describe('historyEventActionPicker', () => {
     expect(updates[0][0]).toEqual({ eventSubtype: 'spend', eventType: 'trade' });
   });
 
-  it('should ignore implicit clears from the underlying picker', async () => {
-    // Guard against any stray update:modelValue with undefined. The picker is
-    // required and has no clear affordance, so these implicit clears must be
-    // discarded: the model value should only change in response to a row pick.
+  it('should ignore implicit clears from the underlying picker, since the value is required and only a row pick may change it', async () => {
     findRowByTypeSubtype.mockReturnValue(row);
     const wrapper = mountPicker({ eventSubtype: 'spend', eventType: 'trade' });
     await flushPromises();
@@ -168,21 +171,17 @@ describe('historyEventActionPicker', () => {
     expect(wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out]').text()).toContain('Swap out');
 
-    // The subtitle must reset the nowrap it inherits from RuiButton's label so
-    // line-clamp-2 can actually wrap onto a second line.
     const subtitle = wrapper.find('[data-testid=event-action-picker-row][data-key=swap-out] .line-clamp-2');
     expect(subtitle.exists()).toBe(true);
     expect(subtitle.classes()).toContain('whitespace-normal');
   });
 
-  it('should group items under their display label, not the raw group id', async () => {
+  it('should group items under their display label, not the raw group id, which the picker prints in its detail header', async () => {
     findRowByTypeSubtype.mockReturnValue(undefined);
     set(recentRef, ['swap out']);
     const wrapper = mountPicker();
     await flushPromises();
 
-    // RuiCategoryPicker prints the category string in its detail header, so the
-    // picker must feed it the human label ('Trade'), never the backend id.
     expect(wrapper.find('[data-testid=category][data-key="Trade"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=category][data-key="trade"]').exists()).toBe(false);
     // ...and the synthetic recent group must not leak its internal id.

@@ -13,8 +13,6 @@ const TEST_DATA_DIR = '/test/data/dir';
 
 describe('useNewlyDetectedTokensDb', () => {
   beforeAll(() => {
-    // Set a global pinia for tests, it's needed otherwise the shared composable
-    // will access the wrong store. and make tests to fail.
     const pinia = createPinia();
     setActivePinia(pinia);
   });
@@ -22,13 +20,11 @@ describe('useNewlyDetectedTokensDb', () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    // Wait for database to become ready
     const { isReady, db } = useDatabase();
 
     const user = useLoggedUserIdentifier();
     set(user, TEST_USER);
 
-    // Set up data directory
     const mainStore = useMainStore();
     const { dataDirectory } = storeToRefs(mainStore);
     set(dataDirectory, TEST_DATA_DIR);
@@ -68,14 +64,12 @@ describe('useNewlyDetectedTokensDb', () => {
       const { addToken, count } = useNewlyDetectedTokensDb();
       const { db } = useDatabase();
 
-      // Add initial token
       await addToken({
         tokenIdentifier: 'eip155:1/erc20:0x1234',
         tokenKind: NewDetectedTokenKind.EVM,
         seenDescription: 'First description',
       });
 
-      // Add same token again with different description
       const result = await addToken({
         tokenIdentifier: 'eip155:1/erc20:0x1234',
         tokenKind: NewDetectedTokenKind.EVM,
@@ -85,7 +79,6 @@ describe('useNewlyDetectedTokensDb', () => {
       expect(result).toBe(false);
       expect(await count()).toBe(1);
 
-      // Verify description was updated
       const token = await db().newlyDetectedTokens.where('tokenIdentifier').equals('eip155:1/erc20:0x1234').first();
       expect(token?.seenDescription).toBe('Updated description');
     });
@@ -94,7 +87,6 @@ describe('useNewlyDetectedTokensDb', () => {
       const { addToken } = useNewlyDetectedTokensDb();
       const { db } = useDatabase();
 
-      // Add initial token
       await addToken({
         tokenIdentifier: 'eip155:1/erc20:0x1234',
         tokenKind: NewDetectedTokenKind.EVM,
@@ -104,9 +96,6 @@ describe('useNewlyDetectedTokensDb', () => {
       const originalDetectedAt = originalToken?.detectedAt;
       expect(originalDetectedAt).toBeDefined();
 
-      // `detectedAt` defaults to `Date.now()`, so the update can only be shown to
-      // preserve the original if a fresh default would differ. Move the clock
-      // rather than sleeping on it.
       const advanced = vi.spyOn(Date, 'now').mockReturnValue(originalDetectedAt! + 10_000);
 
       await addToken({
@@ -122,7 +111,6 @@ describe('useNewlyDetectedTokensDb', () => {
     });
 
     it('should return false when database is not ready', async () => {
-      // Clear the user to make database not ready
       const user = useLoggedUserIdentifier();
       const { isReady } = useDatabase();
 
@@ -198,7 +186,6 @@ describe('useNewlyDetectedTokensDb', () => {
     });
 
     it('should return 0 when database is not ready', async () => {
-      // Clear the user to make database not ready
       const { isReady } = useDatabase();
       const user = useLoggedUserIdentifier();
       set(user, undefined);
@@ -238,7 +225,6 @@ describe('useNewlyDetectedTokensDb', () => {
     });
 
     it('should return empty array when database is not ready', async () => {
-      // Clear the user to make database not ready
       const { isReady } = useDatabase();
       const user = useLoggedUserIdentifier();
       set(user, undefined);
@@ -258,7 +244,6 @@ describe('useNewlyDetectedTokensDb', () => {
       const { db } = useDatabase();
       const now = Date.now();
 
-      // Add tokens with different timestamps directly to DB
       for (let i = 0; i < 5; i++) {
         await db().newlyDetectedTokens.add({
           tokenIdentifier: `token-${i}`,
@@ -270,7 +255,7 @@ describe('useNewlyDetectedTokensDb', () => {
       const payload: NewDetectedTokensRequestPayload = {
         limit: 2,
         offset: 0,
-        orderByAttributes: ['detectedAt'],
+        orderByAttributes: ['detected_at'],
         ascending: [false],
       };
 
@@ -304,7 +289,6 @@ describe('useNewlyDetectedTokensDb', () => {
     });
 
     it('should return empty result when database is not ready', async () => {
-      // Clear the user to make database not ready
       const { isReady } = useDatabase();
       const user = useLoggedUserIdentifier();
       set(user, undefined);
@@ -342,7 +326,6 @@ describe('useNewlyDetectedTokensDb', () => {
     it('should prune expired tokens based on TTL setting', async () => {
       const ttlDays = 30;
 
-      // Set TTL in frontend settings store
       const settingsStore = useSettingsRepo();
       settingsStore.updateFrontend({ newlyDetectedTokensTtlDays: ttlDays });
 
@@ -352,7 +335,6 @@ describe('useNewlyDetectedTokensDb', () => {
       const now = Date.now();
       const cutoffTime = now - (ttlDays * SECONDS_PER_DAY * 1000);
 
-      // Add expired and valid tokens directly to DB
       await db().newlyDetectedTokens.bulkAdd([
         { tokenIdentifier: 'expired-1', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime - 1000 },
         { tokenIdentifier: 'expired-2', tokenKind: NewDetectedTokenKind.EVM, detectedAt: cutoffTime - 2000 },
@@ -370,7 +352,6 @@ describe('useNewlyDetectedTokensDb', () => {
     });
 
     it('should prune excess tokens based on max count setting', async () => {
-      // Set max count in frontend settings store
       const settingsStore = useSettingsRepo();
       settingsStore.updateFrontend({ newlyDetectedTokensMaxCount: 3 });
 
@@ -379,7 +360,6 @@ describe('useNewlyDetectedTokensDb', () => {
 
       const now = Date.now();
 
-      // Add more tokens than max count
       await db().newlyDetectedTokens.bulkAdd([
         { tokenIdentifier: 'oldest', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now - 5000 },
         { tokenIdentifier: 'old', tokenKind: NewDetectedTokenKind.EVM, detectedAt: now - 4000 },
@@ -399,7 +379,6 @@ describe('useNewlyDetectedTokensDb', () => {
     it('should handle combined TTL and max count pruning', async () => {
       const ttlDays = 30;
 
-      // Set both TTL and max count
       const settingsStore = useSettingsRepo();
       settingsStore.updateFrontend({
         newlyDetectedTokensTtlDays: ttlDays,
@@ -423,14 +402,13 @@ describe('useNewlyDetectedTokensDb', () => {
 
       await prune();
 
-      // First prunes expired (1), then prunes excess (1 more to get to max 2)
+      // Expiry runs first, then the excess prune brings the rest down to the max.
       expect(await count()).toBe(2);
       const remaining = await db().newlyDetectedTokens.toArray();
       expect(remaining.map(t => t.tokenIdentifier).sort()).toEqual(['valid-middle', 'valid-newest']);
     });
 
     it('should not fail when no tokens need pruning', async () => {
-      // Set high values so no pruning happens
       const settingsStore = useSettingsRepo();
 
       settingsStore.updateFrontend({
@@ -463,7 +441,6 @@ describe('useNewlyDetectedTokensDb', () => {
       const user = useLoggedUserIdentifier();
 
       expect(get(isReady)).toBe(true);
-      // Clear user to make database not ready
       set(user, undefined);
 
       await until(isReady).toBe(false);

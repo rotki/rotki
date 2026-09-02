@@ -21,14 +21,13 @@ export const EthStakingFilterValueKeys = {
 const selectableStatuses = validStatuses.filter(status => status !== 'all');
 
 /**
- * The pill-bar fields for the eth staking page: the two date matchers collapsed into one `period`
- * pill, and the validator status.
+ * Builds the pill-bar fields for the eth staking page: one `period` pill and the validator status.
  *
- * The one field list here that is genuinely reactive rather than only locale-dependent: which
- * fields exist turns on `disableStatus`, so this keeps a computed where the other tables no longer
- * need one.
+ * @remarks
+ * Returns a computed because which fields exist depends on `disableStatus`, unlike the other
+ * tables' field lists, which vary only with the locale.
  *
- * @param disableStatus when validators are picked by hand, a status filter cannot narrow anything
+ * @param disableStatus - when validators are picked by hand, a status filter cannot narrow anything
  * further, so the field is not offered at all.
  */
 export function useEthStakingFilterFields(
@@ -37,8 +36,10 @@ export function useEthStakingFilterFields(
   const { t } = useI18n({ useScope: 'global' });
   const dateInputFormat = useSetting('dateInputFormat');
 
-  // No serializer of its own: the bounds are stored as the unix seconds they are sent as, and the
-  // date editor reads and writes them through `formatBound`/`parseBound`.
+  /**
+   * The date range, carrying no serializer of its own: the bounds are stored as the unix seconds
+   * they are sent as, and the date editor reads and writes them through `formatBound`/`parseBound`.
+   */
   const periodField: FieldDef = toDateFieldDef({
     formatBound: dateDeserializer(dateInputFormat),
     key: 'period',
@@ -48,14 +49,18 @@ export function useEthStakingFilterFields(
     upperKey: EthStakingFilterValueKeys.END,
   });
 
-  // Declared rather than derived from a matcher: a matcher describes a field to the old text bar,
-  // and this one only ever feeds the pill bar.
+  /**
+   * The validator status.
+   *
+   * @remarks
+   * Written out rather than derived from a matcher, since a matcher describes a field to the old
+   * text bar and this one only ever feeds the pill bar. Its label is the plain noun for the same
+   * reason: `eth_validator_combined_filter.status` is the long hint the old bar showed.
+   */
   const statusField: FieldDef = {
     allowExclusion: false,
     binding: { kind: 'filter' },
     key: EthStakingFilterValueKeys.STATUS,
-    // `eth_validator_combined_filter.status` is the long "filter by the status of the validator"
-    // hint the old bar showed; a pill wants the noun.
     label: (): string => t('common.status'),
     multiple: false,
     operators: [FilterOps.IS],

@@ -44,8 +44,6 @@ describe('transformFilters', () => {
     expect(result).toStrictEqual({ type: { behaviour: FilterBehaviours.INCLUDE, values: true } });
   });
 
-  // Declaring the key IS the statement that it can be excluded, so the `!` the pill writes is
-  // always resolved here. The matcher's separate allowExclusion flag no longer gates it.
   it('should resolve a leading ! on a string to EXCLUDE', () => {
     const filters: Filters = { type: '!deposit' };
     const result = transformFilters(filters, TYPE);

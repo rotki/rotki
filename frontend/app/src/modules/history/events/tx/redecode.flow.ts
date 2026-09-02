@@ -3,21 +3,20 @@ import { msg } from '@/message-key';
 import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
+/** The `ignoreCache` a re-decode submits with, and therefore the one its children must be named for. */
+const IGNORE_CACHE = true;
+
 /**
  * Re-derive decodable chains' events from transactions already in the database.
  *
- * One flow with a scope, not one flow per entry point: "re-decode everything" and "re-decode these
- * chains" are the same work over a different set, and the set belongs in the identity. Two requests
- * for the same chains are genuinely the same run and should dedup; a scoped request and a full one
- * are not, and must not.
+ * One flow with a scope: "re-decode everything" and "re-decode these chains" are the same work over
+ * a different set, and the set belongs in the identity — two requests for the same chains dedup, a
+ * scoped and a full request must not.
  *
  * Reset-bearing: the backend deletes each location's non-customized events before re-deriving
- * (`reset_events_for_redecode`), so this must not overlap matching, which writes links onto those
- * same events.
+ * (`reset_events_for_redecode`), so this must never overlap matching.
  *
- * Documented at docs.rotki.com as "Redecode All Transactions": *"re-read and re-decode the
- * transaction's events and try to understand what happened"*. It pulls nothing new — that is
- * `refresh` (forward) and `re-pull` (a past range).
+ * Pulls nothing new — that is `refresh` (forward) and `re-pull` (a past range).
  */
 export const redecodeFlow: HistoryFlow<readonly string[], string> = {
   /**
@@ -25,10 +24,8 @@ export const redecodeFlow: HistoryFlow<readonly string[], string> = {
    * constructor the mechanism submits under, so the parent gate cannot be broken by the two drifting
    * apart.
    */
-  // `true` because this flow always forces a re-decode; it must match the `ignoreCache` the
-  // mechanism submits with, or the children would not be gated by the parent that claims them.
   children: (chains: readonly string[]): readonly FlowChild<string>[] => chains.map(chain => ({
-    id: decodeActivityId(chain, true),
+    id: decodeActivityId(chain, IGNORE_CACHE),
     kind: ActivityKind.TX_DECODING,
     payload: chain,
   })),

@@ -56,9 +56,7 @@ describe('modules/accounts/manual-balances/manual-balance-form', () => {
       ['no tags', state({ tags: [] })],
       ['tags', state({ tags: ['tag'] })],
       ['a liability', state({ balanceType: BalanceType.LIABILITY })],
-    ])('should read %s back exactly as it was written', (_label, value) => {
-      // Anything lost here comes straight back as an edit the user never made: the form writes the
-      // payload and reads it again on the next change.
+    ])('should read %s back exactly as it was written, since anything lost returns as an edit the user never made', (_label, value) => {
       expect(toFormState(toPayload(balance(), value))).toEqual(value);
     });
 
@@ -76,9 +74,7 @@ describe('modules/accounts/manual-balances/manual-balance-form', () => {
       expect(toFormState(balance({ amount: bigNumberify(Number.NaN) })).amount).toBe('');
     });
 
-    // The payload is rebuilt on every change, so an amount that is not a number yet lands in the
-    // same not-a-number state a cleared one does, rather than throwing out of the parse.
-    it.each(['-', '1.2.3', '0,5', '1 000'])('should carry an amount of %s as not a number', (typed) => {
+    it.each(['-', '1.2.3', '0,5', '1 000'])('should carry an amount of %s as not a number, rather than throw out of the parse', (typed) => {
       expect(toPayload(balance(), state({ amount: typed })).amount.isNaN()).toBe(true);
     });
 
@@ -121,9 +117,7 @@ describe('modules/accounts/manual-balances/manual-balance-form', () => {
       expect(messagesFor(state(), 'label', true, ['my wallet'])).toEqual([]);
     });
 
-    it('should report a taken label before reporting it as empty', () => {
-      // Both can fire at once only if the empty string is itself a stored label; the order is what
-      // the field renders.
+    it('should report a taken label before reporting it as empty, which is the order the field renders them in', () => {
       expect(messagesFor(state({ label: '' }), 'label', false, [''])).toEqual([
         MESSAGES.labelExists(''),
         MESSAGES.labelEmpty,

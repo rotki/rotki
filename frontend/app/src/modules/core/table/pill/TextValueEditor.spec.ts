@@ -4,6 +4,9 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TextValueEditor from '@/modules/core/table/pill/TextValueEditor.vue';
 
+/** The editor's own commit debounce, in milliseconds. */
+const COMMIT_DEBOUNCE_MS = 300;
+
 const notesField: FieldDef = {
   allowExclusion: false,
   binding: { kind: 'filter' },
@@ -48,9 +51,7 @@ describe('textValueEditor', () => {
     vi.useRealTimers();
   });
 
-  // Regression: a single-value field commits through a 300ms debounce, so pressing Enter before
-  // it elapsed closed the editor with the commit still pending and silently dropped the value.
-  it('should commit a single value on enter without waiting for the debounce', async () => {
+  it('should commit a single value on enter without waiting for the debounce, rather than close with it pending', async () => {
     const wrapper = createWrapper(notesField, { fieldKey: 'notesSubstring', op: 'is', values: [] });
 
     await typeAndEnter(wrapper, 'pillfilter gamma');
@@ -67,7 +68,7 @@ describe('textValueEditor', () => {
     await wrapper.find('[data-testid=text-input] input').setValue('pillfilter delta');
     expect(wrapper.emitted('update')).toBeUndefined();
 
-    await vi.advanceTimersByTimeAsync(300);
+    await vi.advanceTimersByTimeAsync(COMMIT_DEBOUNCE_MS);
 
     expect(wrapper.emitted('update')?.[0]).toEqual([
       { fieldKey: 'notesSubstring', op: 'is', values: ['pillfilter delta'] },
@@ -86,8 +87,6 @@ describe('textValueEditor', () => {
     expect(wrapper.emitted('close')).toBeUndefined();
   });
 
-  // Closing commits rather than cancels: a value typed and then dismissed by clicking away would
-  // otherwise be lost to the pending debounce, the same way enter used to lose it.
   it('should commit a pending single value when the editor closes', async () => {
     const wrapper = createWrapper(notesField, { fieldKey: 'notesSubstring', op: 'is', values: [] });
 
@@ -122,10 +121,8 @@ describe('textValueEditor', () => {
     expect(wrapper.emitted('update')).toBeUndefined();
     expect(wrapper.emitted('close')).toBeUndefined();
   });
-  // The single-value field's input IS its committed value, so once the debounce banks what was
-  // typed it would otherwise be flagged as a duplicate of itself: the notes filter said "Already
-  // added" about the text in its own box and then refused to commit any edit of it.
-  it('should not call a single-value field a duplicate of itself', async () => {
+
+  it('should not call the text in a single-value field a duplicate of the value it already committed', async () => {
     const wrapper = createWrapper(notesField, { fieldKey: 'notesSubstring', op: 'is', values: ['swap'] });
 
     await wrapper.get('[data-testid=text-input] input').setValue('swap');

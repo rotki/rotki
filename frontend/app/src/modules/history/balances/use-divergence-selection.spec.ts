@@ -13,7 +13,11 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
     getEvmChainName: (chain: string): string | undefined => chain === 'eth' ? 'ethereum' : undefined,
     isEvm: (chain: string): boolean => chain === 'eth',
-    matchChain: (location: string): string | undefined => ['eth', 'ethereum'].includes(location) ? 'eth' : undefined,
+    matchChain: (location: string): string | undefined => {
+      if (['eth', 'ethereum'].includes(location))
+        return 'eth';
+      return ['btc', 'bitcoin'].includes(location) ? 'btc' : undefined;
+    },
   }),
 }));
 
@@ -66,6 +70,17 @@ describe('useDivergenceSelection', () => {
     expect(get(result.modelSelectedChain)).toBe('eth');
     expect(get(result.modelSelectedLocationLabel)).toBe('0xA');
     expect(get(result.selectedEvmChain)).toBe('ethereum');
+  });
+
+  it('should not offer a location label from a non-evm chain', async () => {
+    useHistoryStore().setLocationLabels([
+      { location: 'bitcoin', locationLabel: '1Dk75NPu6QXxMxRECfz6VM6oXq3XwprsDF' },
+    ]);
+    const { result } = mountSelection();
+    await nextTick();
+
+    expect(get(result.chainOptions)).toStrictEqual(['eth']);
+    expect(get(result.locationLabelOptions)).toStrictEqual([{ location: 'eth', locationLabel: '0xA' }]);
   });
 
   it('should fetch the location labels on mount', () => {

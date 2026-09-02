@@ -85,15 +85,20 @@ export function settledAddresses(chain: Pick<ChainProgress, 'cancelled' | 'compl
   return chain.completed + chain.cancelled + chain.failed;
 }
 
-/** Whether every one of a chain's addresses has reached a terminal state. */
+/**
+ * Whether every one of a chain's addresses has reached a terminal state.
+ *
+ * @remarks
+ * Settled is not the same as complete, and the distinction reaches the UI: a group of settled items
+ * can hold cancelled and failed ones, so its summary must say it *finished* rather than claim every
+ * item in it succeeded. Only a group with neither may claim completion, or the summary contradicts
+ * the rows inside it, which already read cancelled or failed.
+ */
 export function isChainSettled(chain: Pick<ChainProgress, 'cancelled' | 'completed' | 'failed' | 'total'>): boolean {
   return chain.total > 0 && settledAddresses(chain) === chain.total;
 }
 
 function isDone(status: AddressStatus): boolean {
-  // Failed counts as done, like cancelled: no further progress is coming for that address. Same
-  // argument `percentageOf` makes for activities: a bar that excluded failures would stall short
-  // of the end whenever a chain failed, and never reach a settled state.
   return status === AddressStatus.COMPLETE
     || status === AddressStatus.CANCELLED
     || status === AddressStatus.FAILED;
@@ -117,10 +122,6 @@ export function useChainProgress(
     const grouped = new Map<string, { key: string; data: TxQueryStatusData }[]>();
 
     for (const [key, item] of Object.entries(statusMap)) {
-      // Dropped before grouping so an excluded chain leaves no row *and* no denominator: these
-      // entries are backend websocket status, not work we submitted, so the backend still reports
-      // on chains the user switched off. Per address, not per chain - the setting excludes single
-      // addresses on an otherwise active chain, and those must not pad the chain's total either.
       if (isAddressExcluded(item.chain, item.address))
         continue;
 

@@ -12,7 +12,7 @@ const config = computed(() => stateConfigs[state]);
 </script>
 
 <template>
-  <RuiTooltip :popper="{ placement: 'top', scroll: false, resize: false }">
+  <RuiTooltip :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }">
     <template #activator>
       <RuiChip
         size="sm"

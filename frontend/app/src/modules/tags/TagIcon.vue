@@ -24,7 +24,7 @@ const shouldShowAmount = useSetting('shouldShowAmount');
       class="font-medium !rounded-md shrink-0"
       data-testid="tag"
       tile
-      content-class="flex font-mono"
+      :class-names="{ content: 'flex font-mono' }"
       :size="small ? 'sm' : 'md'"
       :bg-color="`#${tag.backgroundColor}`"
       :text-color="`#${tag.foregroundColor}`"

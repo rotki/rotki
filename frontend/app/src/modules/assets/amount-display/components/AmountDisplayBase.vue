@@ -1,17 +1,11 @@
 <script setup lang="ts">
 /**
- * AmountDisplayBase - Internal component for rendering formatted amounts.
+ * Internal component for rendering a formatted amount. Style it with classes through `$attrs`.
  *
- * This is a pure display component - no scrambling logic.
- * Scrambling should be handled by parent components.
- *
- * Use one of the higher-level components instead:
- * - FiatDisplay - for fiat values (with scrambling)
- * - AssetValueDisplay - for asset values (with scrambling)
- * - AssetAmountDisplay - for asset amounts (with scrambling)
- * - ValueDisplay - for raw values (with scrambling)
- *
- * Styling: Use CSS classes via $attrs (e.g., class="text-2xl")
+ * @remarks
+ * Pure display, with **no scrambling of its own** — rendering a user value through this directly
+ * leaks it when privacy mode is on. Reach for a wrapper that scrambles: `FiatDisplay`,
+ * `AssetValueDisplay`, `AssetAmountDisplay` or `ValueDisplay`.
  */
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
@@ -47,13 +41,10 @@ defineSlots<{
   tooltip: () => any;
 }>();
 
-// Extract format options
 const isInteger = computed<boolean>(() => format?.integer ?? false);
 
-// Get display settings
 const { currencyLocation, shouldShowAmount } = useAmountDisplaySettings();
 
-// Format the value for display
 const roundingType = computed(() => format?.rounding ?? 'value');
 
 const {
@@ -68,7 +59,6 @@ const {
   value: () => value,
 });
 
-// Copy value for clipboard
 const copyValue = computed<string>(() => {
   if (get(isNaN)) {
     return '-';

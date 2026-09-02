@@ -22,7 +22,6 @@ function createWrapper(): VueWrapper<InstanceType<typeof PillMenu>> {
 }
 
 describe('pillMenu', () => {
-  // jsdom has no layout and no `scrollIntoView`, so the call itself is what can be asserted.
   const scrollIntoView = vi.fn();
 
   beforeAll(() => {
@@ -57,8 +56,8 @@ describe('pillMenu', () => {
   it('should move the highlight with arrow keys and pick it with enter', async () => {
     const wrapper = createWrapper();
     const input = wrapper.find('input');
-    await input.trigger('keydown', { key: 'ArrowDown' }); // 0 -> 1 (Asset)
-    await input.trigger('keydown', { key: 'ArrowDown' }); // 1 -> 2 (Location)
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await input.trigger('keydown', { key: 'ArrowDown' });
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ key: 'location' });
   });
@@ -70,9 +69,6 @@ describe('pillMenu', () => {
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ key: 'location' });
   });
-  // The list scrolls past its height (history has 15 fields) and the arrow keys live on the search
-  // box, so nothing else can pull the highlighted row back into view: it used to walk off the
-  // bottom while the list stayed put, leaving the user arrowing through rows they could not see.
   it('should bring the highlighted row into view as the arrows move it', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();
@@ -82,9 +78,7 @@ describe('pillMenu', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
 
-  // Hovering moves the highlight as well. Scrolling for that pulls the list out from under the
-  // cursor, which puts a different row under it and moves the highlight again.
-  it('should not scroll when the pointer moves the highlight', async () => {
+  it('should not scroll when the pointer moves the highlight, which would pull the list out from under the cursor and move the highlight again', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();
 

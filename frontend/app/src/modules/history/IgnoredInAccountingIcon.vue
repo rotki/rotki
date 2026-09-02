@@ -23,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
     </BadgeDisplay>
     <RuiTooltip
       v-else
-      :popper="{ placement: 'bottom' }"
+      :options="{ placement: 'bottom' }"
       :open-delay="400"
     >
       <template #activator>

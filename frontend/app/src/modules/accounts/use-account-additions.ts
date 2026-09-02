@@ -31,6 +31,14 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
   const { submitTask } = useNativeTask();
   const { t } = useI18n({ useScope: 'global' });
 
+  /**
+   * Adds one account, or one xpub, and reports the address the backend actually stored.
+   *
+   * @remarks
+   * A cancellation, a failure and an empty result are all the error branch. Nothing was added in
+   * any of them, so there is no address to hand back, and an `ok('')` would put `{ address: '' }`
+   * into `addedAccounts` and refresh on a blank address.
+   */
   const addAccount = async (
     chain: string,
     payload: AccountPayload[] | XpubAccountPayload,
@@ -54,17 +62,10 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    // `''` used to mean three different things at once: cancelled, non-actionable failure, and a
-    // genuinely empty result. The caller read all three as a successful addition, so a cancelled
-    // add was reported as added. Cancellation and failure are now the error branch, and an empty
-    // result joins them: nothing was added, so there is no address to hand back, and returning
-    // `ok('')` would put `{ address: '' }` into `addedAccounts` and refresh on a blank address.
     return flatMapResult(outcome, (result) => {
       if (result === true)
         return ok(address);
 
-      // Translated, because this message is user-facing: `errorOf` hands it back and the account
-      // form renders `error.message` in its dialog.
       return result.length > 0
         ? ok(result[0])
         : err(TaskFailed({ message: t('actions.balances.blockchain_accounts_add.error.nothing_added', { address }) }));
@@ -75,7 +76,6 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
     { address, label, tags }: AccountPayload,
     options?: AdditionOptions,
   ): Promise<Result<EvmAccountsResult, TaskError>> => {
-    // The pseudo-chain, not a real one: this asks for every EVM chain at once.
     const subject: AccountSubject = { chain: EVM_PSEUDO_CHAIN, target: { address, kind: 'address' } };
     const outcome = await submitTask<EvmAccountsResult>({
       id: accountAddActivity.id(subject),
@@ -93,7 +93,6 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
       title: t('task_center.group.accounts'),
     });
 
-    // As in `addAccount`: `{}` conflated a cancelled/failed add with an empty result.
     return outcome;
   };
 

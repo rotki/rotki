@@ -117,9 +117,10 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
   /**
    * Calculate scroll position when both primary and secondary highlights exist.
    *
-   * - If distance <= 3 rows: show both by positioning the earlier one at top.
-   * - If distance > 3 rows and secondary is after primary: secondary at bottom of viewport.
-   * - If distance > 3 rows and secondary is before primary: secondary at top of viewport.
+   * @remarks
+   * Within 3 rows, both fit: the earlier one goes to the top. Further apart, only the secondary is
+   * placed, at the bottom of the viewport when it follows the primary and at the top when it
+   * precedes it.
    */
   function calculateScrollPosition(
     primaryIndex: number,

@@ -6,12 +6,17 @@ import { toInternalTxConflictFields } from '@/modules/history/internal-tx-confli
 /** The pill-bar fields for the internal transaction conflicts table. */
 export function useInternalTxConflictFields(): FieldDef[] {
   const { t } = useI18n({ useScope: 'global' });
-  // Chain and date resolution is the same for every table filtering on them, so it comes from one
-  // place rather than being restated here.
   const shared = useSharedFieldResolvers();
   const { evmChainsData } = useSupportedChains();
 
-  // Only the chains an internal transaction can be on: the conflicts are evm-only.
+  /**
+   * Offers every EVM chain, and nothing else, as the pill's choices.
+   *
+   * @remarks
+   * Internal transactions exist only on EVM chains, so a conflict over one cannot be filed
+   * against any other chain. The values are `evmChainName`, which is the spelling the backend
+   * takes for this filter.
+   */
   const chains = (): string[] => get(evmChainsData).map(chain => chain.evmChainName);
 
   return toInternalTxConflictFields(shared, t, chains);

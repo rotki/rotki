@@ -13,6 +13,7 @@ import {
 } from '@/modules/history/management/forms/solana-swap-event-form';
 import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
+import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
@@ -53,17 +54,7 @@ watchImmediate(() => data, (data) => {
   }
 });
 
-watch(() => state.hasFee, (hasFee) => {
-  if (!hasFee) {
-    state.fee = [];
-    return;
-  }
-
-  // Seeding an existing group sets the flag and the rows together, so only an empty list wants a
-  // blank row; replacing it unconditionally would discard what was just loaded.
-  if (state.fee.length === 0)
-    state.fee.push(emptySubEvent());
-});
+useFeeRows(() => state.hasFee, () => state.fee, emptySubEvent);
 
 defineExpose({
   errorCount: form.errorCount,

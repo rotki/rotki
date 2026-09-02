@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { type NewDetectedTokenInput, NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
 
-// Mock the stores
 const mockIgnoredAssets = ref<string[]>([]);
 const mockAddIgnoredAsset = vi.fn();
 
@@ -19,7 +18,6 @@ vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: vi.fn(() => mockNotifyNewNfts),
 }));
 
-// Mock the database composable
 const mockAddToken = vi.fn();
 const mockRemoveTokens = vi.fn();
 const mockClearAll = vi.fn();
@@ -40,7 +38,6 @@ vi.mock('./use-newly-detected-tokens-db', () => ({
   })),
 }));
 
-// Import after mocks
 const { useNewlyDetectedTokens } = await import('./use-newly-detected-tokens');
 
 describe('useNewlyDetectedTokens', () => {
@@ -186,7 +183,7 @@ describe('useNewlyDetectedTokens', () => {
       const payload: NewDetectedTokensRequestPayload = {
         limit: 10,
         offset: 0,
-        orderByAttributes: ['detectedAt'],
+        orderByAttributes: ['detected_at'],
         ascending: [false],
       };
       const result = await getData(payload);

@@ -31,8 +31,15 @@ function plain(text: string): PreviewValue {
   return { kind: 'plain', text };
 }
 
-// A text column always ships its `has_<column>` companion, whatever the mode leaves in the column
-// itself. Not translated: these are literal values the assistant receives, not prose.
+/**
+ * Pairs a readable cell with the `has_<column>: true` companion the backend sends beside it.
+ *
+ * @remarks
+ * A text column ships that companion whatever the mode leaves in the column itself, so the preview
+ * has to show both. Neither string is translated: they are literal values the assistant receives.
+ * @param text - the column value as the assistant would see it
+ * @param field - the unprefixed column name, which becomes the `has_` companion key
+ */
 function flagged(text: string, field: string): PreviewValue {
   return { flag: `has_${field}: true`, kind: 'plain', text };
 }
@@ -49,10 +56,7 @@ function redacted(field: string): PreviewValue {
   return { flag: `has_${field}: true`, kind: 'redacted', text: '[redacted]' };
 }
 
-// The sample values below mirror `_sanitize_row` in rotkehlchen/mcp/analytics.py. Keep them in
-// step with it: `GENERATED_TEXT_COLUMN_NAMES` decides whether `auto_notes` survives balanced, and
-// `READABLE_LOCATION_LABELS` decides which `location_label` values stay readable there (only a
-// value that is exactly a rotki location name -- a user-assigned account name is hashed).
+// These samples and the ones below mirror `_sanitize_row` in rotkehlchen/mcp/analytics.py.
 const commonRows: PreviewRow[] = [
   { deposit: plain('1754425840000'), field: 'timestamp', swap: plain('1754431200000') },
   { deposit: plain('kraken'), field: 'location', swap: plain('ethereum') },
@@ -62,10 +66,15 @@ const commonRows: PreviewRow[] = [
   { field: 'counterparty', swap: plain('uniswap-v3') },
 ];
 
+/**
+ * Builds the rows whose shape the chosen privacy mode decides.
+ *
+ * @remarks
+ * Raw is the only mode where an identifier keeps its own column name. Everywhere else the value
+ * moves to `<column>_hash` and the original column is dropped, with one exception: under balanced,
+ * a venue-name label also stays readable under `location_label`.
+ */
 const modeRows = computed<PreviewRow[]>(() => {
-  // Raw is the only mode where an identifier keeps its own column name; everywhere else the value
-  // moves to `<column>_hash` and the original column is dropped, except the one balanced case where
-  // a venue-name label also stays readable under `location_label`.
   if (mode === PrivacyMode.RAW) {
     return [
       { deposit: plain('kraken'), field: 'location_label', swap: plain('0x9C5083…5dAC5') },
@@ -103,8 +112,7 @@ const modeRows = computed<PreviewRow[]>(() => {
       field: 'location_label_hash',
       swap: hash('anon_5c4efe77c7146ef8'),
     },
-    // Strict emits no readable label column at all. The row stays so switching to balanced does not
-    // reflow the table, but it says "not sent" rather than "not set": querying it would fail.
+    // Strict sends no readable label column; the row is kept as "not sent" so the table does not reflow.
     { deposit: absent(), field: 'location_label', swap: absent() },
     { field: 'tx_hash_hash', swap: hash('anon_61b73c8e638bc34c') },
     { deposit: redacted('auto_notes'), field: 'auto_notes', swap: redacted('auto_notes') },
@@ -122,8 +130,7 @@ function toLines(rows: PreviewRow[]): PreviewLine[] {
   return rows.map(({ deposit, field, swap }) => ({ cells: [swap, deposit], field }));
 }
 
-// The split is the point: the first group is what every mode sends, the second is what the chosen
-// mode decides.
+// The split is the point: what every mode sends, then what the chosen mode decides.
 const groups = computed<{ label: string; lines: PreviewLine[] }[]>(() => [
   {
     label: t('backend_settings.settings.mcp_server.privacy_mode.preview.group_always'),

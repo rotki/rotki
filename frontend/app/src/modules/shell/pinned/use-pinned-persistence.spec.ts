@@ -32,9 +32,6 @@ describe('usePinnedPersistence', () => {
     localStorage.clear();
     scope = effectScope();
     signIn();
-    // The data-issues panel is only available in accounting-update builds, and the flag is
-    // only set when the shell exports ROTKI_ACCOUNTING_UPDATE. Pin it so the cases using
-    // that panel do not depend on the developer's environment.
     vi.stubEnv('VITE_ACCOUNTING_UPDATE', 'true');
   });
 

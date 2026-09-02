@@ -72,8 +72,8 @@ export function buildManagedAssetPayload(
   if (payload.assetType !== EVM_TOKEN)
     return { ...prepareNonEvmAssetPayload(payload), isRebasing: false };
 
-  // Only a rebasing fungible token has a meaning, and only a collectible has an id.
-  if (payload.tokenKind === EvmTokenKind.ERC721)
+  const isCollectible = payload.tokenKind === EvmTokenKind.ERC721;
+  if (isCollectible)
     return { ...payload, isRebasing: false };
 
   return omit(payload, ['collectibleId']);

@@ -1,7 +1,8 @@
+import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, type Ref, type VNode } from 'vue';
+import { defineComponent, h, type Ref, type VNode } from 'vue';
 import { Quarter } from '@/modules/settings/types/frontend-settings';
 import '@test/i18n';
 
@@ -22,9 +23,6 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 }));
 
 const RangeSelector = (await import('@/modules/reports/RangeSelector.vue')).default;
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 interface Range {
   end: number;
@@ -112,8 +110,6 @@ describe('rangeSelector', () => {
     wrapper = createWrapper();
     await selectCustom();
 
-    // The picker allows an empty end date, so it is reached the way the app reaches it rather
-    // than by seeding a value the model type does not admit.
     picker().vm.$emit('update:end', undefined);
     await vi.advanceTimersToNextTimerAsync();
 
@@ -138,9 +134,6 @@ describe('rangeSelector', () => {
     wrapper = createWrapper();
     await selectCustom();
 
-    // Edit both fields into an invalid state. Under $autoDirty that is exactly what makes a
-    // message appear; here it must not, because the picker is configured with it off and nothing
-    // touches the fields. These two messages have never been reachable.
     picker().vm.$emit('update:start', undefined);
     picker().vm.$emit('update:end', undefined);
     await vi.advanceTimersToNextTimerAsync();
@@ -192,6 +185,29 @@ describe('rangeSelector', () => {
       start: undefined,
     });
     expect(updateFrontendSetting).toHaveBeenCalledWith({ profitLossReportPeriod: selection });
+  });
+
+  it('should blank the range while the persisted switch to custom is still in flight', async () => {
+    let settle = (): void => {};
+    updateFrontendSetting.mockImplementation(async () => new Promise<void>((resolve) => {
+      settle = resolve;
+    }));
+
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    wrapper.findComponent<StubInstance>({ name: 'ReportPeriodSelector' })
+      .vm
+      .$emit('update:selection', { quarter: Quarter.Q1, year: 'custom' });
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.emitted<[Range]>('update:modelValue')?.at(-1)?.[0]).toEqual({
+      end: dayjs().unix(),
+      start: undefined,
+    });
+
+    settle();
+    await vi.advanceTimersToNextTimerAsync();
   });
 
   /*
@@ -256,7 +272,6 @@ describe('rangeSelector', () => {
     setRange({ end: 1800000000, start: 1750000000 });
     await vi.advanceTimersToNextTimerAsync();
 
-    // model -> state, the direction an edit made by the page above takes.
     const picker = parent.findComponent<StubInstance>({ name: 'DateTimeRangePicker' });
     expect(picker.props('start')).toBe(1750000000);
     expect(picker.props('end')).toBe(1800000000);

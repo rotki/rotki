@@ -15,20 +15,19 @@ const { t } = useI18n({ useScope: 'global' });
 const context = injectAccountingOverlay();
 const { getEventTypeData } = useHistoryEventMappings();
 
-// The event's effect on this balance: in = down/green, out = up/red, neutral = no change. Colours
-// are the canonical increase/decrease tokens shared with the action menu (see event-direction.ts).
-// We derive only the direction from the event-type mapping, not the full category icon.
 const eventTypeData = getEventTypeData(() => event);
 const direction = computed<EventDirection>(() => get(eventTypeData).direction);
-// The per-event change shown beneath the running balance — the event's own amount, signed by its
-// direction. Neutral events don't move the balance, so they get no delta line.
 const showDelta = computed<boolean>(() => get(direction) !== 'neutral' && event.amount.gt(0));
 
 const enabled = computed<boolean>(() => !!context && get(context.enabled));
 const account = computed<string | undefined>(() => event.locationLabel ?? undefined);
-// Only some event variants carry a counterparty; it maps to a bucket's protocol so the breakdown
-// can highlight the position this event moved. Absent, null, or a synthetic counterparty (e.g. 'gas',
-// which is paid out of the plain wallet rather than a held protocol position) means the wallet bucket.
+/**
+ * The bucket protocol this event moved, so the breakdown can highlight that position.
+ *
+ * @remarks
+ * Undefined means the plain wallet bucket. Gas reaches here as a counterparty but is paid out of
+ * the wallet rather than a held protocol position, so it resolves to the wallet too.
+ */
 const eventProtocol = computed<string | undefined>(() => {
   const counterparty = 'counterparty' in event ? event.counterparty : undefined;
   if (!counterparty || counterparty === 'gas')
@@ -65,16 +64,13 @@ const series = computed<SparklinePoint[]>(() => {
   return context.overlay.seriesUpTo(acct, event.asset, event.timestamp);
 });
 
-// Declare this row's pair to the overlay so it gets fetched even when it isn't in the
-// view-derived set (e.g. an asset movement linked into another group at render time).
 watchEffect(() => {
   const acct = get(account);
   if (context && get(enabled) && acct && event.asset)
     context.overlay.ensurePair({ asset: event.asset, locationLabel: acct, location: event.location });
 });
 
-// The reason a row shows a dash instead of a balance: either the event has no account, or no
-// balance is known for it. Returns undefined once an actual balance is available.
+/** Why this row shows a dash rather than a balance, or undefined once one is available. */
 const placeholder = computed<string | undefined>(() => {
   if (!get(account))
     return t('accounting_overlay.no_account');
@@ -132,7 +128,7 @@ const placeholder = computed<string | undefined>(() => {
       <span class="text-rui-text-disabled">{{ t('accounting_overlay.no_data') }}</span>
       <RuiTooltip
         :open-delay="300"
-        :popper="{ placement: 'left' }"
+        :options="{ placement: 'left' }"
       >
         <template #activator>
           <RuiIcon

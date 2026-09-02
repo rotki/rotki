@@ -22,7 +22,6 @@ export function useMessageHandling(): UseMessageHandling {
   const { data: notifications } = storeToRefs(useNotificationsStore());
   const { notify } = useNotificationDispatcher();
 
-  // Create registry with all handlers
   const registry = createHandlerRegistry(t, router);
 
   let isRunning = false;

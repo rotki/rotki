@@ -64,12 +64,14 @@ function notifyTabChange(payload: ManualBalance | RawManualBalance): void {
 /**
  * Field-level errors go back to the form so it can mark the offending inputs; a plain string has no
  * field to attach to and is surfaced as a message instead.
+ *
+ * @remarks
+ * The re-validation is what reveals the fields the user has not touched yet, so a rejected save
+ * marks every offending input rather than only the visited ones.
  */
 function reportSaveFailure(message: string | ValidationErrors, formRef: ManualBalanceForm): void {
   if (typeof message !== 'string') {
     set(errorMessages, message);
-    // The form renders the errors as they arrive; this only reveals the fields the user has not
-    // touched yet, so a rejected save marks every offending input rather than the visited ones.
     formRef?.validate();
     return;
   }

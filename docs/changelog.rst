@@ -2,8 +2,18 @@
 Changelog
 =========
 
+* :feature:`6206` A deposit or withdrawal on an exchange whose counterpart is not tracked can now be marked as income or payment.
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
+* :bug:`-` Historical prices of a token that exists on several chains now come from the main asset it is grouped with, so WETH on Arbitrum, Optimism and Base is priced as ETH. They used to be priced on their own and could come back at roughly half of ETH's value.
+* :bug:`-` Changing the asset or chain in the send form while a gas estimate is still being fetched no longer makes the estimate look finished before it is. The spinner stopped as soon as the request you moved away from unwound, so the fee shown while the real request was still in flight read as the final one.
+* :bug:`-` When a history refresh skips an online source you have switched off or not connected, the reason shown in the task centre now names that source the way the rest of rotki does. It read as the raw internal name, so a skipped block production query was explained as "block_productions is not available".
+* :bug:`-` The task centre now scrambles the addresses it shows while privacy mode is on. Rows such as "Querying transactions for 0x..." and account additions printed the real address, so the one setting meant to make rotki safe to screen-share or screenshot did not cover the panel that is open while you work.
+* :bug:`-` Privacy mode no longer renders every balance as zero, or smaller than it really is, depending on the scramble multiplier you set. A multiplier below 1 shrank every number instead of hiding it, and 0 turned them all into zeros, which read as rotki losing your balances rather than concealing them. Randomly generated multipliers could also land below 1, so this could happen without you setting anything.
+* :bug:`-` Cancelling a running sync from the task centre no longer leaves the sync progress panel claiming it completed. The panel says the sync was cancelled, and the grouped rows inside it ("9 chains complete") no longer report a clean completion for chains, locations, decoding or protocol caches that were cancelled or failed, which contradicted the rows they contained.
+* :bug:`-` The Help menu's logs directory entry now opens the directory rotki is actually logging to. If you had set a custom log directory it opened the default one instead, so being told to check the logs sent you to a folder with nothing in it.
+* :bug:`-` Logging in again takes the balance snapshot your net worth graph is built from, when one is due by your balance save frequency. Since 1.44.0 that snapshot was only taken if you left rotki open for ten minutes or synced your history, so opening rotki for a quick look and closing it left a gap in the graph.
+* :bug:`-` The buttons that ignore or unignore the selected assets in the asset manager, in non-fungible balances and in the blockchain accounts selection mode are labelled "Ignore" and "Unignore" again, and their tooltips say what they do. They read "Exclude" and "Include" and claimed to add or remove actions from the profit and loss report, which is not what they do to an asset.
 * :release:`1.44.0 <2026-08-21>`
 * :feature:`12171` rotki now includes a local Model Context Protocol server that lets compatible AI assistants run read only analysis over your history events and balances, look up asset details and cached historical prices, and use rotki's event taxonomy.
 * :feature:`12317` rotki is ready to resolve ENS v2 names.

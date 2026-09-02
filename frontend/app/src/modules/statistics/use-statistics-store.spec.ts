@@ -8,14 +8,17 @@ import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useStatisticsStore } from './use-statistics-store';
 
-// Store reference for accessing currency in mocks
 let generalSettingsStore: ReturnType<typeof useSettingsRepo> | null = null;
+
+/** USD-to-currency rates the mock serves, shared with the assertions so neither can drift. */
+const JPY_RATE = 150;
+const EUR_RATE = 0.9;
 
 function getExchangeRate(currency: string): BigNumber {
   if (currency === 'JPY')
-    return new BigNumber('150');
+    return new BigNumber(JPY_RATE);
   if (currency === 'EUR')
-    return new BigNumber('0.9');
+    return new BigNumber(EUR_RATE);
   return new BigNumber('1');
 }
 
@@ -27,10 +30,8 @@ function createBalanceWithPrice(
   const amountBN = new BigNumber(amount);
   const priceBN = new BigNumber(price);
   const usdValue = amountBN.multipliedBy(priceBN);
-  // Get current currency from settings store
   const currency = generalSettingsStore ? generalSettingsStore.general.mainCurrency.tickerSymbol : 'USD';
   const rate = getExchangeRate(currency);
-  // If asset matches main currency, value = amount; otherwise value = usdValue * rate
   const value = asset === currency ? amountBN : usdValue.multipliedBy(rate);
 
   return {
@@ -68,84 +69,63 @@ describe('useStatisticsStore', () => {
   let generalSettings: ReturnType<typeof useSettingsRepo>;
   let currencies: ReturnType<typeof useCurrencies>;
 
+  /**
+   * Switches the main currency, which the store reads only when it is created.
+   *
+   * @remarks
+   * `defaultGeneralSettings` is reapplied alongside `mainCurrency` because it derives other
+   * currency-dependent defaults, which would otherwise keep the previous currency's values.
+   */
+  function setMainCurrency(symbol: string): void {
+    generalSettings.updateGeneral({
+      ...defaultGeneralSettings(currencies.findCurrency(symbol)),
+      mainCurrency: currencies.findCurrency(symbol),
+    });
+  }
+
   beforeEach(() => {
     setActivePinia(createPinia());
 
-    // Initialize stores
     generalSettings = useSettingsRepo();
     currencies = useCurrencies();
-
-    // Set the store reference for use in mocks
     generalSettingsStore = generalSettings;
 
-    // Reset currency to USD before each test
-    generalSettings.updateGeneral({
-      ...defaultGeneralSettings(currencies.findCurrency('USD')),
-      mainCurrency: currencies.findCurrency('USD'),
-    });
+    setMainCurrency('USD');
   });
 
   describe('calculateTotalValue with main currency handling', () => {
     it('should use amount directly for main currency assets and convert USD values for others', () => {
-      // Set the currency to JPY before creating the store
-      generalSettings.updateGeneral({
-        ...defaultGeneralSettings(currencies.findCurrency('JPY')),
-        mainCurrency: currencies.findCurrency('JPY'),
-      });
+      setMainCurrency('JPY');
 
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // Expected calculation:
-      // JPY asset: 10000 JPY (used directly as it's the main currency)
-      // ETH asset: 4000 USD * 150 = 600000 JPY
-      // BTC asset: 20000 USD * 150 = 3000000 JPY
-      // Total assets: 10000 + 600000 + 3000000 = 3610000 JPY
-      // Liabilities (USD): 1000 USD * 150 = 150000 JPY
-      // Net worth: 3610000 - 150000 = 3460000 JPY
-
-      expect(totalValue.toNumber()).toBe(3460000);
+      const mainCurrencyAssetAtFaceValue = 10000;
+      const assets = mainCurrencyAssetAtFaceValue + (4000 * JPY_RATE) + (20000 * JPY_RATE);
+      const liabilities = 1000 * JPY_RATE;
+      expect(totalValue.toNumber()).toBe(assets - liabilities);
     });
 
     it('should correctly calculate when USD is the main currency', () => {
-      // USD is already the default
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // Expected calculation:
-      // JPY asset: 100 USD (using usdValue)
-      // ETH asset: 4000 USD
-      // BTC asset: 20000 USD
-      // Total assets: 100 + 4000 + 20000 = 24100 USD
-      // Liabilities (USD): 1000 USD (used directly as it's the main currency)
-      // Net worth: 24100 - 1000 = 23100 USD
-
-      expect(totalValue.toNumber()).toBe(23100);
+      expect(totalValue.toNumber()).toBe((100 + 4000 + 20000) - 1000);
     });
 
     it('should correctly handle EUR as main currency', () => {
-      // Set the currency to EUR before creating the store
-      generalSettings.updateGeneral({
-        ...defaultGeneralSettings(currencies.findCurrency('EUR')),
-        mainCurrency: currencies.findCurrency('EUR'),
-      });
+      setMainCurrency('EUR');
 
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // Expected calculation:
-      // JPY asset: 100 USD * 0.9 = 90 EUR
-      // ETH asset: 4000 USD * 0.9 = 3600 EUR
-      // BTC asset: 20000 USD * 0.9 = 18000 EUR
-      // Total assets: 90 + 3600 + 18000 = 21690 EUR
-      // Liabilities (USD): 1000 USD * 0.9 = 900 EUR
-      // Net worth: 21690 - 900 = 20790 EUR
-
-      expect(totalValue.toNumber()).toBe(20790);
+      const noAssetIsInTheMainCurrency = 100 + 4000 + 20000;
+      const assets = noAssetIsInTheMainCurrency * EUR_RATE;
+      const liabilities = 1000 * EUR_RATE;
+      expect(totalValue.toNumber()).toBe(assets - liabilities);
     });
 
     it('should correctly handle when main currency appears in liabilities', async () => {
-      // Update the mock for this specific test
       const module = await import('@/modules/balances/use-aggregated-balances');
       // @ts-expect-error partial mock - only getBalances and getLiabilities are used by the store
       vi.mocked(module.useAggregatedBalances).mockImplementationOnce(() => ({
@@ -158,34 +138,21 @@ describe('useStatisticsStore', () => {
         ],
       }));
 
-      // Set the currency to JPY before creating the store
-      generalSettings.updateGeneral({
-        ...defaultGeneralSettings(currencies.findCurrency('JPY')),
-        mainCurrency: currencies.findCurrency('JPY'),
-      });
+      setMainCurrency('JPY');
 
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
 
-      // Expected calculation:
-      // ETH asset: 4000 USD * 150 = 600000 JPY
-      // Total assets: 600000 JPY
-      // JPY liability: 5000 JPY (used directly as it's the main currency)
-      // USD liability: 1000 USD * 150 = 150000 JPY
-      // Total liabilities: 5000 + 150000 = 155000 JPY
-      // Net worth: 600000 - 155000 = 445000 JPY
-
-      expect(totalValue.toNumber()).toBe(445000);
+      const assets = 4000 * JPY_RATE;
+      const mainCurrencyLiabilityAtFaceValue = 5000;
+      const liabilities = mainCurrencyLiabilityAtFaceValue + (1000 * JPY_RATE);
+      expect(totalValue.toNumber()).toBe(assets - liabilities);
     });
   });
 
   describe('totalNetWorth', () => {
     it('should not double-apply exchange rate', () => {
-      // Set the currency to JPY before creating the store
-      generalSettings.updateGeneral({
-        ...defaultGeneralSettings(currencies.findCurrency('JPY')),
-        mainCurrency: currencies.findCurrency('JPY'),
-      });
+      setMainCurrency('JPY');
 
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);
@@ -198,7 +165,6 @@ describe('useStatisticsStore', () => {
   describe('getNetValue snapshotCount', () => {
     it('should return snapshotCount of 0 when there is no backend data', () => {
       const store = useStatisticsStore();
-      // netValue is empty by default (no backend data)
       const result = store.getNetValue(0);
 
       expect(result.snapshotCount).toBe(0);
@@ -232,8 +198,8 @@ describe('useStatisticsStore', () => {
         times: [now - 300, now - 200, now - 100],
       };
 
-      // Only include snapshots after now - 150 (should exclude first two)
-      const result = store.getNetValue(now - 150);
+      const afterTheFirstTwoSnapshots = now - 150;
+      const result = store.getNetValue(afterTheFirstTwoSnapshots);
 
       expect(result.snapshotCount).toBe(1);
       // 1 real snapshot + 1 appended current balance

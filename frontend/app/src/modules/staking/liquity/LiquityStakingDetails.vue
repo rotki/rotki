@@ -1,31 +1,13 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import {
-  type AssetBalance,
-  type Balance,
-  Blockchain,
-  HistoryEventEntryType,
-  type LiquityPoolDetailEntry,
-  type LiquityPoolDetails,
-  type LiquityStakingDetailEntry,
-  type LiquityStakingDetails,
-  type LiquityStatisticDetails,
-} from '@rotki/common';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { Blockchain, HistoryEventEntryType } from '@rotki/common';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
-import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
-import { zeroBalance } from '@/modules/core/common/data/bignumbers';
-import { balanceSum } from '@/modules/core/common/data/calculation';
-import { uniqueStrings } from '@/modules/core/common/data/data';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import LiquityPools from '@/modules/staking/liquity/LiquityPools.vue';
 import LiquityProxyInformation from '@/modules/staking/liquity/LiquityProxyInformation.vue';
 import LiquityStake from '@/modules/staking/liquity/LiquityStake.vue';
 import LiquityStatistics from '@/modules/staking/liquity/LiquityStatistics.vue';
-import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useLiquityStakingDetails } from '@/modules/staking/liquity/use-liquity-staking-details';
 
 const emit = defineEmits<{
   refresh: [refresh: boolean];
@@ -35,196 +17,24 @@ defineSlots<{
   modules: () => any;
 }>();
 
-const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
-const liquityStore = useLiquityStore();
-const { staking, stakingPools, statistics } = storeToRefs(liquityStore);
-const { useActivity, useIsActive } = useTaskCenter();
-const stakingActivity = useActivity(ActivityKind.LIQUITY, ActivityPart.STAKING);
-const stakingQueryStatus = computed(() => get(stakingActivity)?.steps);
-
-const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
-const liquityHistoricPriceStatus = getProtocolStatsPriceQueryStatus('liquity');
-
-const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKING);
-
 const chains = [Blockchain.ETH];
 
 const { t } = useI18n({ useScope: 'global' });
 
-const accountFilter = useArrayMap(selectedAccounts, account => ({
-  address: getAccountAddress(account),
-  chain: account.chain,
-}));
+const {
+  accountFilter,
+  aggregatedStake,
+  aggregatedStakingPool,
+  aggregatedStatistic,
+  availableAddresses,
+  liquityHistoricPriceStatus,
+  loading,
+  modelSelectedAccounts,
+  proxyInformation,
+  stakingQueryStatus,
+} = useLiquityStakingDetails();
 
-const aggregatedStake = computed<LiquityStakingDetailEntry | null>(() => {
-  const allStakes: LiquityStakingDetails = get(staking);
-  const selectedAddresses = get(selectedAccounts).map(account => getAccountAddress(account));
-
-  const filteredStakes: LiquityStakingDetailEntry[] = [];
-
-  for (const address in allStakes) {
-    const stake = allStakes[address];
-    if (selectedAddresses.length > 0 && !selectedAddresses.includes(address))
-      continue;
-
-    if (stake.balances)
-      filteredStakes.push(stake.balances);
-
-    if (stake.proxies)
-      filteredStakes.push(...Object.values(stake.proxies));
-  }
-
-  let stakes: LiquityStakingDetailEntry | null = null;
-
-  filteredStakes.forEach((stake) => {
-    if (stakes === null) {
-      stakes = { ...stake };
-    }
-    else {
-      let key: keyof LiquityStakingDetailEntry;
-      for (key in stakes) {
-        stakes[key] = {
-          ...stakes[key],
-          ...balanceSum(stakes[key], stake[key]),
-        };
-      }
-    }
-  });
-  return stakes;
-});
-
-const aggregatedStakingPool = computed<LiquityPoolDetailEntry | null>(() => {
-  const allPools: LiquityPoolDetails = get(stakingPools);
-  const selectedAddresses = get(selectedAccounts).map(account => getAccountAddress(account));
-  const filteredPools: LiquityPoolDetailEntry[] = [];
-
-  for (const address in allPools) {
-    const pool = allPools[address];
-    if (selectedAddresses.length > 0 && !selectedAddresses.includes(address))
-      continue;
-
-    if (pool.balances)
-      filteredPools.push(pool.balances);
-
-    if (pool.proxies)
-      filteredPools.push(...Object.values(pool.proxies));
-  }
-
-  let pools: LiquityPoolDetailEntry | null = null;
-  filteredPools.forEach((pool) => {
-    if (pools === null) {
-      pools = { ...pool };
-    }
-    else {
-      let key: keyof LiquityPoolDetailEntry;
-      for (key in pools) {
-        pools[key] = {
-          ...pools[key],
-          ...balanceSum(pools[key], pool[key]),
-        };
-      }
-    }
-  });
-
-  return pools;
-});
-
-const proxyInformation = computed<Record<string, string[]> | null>(() => {
-  const proxies: Record<string, string[]> = {};
-  const allStakes: LiquityStakingDetails = get(staking);
-  const allPools: LiquityPoolDetails = get(stakingPools);
-
-  const selectedAddresses = get(selectedAccounts).map(account => getAccountAddress(account));
-
-  const addToProxies = (mainAddress: string, proxyAddresses: string[]) => {
-    if (!proxies[mainAddress])
-      proxies[mainAddress] = proxyAddresses;
-    else
-      proxies[mainAddress] = [...proxies[mainAddress], ...proxyAddresses].filter(uniqueStrings);
-  };
-
-  selectedAddresses.forEach((address) => {
-    const pool = allPools[address];
-    if (pool && pool.proxies) {
-      const poolProxies = Object.keys(pool.proxies);
-      if (poolProxies.length > 0)
-        addToProxies(address, poolProxies);
-    }
-
-    const stake = allStakes[address];
-    if (stake && stake.proxies) {
-      const stakeProxies = Object.keys(stake.proxies);
-      if (stakeProxies.length > 0)
-        addToProxies(address, stakeProxies);
-    }
-  });
-
-  if (Object.keys(proxies).length === 0)
-    return null;
-
-  return proxies;
-});
-
-const aggregatedStatistic = computed<LiquityStatisticDetails | null>(() => {
-  const allStatistics = get(statistics);
-
-  if (!allStatistics)
-    return null;
-
-  const selectedAddresses = get(selectedAccounts).map(account => getAccountAddress(account));
-
-  if (selectedAddresses.length === 0)
-    return allStatistics.globalStats ?? null;
-
-  if (!allStatistics.byAddress)
-    return null;
-
-  let aggregatedStatistic: LiquityStatisticDetails | null = null;
-  for (const address in allStatistics.byAddress) {
-    if (!selectedAddresses.includes(address))
-      continue;
-
-    const statistic = allStatistics.byAddress[address];
-    if (aggregatedStatistic === null) {
-      aggregatedStatistic = { ...statistic };
-    }
-    else {
-      const { stabilityPoolGains, stakingGains, ...remaining } = statistic;
-
-      let key: keyof typeof remaining;
-
-      for (key in remaining)
-        aggregatedStatistic[key] = aggregatedStatistic[key].plus(remaining[key]);
-
-      const mergeAssetBalances = (items1: AssetBalance[], items2: AssetBalance[]) => {
-        const aggregated = [...items1, ...items2];
-
-        const uniqueAssets = aggregated.map(({ asset }) => asset).filter(uniqueStrings);
-
-        return uniqueAssets.map(asset => ({
-          asset,
-          ...aggregated
-            .filter((item: AssetBalance) => asset === item.asset)
-            .reduce((previous: Balance, current: Balance) => balanceSum(previous, current), zeroBalance()),
-        }));
-      };
-
-      aggregatedStatistic.stakingGains = mergeAssetBalances(aggregatedStatistic.stakingGains, stakingGains);
-      aggregatedStatistic.stabilityPoolGains = mergeAssetBalances(
-        aggregatedStatistic.stabilityPoolGains,
-        stabilityPoolGains,
-      );
-    }
-  }
-
-  return aggregatedStatistic;
-});
-
-const availableAddresses = computed(() =>
-  [...Object.keys(get(staking)), ...Object.keys(get(stakingPools))].filter(uniqueStrings),
-);
-
-function refresh() {
+function refresh(): void {
   emit('refresh', true);
 }
 </script>
@@ -246,6 +56,7 @@ function refresh() {
               color="primary"
               size="lg"
               :loading="loading"
+              data-testid="liquity-refresh"
               @click="refresh()"
             >
               <template #prepend>
@@ -260,7 +71,7 @@ function refresh() {
     </template>
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <BlockchainAccountSelector
-        v-model="selectedAccounts"
+        v-model="modelSelectedAccounts"
         :source="{ chains, usableAddresses: availableAddresses }"
         :field="{ dense: true, label: t('liquity_staking_details.select_account') }"
       />
@@ -277,6 +88,7 @@ function refresh() {
         <div
           v-if="loading && (stakingQueryStatus || liquityHistoricPriceStatus)"
           class="flex items-center gap-3 text-rui-text-secondary text-sm"
+          data-testid="liquity-query-status"
         >
           <RuiProgress
             thickness="2"

@@ -28,11 +28,14 @@ function randomInt(min: number, max: number): number {
 }
 
 /**
+ * Converts one r/g/b channel to its two-digit uppercase hex pair.
  *
- * @param {number} value - Value of r/g/b point, 0-255 scale
- * @return {string} - The value converted to hex
+ * @param value - the channel value on a 0-255 scale; rounded, and padded to two digits
  * @example
+ * ```ts
  * toHex(255); // FF
+ * toHex(0);   // 00
+ * ```
  */
 function toHex(value: number): string {
   return Math.round(value).toString(16).padStart(2, '0').toUpperCase();
@@ -85,14 +88,14 @@ export function randomColor(): string {
   return hslToRgb((1 / 360) * h, s / 100, l / 100);
 }
 
+const HEX = 16;
+
 export function hexToRgbPoints(hex: string): [number, number, number] {
-  // Remove the '#' symbol if present
-  hex = hex.replace('#', '');
+  const digits = hex.replace('#', '');
 
-  // Convert the hex values to decimal
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-
-  return [r, g, b];
+  return [
+    parseInt(digits.substring(0, 2), HEX),
+    parseInt(digits.substring(2, 4), HEX),
+    parseInt(digits.substring(4, 6), HEX),
+  ];
 }

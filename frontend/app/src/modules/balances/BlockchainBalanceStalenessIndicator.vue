@@ -9,7 +9,7 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiTooltip
     v-if="lastRefreshTimestamp"
     class="inline-flex"
-    :popper="{ placement: 'top' }"
+    :options="{ placement: 'top' }"
     :open-delay="400"
   >
     <template #activator>

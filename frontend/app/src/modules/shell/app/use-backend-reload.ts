@@ -49,21 +49,10 @@ export function useBackendReload(): UseBackendReloadReturn {
         severity: Severity.ERROR,
         title: t('backend_reload.failed.title'),
       });
-      // Reconnect, but do not sign the user out. The backend refused the restart rather
-      // than going away, so the session is still good, and leaving the user where they
-      // are keeps the failure in front of them and the operation retryable.
       connect();
       return result;
     }
 
-    // Only a restart that actually happened is itself a logout: core's graceful shutdown
-    // runs `Rotkehlchen.logout()`, so calling the HTTP logout on top of it would reach a
-    // backend with nobody logged in and surface a spurious failure.
-    //
-    // `unavailable` restarted nothing. The backend is still up and still holds the
-    // session, so it needs the real logout - the one this runtime has always done. Sending
-    // `skipBackendCall` there signed the user out of the frontend alone and left the
-    // backend logged in, so the next login came back "user is already logged in".
     if (get(logged))
       await logout(true, { skipBackendCall: result.status === BackendRestartStatus.restarted });
 

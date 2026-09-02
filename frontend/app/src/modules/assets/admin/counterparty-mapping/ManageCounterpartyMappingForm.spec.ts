@@ -1,13 +1,11 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import ManageCounterpartyMappingForm from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import '@test/i18n';
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 /** Every field is a third-party input, so they are stubbed down to what the form reads back. */
 function inputStub(name: string): Record<string, unknown> {
@@ -138,7 +136,6 @@ describe('manageCounterpartyMappingForm', () => {
     expect(messages('counterparty-symbol')).toEqual([
       'asset_management.counterparty_mapping.form.counterparty_symbol_non_empty',
     ]);
-    // The untouched fields stay quiet.
     expect(messages('counterparty')).toEqual([]);
   });
 
@@ -164,8 +161,7 @@ describe('manageCounterpartyMappingForm', () => {
 
   it('should flag stateUpdated once a field is edited', async () => {
     wrapper = createWrapper();
-    // Settle the mounted work first, so what follows is the only edit in play.
-    await vi.advanceTimersByTimeAsync(600);
+    await settleMountedWork();
 
     await edit('counterparty-symbol', 'DAI');
 
@@ -189,8 +185,6 @@ describe('manageCounterpartyMappingForm', () => {
     expect(field('counterparty-asset').props('disabled')).toBeFalsy();
   });
 
-  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
-  // rejected save said nothing at all on a field the user had not been in.
   it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { counterpartySymbol: ['already mapped'] };
     wrapper = createWrapper(baseModel(), { errorMessages });

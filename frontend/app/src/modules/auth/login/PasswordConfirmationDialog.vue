@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { z, type ZodType } from 'zod';
 import { requiredField } from '@/modules/core/form/fields';
-import { useForm } from '@/modules/core/form/use-form';
+import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 interface PasswordConfirmationState {
@@ -34,8 +34,7 @@ const schema = computed<ZodType>(() => z.object({
 const form = useForm<PasswordConfirmationState, PasswordConfirmationState>({
   initial: (): PasswordConfirmationState => ({ password: '' }),
   schema,
-  // The dialog reports the password upwards and nothing else; the caller owns the attempt.
-  submit: async (): Promise<{ success: boolean }> => Promise.resolve({ success: true }),
+  submit: noSubmit,
   transform: (state): PasswordConfirmationState => ({ ...state }),
 });
 
@@ -63,7 +62,6 @@ watchImmediate(display, async (isDisplayed) => {
   if (isDisplayed) {
     form.reset();
     showServerError();
-    // Fetch stored password when dialog opens
     if (username)
       set(storedPassword, await getPassword(username));
   }
@@ -76,7 +74,7 @@ watchImmediate(display, async (isDisplayed) => {
     max-width="500"
     persistent
   >
-    <RuiCard content-class="!pt-0">
+    <RuiCard :class-names="{ content: '!pt-0' }">
       <template #header>
         {{ t('password_confirmation_dialog.title') }}
       </template>

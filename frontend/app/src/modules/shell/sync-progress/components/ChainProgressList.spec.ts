@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { isCompact } from '../test-utils';
 import { AddressStatus, type ChainProgress } from '../types';
 import ChainProgressList from './ChainProgressList.vue';
 
@@ -47,6 +48,24 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       chain,
       completed: 0,
       failed: total,
+      inProgress: 0,
+      pending: 0,
+      progress: 100,
+      total,
+    };
+  }
+
+  /** A chain the user cancelled part way: some addresses done, the rest stopped. */
+  function createCancelledChainProgress(chain: string, completed: number, total: number): ChainProgress {
+    return {
+      addresses: Array.from({ length: total }, (_, i) => ({
+        address: `0x${chain}${i.toString().padStart(38, '0')}`,
+        status: i < completed ? AddressStatus.COMPLETE : AddressStatus.CANCELLED,
+      })),
+      cancelled: total - completed,
+      chain,
+      completed,
+      failed: 0,
       inProgress: 0,
       pending: 0,
       progress: 100,
@@ -110,14 +129,34 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
     });
 
-    it('should treat a chain whose addresses all failed as settled', () => {
-      // Failed is terminal, so this chain is finished, just not cleanly. Counting it as still in
-      // progress stranded it at 0/3 forever while the header reported the sync complete.
+    it('should treat a chain whose addresses all failed as settled, and say the group finished rather than completed', () => {
       const chains = [createFailedChainProgress('gnosis', 3)];
       wrapper = createWrapper(chains);
 
       expect(wrapper.findAll('[data-testid="chain-item"]')).toHaveLength(0);
+      expect(wrapper.text()).toContain('sync_progress.finished_chains');
+    });
+
+    it('should not call a cancelled group complete', () => {
+      const chains = [
+        createChainProgress('eth', 3, 3),
+        createCancelledChainProgress('gnosis', 1, 3),
+      ];
+      wrapper = createWrapper(chains);
+
+      expect(wrapper.text()).toContain('sync_progress.finished_chains');
+      expect(wrapper.text()).not.toContain('sync_progress.completed_chains');
+    });
+
+    it('should still say complete when every chain finished cleanly', () => {
+      const chains = [
+        createChainProgress('eth', 3, 3),
+        createChainProgress('optimism', 3, 3),
+      ];
+      wrapper = createWrapper(chains);
+
       expect(wrapper.text()).toContain('sync_progress.completed_chains');
+      expect(wrapper.text()).not.toContain('sync_progress.finished_chains');
     });
   });
 
@@ -190,10 +229,8 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
       const completedItem = wrapper.findAll('[data-testid="chain-item"]').find(
         item => item.attributes('data-chain') === 'optimism',
       );
-      // In-progress items are not compact
-      expect(inProgressItem?.attributes('data-compact')).toBe('false');
-      // Completed items are rendered in compact mode
-      expect(completedItem?.attributes('data-compact')).toBe('true');
+      expect(isCompact(inProgressItem)).toBe(false);
+      expect(isCompact(completedItem)).toBe(true);
     });
   });
 
@@ -226,27 +263,26 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
   });
 
   describe('cancelled chains', () => {
-    it('should treat cancelled chains as completed', () => {
+    it('should treat cancelled chains as settled', () => {
       const chains = [
         createChainProgress('eth', 1, 3),
         { ...createChainProgress('optimism', 2, 3), cancelled: 1 },
       ];
       wrapper = createWrapper(chains);
 
-      // optimism has 2 completed + 1 cancelled = 3 total, so it's done
-      expect(wrapper.text()).toContain('sync_progress.completed_chains');
+      expect(wrapper.text()).toContain('sync_progress.finished_chains');
     });
 
-    it('should show warning color when completed section has cancelled chains', () => {
+    it('should show the alert icon in warning color when the group has cancelled chains', () => {
       const chains = [
         { ...createChainProgress('optimism', 2, 3), cancelled: 1 },
       ];
       wrapper = createWrapper(chains);
 
       const icons = wrapper.findAll('[data-testid="icon"]');
-      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
-      expect(checkIcon).toBeDefined();
-      expect(checkIcon?.classes()).toContain('text-rui-warning');
+      const alertIcon = icons.find(icon => icon.text() === 'lu-circle-alert');
+      expect(alertIcon).toBeDefined();
+      expect(alertIcon?.classes()).toContain('text-rui-warning');
     });
 
     it('should show success color when completed section has no cancelled chains', () => {

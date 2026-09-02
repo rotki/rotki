@@ -58,9 +58,7 @@ describe('settings/explorers/ExplorerInput.vue', () => {
     expect(saveButton().attributes('disabled')).toBeDefined();
   });
 
-  // 'https://' passes the https rule and fails only the url rule, so it covers the url check rather
-  // than duplicating the test above; an input failing both rules would prove nothing here.
-  it('should reject a url that is only a scheme', async () => {
+  it('should reject a url that is only a scheme, which fails the url rule alone', async () => {
     wrapper = createWrapper();
 
     await wrapper.find('input').setValue('https://');

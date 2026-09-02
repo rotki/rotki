@@ -25,8 +25,10 @@ const schema = deviceNameSchema(currentName, {
   required: t('premium_devices.form.device_name.error.required'),
 });
 
-// The dialog owns the name as a bare string, while the form core works on a state object, so the
-// two are bridged here rather than by a pair of hand-written watchers.
+/**
+ * Bridges the dialog's bare string to the state object the form core works on, which is why this is
+ * a writable computed rather than a pair of hand-written watchers.
+ */
 const model = computed<DeviceNameState>({
   get: (): DeviceNameState => ({ deviceName: get(modelValue) }),
   set: (value: DeviceNameState): void => {

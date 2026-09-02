@@ -138,6 +138,7 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          freethreaded: true
 
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
@@ -164,7 +165,7 @@ jobs:
           pip3 install --upgrade uv=="${UV_VERSION}"
           uv sync --locked --group packaging
           echo "::endgroup::"
-          uv run ./package.py --build full
+          uv run --group packaging ./package.py --build full
 
       - name: Upload to release
         uses: rotki/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
@@ -268,7 +269,7 @@ jobs:
           echo "::group::packaging dependencies"
           uv sync --locked --group packaging
           echo "::endgroup::"
-          uv run ./package.py --build full
+          uv run --group packaging ./package.py --build full
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
@@ -378,6 +379,7 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          freethreaded: true
 
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
@@ -406,7 +408,7 @@ jobs:
           echo ::group::"packaging dependencies"
           uv sync --locked --group packaging
           echo ::endgroup::
-          uv run .\package.py --build full
+          uv run --group packaging .\package.py --build full
         shell: powershell
 
       - name: Upload to release

@@ -28,7 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
         <div class="flex items-center text-rui-text-secondary gap-2 font-light">
           {{ t('kraken_staking_overview.historical') }}
           <RuiTooltip
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             :open-delay="400"
           >
             <template #activator>
@@ -53,7 +53,7 @@ const { t } = useI18n({ useScope: 'global' });
         <div class="flex items-center text-rui-text-secondary gap-2 font-light">
           {{ t('kraken_staking_overview.current') }}
           <RuiTooltip
-            :popper="{ placement: 'top' }"
+            :options="{ placement: 'top' }"
             :open-delay="400"
           >
             <template #activator>

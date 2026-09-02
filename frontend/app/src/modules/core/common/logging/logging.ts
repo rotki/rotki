@@ -60,8 +60,6 @@ function getElectronMessage(logObj: LogObject): { level: LogLevel; message: stri
   return { level, message };
 }
 
-// We only need the indexed db in production.
-// In development the plugin messes the line number from where the logs originated
 const { isPackaged, logToFile } = useInterop();
 
 if (isPackaged) {

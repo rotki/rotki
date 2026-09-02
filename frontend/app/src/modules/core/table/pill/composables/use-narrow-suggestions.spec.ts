@@ -68,6 +68,22 @@ describe('useNarrowSuggestions', () => {
     expect(search).toHaveBeenCalledWith('usdc');
   });
 
+  it('should offer no asset matches once the asset field is spoken for', async () => {
+    const search = vi.fn(async (): Promise<AssetsWithId> => [asset('eip155:1/erc20:0xa0b', 'USDC', 'ethereum')]);
+    const fieldsWithAsset = [protocol, assetField(search)];
+    const query = ref('usdc');
+    const fields = ref(fieldsWithAsset);
+    const { suggestions } = useNarrowSuggestions(query, fields);
+
+    await vi.advanceTimersByTimeAsync(400);
+    expect(get(suggestions)).toHaveLength(1);
+
+    set(fields, [protocol]);
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(get(suggestions)).toEqual([]);
+  });
+
   it('should not search until the query settles', async () => {
     const search = vi.fn(async (): Promise<AssetsWithId> => []);
     const query = ref('u');
@@ -94,7 +110,6 @@ describe('useNarrowSuggestions', () => {
     await vi.advanceTimersByTimeAsync(400);
     set(query, 'fres');
     await vi.advanceTimersByTimeAsync(400);
-    // The first search resolves only now, long after the second already published.
     await vi.advanceTimersByTimeAsync(500);
 
     expect(get(suggestions).map(entry => entry.label)).toEqual(['FRESH']);

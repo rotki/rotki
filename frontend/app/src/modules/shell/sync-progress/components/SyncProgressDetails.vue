@@ -11,9 +11,11 @@ const { t } = useI18n({ useScope: 'global' });
 const { loading: apiKeysLoading, useApiKey } = useExternalApiKeys();
 const etherscanKey = useApiKey('etherscan');
 
-// The free-Etherscan-key tip is only useful to users who have not set one up.
-// Wait for the keys to load first, otherwise it briefly flashes for users who
-// already have a key (getApiKey returns '' until the keys are fetched).
+/**
+ * Whether to offer the free-Etherscan-key tip, which is only useful to someone who has not set one.
+ * Gated on the load as well as the key, since `useApiKey` reads `''` until the keys arrive and the
+ * tip would otherwise flash for everyone who already has one.
+ */
 const showEtherscanHint = computed<boolean>(() => !get(apiKeysLoading) && !get(etherscanKey));
 
 const {

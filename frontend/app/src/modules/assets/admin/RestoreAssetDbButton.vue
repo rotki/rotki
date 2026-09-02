@@ -94,7 +94,7 @@ function showDoneConfirmation() {
 <template>
   <RuiMenu
     v-if="dropdown"
-    :popper="{ placement: 'left-start' }"
+    :options="{ placement: 'left-start' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

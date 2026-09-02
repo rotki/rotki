@@ -3,13 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import GoogleCalendarIntegration from '@/modules/calendar/GoogleCalendarIntegration.vue';
 
-/**
- * The seam: this component is wiring. On mount it reads the status and registers the OAuth handler,
- * on unmount it takes that same handler back off. It shows the connected half or the connect half,
- * offers the manual token form only where there is no callback channel, and routes clicks to the
- * composable, which `use-google-calendar-integration.spec.ts` covers.
- */
-
 const { interop } = vi.hoisted(() => ({ interop: { isPackaged: false, openUrl: vi.fn() } }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({

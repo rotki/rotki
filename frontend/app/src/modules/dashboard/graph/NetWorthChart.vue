@@ -26,8 +26,10 @@ const { isDark } = useRotkiTheme();
 
 const { chartOption } = useNetValueChartConfig(() => chartData, zoomRange);
 
-// datazoom fires on every drag frame; debounce the model write so consumers
-// only recompute once the user settles on a range.
+/**
+ * Publishes the zoom, debounced: `datazoom` fires on every drag frame, so consumers would otherwise
+ * recompute per frame rather than once the user settles on a range.
+ */
 const updateZoomRange = useDebounceFn((range: NetValueZoomRange | undefined) => {
   set(zoomRange, range);
 }, 100);

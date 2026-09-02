@@ -10,8 +10,8 @@ const dialogOpen = ref(false);
 
 <template>
   <RuiMenu
-    menu-class="max-w-[32rem] !z-[1]"
-    :popper="{ placement: 'bottom-end' }"
+    :class-names="{ menu: 'max-w-[32rem] !z-[1]' }"
+    :options="{ placement: 'bottom-end' }"
     :persistent="dialogOpen"
   >
     <template #activator="{ attrs }">

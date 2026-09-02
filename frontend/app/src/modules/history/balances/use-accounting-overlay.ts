@@ -108,18 +108,36 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
   const { fetchHistoricalBalanceSeries } = useHistoricalBalancesApi();
   const { submitTask } = useNativeTask();
 
-  // pairKey -> series state.
+  /** Series state by pair key. */
   const cache = shallowRef<Map<string, PairSeries>>(new Map());
-  // Pairs declared by rendered cells that the view-derived set may not cover (e.g. linked
-  // asset movements). pairKey -> pair; fetched alongside the view's pairs.
+
+  /**
+   * Pairs a rendered cell asked for, which the view-derived set may not cover.
+   *
+   * @remarks
+   * An asset movement linked into another group is only known at render time, so it cannot be
+   * derived from the view. These are fetched alongside the view's own pairs.
+   */
   const requestedPairs = shallowRef<Map<string, OverlayPair>>(new Map());
-  // Monotonic scope id; bumped when the time range or toggle changes so in-flight results
-  // for a previous scope are discarded and the cache is rebuilt.
+
+  /**
+   * Monotonic id of the current scope, bumped whenever the time range or the toggle changes.
+   *
+   * @remarks
+   * Results arriving under a superseded id are discarded rather than written, so a slow response
+   * from the previous range cannot land in the rebuilt cache.
+   */
   const scopeId = shallowRef<number>(0);
-  // Guards the incremental pair watcher from firing before the first refresh has established a
-  // scope. Without it, pairs arriving during the initial (debounced) refresh trigger a fetch
-  // under the old scope, which refresh then supersedes — duplicating every request and leaving
-  // entries whose duplicate got cancelled stuck on 'loading' forever.
+
+  /**
+   * Whether the first refresh has established a scope yet.
+   *
+   * @remarks
+   * The incremental pair watcher must not fire before it has. Pairs arriving during the initial,
+   * debounced refresh would fetch under the *old* scope, which that refresh then supersedes:
+   * every request is duplicated, and an entry whose duplicate is cancelled stays on `loading`
+   * for good.
+   */
   const initialized = shallowRef<boolean>(false);
 
   const state = computed<AccountingOverlayState>(() => {
@@ -163,8 +181,6 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     const parsed = HistoricalBalanceSeriesResponse.parse(response);
     const buckets = mergeSameScopeBuckets(parsed.entries.map<PreparedBucket>(entry => ({
       location: entry.location,
-      // The backend tags plain-wallet series as either null or '' (empty string) — normalise
-      // both to null so they share a scope key (and render consistently as "Wallet").
       protocol: entry.protocol ?? null,
       times: entry.times,
       values: entry.values,
@@ -187,11 +203,6 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     };
 
     try {
-      // Per-request id keyed by the (account, asset) pair *and the date range*: we fan out one
-      // task per pair concurrently, so the ids must differ or `submitTask` would dedup distinct
-      // pairs — and a range change is a different question about the same pair. Without the
-      // timestamps, changing the range while a series was in flight deduped onto the old request,
-      // so the series never re-fetched and the cell sat on LOADING forever.
       const outcome = await submitTask<HistoricalBalanceSeriesResponse>({
         id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.SERIES, pair.locationLabel, pair.asset, from ?? 0, to ?? 0),
         kind: ActivityKind.HISTORICAL_BALANCES,
@@ -318,12 +329,18 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     { debounce: 400, immediate: true },
   );
 
-  // The visible pair set grows as more events load; fetch the newcomers. Gated on the first
-  // refresh so it never races ahead of the initial scope (see `initialized`).
-  watch((): OverlayPair[] => toValue(pairs), () => {
+  /**
+   * Fetches the pairs that appear as more events load into the view.
+   *
+   * @remarks
+   * Gated on {@link initialized} so it never runs ahead of the first refresh's scope.
+   */
+  function fetchPairsAsTheyAppear(): void {
     if (get(initialized))
       fetchMissing();
-  }, { deep: true });
+  }
+
+  watch((): OverlayPair[] => toValue(pairs), fetchPairsAsTheyAppear, { deep: true });
 
   return {
     state,

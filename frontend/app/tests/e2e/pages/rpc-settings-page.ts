@@ -98,7 +98,6 @@ export class RpcSettingsPage {
   }
 
   async confirmRPCmissing(name: string, _endpoint: string): Promise<void> {
-    // Check that no node row contains the name
     const nodeRow = this.page.locator('[data-testid=ethereum-node]').filter({ hasText: name });
     await expect(nodeRow).toHaveCount(0);
   }

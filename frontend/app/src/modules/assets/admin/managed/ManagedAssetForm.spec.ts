@@ -1,4 +1,4 @@
-import type { ComponentPublicInstance } from 'vue';
+import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { EvmTokenKind, type SupportedAsset } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -28,13 +28,9 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 
 const ManagedAssetForm = (await import('@/modules/assets/admin/managed/ManagedAssetForm.vue')).default;
 
-/** Real addresses, since the address rules run format checks on them. */
 const EVM_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 const SOLANA_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const HYPERLIQUID_ADDRESS = '0x0d01dc56dcaaca66ad901c959b4011ec';
-
-/** The stubs below declare their props at runtime, so their instances are typed loosely. */
-type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -98,7 +94,6 @@ describe('managedAssetForm', () => {
     });
   }
 
-  /** Some test ids sit on the field, some on the cell around it. */
   function field(testId: string): VueWrapper<StubInstance> {
     const found = wrapper.findComponent<StubInstance>(`[data-testid=${testId}]`);
     return found.exists() ? found : wrapper.find(`[data-testid=${testId}]`).findComponent<StubInstance>('*');
@@ -179,21 +174,18 @@ describe('managedAssetForm', () => {
     wrapper = createWrapper(evmToken({ [key]: '' }));
     await vi.advanceTimersToNextTimerAsync();
 
-    // These carry a rule that always returns true. It is where server errors land, not a rule.
     expect(await wrapper.vm.validate()).toBe(true);
   });
 
   it('should show no message before anything is edited', async () => {
-    // The address fields only exist once a type is chosen, so the type stays set here.
     wrapper = createWrapper(evmToken({ address: '' }));
     await vi.advanceTimersToNextTimerAsync();
 
+    expect(field('address-input').exists()).toBe(true);
     expect(messages('address-input')).toEqual([]);
     expect(messages('type-select')).toEqual([]);
   });
 
-  // Before the swap this reported two of vuelidate's own untranslated strings: the empty field was
-  // called missing and malformed at once.
   it('should report a missing address once, in this app words', async () => {
     wrapper = createWrapper(evmToken({ address: '' }));
     await vi.advanceTimersToNextTimerAsync();
@@ -214,8 +206,6 @@ describe('managedAssetForm', () => {
     expect(messages('type-select')).toEqual(['asset_form.validation.asset_type_non_empty']);
   });
 
-  // Deliberately flipped in the zod swap. Vuelidate read external results through $errors, so a
-  // rejected save said nothing at all on a field the user had not been in.
   it('should show a server error on an untouched field', async () => {
     const errorMessages: ValidationErrors = { symbol: ['already taken'] };
     wrapper = createWrapper(evmToken(), { errorMessages });
@@ -224,9 +214,6 @@ describe('managedAssetForm', () => {
     expect(messages('symbol-input')).toEqual(['already taken']);
   });
 
-  // The form edits its own state and the dialog saves what it reads off the model, so an edit that
-  // never reaches the model is an edit that never gets persisted. Before the fields bound to
-  // `form.state` this direction was the one thing nothing here covered.
   describe('writing back to the model', () => {
     function lastModel(): SupportedAsset {
       const emitted = wrapper.emitted<[SupportedAsset]>('update:modelValue');
@@ -249,8 +236,6 @@ describe('managedAssetForm', () => {
       wrapper = createWrapper();
       await vi.advanceTimersToNextTimerAsync();
 
-      // The negative control for the test above: opening the form is not an edit, so a passing
-      // assertion there cannot be the model simply echoing what it was seeded with.
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
       expect(wrapper.emitted('update:stateUpdated')).toBeUndefined();
     });
@@ -259,8 +244,6 @@ describe('managedAssetForm', () => {
       wrapper = createWrapper();
       await vi.advanceTimersToNextTimerAsync();
 
-      // The state holds '' rather than clearing the key, and `buildManagedAssetPayload` is what
-      // turns it back into an absent field. Clearing it here must not produce null.
       field('symbol-input').vm.$emit('update:modelValue', '');
       await vi.advanceTimersToNextTimerAsync();
 
@@ -281,8 +264,6 @@ describe('managedAssetForm', () => {
       wrapper = createWrapper();
       await vi.advanceTimersToNextTimerAsync();
 
-      // The chain select belongs to an evm token alone, and the rules that ask for an address read
-      // the same answer, so this is what proves the kind follows the state the fields write into.
       expect(field('chain-select').exists()).toBe(true);
 
       field('type-select').vm.$emit('update:modelValue', CUSTOM_ASSET);
@@ -298,7 +279,6 @@ describe('managedAssetForm', () => {
     wrapper = createWrapper(evmToken(), { errorMessages });
     await vi.advanceTimersToNextTimerAsync();
 
-    // The messages differ per asset type, so what the server said about the last one cannot stand.
     field('type-select').vm.$emit('update:modelValue', SOLANA_TOKEN);
     await vi.advanceTimersToNextTimerAsync();
 

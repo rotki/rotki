@@ -120,8 +120,6 @@ function toBatchEntry(entry: SigilQueueEntry): SigilBatchEntry {
     referrer: '',
   };
 
-  // Identify carries the linkage on the session, so page views are covered without a name, which
-  // event data would need: upstream drops data on a nameless entry.
   if (entry.kind === 'identify') {
     payload.id = entry.clientId;
     payload.data = entry.data;
@@ -134,8 +132,7 @@ function toBatchEntry(entry: SigilQueueEntry): SigilBatchEntry {
   if (entry.data)
     payload.data = entry.data;
 
-  // Every entry carries it, as the upstream tracker does: it is stored per row, and the identify
-  // alone only links the session, which is shared by every account used on that machine that day.
+  // On every entry, not the identify alone: a session is shared by every account used that day.
   payload.id = getCurrentClientId();
 
   return { type: 'event', payload };

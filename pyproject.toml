@@ -22,16 +22,14 @@ dependencies = [
     "web3==7.16.0",
     "eth-typing==5.2.1",
     "content-hash==2.0.0",
-    "sqlcipher3==0.6.2",
+    "rotki-pysqlcipher3==2026.8.3",
     "rotki-sqlite==2026.07.2",
     "requests==2.33.1",
+    "oauthlib==3.3.1",
     "bech32==1.2.0",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",
-    "py-sr25519-bindings==0.2.4",
-    "py-ed25519-zebra-bindings==1.3.0",
-    "py-bip39-bindings==0.3.0",
-    "substrate-interface==1.8.1",
+    "substrate-interface @ git+https://github.com/rotki/py-polkadot-sdk@8368cea674b1234dadee0c9575f19b220a7c8b9c",
     "beautifulsoup4==4.14.2",
     "defusedxml==0.7.1",
     "maxminddb==3.1.1",
@@ -43,6 +41,7 @@ dependencies = [
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
     "eth-abi==5.2.0",
     "eth-utils==5.3.1",
+    "cytoolz==1.1.0",  # 1.0.1's native extension re-enables the GIL under Python 3.14t
     # For the rest api
     "flask-cors==6.0.1",
     "flask==3.1.3",
@@ -70,7 +69,6 @@ dependencies = [
     "idna==3.18",  # enforced due to dependabot reports
     "cbor2==5.9.0",  # enforced due to dependabot reports
     "protobuf==6.33.6",  # enforced due to dependabot reports
-    "xxhash==3.7.2",  # enforced for free-threaded Python support
     "bitarray==3.8.2",  # pinned to check free-threaded Python support
     "pandas==3.0.3",
     "mcp==1.28.1",
@@ -97,6 +95,7 @@ dev = [
     "pytest-socket==0.7.0",
     "pytest-vcr==1.0.2",
     "vcrpy==8.2.1",
+    "pyyaml==6.0.3",  # 6.0.2's native extension re-enables the GIL under Python 3.14t
     "freezegun==1.5.5",
     # To test google spreadsheet uploading
     "google-auth-httplib2==0.2.0",
@@ -547,7 +546,13 @@ ignored-classes = "rsqlite"
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { eth-keyfile = "2026-08-22T00:00:00Z", eth-keys = "2026-08-22T00:00:00Z", eth-rlp = "2026-08-23T00:00:00Z", hexbytes = "2026-08-22T00:00:00Z", xxhash = "2026-07-07T00:00:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+exclude-newer-package = { eth-keyfile = "2026-08-22T00:00:00Z", eth-keys = "2026-08-22T00:00:00Z", eth-rlp = "2026-08-23T00:00:00Z", hexbytes = "2026-08-22T00:00:00Z", xxhash = "2026-08-18T00:00:00Z", rotki-pysqlcipher3 = "2026-08-27T10:11:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+exclude-dependencies = [
+    # Rotki only uses HTTP/WebSocket providers. Windows IPC is the only Web3 path using pywin32.
+    { package = { name = "web3", version = "7.16.0" }, dependencies = ["pywin32"] },
+    # Rotki runs an MCP server. Only MCP's Windows stdio client uses pywin32.
+    { package = { name = "mcp", version = "1.28.1" }, dependencies = ["pywin32"] },
+]
 
 [tool.uv.sources]
 eth-account = { git = "https://github.com/rotki/eth-account.git", rev = "ca1dd054e50667e8955ea89c841bb4bf2af567db" }

@@ -92,8 +92,6 @@ describe('useFilterState', () => {
     ]);
   });
 
-  // The bar is the only place the rule is applied, so every door into the state has to pass through
-  // it. A user edit and a route restore are two different doors.
   describe('admissibility', () => {
     const subtypes: FieldDef = {
       admits: values => ((values.types ?? []).includes('spend') ? ['fee'] : []),
@@ -123,10 +121,7 @@ describe('useFilterState', () => {
       expect(get(matches).subtypes).toStrictEqual(['fee']);
     });
 
-    // The option list is store-backed, so a restored link can land before the mapping does. The
-    // value is kept then, and pruned when the list finally arrives — without this the bar would
-    // have to be touched again before it corrected itself.
-    it('should re-prune when the option list arrives late', async () => {
+    it('should keep an unadmitted value while the store-backed option list is still empty and prune it once the list arrives, without the bar being touched again', async () => {
       const loaded = ref<boolean>(false);
       const late: FieldDef = {
         ...subtypes,

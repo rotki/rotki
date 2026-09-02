@@ -45,9 +45,12 @@ interface AssetBreakdownScope {
 }
 
 /**
- * How an asset row expands into its breakdown. These four travel together across the
- * AssetBalances -> AssetRowDetails -> AssetBalances boundary, so they are one prop rather than four
- * forwarded individually. Lives here rather than in either SFC because those two import each other.
+ * How an asset row expands into its breakdown.
+ *
+ * @remarks
+ * These four travel together from `AssetBalances` through `AssetRowDetails` and back, so they are
+ * one prop rather than four forwarded individually. Declared here rather than in either SFC, because
+ * those two import each other.
  */
 export interface AssetBreakdownOptions {
   scope?: AssetBreakdownScope;

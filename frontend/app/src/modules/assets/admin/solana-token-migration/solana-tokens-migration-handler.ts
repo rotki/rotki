@@ -8,7 +8,6 @@ export function createSolanaTokensHandler(
   t: ReturnType<typeof useI18n>['t'],
   router: ReturnType<typeof useRouter>,
 ): MessageHandler<SolanaTokensMigrationData> {
-  // Capture store at handler creation time (in setup context)
   const store = useSolanaTokenMigrationStore();
 
   return createStateWithNotificationHandler<SolanaTokensMigrationData>(

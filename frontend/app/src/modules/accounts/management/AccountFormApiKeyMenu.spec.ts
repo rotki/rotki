@@ -3,14 +3,6 @@ import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountFormApiKeyMenu from '@/modules/accounts/management/AccountFormApiKeyMenu.vue';
 
-/**
- * The seam: which service's guidance the popover carries, the disclosure semantics on the trigger,
- * and dismissal. Dismissal is the part worth pinning, because a prompt that cannot be put away is
- * permanent chrome and a dismissal that is not persisted comes back on the next login.
- *
- * `RuiMenu` is stubbed to a pass-through. Its open/close behaviour belongs to the library and does
- * not work under happy-dom anyway, since floating-ui needs real layout.
- */
 const RuiMenu = {
   template: '<div><slot name="activator" :attrs="{}" /><slot /></div>',
 };
@@ -53,9 +45,7 @@ describe('accountFormApiKeyMenu', () => {
     expect(content.text()).toContain('external_services.beaconchain.title');
   });
 
-  it('should head the consensus rpc case with its own title', () => {
-    // This one has no service name of its own to borrow, so it carries a dedicated heading rather
-    // than falling through to another service's.
+  it('should head the consensus rpc case with its own title, having no service name of its own to borrow', () => {
     const content = create('consensusRpc').find('[data-testid=api-key-menu-content]');
 
     expect(content.text()).toContain('external_services.api_key_menu.consensus_rpc_title');
@@ -67,9 +57,7 @@ describe('accountFormApiKeyMenu', () => {
     expect(content.text()).toContain('external_services.etherscan.api_key_message');
   });
 
-  it('should announce the trigger as a collapsed disclosure', () => {
-    // RuiMenu supplies neither attribute, so without these a screen reader is told nothing about
-    // there being anything to open.
+  it('should announce the trigger as a collapsed disclosure, which RuiMenu supplies no attribute for', () => {
     const trigger = create('beaconchain').find('[data-testid=api-key-menu-activator]');
 
     expect(trigger.attributes('aria-haspopup')).toBe('dialog');

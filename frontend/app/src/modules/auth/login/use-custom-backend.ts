@@ -39,7 +39,6 @@ interface UseCustomBackendReturn {
 export function useCustomBackend(options: UseCustomBackendOptions): UseCustomBackendReturn {
   const { onChange } = options;
 
-  // `model` prefix marks these as intentionally writable: both are bound with v-model.
   const modelUrl = shallowRef<string>('');
   const modelSessionOnly = shallowRef<boolean>(false);
   const display = shallowRef<boolean>(false);

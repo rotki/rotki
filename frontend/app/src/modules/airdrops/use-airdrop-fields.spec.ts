@@ -16,8 +16,6 @@ describe('useAirdropFields', () => {
   it('should offer only the addresses that have an airdrop', () => {
     const eligible = ref<string[]>(['0xabc']);
     const [account] = useAirdropFields(eligible);
-    // The account resolvers come from every tracked account; only the offered list is narrowed,
-    // and with no tracked accounts in this pinia nothing survives the narrowing.
     expect(account.suggest?.()).toStrictEqual([]);
   });
 

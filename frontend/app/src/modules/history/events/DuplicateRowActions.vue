@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiTooltip
       v-if="mode === 'ignored'"
       :open-delay="400"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
     >
       <template #activator>
         <RuiButton
@@ -57,7 +57,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiTooltip
       v-else
       :open-delay="400"
-      :popper="{ placement: 'top' }"
+      :options="{ placement: 'top' }"
     >
       <template #activator>
         <RuiButton

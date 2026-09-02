@@ -17,8 +17,6 @@ describe('useSnapshotBalanceFields', () => {
     ]);
   });
 
-  // The two hide-defaults are stated as their departures, so an absent pill means what the ticked
-  // checkbox meant.
   it('should state the spam and ignored pills as showing, not hiding', () => {
     const [, , spam, ignored] = get(useSnapshotBalanceFields(counts));
 
@@ -34,8 +32,7 @@ describe('useSnapshotBalanceFields', () => {
     expect(spam.suggest).toBeUndefined();
   });
 
-  // `hide` is the table's default and so is not offered: an absent pill is how it is stated.
-  it('should offer only the two zero-value departures', () => {
+  it('should offer only the two zero-value departures, the default being absence', () => {
     const [, , , , zeroValue] = get(useSnapshotBalanceFields(counts));
 
     expect(zeroValue.suggest?.()).toStrictEqual([ZeroValueFilter.ALL, ZeroValueFilter.ONLY]);
@@ -49,9 +46,7 @@ describe('useSnapshotBalanceFields', () => {
     expect(zeroValue.resolveLabel?.(ZeroValueFilter.ONLY)).toContain('zero_value.only');
   });
 
-  // The counts rode the checkbox labels before; choosing to show ignored rows is a different
-  // decision when there are none.
-  it('should rebuild the labels when the counts change', () => {
+  it('should rebuild the labels when the counts change, a choice reading differently at zero', () => {
     const model = ref({ ignored: 0, spam: 0, zeroValue: 0 });
     const fields = useSnapshotBalanceFields(model);
     const labelOf = (): string => resolveText(get(fields)[2].label);

@@ -35,8 +35,10 @@ const emit = defineEmits<{
 const error = ref<boolean>(false);
 const success = ref<boolean>(false);
 
-// Both class names must stay literal and stay in this file: tailwind's `content` globs cover
-// `.vue` only, so moving them into a `.ts` helper would purge them with every gate still green.
+/**
+ * Both class names must stay written out, and stay in this file: tailwind's `content` globs cover
+ * `.vue` only, so moving them into a `.ts` helper would purge them with every gate still green.
+ */
 const fitClass = computed<string | undefined>(() => {
   if (fit === undefined)
     return undefined;

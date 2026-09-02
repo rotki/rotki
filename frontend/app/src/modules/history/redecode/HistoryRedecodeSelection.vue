@@ -24,19 +24,12 @@ const search = ref<string>('');
 const selection = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
-// Every chain that can be redecoded, not just the EVM ones. The consumer decides whether a request
-// is the full run by comparing the selection against `decodableTxChainsInfo`, so offering a
-// narrower list here meant selecting everything still read as a partial run: it never took the
-// canonical `redecode:all` id and so never deduped against the Redecode All button.
 const { decodableTxChainsInfo } = useSupportedChains();
 
 const filteredChains = computed<ChainInfo[]>(() => {
   const query = getTextToken(get(search));
   return get(decodableTxChainsInfo).filter(chain =>
     getTextToken(chain.name).includes(query)
-    // Only EVM chains carry an `evmChainName` to match on; the rest match by name alone.
-    // Narrowed with `in` rather than on `type`, because the fallback chain variant types `type` as
-    // a plain string and so is not excluded by comparing it to 'evm'.
     || ('evmChainName' in chain && getTextToken(chain.evmChainName).includes(query)),
   );
 });
@@ -85,7 +78,7 @@ function redecode() {
   <RuiMenu
     v-model="open"
     class="!border-0"
-    :popper="{ placement: 'bottom', offsetSkid: 35 }"
+    :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
       <RuiButton

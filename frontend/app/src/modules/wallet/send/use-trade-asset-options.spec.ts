@@ -194,8 +194,6 @@ describe('useTradeAssetOptions', () => {
   });
 
   it('should not flag unresolved assets as sharing a symbol', () => {
-    // Everything is unresolved on first open, so every symbol is ''. Counting those together would
-    // mark the whole list ambiguous and print an address beside a blank symbol on every row.
     getAssetField.mockReturnValue('');
     const assets = [
       asset('eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 'eth'),
@@ -213,15 +211,11 @@ describe('useTradeAssetOptions', () => {
 
     const { options } = useTradeAssetOptions(assets, 'eth', '', ['eth'], resolveNames);
     expect(get(options)).toHaveLength(2);
-    // getAssetField resolves through a cache that queues a backend fetch for anything it lacks, so
-    // touching it before the dialog opens costs a mapping request for the whole holding.
     expect(getAssetField).not.toHaveBeenCalled();
     expect(get(options).every(option => option.symbol === '')).toBe(true);
 
     set(resolveNames, true);
 
-    // Read first: the computed is lazy, so asserting before touching it would only prove that
-    // nothing had re-evaluated yet.
     expect(get(options)[0].symbol).toBe('ETH');
     expect(getAssetField).toHaveBeenCalled();
   });

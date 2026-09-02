@@ -2,8 +2,13 @@
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
-// Resolves a single protocol's icon/image. Kept as its own component so the breakdown can
-// render one per bucket row (useProtocolData must run at a component's setup, not in a loop).
+/**
+ * One protocol's icon.
+ *
+ * @remarks
+ * Its own component so the breakdown can render one per bucket row: `useProtocolData` has to run in
+ * a component's setup and so cannot be called in a loop.
+ */
 const { protocol } = defineProps<{ protocol: string }>();
 
 const { protocolData } = useProtocolData(() => protocol);

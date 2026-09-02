@@ -292,26 +292,31 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(notesTextArea.element.value).toBe(event.userNotes);
   });
 
-  it('should not call editHistoryEvent when only updating the historic price', async () => {
+  it('should not call editHistoryEvent when nothing changed', async () => {
     wrapper = createWrapper({
       props: { data: { eventsInGroup: [event], type: 'edit-group' } },
     });
     await vi.advanceTimersToNextTimerAsync();
-    const saveMethod = wrapper.vm.save;
 
-    // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoricalPriceMock.mockResolvedValueOnce(true);
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
 
-    // click save after changing the historic price
+  it('should not call editHistoryEvent when the historic price is the only edit', async () => {
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: [event], type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
     await wrapper.find('[data-testid=primary] input').setValue('1000');
 
-    await saveMethod();
+    await wrapper.vm.save();
     await nextTick();
     expect(editHistoryEventMock).not.toHaveBeenCalled();
   });
@@ -322,8 +327,6 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    // The event itself is edited too, so the save is only held back by the failed price write and
-    // not by the unchanged-in-edit-mode short circuit.
     await wrapper.find('[data-testid=primary] input').setValue('1000');
     await wrapper.find('[data-testid=amount] input').setValue('250');
 
@@ -454,7 +457,6 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.find('[data-testid=location] input').setValue('kraken');
     await wrapper.find('[data-testid=asset] input').setValue('BTC');
     await wrapper.find('[data-testid=amount] input').setValue('2.5');
-    // Note: uniqueId field is left empty
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -469,9 +471,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     );
   });
 
-  it('should keep a blank unique id when editing rather than assigning one', async () => {
-    // A movement whose extra data carries no reference must not be handed a fresh identifier on
-    // every save; only a new movement gets one generated.
+  it('should keep a blank unique id when editing rather than assigning one on every save', async () => {
     const withoutReference: AssetMovementEvent = { ...event, extraData: null };
     wrapper = createWrapper({
       props: { data: { eventsInGroup: [withoutReference], type: 'edit-group' } },

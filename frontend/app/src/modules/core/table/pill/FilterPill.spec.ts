@@ -19,7 +19,7 @@ function createWrapper(filter: ActiveFilter, disabled = false): VueWrapper {
 }
 
 /**
- * A pill for a field that renders an icon per value — the only kind that collapses to "+N".
+ * A pill for a field that renders an icon per value, the only kind that collapses to "+N".
  * `PillValueIcon` reads the scramble setting to render an address, so it needs a pinia even for
  * a counterparty.
  */
@@ -48,10 +48,7 @@ describe('filterPill', () => {
     expect(wrapper.text()).toContain('table_filter.operators.is_not');
   });
 
-  // Values past the cap collapse to a "+N" count, so a pill holding many values stays a fixed,
-  // scannable width. Only a field that renders value icons collapses; a plain enum shows the
-  // summary text instead.
-  it('should collapse values past the icon cap', () => {
+  it('should collapse values past the icon cap into a "+N" count so the pill keeps a fixed width', () => {
     const wrapper = createIconWrapper(['aave', 'uniswap', 'curve']);
     expect(wrapper.get('[data-testid=filter-pill-value]').text()).toContain('+1');
   });
@@ -61,9 +58,7 @@ describe('filterPill', () => {
     expect(wrapper.get('[data-testid=filter-pill-value]').text()).not.toContain('+');
   });
 
-  // A field with no display kind still renders value icons when it resolves one per value (the
-  // event state markers, which are read by their glyph as much as their label).
-  it('should render icons for a field that resolves them per value', () => {
+  it('should render icons for a field that has no display kind but resolves one icon per value', () => {
     const iconField: FieldDef = {
       ...field,
       resolveIcon: () => ({ color: 'info', icon: 'lu-link' }),
@@ -75,10 +70,7 @@ describe('filterPill', () => {
     expect(wrapper.get('[data-testid=filter-pill-value]').text()).toContain('+1');
   });
 
-  // A field whose values are not all of one kind resolves the kind per value: the data-issues
-  // account is an address on a chain and an exchange account name elsewhere, and the exchange's
-  // icon comes from its location rather than from the value being filtered on.
-  it('should draw a value in its own display kind when the field resolves one', () => {
+  it('should draw a value in the display kind the field resolves for it, so an exchange account gets its location icon and not an address avatar', () => {
     const accountField: FieldDef = {
       ...field,
       resolveDisplay: (value: string) => (value.startsWith('0x')
@@ -94,8 +86,6 @@ describe('filterPill', () => {
     expect(wrapper.findComponent({ name: 'EnsAvatar' }).exists()).toBe(false);
   });
 
-  // The pill could not be reached by keyboard at all: its root is a div with a click handler, so
-  // Tab skipped it and an existing filter could not be reopened without a mouse.
   it('should expose the editable region as a button so it can be tabbed to', () => {
     const wrapper = createWrapper({ fieldKey: 'protocols', op: 'is', values: ['aave'] });
     const open = wrapper.get('[data-testid=filter-pill-open]');
@@ -103,9 +93,7 @@ describe('filterPill', () => {
     expect(open.attributes('disabled')).toBeUndefined();
   });
 
-  // Activating it bubbles to the root, which carries the menu activator, so Enter and Space open
-  // the editor exactly as a click does.
-  it('should open the editor when the button is activated', async () => {
+  it('should open the editor when the button is activated, since activation bubbles to the root that carries the menu activator', async () => {
     const wrapper = createWrapper({ fieldKey: 'protocols', op: 'is', values: ['aave'] });
     await wrapper.get('[data-testid=filter-pill-open]').trigger('click');
     expect(wrapper.emitted('edit')).toHaveLength(1);
@@ -116,8 +104,7 @@ describe('filterPill', () => {
     expect(wrapper.get('[data-testid=filter-pill-open]').attributes('disabled')).toBeDefined();
   });
 
-  // The remove control is an icon with no text, so it has no accessible name of its own.
-  it('should give the remove control an accessible name', () => {
+  it('should give the remove control an accessible name, it being an icon with no text', () => {
     const wrapper = mount(FilterPill, {
       props: { field, filter: { fieldKey: 'protocols', op: 'is', values: ['aave'] }, removeLabel: 'Remove filter' },
     });

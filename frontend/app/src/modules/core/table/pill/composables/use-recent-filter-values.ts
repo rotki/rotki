@@ -16,7 +16,7 @@ const MAX_VALUE_LENGTH = 120;
 interface RecentFilterValuesReturn {
   /** Most recent first, for a free-text field. Other fields have their own option list. */
   recentFor: (field: FieldDef) => string[];
-  /** Records values a user committed, newest first, capped per field. */
+  /** Records values a user committed, newest first and each value once, capped per field. */
   remember: (field: FieldDef, values: string[]) => void;
 }
 
@@ -36,8 +36,6 @@ export function useRecentFilterValues(): RecentFilterValuesReturn {
   function recentFor(field: FieldDef): string[] {
     if (!field.freeText)
       return [];
-    // Ranked by recency: with at most ten values per field, what was used last is nearly always
-    // what is wanted next. `count` is recorded so this can become frequency-aware later.
     return (get(recentValues)[field.key] ?? []).map(entry => entry.value);
   }
 
@@ -52,8 +50,6 @@ export function useRecentFilterValues(): RecentFilterValuesReturn {
     const current = get(recentValues)[field.key] ?? [];
     const countOf = (value: string): number => (current.find(entry => entry.value === value)?.count ?? 0) + 1;
 
-    // Newest first, each value once, so re-using a value moves it up instead of duplicating it,
-    // carrying its use count along.
     const next = [
       ...worthKeeping.slice().reverse().map(value => ({ count: countOf(value), value })),
       ...current.filter(entry => !worthKeeping.includes(entry.value)),

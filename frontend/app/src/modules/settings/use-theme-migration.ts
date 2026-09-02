@@ -32,7 +32,6 @@ export function useThemeMigration(): UseThemeMigrationReturn {
       if (!isKeyOfThemeColors(key))
         return;
 
-      // If saved theme isn't the same with the default theme at that version, do not replace with new default.
       if (historicDefaultTheme.lightColors[key] !== savedLightTheme[key])
         newLightTheme[key] = savedLightTheme[key];
 

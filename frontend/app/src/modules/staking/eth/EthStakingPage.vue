@@ -16,7 +16,6 @@ import { useEthValidatorManagement } from './use-eth-validator-management';
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Access control
 const { allowed, enabled, module } = useEthStakingAccess();
 
 // API key check (only when module is allowed and enabled)
@@ -51,7 +50,6 @@ const blockingApiKeyService = computed<'consensusRpc' | undefined>(() =>
   get(missingApiKeyService) === 'consensusRpc' ? 'consensusRpc' : undefined,
 );
 
-// Validator management
 const {
   fetchValidatorsWithFilter,
   modelFilter,
@@ -60,7 +58,6 @@ const {
   total,
 } = useEthValidatorManagement();
 
-// Performance management
 const {
   getPerformance,
   performance,
@@ -69,7 +66,6 @@ const {
   refreshPerformance,
 } = useEthStakingPerformance();
 
-// Refresh and loading states
 const { refresh, refreshing } = useEthStakingRefresh({
   getPerformance,
   refreshPerformance,
