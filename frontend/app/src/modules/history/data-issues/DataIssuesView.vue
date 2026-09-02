@@ -14,6 +14,7 @@ import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/c
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -32,6 +33,7 @@ const router = useRouter();
 
 const { fetchData } = useDataIssues();
 const { baselineTotal, counts, dismissInlinePanels, refreshSummary } = useDataIssuesSummary();
+const { historicalBalanceProcessingCompleted } = storeToRefs(useDataIssuesInboxStore());
 const { syncCompleted } = useSyncCompleted();
 
 const fields = useDataIssueFields();
@@ -169,6 +171,10 @@ watch(hasRemediatingRows, (remediating) => {
 
 // A finished sync is what detects new issues, so reload rather than wait for the 10s poll.
 watch(syncCompleted, () => {
+  startPromise(reloadAll());
+});
+
+watch(historicalBalanceProcessingCompleted, () => {
   startPromise(reloadAll());
 });
 

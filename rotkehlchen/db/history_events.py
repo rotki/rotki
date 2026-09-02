@@ -240,6 +240,17 @@ class DBHistoryEvents:
             ),
         )
 
+    def mark_asset_events_modified(self, write_cursor: DBCursor, asset: str) -> None:
+        """Mark historical balances stale from the first event holding the given asset."""
+        if (first_event := write_cursor.execute(
+            'SELECT MIN(timestamp) FROM history_events WHERE asset=?',
+            (asset,),
+        ).fetchone()) is not None and first_event[0] is not None:
+            self._mark_events_modified(
+                write_cursor=write_cursor,
+                timestamp=TimestampMS(first_event[0]),
+            )
+
     def mark_all_events_modified(self, write_cursor: DBCursor) -> None:
         """Mark historical balances stale from the first event, if any."""
         if (first_event := write_cursor.execute(

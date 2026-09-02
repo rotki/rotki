@@ -8,6 +8,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_random_bytes
@@ -89,7 +90,10 @@ def test_solana_tokens_migration_notification(uninitialized_rotkehlchen):
         cursor.execute("INSERT INTO user_added_solana_tokens VALUES ('token1'), ('token2')")
 
     # Mock greenlet spawning to avoid background tasks
-    with mock.patch.object(rotki.task_supervisor, 'spawn_and_track'):
+    with (
+        mock.patch.object(rotki.task_supervisor, 'spawn_and_track'),
+        mock.patch.object(DataIssuesManager, 'reset_orphaned_remediations') as reset_mock,
+    ):
         # Unlock user
         rotki.unlock_user(
             user='testuser',
@@ -99,6 +103,8 @@ def test_solana_tokens_migration_notification(uninitialized_rotkehlchen):
             premium_credentials=None,
             resume_from_backup=False,
         )
+
+    reset_mock.assert_called_once_with()
 
     # Check notification
     messages = rotki.msg_aggregator.rotki_notifier.messages

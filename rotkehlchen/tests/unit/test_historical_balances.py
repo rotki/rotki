@@ -33,7 +33,11 @@ from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.tasks.historical_balances import (
     Bucket,
     _get_rebasing_reconciliation_points,
@@ -116,6 +120,82 @@ def _add_test_evm_transactions(
         ) for idx, (tx_hash, timestamp, block_number) in enumerate(transactions)],
         relevant_address=TEST_ADDR1,
     )
+
+
+def test_rebasing_reconciliation_queries_more_than_sqlite_expression_limit(
+        database: DBHandler,
+) -> None:
+    """Transaction lookup uses chunked IN queries, not an expression-depth-limited OR chain."""
+    transaction_count = 1001
+    tx_hashes = [make_evm_tx_hash() for _ in range(transaction_count)]
+    with database.user_write() as write_cursor:
+        _add_test_evm_transactions(
+            database=database,
+            write_cursor=write_cursor,
+            transactions=[
+                (tx_hash, Timestamp(idx + 1), idx + 1)
+                for idx, tx_hash in enumerate(tx_hashes)
+            ],
+        )
+
+    events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS((idx + 1) * 1000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_DAI,
+        amount=ONE,
+        location_label=TEST_ADDR1,
+        identifier=idx + 1,
+    ) for idx, tx_hash in enumerate(tx_hashes)]
+
+    points = _get_rebasing_reconciliation_points(
+        database=database,
+        events=events,
+        rebasing_assets=frozenset({A_DAI.identifier}),
+        treat_eth2_as_eth=False,
+    )
+
+    assert len(points) == transaction_count
+
+
+def test_rebasing_reconciliation_uses_highest_block_for_same_timestamp(
+        database: DBHandler,
+) -> None:
+    """Sub-second chains can sort a higher block before a lower block at one timestamp."""
+    higher_block_tx, lower_block_tx = make_evm_tx_hash(), make_evm_tx_hash()
+    with database.user_write() as write_cursor:
+        _add_test_evm_transactions(
+            database=database,
+            write_cursor=write_cursor,
+            transactions=[
+                (higher_block_tx, Timestamp(1), 101),
+                (lower_block_tx, Timestamp(1), 100),
+            ],
+        )
+
+    events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=sequence_index,
+        timestamp=TimestampMS(1000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_DAI,
+        amount=ONE,
+        location_label=TEST_ADDR1,
+        identifier=sequence_index + 1,
+    ) for sequence_index, tx_hash in enumerate((higher_block_tx, lower_block_tx))]
+    bucket = Bucket.from_event(events[-1])[0][0]
+
+    assert _get_rebasing_reconciliation_points(
+        database=database,
+        events=events,
+        rebasing_assets=frozenset({A_DAI.identifier}),
+        treat_eth2_as_eth=False,
+    ) == {(2, bucket): 101}
 
 
 def _get_stale_cache_values(database: DBHandler) -> tuple[int | None, int | None]:
@@ -1723,6 +1803,7 @@ def test_rebasing_token_deficit_uses_archive_balance_and_resolves_issue(
                 'WHERE event_identifier = ?',
                 (final_id,),
             ).fetchall() == [
+                (EventMetricKey.REBASE_YIELD.serialize(), '2', 2001),
                 (EventMetricKey.BALANCE.serialize(), '3', 2001),
             ]
         assert DataIssuesManager(database).list_issues()[0].state == 'resolved'
@@ -1958,9 +2039,118 @@ def test_negative_rebasing_token_without_archive_node_writes_specific_issue(
         assert issue.auto_remediation_attempts[1]['success'] is True
         with database.conn.read_ctx() as cursor:
             assert cursor.execute(
-                'SELECT metric_value FROM event_metrics WHERE event_identifier=?',
-                (spend_id,),
+                'SELECT metric_value FROM event_metrics '
+                'WHERE event_identifier=? AND metric_key=?',
+                (spend_id, EventMetricKey.BALANCE.serialize()),
             ).fetchone()[0] == '0'
+    finally:
+        GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
+
+
+def test_rebasing_reconciliation_resumes_after_transient_query_failure(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """A later timestamp can restore metrics after an earlier archive query fails."""
+    tx_hashes = [make_evm_tx_hash() for _ in range(3)]
+    with database.user_write() as write_cursor:
+        _add_test_evm_transactions(
+            database=database,
+            write_cursor=write_cursor,
+            transactions=[
+                (tx_hash, Timestamp(idx), idx * 100)
+                for idx, tx_hash in enumerate(tx_hashes, start=1)
+            ],
+        )
+        events_db = DBHistoryEvents(database)
+        event_ids = [events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(idx * 1000),
+                location=Location.ETHEREUM,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal(amount),
+                location_label=TEST_ADDR1,
+            ),
+        ) for idx, (tx_hash, event_type, amount) in enumerate(zip(
+                tx_hashes,
+                (HistoryEventType.RECEIVE, HistoryEventType.SPEND, HistoryEventType.RECEIVE),
+                ('10', '11', '2'),
+                strict=True,
+            ), start=1)]
+
+    GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=True)
+    try:
+        node_inquirer = MagicMock()
+        node_inquirer.get_historical_token_balance.side_effect = [None, FVal('2')]
+        node_inquirer.has_archive_node.return_value = True
+        chains_aggregator = MagicMock()
+        chains_aggregator.get_evm_manager.return_value.node_inquirer = node_inquirer
+
+        process_historical_balances(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            chains_aggregator=chains_aggregator,
+        )
+
+        issue = DataIssuesManager(database).list_issues()[0]
+        assert issue.state == IssueState.RESOLVED
+        assert issue.payload['event_identifier'] == event_ids[1]
+        assert node_inquirer.get_historical_token_balance.call_count == 2
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT metric_key, metric_value FROM event_metrics '
+                'WHERE event_identifier=? ORDER BY rowid',
+                (event_ids[2],),
+            ).fetchall() == [
+                (EventMetricKey.REBASE_YIELD.serialize(), '1'),
+                (EventMetricKey.BALANCE.serialize(), '2'),
+            ]
+    finally:
+        GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
+
+
+@pytest.mark.parametrize(('event_asset', 'bucket_asset'), [(A_ETH, A_DAI), (A_DAI, A_ETH)])
+def test_rebasing_asset_identity_mismatch_uses_negative_balance_path(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        event_asset: Asset,
+        bucket_asset: Asset,
+) -> None:
+    """Swapped asset identity mismatches must never leave a bucket pending without a checkpoint."""
+    event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(1000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=event_asset,
+        amount=ONE,
+        location_label=TEST_ADDR1,
+    )
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(write_cursor=write_cursor, event=event)
+
+    bucket = Bucket(
+        location=Location.ETHEREUM.serialize_for_db(),
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=bucket_asset.identifier,
+    )
+    GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=True)
+    try:
+        with patch.object(Bucket, 'from_event', return_value=[(bucket, EventDirection.OUT)]):
+            process_historical_balances(database, messages_aggregator)
+
+        issues = DataIssuesManager(database).list_issues()
+        assert len(issues) == 1
+        assert issues[0].kind == IssueKind.NEGATIVE_BALANCE
+        assert issues[0].asset == bucket_asset.identifier
     finally:
         GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
 

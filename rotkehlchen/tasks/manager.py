@@ -639,7 +639,10 @@ class TaskManager:
         return True
 
     def _maybe_process_historical_balances(self) -> list[Task] | None:
-        if self.history_processing_coordinator.is_history_fetching():
+        if (
+            self.history_processing_coordinator.is_history_fetching() or
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+        ):
             return None
 
         with self.database.conn.read_ctx() as cursor:

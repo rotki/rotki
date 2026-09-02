@@ -1,5 +1,7 @@
 import logging
 import time
+from collections import defaultdict
+from contextlib import suppress
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
@@ -11,15 +13,13 @@ from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.constants import (
-    HISTORY_MAPPING_KEY_STATE,
-    SQL_VARIABLE_CHUNK_SIZE,
-    HistoryMappingState,
-)
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents, get_bitcoin_counterparty_addresses
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.misc import NotFoundError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -29,6 +29,7 @@ from rotkehlchen.history.data_issues.manager import (
     make_auto_remediation_attempt,
 )
 from rotkehlchen.history.data_issues.types import (
+    RebasingQueryFailure,
     RebasingTokenIssuePayload,
     UnmatchedBridgeIssuePayload,
 )
@@ -57,6 +58,8 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -280,12 +283,6 @@ type ModifiedBuckets = dict[Bucket, ModifiedBucketData]
 type EventIssueScope = tuple[str, str | None, str | None, str, int]
 type RebasingReconciliationPoints = dict[tuple[int, Bucket], int | None]
 type PendingRebasingEvents = dict[Bucket, HistoryBaseEntry]
-type RebasingQueryFailure = Literal[
-    'archive_node_unavailable',
-    'historical_balance_query_failed',
-    'missing_transaction',
-    'unsupported_bucket',
-]
 
 
 def _load_bucket_balances_before_ts(
@@ -323,11 +320,17 @@ def _load_bucket_balances_before_ts(
 
 def _get_rebasing_reconciliation_points(
         database: DBHandler,
-        events: list[HistoryBaseEntry],
+        events: Sequence[HistoryBaseEntry],
         rebasing_assets: frozenset[str],
         treat_eth2_as_eth: bool,
 ) -> RebasingReconciliationPoints:
-    """Return the final rebasing event per block and bucket with its transaction block."""
+    """Return the final rebasing event per timestamp and bucket with its highest block.
+
+    Events are processed by timestamp and sequence index, while chains with sub-second blocks can
+    have multiple blocks at the same timestamp whose log indexes do not preserve block order.
+    Reconciling once at the timestamp's final event against its highest block ensures the queried
+    end-of-block balance covers every event applied for that timestamp and no later event.
+    """
     if len(rebasing_assets) == 0:
         return {}
 
@@ -356,22 +359,23 @@ def _get_rebasing_reconciliation_points(
         ))
 
     transaction_blocks: dict[tuple[bytes, int], int] = {}
-    keys = list(transaction_keys)
-    chunk_size = SQL_VARIABLE_CHUNK_SIZE // 2
-    with database.conn.read_ctx() as cursor:
-        for start in range(0, len(keys), chunk_size):
-            chunk = keys[start:start + chunk_size]
-            conditions = ' OR '.join('(tx_hash=? AND chain_id=?)' for _ in chunk)
-            bindings = [value for key in chunk for value in key]
-            transaction_blocks.update({
-                (bytes(tx_hash), chain_id): block_number
-                for tx_hash, chain_id, block_number in cursor.execute(
-                    f'SELECT tx_hash, chain_id, block_number FROM evm_transactions WHERE {conditions}',  # noqa: E501
-                    bindings,
-                )
-            })
+    hashes_by_chain: defaultdict[int, list[bytes]] = defaultdict(list)
+    for tx_hash, chain_id in transaction_keys:
+        hashes_by_chain[chain_id].append(tx_hash)
 
-    last_points: dict[tuple[int, int, Bucket], int] = {}
+    with database.conn.read_ctx() as cursor:
+        for chain_id, tx_hashes in hashes_by_chain.items():
+            for chunk, placeholders in get_query_chunks(data=tx_hashes):
+                transaction_blocks.update({
+                    (bytes(tx_hash), chain_id): block_number
+                    for tx_hash, block_number in cursor.execute(
+                        'SELECT tx_hash, block_number FROM evm_transactions '
+                        f'WHERE chain_id=? AND tx_hash IN ({placeholders})',
+                        [chain_id, *chunk],
+                    )
+                })
+
+    last_points: dict[tuple[int, TimestampMS, Bucket], tuple[int, int]] = {}
     missing_points: dict[tuple[bytes, int, Bucket], int] = {}
     for event, buckets in event_buckets:
         assert event.identifier is not None
@@ -383,12 +387,17 @@ def _get_rebasing_reconciliation_points(
             continue
 
         for bucket in buckets:
-            last_points[chain_id, block_number, bucket] = event.identifier
+            point_key = (chain_id, event.timestamp, bucket)
+            previous = last_points.get(point_key)
+            last_points[point_key] = (
+                event.identifier,
+                block_number if previous is None else max(block_number, previous[1]),
+            )
 
     return {
         **{(event_identifier, bucket): block_number for (
-            _chain_id, block_number, bucket,
-        ), event_identifier in last_points.items()},
+            _chain_id, _timestamp, bucket,
+        ), (event_identifier, block_number) in last_points.items()},
         **{(event_identifier, bucket): None for (
             _tx_hash, _chain_id, bucket,
         ), event_identifier in missing_points.items()},
@@ -445,7 +454,7 @@ def _write_rebasing_issue(
     """Persist why a rebasing balance could not be verified."""
     assert event.identifier is not None, 'Processed history events should have identifiers'
     issues_manager = DataIssuesManager(database)
-    issue_id = issues_manager.write_issue(
+    issue_id, issue_state = issues_manager.write_issue_with_state(
         kind=IssueKind.REBASING_TOKEN,
         location=bucket.location,
         location_label=bucket.location_label,
@@ -459,7 +468,7 @@ def _write_rebasing_issue(
         ts_start=event.timestamp,
         ts_end=event.timestamp,
     )
-    if issues_manager.get_issue(issue_id).state == IssueState.AUTO_REMEDIATING:
+    if issue_state == IssueState.AUTO_REMEDIATING:
         issues_manager.update_state(
             issue_id=issue_id,
             state=IssueState.UNRESOLVED,
@@ -474,7 +483,13 @@ def process_historical_balances(
         from_ts: TimestampMS | None = None,
         chains_aggregator: ChainsAggregator | None = None,
 ) -> bool:
-    """Process events and compute balance metrics."""
+    """Process events and compute balance metrics.
+
+    Returns True once processing runs to completion. The ``skip_if_running`` decorator returns
+    None instead when another run holds the lock; remediation callers must distinguish that case.
+    When a chain aggregator is supplied, negative rebasing balances can make cached or archive-node
+    historical balance queries. Results are cached per address, token and block.
+    """
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
     rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
     bucket_balances: dict[Bucket, FVal] = {}
@@ -585,10 +600,7 @@ def process_historical_balances(
             )
 
     issues_manager = DataIssuesManager(database)
-    issues_manager.resolve_event_issues(
-        kind=IssueKind.NEGATIVE_BALANCE,
-        issues=resolved_rebasing_events,
-    )
+    issues_manager.resolve_superseded_negative_balance_issues(assets=rebasing_assets)
     issues_manager.resolve_event_issues(
         kind=IssueKind.REBASING_TOKEN,
         issues=resolved_rebasing_events,
@@ -644,10 +656,12 @@ def retry_rebasing_token_issue(
             chains_aggregator=chains_aggregator,
         )
     except TaskCancelledError:
-        _fail_rebasing_remediation(database, issue_id, 'processing_cancelled')
+        with suppress(NotFoundError):
+            _fail_rebasing_remediation(database, issue_id, 'processing_cancelled')
         raise
-    except Exception:
-        _fail_rebasing_remediation(database, issue_id, 'processing_failed')
+    except Exception:  # the remediation state must be recovered for any processing failure
+        with suppress(NotFoundError):
+            _fail_rebasing_remediation(database, issue_id, 'processing_failed')
         raise
 
     if processing_completed is None:
@@ -835,7 +849,10 @@ def _apply_to_buckets(
             current_balance + event.amount if direction == EventDirection.IN else
             current_balance - event.amount
         )
-        if bucket.asset in rebasing_assets:
+        if (
+            bucket.asset in rebasing_assets and
+            event.asset.identifier in rebasing_assets
+        ):
             assert event.identifier is not None, 'Processed history events should have identifiers'
             if new_balance < ZERO and not isinstance(event, EvmEvent):
                 _write_rebasing_issue(
@@ -867,7 +884,6 @@ def _apply_to_buckets(
                     block_number=block_number,
                     chains_aggregator=chains_aggregator,
                 )
-                del pending_rebasing_events[bucket]
                 if failure is not None:
                     _write_rebasing_issue(
                         database=database,
@@ -881,12 +897,25 @@ def _apply_to_buckets(
 
                 assert onchain_balance is not None
                 assert negative_event.identifier is not None
+                del pending_rebasing_events[bucket]
                 resolved_rebasing_events.append((
                     bucket.location,
                     bucket.location_label,
                     bucket.protocol,
                     bucket.asset,
                     negative_event.identifier,
+                ))
+                metrics_batch.append((
+                    event.identifier,
+                    bucket.location,
+                    bucket.location_label,
+                    bucket.protocol,
+                    EventMetricKey.REBASE_YIELD.serialize(),
+                    str(onchain_balance - new_balance),
+                    bucket.asset,
+                    event.timestamp,
+                    event.sequence_index,
+                    event.timestamp + event.sequence_index,
                 ))
                 new_balance = onchain_balance
         elif new_balance < ZERO:

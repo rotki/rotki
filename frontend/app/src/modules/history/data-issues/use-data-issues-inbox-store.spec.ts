@@ -47,6 +47,14 @@ describe('useDataIssuesInboxStore', () => {
     expect(get(store.baselineTotal)).toBe(42);
   });
 
+  it('should signal completed historical balance processing', () => {
+    const store = useDataIssuesInboxStore();
+
+    store.notifyHistoricalBalanceProcessingCompleted();
+
+    expect(get(store.historicalBalanceProcessingCompleted)).toBe(1);
+  });
+
   it('should remove the data-issues tab when dismissing inline panels', () => {
     const store = useDataIssuesInboxStore();
     const visibility = useAreaVisibilityStore();

@@ -23,6 +23,7 @@ export function emptyCounts(): StateCounts {
 export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', () => {
   const counts = ref<StateCounts>(emptyCounts());
   const baselineTotal = ref<number>(0);
+  const historicalBalanceProcessingCompleted = ref<number>(0);
 
   /** Issues awaiting the user: open + needs-attention. Auto-remediating issues
    * are in progress and need no action, so they are intentionally excluded. */
@@ -32,6 +33,10 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   function setSummary(newCounts: StateCounts, baseline: number): void {
     set(counts, newCounts);
     set(baselineTotal, baseline);
+  }
+
+  function notifyHistoricalBalanceProcessingCompleted(): void {
+    set(historicalBalanceProcessingCompleted, get(historicalBalanceProcessingCompleted) + 1);
   }
 
   /** Removes the pinned-rail copy of the inbox. Called when the dedicated
@@ -46,6 +51,8 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
     baselineTotal,
     counts,
     dismissInlinePanels,
+    historicalBalanceProcessingCompleted,
+    notifyHistoricalBalanceProcessingCompleted,
     setSummary,
   };
 });

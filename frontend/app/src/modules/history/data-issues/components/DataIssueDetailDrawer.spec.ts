@@ -132,4 +132,15 @@ describe('dataIssueDetailDrawer', () => {
     expect(wrapper.emitted('dismiss')?.[0]).toStrictEqual([8]);
     expect(wrapper.emitted('resolve')?.[0]).toStrictEqual([8]);
   });
+
+  it('should keep the retry action visible and disabled while remediation is running', () => {
+    const wrapper = createWrapper(createIssue({
+      kind: IssueKind.REBASING_TOKEN,
+      state: IssueState.AUTO_REMEDIATING,
+    }));
+    const retry = wrapper.find('[data-testid="data-issue-detail-retry"]');
+
+    expect(retry.exists()).toBe(true);
+    expect(retry.attributes('disabled')).toBeDefined();
+  });
 });

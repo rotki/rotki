@@ -13,6 +13,13 @@ const mockSetHistoricalDailyPriceStatus = vi.fn();
 const mockSetHistoricalPriceStatus = vi.fn();
 const mockSetStatsPriceQueryStatus = vi.fn();
 const mockReportProgress = vi.fn();
+const mockNotifyHistoricalBalanceProcessingCompleted = vi.fn();
+
+vi.mock('@/modules/history/data-issues/use-data-issues-inbox-store', () => ({
+  useDataIssuesInboxStore: vi.fn(() => ({
+    notifyHistoricalBalanceProcessingCompleted: mockNotifyHistoricalBalanceProcessingCompleted,
+  })),
+}));
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: vi.fn(() => ({
@@ -110,6 +117,17 @@ describe('createProgressUpdateHandler', () => {
       makeActivityId(ActivityKind.HISTORICAL_BALANCES),
       expect.objectContaining({ current: expect.anything(), total: expect.anything() }),
     );
+  });
+
+  it('should signal data-issue refresh when historical balance processing completes', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      processed: 2,
+      subtype: SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING,
+      total: 2,
+    }));
+
+    expect(mockNotifyHistoricalBalanceProcessingCompleted).toHaveBeenCalledOnce();
   });
 
   it('should delegate csv import results to the csv handler', async () => {

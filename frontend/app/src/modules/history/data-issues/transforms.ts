@@ -171,7 +171,7 @@ export function relatedEventRoute(
     return { name, query: { openMatchBridgesDialog: 'true' } };
   }
 
-  if (kind === IssueKind.NEGATIVE_BALANCE) {
+  if (kind === IssueKind.NEGATIVE_BALANCE || kind === IssueKind.REBASING_TOKEN) {
     query.highlightedNegativeBalanceEvent = eventIdentifier.toString();
     if (groupIdentifier)
       query.targetGroupIdentifier = groupIdentifier;
