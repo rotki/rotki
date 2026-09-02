@@ -1,6 +1,7 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import { get } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 
@@ -124,6 +125,19 @@ describe('useDataIssueDetailActions', () => {
 
     expect(get(modelSelectedIssue)).toStrictEqual(updated);
     expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should synchronize an open issue after the list refreshes', async () => {
+    const issue = createIssue({ state: IssueState.AUTO_REMEDIATING });
+    const issues = ref<DataIssue[]>([issue]);
+    const { modelSelectedIssue, openDetail } = useDataIssueDetailActions(vi.fn(), issues);
+    openDetail(issue);
+
+    const resolved = createIssue({ state: IssueState.RESOLVED });
+    set(issues, [resolved]);
+    await nextTick();
+
+    expect(get(modelSelectedIssue)).toStrictEqual(resolved);
   });
 
   it('should open the resolve dialog on request', () => {

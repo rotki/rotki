@@ -28,6 +28,7 @@ from rotkehlchen.history.events.structures.types import (
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.tasks.manager import HISTORICAL_BALANCE_PROCESSING_TASK_NAME
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -268,13 +269,13 @@ def test_get_historical_balance_with_filters(
                 amount=FVal('3'),
                 location_label=addr1,
                 address=addr1,
-            ), EvmEvent(  # Day 1: Receive wrapped token from Aave (address 1)
+            ), EvmEvent(  # Day 1: Generate debt in Aave (address 1)
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
                 amount=FVal('10'),
                 location_label=addr1,
@@ -291,13 +292,13 @@ def test_get_historical_balance_with_filters(
                 amount=FVal('2'),
                 location_label=addr1,
                 address=addr1,
-            ), EvmEvent(  # Day 2: Receive wrapped from Compound (address 1)
+            ), EvmEvent(  # Day 2: Generate debt in Compound (address 1)
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(day2_ts),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
                 amount=FVal('6'),
                 location_label=addr1,
@@ -965,7 +966,7 @@ def test_get_historical_netvalue(
             A_EUR.identifier: '16800',
         },
         {  # Day 3: After BTC spend (-0.5) and ETH -> EUR swap (-0.2 ETH, +240 EUR)
-            A_BTC.identifier: '1.7000000000000002',
+            A_BTC.identifier: '1.7',
             A_ETH.identifier: '10.5',
             A_EUR.identifier: '17040',
         },
@@ -1453,6 +1454,18 @@ def test_get_historical_asset_amounts_processing_required(
     )
     assert_proper_sync_response_with_result(response)
 
+    # The trigger acknowledges scheduling, not completion of the background processing.
+    supervisor = rotkehlchen_api_server.rest_api.rotkehlchen.task_supervisor
+    with supervisor.lock:
+        processing_tasks = [
+            task for task in supervisor.tasks
+            if task.task_name == HISTORICAL_BALANCE_PROCESSING_TASK_NAME
+        ]
+    for task in processing_tasks:
+        task.join(timeout=30)
+        assert task.dead, 'Historical balance processing did not finish'
+        task.get()  # Propagate processing failures before checking the resulting balances.
+
     # now data should be available
     response = requests.post(
         api_url_for(
@@ -1487,8 +1500,5 @@ def test_get_historical_asset_amounts_no_events(
             'to_timestamp': START_TS + DAY_IN_SECONDS,
         },
     )
-    assert_error_response(
-        response=response,
-        contained_in_msg='No historical data found',
-        status_code=HTTPStatus.NOT_FOUND,
-    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result == {'processing_required': False}

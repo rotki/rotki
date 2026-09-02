@@ -1541,7 +1541,15 @@ DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
 
 
 class EventMetricKey(SerializableEnumNameMixin):
-    """Keys for metrics stored in the event_metrics table."""
+    """Keys for metrics stored in the event_metrics table.
+
+    BALANCE is the canonical proof that an event was processed. REBASE_YIELD is supplemental
+    metadata recording the difference between the derived balance and an authoritative historical
+    balance. It is attached to the reconciliation checkpoint instead of creating a synthetic
+    history event because a token rebase has no corresponding event in the user's history.
+    Consumers must therefore check specifically for BALANCE rather than treating any metric as
+    proof that an event was processed.
+    """
     BALANCE = auto()
     REBASE_YIELD = auto()
 

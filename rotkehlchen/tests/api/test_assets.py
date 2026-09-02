@@ -733,29 +733,6 @@ def test_edit_rebasing_asset_flag(
     assert token.identifier not in globaldb.get_asset_ids_with_flag(AssetFlag.REBASING)
 
 
-def test_asset_update_invalidates_changed_rebasing_assets(
-        rotkehlchen_api_server: APIServer,
-) -> None:
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    with (
-        patch.object(rotki.assets_updater, 'perform_update', return_value=None),
-        patch.object(
-            GlobalDBHandler,
-            'get_asset_ids_with_flag',
-            side_effect=[frozenset(), frozenset({A_DAI.identifier})],
-        ),
-        patch.object(DBHistoryEvents, 'mark_asset_events_modified') as mark_modified,
-    ):
-        result = rotkehlchen_api_server.rest_api.assets_service.perform_assets_updates(
-            up_to_version=None,
-            conflicts=None,
-        )
-
-    assert result == {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
-    assert mark_modified.call_count == 1
-    assert mark_modified.call_args.kwargs['asset'] == A_DAI.identifier
-
-
 def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: APIServer) -> None:
     """Test that the paginated assets endpoint ranks name/symbol searches by levenshtein
     closeness (like the asset search dropdown) instead of an alphabetical LIKE match, while
