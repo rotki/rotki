@@ -1037,6 +1037,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Extra code to run when eth account addition happens"""
         if blockchain == SupportedBlockchain.ETHEREUM:  # add it first so that it's there for module's on account addition  # noqa: E501
             self.ethereum.node_inquirer.proxies_inquirer.query_address_for_proxies(address)
+
+        DBEth2(self.database).invalidate_withdrawals_derived_data(address)
         for _, module in self.iterate_modules():
             module.on_account_addition(address)
 
@@ -1049,6 +1051,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if blockchain == SupportedBlockchain.ETHEREUM:
             self.ethereum.node_inquirer.proxies_inquirer.reset_last_query_ts()
 
+        DBEth2(self.database).invalidate_withdrawals_derived_data(address)
         for _, module in self.iterate_modules():
             module.on_account_removal(address)
 

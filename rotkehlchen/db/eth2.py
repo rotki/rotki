@@ -265,6 +265,31 @@ class DBEth2:
                 f'that is not in the database',
             )
 
+    def invalidate_withdrawals_derived_data(self, address: ChecksumEvmAddress) -> None:
+        """Drop everything derived from whether the given address' withdrawals count as ours.
+
+        Withdrawals to an untracked address are filtered out of history, accounting and
+        validator performance at query time, but the data derived from them is stored, so
+        tracking or untracking the address has to drop it.
+
+        Called on every ethereum account modification, whether or not the eth2 module is
+        active, since what it invalidates is queried independently of the module and would
+        otherwise stay stale until the next time the account happened to change.
+        """
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM eth_validators_data_cache WHERE validator_index IN ('
+                'SELECT S.validator_index FROM history_events H INNER JOIN '
+                'eth_staking_events_info S ON H.identifier=S.identifier '
+                'WHERE H.entry_type=? AND H.location_label=?)',
+                (HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), address),
+            )
+            DBHistoryEvents(self.db).mark_events_stale_by_query(
+                write_cursor=write_cursor,
+                query='SELECT timestamp FROM history_events WHERE entry_type=? AND location_label=?',  # noqa: E501
+                bindings=(HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), address),
+            )
+
     def delete_validators(self, validator_indices: list[int]) -> None:
         """Deletes the given validators from the DB. Due to marshmallow here at least one
         of the two arguments is not None.

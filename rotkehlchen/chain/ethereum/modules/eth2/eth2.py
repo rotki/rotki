@@ -1063,28 +1063,6 @@ class Eth2(EthereumModule):
                 set_bindings=(event_type.serialize(),),
             )
 
-    def _adjust_withdrawals_at_account_modification(self, address: ChecksumEvmAddress) -> None:
-        """Invalidate everything that depends on whether the given address' withdrawals count.
-
-        Withdrawals to an untracked address are filtered out of history, accounting and
-        validator performance at query time, but the derived data computed from them is
-        cached, so tracking or untracking the address has to drop those caches.
-        """
-        self.performance_cache.clear()
-        with self.database.user_write() as write_cursor:
-            write_cursor.execute(
-                'DELETE FROM eth_validators_data_cache WHERE validator_index IN ('
-                'SELECT S.validator_index FROM history_events H INNER JOIN '
-                'eth_staking_events_info S ON H.identifier=S.identifier '
-                'WHERE H.entry_type=? AND H.location_label=?)',
-                (HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), address),
-            )
-            DBHistoryEvents(self.database).mark_events_stale_by_query(
-                write_cursor=write_cursor,
-                query='SELECT timestamp FROM history_events WHERE entry_type=? AND location_label=?',  # noqa: E501
-                bindings=(HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), address),
-            )
-
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         """
@@ -1100,14 +1078,17 @@ class Eth2(EthereumModule):
             )
 
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)
-        self._adjust_withdrawals_at_account_modification(address)
+        # whether the address' withdrawals count as ours changed, so the performance results
+        # computed from them are no longer valid. The persisted data derived from them is
+        # dropped by the chains aggregator, which runs even when this module is not active.
+        self.performance_cache.clear()
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         """
         Adjust existing block production events to become informational if they involve the address
         """
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.INFORMATIONAL)  # noqa: E501
-        self._adjust_withdrawals_at_account_modification(address)
+        self.performance_cache.clear()  # its results counted this address' withdrawals
 
         with self.database.conn.write_ctx() as write_cursor:
             self.database.delete_dynamic_cache(

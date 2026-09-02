@@ -1,3 +1,4 @@
+import os
 from typing import TYPE_CHECKING, Final
 from unittest.mock import patch
 
@@ -25,13 +26,14 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChainQueryResponse
+from rotkehlchen.feature_flags import ROTKI_ACCOUNTING_UPDATE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
@@ -58,6 +60,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -1389,7 +1392,9 @@ def test_validator_performance_ignores_untracked_withdrawal_address(
             )],
         )
     with patch.object(eth2, 'detect_and_refresh_validators'):  # avoid the remote query
-        eth2.on_account_addition(untracked_address)
+        eth2.on_account_addition(untracked_address)  # drops the in-memory performance cache
+    # and this is what the chains aggregator does on any ethereum account modification
+    DBEth2(database).invalidate_withdrawals_derived_data(untracked_address)
 
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=10, offset=0, ignore_cache=False)  # noqa: E501
     assert performance['sums']['withdrawals'] == withdrawal_tracked + withdrawal_untracked
@@ -1462,7 +1467,9 @@ def test_accumulating_validator_pnl_ignores_untracked_withdrawal_address(
             )],
         )
     with patch.object(eth2, 'detect_and_refresh_validators'):  # avoid the remote query
-        eth2.on_account_addition(untracked_address)
+        eth2.on_account_addition(untracked_address)  # drops the in-memory performance cache
+    # and this is what the chains aggregator does on any ethereum account modification
+    DBEth2(database).invalidate_withdrawals_derived_data(untracked_address)
 
     validator_performance = query_performance()['validators'][v_index]
     assert validator_performance['withdrawals'] == FVal('2')  # the skimming withdrawal
@@ -1471,3 +1478,58 @@ def test_accumulating_validator_pnl_ignores_untracked_withdrawal_address(
     # that were skipped for pnl above.
     assert validator_performance.get('exits', ZERO) == ZERO
     assert validator_performance['sum'] == FVal('2')
+
+
+@pytest.mark.parametrize('ethereum_modules', [[]])  # eth2 module deactivated
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+def test_withdrawals_derived_data_invalidated_without_eth2_module(
+        blockchain: ChainsAggregator,
+        database: DBHandler,
+) -> None:
+    """Tracking an eth account flips whether its validator withdrawals count as ours, so the
+    data derived from them has to be dropped. That has to happen even while the eth2 module
+    is deactivated, since the derived data is queried independently of the module and nothing
+    revisits it when the module is activated again."""
+    assert blockchain.get_module('eth2') is None
+    with database.user_write() as write_cursor:
+        DBEth2(database).add_or_update_validators(write_cursor, validators=[ValidatorDetails(
+            validator_index=(v_index := 114543),
+            validator_type=ValidatorType.ACCUMULATING,
+            public_key=Eth2PubKey('0xa41a0224e73270cee8e06a9984aa2cd902a20e66c8bb528caae602a7caf76c417d0bdf2ab3b6e50a579fa7d98c6d240c'),
+            withdrawal_address=(address := make_evm_address()),
+        )])
+        DBHistoryEvents(database).add_history_events(write_cursor, [EthWithdrawalEvent(
+            validator_index=v_index,
+            timestamp=(timestamp := TimestampMS(1666693607000)),
+            amount=FVal('5'),
+            withdrawal_address=address,
+            is_exit=False,
+        )])
+        write_cursor.execute(  # the pnl/balance data derived from that withdrawal
+            'INSERT INTO eth_validators_data_cache(validator_index, timestamp, balance, '
+            'withdrawals_pnl, exit_pnl) VALUES(?, ?, ?, ?, ?)',
+            (v_index, timestamp, '32', '5', '0'),
+        )
+        write_cursor.execute(  # and pretend the historical balances are up to date
+            'DELETE FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        )
+
+    with (
+        patch.dict(os.environ, {ROTKI_ACCOUNTING_UPDATE: 'True'}),  # so the stale marking runs
+        patch.object(blockchain.ethereum.node_inquirer.proxies_inquirer, 'query_address_for_proxies'),  # noqa: E501
+        database.user_write() as write_cursor,
+    ):
+        blockchain.modify_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            accounts=[address],
+            append_or_remove='append',
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM eth_validators_data_cache').fetchone()[0] == 0
+        assert int(cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        ).fetchone()[0]) == timestamp
