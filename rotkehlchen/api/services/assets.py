@@ -240,7 +240,10 @@ class AssetsService:
             return
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
-            DBHistoryEvents(self.rotkehlchen.data.db).mark_all_events_modified(write_cursor)
+            DBHistoryEvents(self.rotkehlchen.data.db).mark_asset_events_modified(
+                write_cursor=write_cursor,
+                asset=identifier,
+            )
 
     def add_user_asset(
             self,
@@ -747,12 +750,24 @@ class AssetsService:
             up_to_version: int | None,
             conflicts: dict[Asset, Literal['remote', 'local']] | None,
     ) -> dict[str, Any]:
+        rebasing_assets_before = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
         try:
             result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts)
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
+            changed_rebasing_assets = rebasing_assets_before.symmetric_difference(
+                GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING),
+            )
+            if len(changed_rebasing_assets) != 0:
+                history_db = DBHistoryEvents(self.rotkehlchen.data.db)
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    for asset in changed_rebasing_assets:
+                        history_db.mark_asset_events_modified(
+                            write_cursor=write_cursor,
+                            asset=asset,
+                        )
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
         return {

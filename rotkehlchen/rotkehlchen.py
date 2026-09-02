@@ -98,6 +98,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import Price, PriceHistorian
 from rotkehlchen.history.price_oracles.coinbase import CoinbaseHistoricalPriceOracle
@@ -410,6 +411,7 @@ class Rotkehlchen:
             # else let's just continue. User signed in successfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB
 
+        DataIssuesManager(self.data.db).reset_orphaned_remediations()
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
             CachedSettings().initialize(settings)  # initialize with saved DB settings

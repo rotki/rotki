@@ -7,7 +7,7 @@ import DataIssueDetectedTime from '@/modules/history/data-issues/components/Data
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
-import { canDismiss, canResolveManually, canRetry } from '@/modules/history/data-issues/constants';
+import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
 import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -203,10 +203,10 @@ const resolutionNote = computed<string | undefined>(() => {
         {{ t('data_issues.action.dismiss.label') }}
       </RuiButton>
       <RuiButton
-        v-if="canRetry(issue.kind, issue.state)"
+        v-if="canRetry(issue.kind, issue.state) || issue.state === IssueState.AUTO_REMEDIATING"
         variant="outlined"
         color="primary"
-        :disabled="busy"
+        :disabled="busy || !canRetry(issue.kind, issue.state)"
         data-testid="data-issue-detail-retry"
         @click="emit('retry', issue.id)"
       >

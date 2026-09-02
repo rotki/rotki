@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError, NotFoundError
 from rotkehlchen.history.data_issues.constants import (
     ALLOWED_STATE_TRANSITIONS,
@@ -145,6 +146,31 @@ class DataIssuesManager:
             severity: IssueSeverity | None = None,
     ) -> int:
         """Write an issue row idempotently and return its id."""
+        return self.write_issue_with_state(
+            kind=kind,
+            location=location,
+            location_label=location_label,
+            protocol=protocol,
+            asset=asset,
+            payload=payload,
+            ts_start=ts_start,
+            ts_end=ts_end,
+            severity=severity,
+        )[0]
+
+    def write_issue_with_state(
+            self,
+            kind: IssueKind,
+            location: str,
+            location_label: str | None,
+            protocol: str | None,
+            asset: str | None,
+            payload: DataIssuePayload,
+            ts_start: int,
+            ts_end: int,
+            severity: IssueSeverity | None = None,
+    ) -> tuple[int, str | IssueState]:
+        """Write an issue idempotently and return its id and resulting state."""
         location_label = '' if location_label is None else location_label
         protocol = '' if protocol is None else protocol
         asset = '' if asset is None else asset
@@ -182,7 +208,7 @@ class DataIssuesManager:
                 ),
             )
             if write_cursor.rowcount == 1:
-                return write_cursor.lastrowid
+                return write_cursor.lastrowid, IssueState.OPEN
 
         issue_id, existing_state = self._get_issue_id_and_state_by_natural_key(
             kind=kind,
@@ -193,7 +219,7 @@ class DataIssuesManager:
             event_identifier=event_identifier,
         )
         if existing_state == IssueState.DISMISSED:
-            return issue_id
+            return issue_id, existing_state
 
         with self.db.user_write() as write_cursor:
             if existing_state == IssueState.RESOLVED:
@@ -208,7 +234,39 @@ class DataIssuesManager:
                     'WHERE id = ?',
                     (ts_start, ts_end, payload_json, issue_id),
                 )
-        return issue_id
+        resulting_state = (
+            IssueState.OPEN if existing_state == IssueState.RESOLVED else existing_state
+        )
+        return issue_id, resulting_state
+
+    def resolve_superseded_negative_balance_issues(self, assets: frozenset[str]) -> None:
+        """Resolve negative-balance issues for assets now handled as rebasing tokens."""
+        if len(assets) == 0:
+            return
+
+        resolved_at = ts_now()
+        with self.db.user_write() as write_cursor:
+            for chunk, placeholders in get_query_chunks(data=list(assets)):
+                write_cursor.execute(
+                    'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
+                    f'AND asset IN ({placeholders}) AND state NOT IN (?, ?)',
+                    [
+                        IssueState.RESOLVED,
+                        resolved_at,
+                        IssueKind.NEGATIVE_BALANCE,
+                        *chunk,
+                        IssueState.RESOLVED,
+                        IssueState.DISMISSED,
+                    ],
+                )
+
+    def reset_orphaned_remediations(self) -> None:
+        """Make remediation rows left by a previous process retryable after login."""
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE data_issues SET state = ? WHERE state = ?',
+                (IssueState.UNRESOLVED, IssueState.AUTO_REMEDIATING),
+            )
 
     def resolve_event_issues(
             self,
@@ -403,15 +461,14 @@ class DataIssuesManager:
 
     def retry_auto_remediation(self, issue_id: int) -> tuple[DataIssue, bool]:
         issue = self.get_issue(issue_id)
+        if issue.kind != IssueKind.REBASING_TOKEN:
+            raise InputError(f'Auto-remediation is not supported for {issue.kind} data issues')
         if issue.state == IssueState.AUTO_REMEDIATING:
             return issue, False
         if issue.state not in {IssueState.OPEN, IssueState.UNRESOLVED}:
             raise InputError(
-                f'Cannot retry auto-remediation for {issue.state} data issue. '
-                f'Current state is {issue.state}',
+                f'Cannot retry auto-remediation for a {issue.state} data issue',
             )
-        if issue.kind != IssueKind.REBASING_TOKEN:
-            raise InputError(f'Auto-remediation is not supported for {issue.kind} data issues')
 
         return self.update_state(issue_id, IssueState.AUTO_REMEDIATING), True
 

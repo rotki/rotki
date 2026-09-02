@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Literal, NotRequired, TypedDict
 
+type RebasingQueryFailure = Literal[
+    'archive_node_unavailable',
+    'historical_balance_query_failed',
+    'missing_transaction',
+    'unsupported_bucket',
+]
+
 
 class BaseIssuePayload(TypedDict):
     """Common optional payload fields shared by all data issue kinds."""
@@ -35,12 +42,7 @@ class RebasingTokenIssuePayload(BaseIssuePayload):
     """Payload for a rebasing balance that could not be verified on-chain."""
     event_identifier: int
     block_number: int | None
-    reason: Literal[
-        'archive_node_unavailable',
-        'historical_balance_query_failed',
-        'missing_transaction',
-        'unsupported_bucket',
-    ]
+    reason: RebasingQueryFailure
 
 
 class UnmatchedBridgeIssuePayload(BaseIssuePayload):

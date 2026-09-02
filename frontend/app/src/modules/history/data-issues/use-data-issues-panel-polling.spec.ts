@@ -1,7 +1,9 @@
 import { mount } from '@vue/test-utils';
 import { set } from '@vueuse/core';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, KeepAlive, type Ref, ref, shallowRef } from 'vue';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
 
 const syncCompleted = ref<boolean>(false);
@@ -49,6 +51,7 @@ function mountPanel(hasRemediatingRows: Ref<boolean>, reload: () => Promise<void
 describe('useDataIssuesPanelPolling', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    setActivePinia(createPinia());
     set(syncCompleted, false);
   });
 
@@ -138,6 +141,17 @@ describe('useDataIssuesPanelPolling', () => {
     const panel = mountPanel(ref(false), reload);
 
     set(syncCompleted, true);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(reload).toHaveBeenCalledOnce();
+    panel.unmount();
+  });
+
+  it('should reload when historical balance processing completes while visible', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const panel = mountPanel(ref(false), reload);
+
+    useDataIssuesInboxStore().notifyHistoricalBalanceProcessingCompleted();
     await vi.advanceTimersByTimeAsync(0);
 
     expect(reload).toHaveBeenCalledOnce();

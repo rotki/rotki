@@ -180,6 +180,38 @@ def test_retry_auto_remediation(database: DBHandler) -> None:
     with pytest.raises(InputError, match='Auto-remediation is not supported'):
         manager.retry_auto_remediation(unsupported_issue_id)
 
+    manager.update_state(unsupported_issue_id, IssueState.AUTO_REMEDIATING)
+    with pytest.raises(InputError, match='Auto-remediation is not supported'):
+        manager.retry_auto_remediation(unsupported_issue_id)
+
+
+def test_reset_orphaned_remediations(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_rebasing_issue(manager)
+    manager.retry_auto_remediation(issue_id)
+
+    manager.reset_orphaned_remediations()
+
+    issue, should_schedule = manager.retry_auto_remediation(issue_id)
+    assert should_schedule is True
+    assert issue.state == IssueState.AUTO_REMEDIATING
+
+
+def test_resolve_superseded_negative_balance_issues(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    superseded_id = _write_negative_balance_issue(manager, event_identifier=1)
+    unaffected_id = _write_negative_balance_issue(manager, event_identifier=2)
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE data_issues SET asset=? WHERE id=?',
+            ('OTHER_ASSET', unaffected_id),
+        )
+
+    manager.resolve_superseded_negative_balance_issues(assets=frozenset({'ETH'}))
+
+    assert manager.get_issue(superseded_id).state == IssueState.RESOLVED
+    assert manager.get_issue(unaffected_id).state == IssueState.OPEN
+
 
 def test_dismiss_and_resolve_manually(database: DBHandler) -> None:
     manager = DataIssuesManager(database)

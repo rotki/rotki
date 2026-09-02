@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -18,6 +19,7 @@ from rotkehlchen.constants.resolver import (
     hyperliquid_token_address_to_identifier,
     solana_address_to_identifier,
 )
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -660,12 +662,57 @@ def test_edit_rebasing_asset_flag(
         'symbol': None,
         'decimals': None,
     }
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        database.add_asset_identifiers(
+            write_cursor=write_cursor,
+            asset_identifiers=[token.identifier],
+        )
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='unrelated',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=ONE,
+            ), HistoryEvent(
+                group_identifier='rebasing',
+                sequence_index=0,
+                timestamp=TimestampMS(5000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=token,
+                amount=ONE,
+            )],
+        )
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name IN (?, ?)',
+            (
+                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
+            ),
+        )
 
-    assert_proper_response(requests.patch(
-        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
-        json=payload | {'is_rebasing': True},
-    ))
+    with patch(
+        'rotkehlchen.db.history_events.is_accounting_update_enabled',
+        return_value=True,
+    ):
+        assert_proper_response(requests.patch(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=payload | {'is_rebasing': True},
+        ))
     assert token.identifier in globaldb.get_asset_ids_with_flag(AssetFlag.REBASING)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+        ) == '5000'
     result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'allassetsresource'),
         json={'identifiers': [token.identifier]},
@@ -684,6 +731,29 @@ def test_edit_rebasing_asset_flag(
         json=payload | {'is_rebasing': False},
     ))
     assert token.identifier not in globaldb.get_asset_ids_with_flag(AssetFlag.REBASING)
+
+
+def test_asset_update_invalidates_changed_rebasing_assets(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with (
+        patch.object(rotki.assets_updater, 'perform_update', return_value=None),
+        patch.object(
+            GlobalDBHandler,
+            'get_asset_ids_with_flag',
+            side_effect=[frozenset(), frozenset({A_DAI.identifier})],
+        ),
+        patch.object(DBHistoryEvents, 'mark_asset_events_modified') as mark_modified,
+    ):
+        result = rotkehlchen_api_server.rest_api.assets_service.perform_assets_updates(
+            up_to_version=None,
+            conflicts=None,
+        )
+
+    assert result == {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+    assert mark_modified.call_count == 1
+    assert mark_modified.call_args.kwargs['asset'] == A_DAI.identifier
 
 
 def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: APIServer) -> None:

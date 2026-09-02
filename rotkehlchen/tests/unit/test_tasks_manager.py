@@ -45,7 +45,11 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
-from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
+from rotkehlchen.tasks.manager import (
+    HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
+    PREMIUM_STATUS_CHECK,
+    TaskManager,
+)
 from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
     should_run_periodic_task,
@@ -105,6 +109,20 @@ def test_potential_maybe_schedule_task(task_manager: TaskManager):
     assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
         '_maybe_trigger_calendar_reminder',
     ]
+
+
+def test_periodic_historical_balances_skip_active_remediation(task_manager: TaskManager) -> None:
+    with (
+        patch.object(
+            task_manager.history_processing_coordinator,
+            'is_history_fetching',
+            return_value=False,
+        ),
+        patch.object(task_manager.task_supervisor, 'has_task', return_value=True) as has_task,
+    ):
+        assert task_manager._maybe_process_historical_balances() is None
+
+    has_task.assert_called_once_with(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

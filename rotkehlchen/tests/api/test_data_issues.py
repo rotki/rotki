@@ -206,7 +206,7 @@ def test_data_issue_write_endpoints(rotkehlchen_api_server: APIServer) -> None:
             'dataissueretryautoremediationresource',
             issue_id=issue_id,
         )),
-        contained_in_msg='Cannot retry auto-remediation for dismissed data issue',
+        contained_in_msg='Auto-remediation is not supported for negative_balance data issues',
         status_code=HTTPStatus.CONFLICT,
     )
     assert_error_response(
@@ -250,7 +250,7 @@ def test_data_issue_write_endpoints(rotkehlchen_api_server: APIServer) -> None:
             'dataissueretryautoremediationresource',
             issue_id=issue_id,
         )),
-        contained_in_msg='Cannot retry auto-remediation for resolved data issue',
+        contained_in_msg='Auto-remediation is not supported for negative_balance data issues',
         status_code=HTTPStatus.CONFLICT,
     )
 

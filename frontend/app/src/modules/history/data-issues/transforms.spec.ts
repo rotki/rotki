@@ -194,6 +194,17 @@ describe('data-issues transforms', () => {
       });
     });
 
+    it('should deep-link a rebasing issue to its highlighted event', () => {
+      expect(relatedEventRoute(IssueKind.REBASING_TOKEN, 9, '0xdef', 'stETH')).toEqual({
+        name: '/history/events/',
+        query: {
+          asset: 'stETH',
+          highlightedNegativeBalanceEvent: '9',
+          targetGroupIdentifier: '0xdef',
+        },
+      });
+    });
+
     it('should link a non negative-balance kind to the events page without a highlight', () => {
       expect(relatedEventRoute(IssueKind.CURRENT_BALANCE_MISMATCH, 7)).toEqual({
         name: '/history/events/',
