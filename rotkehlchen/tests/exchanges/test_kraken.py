@@ -1126,6 +1126,89 @@ def test_kraken_trade_no_counterpart(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_trade_no_counterpart_resolves_pair(kraken):
+    """A dust fill whose fiat side rounds to zero has a single ledger leg. The trade
+    record still names the pair, so the zero counterpart should be that asset (EUR here)
+    instead of the USD placeholder"""
+    kraken.query_trades_data = {
+        'TA77LG-JIAOO-JB2W2I': {
+            'ordertxid': 'OFKLZU-ZNKCZ-3CSR3G',
+            'postxid': 'TKH2SE-M7IF5-CFI7LT',
+            'pair': 'ICPEUR',
+            'aclass': 'forex',
+            'time': 1788327992.033597,
+            'type': 'sell',
+            'ordertype': 'limit',
+            'price': '2.23000',
+            'cost': '0.00000',
+            'fee': '0.00000',
+            'vol': '0.00000106',
+            'margin': '0.00000',
+            'leverage': '0',
+            'misc': '',
+            'trade_id': 766788,
+            'maker': True,
+        },
+    }
+    kraken.extra_asset_pairs = {
+        'ICPEUR': {
+            'altname': 'ICPEUR',
+            'wsname': 'ICP/EUR',
+            'aclass_base': 'currency',
+            'base': 'ICP',
+            'aclass_quote': 'currency',
+            'quote': 'ZEUR',
+        },
+    }
+    with _patch_ledger(kraken, """{
+        "ledger": {
+            "LQRVRS-ZWE6Z-3DANHE": {
+                "aclass": "currency",
+                "amount": "-0.00000106",
+                "asset": "ICP",
+                "balance": "8561.90851429",
+                "fee": "0.00000000",
+                "refid": "TA77LG-JIAOO-JB2W2I",
+                "time": 1788327992.033597,
+                "type": "trade",
+                "subtype": "tradespot"
+            }
+        },
+        "count": 1
+    }"""):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        assert DBHistoryEvents(kraken.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+        ) == [SwapEvent(
+            identifier=1,
+            timestamp=(timestamp := TimestampMS(1788327992033)),
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('ICP'),
+            amount=FVal('0.00000106'),
+            group_identifier=(group_identifier := create_group_identifier_from_unique_id(
+                location=Location.KRAKEN,
+                unique_id='TA77LG-JIAOO-JB2W2I1788327992033',
+            )),
+            location_label=kraken.name,
+        ), SwapEvent(
+            identifier=2,
+            timestamp=timestamp,
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_EUR,
+            amount=ZERO,
+            group_identifier=group_identifier,
+            location_label=kraken.name,
+        )]
+    assert len(kraken.msg_aggregator.consume_errors()) == 0
+    assert len(kraken.msg_aggregator.consume_warnings()) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_failed_withdrawals(kraken):
     """Test that failed withdrawals are processed properly"""
     test_events = """{

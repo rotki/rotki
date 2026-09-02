@@ -8,7 +8,7 @@ import logging
 import operator
 import threading
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
 import requests
@@ -86,7 +86,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.user_messages import MessagesAggregator
@@ -94,6 +94,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+KrakenApiMethod = Literal[
+    'Balance', 'TradesHistory', 'QueryTrades', 'Ledgers', 'Assets', 'AssetPairs', 'accounts',
+]
+KRAKEN_PUBLIC_METHODS: Final = {'Assets', 'AssetPairs'}
 
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
@@ -172,7 +177,7 @@ def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> 
 
 def _check_and_get_response(
         response: Response,
-        method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],
+        method: KrakenApiMethod,
 ) -> str | dict:
     """Checks the kraken response and if it's successful returns the result.
 
@@ -356,7 +361,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _manage_call_counter(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            method: KrakenApiMethod,
     ) -> None:
         with self.nonce_lock:  # += from concurrent queries would lose increments
             self.last_query_ts = ts_now()
@@ -367,7 +372,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def api_query(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            method: KrakenApiMethod,
             req: dict | None = None,
     ) -> dict:
         tries = KRAKEN_QUERY_TRIES
@@ -405,6 +410,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
             if method == 'accounts':
                 result = self._query_futures_api_method(method)
+            elif method in KRAKEN_PUBLIC_METHODS:
+                result = self._query_public(method, req)
             else:
                 result = self._query_private(method, req)
             if isinstance(result, str):
@@ -425,9 +432,36 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             f'After {KRAKEN_QUERY_TRIES} kraken queries for {method} could still not be completed',
         )
 
+    def _query_public(
+            self,
+            method: KrakenApiMethod,
+            req: dict | None = None,
+    ) -> dict | str:
+        """API queries of the public endpoints that need no authentication.
+
+        Returns the result on success and a string describing a recoverable error otherwise.
+        May raise RemoteError for unrecoverable errors.
+        """
+        try:
+            response = self.session.get(
+                f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}',
+                params=req,
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+
+        if isinstance(decoded_json := _check_and_get_response(response, method), str):
+            return decoded_json
+
+        if (result := decoded_json.get('result')) is None:
+            raise RemoteError(f'Missing result in kraken response for {method}')
+
+        return result
+
     def _query_private(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            method: KrakenApiMethod,
             req: dict | None = None,
     ) -> dict | str:
         """API queries that require a valid key/secret pair.
@@ -665,6 +699,44 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ) -> list[MarginPosition]:
         return []  # noop for kraken
 
+    def _query_orphan_trade_counterpart(self, refid: str, known_asset: Asset) -> Asset | None:
+        """Find the other asset of a trade whose ledger has a single leg.
+
+        Kraken rounds the fiat side of a trade to 4 decimals and writes no ledger entry
+        at all when that rounds to zero, so the ledger alone can't say what the trade was
+        against. The trade record still names the pair, so query it and resolve the pair
+        to its base/quote assets. Returns None if the counterpart can't be determined.
+        """
+        try:
+            if (trade := self.api_query('QueryTrades', req={'txid': refid}).get(refid)) is None:
+                log.warning('Kraken trade with a single ledger leg has no trade record', refid=refid)  # noqa: E501
+                return None
+
+            pair_info = self.api_query('AssetPairs', req={'pair': (pair := trade['pair'])})[pair]
+            candidates = {
+                asset_from_kraken(pair_info['base']),
+                asset_from_kraken(pair_info['quote']),
+            }
+        except (RemoteError, KeyError, UnknownAsset, DeserializationError) as e:
+            log.warning(
+                'Failed to resolve the counterpart asset of a kraken trade with a single ledger leg',  # noqa: E501
+                refid=refid,
+                error=str(e),
+            )
+            return None
+
+        candidates.discard(known_asset)
+        if len(candidates) != 1:
+            log.warning(
+                'Kraken trade with a single ledger leg resolved to unexpected pair assets',
+                refid=refid,
+                known_asset=known_asset,
+                candidates=candidates,
+            )
+            return None
+
+        return candidates.pop()
+
     def process_kraken_events_for_trade(
             self,
             trade_parts: list[HistoryEvent],
@@ -722,16 +794,23 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             # when the other part of a trade is so small it's 0. So it's either a
             # receive event with no counterpart or a spend event with no counterpart.
             # This happens for really really small amounts. So we add rate 0 trades
+            # against the pair's other asset, or USD if that can't be determined.
             if spend_part is not None:
                 spend_asset = spend_part.asset
                 spend_amount = spend_part.amount
-                receive_asset = A_USD  # whatever
+                receive_asset = self._query_orphan_trade_counterpart(
+                    refid=event_id,
+                    known_asset=spend_asset,
+                ) or A_USD
                 receive_amount = ZERO
             elif receive_part is not None:
-                spend_asset = A_USD  # whatever
-                spend_amount = ZERO
                 receive_asset = receive_part.asset
                 receive_amount = receive_part.amount
+                spend_asset = self._query_orphan_trade_counterpart(
+                    refid=event_id,
+                    known_asset=receive_asset,
+                ) or A_USD
+                spend_amount = ZERO
             else:
                 log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
                 return []
