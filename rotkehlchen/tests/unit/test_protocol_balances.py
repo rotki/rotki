@@ -57,6 +57,7 @@ from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.contracts import WEB3
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BEETS_V2, CPT_BEETS_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -90,6 +91,7 @@ from rotkehlchen.chain.optimism.modules.walletconnect.constants import (
     CPT_WALLETCONNECT,
     WCT_TOKEN_ID,
 )
+from rotkehlchen.chain.sonic.modules.beets.balances import BeetsV2Balances, BeetsV3Balances
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ARB,
@@ -114,6 +116,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
+    globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -135,6 +138,7 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.sonic import SONIC_MAINNET_NODE
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -1873,3 +1877,66 @@ def test_kinetiq_earn_pending_withdrawal_balances(
     )
     khype = Asset('eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D')
     assert protocol_balances[hyperliquid_accounts[0]].assets[khype][CPT_KINETIQ] == expected_balance  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_BEETS_V2, CPT_BEETS_V3]])
+@pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
+@pytest.mark.parametrize('sonic_accounts', [['0x6B808e314d7f758076922297bcD2eCd56aFe7B19']])
+def test_beets_gauge_balances(
+        sonic_inquirer,
+        sonic_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        globaldb: GlobalDBHandler,
+        load_global_caches: list[str],
+) -> None:
+    """Gauge balances for Beets v2 and v3 pools on Sonic are detected.
+
+    The address has 5.99 BPT-stS-fMULTI-MCLB staked in a v2 gauge and
+    0.667 25USDC-50FLY-25stS staked in a v3 gauge. The gauges are seeded
+    directly into the globaldb cache as the beetswaps API has no sonic
+    pool listings to refresh them from."""
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V2_GAUGES, str(ChainID.SONIC.value)),
+            values=['0xB6F5702b0dA321A38a2a43A31ebe4b05183A85d5'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V2_POOLS, str(ChainID.SONIC.value)),
+            values=['0x15761307e86BAF700f29052e357a88f49B33B1B4'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_GAUGES, str(ChainID.SONIC.value)),
+            values=['0x52c518A5a8644bd5225ffAea38f9512Af5B8dcAe'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_POOLS, str(ChainID.SONIC.value)),
+            values=['0xa476B33460E792Bac5CC294ba19F0543aB00DC01'],
+        )
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xa60628b20aebe7e039238738cdbe949f83de103b7d9d2ca7730970226d69d49d'),
+        load_global_caches=load_global_caches,
+    )
+    balances = BeetsV2Balances(
+        evm_inquirer=sonic_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances(addresses=sonic_accounts)
+    v2_lp_token = Asset('eip155:146/erc20:0x15761307e86BAF700f29052e357a88f49B33B1B4')
+    assert balances[sonic_accounts[0]].assets[v2_lp_token][CPT_BEETS_V2].amount == FVal('5.991441225005343457')  # noqa: E501
+
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=sonic_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xd60f4413acbd1776206ce248c2d0a8f3f95a364dc981afdb19f11825dcf040e4'),
+        load_global_caches=load_global_caches,
+    )
+    balances = BeetsV3Balances(
+        evm_inquirer=sonic_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances(addresses=sonic_accounts)
+    v3_lp_token = Asset('eip155:146/erc20:0xa476B33460E792Bac5CC294ba19F0543aB00DC01')
+    assert balances[sonic_accounts[0]].assets[v3_lp_token][CPT_BEETS_V3].amount == FVal('0.667921828364012456')  # noqa: E501
