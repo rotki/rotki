@@ -55,7 +55,10 @@ const {
   onResolveRequest,
   onRetry,
   openDetail,
-} = useDataIssueDetailActions(reloadAll);
+} = useDataIssueDetailActions(
+  reloadAll,
+  () => get(rows).map(({ issue }) => issue),
+);
 
 const { clearSelection, goToEvent, hasActiveSelection, isActiveRow } = useDataIssuesPanelSelection();
 

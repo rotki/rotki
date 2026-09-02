@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [ api, decoders, others ]
+        test-group: [ api, decoders, others, accounting ]
     permissions:
       contents: read
     steps:
@@ -141,8 +141,8 @@ jobs:
           FORCE_COLOR: 1
           MATRIX_JOB: ${{ matrix.test-group }}
         run: |
-          if [ "${{ inputs.collect_coverage }}" = 'true' ]; then
-            export COVERAGE_FILE=".coverage.${{ matrix.test-group }}"
+          if [ "$COLLECT_COVERAGE" = 'true' ]; then
+            export COVERAGE_FILE=".coverage.$MATRIX_JOB"
             COVERAGE_ARGS='--cov=rotkehlchen --cov-report=term-missing'
           else
             COVERAGE_ARGS=''
@@ -150,17 +150,20 @@ jobs:
 
           export CASSETTES_DIR="$(pwd)/test-caching"
 
-          if [ "${{ matrix.test-group }}" == 'api' ]
+          if [ "$MATRIX_JOB" == 'accounting' ]
+          then
+            ROTKI_ACCOUNTING_UPDATE=True uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v -m accounting_update rotkehlchen/tests/
+          elif [ "$MATRIX_JOB" == 'api' ]
           then
             uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
-          elif [ "${{ matrix.test-group }}" == 'decoders' ]
+          elif [ "$MATRIX_JOB" == 'decoders' ]
           then
             uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders
           else
             uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
-          if [ "${{ matrix.test-group }}" == 'others' ]
+          if [ "$MATRIX_JOB" == 'others' ]
           then
             # dead-fixtures needs only one full collection, so run it once in this leg
             uv run pytest --dead-fixtures

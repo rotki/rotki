@@ -80,7 +80,7 @@ const {
   onResolveRequest,
   onRetry,
   openDetail,
-} = useDataIssueDetailActions(reloadAll);
+} = useDataIssueDetailActions(reloadAll, () => get(state).data);
 
 const activeStates = computed<string[]>(() => {
   const value = get(filters).state;

@@ -3812,11 +3812,11 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        """Return graph balances by calculating them from history events on demand.
+        """Return graph balances for an asset or collection.
 
-        Keep this legacy graph endpoint outside the accounting-update feature flag.
-        Its event-metrics replacement depends on background processing that remains
-        experimental, whereas the frontend still exposes this historical source.
+        The accounting-update path reads precomputed event metrics and reports whether processing
+        is required. Outside the feature flag the frontend-facing legacy path continues calculating
+        balances from history events on demand.
         """
         assets: tuple[Asset, ...]
         try:
@@ -3830,9 +3830,22 @@ class RestAPI:
                     )
                     assets = tuple(Asset(row[0]) for row in cursor)
 
-            balances, last_group_identifier = HistoricalBalancesManager(
-                self.rotkehlchen.data.db,
-            ).get_assets_amounts(
+            balances_manager = HistoricalBalancesManager(self.rotkehlchen.data.db)
+            if is_accounting_update_enabled():
+                processing_required, balances = balances_manager.get_assets_amounts_event_metrics(
+                    assets=assets,
+                    from_ts=from_timestamp,
+                    to_ts=to_timestamp,
+                )
+                response_result: dict[str, Any] = {'processing_required': processing_required}
+                if balances is not None:
+                    response_result.update({
+                        'times': list(balances),
+                        'values': [str(value) for value in balances.values()],
+                    })
+                return api_response(_wrap_in_ok_result(result=response_result))
+
+            balances, last_group_identifier = balances_manager.get_assets_amounts(
                 assets=assets,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,

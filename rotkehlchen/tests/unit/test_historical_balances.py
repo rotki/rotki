@@ -527,6 +527,57 @@ def test_has_unprocessed_events(
         write_cursor.execute('DELETE FROM event_metrics WHERE event_identifier IN (SELECT identifier FROM history_events WHERE timestamp >= 5000)')  # noqa: E501
     assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True
 
+    # 11. A non-balance metric must not make an event look processed
+    with database.user_write() as write_cursor:
+        event_identifier = write_cursor.execute(
+            'SELECT identifier FROM history_events WHERE timestamp = ?',
+            (TimestampMS(5000),),
+        ).fetchone()[0]
+        write_cursor.execute(
+            'INSERT INTO event_metrics(event_identifier, location, location_label, protocol, '
+            'metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                event_identifier,
+                Location.ETHEREUM.serialize_for_db(),
+                TEST_ADDR1,
+                None,
+                EventMetricKey.REBASE_YIELD.serialize(),
+                '1',
+                A_ETH.identifier,
+                TimestampMS(5000),
+                0,
+                5000,
+            ),
+        )
+    assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True
+
+
+def test_process_historical_balances_resumes_at_exact_millisecond(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                _make_balance_event(timestamp=1000, amount='1'),
+                _make_balance_event(timestamp=1500, amount='1'),
+            ],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+    process_historical_balances(
+        database=database,
+        msg_aggregator=messages_aggregator,
+        from_ts=TimestampMS(1500),
+    )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(1000, '1'), (1500, '2')]
+
 
 def test_get_balances_with_unprocessed_events_and_timestamp_filter(
         database: DBHandler,
@@ -825,7 +876,7 @@ def test_empty_counterparty_does_not_create_protocol_bucket(
         database: DBHandler,
         messages_aggregator: MessagesAggregator,
 ) -> None:
-    """Test that an empty counterparty is not considered a valid protocol bucket."""
+    """Test that dual and single protocol events use the wallet without a counterparty."""
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_events(
             write_cursor=write_cursor,
@@ -855,8 +906,8 @@ def test_empty_counterparty_does_not_create_protocol_bucket(
                 sequence_index=0,
                 timestamp=TimestampMS(3000),
                 location=Location.ETHEREUM,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
                 amount=FVal('1'),
                 location_label=TEST_ADDR1,
@@ -873,7 +924,7 @@ def test_empty_counterparty_does_not_create_protocol_bucket(
         ).fetchall() == [
             (1000, TEST_ADDR1, None, '10'),
             (2000, TEST_ADDR1, None, '7'),
-            (3000, TEST_ADDR1, None, '6'),
+            (3000, TEST_ADDR1, None, '8'),
         ]
 
 
@@ -2114,6 +2165,68 @@ def test_rebasing_reconciliation_resumes_after_transient_query_failure(
         GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
 
 
+def test_rebasing_reconciliation_reports_only_first_failure(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Later failed checkpoints must not rewrite the issue's original event and block."""
+    tx_hashes = [make_evm_tx_hash() for _ in range(3)]
+    with database.user_write() as write_cursor:
+        _add_test_evm_transactions(
+            database=database,
+            write_cursor=write_cursor,
+            transactions=[
+                (tx_hash, Timestamp(idx), idx * 100)
+                for idx, tx_hash in enumerate(tx_hashes, start=1)
+            ],
+        )
+        events_db = DBHistoryEvents(database)
+        event_ids = [events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(idx * 1000),
+                location=Location.ETHEREUM,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal(amount),
+                location_label=TEST_ADDR1,
+            ),
+        ) for idx, (tx_hash, event_type, amount) in enumerate(zip(
+            tx_hashes,
+            (HistoryEventType.RECEIVE, HistoryEventType.SPEND, HistoryEventType.RECEIVE),
+            ('10', '11', '1'),
+            strict=True,
+        ), start=1)]
+
+    GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=True)
+    try:
+        node_inquirer = MagicMock()
+        node_inquirer.get_historical_token_balance.return_value = None
+        node_inquirer.has_archive_node.return_value = False
+        chains_aggregator = MagicMock()
+        chains_aggregator.get_evm_manager.return_value.node_inquirer = node_inquirer
+
+        process_historical_balances(
+            database=database,
+            msg_aggregator=messages_aggregator,
+            chains_aggregator=chains_aggregator,
+        )
+
+        issues = DataIssuesManager(database).list_issues()
+        assert len(issues) == 1
+        assert issues[0].payload == {
+            'event_identifier': event_ids[1],
+            'block_number': 200,
+            'reason': 'archive_node_unavailable',
+        }
+        assert node_inquirer.get_historical_token_balance.call_count == 2
+    finally:
+        GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
+
+
 @pytest.mark.parametrize(('event_asset', 'bucket_asset'), [(A_ETH, A_DAI), (A_DAI, A_ETH)])
 def test_rebasing_asset_identity_mismatch_uses_negative_balance_path(
         database: DBHandler,
@@ -2176,10 +2289,17 @@ def test_retry_rebasing_issue_finishes_remediation_state(
     )
     issues_manager.retry_auto_remediation(issue_id)
 
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            value='500',
+        )
+
     with patch(
         'rotkehlchen.tasks.historical_balances.process_historical_balances',
         return_value=True,
-    ):
+    ) as process_mock:
         retry_rebasing_token_issue(
             database=database,
             msg_aggregator=messages_aggregator,
@@ -2187,6 +2307,7 @@ def test_retry_rebasing_issue_finishes_remediation_state(
             issue_id=issue_id,
             from_ts=TimestampMS(1000),
         )
+    assert process_mock.call_args.kwargs['from_ts'] == TimestampMS(500)
 
     issue = issues_manager.get_issue(issue_id)
     assert issue.state == IssueState.RESOLVED

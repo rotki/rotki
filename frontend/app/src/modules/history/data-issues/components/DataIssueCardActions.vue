@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import { canDismiss, canResolveManually, canRetry } from '@/modules/history/data-issues/constants';
+import {
+  canDismiss,
+  canResolveManually,
+  canRetry,
+  IssueState,
+} from '@/modules/history/data-issues/constants';
 
 const { issue, eventRoute } = defineProps<{
   issue: DataIssue;
@@ -68,7 +73,7 @@ function onGoto(): void {
       {{ t('data_issues.action.dismiss.label') }}
     </RuiTooltip>
     <RuiTooltip
-      v-if="canRetry(issue.kind, issue.state)"
+      v-if="canRetry(issue.kind, issue.state) || issue.state === IssueState.AUTO_REMEDIATING"
       :open-delay="300"
     >
       <template #activator>
@@ -78,6 +83,7 @@ function onGoto(): void {
           size="sm"
           :aria-label="t('data_issues.action.retry.label')"
           data-testid="data-issues-panel-retry"
+          :disabled="!canRetry(issue.kind, issue.state)"
           @click.stop="emit('retry', issue)"
         >
           <RuiIcon

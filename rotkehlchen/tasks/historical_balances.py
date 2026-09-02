@@ -291,18 +291,24 @@ def _load_bucket_balances_before_ts(
 ) -> dict[Bucket, FVal]:
     """Load the latest balance per bucket before from_ts.
 
-    We use MAX(sort_key) to identify the most recent row per bucket,
-    relying on SQLite's bare column behavior to return non-aggregated columns from
-    that row. See https://www.sqlite.org/lang_select.html#bareagg
+    Rank metrics by the complete event ordering so events that share a timestamp and sequence
+    index still select the deterministic latest event identifier.
     """
     bucket_balances: dict[Bucket, FVal] = {}
     with database.conn.read_ctx() as cursor:
         treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
         cursor.execute(
             """
-            SELECT location, location_label, protocol, asset, metric_value, MAX(sort_key)
-            FROM event_metrics WHERE metric_key = ? AND timestamp < ?
-            GROUP BY location, location_label, protocol, asset
+            WITH ranked_metrics AS (
+                SELECT location, location_label, protocol, asset, metric_value,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY location, location_label, protocol, asset
+                        ORDER BY timestamp DESC, sequence_index DESC, event_identifier DESC
+                    ) AS metric_rank
+                FROM event_metrics WHERE metric_key = ? AND timestamp < ?
+            )
+            SELECT location, location_label, protocol, asset, metric_value
+            FROM ranked_metrics WHERE metric_rank = 1
             """,
             (EventMetricKey.BALANCE.serialize(), from_ts),
         )
@@ -501,13 +507,20 @@ def process_historical_balances(
             cursor=cursor,
             name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
         )
+        event_filter = HistoryEventFilterQuery.make(
+            order_by_rules=[
+                ('timestamp', True),
+                ('sequence_index', True),
+                ('history_events_identifier', True),
+            ],
+            exclude_ignored_assets=True,
+        )
+        if from_ts is not None:
+            event_filter.timestamp_filter.from_ts = Timestamp(from_ts)
+            event_filter.timestamp_filter.scaling_factor = None
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
-                from_ts=ts_ms_to_sec(from_ts) if from_ts is not None else None,
-                order_by_rules=[('timestamp', True), ('sequence_index', True)],
-                exclude_ignored_assets=True,
-            ),
+            filter_query=event_filter,
         )
         # Snapshot the modification timestamp after reading events. This allows us to
         # detect concurrent modifications: if the modification timestamp changed between
@@ -540,6 +553,7 @@ def process_historical_balances(
     metrics_batch: list[MetricRow] = []
     modified_buckets: ModifiedBuckets = {}
     pending_rebasing_events: PendingRebasingEvents = {}
+    reported_rebasing_buckets: set[Bucket] = set()
     resolved_rebasing_events: list[EventIssueScope] = []
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
@@ -558,6 +572,7 @@ def process_historical_balances(
                 metrics_batch=metrics_batch,
                 modified_buckets=modified_buckets,
                 pending_rebasing_events=pending_rebasing_events,
+                reported_rebasing_buckets=reported_rebasing_buckets,
                 resolved_rebasing_events=resolved_rebasing_events,
                 last_run_ts=last_run_ts,
                 rebasing_assets=rebasing_assets,
@@ -647,7 +662,18 @@ def retry_rebasing_token_issue(
         issue_id: int,
         from_ts: TimestampMS,
 ) -> None:
-    """Reprocess balances from a rebasing issue and finish its remediation attempt."""
+    """Reprocess balances from a rebasing issue and finish its remediation attempt.
+
+    A pending stale-balances marker older than the issue widens the reprocessed range because
+    finalizing this run clears that marker.
+    """
+    with database.conn.read_ctx() as cursor:
+        if (stale_from_ts := database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+        )) is not None:
+            from_ts = min(from_ts, TimestampMS(int(stale_from_ts)))
+
     try:
         processing_completed = process_historical_balances(
             database=database,
@@ -659,7 +685,7 @@ def retry_rebasing_token_issue(
         with suppress(NotFoundError):
             _fail_rebasing_remediation(database, issue_id, 'processing_cancelled')
         raise
-    except Exception:  # the remediation state must be recovered for any processing failure
+    except Exception:  # remediation state must recover from any processing failure
         with suppress(NotFoundError):
             _fail_rebasing_remediation(database, issue_id, 'processing_failed')
         raise
@@ -825,6 +851,7 @@ def _apply_to_buckets(
         metrics_batch: list[MetricRow],
         modified_buckets: ModifiedBuckets,
         pending_rebasing_events: PendingRebasingEvents,
+        reported_rebasing_buckets: set[Bucket],
         resolved_rebasing_events: list[EventIssueScope],
         last_run_ts: Timestamp | None,
         rebasing_assets: frozenset[str],
@@ -885,19 +912,22 @@ def _apply_to_buckets(
                     chains_aggregator=chains_aggregator,
                 )
                 if failure is not None:
-                    _write_rebasing_issue(
-                        database=database,
-                        event=negative_event,
-                        bucket=bucket,
-                        block_number=block_number,
-                        reason=failure,
-                    )
+                    if bucket not in reported_rebasing_buckets:
+                        reported_rebasing_buckets.add(bucket)
+                        _write_rebasing_issue(
+                            database=database,
+                            event=negative_event,
+                            bucket=bucket,
+                            block_number=block_number,
+                            reason=failure,
+                        )
                     bucket_balances[bucket] = new_balance
                     continue
 
                 assert onchain_balance is not None
                 assert negative_event.identifier is not None
                 del pending_rebasing_events[bucket]
+                reported_rebasing_buckets.discard(bucket)
                 resolved_rebasing_events.append((
                     bucket.location,
                     bucket.location_label,

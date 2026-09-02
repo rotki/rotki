@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
@@ -20,6 +20,7 @@ interface UseDataIssueDetailActionsReturn {
  * the full page. Owns the selected issue, the drawer/resolve-dialog visibility,
  * and a busy flag; each successful action triggers the caller-supplied `reload`
  * so both the list and the badge summary refresh from a single place.
+ * The selected issue is synchronized from `issues` after polling or an explicit refresh.
  *
  * The returned refs use the `model` prefix because they are two-way bindings the
  * consumer drives via `v-model` / mutates, which the `composable-return-readonly`
@@ -27,6 +28,7 @@ interface UseDataIssueDetailActionsReturn {
  */
 export function useDataIssueDetailActions(
   reload: () => Promise<void>,
+  issues: MaybeRefOrGetter<DataIssue[]> = () => [],
 ): UseDataIssueDetailActionsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { dismiss, resolveManually, retry } = useDataIssues();
@@ -108,6 +110,16 @@ export function useDataIssueDetailActions(
       set(modelActionBusy, false);
     }
   }
+
+  watch(() => toValue(issues), (updatedIssues) => {
+    const selected = get(modelSelectedIssue);
+    if (!selected)
+      return;
+
+    const updated = updatedIssues.find(issue => issue.id === selected.id);
+    if (updated)
+      set(modelSelectedIssue, updated);
+  });
 
   return {
     modelActionBusy,
