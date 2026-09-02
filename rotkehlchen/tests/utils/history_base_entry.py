@@ -27,7 +27,12 @@ from rotkehlchen.history.events.structures.eth2 import (
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    Location,
+    SupportedBlockchain,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -274,6 +279,13 @@ def add_entries(events_db: DBHistoryEvents) -> list[HistoryBaseEntry]:
     """Add history events to the database"""
     entries = predefined_events_to_insert()
     with events_db.db.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(  # withdrawals of an untracked address are hidden everywhere
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
+            [
+                (SupportedBlockchain.ETHEREUM.value, entry.location_label)
+                for entry in entries if isinstance(entry, EthWithdrawalEvent)
+            ],
+        )
         for entry in entries:
             identifier = events_db.add_history_event(
                 write_cursor=write_cursor,

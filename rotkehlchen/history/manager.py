@@ -248,6 +248,7 @@ class HistoryQueryingManager:
                     # We need to have history since before the range
                     from_ts=Timestamp(0),
                     to_ts=end_ts,
+                    exclude_untracked_withdrawals=True,
                 ),
                 aggregate_by_group_ids=False,
             )

@@ -299,6 +299,7 @@ def process_historical_balances(
                 from_ts=ts_ms_to_sec(from_ts) if from_ts is not None else None,
                 order_by_rules=[('timestamp', True), ('sequence_index', True)],
                 exclude_ignored_assets=True,
+                exclude_untracked_withdrawals=True,
             ),
         )
         # Snapshot the modification timestamp after reading events. This allows us to

@@ -265,6 +265,31 @@ class DBEth2:
                 f'that is not in the database',
             )
 
+    def invalidate_withdrawals_derived_data(self, address: ChecksumEvmAddress) -> None:
+        """Drop everything derived from whether the given address' withdrawals count as ours.
+
+        Withdrawals to an untracked address are filtered out of history, accounting and
+        validator performance at query time, but the data derived from them is stored, so
+        tracking or untracking the address has to drop it.
+
+        Called on every ethereum account modification, whether or not the eth2 module is
+        active, since what it invalidates is queried independently of the module and would
+        otherwise stay stale until the next time the account happened to change.
+        """
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM eth_validators_data_cache WHERE validator_index IN ('
+                'SELECT S.validator_index FROM history_events H INNER JOIN '
+                'eth_staking_events_info S ON H.identifier=S.identifier '
+                'WHERE H.entry_type=? AND H.location_label=?)',
+                (HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), address),
+            )
+            DBHistoryEvents(self.db).mark_events_stale_by_query(
+                write_cursor=write_cursor,
+                query='SELECT timestamp FROM history_events WHERE entry_type=? AND location_label=?',  # noqa: E501
+                bindings=(HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), address),
+            )
+
     def delete_validators(self, validator_indices: list[int]) -> None:
         """Deletes the given validators from the DB. Due to marshmallow here at least one
         of the two arguments is not None.
@@ -382,6 +407,7 @@ class DBEth2:
                     event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
                     entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
                     withdrawal_types_filter=withdrawal_types_filter,
+                    exclude_untracked_withdrawals=True,  # withdrawals to an address we don't track are not our pnl  # noqa: E501
                 ),
             ).items():
                 withdrawal_sums[key] += value
@@ -451,6 +477,10 @@ class DBEth2:
         events_db = DBHistoryEvents(self.db)
         events: list[HistoryBaseEntry] = []
         with self.db.conn.read_ctx() as cursor:
+            # Withdrawals to an address we don't track are not ours, so they contribute no pnl.
+            # They are still needed to reconstruct the validator's balance over time, so they
+            # are queried here and skipped only where pnl gets accumulated below.
+            tracked_addresses = set(self.db.get_blockchain_accounts(cursor).eth)
             cached_balances_over_time, cached_withdrawals_pnl, cached_exits_pnl, cached_last_stored_ts = self._load_eth2_validator_cache(  # noqa: E501
                 cursor=cursor,
                 from_ts=from_ts,
@@ -515,11 +545,14 @@ class DBEth2:
                 validator_balances[v_index := event.validator_index] += event.amount
             elif isinstance(event, EthWithdrawalEvent):
                 v_index = event.validator_index
+                is_tracked = event.location_label in tracked_addresses
                 if event.is_exit_or_blocknumber is True:  # Exit withdrawals
                     if from_ts_ms <= event.timestamp <= to_ts_ms:  # only count pnl within the specified range  # noqa: E501
-                        # For accumulating validators, subtract already counted withdrawals
-                        # from exit PnL to avoid double-counting consensus rewards
-                        exits_pnl[v_index] = event.amount - validator_balances[v_index] - sum(withdrawals_pnl_over_time[v_index].values())  # noqa: E501
+                        if is_tracked:
+                            # For accumulating validators, subtract already counted withdrawals
+                            # from exit PnL to avoid double-counting consensus rewards
+                            exits_pnl[v_index] = event.amount - validator_balances[v_index] - sum(withdrawals_pnl_over_time[v_index].values())  # noqa: E501
+
                         validator_balances[v_index] = ZERO
                     else:
                         continue
@@ -530,7 +563,9 @@ class DBEth2:
                             withdrawal_request_events[v_index].remove(request_event)  # remove this request event so we don't match it again.  # noqa: E501
                             break
                     else:  # skimming withdrawal - doesn't change the effective balance, but is counted as profit  # noqa: E501
-                        withdrawals_pnl_over_time[v_index][event.timestamp] += event.amount
+                        if is_tracked:
+                            withdrawals_pnl_over_time[v_index][event.timestamp] += event.amount
+
                         continue
             elif (
                 event.event_type == HistoryEventType.INFORMATIONAL and

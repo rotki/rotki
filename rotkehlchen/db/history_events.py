@@ -258,6 +258,26 @@ class DBHistoryEvents:
             self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
         return count
 
+    def mark_events_stale_by_query(
+            self,
+            write_cursor: DBCursor,
+            query: str,
+            bindings: tuple,
+    ) -> int:
+        """Mark the historical balances stale from the earliest timestamp the given query
+        selects, without modifying any event.
+
+        This is for changes that alter how already stored events are interpreted (e.g. an
+        eth account being tracked or untracked flipping whether its validator withdrawals
+        count) rather than changing the events themselves.
+
+        The query must select a single timestamp column. Returns the number of rows it matched.
+        """
+        return self._execute_and_track_modified(
+            write_cursor=write_cursor,
+            result=write_cursor.execute(query, bindings),
+        )
+
     def delete_events_and_track(
             self,
             write_cursor: DBCursor,

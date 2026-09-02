@@ -1078,12 +1078,17 @@ class Eth2(EthereumModule):
             )
 
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)
+        # whether the address' withdrawals count as ours changed, so the performance results
+        # computed from them are no longer valid. The persisted data derived from them is
+        # dropped by the chains aggregator, which runs even when this module is not active.
+        self.performance_cache.clear()
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         """
         Adjust existing block production events to become informational if they involve the address
         """
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.INFORMATIONAL)  # noqa: E501
+        self.performance_cache.clear()  # its results counted this address' withdrawals
 
         with self.database.conn.write_ctx() as write_cursor:
             self.database.delete_dynamic_cache(

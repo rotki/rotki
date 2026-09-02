@@ -224,6 +224,15 @@ class EthWithdrawalEvent(EthStakingEvent):
             accounting: AccountingPot,
             events_iterator: Iterator[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
+        if accounting.is_tracked_eth_account(self.location_label) is False:
+            log.debug(
+                'Skipping withdrawal event for accounting since its withdrawal address '
+                'is not a tracked ethereum account',
+                event=self,
+                withdrawal_address=self.location_label,
+            )
+            return 1
+
         if (validator_info := accounting.get_validator_with_status(self.validator_index)) is None:
             log.error(
                 f'Could not find validator {self.validator_index} in the DB while processing '
