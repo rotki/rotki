@@ -11,7 +11,13 @@ from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2,
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )
-from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V3
+from rotkehlchen.chain.evm.decoding.balancer.constants import (
+    BALANCER_CACHE_TYPE_MAPPING,
+    BALANCER_LABEL,
+    BALANCER_VERSION_MAPPING,
+    CPT_BALANCER_V3,
+    BalancerCounterparty,
+)
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -27,13 +33,13 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     BALANCER_V3_POOL_ABI,
     CPT_BALANCER_SWAP_V3,
     LIQUIDITY_ADDED_TOPIC,
+    LIQUIDITY_AMOUNT_TOLERANCE,
     LIQUIDITY_REMOVED_TOPIC,
     SWAP_TOPIC,
     VAULT_ADDRESS,
@@ -48,6 +54,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -61,16 +68,19 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             evm_inquirer: EvmNodeInquirer,
             base_tools: BaseEvmDecoderTools,
             msg_aggregator: MessagesAggregator,
+            counterparty: BalancerCounterparty = CPT_BALANCER_V3,
+            swap_counterparty: str = CPT_BALANCER_SWAP_V3,
     ) -> None:
+        self.swap_counterparty = swap_counterparty
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            counterparty=CPT_BALANCER_V3,
+            counterparty=counterparty,
             read_fn=lambda chain_id: read_balancer_pools_and_gauges_from_cache(
-                version=3,
+                version=BALANCER_VERSION_MAPPING[counterparty],
                 chain_id=chain_id,
-                cache_type=CacheType.BALANCER_V3_POOLS,
+                cache_type=BALANCER_CACHE_TYPE_MAPPING[counterparty],
             ),
         )
 
@@ -104,11 +114,11 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 return FAILED_ENRICHMENT_OUTPUT
 
         context.event.event_subtype = HistoryEventSubType.REWARD
-        context.event.counterparty = CPT_BALANCER_V3
+        context.event.counterparty = self.counterparty
         context.event.notes = (
-            f'Claim {context.event.amount} {context.token.symbol} from a balancer-v3 gauge'
+            f'Claim {context.event.amount} {context.token.symbol} from a {self.counterparty} gauge'
         )
-        return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V3)
+        return TransferEnrichmentOutput(matched_counterparty=self.counterparty)
 
     def _decode_liquidity_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode liquidity events (inflow & outflow) for Balancer V3 pools."""
@@ -118,19 +128,19 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         if context.tx_log.topics[0] == LIQUIDITY_ADDED_TOPIC:
             pool_token_event_type = HistoryEventType.RECEIVE
             pool_token_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            pool_token_notes_template = 'Receive {amount} {symbol} from a Balancer v3 pool'
+            pool_token_notes_template = f'Receive {{amount}} {{symbol}} from a {self.protocol_label} pool'  # noqa: E501
             from_event_type = HistoryEventType.SPEND
             to_event_type = HistoryEventType.DEPOSIT
             to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-            to_notes_template = 'Deposit {amount} {symbol} to a Balancer v3 pool'
+            to_notes_template = f'Deposit {{amount}} {{symbol}} to a {self.protocol_label} pool'
         else:  # LIQUIDITY_REMOVED_TOPIC
             pool_token_event_type = HistoryEventType.SPEND
             pool_token_event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            pool_token_notes_template = 'Return {amount} {symbol} to a Balancer v3 pool'
+            pool_token_notes_template = f'Return {{amount}} {{symbol}} to a {self.protocol_label} pool'  # noqa: E501
             from_event_type = HistoryEventType.RECEIVE
             to_event_type = HistoryEventType.WITHDRAWAL
             to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-            to_notes_template = 'Withdraw {amount} {symbol} from a Balancer v3 pool'
+            to_notes_template = f'Withdraw {{amount}} {{symbol}} from a {self.protocol_label} pool'
 
         pool_tokens = self.node_inquirer.call_contract(
             contract_address=(lp_token_address := bytes_to_address(context.tx_log.topics[1])),
@@ -150,7 +160,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                     event.asset == lp_token_identifier
             ):
                 event.event_subtype = pool_token_event_subtype
-                event.counterparty = CPT_BALANCER_V3
+                event.counterparty = self.counterparty
                 event.notes = pool_token_notes_template.format(
                     amount=event.amount,
                     symbol=event.asset.resolve_to_asset_with_symbol().symbol,
@@ -176,22 +186,35 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 amount=amount_raw,
                 asset=(token := self.base.get_or_create_evm_asset(deserialize_evm_address(token_address))),  # noqa: E501
             )
-            if token == self.node_inquirer.wrapped_native_token:
-                for event in context.decoded_events:
-                    if (
-                            event.event_type == from_event_type and
-                            event.event_subtype == HistoryEventSubType.NONE and
-                            event.asset == self.node_inquirer.native_token and
-                            event.amount == amount
-                    ):
-                        event.event_type = to_event_type
-                        event.counterparty = CPT_BALANCER_V3
-                        event.event_subtype = to_event_subtype
-                        event.notes = to_notes_template.format(
-                            amount=event.amount,
-                            symbol=self.node_inquirer.native_token.symbol,
-                        )
-                        break
+
+            # The deposit/withdrawal transfer may have been decoded before the
+            # liquidity event (e.g. joins through the BatchRouter emit the token
+            # transfer first). Transform it in place if already present, otherwise
+            # queue an ActionItem for the transfer decoder.
+            transformed = False
+            for event in context.decoded_events:
+                if (
+                    event.event_type == from_event_type and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    # pool exit fees may leave the received transfer a few wei short
+                    abs(event.amount - amount) < LIQUIDITY_AMOUNT_TOLERANCE and
+                    (
+                        event.asset == token or
+                        (token == self.node_inquirer.wrapped_native_token and event.asset == self.node_inquirer.native_token)  # noqa: E501
+                    )
+                ):
+                    event.event_type = to_event_type
+                    event.counterparty = self.counterparty
+                    event.event_subtype = to_event_subtype
+                    event.notes = to_notes_template.format(
+                        amount=event.amount,
+                        symbol=event.asset.resolve_to_asset_with_symbol().symbol,
+                    )
+                    transformed = True
+                    break
+
+            if transformed is True:
+                continue
 
             action_items.append(ActionItem(
                 action='transform',
@@ -202,18 +225,17 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 to_event_type=to_event_type,
                 to_event_subtype=to_event_subtype,
                 to_notes=to_notes_template.format(amount=amount, symbol=token.symbol),
-                to_counterparty=CPT_BALANCER_V3,
+                to_counterparty=self.counterparty,
             ))
 
-        return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_BALANCER_V3)
+        return EvmDecodingOutput(action_items=action_items, matched_counterparty=self.counterparty)
 
-    @staticmethod
-    def _decode_swap_event(context: DecoderContext) -> EvmDecodingOutput:
+    def _decode_swap_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Identifies swap events and marks them for later processing."""
-        return EvmDecodingOutput(matched_counterparty=CPT_BALANCER_SWAP_V3)
+        return EvmDecodingOutput(matched_counterparty=self.swap_counterparty)
 
-    @staticmethod
     def _order_lp_events(
+            self,
             transaction: EvmTransaction,
             decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
@@ -221,7 +243,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         """Order liquidity provision events for proper display."""
         deposit_events, receive_events, return_events, withdrawal_events = [], [], [], []
         for event in decoded_events:
-            if event.counterparty != CPT_BALANCER_V3:
+            if event.counterparty != self.counterparty:
                 continue
 
             if event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
@@ -325,8 +347,8 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {
-            CPT_BALANCER_V3: [(0, self._order_lp_events)],
-            CPT_BALANCER_SWAP_V3: [(0, self._process_swap_events)],
+            self.counterparty: [(0, self._order_lp_events)],
+            self.swap_counterparty: [(0, self._process_swap_events)],
         }
 
     @staticmethod

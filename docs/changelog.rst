@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`6206` A deposit or withdrawal on an exchange whose counterpart is not tracked can now be marked as income or payment.
+* :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :bug:`-` Historical prices of a token that exists on several chains now come from the main asset it is grouped with, so WETH on Arbitrum, Optimism and Base is priced as ETH. They used to be priced on their own and could come back at roughly half of ETH's value.
 * :bug:`-` Changing the asset or chain in the send form while a gas estimate is still being fetched no longer makes the estimate look finished before it is. The spinner stopped as soon as the request you moved away from unwound, so the fee shown while the real request was still in flight read as the final one.

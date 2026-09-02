@@ -65,6 +65,8 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'woo-fi',
     'morpho_blue',
     'yearn-vesting',
+    'beets-v2',
+    'beets-v3',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 # The only entry type addresses_with_activity() can ever match. Shared with the caller that
