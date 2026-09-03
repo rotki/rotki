@@ -497,7 +497,10 @@ def vcr_fixture(vcr: VCR) -> VCR:
         return r1.uri == r2.uri and r1.method == r2.method
 
     def match_rpc_calls(r1, r2):
-        """Match rpc calls ignoring the call id"""
+        """Match RPC calls without transport IDs and support accompanying indexer requests."""
+        if r1.body is None or r2.body is None:
+            return r1.body == r2.body and etherscan_matcher(r1, r2)
+
         b1, b2 = json.loads(r1.body), json.loads(r2.body)
         if 'id' in b1:
             b1.pop('id')

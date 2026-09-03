@@ -2,7 +2,7 @@ import logging
 import random
 import threading
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple, cast
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
@@ -10,6 +10,13 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
+    FLYING_TULIP_LEND_DEPLOYMENTS,
+    LAST_DEPOSIT_FOR_QUERY,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.discovery import (
+    query_deposit_for_transactions,
+)
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -96,6 +103,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.processing import HistoryProcessingCoordinator
     from rotkehlchen.premium.sync import PremiumSyncManager
     from rotkehlchen.tasks.supervisor import TaskSupervisor
+    from rotkehlchen.types import SUPPORTED_CHAIN_IDS
     from rotkehlchen.user_messages import MessagesAggregator
 
     SchedulerTask = Callable[[], list[Task] | None]
@@ -203,6 +211,7 @@ class TaskManager:
             self._maybe_delete_past_calendar_events,
             self._maybe_sync_google_calendar,
             self._maybe_query_graph_delegated_tokens,
+            self._maybe_query_flying_tulip_deposits,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -1083,6 +1092,41 @@ class TaskManager:
             method=self.chains_aggregator.ethereum.transactions.query_for_graph_delegation_txns,  # type: ignore[attr-defined]
             addresses=self.chains_aggregator.accounts.eth,
         )]
+
+    def _maybe_query_flying_tulip_deposits(self) -> list[Task] | None:
+        """Look for Flying Tulip lending deposits made for a tracked address by someone else.
+
+        Such a transaction moves no funds of the beneficiary, it only names them in a
+        DepositFor log, so the per address transaction query never brings it in.
+        """
+        tasks = []
+        for deployed_chain_id in FLYING_TULIP_LEND_DEPLOYMENTS:
+            chain_id = cast('SUPPORTED_CHAIN_IDS', deployed_chain_id)
+            blockchain = chain_id.to_blockchain()
+            if len(accounts := self.chains_aggregator.accounts.get(blockchain)) == 0:
+                continue
+
+            with self.database.conn.read_ctx() as cursor:
+                last_query_ts = self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_QUERY_TS,
+                    location=chain_id.to_name(),
+                    location_name=LAST_DEPOSIT_FOR_QUERY,
+                    account_id='positions',
+                )
+            if last_query_ts is not None and ts_now() - last_query_ts < 3 * DAY_IN_SECONDS:
+                continue
+
+            tasks.append(self.task_supervisor.spawn_and_track(
+                after_seconds=None,
+                task_name=f'Search for Flying Tulip deposits made for {blockchain!s} accounts',
+                exception_is_error=True,
+                method=query_deposit_for_transactions,
+                transactions=self.chains_aggregator.get_evm_manager(chain_id).transactions,
+                addresses=accounts,
+            ))
+
+        return tasks if len(tasks) != 0 else None
 
     def _clear_finished_task_references(self) -> None:
         self.task_supervisor.clear_finished()

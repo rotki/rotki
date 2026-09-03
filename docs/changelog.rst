@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Flying Tulip activity is now decoded on Ethereum: ftUSD mints and redemptions, sftUSD staking with its FT reward claims, lending deposits, withdrawals, borrows and repayments, and ftPUT invests, divests and FT withdrawals. Open lending positions, outstanding debt and claimable staking rewards are also included in your on-chain balances. The lending market is also supported on Binance Smart Chain.
 * :feature:`6206` A deposit or withdrawal on an exchange whose counterpart is not tracked can now be marked as income or payment.
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.

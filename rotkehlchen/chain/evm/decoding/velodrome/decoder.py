@@ -10,6 +10,7 @@ from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
     BURN_TOPIC,
     DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC_V3,
     MINT_TOPIC,
     WITHDRAW_TOPIC_V2,
     ZERO_ADDRESS,
@@ -30,7 +31,6 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import (
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
     CLAIM_REWARDS_V2,
     DROME_ROTKI_ABI,
-    GAUGE_DEPOSIT_V2,
     REMOVE_LIQUIDITY_EVENT_V2,
     SWAP_V2,
     VOTER_CLAIM_REWARDS,
@@ -323,7 +323,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         Decodes transactions that interact with a (velo/aero)drome v2 gauge.
         Velodrome v1 had no gauges.
         """
-        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_V2, WITHDRAW_TOPIC_V2, CLAIM_REWARDS_V2):
+        if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V3, WITHDRAW_TOPIC_V2, CLAIM_REWARDS_V2):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         user_or_contract_address = bytes_to_address(context.tx_log.topics[1])
@@ -339,7 +339,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             ):
                 event.counterparty = self.counterparty
                 found_event_modifying_balances = True
-                if context.tx_log.topics[0] == GAUGE_DEPOSIT_V2:
+                if context.tx_log.topics[0] == DEPOSIT_TOPIC_V3:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into {gauge_address} {self.counterparty} gauge'  # noqa: E501

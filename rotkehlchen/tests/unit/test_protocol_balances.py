@@ -71,6 +71,15 @@ from rotkehlchen.chain.evm.decoding.extrafi.cache import (
     query_extrafi_data,
 )
 from rotkehlchen.chain.evm.decoding.extrafi.constants import CPT_EXTRAFI
+from rotkehlchen.chain.evm.decoding.flying_tulip.constants import CPT_FLYING_TULIP
+from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.balances import FlyingTulipStakingBalances
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.balances import FlyingTulipLendBalances
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
+    LAST_DEPOSIT_FOR_QUERY,
+)
+from rotkehlchen.chain.evm.decoding.flying_tulip.lend.discovery import (
+    query_deposit_for_transactions,
+)
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
@@ -81,7 +90,13 @@ from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
 from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.balances import KinetiqBalances
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.constants import CPT_KINETIQ
@@ -115,6 +130,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -138,6 +154,7 @@ from rotkehlchen.tests.utils.balances import find_inheriting_classes
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.decoders import patch_decoder_should_update_protocol_caches
 from rotkehlchen.tests.utils.ethereum import (
+    PRUNED_AND_NOT_ARCHIVED_NODE,
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
 )
@@ -2111,3 +2128,196 @@ def test_protocol_balances_skip_the_events_query_for_absent_counterparties(
         )
 
     assert refresh_query_count() == 1
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey', 'api_key'], match_on=['match_rpc_calls'],
+    before_record_response=None,
+)
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(
+    order={ChainID.ETHEREUM: [EvmIndexer.BLOCKSCOUT]},
+)}])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
+def test_flying_tulip_lend_balances(
+        ethereum_inquirer, ethereum_accounts, inquirer,
+):
+    """Discover collateral and debt from a real borrowing transaction and contract responses."""
+    _, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x84dfebb43989ad185ba61d493762501e421e862b2ed15c86c81359d9b6e7f490'),
+    )
+    balances = FlyingTulipLendBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=decoder,
+    ).query_balances(addresses=ethereum_accounts)
+    assert set(balances) == set(ethereum_accounts)
+    position = balances[ethereum_accounts[0]]
+    assert {
+        asset.identifier: str(values[CPT_FLYING_TULIP].amount)
+        for asset, values in position.assets.items()
+    } == {
+        A_WETH.identifier: '0.499802046555352326',
+        'eip155:1/erc20:0x5DD1A7A369e8273371d2DBf9d83356057088082c': '380.339290563347645575',
+    }
+    assert {
+        asset.identifier: str(values[CPT_FLYING_TULIP].amount)
+        for asset, values in position.liabilities.items()
+    } == {'eip155:1/erc20:0xF7D85EC4E7710f71992752eac2111312e73E9C9C': '0.558442'}
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey', 'api_key'], match_on=['match_rpc_calls'],
+    before_record_response=None,
+)
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(
+    order={ChainID.ETHEREUM: [EvmIndexer.BLOCKSCOUT]},
+)}])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x3c9094Fc254371998fE115a6AA38be9955b2f694', '0x072ab8B22c7C7b4DD2b3367C6E7445d6c9e3cB2F',
+]])
+def test_flying_tulip_lend_balances_ignore_other_products(
+        ethereum_inquirer, ethereum_accounts, vcr_cassette,
+):
+    """Actual staking, put and queued redemption activity must not seed lending queries."""
+    for tx_hash in (
+        '0xda81303cc65040a0fbd75b97cae82f61d068d32d61e52f0e836f664d9858cfcd',
+        '0x2b1ce9db1e985429e3d0103113f64e1aa21145650fcc5944edd03ca0e2430d59',
+        '0xa58bad57aeec3377b47fc47b474386d3afc17d73be7b8ef232d3c26aa06b9296',
+    ):
+        events, decoder = get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
+        )
+        assert any(event.counterparty == CPT_FLYING_TULIP for event in events)
+    previous_requests = vcr_cassette.play_count + len(vcr_cassette.requests)
+    assert FlyingTulipLendBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=decoder,
+    ).query_balances(addresses=ethereum_accounts) == {}
+    assert vcr_cassette.play_count + len(vcr_cassette.requests) == previous_requests
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey', 'api_key'], match_on=['match_rpc_calls'],
+    before_record_response=None,
+)
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(
+    order={ChainID.ETHEREUM: [EvmIndexer.BLOCKSCOUT]},
+)}])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_flying_tulip_staking_balances(ethereum_inquirer, ethereum_accounts, inquirer):
+    """Query claimable FT rewards after decoding the account's actual vault deposit."""
+    _, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xda81303cc65040a0fbd75b97cae82f61d068d32d61e52f0e836f664d9858cfcd'),
+    )
+    balances = FlyingTulipStakingBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=decoder,
+    ).query_balances(addresses=ethereum_accounts)
+    assert set(balances) == set(ethereum_accounts)
+    assert {
+        asset.identifier: str(values[CPT_FLYING_TULIP].amount)
+        for asset, values in balances[ethereum_accounts[0]].assets.items()
+    } == {'eip155:1/erc20:0x5DD1A7A369e8273371d2DBf9d83356057088082c': '1.848573219340315019'}
+    assert balances[ethereum_accounts[0]].liabilities == {}
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey', 'api_key'], match_on=['match_rpc_calls'],
+    before_record_response=None,
+)
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(
+    order={ChainID.ETHEREUM: [EvmIndexer.BLOCKSCOUT]},
+)}])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3c9094Fc254371998fE115a6AA38be9955b2f694']])
+def test_flying_tulip_staking_balances_ignore_other_products(
+        ethereum_inquirer, ethereum_accounts, vcr_cassette,
+):
+    """An actual ftPUT investment must not cause a staking reward query."""
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x2b1ce9db1e985429e3d0103113f64e1aa21145650fcc5944edd03ca0e2430d59'),
+    )
+    assert any(
+        event.counterparty == CPT_FLYING_TULIP and
+        event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+        for event in events
+    )
+    previous_requests = vcr_cassette.play_count + len(vcr_cassette.requests)
+    assert FlyingTulipStakingBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=decoder,
+    ).query_balances(addresses=ethereum_accounts) == {}
+    assert vcr_cassette.play_count + len(vcr_cassette.requests) == previous_requests
+
+
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], before_record_response=None,
+)
+@pytest.mark.parametrize('binance_sc_manager_connect_at_start', [(WeightedNode(
+    node_info=NodeName(
+        name='Public Node', endpoint='https://bsc-rpc.publicnode.com',
+        owned=True, blockchain=SupportedBlockchain.BINANCE_SC,
+    ),
+    active=True,
+    weight=FVal(1),
+),)])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x125DBE70459b36A4C71664DcC97224EafEb4AeE0']])
+def test_flying_tulip_lend_empty_balances_binance_sc(
+        binance_sc_transactions, binance_sc_transaction_decoder, binance_sc_accounts,
+):
+    """An account without BSC lending positions returns no balances."""
+    query_deposit_for_transactions(binance_sc_transactions, binance_sc_accounts)
+    assert FlyingTulipLendBalances(
+        evm_inquirer=binance_sc_transactions.evm_inquirer,
+        tx_decoder=binance_sc_transaction_decoder,
+    ).query_balances(addresses=binance_sc_accounts) == {}
+    with binance_sc_transactions.database.conn.read_ctx() as cursor:
+        assert binance_sc_transactions.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_QUERY_TS,
+            location='binance_sc',
+            location_name=LAST_DEPOSIT_FOR_QUERY,
+            account_id='positions',
+        ) is not None
+
+
+@pytest.mark.parametrize(('contract_filter', 'expected_indices'), [
+    (None, [0, 1]),
+    ([0], [0]),
+    ([1], [1]),
+    ([0, 1], [0, 1]),
+    ([], []),
+])
+def test_protocol_balance_activity_contract_filter(
+        ethereum_inquirer, database, contract_filter, expected_indices,
+):
+    """Filter contracts independently of wallet labels, retaining the unfiltered default."""
+    wallet, other_wallet = make_evm_address(), make_evm_address()
+    contracts = [make_evm_address(), make_evm_address()]
+    events = [make_ethereum_event(
+        index=index, location_label=owner, address=contract,
+        counterparty=CPT_FLYING_TULIP, event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+    ) for index, (owner, contract) in enumerate((
+        (wallet, contracts[0]), (wallet, contracts[1]), (other_wallet, contracts[0]),
+    ))]
+    with database.user_write() as cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=cursor, history=events)
+
+    balances = FlyingTulipLendBalances(evm_inquirer=ethereum_inquirer, tx_decoder=Mock())
+    result = balances.addresses_with_deposits(
+        location_labels=[wallet],
+        addresses=None if contract_filter is None else [contracts[idx] for idx in contract_filter],
+    )
+    assert set(result) == ({wallet} if expected_indices else set())
+    assert {event.address for event in result.get(wallet, [])} == {
+        contracts[idx] for idx in expected_indices
+    }
