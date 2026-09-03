@@ -6,7 +6,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from .constants import CPT_FLYING_TULIP, FLYING_TULIP_CPT_DETAILS
 
 if TYPE_CHECKING:
-    from collections.abc import Container
+    from collections.abc import Container, Sequence
 
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -29,7 +29,7 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
             from_event_type: HistoryEventType,
             token: EvmToken,
             amount: FVal,
-            allowed_labels: Container[ChecksumEvmAddress] | None,  # None allows any tracked wallet
+            allowed_labels: Sequence[ChecksumEvmAddress] | None,  # None allows any tracked wallet
             allowed_addresses: Container[ChecksumEvmAddress],
             to_event_type: HistoryEventType,
             to_event_subtype: HistoryEventSubType,
@@ -49,6 +49,7 @@ class FlyingTulipCommonDecoder(EvmDecoderInterface):
                     event.asset == token and
                     event.amount == amount and
                     (allowed_labels is None or event.location_label in allowed_labels) and
+                    event.address is not None and
                     event.address in allowed_addresses
             ):
                 event.event_type = to_event_type

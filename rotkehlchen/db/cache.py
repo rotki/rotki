@@ -28,7 +28,6 @@ class DBCacheStatic(Enum):
     LAST_DELETE_PAST_CALENDAR_EVENTS: Final = 'last_delete_past_calendar_events'
     LAST_CREATE_REMINDER_CHECK_TS: Final = 'last_create_reminder_check_ts'
     LAST_GRAPH_DELEGATIONS_CHECK_TS: Final = 'last_graph_delegations_check_ts'
-    LAST_FLYING_TULIP_DEPOSITS_CHECK_TS: Final = 'last_flying_tulip_deposits_check_ts'
     LAST_GNOSISPAY_QUERY_TS: Final = 'last_gnosispay_query_ts'
     GNOSIS_PAY_SAFE_MIGRATION: Final = 'gnosis_pay_safe_migration'
     LAST_SPARK_ASSETS_UPDATE: Final = 'last_spark_assets_update'

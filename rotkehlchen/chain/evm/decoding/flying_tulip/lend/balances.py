@@ -100,30 +100,39 @@ class FlyingTulipLendBalances(ProtocolWithBalance):
 
         return collateral_pairs, debt_pairs
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         addresses = list(dict.fromkeys(
             self._addresses_at(
-                events_by_address=self.addresses_with_activity(event_types={
-                    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
-                    (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
-                }),
+                events_by_address=self.addresses_with_activity(
+                    location_labels=addresses,
+                    event_types={
+                        (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+                        (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
+                    },
+                ),
                 contract=self.deployment.positions_manager,
             ) +
             # Leverage fills move funds inside the protocol, so users whose
             # position was opened engine-side only have informational events.
             self._addresses_at(
-                events_by_address=self.addresses_with_activity(event_types={
-                    (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
-                }),
+                events_by_address=self.addresses_with_activity(
+                    location_labels=addresses,
+                    event_types={
+                        (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+                    },
+                ),
                 contract=self.deployment.leverage_engine,
             ) +
             # A deposit made for someone else by an untracked payer leaves the
             # position owner only this discovery event.
             self._addresses_at(
-                events_by_address=self.addresses_with_activity(event_types={
-                    (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
-                }),
+                events_by_address=self.addresses_with_activity(
+                    location_labels=addresses,
+                    event_types={
+                        (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+                    },
+                ),
                 contract=self.deployment.positions_manager,
             ),
         ))

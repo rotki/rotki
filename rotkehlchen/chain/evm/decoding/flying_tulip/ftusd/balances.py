@@ -18,6 +18,7 @@ from .constants import FLYING_TULIP_FTUSD_DEPLOYMENTS, STAKING_VAULT_ABI
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -47,14 +48,14 @@ class FlyingTulipStakingBalances(ProtocolWithBalance):
         )
         self.deployment = FLYING_TULIP_FTUSD_DEPLOYMENTS[evm_inquirer.chain_id]
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         # Filtered by the vault rather than by the shared counterparty: an ftPUT
         # position is also a deposit for a wrapped token, and its investor has
         # no rewards to claim here.
         addresses = list(dict.fromkeys(
             address
-            for address, events in self.addresses_with_deposits().items()
+            for address, events in self.addresses_with_deposits(location_labels=addresses).items()
             if any(event.address == self.deployment.staking_vault for event in events)
         ))
         if len(addresses) == 0:

@@ -1030,8 +1030,9 @@ class EtherscanLikeApi(ABC):
 
             options[f'topic{idx}'] = topic
             if idx != 0:
-                for j in range(idx):  # Add AND-operators for all topic combinations with this idx
-                    options[f'topic{j}_{idx}_opr'] = 'and'
+                for j in range(idx):
+                    if topics[j] is not None:
+                        options[f'topic{j}_{idx}_opr'] = 'and'
 
         timeout_tuple = CachedSettings().get_timeout_tuple()
         new_events = self._query(

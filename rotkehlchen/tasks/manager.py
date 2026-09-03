@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
     FLYING_TULIP_LEND_DEPLOYMENTS,
+    LAST_DEPOSIT_FOR_QUERY,
 )
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.discovery import (
     query_deposit_for_transactions,
@@ -1098,14 +1099,22 @@ class TaskManager:
         Such a transaction moves no funds of the beneficiary, it only names them in a
         DepositFor log, so the per address transaction query never brings it in.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_FLYING_TULIP_DEPOSITS_CHECK_TS, DAY_IN_SECONDS, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
-            return None
-
         tasks = []
         for deployed_chain_id in FLYING_TULIP_LEND_DEPLOYMENTS:
             chain_id = cast('SUPPORTED_CHAIN_IDS', deployed_chain_id)
             blockchain = chain_id.to_blockchain()
             if len(accounts := self.chains_aggregator.accounts.get(blockchain)) == 0:
+                continue
+
+            with self.database.conn.read_ctx() as cursor:
+                last_query_ts = self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_QUERY_TS,
+                    location=chain_id.to_name(),
+                    location_name=LAST_DEPOSIT_FOR_QUERY,
+                    account_id='positions',
+                )
+            if last_query_ts is not None and ts_now() - last_query_ts < 3 * DAY_IN_SECONDS:
                 continue
 
             tasks.append(self.task_supervisor.spawn_and_track(

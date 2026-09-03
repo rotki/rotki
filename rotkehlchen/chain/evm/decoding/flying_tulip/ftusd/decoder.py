@@ -1,7 +1,7 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.assets.utils import token_normalized_value
+from rotkehlchen.assets.utils import TokenEncounterInfo, token_normalized_value
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.flying_tulip.constants import (
@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
@@ -64,8 +66,14 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             msg_aggregator=msg_aggregator,
         )
         self.deployment = FLYING_TULIP_FTUSD_DEPLOYMENTS[evm_inquirer.chain_id]
-        self.ftusd = self.base.get_or_create_evm_token(address=self.deployment.ftusd_token)
-        self.ft_token = self.base.get_or_create_evm_token(address=self.deployment.ft_token)
+        self.ftusd = self.base.get_or_create_evm_token(
+            address=self.deployment.ftusd_token,
+            encounter=TokenEncounterInfo(should_notify=False),
+        )
+        self.ft_token = self.base.get_or_create_evm_token(
+            address=self.deployment.ft_token,
+            encounter=TokenEncounterInfo(should_notify=False),
+        )
         # transfers are only matched against these protocol counterparties, so
         # an unrelated equal-amount transfer in the same tx cannot be claimed
         self.mint_redeem_addresses = frozenset((self.deployment.mint_and_redeem,)) | self.deployment.wrappers  # noqa: E501
@@ -125,19 +133,65 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             if out_event is not None and in_event is not None:
                 break
 
-        if in_event is None and out_event is not None and (queued_amount := self._find_queued_outflow(  # noqa: E501
+        if in_event is None and (queued_outflow := self._find_queued_outflow(
             context=context,
             recipient=to_address,
             token=in_asset,
+            amount=in_amount,
         )) is not None:
-            # A rate-limited payout: the circuit breaker holds the output and
-            # pays it out in a later transaction, so only the spend leg exists.
-            out_event.event_type = HistoryEventType.DEPOSIT
-            out_event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
-            out_event.notes = f'Swap {out_amount} {out_asset.symbol} in {FLYING_TULIP_LABEL} for {queued_amount} {in_asset.symbol} queued by the circuit breaker'  # noqa: E501
-            out_event.counterparty = CPT_FLYING_TULIP
-            out_event.address = context.tx_log.address
-            return DEFAULT_EVM_DECODING_OUTPUT
+            if not self.base.is_tracked(to_address):
+                # The output belongs to an untracked recipient. Preserve the payer's
+                # real wallet transfer without inventing a receive for that payer.
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+            # The conversion already happened: the circuit breaker holds the output
+            # collateral, not the burned ftUSD. Record the conversion and the output's
+            # deposit together so the wallet has no collateral until it is released.
+            in_event = self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.TRADE if out_event is not None else HistoryEventType.RECEIVE,  # noqa: E501
+                event_subtype=HistoryEventSubType.RECEIVE if out_event is not None else HistoryEventSubType.NONE,  # noqa: E501
+                asset=in_asset,
+                amount=in_amount,
+                location_label=to_address,
+                notes=f'Receive {in_amount} {in_asset.symbol} from a {FLYING_TULIP_LABEL} swap queued by the circuit breaker',  # noqa: E501
+                counterparty=CPT_FLYING_TULIP,
+                address=context.tx_log.address,
+            )
+            queue_deposit = self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                asset=in_asset,
+                amount=in_amount,
+                location_label=to_address,
+                notes=f'Queue {in_amount} {in_asset.symbol} in the {FLYING_TULIP_LABEL} circuit breaker',  # noqa: E501
+                counterparty=CPT_FLYING_TULIP,
+                address=self.deployment.circuit_breaker,
+            )
+            self._record_queued_outflow(
+                context=context,
+                out_event=queue_deposit,
+                queue_log=queued_outflow,
+                origin='redeem',
+                recipient=to_address,
+                token=in_asset,
+                amount=in_amount,
+            )
+            context.decoded_events.extend([in_event, queue_deposit])
+            if out_event is not None:
+                out_event.event_type = HistoryEventType.TRADE
+                out_event.event_subtype = HistoryEventSubType.SPEND
+                out_event.notes = f'Swap {out_amount} {out_asset.symbol} in {FLYING_TULIP_LABEL}'
+                out_event.counterparty = CPT_FLYING_TULIP
+                out_event.address = context.tx_log.address
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event, queue_deposit],
+                events_list=context.decoded_events,
+            )
+            return EvmDecodingOutput(process_swaps=out_event is not None)
 
         if out_event is None or in_event is None:
             # Only decode complete swaps: with a single leg (the other party is
@@ -171,24 +225,62 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             context: DecoderContext,
             recipient: ChecksumEvmAddress,
             token: EvmToken,
-    ) -> FVal | None:
-        """Return the amount of a rate-limited payout the circuit breaker queued
+            amount: FVal,
+    ) -> EvmTxReceiptLog | None:
+        """Return the log of a rate-limited payout the circuit breaker queued
         for the recipient in this transaction, if any. The queued funds are paid
         out from the circuit breaker in a later transaction.
         """
-        for tx_log in context.all_logs:
+        for tx_log in reversed(context.all_logs):
             if (
                     tx_log.address == self.deployment.circuit_breaker and
                     tx_log.topics[0] == OUTFLOW_QUEUED_TOPIC and
                     bytes_to_address(tx_log.topics[2]) == token.evm_address and
-                    bytes_to_address(tx_log.topics[3]) == recipient
+                    bytes_to_address(tx_log.topics[3]) == recipient and
+                    tx_log.log_index < context.tx_log.log_index and
+                    token_normalized_value(int.from_bytes(tx_log.data[:32]), token) == amount
             ):
-                return token_normalized_value(
-                    token_amount=int.from_bytes(tx_log.data[0:32]),
-                    token=token,
-                )
+                return tx_log
 
         return None
+
+    def _record_queued_outflow(
+            self,
+            context: DecoderContext,
+            out_event: EvmEvent | None,
+            queue_log: EvmTxReceiptLog,
+            origin: Literal['redeem', 'unstake'],
+            recipient: ChecksumEvmAddress,
+            token: EvmToken,
+            amount: FVal,
+    ) -> None:
+        """Keep the queue's identity and origin on the persisted source event.
+
+        The wallet debit remains on the payer/share owner, who may differ from
+        the recipient. If only the recipient is tracked, an informational event
+        preserves the queue without inventing a wallet movement.
+        """
+        if out_event is None:
+            context.decoded_events.append(out_event := self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=queue_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=token,
+                amount=amount,
+                location_label=recipient,
+                notes=f'Queue {amount} {token.symbol} for release from the {FLYING_TULIP_LABEL} circuit breaker',  # noqa: E501
+                counterparty=CPT_FLYING_TULIP,
+                address=self.deployment.circuit_breaker,
+            ))
+        out_event.extra_data = (out_event.extra_data or {}) | {'flying_tulip_queue': {
+            'id': str(int.from_bytes(queue_log.topics[1])),
+            'origin': origin,
+            'recipient': recipient,
+            'asset': token.identifier,
+            'amount': str(amount),
+            'circuit_breaker': self.deployment.circuit_breaker,
+        }}
 
     def _decode_circuit_breaker(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode the delayed payout of a rate-limited mint/redeem/unstake."""
@@ -205,6 +297,24 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token=token,
         )
+        queue_id = str(int.from_bytes(context.tx_log.topics[1]))
+        with self.base.database.conn.read_ctx() as cursor:
+            source = cursor.execute(
+                "SELECT json_extract(H.extra_data, '$.flying_tulip_queue.origin') "
+                'FROM history_events H JOIN chain_events_info C ON H.identifier=C.identifier '
+                'WHERE H.location=? AND C.counterparty=? '
+                "AND json_extract(H.extra_data, '$.flying_tulip_queue.id')=? "
+                "AND json_extract(H.extra_data, '$.flying_tulip_queue.recipient')=? "
+                "AND json_extract(H.extra_data, '$.flying_tulip_queue.asset')=? "
+                "AND json_extract(H.extra_data, '$.flying_tulip_queue.amount')=? "
+                "AND json_extract(H.extra_data, '$.flying_tulip_queue.circuit_breaker')=? "
+                "AND json_extract(H.extra_data, '$.flying_tulip_queue.is_release') IS NULL "
+                'LIMIT 1',
+                (Location.from_chain_id(self.node_inquirer.chain_id).serialize_for_db(),
+                 CPT_FLYING_TULIP, queue_id, recipient, token.identifier, str(amount),
+                 self.deployment.circuit_breaker),
+            ).fetchone()
+        origin = source[0] if source is not None else None
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -214,8 +324,27 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     event.amount == amount and
                     event.address == self.deployment.circuit_breaker
             ):
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+                if origin == 'unstake':
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                elif origin == 'redeem':
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+                else:
+                    log.warning(
+                        'Could not find the origin of %s queue %s in %s. '
+                        'Keeping the payout as a receive',
+                        FLYING_TULIP_LABEL, queue_id, context.transaction,
+                    )
+                event.extra_data = (event.extra_data or {}) | {'flying_tulip_queue': {
+                    'id': queue_id,
+                    'origin': origin,
+                    'recipient': recipient,
+                    'asset': token.identifier,
+                    'amount': str(amount),
+                    'circuit_breaker': self.deployment.circuit_breaker,
+                    'is_release': True,
+                }}
                 event.notes = f'Receive {amount} {token.symbol} released from the {FLYING_TULIP_LABEL} circuit breaker queue'  # noqa: E501
                 event.counterparty = CPT_FLYING_TULIP
                 break
@@ -456,12 +585,13 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
 
         queued_amount = None
         if in_event is None:
-            queued_amount = self._find_queued_outflow(
+            queued_outflow = self._find_queued_outflow(
                 context=context,
                 recipient=receiver,
                 token=self.ftusd,
+                amount=assets_amount,
             )
-            if queued_amount is None:
+            if queued_outflow is None:
                 # Do not half-decode: without a payout (and no queue marker) the
                 # share burn is left as a plain transfer too.
                 log.warning(
@@ -470,6 +600,17 @@ class FlyingTulipFtusdCommonDecoder(FlyingTulipCommonDecoder):
                     context.transaction,
                 )
                 return DEFAULT_EVM_DECODING_OUTPUT
+
+            queued_amount = assets_amount
+            self._record_queued_outflow(
+                context=context,
+                out_event=out_event,
+                queue_log=queued_outflow,
+                origin='unstake',
+                recipient=receiver,
+                token=self.ftusd,
+                amount=queued_amount,
+            )
 
         queued_fee_events: list[EvmEvent] = []
         if out_event is not None:

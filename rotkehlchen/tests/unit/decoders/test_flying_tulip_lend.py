@@ -1,4 +1,3 @@
-from unittest.mock import patch
 
 import pytest
 
@@ -11,18 +10,24 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
 )
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.discovery import (
     CHECKPOINT_MARGIN_BLOCKS,
-    query_deposit_for_transactions,
+    _query_deposits_for_address,
 )
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WETH, A_WSTETH
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    PRUNED_AND_NOT_ARCHIVED_NODE,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 
 A_FTUSD = Asset('eip155:1/erc20:0xF7D85EC4E7710f71992752eac2111312e73E9C9C')
@@ -299,15 +304,49 @@ def test_leverage_open_fill(ethereum_inquirer, ethereum_accounts):
     )]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(
+    filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], before_record_response=None,
+)
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(
+    order={ChainID.ETHEREUM: [EvmIndexer.BLOCKSCOUT]},
+)}])
 @pytest.mark.parametrize('ethereum_accounts', [['0x66613091b75e54954f77746e160c98391f99701c']])
-def test_lend_deposit_for_untracked_payer(ethereum_inquirer, ethereum_accounts):
+def test_lend_deposit_for_untracked_payer(eth_transactions, ethereum_accounts, database):
     """A deposit someone else paid for: the payer is untracked, so their transfer
     is never decoded and the position owner is only known from the positions
-    manager event. It is recorded so that balance discovery finds the position."""
+    manager event. Discover it with a beneficiary-filtered log query before decoding."""
+    tx_hash = deserialize_evm_tx_hash('0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060')  # noqa: E501
+    deposit_block = 25366044
+    assert _query_deposits_for_address(
+        transactions=eth_transactions,
+        beneficiary=ethereum_accounts[0],
+        contract_address=POSITIONS_MANAGER,
+        from_block=deposit_block,
+        target_block=deposit_block + CHECKPOINT_MARGIN_BLOCKS,
+    ) is True
+
+    # Assert discovery imported and mapped the transaction before the decoding helper
+    # gets its hash: that helper can otherwise fetch it and hide a broken log scan.
+    with database.conn.read_ctx() as cursor:
+        assert eth_transactions.dbevmtx.get_receipt(cursor, tx_hash, ChainID.ETHEREUM) is not None
+        assert cursor.execute(
+            'SELECT M.address FROM evmtx_address_mappings M '
+            'JOIN evm_transactions T ON T.identifier=M.tx_id WHERE T.tx_hash=? AND T.chain_id=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchall() == [(ethereum_accounts[0],)]
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BLOCK_ID,
+            location='ethereum',
+            location_name=LAST_DEPOSIT_FOR_QUERY,
+            account_id=ethereum_accounts[0],
+        ) == deposit_block
+
     events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060')),  # noqa: E501
+        evm_inquirer=eth_transactions.evm_inquirer,
+        tx_hash=tx_hash,
+        transactions=eth_transactions,
     )
     assert events == [
         EvmEvent(
@@ -394,6 +433,7 @@ def test_lend_deposit_for_beneficiary(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_binance_sc_registration(binance_sc_transaction_decoder):
     """The lending deployment is the only Flying Tulip module on Binance SC, so
     only the lend decoder is registered there and it is keyed to the Binance SC
@@ -415,114 +455,3 @@ def test_binance_sc_registration(binance_sc_transaction_decoder):
         counterparty.identifier
         for counterparty in binance_sc_transaction_decoder.rules.all_counterparties
     }
-
-
-@pytest.mark.parametrize('ethereum_accounts', [[
-    '0x66613091b75e54954f77746e160c98391f99701c',
-    '0x1118e1c057211306a40A4d7006C040dbfE1370Cb',
-]])
-def test_deposit_for_discovery(eth_transactions, ethereum_accounts, database):
-    """The beneficiary of a deposit paid by someone else is only a log topic, so the
-    per address transaction query cannot find the transaction. The log scan does."""
-    beneficiary, self_payer = ethereum_accounts
-    deployment = FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.ETHEREUM]
-    untracked_payer = '0x4D2A422dB44144996E855cE15FB581a477dbB947'
-    other_beneficiary = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
-
-    def topic_of(address: str) -> str:
-        return f'0x{"0" * 24}{address[2:].lower()}'
-
-    logs = [{  # paid by an untracked address for a tracked one: the case we are after
-        'topics': ['0xtopic0', topic_of(untracked_payer), topic_of(beneficiary)],
-        'transactionHash': (wanted := '0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060'),  # noqa: E501
-    }, {  # a tracked address depositing for itself: their own query already has it
-        'topics': ['0xtopic0', topic_of(self_payer), topic_of(self_payer)],
-        'transactionHash': '0x1111111111111111111111111111111111111111111111111111111111111111',
-    }, {  # someone else entirely
-        'topics': ['0xtopic0', topic_of(untracked_payer), topic_of(other_beneficiary)],
-        'transactionHash': '0x2222222222222222222222222222222222222222222222222222222222222222',
-    }]
-    imported: list[tuple[str, str]] = []
-
-    def mock_ensure(tx_hashes, relevant_address):
-        imported.extend((tx_hash.hex(), relevant_address) for tx_hash in tx_hashes)
-        return {}, []
-
-    def run(logs_to_return, from_block_seen):
-        with (
-            patch.object(eth_transactions.evm_inquirer, 'get_latest_block_number', return_value=target_block),  # noqa: E501
-            patch.object(eth_transactions.evm_inquirer, 'get_logs', return_value=logs_to_return) as get_logs,  # noqa: E501
-            patch.object(eth_transactions, '_batch_ensure_evm_txns_in_db', wraps=mock_ensure),
-        ):
-            query_deposit_for_transactions(
-                transactions=eth_transactions,
-                addresses=ethereum_accounts,
-            )
-        assert get_logs.call_args_list[0].kwargs['contract_address'] == deployment.positions_manager  # noqa: E501
-        assert get_logs.call_args_list[0].kwargs['from_block'] == from_block_seen
-
-    def checkpoint_of(address):
-        with database.conn.read_ctx() as cursor:
-            return database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_BLOCK_ID,
-                location='ethereum',
-                location_name=LAST_DEPOSIT_FOR_QUERY,
-                account_id=address,
-            )
-
-    # only the deposit made for a tracked beneficiary by another payer is imported
-    target_block = deployment.deployment_block + 1000
-    run(logs, deployment.deployment_block)
-    assert imported == [(wanted, beneficiary)]
-
-    # progress is kept per address, and stops short of the tip so the last blocks,
-    # which an indexer may not have yet, are looked at again
-    saved = target_block - CHECKPOINT_MARGIN_BLOCKS
-    assert checkpoint_of(beneficiary) == saved
-    assert checkpoint_of(self_payer) == saved
-
-    # an account added later is backfilled from the deployment block, not from the
-    # point the other accounts already reached
-    imported.clear()
-    ethereum_accounts.append(late_account := other_beneficiary)
-    run(logs, deployment.deployment_block)
-    assert imported == [(wanted, beneficiary), ('0x2222222222222222222222222222222222222222222222222222222222222222', late_account)]  # noqa: E501
-
-
-@pytest.mark.parametrize('ethereum_accounts', [['0x66613091b75e54954f77746e160c98391f99701c']])
-def test_deposit_for_discovery_skips_unresolvable(eth_transactions, ethereum_accounts):
-    """A hash that cannot be resolved at all, a reorged out one for instance, must not
-    stop the deposits after it from being imported."""
-    beneficiary = ethereum_accounts[0]
-    payer = '0x4D2A422dB44144996E855cE15FB581a477dbB947'
-    gone = '0x3333333333333333333333333333333333333333333333333333333333333333'
-    good = '0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060'
-    logs = [{
-        'topics': [
-            '0xtopic0',
-            f'0x{"0" * 24}{payer[2:].lower()}',
-            f'0x{"0" * 24}{beneficiary[2:].lower()}',
-        ],
-        'transactionHash': tx_hash,
-    } for tx_hash in (gone, good)]
-    imported: list[str] = []
-
-    def mock_ensure(tx_hashes, relevant_address):  # pylint: disable=unused-argument
-        if (tx_hash := tx_hashes[0].hex()) == gone:
-            raise InputError('transaction not found')
-
-        imported.append(tx_hash)
-        return {}, []
-
-    with (
-        patch.object(eth_transactions.evm_inquirer, 'get_latest_block_number', return_value=FLYING_TULIP_LEND_DEPLOYMENTS[ChainID.ETHEREUM].deployment_block + 10),  # noqa: E501
-        patch.object(eth_transactions.evm_inquirer, 'get_logs', return_value=logs),
-        patch.object(eth_transactions, '_batch_ensure_evm_txns_in_db', wraps=mock_ensure),
-    ):
-        query_deposit_for_transactions(
-            transactions=eth_transactions,
-            addresses=ethereum_accounts,
-        )
-
-    assert imported == [good]
