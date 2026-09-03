@@ -35,7 +35,7 @@ dependencies = [
     "maxminddb==3.1.1",
     # Newer releases dropped x86_64 macOS wheels, causing source builds whose OpenSSL
     # dependency conflicts with the libssl bundled by PyInstaller.
-    "cryptography==48.0.1",
+    "cryptography==50.0.0",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
