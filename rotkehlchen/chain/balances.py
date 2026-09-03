@@ -264,6 +264,16 @@ class BlockchainBalancesUpdate:
     given_chain: SupportedBlockchain | None
     per_account: BlockchainBalances
     totals: BalanceSheet
+    # Chains whose query failed in this update mapped to the error. Their per_account
+    # entries still hold the balances of the last query that succeeded.
+    failed_chains: dict[SupportedBlockchain, str] = field(default_factory=dict)
+
+    def failed_chains_message(self) -> str:
+        """Returns a human readable description of the chains that failed to be queried"""
+        return '. '.join(
+            f'Failed to query {chain!s} balances: {error}'
+            for chain, error in self.failed_chains.items()
+        )
 
     def serialize(self) -> dict[str, dict]:
         """
@@ -271,7 +281,8 @@ class BlockchainBalancesUpdate:
 
         If given_chain is None, then it's for all chains, essentially returning all per account
         balances and asset totals across all chain.
-        If chain is specified then it's only per account mapping and totals for that chain
+        If chain is specified then it's only per account mapping and totals for that chain.
+        Chains that failed to be queried are listed under failed_chains, if any.
         """
         if self.given_chain is None:
             serialized_totals = self.totals.serialize()
@@ -289,7 +300,12 @@ class BlockchainBalancesUpdate:
                     totals += balances
 
             serialized_totals = totals.serialize()
-        return {
+        result: dict[str, dict] = {
             'per_account': self.per_account.serialize(self.given_chain),
             'totals': serialized_totals,
         }
+        if len(self.failed_chains) != 0:
+            result['failed_chains'] = {
+                chain.serialize(): error for chain, error in self.failed_chains.items()
+            }
+        return result

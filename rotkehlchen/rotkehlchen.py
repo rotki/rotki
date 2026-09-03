@@ -1245,6 +1245,13 @@ class Rotkehlchen:
         try:
             # copies below since if cache is used we end up modifying the balance sheet object
             blockchain_result = result_of(blockchain_task)
+            # chains that failed keep the balances of their last successful query
+            for chain, error in blockchain_result.failed_chains.items():
+                problem_free = False
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
+                    data={'location': f'{chain!s} balances query', 'error': error},
+                )
 
             blockchain_assets: dict[Asset, Balance] = {}
             for asset, asset_balances in blockchain_result.totals.assets.items():

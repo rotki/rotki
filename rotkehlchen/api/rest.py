@@ -968,6 +968,7 @@ class RestAPI:
                     ignore_cache=True,
                     addresses=addresses,
                 )
+                msg = balances.failed_chains_message()
             result = self._serialize_blockchain_balances(
                 balances=balances,
                 blockchain=blockchain,
@@ -996,6 +997,7 @@ class RestAPI:
                 ignore_cache=True,
                 addresses=addresses,
             )
+            msg = balances.failed_chains_message()
             result = self._serialize_blockchain_balances(
                 balances=balances,
                 blockchain=blockchain,
