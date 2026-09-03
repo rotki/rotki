@@ -593,6 +593,12 @@ class TaskManager:
             self,
             from_ts: TimestampMS | None,
     ) -> list[Task]:
+        """Schedule historical balance processing with archive-node access.
+
+        Periodic runs may query configured archive nodes for negative rebasing balances.
+        Successful results are cached per address, token, and block, so the first pass over
+        uncached history can take longer even without a manual processing request.
+        """
         log.debug('Scheduling task to %s', HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
         return [self.task_supervisor.spawn_and_track(
             after_seconds=None,

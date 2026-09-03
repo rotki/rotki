@@ -291,24 +291,18 @@ def _load_bucket_balances_before_ts(
 ) -> dict[Bucket, FVal]:
     """Load the latest balance per bucket before from_ts.
 
-    Rank metrics by the complete event ordering so events that share a timestamp and sequence
-    index still select the deterministic latest event identifier.
+    We use MAX(sort_key) to identify the most recent row per bucket,
+    relying on SQLite's bare column behavior to return non-aggregated columns from
+    that row. See https://www.sqlite.org/lang_select.html#bareagg
     """
     bucket_balances: dict[Bucket, FVal] = {}
     with database.conn.read_ctx() as cursor:
         treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
         cursor.execute(
             """
-            WITH ranked_metrics AS (
-                SELECT location, location_label, protocol, asset, metric_value,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY location, location_label, protocol, asset
-                        ORDER BY timestamp DESC, sequence_index DESC, event_identifier DESC
-                    ) AS metric_rank
-                FROM event_metrics WHERE metric_key = ? AND timestamp < ?
-            )
-            SELECT location, location_label, protocol, asset, metric_value
-            FROM ranked_metrics WHERE metric_rank = 1
+            SELECT location, location_label, protocol, asset, metric_value, MAX(sort_key)
+            FROM event_metrics WHERE metric_key = ? AND timestamp < ?
+            GROUP BY location, location_label, protocol, asset
             """,
             (EventMetricKey.BALANCE.serialize(), from_ts),
         )

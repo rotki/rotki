@@ -107,8 +107,9 @@ class HistoricalBalancesManager:
     ) -> tuple[bool, dict[Asset, FVal] | list[HistoricalBalanceEntry] | None]:
         """Get historical balances for all assets at a given timestamp.
 
-        The inner query ranks metrics by the complete event ordering so events that share a
-        timestamp and sequence index still select the deterministic latest event identifier.
+        The inner query gets the latest balance per bucket via MAX(sort_key),
+        relying on SQLite's bare column behavior to return non-aggregated columns from that row.
+        See https://www.sqlite.org/lang_select.html#bareagg
 
         Returns a tuple of (processing_required, balances):
         - processing_required: True if events exist but haven't been processed yet
@@ -122,20 +123,15 @@ class HistoricalBalancesManager:
         with self.db.conn.read_ctx() as cursor:
             if group_by_account is True:
                 cursor.execute(
-                    f"""WITH ranked_metrics AS (
-                        SELECT location, location_label, protocol, asset, metric_value,
-                            ROW_NUMBER() OVER (
-                                PARTITION BY location, location_label, protocol, asset
-                                ORDER BY timestamp DESC, sequence_index DESC, event_identifier DESC
-                            ) AS metric_rank
-                        FROM event_metrics em
-                        WHERE metric_key = ? {filter_str}
-                        AND asset NOT IN (
-                            SELECT value FROM multisettings WHERE name='ignored_asset'
-                        )
+                    f"""SELECT
+                        location, location_label, protocol, asset, metric_value, MAX(sort_key)
+                    FROM event_metrics em
+                    WHERE metric_key = ? {filter_str}
+                    AND asset NOT IN (
+                        SELECT value FROM multisettings WHERE name='ignored_asset'
                     )
-                    SELECT location, location_label, protocol, asset, metric_value
-                    FROM ranked_metrics WHERE metric_rank = 1 AND metric_value > 0
+                    GROUP BY location, location_label, protocol, asset
+                    HAVING metric_value > 0
                     """,
                     query_bindings,
                 )
@@ -146,24 +142,19 @@ class HistoricalBalancesManager:
                         protocol=protocol,
                         asset=Asset(asset_id),
                         amount=FVal(amount),
-                    ) for location, location_label, protocol, asset_id, amount in cursor
+                    ) for location, location_label, protocol, asset_id, amount, _sort_key in cursor
                 ] or None
             else:
                 cursor.execute(
-                    f"""WITH ranked_metrics AS (
-                        SELECT asset, metric_value,
-                            ROW_NUMBER() OVER (
-                                PARTITION BY location, location_label, protocol, asset
-                                ORDER BY timestamp DESC, sequence_index DESC, event_identifier DESC
-                            ) AS metric_rank
+                    f"""SELECT asset, SUM(metric_value) FROM (
+                        SELECT asset, metric_value, MAX(sort_key)
                         FROM event_metrics em
                         WHERE metric_key = ? {filter_str}
                         AND asset NOT IN (
                             SELECT value FROM multisettings WHERE name='ignored_asset'
                         )
-                    )
-                    SELECT asset, SUM(metric_value) FROM ranked_metrics
-                    WHERE metric_rank = 1 GROUP BY asset HAVING SUM(metric_value) > 0
+                        GROUP BY location, location_label, protocol, asset
+                    ) GROUP BY asset HAVING SUM(metric_value) > 0
                     """,
                     query_bindings,
                 )
@@ -192,8 +183,7 @@ class HistoricalBalancesManager:
                 WHERE metric_key = ? {filter_str}
                 AND asset NOT IN (SELECT value FROM multisettings WHERE name='ignored_asset')
                 AND metric_value > 0
-                ORDER BY location, location_label, protocol, asset,
-                    timestamp, sequence_index, event_identifier
+                ORDER BY location, location_label, protocol, asset, timestamp, sort_key
                 """,
                 query_bindings,
             )
@@ -498,7 +488,7 @@ class HistoricalBalancesManager:
         from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
         metric_key = EventMetricKey.BALANCE.serialize()
         asset_ids = [asset.resolve_swapped_for().identifier for asset in assets]
-        columns = ['timestamp', 'sequence_index', 'event_identifier', 'delta']
+        columns = ['timestamp', 'sort_key', 'delta']
         frames: list[pd.DataFrame] = []
         with self.db.conn.read_ctx() as cursor:
             for chunk, placeholders in get_query_chunks(data=asset_ids):
@@ -509,8 +499,7 @@ class HistoricalBalancesManager:
                             SELECT
                                 timestamp,
                                 CAST(metric_value AS REAL) as balance,
-                                sequence_index,
-                                event_identifier,
+                                sort_key,
                                 location,
                                 location_label,
                                 protocol,
@@ -524,18 +513,17 @@ class HistoricalBalancesManager:
                         with_delta AS (
                             SELECT
                                 timestamp,
-                                sequence_index,
-                                event_identifier,
+                                sort_key,
                                 balance - COALESCE(
                                     LAG(balance) OVER (
                                         PARTITION BY location, location_label, protocol, asset
-                                        ORDER BY timestamp, sequence_index, event_identifier
+                                        ORDER BY sort_key
                                     ),
                                     0
                                 ) as delta
                             FROM all_events
                         )
-                        SELECT timestamp, sequence_index, event_identifier, delta
+                        SELECT timestamp, sort_key, delta
                         FROM with_delta
                         WHERE timestamp >= ? AND timestamp <= ?
                         """,
@@ -549,13 +537,8 @@ class HistoricalBalancesManager:
         data = None
         if frames:
             df = pd.concat(frames, ignore_index=True).astype(
-                {
-                    'timestamp': 'int64',
-                    'sequence_index': 'int64',
-                    'event_identifier': 'int64',
-                    'delta': 'float64',
-                },
-            ).sort_values(['timestamp', 'sequence_index', 'event_identifier'])
+                {'timestamp': 'int64', 'sort_key': 'int64', 'delta': 'float64'},
+            ).sort_values('sort_key')
             df['amount'] = df['delta'].cumsum()
             data = {
                 ts_ms_to_sec(TimestampMS(int(ts))): FVal(amt)
@@ -591,30 +574,29 @@ class HistoricalBalancesManager:
                     """
                     WITH all_events AS (
                         SELECT timestamp, asset, CAST(metric_value AS REAL) as balance,
-                               sequence_index, event_identifier, location, location_label, protocol
+                               sort_key, location, location_label, protocol
                         FROM event_metrics em
                         WHERE metric_key = ?
                         AND asset NOT IN (
                             SELECT value FROM multisettings WHERE name='ignored_asset'
                         )
                     ), with_delta AS (
-                        SELECT timestamp, sequence_index, event_identifier, asset,
+                        SELECT timestamp, sort_key, asset,
                                balance - COALESCE(
                                    LAG(balance) OVER (
                                        PARTITION BY location, location_label, protocol, asset
-                                       ORDER BY timestamp, sequence_index, event_identifier
+                                       ORDER BY sort_key
                                    ),
                                    0
                                ) as delta
                         FROM all_events
                     )
-                    SELECT timestamp, sequence_index, event_identifier, asset, delta
-                    FROM with_delta
+                    SELECT timestamp, sort_key, asset, delta FROM with_delta
                     WHERE timestamp >= ? AND timestamp <= ?
                     """,
                     (EventMetricKey.BALANCE.serialize(), from_ts_ms, to_ts_ms),
                 ),
-                columns=['timestamp', 'sequence_index', 'event_identifier', 'asset', 'delta'],
+                columns=['timestamp', 'sort_key', 'asset', 'delta'],
             )
 
         data = None
@@ -623,14 +605,8 @@ class HistoricalBalancesManager:
             # Sum them up in order to reconstruct the running balance for each asset,
             # then keep only the last balance of each day (the end-of-day snapshot).
             df = df.astype(
-                {
-                    'timestamp': 'int64',
-                    'sequence_index': 'int64',
-                    'event_identifier': 'int64',
-                    'asset': 'str',
-                    'delta': 'float64',
-                },
-            ).sort_values(['timestamp', 'sequence_index', 'event_identifier'])
+                {'timestamp': 'int64', 'sort_key': 'int64', 'asset': 'str', 'delta': 'float64'},
+            ).sort_values('sort_key')
             df['balance'] = df.groupby('asset', sort=False)['delta'].cumsum()
             df['day'] = (df['timestamp'] // DAY_IN_MILLISECONDS) * DAY_IN_MILLISECONDS
             pivoted = (
@@ -726,7 +702,7 @@ class HistoricalBalancesManager:
                     LEFT JOIN evm_transactions et ON et.tx_hash = cei.tx_ref AND et.chain_id = ?
                     WHERE em.metric_key = ? AND em.location = ? AND em.location_label = ?
                     AND em.protocol IS NULL AND em.asset = ?
-                    ORDER BY em.timestamp, em.sequence_index, em.event_identifier
+                    ORDER BY em.sort_key
                     """,
                     (
                         evm_chain.serialize_for_db(),
