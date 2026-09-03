@@ -72,22 +72,19 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
         the collateral that goes in is exchanged for the NFT and the NFT is
         given back to take the collateral out.
         """
-        for event in context.decoded_events:
-            if (
-                    event.event_type == event_type and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.address == ZERO_ADDRESS and  # minted for, or burned by, the position
-                    event.amount == ONE and
-                    event.asset == Asset(evm_address_to_identifier(
-                        address=self.deployment.position_nft,
-                        chain_id=self.node_inquirer.chain_id,
-                        token_type=TokenKind.ERC721,
-                        collectible_id=str(position_id),
-                    ))
-            ):
-                return event
-
-        return None
+        return self._find_matching_transfer(
+            context=context,
+            event_type=event_type,
+            asset=Asset(evm_address_to_identifier(
+                address=self.deployment.position_nft,
+                chain_id=self.node_inquirer.chain_id,
+                token_type=TokenKind.ERC721,
+                collectible_id=str(position_id),
+            )),
+            amount=ONE,
+            allowed_labels=None,
+            allowed_addresses=(ZERO_ADDRESS,),
+        )
 
     def _decode_position_return(
             self,
@@ -161,84 +158,51 @@ class FlyingTulipPutCommonDecoder(FlyingTulipCommonDecoder):
                 )
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        if context.tx_log.topics[0] == DIVESTED_TOPIC:
-            if not self.base.is_tracked(
-                divestor := bytes_to_address(context.tx_log.data[0:32]),
-            ):
-                return DEFAULT_EVM_DECODING_OUTPUT
-
-            position_id = int.from_bytes(context.tx_log.data[32:64])
-            token = self.base.get_or_create_evm_token(
-                address=bytes_to_address(context.tx_log.data[128:160]),
-            )
-            amount = token_normalized_value(
-                token_amount=int.from_bytes(context.tx_log.data[160:192]),
-                token=token,
-            )
-            nft_event = self._find_position_nft_event(
-                context=context,
-                position_id=position_id,
-                event_type=HistoryEventType.SPEND,
-            )
-            if (divest_event := self._transform_matching_event(
-                context=context,
-                from_event_type=HistoryEventType.RECEIVE,
-                token=token,
-                amount=amount,
-                allowed_labels=(divestor,),
-                allowed_addresses=self.deployment.collateral_wrappers | {self.deployment.put_manager},  # noqa: E501
-                to_event_type=HistoryEventType.WITHDRAWAL,
-                to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED if nft_event is not None else HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,  # noqa: E501
-                notes=f'Divest {amount} {token.symbol} from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
-            )) is None:
-                log.debug('Found no matching transfer for a put event in %s', context.transaction)
-
-            if nft_event is not None:
-                self._decode_position_return(
-                    context=context,
-                    nft_event=nft_event,
-                    payout_event=divest_event,
-                    position_id=position_id,
-                )
+        if (topic := context.tx_log.topics[0]) not in (DIVESTED_TOPIC, UNSTAKE_TOPIC):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        if context.tx_log.topics[0] == UNSTAKE_TOPIC:  # Withdraw(address,uint256,uint256)
-            if not self.base.is_tracked(
-                owner := bytes_to_address(context.tx_log.data[0:32]),
-            ):
-                return DEFAULT_EVM_DECODING_OUTPUT
+        if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.data[0:32])):
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-            position_id = int.from_bytes(context.tx_log.data[32:64])
-            ft_token = self.base.get_or_create_evm_token(address=self.deployment.ft_token)
-            amount = token_normalized_value(
-                token_amount=int.from_bytes(context.tx_log.data[64:96]),
-                token=ft_token,
-            )
-            nft_event = self._find_position_nft_event(
+        position_id = int.from_bytes(context.tx_log.data[32:64])
+        if topic == DIVESTED_TOPIC:
+            token_address = bytes_to_address(context.tx_log.data[128:160])
+            amount_raw = int.from_bytes(context.tx_log.data[160:192])
+            allowed_addresses = self.deployment.collateral_wrappers | {self.deployment.put_manager}
+            action = 'Divest'
+        else:
+            token_address = self.deployment.ft_token
+            amount_raw = int.from_bytes(context.tx_log.data[64:96])
+            allowed_addresses = frozenset((self.deployment.put_manager,))
+            action = 'Withdraw'
+
+        token = self.base.get_or_create_evm_token(address=token_address)
+        amount = token_normalized_value(token_amount=amount_raw, token=token)
+        nft_event = self._find_position_nft_event(
+            context=context,
+            position_id=position_id,
+            event_type=HistoryEventType.SPEND,
+        )
+        if (payout_event := self._transform_matching_event(
+            context=context,
+            from_event_type=HistoryEventType.RECEIVE,
+            token=token,
+            amount=amount,
+            allowed_labels=(owner,),
+            allowed_addresses=allowed_addresses,
+            to_event_type=HistoryEventType.WITHDRAWAL,
+            to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED if nft_event is not None else HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,  # noqa: E501
+            notes=f'{action} {amount} {token.symbol} from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
+        )) is None:
+            log.debug('Found no matching transfer for a put event in %s', context.transaction)
+
+        if nft_event is not None:
+            self._decode_position_return(
                 context=context,
+                nft_event=nft_event,
+                payout_event=payout_event,
                 position_id=position_id,
-                event_type=HistoryEventType.SPEND,
             )
-            if (withdraw_event := self._transform_matching_event(
-                context=context,
-                from_event_type=HistoryEventType.RECEIVE,
-                token=ft_token,
-                amount=amount,
-                allowed_labels=(owner,),
-                allowed_addresses=(self.deployment.put_manager,),
-                to_event_type=HistoryEventType.WITHDRAWAL,
-                to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED if nft_event is not None else HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,  # noqa: E501
-                notes=f'Withdraw {amount} FT from {FLYING_TULIP_LABEL} put position #{position_id}',  # noqa: E501
-            )) is None:
-                log.debug('Found no matching transfer for a put event in %s', context.transaction)
-
-            if nft_event is not None:
-                self._decode_position_return(
-                    context=context,
-                    nft_event=nft_event,
-                    payout_event=withdraw_event,
-                    position_id=position_id,
-                )
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

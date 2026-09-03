@@ -51,8 +51,8 @@ def query_deposit_for_transactions(
     wallet, so when the payer is not tracked the transaction touches no tracked address
     at all. Transaction discovery queries per address and never returns it, and with no
     transaction there is no event, which also keeps the position out of the balances.
-    The beneficiary is an indexed argument of `DepositFor`, which lets us query
-    the positions manager logs for their deposits directly.
+    The beneficiary is an indexed argument of `DepositFor`, which lets us identify
+    their deposits in the positions manager logs.
 
     Known lending activity or a batched live collateral check gates the historical
     scan. This discovers externally funded open positions and backfills deposits
@@ -134,8 +134,7 @@ def query_deposit_for_transactions(
         )
         return
 
-    # Etherscan-style indexers accept one value per topic, unlike RPC topic OR-lists.
-    # Filter each eligible beneficiary instead of downloading the whole market's logs.
+    # Each eligible beneficiary scans from its own checkpoint.
     for beneficiary, checkpoint in checkpoints.items():
         if not _query_deposits_for_address(
                 transactions=transactions,
@@ -156,7 +155,11 @@ def _query_deposits_for_address(
         from_block: int,
         target_block: int,
 ) -> bool:
-    """Import one beneficiary's deposits and checkpoint only fully processed chunks."""
+    """Import one beneficiary's deposits and checkpoint only fully processed chunks.
+
+    Query DepositFor logs and filter beneficiaries locally: filtering topic 2 alone
+    makes the indexer query builder add an operator for the unspecified payer at topic 1.
+    """
     inquirer, database = transactions.evm_inquirer, transactions.database
     beneficiary_topic = f'0x{"0" * 24}{beneficiary[2:].lower()}'
     save_up_to = target_block - CHECKPOINT_MARGIN_BLOCKS
@@ -167,7 +170,7 @@ def _query_deposits_for_address(
                 contract_address=contract_address,
                 abi=DEPOSIT_FOR_ABI,
                 event_name='DepositFor',
-                argument_filters={'beneficiary': beneficiary},
+                argument_filters={},
                 from_block=from_block,
                 to_block=chunk_end,
             )

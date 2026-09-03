@@ -315,7 +315,7 @@ def test_leverage_open_fill(ethereum_inquirer, ethereum_accounts):
 def test_lend_deposit_for_untracked_payer(eth_transactions, ethereum_accounts, database):
     """A deposit someone else paid for: the payer is untracked, so their transfer
     is never decoded and the position owner is only known from the positions
-    manager event. Discover it with a beneficiary-filtered log query before decoding."""
+    manager event. Discover it by filtering DepositFor logs before decoding."""
     tx_hash = deserialize_evm_tx_hash('0x4e2d5820c340408029ddca71d46401223f6a1a935c9e193bc53303c6b92bf060')  # noqa: E501
     deposit_block = 25366044
     assert _query_deposits_for_address(

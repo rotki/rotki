@@ -123,10 +123,13 @@ class ProtocolWithBalance(abc.ABC):
             event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
             location_labels: list[ChecksumEvmAddress],
             assets: tuple[Asset, ...] | None = None,
+            addresses: list[ChecksumEvmAddress] | None = None,
     ) -> dict[ChecksumEvmAddress, list[EvmEvent]]:
         """
-        Query events for addresses having performed a certain activity. It returns
-        a mapping of the address that made the activity to the event returned by the filter.
+        Query events for wallets having performed a certain activity.
+
+        location_labels selects the wallets; addresses optionally restricts the protocol
+        contracts they interacted with. Returns each wallet's matching events.
         """
         if self.counterparty_is_absent_from_chain():
             return {}
@@ -138,6 +141,7 @@ class ProtocolWithBalance(abc.ABC):
             location=Location.from_chain_id(self.evm_inquirer.chain_id),
             entry_types=IncludeExcludeFilterData(values=list(ACTIVITY_ENTRY_TYPES)),
             excluded_addresses=self.excluded_addresses,
+            addresses=addresses,
             location_labels=[str(address) for address in location_labels],
         )
         with self.event_db.db.conn.read_ctx() as cursor:
@@ -156,10 +160,12 @@ class ProtocolWithBalance(abc.ABC):
     def addresses_with_deposits(
             self,
             location_labels: list[ChecksumEvmAddress],
+            addresses: list[ChecksumEvmAddress] | None = None,
     ) -> dict[ChecksumEvmAddress, list[EvmEvent]]:
         return self.addresses_with_activity(
             event_types=self.deposit_event_types,
             location_labels=location_labels,
+            addresses=addresses,
         )
 
     def _add_priced_balances(

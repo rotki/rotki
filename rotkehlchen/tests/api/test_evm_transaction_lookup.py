@@ -158,7 +158,7 @@ GNOSIS_RPC_NODE = WeightedNode(
 @pytest.mark.parametrize('gnosis_manager_connect_at_start', [(GNOSIS_RPC_NODE,)])
 def test_lookup_evm_transaction_returns_not_found_for_wrong_chain(
         rotkehlchen_api_server: APIServer,
-        allow_gnosis_etherscan: None,
+        monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     gnosis_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.gnosis.node_inquirer  # noqa: E501
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
@@ -168,6 +168,7 @@ def test_lookup_evm_transaction_returns_not_found_for_wrong_chain(
         )
     gnosis_inquirer.maybe_connect_to_nodes(when_tracked_accounts=True)
     wait_until_all_nodes_connected(connect_at_start=(GNOSIS_RPC_NODE,), evm_inquirer=gnosis_inquirer)  # noqa: E501
+    monkeypatch.setattr(gnosis_inquirer, 'default_call_order', lambda: [GNOSIS_RPC_NODE])
 
     tx_hash = deserialize_evm_tx_hash('0xb033c0fd043738d8a770670c65d57cc6f0aebc7567eeaf25a14c0fc8bb4469c5')  # noqa: E501
     assert_error_response(

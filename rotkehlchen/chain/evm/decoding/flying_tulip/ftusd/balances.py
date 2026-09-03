@@ -50,13 +50,9 @@ class FlyingTulipStakingBalances(ProtocolWithBalance):
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        # Filtered by the vault rather than by the shared counterparty: an ftPUT
-        # position is also a deposit for a wrapped token, and its investor has
-        # no rewards to claim here.
-        addresses = list(dict.fromkeys(
-            address
-            for address, events in self.addresses_with_deposits(location_labels=addresses).items()
-            if any(event.address == self.deployment.staking_vault for event in events)
+        addresses = list(self.addresses_with_deposits(
+            location_labels=addresses,
+            addresses=[self.deployment.staking_vault],
         ))
         if len(addresses) == 0:
             return balances

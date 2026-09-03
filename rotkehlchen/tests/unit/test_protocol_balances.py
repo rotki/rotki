@@ -2287,3 +2287,37 @@ def test_flying_tulip_lend_empty_balances_binance_sc(
             location_name=LAST_DEPOSIT_FOR_QUERY,
             account_id='positions',
         ) is not None
+
+
+@pytest.mark.parametrize(('contract_filter', 'expected_indices'), [
+    (None, [0, 1]),
+    ([0], [0]),
+    ([1], [1]),
+    ([0, 1], [0, 1]),
+    ([], []),
+])
+def test_protocol_balance_activity_contract_filter(
+        ethereum_inquirer, database, contract_filter, expected_indices,
+):
+    """Filter contracts independently of wallet labels, retaining the unfiltered default."""
+    wallet, other_wallet = make_evm_address(), make_evm_address()
+    contracts = [make_evm_address(), make_evm_address()]
+    events = [make_ethereum_event(
+        index=index, location_label=owner, address=contract,
+        counterparty=CPT_FLYING_TULIP, event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+    ) for index, (owner, contract) in enumerate((
+        (wallet, contracts[0]), (wallet, contracts[1]), (other_wallet, contracts[0]),
+    ))]
+    with database.user_write() as cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=cursor, history=events)
+
+    balances = FlyingTulipLendBalances(evm_inquirer=ethereum_inquirer, tx_decoder=Mock())
+    result = balances.addresses_with_deposits(
+        location_labels=[wallet],
+        addresses=None if contract_filter is None else [contracts[idx] for idx in contract_filter],
+    )
+    assert set(result) == ({wallet} if expected_indices else set())
+    assert {event.address for event in result.get(wallet, [])} == {
+        contracts[idx] for idx in expected_indices
+    }

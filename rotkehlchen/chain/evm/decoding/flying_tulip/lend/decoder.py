@@ -89,7 +89,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             self,
             transaction: EvmTransaction,
             decoded_events: list[EvmEvent],
-            consumed: set[int],
             token: EvmToken,
             amount: FVal,
             allowed_labels: tuple[ChecksumEvmAddress, ...],
@@ -110,7 +109,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         candidate = None
         for event in decoded_events:
             if (
-                    event.sequence_index not in consumed and
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
@@ -139,7 +137,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             refund_event = next((
                 event for event in decoded_events
                 if (
-                    event.sequence_index not in consumed and
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
@@ -154,20 +151,15 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
 
             candidate.amount = amount
             if fee_amount > ZERO:
-                decoded_events.append(self.base.make_event_next_index(
-                    tx_ref=transaction.tx_hash,
-                    timestamp=transaction.timestamp,
-                    event_type=HistoryEventType.SPEND,
-                    event_subtype=HistoryEventSubType.FEE,
-                    asset=token,
-                    amount=fee_amount,
+                decoded_events.append(self._make_relayer_fee_event(
+                    transaction=transaction,
+                    sequence_index=self.base.get_next_sequence_index(),
+                    token=token,
+                    fee_amount=fee_amount,
                     location_label=candidate.location_label,
-                    notes=f'Spend {fee_amount} {token.symbol} as a {FLYING_TULIP_LABEL} relayer fee',  # noqa: E501
-                    counterparty=CPT_FLYING_TULIP,
                     address=self.deployment.positions_manager,
                 ))
 
-        consumed.add(candidate.sequence_index)
         candidate.event_type = to_event_type
         candidate.event_subtype = to_event_subtype
         candidate.notes = notes
@@ -179,7 +171,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             self,
             transaction: EvmTransaction,
             decoded_events: list[EvmEvent],
-            consumed: set[int],
             token: EvmToken,
             amount: FVal,
             location_label: ChecksumEvmAddress,
@@ -198,7 +189,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         candidate = None
         for event in decoded_events:
             if (
-                    event.sequence_index not in consumed and
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
@@ -221,19 +211,14 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
             log.debug('Found no matching transfer for a lend event in %s', transaction)
             return
 
-        consumed.add(candidate.sequence_index)
         if (fee_amount := amount - candidate.amount) > ZERO:
             candidate.amount = amount
-            decoded_events.append(self.base.make_event_next_index(
-                tx_ref=transaction.tx_hash,
-                timestamp=transaction.timestamp,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.FEE,
-                asset=token,
-                amount=fee_amount,
+            decoded_events.append(self._make_relayer_fee_event(
+                transaction=transaction,
+                sequence_index=self.base.get_next_sequence_index(),
+                token=token,
+                fee_amount=fee_amount,
                 location_label=location_label,
-                notes=f'Spend {fee_amount} {token.symbol} as a {FLYING_TULIP_LABEL} relayer fee',
-                counterparty=CPT_FLYING_TULIP,
                 address=self.deployment.positions_manager,
             ))
         candidate.event_type = to_event_type
@@ -291,10 +276,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
         for _, _, _, _, token, _ in parsed_events:
             token_counts[token.evm_address] += 1
 
-        # sequence indexes of the transfer events already claimed by an event.
-        # They are unique within a transaction and, unlike the DB identifier,
-        # they exist while decoding, before any of these events is written.
-        consumed: set[int] = set()
         for topic, user, payer, beneficiary, token, amount in parsed_events:
             if topic in spend_topics:
                 if topic in (DEPOSIT_TOPIC_V3, PM_DEPOSIT_FOR_TOPIC):
@@ -308,7 +289,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                 matched = self._reconcile_spend(
                     transaction=transaction,
                     decoded_events=decoded_events,
-                    consumed=consumed,
                     token=token,
                     amount=amount,
                     allowed_labels=(user,) if payer is None or beneficiary is None else (payer, beneficiary),  # noqa: E501
@@ -342,7 +322,6 @@ class FlyingTulipLendCommonDecoder(FlyingTulipCommonDecoder):
                 self._reconcile_receive(
                     transaction=transaction,
                     decoded_events=decoded_events,
-                    consumed=consumed,
                     token=token,
                     amount=amount,
                     location_label=user,
