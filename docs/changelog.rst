@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12795` When every RPC node of one chain fails, blockchain balances of the other chains are no longer discarded from balance snapshot.
 * :bug:`13034` Withdrawals from a validator whose withdrawal address you do not track no longer show up in your history or count as staking income.
 * :bug:`-` Across and CCTP bridges involving Solana are now decoded, and their Solana and EVM history events are matched as the two sides of the same bridge transfer.
 * :bug:`-` Claiming your Safenet staking rewards is now recorded as a staking reward.

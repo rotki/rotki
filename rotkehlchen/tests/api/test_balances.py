@@ -60,7 +60,11 @@ from rotkehlchen.tests.utils.exchanges import (
     create_test_coinbase,
     try_get_first_exchange,
 )
-from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.factories import (
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+    make_evm_address,
+)
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 from rotkehlchen.types import (
@@ -1599,3 +1603,71 @@ def test_blockchain_balances_specific_addresses(
     eth_balances = result['per_account']['eth']
     for address in ethereum_accounts:
         assert address in eth_balances
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_blockchain_balances_partial_chain_failure(
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
+) -> None:
+    """Test that when every node of one chain fails, querying all blockchain balances
+    returns the balances of the other chains with the failure named in the message, and
+    that the balance snapshot keeps the blockchain balances instead of dropping them all.
+    Regression test for https://github.com/rotki/rotki/issues/12795"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    chains_aggregator = rotki.chains_aggregator
+    eth_address, optimism_address = chains_aggregator.accounts.eth[0], chains_aggregator.accounts.optimism[0]  # noqa: E501
+    chains_aggregator.balances.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5), value=FVal(10))  # from a previous successful query  # noqa: E501
+
+    def mock_query_chain_balances(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
+        if blockchain == SupportedBlockchain.OPTIMISM:
+            raise RemoteError('Error querying information from optimism')
+        chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+
+    with patch.object(chains_aggregator, '_query_chain_balances', side_effect=mock_query_chain_balances):  # noqa: E501
+        result = assert_proper_sync_response_with_result(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+                json={'async_query': False},
+            ),
+            message='Failed to query optimism balances: Error querying information from optimism',
+        )
+        assert result['failed_chains'] == {'optimism': 'Error querying information from optimism'}
+        assert result['per_account']['eth'][eth_address]['assets'] == {A_ETH.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '1', 'value': '2'}}}  # noqa: E501
+        assert result['per_account']['optimism'][optimism_address]['assets'] == {A_ETH.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '5', 'value': '10'}}}  # noqa: E501
+        assert result['totals']['assets'] == {A_ETH.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '6', 'value': '12'}}}  # noqa: E501
+
+        # querying the failing chain alone is still an error
+        assert_error_response(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+                json={'async_query': False, 'blockchain': 'OPTIMISM'},
+            ),
+            contained_in_msg='Error querying information from optimism',
+            status_code=HTTPStatus.BAD_GATEWAY,
+        )
+
+        # the snapshot is not saved on a failure unless errors are ignored, but when it is
+        # saved the blockchain balances are all still there
+        for ignore_errors in (False, True):
+            result = assert_proper_sync_response_with_result(requests.get(
+                api_url_for(rotkehlchen_api_server, 'allbalancesresource'),
+                json={'async_query': False, 'save_data': True, 'ignore_errors': ignore_errors},
+            ))
+            assert result['assets'][A_ETH.identifier]['amount'] == '6'
+            assert result['location'].keys() == {'blockchain'}
+            websocket_connection.wait_until_messages_num(num=1, timeout=10)
+            assert websocket_connection.pop_message() == {
+                'type': 'balance_snapshot_error',
+                'data': {
+                    'location': 'optimism balances query',
+                    'error': 'Error querying information from optimism',
+                },
+            }
+            with rotki.data.db.conn.read_ctx() as cursor:
+                assert cursor.execute(
+                    'SELECT COUNT(*) FROM timed_location_data WHERE location=?',
+                    (Location.BLOCKCHAIN.serialize_for_db(),),
+                ).fetchone()[0] == int(ignore_errors)

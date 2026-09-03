@@ -535,8 +535,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             from_cache: bool = False,
             addresses: ListOfBlockchainAddresses | None = None,
             only_cache: bool = False,
+            failed_chains: dict[SupportedBlockchain, str] | None = None,
     ) -> BlockchainBalancesUpdate:
-        """Returns a balances update to be consumed by the API."""
+        """Returns a balances update to be consumed by the API.
+
+        failed_chains lists the chains whose query just failed, along with the error,
+        so the consumer can tell which balances in the update could not be refreshed.
+        """
         if from_cache is True:
             with self.database.conn.read_ctx() as cursor:
                 balances = self.database.get_blockchain_balances_cache(
@@ -574,6 +579,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 given_chain=chain,
                 per_account=self.balances.copy(),
                 totals=self.totals.copy(),
+                failed_chains=failed_chains or {},
             )
 
     def get_blockchain_balances_last_query_ts(
@@ -745,6 +751,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         If querying beaconchain and ignore_cache is true then each eth1 address is also
         checked for the validators it has deposited and the deposits are fetched.
 
+        When all chains are queried and only some of them fail, the balances of the chains
+        that succeeded are returned and the failing chains are listed in the update's
+        failed_chains, keeping the balances of their last successful query. An error is
+        raised only if a specific chain was requested or if every queried chain failed.
+
         May raise:
         - RemoteError if an external service such as Etherscan or blockchain.info
         is queried and there is a problem with its query.
@@ -780,17 +791,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         tasks = {chain: spawn(_query_one, chain) for chain in chains_to_query}
         wait(list(tasks.values()))
 
-        # Persist the cache only for chains that succeeded. Preserve the original
-        # contract by reraising the first failure after all chains have settled.
-        # Additional failures are logged so they aren't silently swallowed when
-        # multiple chains fail in the same refresh.
+        # Persist the cache only for chains that succeeded.
         first_exception: BaseException | None = None
+        failed_chains: dict[SupportedBlockchain, str] = {}
         for chain, task in tasks.items():
             if (chain_exception := exception_of(task)) is not None:
+                log.error('Failed to query chain balances', chain=chain, error=chain_exception)
+                failed_chains[chain] = str(chain_exception)
                 if first_exception is None:
                     first_exception = chain_exception
-                else:
-                    log.error('Failed to query %s balances: %s', chain, chain_exception)
                 continue
             self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 
@@ -798,10 +807,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # mutated self.balances, leaving the cached self.totals out of sync.
         with self.balances_lock:
             self.totals = self.balances.recalculate_totals()
-        if first_exception is not None:
+
+        # A single chain query keeps raising on failure. When querying all chains the
+        # balances of the chains that succeeded are returned, with the failing ones
+        # listed in failed_chains, unless no chain at all could be queried.
+        if first_exception is not None and (blockchain is not None or len(failed_chains) == len(tasks)):  # noqa: E501
             raise first_exception
 
-        return self.get_balances_update(blockchain)
+        return self.get_balances_update(blockchain, failed_chains=failed_chains)
 
     @overload
     def get_active_addresses(

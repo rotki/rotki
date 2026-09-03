@@ -1,10 +1,11 @@
 import datetime
 from contextlib import ExitStack
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -15,8 +16,12 @@ from rotkehlchen.chain.evm.types import (
     SerializableChainIndexerOrder,
     string_to_evm_address,
 )
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
@@ -445,3 +450,45 @@ def test_query_balances_skips_chains_without_accounts(
     assert updated_chains <= {SupportedBlockchain.ETHEREUM_BEACONCHAIN}, (
         f'cache update ran for account-less chains: {updated_chains}'
     )
+
+
+@pytest.mark.parametrize('ethereum_modules', [[]])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+def test_query_balances_partial_chain_failure(blockchain: ChainsAggregator) -> None:
+    """When querying all chains, a chain whose query fails keeps the balances of its last
+    successful query and is reported in failed_chains, instead of the failure discarding
+    the balances of the chains that were queried fine. Querying the failing chain alone,
+    or having every chain fail, still raises."""
+    chains_aggregator = blockchain  # the mock below shadows the fixture name with the chain
+    eth_address, optimism_address = chains_aggregator.accounts.eth[0], chains_aggregator.accounts.optimism[0]  # noqa: E501
+    chains_aggregator.balances.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5), value=FVal(10))  # from a previous successful query  # noqa: E501
+    failing_chains = {SupportedBlockchain.OPTIMISM}
+
+    def mock_query_chain(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
+        if blockchain in failing_chains:
+            raise RemoteError(f'Error querying information from {blockchain!s}')
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+
+    with (
+        patch.object(chains_aggregator, '_query_chain_balances', side_effect=mock_query_chain),
+        patch.object(chains_aggregator, 'query_eth2_balances', side_effect=lambda **kwargs: mock_query_chain(SupportedBlockchain.ETHEREUM_BEACONCHAIN)),  # noqa: E501
+        patch.object(chains_aggregator, '_update_blockchain_balances_cache') as cache_mock,
+    ):
+        update = chains_aggregator.query_balances(ignore_cache=True)
+        assert update.failed_chains == {SupportedBlockchain.OPTIMISM: 'Error querying information from optimism'}  # noqa: E501
+        assert update.per_account.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=ONE, value=FVal(2))  # noqa: E501
+        assert update.per_account.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=FVal(5), value=FVal(10))  # noqa: E501
+        assert update.totals.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=FVal(6), value=FVal(12))  # noqa: E501
+        assert {call.kwargs['blockchain'] for call in cache_mock.call_args_list} == {
+            SupportedBlockchain.ETHEREUM,
+            SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+        }  # only the chains that succeeded get their cache updated
+
+        with pytest.raises(RemoteError):  # a single chain query still raises
+            chains_aggregator.query_balances(blockchain=SupportedBlockchain.OPTIMISM, ignore_cache=True)  # noqa: E501
+
+        failing_chains.update({SupportedBlockchain.ETHEREUM, SupportedBlockchain.ETHEREUM_BEACONCHAIN})  # noqa: E501
+        with pytest.raises(RemoteError):  # so does all queried chains failing
+            chains_aggregator.query_balances(ignore_cache=True)
