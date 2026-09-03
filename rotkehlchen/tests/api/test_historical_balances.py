@@ -10,6 +10,7 @@ from rotkehlchen.api.v1.types import TaskName
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
@@ -553,10 +554,14 @@ def test_find_onchain_historical_balance_divergence(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('accounting_update_enabled', [True, False])
 def test_get_historical_asset_amounts_over_time(
         rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
+        monkeypatch: pytest.MonkeyPatch,
+        accounting_update_enabled: bool,
 ) -> None:
+    monkeypatch.setenv('ROTKI_ACCOUNTING_UPDATE', str(accounting_update_enabled))
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with db.user_write() as write_cursor:
         DBHistoryEvents(database=db).add_history_events(
@@ -585,13 +590,11 @@ def test_get_historical_asset_amounts_over_time(
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    # Check all balance amount change points are present with correct amounts
-    assert len(result['times']) == len(result['values'])
-    assert 'last_group_identifier' not in result
     day_3_ts = START_TS + DAY_IN_SECONDS * 2
-    for ts, amount in zip(result['times'], result['values'], strict=True):
-        assert ts in {START_TS, day_3_ts, day_3_ts + 1, START_TS + DAY_IN_SECONDS * 3}
-        assert amount in {'2', '2.5', '1.5', '3.5'}
+    assert result == {
+        'times': [START_TS, day_3_ts, day_3_ts + 1, START_TS + DAY_IN_SECONDS * 3],
+        'values': ['2', '1.5', '1.5', '3.5'],
+    }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -619,25 +622,19 @@ def test_get_historical_asset_amounts_over_time_event_metrics(
         )
 
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'historicalassetamountsresource',
-        ),
-        json={
-            'asset': 'BTC',
-            'from_timestamp': START_TS,
-            'to_timestamp': START_TS + DAY_IN_SECONDS * 10,
-        },
+    processing_required, balances = HistoricalBalancesManager(db).get_assets_amounts_event_metrics(
+        assets=(A_BTC,),
+        from_ts=START_TS,
+        to_ts=Timestamp(START_TS + DAY_IN_SECONDS * 10),
     )
-    result = assert_proper_sync_response_with_result(response)
-    # Check all balance amount change points are present with correct amounts
-    # Day 1: 2 (receive), Day 3: 2.5 (deposit to exchange), Day 3+1s: 1.5 (withdrawal), Day 4: 3.5 (swaps)  # noqa: E501
-    assert len(result['times']) == len(result['values'])
     day_3_ts = START_TS + DAY_IN_SECONDS * 2
-    for ts, amount in zip(result['times'], result['values'], strict=True):
-        assert ts in {START_TS, day_3_ts, day_3_ts + 1, START_TS + DAY_IN_SECONDS * 3}
-        assert amount in {'2', '2.5', '1.5', '3.5'}
+    assert processing_required is False
+    assert balances == {
+        START_TS: FVal('2'),
+        day_3_ts: FVal('2.5'),
+        day_3_ts + 1: FVal('1.5'),
+        START_TS + DAY_IN_SECONDS * 3: FVal('3.5'),
+    }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -645,11 +642,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
         rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
-    """Test that historical asset amounts are returned correctly with pre-processed event_metrics.
-
-    Negative balance detection happens during processing (via WS message), not during querying.
-    The legacy last_group_identifier is no longer returned by the event_metrics path.
-    """
+    """The graph stops at the first negative balance and identifies the offending event."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     db.msg_aggregator.rotki_notifier = MockRotkiNotifier()  # type: ignore[assignment]
     events = [
@@ -677,10 +670,12 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
         ),
     ]
     with db.user_write() as write_cursor:
-        DBHistoryEvents(database=db).add_history_events(
+        db_events = DBHistoryEvents(database=db)
+        first_negative_event_id = db_events.add_history_event(
             write_cursor=write_cursor,
-            history=events,
+            event=events[0],
         )
+        db_events.add_history_event(write_cursor=write_cursor, event=events[1])
 
     # Process events so event_metrics has the data (including negative balance detection)
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
@@ -701,10 +696,12 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
-    assert len(result['times']) == len(result['values'])
-    # event_metrics path returns all processed balance changes (including exchange movements)
-    assert len(result['times']) == 3
+    day_3_ts = START_TS + DAY_IN_SECONDS * 2
+    assert result == {
+        'times': [START_TS, day_3_ts, day_3_ts + 1],
+        'values': ['2', '1.5', '1.5'],
+        'last_group_identifier': [first_negative_event_id, events[0].group_identifier],
+    }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -751,29 +748,18 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metri
     messages = db.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
     assert any(m.message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED for m in messages)
 
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'historicalassetamountsresource',
-        ),
-        json={
-            'asset': 'BTC',
-            'from_timestamp': START_TS,
-            'to_timestamp': four_days_after_start,
-        },
+    processing_required, balances = HistoricalBalancesManager(db).get_assets_amounts_event_metrics(
+        assets=(A_BTC,),
+        from_ts=START_TS,
+        to_ts=four_days_after_start,
     )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
-    assert len(result['times']) == len(result['values'])
+    assert processing_required is False
     day_3_ts = START_TS + DAY_IN_SECONDS * 2
-    assert len(result['times']) == 3
-    assert result['times'][0] == START_TS  # Initial timestamp
-    assert result['times'][1] == day_3_ts  # After spend and exchange deposit
-    assert result['times'][2] == day_3_ts + 1  # After exchange withdrawal
-    # event_metrics sums across all buckets (blockchain + exchange)
-    assert result['values'][0] == '2'  # Initial balance (blockchain only)
-    assert result['values'][1] == '2.5'  # 1.5 (blockchain after spend) + 1 (exchange deposit)
-    assert result['values'][2] == '1.5'  # 1.5 (blockchain) + 0 (exchange after withdrawal)
+    assert balances == {
+        START_TS: FVal('2'),
+        day_3_ts: FVal('2.5'),
+        day_3_ts + 1: FVal('1.5'),
+    }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -808,10 +794,12 @@ def test_get_historical_assets_in_collection_amounts_over_time(
         ),
     ]
     with db.user_write() as write_cursor:
-        DBHistoryEvents(database=db).add_history_events(
+        db_events = DBHistoryEvents(database=db)
+        first_negative_event_id = db_events.add_history_event(
             write_cursor=write_cursor,
-            history=events,
+            event=events[0],
         )
+        db_events.add_history_event(write_cursor=write_cursor, event=events[1])
 
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
 
@@ -831,17 +819,24 @@ def test_get_historical_assets_in_collection_amounts_over_time(
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
-    assert len(result['times']) == len(result['values'])
     day_3_ts = START_TS + DAY_IN_SECONDS * 2
-    assert len(result['times']) == 3
-    assert result['times'][0] == START_TS  # Initial timestamp
-    assert result['times'][1] == day_3_ts  # After spend and exchange deposit
-    assert result['times'][2] == day_3_ts + 1  # After exchange withdrawal
-    # event_metrics sums across all buckets (blockchain + exchange)
-    assert result['values'][0] == '2'  # Initial balance (blockchain only)
-    assert result['values'][1] == '2.5'  # 1.5 (blockchain after spend) + 1 (exchange deposit)
-    assert result['values'][2] == '1.5'  # 1.5 (blockchain) + 0 (exchange after withdrawal)
+    assert result == {
+        'times': [START_TS, day_3_ts, day_3_ts + 1],
+        'values': ['2', '1.5', '1.5'],
+        'last_group_identifier': [first_negative_event_id, events[0].group_identifier],
+    }
+
+    processing_required, balances = HistoricalBalancesManager(db).get_assets_amounts_event_metrics(
+        assets=(A_BTC, events[0].asset, events[1].asset),
+        from_ts=START_TS,
+        to_ts=four_days_after_start,
+    )
+    assert processing_required is False
+    assert balances == {
+        START_TS: FVal('2'),
+        day_3_ts: FVal('2.5'),
+        day_3_ts + 1: FVal('1.5'),
+    }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -1397,9 +1392,14 @@ def test_historical_price_cache_only_special_assets(
 def test_get_historical_asset_amounts_processing_required(
         rotkehlchen_api_server: APIServer,
 ) -> None:
-    """Test that processing_required flag is returned correctly and that the
-    processing trigger endpoint works."""
+    """Processing updates event metrics while the graph remains available on demand."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    balances_manager = HistoricalBalancesManager(db)
+    assert balances_manager.get_assets_amounts_event_metrics(
+        assets=(A_BTC,),
+        from_ts=START_TS,
+        to_ts=Timestamp(START_TS + DAY_IN_SECONDS),
+    ) == (False, None)
     events = [
         HistoryEvent(
             group_identifier='btc_receive_1',
@@ -1419,7 +1419,12 @@ def test_get_historical_asset_amounts_processing_required(
             history=events,
         )
 
-    # events exist but are not yet processed
+    assert balances_manager.get_assets_amounts_event_metrics(
+        assets=(A_BTC,),
+        from_ts=START_TS,
+        to_ts=Timestamp(START_TS + DAY_IN_SECONDS),
+    ) == (True, None)
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1432,9 +1437,7 @@ def test_get_historical_asset_amounts_processing_required(
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is True
-    assert 'times' not in result
-    assert 'values' not in result
+    assert result == {'times': [START_TS], 'values': ['2']}
 
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
@@ -1479,16 +1482,23 @@ def test_get_historical_asset_amounts_processing_required(
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
-    assert 'times' in result
-    assert 'values' in result
+    assert result == {'times': [START_TS], 'values': ['2']}
+    assert balances_manager.get_assets_amounts_event_metrics(
+        assets=(A_BTC,),
+        from_ts=START_TS,
+        to_ts=Timestamp(START_TS + DAY_IN_SECONDS),
+    ) == (False, {START_TS: FVal('2')})
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('accounting_update_enabled', [True, False])
 def test_get_historical_asset_amounts_no_events(
         rotkehlchen_api_server: APIServer,
+        monkeypatch: pytest.MonkeyPatch,
+        accounting_update_enabled: bool,
 ) -> None:
-    """Test that processing_required=False is returned when no events exist in time range."""
+    """The graph returns 404 when no events exist, regardless of the accounting flag."""
+    monkeypatch.setenv('ROTKI_ACCOUNTING_UPDATE', str(accounting_update_enabled))
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1500,5 +1510,8 @@ def test_get_historical_asset_amounts_no_events(
             'to_timestamp': START_TS + DAY_IN_SECONDS,
         },
     )
-    result = assert_proper_sync_response_with_result(response)
-    assert result == {'processing_required': False}
+    assert_error_response(
+        response=response,
+        contained_in_msg='No historical data found',
+        status_code=HTTPStatus.NOT_FOUND,
+    )
