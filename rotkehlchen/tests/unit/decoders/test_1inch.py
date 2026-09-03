@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.oneinch.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.oneinch.v2.constants import ONEINCH_V2_MAINNET_ROUTER
 from rotkehlchen.chain.ethereum.modules.oneinch.v3.constants import ONEINCH_V3_MAINNET_ROUTER
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ONEINCH_V4_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import ONEINCH_V5_ROUTER
@@ -832,6 +833,84 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert events == expetec_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6B526fdC12058d5F75f820C2BCc7b0066479f9c7']])
+def test_1inch_v5_swap_with_extra_receive(ethereum_inquirer, ethereum_accounts):
+    """Test that a 1inch v5 swap where the sender receives more than one transfer only
+    pairs the actual swap output as the receive leg. Here transferring the aave v1 aSUSD
+    to the router mints the accrued interest to the sender, which must stay a plain receive.
+    Regression test for https://github.com/rotki/rotki/issues/8107
+    """
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x93dee2be1df389632c8015f69759c8d7e8844109e4dcdf301696fe25e593372d')),  # noqa: E501
+    )
+    a_asusd = Asset('eip155:1/erc20:0x625aE63000f46200499120B906716420bd059240')
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1717559987000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.003995508153908601'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=265,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=a_asusd,
+            amount=FVal(interest_str := '20.965149597970033412'),
+            location_label=user_address,
+            notes=f'Receive {interest_str} aSUSD from {ZERO_ADDRESS} to {user_address}',
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=270,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=a_asusd,
+            amount=FVal(approve_str := '7.112589963311288738'),
+            location_label=user_address,
+            notes=f'Set aSUSD spending approval of {user_address} by {ONEINCH_V5_ROUTER} to {approve_str}',  # noqa: E501
+            address=ONEINCH_V5_ROUTER,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=271,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=a_asusd,
+            amount=FVal(spend_str := '142.251799266225648426'),
+            location_label=user_address,
+            notes=f'Swap {spend_str} aSUSD in {CPT_ONEINCH_V5}',
+            counterparty=CPT_ONEINCH_V5,
+            address=ONEINCH_V5_ROUTER,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=272,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDC,
+            amount=FVal(receive_str := '140.876391'),
+            location_label=user_address,
+            notes=f'Receive {receive_str} USDC as a result of a {CPT_ONEINCH_V5} swap',
+            counterparty=CPT_ONEINCH_V5,
+            address=ONEINCH_V5_ROUTER,
+        ),
+    ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
