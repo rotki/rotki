@@ -2057,7 +2057,7 @@ class DBHandler:
             "value = evm_accounts_details.value)"
         )
         bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
-        cursor.execute(querystr, bindings)  # original place https://github.com/rotki/rotki/issues/5432 was seen # noqa: E501
+        cursor.execute(querystr, bindings)
 
         returned_list = []
         for (key, value) in cursor:
