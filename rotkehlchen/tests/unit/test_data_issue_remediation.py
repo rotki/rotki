@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -12,13 +13,16 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
-from rotkehlchen.tests.utils.ethereum import TEST_ADDR1
+from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import EVMTxHash
+    from rotkehlchen.user_messages import MessagesAggregator
 
 pytestmark = pytest.mark.accounting_update
 
@@ -84,6 +88,91 @@ def _get_saved_event_rows(database: DBHandler) -> tuple[list[tuple], list[tuple]
                 'SELECT * FROM history_events_mappings ORDER BY parent_identifier, name',
             ).fetchall(),
         )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_negative_balance_customized_spend_is_compared_with_real_decoder(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    receive_tx_hash, spend_tx_hash = make_evm_tx_hash(), make_evm_tx_hash()
+    spend_transaction = EvmTransaction(
+        tx_hash=spend_tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(2),
+        block_number=1,
+        from_address=TEST_ADDR1,
+        to_address=TEST_ADDR2,
+        value=5 * 10**18,
+        gas=21_000,
+        gas_price=0,
+        gas_used=0,
+        input_data=b'',
+        nonce=0,
+    )
+    dbevents, dbtx = DBHistoryEvents(database), DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[spend_transaction],
+            relevant_address=TEST_ADDR1,
+        )
+        dbtx.add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, {
+            'transactionHash': spend_tx_hash.hex(),
+            'type': '0x0',
+            'status': 1,
+            'contractAddress': None,
+            'logs': [],
+        })
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_make_event(
+                tx_hash=receive_tx_hash,
+                amount='10',
+                event_type=HistoryEventType.RECEIVE,
+            ),
+        )
+        spend_event_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_make_event(tx_hash=spend_tx_hash, amount='11', timestamp=2_000),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+    assert spend_event_id is not None
+
+    process_historical_balances(database=database, msg_aggregator=messages_aggregator)
+    issues_manager = DataIssuesManager(database)
+    issues = issues_manager.list_issues()
+    assert len(issues) == 1
+    assert issues[0].kind == IssueKind.NEGATIVE_BALANCE
+    assert issues[0].state == IssueState.OPEN
+    assert issues[0].payload == {
+        'event_identifier': spend_event_id,
+        'in_memory_negative_amount': '-1',
+        'derived_balance_before_event': '10',
+    }
+    saved_rows = _get_saved_event_rows(database)
+
+    chains_aggregator = MagicMock()
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder = (
+        ethereum_transaction_decoder
+    )
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=chains_aggregator,
+    )
+
+    issue = issues_manager.get_issue(issues[0].id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert issue.auto_remediation_attempts == [{
+        'attribution': 'system',
+        'strategy': 'redecode_customized_transactions',
+        'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
+        'result': 'redecoding_would_change_balance',
+        'customized_transaction_count': 1,
+        'changed_transaction_count': 1,
+    }]
+    assert _get_saved_event_rows(database) == saved_rows
 
 
 @pytest.mark.parametrize(('preview_amount', 'expected_result', 'expected_changed'), [
