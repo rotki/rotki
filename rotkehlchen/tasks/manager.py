@@ -61,6 +61,7 @@ from rotkehlchen.tasks.calendar import (
     maybe_create_calendar_reminders,
     notify_reminders,
 )
+from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.historical_balances import (
     process_historical_balances,
     retry_rebasing_token_issue,
@@ -89,6 +90,8 @@ from .events import process_eth2_events
 
 HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
+DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
+DATA_ISSUE_REMEDIATION_TASK_NAME: Final = 'Auto-remediate data issues'
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -195,7 +198,10 @@ class TaskManager:
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
-            *([self._maybe_process_historical_balances] if is_accounting_update_enabled() else []),
+            *(
+                [self._maybe_process_historical_balances, self._maybe_run_data_issue_remediation]
+                if is_accounting_update_enabled() else []
+            ),
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
@@ -656,7 +662,8 @@ class TaskManager:
     def _maybe_process_historical_balances(self) -> list[Task] | None:
         if (
             self.history_processing_coordinator.is_history_fetching() or
-            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME) or
+            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME)
         ):
             return None
 
@@ -679,6 +686,36 @@ class TaskManager:
         return self._spawn_historical_balance_processing(
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
         )
+
+    def _maybe_run_data_issue_remediation(self) -> list[Task] | None:
+        if (
+            self.history_processing_coordinator.is_history_fetching() or
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+        ):
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            if self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            ) is None:
+                return None
+
+        if should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            refresh_period=DATA_ISSUE_REMEDIATION_REFRESH,
+            cached_timestamps=self._scheduler_task_timestamps,
+        ) is False:
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name=DATA_ISSUE_REMEDIATION_TASK_NAME,
+            exception_is_error=True,
+            method=run_data_issue_remediation,
+            database=self.database,
+        )]
 
     def _maybe_update_snapshot_balances(self) -> list[Task] | None:
         """
