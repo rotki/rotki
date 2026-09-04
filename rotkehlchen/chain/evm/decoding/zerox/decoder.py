@@ -18,6 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_ZEROX, METATX_ZEROX
+from .utils import generate_settler_addresses
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -42,22 +43,20 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
             msg_aggregator: MessagesAggregator,
             router_address: ChecksumEvmAddress | None = None,
             flash_wallet_address: ChecksumEvmAddress | None = None,
-            settler_routers_addresses: set[ChecksumEvmAddress] | None = None,
     ) -> None:
         """router_address is the main point of contact with the 0x protocol.
         flash_wallet_address is a contract that can execute arbitrary calls from 0x router_address.
         Docs: https://0x.org/docs/introduction/0x-cheat-sheet#exchange-proxy-addresses
-        Both router_address and flash_wallet_address may be None on settler-only chains."""
+        Both router_address and flash_wallet_address may be None on settler-only chains.
+        The settler addresses of the chain are computed, see generate_settler_addresses()."""
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.evm_txns = EvmTransactions(self.node_inquirer, self.base.database)
         self.router_address = router_address
-        self.settler_routers_addresses = settler_routers_addresses
+        self.settler_routers_addresses = generate_settler_addresses(evm_inquirer.chain_id)
         self.flash_wallet_address = flash_wallet_address
-        self.router_addresses_set: set[ChecksumEvmAddress] = set()
+        self.router_addresses_set: set[ChecksumEvmAddress] = set(self.settler_routers_addresses)
         if self.router_address is not None:
             self.router_addresses_set.add(self.router_address)
-        if self.settler_routers_addresses:
-            self.router_addresses_set |= self.settler_routers_addresses
 
     def _update_send_receive_fee_events(
             self,
@@ -71,11 +70,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
         # The send event contains the settler address, so need to
         # update the others events with the settler address
         router_address = self.router_address
-        if (
-            send_event is not None and
-            self.settler_routers_addresses is not None and
-            send_event.address in self.settler_routers_addresses
-        ):
+        if send_event is not None and send_event.address in self.settler_routers_addresses:
             router_address = send_event.address
         elif used_router_address is not None:
             router_address = used_router_address
