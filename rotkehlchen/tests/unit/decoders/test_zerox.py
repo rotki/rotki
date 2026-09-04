@@ -8,17 +8,20 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.zerox.constants import ZEROX_ROUTER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
+from rotkehlchen.chain.evm.decoding.zerox.utils import generate_settler_addresses
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.optimism.modules.zerox.constants import ZEROX_ROUTER as OP_ZEROX_ROUTER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
+    A_CRV,
     A_ETH,
     A_OP,
     A_POL,
     A_SNX,
     A_USDC,
     A_USDT,
+    A_WETH,
 )
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
@@ -29,8 +32,17 @@ from rotkehlchen.tests.unit.decoders.test_aerodrome import A_AERO
 from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.ethereum import (
+    PRUNED_AND_NOT_ARCHIVED_NODE,
+    get_decoded_events_of_transaction,
+)
+from rotkehlchen.types import (
+    ChainID,
+    Location,
+    SupportedBlockchain,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -1863,4 +1875,67 @@ def test_base_settler_zerox_swap_runner_to_usdc(base_inquirer, base_accounts) ->
         notes=f'Receive {in_amount} USDC as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=string_to_evm_address('0x7747F8D2a76BD6345Cc29622a946A929647F2359'),
+    )]
+
+
+@pytest.mark.parametrize(('chain_id', 'settler_address'), [
+    (ChainID.ETHEREUM, '0xECf4248A682FFC676F4C596214CD6a4B463d8d2E'),  # 1st deployment
+    (ChainID.ETHEREUM, '0x0889e9327b98D7d1BE3C301A4585ff3330502c9A'),  # 18th, missing from the old hardcoded list  # noqa: E501
+    (ChainID.ETHEREUM, '0x666FEdd4CdD4E890A5aD20E7B60975409435a64A'),  # 19th, current one as of Sept 2026  # noqa: E501
+    (ChainID.OPTIMISM, '0x4C3758CD0341D6e7749C327424A0BcCa3308b884'),
+    (ChainID.POLYGON_POS, '0x7150ea07D00d8E5a46bcC809f1c9FDf5cb5f8E81'),
+    (ChainID.ARBITRUM_ONE, '0xB254ee265261675528bdDb0796741c0C65a4C158'),
+    (ChainID.BASE, '0x7747F8D2a76BD6345Cc29622a946A929647F2359'),
+    (ChainID.BINANCE_SC, '0x4675748248a1182819E5eA6819e41bE0B2ad3A7d'),
+    (ChainID.MONAD, '0x4f83A6D66e89aE4B040cc7B9d89b1FB14e730314'),
+])
+def test_generate_settler_addresses(chain_id: ChainID, settler_address: str) -> None:
+    """Check that the computed settler addresses match settlers actually deployed on-chain"""
+    assert string_to_evm_address(settler_address) in generate_settler_addresses(chain_id)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('ethereum_accounts', [['0x5275817b74021E97c980E95EdE6bbAc0D0d6f3a2']])
+def test_swap_via_new_settler_ethereum(ethereum_inquirer, ethereum_accounts) -> None:
+    """Regression test for a swap via a settler deployed after the last hardcoded address
+    (deploy nonce 18 on ethereum). Settler addresses are computed now so all deployments,
+    including future ones, are recognized."""
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x71f8e78b491f5d8d0d996359fe752b132d4eecf06e598a95a680fddedc9dbd81')))  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1788554531000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.00002297152')),
+        location_label=(user := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_CRV,
+        amount=(out_amount := FVal('1679.395793672048033701')),
+        location_label=user,
+        notes=f'Swap {out_amount} CRV via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=(settler := string_to_evm_address('0x0889e9327b98D7d1BE3C301A4585ff3330502c9A')),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_WETH,
+        amount=(in_amount := FVal('0.242457579914299359')),
+        location_label=user,
+        notes=f'Receive {in_amount} WETH as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=settler,
     )]

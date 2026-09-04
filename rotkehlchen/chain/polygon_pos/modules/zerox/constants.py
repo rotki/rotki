@@ -5,23 +5,3 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 ZEROX_FLASH_WALLET: Final = string_to_evm_address(
     '0xdB6f1920A889355780aF7570773609Bd8Cb1f498',
 )
-
-# Skipped version v1.2 because this contract doesn't have any transactions
-SETTLER_ROUTERS: Final = {
-    string_to_evm_address('0xC8536873bAf65695Be8Eba0f3a31fcfCE8bf8608'),  # V1.1 commit: 0x7b1c68714aeca5b797b1e3bf95d6c8675e9cc811000000000000000000000000  # noqa: E501
-    string_to_evm_address('0xD29b634D35E9E22379241eAd1F5Ba431AF6dbba3'),  # V1.3 commit: 0x336fda7ac33e46626cba703a82a53ad517aa8336000000000000000000000000  # noqa: E501
-    string_to_evm_address('0x6aEC4d9f02d6D4b9a09c588922eBC81a532b94d0'),  # V1.4 commit: 0x543ca9b301408c77ea0e8dbc6749f6b2bd01b3f3000000000000000000000000  # noqa: E501
-    string_to_evm_address('0xd2aeAE6DC50a8efA8919E7783125cAcDE3b4e930'),  # V1.5 commit: 0xa5a3b402765eb2940a6e29efa81a58e222d0ae6a000000000000000000000000  # noqa: E501
-    string_to_evm_address('0x88530dD3a2E72c2A6580F45AC9c2197e9b75a642'),  # V1.6 commit: 0x3ae13a6a1d3eea900d733ebc1d1ba9d772e6b415000000000000000000000000  # noqa: E501
-    string_to_evm_address('0xfF4b330c5BC3811b66d8864CF8078D8F2db20Dd6'),  # V1.7 commit: 0xa6f39ee20f0c4dfe1265f5d203dfc4f3f05ca003000000000000000000000000  # noqa: E501
-    string_to_evm_address('0x7f20a7A526D1BAB092e3Be0733D96287E93cEf59'),  # V1.8 commit: 0xffc129424fbe525c124e52cff5225afbfb610534000000000000000000000000  # noqa: E501
-    string_to_evm_address('0xa3D370E8a4180828f6756cb8DCE359CF21D9d6F7'),  # commit: 0x2ddbef2c14ee27f3dafcfdb3d376dad949d7a86e000000000000000000000000  # noqa: E501
-    string_to_evm_address('0xcD024e1ADbD9DeA7071d1fbe768e88fa86fACfDe'),  # commit: a2ca15a3e0b5d90d91c40619293f311b3e1b807e  # noqa: E501
-    string_to_evm_address('0x07121BAd3ac59b32e28D49cbCB0a8D17b83a2e8f'),
-    string_to_evm_address('0xD57E8e9996B81F689Bb26E680c2B8a1f8De7003d'),
-    string_to_evm_address('0x7F4f8aB7809c9b1E6Ce14742608cf0f2B50aC473'),
-    string_to_evm_address('0x6E105b616802665ed172210B031b451749111B0d'),
-    string_to_evm_address('0xDE33b176C0af1c404cF461aCC7a60Bfd8C9Bef48'),
-    string_to_evm_address('0xb0873c46937d34e98615E8C868Bd3580BC6dcD47'),
-    string_to_evm_address('0x7150ea07D00d8E5a46bcC809f1c9FDf5cb5f8E81'),
-}
