@@ -45,7 +45,9 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
+from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.manager import (
+    DATA_ISSUE_REMEDIATION_TASK_NAME,
     HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
     PREMIUM_STATUS_CHECK,
     TaskManager,
@@ -104,6 +106,7 @@ def test_potential_maybe_schedule_task(task_manager: TaskManager):
     }
     if is_accounting_update_enabled() is False:
         expected_tasks.remove('_maybe_process_historical_balances')
+        expected_tasks.remove('_maybe_run_data_issue_remediation')
 
     assert expected_tasks == tasks
     assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
@@ -118,11 +121,89 @@ def test_periodic_historical_balances_skip_active_remediation(task_manager: Task
             'is_history_fetching',
             return_value=False,
         ),
-        patch.object(task_manager.task_supervisor, 'has_task', return_value=True) as has_task,
+        patch.object(
+            task_manager.task_supervisor,
+            'has_task',
+            side_effect=lambda name: name == DATA_ISSUE_REMEDIATION_TASK_NAME,
+        ) as has_task,
     ):
         assert task_manager._maybe_process_historical_balances() is None
 
-    has_task.assert_called_once_with(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+    assert has_task.call_args_list == [
+        ((HISTORICAL_BALANCE_PROCESSING_TASK_NAME,), {}),
+        ((DATA_ISSUE_REMEDIATION_TASK_NAME,), {}),
+    ]
+
+
+def test_data_issue_remediation_runs_daily_after_initial_processing(
+        task_manager: TaskManager,
+) -> None:
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        assert task_manager._maybe_run_data_issue_remediation() is None
+        spawn_task.assert_not_called()
+
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                value=ts_now(),
+            )
+
+        assert task_manager._maybe_run_data_issue_remediation() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs == {
+            'after_seconds': None,
+            'task_name': DATA_ISSUE_REMEDIATION_TASK_NAME,
+            'exception_is_error': True,
+            'method': run_data_issue_remediation,
+            'database': task_manager.database,
+        }
+
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+                value=ts_now(),
+            )
+
+        spawn_task.reset_mock()
+        assert task_manager._maybe_run_data_issue_remediation() is None
+        spawn_task.assert_not_called()
+
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+                value=Timestamp(ts_now() - DAY_IN_SECONDS),
+            )
+
+        assert task_manager._maybe_run_data_issue_remediation() == [spawn_task.return_value]
+
+
+def test_data_issue_remediation_skips_active_historical_processing(
+        task_manager: TaskManager,
+) -> None:
+    with (
+        patch.object(
+            task_manager.task_supervisor,
+            'has_task',
+            side_effect=lambda name: name == HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
+        ),
+        patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task,
+    ):
+        assert task_manager._maybe_run_data_issue_remediation() is None
+
+    spawn_task.assert_not_called()
+
+
+def test_data_issue_remediation_records_completed_run(database: DBHandler) -> None:
+    with freeze_time('2026-09-04 12:00:00'):
+        run_data_issue_remediation(database)
+
+        with database.conn.read_ctx() as cursor:
+            assert database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            ) == ts_now()
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
