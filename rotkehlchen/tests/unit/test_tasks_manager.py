@@ -156,6 +156,7 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
             'exception_is_error': True,
             'method': run_data_issue_remediation,
             'database': task_manager.database,
+            'chains_aggregator': task_manager.chains_aggregator,
         }
 
         with task_manager.database.user_write() as write_cursor:
@@ -197,7 +198,7 @@ def test_data_issue_remediation_skips_active_historical_processing(
 
 def test_data_issue_remediation_records_completed_run(database: DBHandler) -> None:
     with freeze_time('2026-09-04 12:00:00'):
-        run_data_issue_remediation(database)
+        run_data_issue_remediation(database, MagicMock())
 
         with database.conn.read_ctx() as cursor:
             assert database.get_static_cache(

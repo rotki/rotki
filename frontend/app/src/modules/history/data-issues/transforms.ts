@@ -186,6 +186,9 @@ export function relatedEventRoute(
 function toTimelineItem(attempt: AutoRemediationAttempt): RemediationTimelineItem {
   return {
     attribution: attempt.attribution,
+    changedTransactionCount: attempt.changedTransactionCount,
+    customizedTransactionCount: attempt.customizedTransactionCount,
+    result: attempt.result,
     strategy: attempt.strategy,
     success: attempt.success,
     timestamp: attempt.timestamp,

@@ -8,6 +8,12 @@ type RebasingQueryFailure = Literal[
     'unsupported_bucket',
 ]
 
+type RedecodeComparisonResult = Literal[
+    'redecoding_failed',
+    'redecoding_would_change_balance',
+    'redecoding_would_not_change_balance',
+]
+
 
 class BaseIssuePayload(TypedDict):
     """Common optional payload fields shared by all data issue kinds."""
@@ -17,9 +23,12 @@ class BaseIssuePayload(TypedDict):
 class AutoRemediationAttempt(TypedDict):
     attribution: str
     strategy: str
-    success: bool
+    success: NotRequired[bool]
     timestamp: int
     reason: NotRequired[str]
+    result: NotRequired[RedecodeComparisonResult]
+    customized_transaction_count: NotRequired[int]
+    changed_transaction_count: NotRequired[int]
 
 
 class NegativeBalanceIssuePayload(BaseIssuePayload):
