@@ -145,12 +145,7 @@ class DBCursor:
         self._prefetched_rows.clear()  # a new statement discards the previous result set
         try:
             with self.connection.statement_lock:
-                try:
-                    self._cursor.execute(statement, *bindings)
-                except (sqlcipher.InterfaceError, rsqlite.InterfaceError) as e:  # pylint: disable=no-member
-                    # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
-                    logger.debug('%s with %s failed due to %s. Probably https://github.com/rotki/rotki/issues/5432. Retrying', statement, bindings, e)  # noqa: E501
-                    self._cursor.execute(statement, *bindings)
+                self._cursor.execute(statement, *bindings)
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
