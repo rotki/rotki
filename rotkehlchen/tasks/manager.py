@@ -715,6 +715,7 @@ class TaskManager:
             exception_is_error=True,
             method=run_data_issue_remediation,
             database=self.database,
+            chains_aggregator=self.chains_aggregator,
         )]
 
     def _maybe_update_snapshot_balances(self) -> list[Task] | None:

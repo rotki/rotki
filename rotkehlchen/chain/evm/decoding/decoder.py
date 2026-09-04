@@ -817,6 +817,28 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         )
         return events, refresh_balances, reload_decoders  # Propagate for post processing in the caller  # noqa: E501
 
+    def decode_transaction_without_persistence(
+            self,
+            transaction: EvmTransaction,
+            tx_receipt: EvmTxReceipt,
+    ) -> list[EvmEvent]:
+        """Generate the events for a transaction without replacing its saved events.
+
+        The regular decoder's deferred-write path is used so sequence-index normalization is
+        identical to a persisted decode. The buffer is deliberately discarded, leaving both the
+        history events and the transaction's decoded marker unchanged.
+        """
+        with self.undecoded_tx_query_lock:
+            with self.database.conn.read_ctx() as cursor:
+                self.reload_data(cursor)
+
+            events, _refresh_balances, _reload_decoders = self._decode_transaction(
+                transaction=transaction,
+                tx_receipt=tx_receipt,
+                write_buffer=[],
+            )
+        return events
+
     def _decode_transaction_hashes(
             self,
             ignore_cache: bool,

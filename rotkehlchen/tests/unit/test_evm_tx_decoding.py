@@ -45,7 +45,11 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_ethereum_transaction,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -763,6 +767,48 @@ def test_write_events_relocates_sequence_index_collision(
         (3, 'first at 3'),
         (4, 'second at 3'),  # relocated past the max used index instead of being dropped
     ]
+
+
+def test_decode_transaction_without_persistence_discards_write_buffer(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    transaction = make_ethereum_transaction()
+    receipt = EvmTxReceipt(
+        tx_hash=transaction.tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=0,
+    )
+    expected_events = [EvmEvent(
+        tx_ref=transaction.tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+    )]
+    with (
+        patch.object(ethereum_transaction_decoder, 'reload_data') as reload_data,
+        patch.object(
+            ethereum_transaction_decoder,
+            '_decode_transaction',
+            return_value=(expected_events, False, None),
+        ) as decode_transaction,
+    ):
+        assert ethereum_transaction_decoder.decode_transaction_without_persistence(
+            transaction=transaction,
+            tx_receipt=receipt,
+        ) == expected_events
+
+    reload_data.assert_called_once()
+    decode_transaction.assert_called_once_with(
+        transaction=transaction,
+        tx_receipt=receipt,
+        write_buffer=[],
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
