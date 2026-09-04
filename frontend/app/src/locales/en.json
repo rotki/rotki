@@ -2701,9 +2701,12 @@
     },
     "detail": {
       "detected": "Detected",
-      "no_attempts": "No automatic fixes have been attempted yet.",
+      "no_attempts": "No automatic checks or fixes have been attempted yet.",
+      "redecoding_failed": "rotki could not compare the customized transactions with the current decoder. Your saved events were left unchanged.",
+      "redecoding_would_change_balance": "Re-decoding would change this balance. Review the customized events and restore decoder defaults where appropriate. Your saved events were left unchanged.",
+      "redecoding_would_not_change_balance": "Re-decoding the customized transactions affecting this balance would not change it. Your saved events were left unchanged.",
       "related_event": "Related history event: #{id}",
-      "remediation_history": "Auto-remediation history",
+      "remediation_history": "Automatic checks and fixes",
       "resolution_note": "Resolution note",
       "title": "Issue details",
       "whats_wrong": "What's wrong"
