@@ -163,6 +163,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'XdaiBridge',
         'Zerox',
         'WooFi',
+        'Zerion',
     }
 
     counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
@@ -290,6 +291,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'giveth',
         'morpho_blue',
         'clipper',
+        'zerion',
     }
 
 
