@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, cast
 
+from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HistoryMappingState
@@ -26,6 +27,7 @@ from rotkehlchen.types import (
     ChainID,
     EVMTxHash,
     Location,
+    Timestamp,
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
@@ -42,7 +44,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
 
-type BucketEffect = tuple[int, EventDirection, str]
+type BucketEffect = tuple[TimestampMS, int, EventDirection, str]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
 
 
@@ -58,50 +60,71 @@ def _get_bucket_effects(
             treat_eth2_as_eth=treat_eth2_as_eth,
         ):
             if event_bucket == bucket:
-                effects.append((event.sequence_index, direction, str(event.amount)))
+                effects.append((
+                    event.timestamp,
+                    event.sequence_index,
+                    direction,
+                    str(event.amount),
+                ))
 
     return effects
 
 
-def _get_customized_transactions_affecting_issue(
+def _get_customized_transactions_for_issue(
         database: DBHandler,
         issue: DataIssue,
-        bucket: Bucket,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
         location: Location,
-        treat_eth2_as_eth: bool,
 ) -> dict[EVMTxHash, list[EvmEvent]]:
-    """Return customized transactions whose saved events affect the issue bucket."""
-    dbevents = DBHistoryEvents(database)
+    """Return customized transactions associated with the issue account."""
+    dbevents, dbtx = DBHistoryEvents(database), DBEvmTx(database)
     with database.conn.read_ctx() as cursor:
         customized_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 location=location,
                 state_markers=[HistoryMappingState.CUSTOMIZED],
-                to_ts=ts_ms_to_sec(TimestampMS(issue.ts_end)),
             ),
         )
         if len(customized_events) == 0:
+            return {}
+
+        account_transactions = dbtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(
+                    address=string_to_evm_address(issue.location_label),
+                    chain_id=chain_id,
+                )],
+                to_ts=Timestamp(ts_ms_to_sec(TimestampMS(issue.ts_end))),
+                chain_id=chain_id,
+            ),
+        )
+        if len(account_transactions) == 0:
+            return {}
+
+        account_tx_hashes = {transaction.tx_hash for transaction in account_transactions}
+        customized_group_identifiers = {
+            event.group_identifier
+            for event in customized_events
+            if event.tx_ref in account_tx_hashes
+        }
+        if len(customized_group_identifiers) == 0:
             return {}
 
         transaction_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 location=location,
-                group_identifiers=list({event.group_identifier for event in customized_events}),
+                group_identifiers=list(customized_group_identifiers),
             ),
         )
 
     events_by_transaction: defaultdict[EVMTxHash, list[EvmEvent]] = defaultdict(list)
     for event in transaction_events:
-        if event.timestamp <= issue.ts_end:
-            events_by_transaction[event.tx_ref].append(event)
+        events_by_transaction[event.tx_ref].append(event)
 
-    return {
-        tx_hash: events
-        for tx_hash, events in events_by_transaction.items()
-        if len(_get_bucket_effects(events, bucket, treat_eth2_as_eth)) != 0
-    }
+    return dict(events_by_transaction)
 
 
 def _preview_transaction(
@@ -158,7 +181,7 @@ def _check_issue(
         preview_cache: PreviewCache,
 ) -> None:
     location = Location.deserialize_from_db(issue.location)
-    if location not in EVM_LOCATIONS:
+    if location not in EVM_LOCATIONS or issue.location_label == '':
         return
 
     chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
@@ -168,12 +191,11 @@ def _check_issue(
         protocol=issue.protocol or None,
         asset=issue.asset,
     )
-    if len(transactions := _get_customized_transactions_affecting_issue(
+    if len(transactions := _get_customized_transactions_for_issue(
         database=database,
         issue=issue,
-        bucket=bucket,
+        chain_id=chain_id,
         location=location,
-        treat_eth2_as_eth=treat_eth2_as_eth,
     )) == 0:
         return
 

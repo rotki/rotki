@@ -32,6 +32,7 @@ def _make_event(
         amount: str,
         timestamp: int = 1_000,
         event_type: HistoryEventType = HistoryEventType.SPEND,
+        location_label: str = TEST_ADDR1,
 ) -> EvmEvent:
     return EvmEvent(
         tx_ref=tx_hash,
@@ -42,8 +43,25 @@ def _make_event(
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
         amount=FVal(amount),
-        location_label=TEST_ADDR1,
+        location_label=location_label,
         notes='saved customized event',
+    )
+
+
+def _make_transaction(tx_hash: EVMTxHash, timestamp: int = 1) -> EvmTransaction:
+    return EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(timestamp),
+        block_number=1,
+        from_address=TEST_ADDR1,
+        to_address=TEST_ADDR2,
+        value=0,
+        gas=21_000,
+        gas_price=0,
+        gas_used=0,
+        input_data=b'',
+        nonce=0,
     )
 
 
@@ -53,6 +71,11 @@ def _add_negative_balance_issue(
 ) -> tuple[int, EVMTxHash]:
     tx_hash = make_evm_tx_hash()
     with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[_make_transaction(tx_hash)],
+            relevant_address=TEST_ADDR1,
+        )
         event_id = DBHistoryEvents(database).add_history_event(
             write_cursor=write_cursor,
             event=_make_event(tx_hash=tx_hash, amount='2'),
@@ -223,8 +246,13 @@ def test_earlier_customized_transaction_in_negative_bucket_is_compared(
         database: DBHandler,
 ) -> None:
     customized_tx_hash, failing_tx_hash = make_evm_tx_hash(), make_evm_tx_hash()
-    dbevents = DBHistoryEvents(database)
+    dbevents, dbtx = DBHistoryEvents(database), DBEvmTx(database)
     with database.user_write() as write_cursor:
+        dbtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[_make_transaction(customized_tx_hash)],
+            relevant_address=TEST_ADDR1,
+        )
         dbevents.add_history_event(
             write_cursor=write_cursor,
             event=_make_event(
@@ -268,6 +296,88 @@ def test_earlier_customized_transaction_in_negative_bucket_is_compared(
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.UNRESOLVED
     assert issue.auto_remediation_attempts[0]['result'] == 'redecoding_would_change_balance'
+
+
+@pytest.mark.parametrize(('saved_timestamp', 'saved_location_label'), [
+    (1_000, TEST_ADDR2),
+    (2_000, TEST_ADDR1),
+])
+def test_customized_transaction_with_changed_bucket_scope_is_compared(
+        database: DBHandler,
+        saved_timestamp: int,
+        saved_location_label: str,
+) -> None:
+    customized_tx_hash = make_evm_tx_hash()
+    issue_id, _failing_tx_hash = _add_negative_balance_issue(
+        database=database,
+        customized=False,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[_make_transaction(customized_tx_hash)],
+            relevant_address=TEST_ADDR1,
+        )
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_make_event(
+                tx_hash=customized_tx_hash,
+                amount='1',
+                timestamp=saved_timestamp,
+                event_type=HistoryEventType.RECEIVE,
+                location_label=saved_location_label,
+            ),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+
+    with patch(
+        'rotkehlchen.tasks.data_issues._preview_transaction',
+        return_value=[_make_event(
+            tx_hash=customized_tx_hash,
+            amount='1',
+            event_type=HistoryEventType.RECEIVE,
+        )],
+    ) as preview:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    preview.assert_called_once()
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert issue.auto_remediation_attempts[0]['result'] == 'redecoding_would_change_balance'
+    assert issue.auto_remediation_attempts[0]['changed_transaction_count'] == 1
+
+
+def test_customized_transaction_for_unrelated_account_is_not_compared(
+        database: DBHandler,
+) -> None:
+    customized_tx_hash = make_evm_tx_hash()
+    issue_id, _failing_tx_hash = _add_negative_balance_issue(
+        database=database,
+        customized=False,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[_make_transaction(customized_tx_hash)],
+            relevant_address=TEST_ADDR2,
+        )
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_make_event(
+                tx_hash=customized_tx_hash,
+                amount='1',
+                event_type=HistoryEventType.RECEIVE,
+            ),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+
+    with patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    preview.assert_not_called()
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert issue.auto_remediation_attempts == []
 
 
 def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) -> None:
