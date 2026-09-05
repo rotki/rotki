@@ -151,9 +151,9 @@ def test_weth_unwrap(robinhood_inquirer, robinhood_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('robinhood_manager_connect_at_start', [(ROBINHOOD_MAINNET_NODE,)])
-def test_native_balances_via_multicall(robinhood_inquirer):
-    """The balance scanner is not deployed on Robinhood chain, so native balances
-    go through Multicall3's getEthBalance. The WETH contract holds the wrapped supply."""
+def test_native_balances_via_scanner(robinhood_inquirer):
+    """Native balances go through the rotki balance scanner deployed on Robinhood chain.
+    The WETH contract holds the wrapped supply."""
     balances = robinhood_inquirer.get_multi_balance(
         accounts=[WETH_ROBINHOOD_ADDRESS, (user := '0x5149Ae7F9445E70331608EA03C592c078aE7399D')],
     )
