@@ -34,7 +34,6 @@ def test_deposit_eth_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -96,7 +95,6 @@ def test_payback_lusd(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -132,7 +130,6 @@ def test_remove_eth(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -168,7 +165,6 @@ def test_stability_pool_deposit(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -214,9 +210,8 @@ def test_stability_pool_collect_rewards(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_str := '0.00249609940900398'),
+        amount=FVal('0.00249609940900398'),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -277,7 +272,6 @@ def test_increase_lqty_staking(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -340,7 +334,6 @@ def test_remove_liquity_staking(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -403,7 +396,6 @@ def test_stability_pool_withdrawal(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -465,7 +457,6 @@ def test_ds_proxy_liquity_deposit(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.002962168608405875'),
             location_label=user_address,
-            notes='Burn 0.002962168608405875 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -490,7 +481,6 @@ def test_ds_proxy_liquity_deposit(ethereum_inquirer, ethereum_accounts):
             asset=A_LUSD,
             amount=FVal('115792089237316195423570985008687907853269984665640564039370.086818754634000885'),
             location_label=user_address,
-            notes='Set LUSD spending approval of 0x0c3ce74FCB2B93F9244544919572818Dc2AC0641 by 0x7815beb98a927565eA43b5854644392F21dA0021 to 115792089237316195423570985008687907853269984665640564039370.086818754634000885',  # noqa: E501
             address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
         ),
     ]
@@ -513,9 +503,8 @@ def test_ds_proxy_liquity_deposit_and_borrow(ethereum_inquirer, ethereum_account
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.009018175299183188'),
+            amount=FVal('0.009018175299183188'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -576,7 +565,6 @@ def test_ds_proxy_liquity_withdraw(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.002590429704686116'),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.002590429704686116 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -637,7 +625,6 @@ def test_ds_proxy_liquity_staking(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.009100878613428384'),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.009100878613428384 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -650,7 +637,6 @@ def test_ds_proxy_liquity_staking(ethereum_inquirer, ethereum_accounts):
             asset=A_LQTY,
             amount=FVal('0'),
             location_label=ethereum_accounts[0],
-            notes='Revoke LQTY spending approval of 0xEa00FC641a817e5F3eded4743aac7AB08dbf74b0 by 0x31E45D87D9549DCc5cc28925238b7e329719C8fB',  # noqa: E501
             address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -715,9 +701,8 @@ def test_ds_proxy_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_str := '0.006847541539452045'),
+        amount=FVal('0.006847541539452045'),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

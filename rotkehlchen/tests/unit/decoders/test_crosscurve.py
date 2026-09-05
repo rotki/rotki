@@ -53,9 +53,8 @@ def test_crosscurve_bridge_send(optimism_inquirer: OptimismInquirer, optimism_ac
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000000012981416497'),
+            amount=FVal('0.000000012981416497'),
             location_label=(user_address := optimism_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -102,9 +101,8 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: ArbitrumOneInqui
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00001096576'),
+            amount=FVal('0.00001096576'),
             location_label=(user_address := arbitrum_one_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

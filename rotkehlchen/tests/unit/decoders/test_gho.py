@@ -42,9 +42,8 @@ def test_activate_cooldown(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_fees := '0.000003585343272752'),
+        amount=FVal('0.000003585343272752'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -81,9 +80,8 @@ def test_stake_gho(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_fees := '0.000008884571617488'),
+        amount=FVal('0.000008884571617488'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -95,7 +93,6 @@ def test_stake_gho(
         asset=Asset(GHO_IDENTIFIER),
         amount=FVal(amount := '115.46416512082666946'),
         location_label=user,
-        notes=f'Set GHO spending approval of {user} by {STAKED_GHO_ADDRESS} to {amount}',
         address=STAKED_GHO_ADDRESS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -145,9 +142,8 @@ def test_redeem_stkgho(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_fees := '0.000006341116107216'),
+        amount=FVal('0.000006341116107216'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

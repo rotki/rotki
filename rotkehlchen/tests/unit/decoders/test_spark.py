@@ -34,7 +34,6 @@ def test_deposit_usdc_into_savings(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -84,7 +83,6 @@ def test_withdraw_usdc_from_savings(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -151,7 +149,6 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -231,7 +228,6 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -305,7 +301,6 @@ def test_susdc_ethereum_deposit(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -354,7 +349,6 @@ def test_susdc_ethereum_redeem(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -402,7 +396,6 @@ def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -449,7 +442,6 @@ def test_deposit_susds(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -493,9 +485,8 @@ def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.001301015216220134'),
+            amount=FVal('0.001301015216220134'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -541,9 +532,8 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.00152049387145495'),
+            amount=FVal('0.00152049387145495'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -594,7 +584,6 @@ def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=(user_address := gnosis_accounts[0]),
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -645,7 +634,6 @@ def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=(user_address := gnosis_accounts[0]),
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -697,7 +685,6 @@ def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis_et
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -749,7 +736,6 @@ def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts, allow_gnosis
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

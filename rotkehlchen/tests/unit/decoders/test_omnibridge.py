@@ -34,7 +34,6 @@ def test_omnibridge_ethereum_token_deposit(ethereum_inquirer, ethereum_accounts)
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -76,7 +75,6 @@ def test_omnibridge_ethereum_eth_deposit(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -118,7 +116,6 @@ def test_omnibridge_gnosis_token_deposit(gnosis_inquirer, gnosis_accounts, allow
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -169,7 +166,6 @@ def test_omnibridge_gnosis_token_deposit_with_fee(
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=(user_address := gnosis_accounts[0]),
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -224,7 +220,6 @@ def test_omnibridge_ethereum_token_withdrawal(ethereum_inquirer, ethereum_accoun
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -266,7 +261,6 @@ def test_omnibridge_ethereum_eth_withdrawal(ethereum_inquirer, ethereum_accounts
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

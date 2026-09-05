@@ -36,9 +36,8 @@ def test_put_invest(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.001004918305270749'),
+            amount=FVal('0.001004918305270749'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -62,7 +61,6 @@ def test_put_invest(ethereum_inquirer, ethereum_accounts):
             asset=A_USDT,
             amount=FVal(invest_amount := '25'),
             location_label=user_address,
-            notes=f'Set USDT spending approval of {user_address} by {DEPLOYMENT.put_manager} to {invest_amount}',  # noqa: E501
             address=DEPLOYMENT.put_manager,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -110,9 +108,8 @@ def test_put_divest(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000720888551342379'),
+            amount=FVal('0.000720888551342379'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -160,9 +157,8 @@ def test_put_withdraw_ft(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000118316863888672'),
+            amount=FVal('0.000118316863888672'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -213,9 +209,8 @@ def test_put_invest_via_proxy(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000140340264682185'),
+            amount=FVal('0.000140340264682185'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

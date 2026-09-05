@@ -12,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDetailsWithStatus,
     ValidatorType,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants import WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -28,6 +27,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.auto_notes import NATIVE_TRANSFER_TEMPLATE
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
@@ -54,6 +54,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _mev_transfer_notes(amount: str, address: str | None) -> str:
+    """The generated notes of the plain ETH receive event an MEV reward starts as, which are
+    not stored (see EvmEvent.auto_notes) and get extended when the event moves to the block"""
+    return NATIVE_TRANSFER_TEMPLATE.format(
+        verb='Receive',
+        amount=amount,
+        symbol='ETH',
+        preposition='from',
+        counterparty_or_address=address,
+    )
 
 
 class DBEth2:
@@ -179,7 +191,7 @@ class DBEth2:
     ) -> None:
         """If the validator has withdrawal events, find last one and mark as exit if after withdrawable ts"""  # noqa: E501
         write_cursor.execute(
-            'SELECT HE.identifier, HE.timestamp, HE.amount FROM history_events HE LEFT JOIN '
+            'SELECT HE.identifier, HE.timestamp FROM history_events HE LEFT JOIN '
             'eth_staking_events_info SE ON SE.identifier = HE.identifier '
             'WHERE SE.validator_index=? AND HE.entry_type=? ORDER BY HE.timestamp DESC LIMIT 1',
             (index, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.value),
@@ -188,13 +200,9 @@ class DBEth2:
             return  # no event found so nothing to do
 
         if (exit_ts := ts_ms_to_sec(latest_result[1])) >= withdrawable_timestamp:
-            write_cursor.execute(
+            write_cursor.execute(  # the withdrawal notes follow from this flag, see auto_notes()
                 'UPDATE eth_staking_events_info SET is_exit_or_blocknumber=? WHERE identifier=?',
                 (1, latest_result[0]),
-            )
-            write_cursor.execute(
-                'UPDATE history_events SET notes=? WHERE identifier=?',
-                (form_withdrawal_notes(is_exit=True, validator_index=index, amount=latest_result[2]), latest_result[0]),  # noqa: E501
             )
             write_cursor.execute(
                 'UPDATE eth2_validators SET exited_timestamp=? WHERE validator_index=?',
@@ -812,7 +820,7 @@ class DBEth2:
                 SELECT A_H.location_label, A_S.is_exit_or_blocknumber, A_S.validator_index FROM
                 history_events A_H JOIN eth_staking_events_info A_S ON A_H.identifier = A_S.identifier
             WHERE A_H.subtype = ?)
-            SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, mev.validator_index FROM evm_transactions B_T
+            SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, mev.validator_index, B_H.amount, B_E.address FROM evm_transactions B_T
             JOIN chain_events_info B_E ON B_T.tx_hash = B_E.tx_ref
             JOIN history_events B_H ON B_E.identifier = B_H.identifier
             LEFT JOIN mev_rewards mev ON mev.is_exit_or_blocknumber = B_T.block_number
@@ -829,7 +837,7 @@ class DBEth2:
                 WHERE M_H.subtype = ? AND M_S.validator_index = A_S.validator_index
                 AND M_S.is_exit_or_blocknumber = A_S.is_exit_or_blocknumber
             ))
-            SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, blocks.validator_index FROM evm_transactions B_T
+            SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, blocks.validator_index, B_H.amount, B_E.address FROM evm_transactions B_T
             JOIN chain_events_info B_E ON B_T.tx_hash = B_E.tx_ref
             JOIN history_events B_H ON B_E.identifier = B_H.identifier
             JOIN block_productions blocks ON blocks.is_exit_or_blocknumber = B_T.block_number
@@ -872,7 +880,7 @@ class DBEth2:
                 (
                     (group_identifier := EthBlockEvent.form_group_identifier(entry[1])),
                     group_identifier,
-                    f'{entry[2]} as mev reward for block {entry[1]} in {(tx_hash := deserialize_evm_tx_hash(entry[3]))!s}',  # noqa: E501
+                    f'{entry[2] if entry[2] is not None else _mev_transfer_notes(amount=entry[5], address=entry[6])} as mev reward for block {entry[1]} in {(tx_hash := deserialize_evm_tx_hash(entry[3]))!s}',  # noqa: E501
                     HistoryEventType.STAKING.serialize(),
                     HistoryEventSubType.MEV_REWARD.serialize(),
                     json.dumps({'validator_index': entry[4]}),  # extra data

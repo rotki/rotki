@@ -36,9 +36,8 @@ def test_deposit(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.0000004985'),
+            amount=FVal('0.0000004985'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

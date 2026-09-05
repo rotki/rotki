@@ -54,9 +54,8 @@ def test_vesting_escrow_creation(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=yvdai,
-            amount=FVal(approval_amount := '61352.174049471814839136'),
+            amount=FVal('61352.174049471814839136'),
             location_label=user_address,
-            notes=f'Set yvDAI-1 spending approval of {user_address} by 0x200C92Dd85730872Ab6A1e7d5E40A067066257cF to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x200C92Dd85730872Ab6A1e7d5E40A067066257cF'),
         ), EvmEvent(
@@ -66,9 +65,8 @@ def test_vesting_escrow_creation(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=yvdai,
-            amount=FVal(approval_amount_2 := '607.44755577728393329'),
+            amount=FVal('607.44755577728393329'),
             location_label=user_address,
-            notes=f'Set yvDAI-1 spending approval of {user_address} by 0x200C92Dd85730872Ab6A1e7d5E40A067066257cF to {approval_amount_2}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x200C92Dd85730872Ab6A1e7d5E40A067066257cF'),
         ), EvmEvent(
@@ -92,9 +90,8 @@ def test_vesting_escrow_creation(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=yvdai,
-            amount=FVal(approval_amount_3 := '0.000290840338624232'),
+            amount=FVal('0.000290840338624232'),
             location_label=user_address,
-            notes=f'Set yvDAI-1 spending approval of {user_address} by 0x200C92Dd85730872Ab6A1e7d5E40A067066257cF to {approval_amount_3}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x200C92Dd85730872Ab6A1e7d5E40A067066257cF'),
         ), EvmEvent(
@@ -144,9 +141,8 @@ def test_vesting_escrow_claim(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00306796151931048'),
+            amount=FVal('0.00306796151931048'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -184,9 +180,8 @@ def test_vesting_escrow_claim_v1(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.014004585'),
+            amount=FVal('0.014004585'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -350,9 +345,8 @@ def test_vesting_escrow_disown(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=rsup,
-            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457.584007913129639935'),  # noqa: E501
+            amount=FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935'),
             location_label=user_address,
-            notes=f'Set RSUP spending approval of {user_address} by 0x200C92Dd85730872Ab6A1e7d5E40A067066257cF to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x200C92Dd85730872Ab6A1e7d5E40A067066257cF'),
         ), EvmEvent(

@@ -30,9 +30,8 @@ def test_claim_grain(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.007051027'),
+            amount=FVal('0.007051027'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

@@ -4901,6 +4901,55 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
         ).fetchone()[0] == 0
 
+        # events whose notes rotki generates from now on. The expected note after the
+        # upgrade is None for the ones matching the generated text and unchanged otherwise.
+        user, other = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'  # noqa: E501
+        usdc, matic = 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'eip155:137/erc20:0x0000000000000000000000000000000000001010'  # noqa: E501
+        nft = 'eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1'
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO assets(identifier) VALUES (?)',
+            [('ETH',), ('SOL',), (usdc,), (matic,), (nft,)],
+        )
+        notes_events: list[tuple[tuple, tuple | None, str | None]] = [  # history_events row, chain_events_info row, expected notes  # noqa: E501
+            ((2, 'f', user, 'ETH', '0.001', 'Burn 0.001 ETH for gas', 'spend', 'fee'), ('gas', None), None),  # noqa: E501
+            ((2, 'f', user, 'ETH', '0.002', 'Burn 0.002 ETH for gas of a failed transaction', 'fail', 'fee'), ('gas', None), None),  # noqa: E501
+            ((2, 'f', user, 'ETH', '0.003', 'Expensive gas', 'spend', 'fee'), ('gas', None), 'Expensive gas'),  # noqa: E501
+            ((2, 'f', user, usdc, '115', f'Set USDC spending approval of {user} by {other} to 115', 'informational', 'approve'), (None, other), None),  # noqa: E501
+            ((2, 'f', user, usdc, '0', f'Revoke USDC spending approval of {user} by {other}', 'informational', 'approve'), (None, other), None),  # noqa: E501
+            ((2, 'f', user, 'ETH', '0', f'Deploy a new contract at {other}', 'deploy', 'none'), (None, other), None),  # noqa: E501
+            ((2, 'f', user, 'ETH', '0', 'No value transaction to self', 'transaction to self', 'none'), (None, user), None),  # noqa: E501
+            ((2, 'f', user, 'ETH', '0.5', f'Send 0.5 ETH to {other}', 'spend', 'none'), (None, other), None),  # noqa: E501
+            ((2, 'f', user, usdc, '5', f'Receive 5 USDC from {other} to {user}', 'receive', 'none'), (None, other), None),  # noqa: E501
+            ((2, 'f', user, usdc, '5', f'Receive 5 USDC from {other} to {user} for {user}', 'receive', 'none'), (None, other), f'Receive 5 USDC from {other} to {user} for {user}'),  # noqa: E501
+            ((2, 'f', user, 'ETH', '1', 'Deposit 1 ETH to kraken', 'deposit', 'deposit asset'), ('kraken', other), None),  # noqa: E501
+            ((2, 'f', user, nft, '1', f'Send BAYC with id 1 from {user} to {other}', 'spend', 'none'), (None, other), f'Send BAYC with id 1 from {user} to {other}'),  # noqa: E501
+            ((2, 'f', user, 'ETH', '1', 'Deposit 1 ETH into Aave v3', 'deposit', 'deposit asset'), ('aave-v3', other), 'Deposit 1 ETH into Aave v3'),  # noqa: E501
+            ((2, 'h', user, matic, '1', f'Send 1 POL to {other}', 'spend', 'none'), (None, other), None),  # noqa: E501
+            ((3, 'f', user, 'ETH', '0.01', 'Withdraw 0.01 ETH from validator 42', 'staking', 'remove asset'), None, None),  # noqa: E501
+            ((9, 'w', 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4', 'SOL', '0.000005', 'Spend 0.000005 SOL as transaction fee', 'spend', 'fee'), ('gas', None), None),  # noqa: E501
+            ((1, 'B', None, 'ETH', '1', 'Some exchange note', 'receive', 'none'), None, 'Some exchange note'),  # noqa: E501
+        ]
+        notes_event_ids = []
+        for idx, (event_row, chain_row, _) in enumerate(notes_events):
+            write_cursor.execute(
+                'INSERT INTO history_events(entry_type, group_identifier, sequence_index, '
+                'timestamp, location, location_label, asset, amount, notes, type, subtype) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (event_row[0], f'notes_test_{idx}', 0, 1700000000000, *event_row[1:]),
+            )
+            notes_event_ids.append(identifier := write_cursor.lastrowid)
+            if chain_row is not None:
+                write_cursor.execute(
+                    'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) '
+                    'VALUES (?, ?, ?, ?)',
+                    (identifier, bytes([idx]) * 32, *chain_row),
+                )
+            if event_row[0] == 3:
+                write_cursor.execute(
+                    'INSERT INTO eth_staking_events_info(identifier, validator_index, is_exit_or_blocknumber) VALUES (?, ?, ?)',  # noqa: E501
+                    (identifier, 42, 0),
+                )
+
     db_v53.logout()
     db = _init_db_with_target_version(
         target_version=54,
@@ -4923,6 +4972,11 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
         ).fetchone()[0] == 0
+        # generated notes were removed, edited and protocol specific ones were kept
+        for identifier, (_, _, expected_notes) in zip(notes_event_ids, notes_events, strict=True):
+            assert cursor.execute(
+                'SELECT notes FROM history_events WHERE identifier=?', (identifier,),
+            ).fetchone()[0] == expected_notes, f'event {identifier} notes should be {expected_notes}'  # noqa: E501
         assert db.get_setting(cursor, 'version') == 54
 
     db.logout()

@@ -118,7 +118,6 @@ def test_include_gas_costs(accountant, google_service):
         location_label=addr1,
         asset=A_ETH,
         amount=FVal('0.000030921'),
-        notes='Burn 0.000030921 ETH for gas',
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         counterparty=CPT_GAS,

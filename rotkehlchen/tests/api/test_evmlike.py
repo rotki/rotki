@@ -541,6 +541,7 @@ def test_add_edit_evmlike_event(
         address=make_evm_address(),
     )).serialize()
     entry.pop('identifier')
+    entry.pop('auto_notes')  # output only field
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry,

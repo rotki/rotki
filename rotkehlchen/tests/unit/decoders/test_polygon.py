@@ -26,9 +26,8 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_str := '0.001792178291324676'),
+        amount=FVal('0.001792178291324676'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -40,7 +39,6 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH_MATIC,
         amount=ZERO,
         location_label=ethereum_accounts[0],
-        notes=f'Revoke MATIC spending approval of {ethereum_accounts[0]} by {POLYGON_MIGRATION_ADDRESS}',  # noqa: E501
         address=POLYGON_MIGRATION_ADDRESS,
     ), EvmEvent(
         tx_ref=tx_hash,

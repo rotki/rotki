@@ -7,7 +7,6 @@ import pytest
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     epoch_to_timestamp,
-    form_withdrawal_notes,
     timestamp_to_slot,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -464,9 +463,7 @@ def test_withdrawals_detect_exit(eth2: Eth2, database):
 
     # check that the two exits were detected
     withdrawal_events[1].is_exit_or_blocknumber = True  # slashed exit
-    withdrawal_events[1].notes = form_withdrawal_notes(is_exit=True, validator_index=slashed_index, amount=slashed_exit_amount)  # noqa: E501
     withdrawal_events[5].is_exit_or_blocknumber = True  # normal exit
-    withdrawal_events[5].notes = form_withdrawal_notes(is_exit=True, validator_index=exited_index, amount=exit_amount)  # noqa: E501
     assert withdrawal_events == events
 
 

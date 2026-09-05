@@ -34,9 +34,8 @@ def test_delegate_vested_tokens_with_vault_creation(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.002012111196478005'),
+            amount=FVal('0.002012111196478005'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -73,9 +72,8 @@ def test_delegate_plans(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000156863123427816'),
+            amount=FVal('0.000156863123427816'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -113,9 +111,8 @@ def test_redeem_plans(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000964573778269605'),
+            amount=FVal('0.000964573778269605'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

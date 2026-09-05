@@ -37,7 +37,6 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -49,7 +48,6 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=Asset('eip155:42161/erc20:0x912CE59144191C1204E64559FE8253a0e49E6548'),
             amount=FVal(approval_amount),
             location_label=user_address,
-            notes=f'Set ARB spending approval of {user_address} by 0x0c6134Abc08A1EafC3E2Dc9A5AD023Bb08Da86C3 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x0c6134Abc08A1EafC3E2Dc9A5AD023Bb08Da86C3'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -96,7 +94,6 @@ def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -144,7 +141,6 @@ def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -194,7 +190,6 @@ def test_swap_erc20_token_for_bnb(
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -206,7 +201,6 @@ def test_swap_erc20_token_for_bnb(
         asset=a_frax,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set FRAX spending approval of {user_address} by 0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,

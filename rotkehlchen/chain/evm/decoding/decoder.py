@@ -94,6 +94,7 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.auto_notes import SELF_TX_TEMPLATE
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -904,10 +905,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             if amount == ZERO:
                 continue
 
-            event_type, event_subtype, location_label, address, counterparty, verb = direction_result  # noqa: E501
-            counterparty_or_address = counterparty or address
-            preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-            events.append(self.base.make_event(
+            event_type, event_subtype, location_label, address, counterparty, _ = direction_result
+            event = self.base.make_event(
                 tx_ref=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                 timestamp=tx.timestamp,
@@ -916,10 +915,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 asset=self.value_asset,
                 amount=amount,
                 location_label=location_label,
-                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty_or_address}',  # noqa: E501
                 address=address,
                 counterparty=counterparty,
-            ))
+            )
+            event.notes = event.auto_notes()  # set so that protocol decoders can extend them
+            events.append(event)
 
     def _get_eth_transfer_event(self, tx: EvmTransaction) -> EvmEvent | None:
         direction_result = self.base.decode_direction(
@@ -928,23 +928,21 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         )
         if direction_result is None:
             return None
-        event_type, event_subtype, location_label, address, counterparty, verb = direction_result
-        counterparty_or_address = counterparty or address
-        amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
-        preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-        return self.base.make_event(
+        event_type, event_subtype, location_label, address, counterparty, _ = direction_result
+        event = self.base.make_event(
             tx_ref=tx.tx_hash,
             sequence_index=self.base.get_next_sequence_index_pre_decoding(),
             timestamp=tx.timestamp,
             event_type=event_type,
             event_subtype=event_subtype,
             asset=self.value_asset,
-            amount=amount,
+            amount=ZERO if tx.value == 0 else from_wei(FVal(tx.value)),
             location_label=location_label,
-            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty_or_address}',  # noqa: E501
             address=address,
             counterparty=counterparty,
         )
+        event.notes = event.auto_notes()  # set so that protocol decoders can extend them
+        return event
 
     def _get_transfer_or_approval_token_kind_and_id(
             self,
@@ -1010,20 +1008,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if not self.base.any_tracked([owner_address, spender_address]):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        amount = token_normalized_value(token_amount=amount_raw, token=token)
-        if amount == ZERO:
-            notes = f'Revoke {token.symbol} spending approval of {owner_address} by {spender_address}'  # noqa: E501
-        else:
-            notes = f'Set {token.symbol} spending approval of {owner_address} by {spender_address} to {amount}'  # noqa: E501
-        event = self.base.make_event_from_transaction(
+        event = self.base.make_event_from_transaction(  # notes are generated, see EvmEvent.auto_notes  # noqa: E501
             transaction=transaction,
             tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=token,
-            amount=amount,
+            amount=token_normalized_value(token_amount=amount_raw, token=token),
             location_label=owner_address,
-            notes=notes,
             address=spender_address,
         )
         return EvmDecodingOutput(events=[event])
@@ -1041,24 +1033,15 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if direction_result is not None:
             event_type, _, location_label, address, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
-                eth_burned_as_gas = self._calculate_fees(tx)
-                notes = f'Burn {eth_burned_as_gas} {self.value_asset.symbol} for gas'
-                event_type = HistoryEventType.SPEND
-
-                if tx_receipt.status is False:
-                    notes += ' of a failed transaction'
-                    event_type = HistoryEventType.FAIL
-
-                events.append(self.base.make_event(
+                events.append(self.base.make_event(  # notes are generated, see EvmEvent.auto_notes
                     tx_ref=tx.tx_hash,
                     sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                     timestamp=tx.timestamp,
-                    event_type=event_type,
+                    event_type=HistoryEventType.FAIL if tx_receipt.status is False else HistoryEventType.SPEND,  # noqa: E501
                     event_subtype=HistoryEventSubType.FEE,
                     asset=self.value_asset,
-                    amount=eth_burned_as_gas,
+                    amount=self._calculate_fees(tx),
                     location_label=location_label,
-                    notes=notes,
                     counterparty=CPT_GAS,
                 ))
 
@@ -1103,10 +1086,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self.base.is_tracked(tx.from_address) and
             not (tx.authorization_list is not None and len(tx.authorization_list) > 0)  # AA authorizations are handled with their own event  # noqa: E501
         ):
-            if amount == ZERO and len(tx.input_data) == 0:
-                notes = 'No value transaction to self'
-            else:
-                notes = f'Transaction to self of {amount} {self.value_asset.symbol}'
+            notes = None  # generated, see EvmEvent.auto_notes ...
+            if amount == ZERO and len(tx.input_data) != 0:  # ... except for a call to self, which the "no value" wording would misdescribe  # noqa: E501
+                notes = SELF_TX_TEMPLATE.format(amount=amount, symbol=self.value_asset.symbol)
+
             events.append(self.base.make_event(
                 tx_ref=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_index_pre_decoding(),
@@ -1130,7 +1113,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             if amount != ZERO:
                 event_subtype = HistoryEventSubType.SPEND
 
-            events.append(self.base.make_event(  # contract deployment
+            events.append(self.base.make_event(  # contract deployment. Notes are generated, see EvmEvent.auto_notes  # noqa: E501
                 tx_ref=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                 timestamp=tx.timestamp,
@@ -1139,7 +1122,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 asset=self.value_asset,
                 amount=amount,
                 location_label=tx.from_address,
-                notes=f'Deploy a new contract at {tx_receipt.contract_address}',
                 address=tx_receipt.contract_address,
             ))
             return events

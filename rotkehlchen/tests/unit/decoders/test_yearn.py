@@ -152,9 +152,8 @@ def test_deposit_yearn_v3(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000357122879546472'),
+            amount=FVal('0.000357122879546472'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -164,9 +163,8 @@ def test_deposit_yearn_v3(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
-            amount=FVal(approve_amount := '57896044618658097711785492504343953926634992332820282012283.792003956564819967'),  # noqa: E501
+            amount=FVal('57896044618658097711785492504343953926634992332820282012283.792003956564819967'),
             location_label=user_address,
-            notes=f'Set crvUSD spending approval of {user_address} by {vault_address} to {approve_amount}',  # noqa: E501
             address=vault_address,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -235,7 +233,6 @@ def test_withdraw_yearn_v3(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -302,9 +299,8 @@ def test_deposit_yearn_v2(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.001446241576196176'),
+            amount=FVal('0.001446241576196176'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -314,9 +310,8 @@ def test_deposit_yearn_v2(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xef484de8C07B6e2d732A92B5F78e81B38f99f95E'),
-            amount=FVal(approve_amount := '57896044618658097711785492504343953926634992332820281981187.425405284732127439'),  # noqa: E501
+            amount=FVal('57896044618658097711785492504343953926634992332820281981187.425405284732127439'),
             location_label=user_address,
-            notes=f'Set crvDOLA spending approval of {user_address} by {YEARN_PARTNER_TRACKER} to {approve_amount}',  # noqa: E501
             address=YEARN_PARTNER_TRACKER,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -383,9 +378,8 @@ def test_increase_deposit_yearn_v2(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.0020739662607066'),
+            amount=FVal('0.0020739662607066'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -454,7 +448,6 @@ def test_withdraw_yearn_v2(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -506,7 +499,6 @@ def test_deposit_yearn_v2_without_logs(
             asset=A_ETH,
             amount=FVal(0.001003537266292329),
             location_label=user_address,
-            notes='Burn 0.001003537266292329 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -518,7 +510,6 @@ def test_deposit_yearn_v2_without_logs(
             asset=A_YFI,
             amount=FVal('115792089237316195423570985008687907853269984665640564039457.562087073129639935'),
             location_label=user_address,
-            notes='Set YFI spending approval of 0xb524c787669185E11d01C645D1910631e04Fa5Eb by 0xdb25cA703181E7484a155DD612b06f57E12Be5F0 to 115792089237316195423570985008687907853269984665640564039457.562087073129639935',  # noqa: E501
             address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -570,7 +561,6 @@ def test_withdraw_yearn_v2_without_logs(
             asset=A_ETH,
             amount=FVal(0.000631154785993836),
             location_label=user_address,
-            notes='Burn 0.000631154785993836 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -622,7 +612,6 @@ def test_deposit_yearn_v1(
             asset=A_ETH,
             amount=FVal(0.007502376),
             location_label=user_address,
-            notes='Burn 0.007502376 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -674,7 +663,6 @@ def test_withdraw_yearn_v1(
             asset=A_ETH,
             amount=FVal(0.008944164419689952),
             location_label=user_address,
-            notes='Burn 0.008944164419689952 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -727,7 +715,6 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(0.0108951),
             location_label=user_address,
-            notes='Burn 0.0108951 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -739,7 +726,6 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             asset=A_1INCH,
             amount=FVal('115792089237316195423570985008687907853269984665640564038972.292276463862611574'),
             location_label=user_address,
-            notes='Set 1INCH spending approval of 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8 by 0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67 to 115792089237316195423570985008687907853269984665640564038972.292276463862611574',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ), EvmEvent(
@@ -812,7 +798,6 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -862,9 +847,8 @@ def test_yearn_v3_curve_savings_deposit(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.00019683257061538')),
+        amount=(FVal('0.00019683257061538')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -874,9 +858,8 @@ def test_yearn_v3_curve_savings_deposit(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_crvusd := Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')),
-        amount=(approve_amount := FVal('9999900000')),
+        amount=(FVal('9999900000')),
         location_label=user_address,
-        notes=f'Set crvUSD spending approval of {user_address} by {curve_savings_vault.evm_address} to {approve_amount}',  # noqa: E501
         address=curve_savings_vault.evm_address,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -925,9 +908,8 @@ def test_yearn_v3_curve_savings_withdraw(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000056238373116988')),
+        amount=(FVal('0.000056238373116988')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -975,9 +957,8 @@ def test_yearn_staking_withdraw(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000031728668')),
+        amount=(FVal('0.000031728668')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1038,9 +1019,8 @@ def test_yearn_staking_deposit(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000606145590629498')),
+        amount=(FVal('0.000606145590629498')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1052,7 +1032,6 @@ def test_yearn_staking_deposit(
         asset=Asset('eip155:1/erc20:0x790a60024bC3aea28385b60480f15a0771f26D09'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke yvCurve-YFIETH spending approval of {user_address} by {yearn_yfi_eth_gauge.evm_address}',  # noqa: E501
         address=yearn_yfi_eth_gauge.evm_address,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1100,9 +1079,8 @@ def test_yearn_staking_deposit_zap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000122339162')),
+        amount=(FVal('0.000122339162')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1114,7 +1092,6 @@ def test_yearn_staking_deposit_zap(
         asset=Asset('eip155:1/erc20:0x13120b7599DdF33782c748A847cc1d3c96387Ecd'),
         amount=FVal('2160000'),
         location_label=user_address,
-        notes='Set upYFI spending approval of 0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721 by 0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC to 2160000',  # noqa: E501
         address=string_to_evm_address('0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1172,9 +1149,8 @@ def test_yearn_v2_vault_deposit_optimism(optimism_inquirer: OptimismInquirer, op
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000007147891756595')),
+        amount=(FVal('0.000007147891756595')),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1247,9 +1223,8 @@ def test_yearn_staking_deposit_optimism(optimism_inquirer: OptimismInquirer, opt
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.00000752535695313')),
+        amount=(FVal('0.00000752535695313')),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1261,7 +1236,6 @@ def test_yearn_staking_deposit_optimism(optimism_inquirer: OptimismInquirer, opt
         asset=Asset('eip155:10/erc20:0x5B977577Eb8a480f63e11FC615D6753adB8652Ae'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke yvWETH spending approval of {user_address} by {gauge_address}',
         address=gauge_address,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1340,9 +1314,8 @@ def test_yearn_staking_withdraw_optimism(optimism_inquirer: OptimismInquirer, op
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000000289621487974')),
+        amount=(FVal('0.000000289621487974')),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1404,9 +1377,8 @@ def test_yearn_v2_withdraw_yvop_optimism(optimism_inquirer: OptimismInquirer, op
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000000235293360937')),
+        amount=(FVal('0.000000235293360937')),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1468,9 +1440,8 @@ def test_yearn_v2_withdraw_weth_to_eth_optimism(optimism_inquirer: OptimismInqui
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000026070215176204')),
+        amount=(FVal('0.000026070215176204')),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1482,7 +1453,6 @@ def test_yearn_v2_withdraw_weth_to_eth_optimism(optimism_inquirer: OptimismInqui
         asset=Asset('eip155:10/erc20:0x5B977577Eb8a480f63e11FC615D6753adB8652Ae'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke yvWETH spending approval of {user_address} by 0xDeAFc27aC8f977E6973d671E43cBfd2573021d9e',  # noqa: E501
         address=string_to_evm_address('0xDeAFc27aC8f977E6973d671E43cBfd2573021d9e'),
     ), EvmEvent(
         tx_ref=tx_hash,

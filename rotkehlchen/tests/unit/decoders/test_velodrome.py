@@ -86,7 +86,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             amount=FVal('0.000054658008447046'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000054658008447046 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=69,
@@ -98,7 +97,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             amount=ZERO,
             location_label=user_address,
             address=ROUTER_V2,
-            notes=f'Revoke OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=70,
@@ -172,7 +170,6 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             amount=FVal('0.00016522650722948'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.00016522650722948 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -241,7 +238,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             amount=FVal('0.000024369543627752'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000024369543627752 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=33,
@@ -253,7 +249,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             amount=ZERO,
             location_label=user_address,
             address=ROUTER_V2,
-            notes=f'Revoke vAMMV2-WETH/OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=34,
@@ -321,7 +316,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             amount=FVal('0.000037049807135563'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000037049807135563 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=39,
@@ -332,7 +326,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             asset=Asset(evm_address_to_identifier(address=pool, chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20)),  # noqa: E501
             amount=ZERO,
             location_label=user_address,
-            notes=f'Revoke vAMM-OP/USDC spending approval of {user_address} by 0x9c12939390052919aF3155f41Bf4160Fd3666A6f',  # noqa: E501
             address=string_to_evm_address('0x9c12939390052919aF3155f41Bf4160Fd3666A6f'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -402,7 +395,6 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             amount=FVal('0.000044146364876824'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000044146364876824 ETH for gas',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -458,7 +450,6 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             amount=FVal('0.000184626805145159'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000184626805145159 ETH for gas',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -514,7 +505,6 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             amount=FVal('0.000059095022720367'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000059095022720367 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=97,
@@ -526,7 +516,6 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             amount=ZERO,
             location_label=user_address,
             address=ROUTER_V2,
-            notes=f'Revoke OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=98,
@@ -580,7 +569,6 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
             amount=FVal('0.000076204005061914'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000076204005061914 ETH for gas',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -637,7 +625,6 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             amount=FVal('0.000034672969663309'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000034672969663309 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=92,
@@ -649,7 +636,6 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             amount=ZERO,
             location_label=user_address,
             address=ROUTER_V2,
-            notes=f'Revoke DOLA spending approval of {user_address} by {ROUTER_V2}',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=93,
@@ -702,7 +688,6 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             amount=FVal('0.00003955388723844'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.00003955388723844 ETH for gas',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -762,7 +747,6 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             amount=FVal('0.000019177994860846'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000019177994860846 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=19,
@@ -774,7 +758,6 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             amount=ZERO,
             location_label=user_address,
             address=WETH_OP_GAUGE_ADDRESS,
-            notes=f'Revoke vAMMV2-WETH/OP spending approval of {user_address} by {WETH_OP_GAUGE_ADDRESS}',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=20,
@@ -816,7 +799,6 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
             amount=FVal('0.00001849989800651'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.00001849989800651 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=85,
@@ -859,7 +841,6 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             amount=FVal('0.000024794371949528'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burn 0.000024794371949528 ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=35,
@@ -895,10 +876,9 @@ def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000000699973735595'),
+            amount=FVal('0.000000699973735595'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=13,
@@ -947,10 +927,9 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000001167814501718'),
+            amount=FVal('0.000001167814501718'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=99,
@@ -962,7 +941,6 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
             amount=ZERO,
             location_label=user_address,
             address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
-            notes=f'Revoke VELO spending approval of {user_address} by 0xFAf8FD17D9840595845582fCB047DF13f006787d',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=100,
@@ -1012,10 +990,9 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00000136036499356'),
+            amount=FVal('0.00000136036499356'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -1024,10 +1001,9 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
-            amount=FVal(approval_amount := '366860.961209203199646747'),
+            amount=FVal('366860.961209203199646747'),
             location_label=user_address,
             address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
-            notes=f'Set VELO spending approval of {user_address} by 0xFAf8FD17D9840595845582fCB047DF13f006787d to {approval_amount}',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -1064,10 +1040,9 @@ def test_increase_unlock_time(optimism_accounts, optimism_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000000573869266137'),
+            amount=FVal('0.000000573869266137'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=19,
@@ -1116,10 +1091,9 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000001246550912592'),
+            amount=FVal('0.000001246550912592'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=143,

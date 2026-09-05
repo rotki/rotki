@@ -33,9 +33,8 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00355751579933013'),
+            amount=FVal('0.00355751579933013'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -58,9 +57,8 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-            amount=FVal(approve_str := '115792089237316195423570985008687907853269984665640564027654.491316674464992473'),  # noqa: E501
+            amount=FVal('115792089237316195423570985008687907853269984665640564027654.491316674464992473'),
             location_label=ethereum_accounts[0],
-            notes=f'Set LOOKS spending approval of {ethereum_accounts[0]} by {PICKLE_JAR} to {approve_str}',  # noqa: E501
             address=PICKLE_JAR,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -92,9 +90,8 @@ def test_pickle_withdraw(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00389232626065528'),
+            amount=FVal('0.00389232626065528'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -139,9 +136,8 @@ def test_claim_cornichon(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.002380306'),
+            amount=FVal('0.002380306'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

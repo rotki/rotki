@@ -59,7 +59,6 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -97,7 +96,6 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -135,7 +133,6 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

@@ -32,9 +32,8 @@ def test_oneinch_liquidity_deposit(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.009274412'),
+        amount=FVal('0.009274412'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -44,9 +43,8 @@ def test_oneinch_liquidity_deposit(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_1INCH,
-        amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564038051.821129519885804696'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564038051.821129519885804696'),
         location_label=user_address,
-        notes=f'Set 1INCH spending approval of {user_address} by {ETH_1INCH_POOL} to {approve_amount}',  # noqa: E501
         address=ETH_1INCH_POOL,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -103,9 +101,8 @@ def test_oneinch_liquidity_withdrawal(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000120824534327907'),
+        amount=FVal('0.000120824534327907'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -163,9 +160,8 @@ def test_mooniswap_deposit(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.002885261256994148'),
+        amount=FVal('0.002885261256994148'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -223,9 +219,8 @@ def test_mooniswap_withdrawal(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00015820347100082'),
+        amount=FVal('0.00015820347100082'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

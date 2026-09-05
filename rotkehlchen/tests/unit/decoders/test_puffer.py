@@ -31,9 +31,8 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.001071196143585596'),
+        amount=FVal('0.001071196143585596'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -65,9 +64,8 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.002975374594297972'),
+        amount=FVal('0.002975374594297972'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

@@ -37,9 +37,8 @@ def test_swap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.011052763177263014'),
+        amount=FVal('0.011052763177263014'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -49,9 +48,8 @@ def test_swap(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:137/erc20:0xeB51D9A39AD5EEF215dC0Bf39a8821ff804A0F01'),
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457584006926.433208663'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457584006926.433208663'),
         location_label=user_address,
-        notes=f'Set LGNS spending approval of {user_address} by 0xf5b509bB0909a69B1c207E495f687a596C168E12 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0xf5b509bB0909a69B1c207E495f687a596C168E12'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -98,9 +96,8 @@ def test_create_lp_position(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.019757940084300544'),
+        amount=FVal('0.019757940084300544'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -160,9 +157,8 @@ def test_add_liquidity(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.008028270073324866'),
+        amount=FVal('0.008028270073324866'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -209,9 +205,8 @@ def test_remove_liquidity(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.010401180111986038'),
+        amount=FVal('0.010401180111986038'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

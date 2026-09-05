@@ -173,7 +173,6 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         asset=A_ETH,
                         amount=FVal('0.000030921'),
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        notes='Burn 0.000030921 ETH for gas',
                         event_type=HistoryEventType.SPEND,
                         event_subtype=HistoryEventSubType.FEE,
                         counterparty=CPT_GAS,
@@ -187,7 +186,6 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         location_label=addr1,
                         asset=A_SAI,
                         amount=1,
-                        notes=f'Set SAI spending approval of {addr1} by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
                         event_type=HistoryEventType.INFORMATIONAL,
                         event_subtype=HistoryEventSubType.APPROVE,
                         address=GITCOIN_GRANTS_OLD1,
@@ -534,10 +532,9 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.0002516693954254'),
+            amount=FVal('0.0002516693954254'),
             location_label=(user_address := ethereum_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -585,10 +582,9 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.0001836334598192'),
+            amount=FVal('0.0001836334598192'),
             location_label=(user_address := ethereum_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -624,10 +620,9 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.001220261148478126'),
+            amount=FVal('0.001220261148478126'),
             location_label=(user_address := '0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379'),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -638,8 +633,7 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             amount=ZERO,
             location_label=user_address,
-            address=(contract_address := '0x3337286E850cf01B8A8B6094574f0dd6a2108B16'),
-            notes=f'Deploy a new contract at {contract_address}',
+            address='0x3337286E850cf01B8A8B6094574f0dd6a2108B16',
         ),
     ]
 

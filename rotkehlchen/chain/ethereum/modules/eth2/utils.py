@@ -15,7 +15,6 @@ from rotkehlchen.utils.misc import get_chunks
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -40,15 +39,6 @@ def timestamp_to_slot(timestamp: Timestamp) -> int:
 def epoch_to_timestamp(epoch: int) -> Timestamp:
     """Turn a beaconchain epoch to a unix timestamp"""
     return Timestamp(ETH2_GENESIS_TIMESTAMP + epoch * EPOCH_DURATION_SECS)
-
-
-def form_withdrawal_notes(is_exit: bool, validator_index: int, amount: FVal) -> str:
-    """Forms the ethereum withdrawal notes depending on is_exit and other attributes"""
-    if is_exit is True:
-        notes = f'Exit validator {validator_index} with {amount} ETH'
-    else:
-        notes = f'Withdraw {amount} ETH from validator {validator_index}'
-    return notes
 
 
 def calculate_query_chunks(

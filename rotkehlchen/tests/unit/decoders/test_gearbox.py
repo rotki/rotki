@@ -122,9 +122,8 @@ def test_gearbox_deposit_non_farming_pool(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.000026282468494372'),
+        amount=FVal('0.000026282468494372'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -176,9 +175,8 @@ def test_gearbox_deposit(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.0006562535'),
+            amount=FVal('0.0006562535'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -233,9 +231,8 @@ def test_gearbox_deposit_usdc(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.004946659515956316'),
+            amount=FVal('0.004946659515956316'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -247,7 +244,6 @@ def test_gearbox_deposit_usdc(
             asset=A_USDC,
             amount=FVal(6500000),
             location_label=ethereum_accounts[0],
-            notes=f'Set USDC spending approval of {ethereum_accounts[0]} by 0x53D5BD0E7fAa9ee3eafEf7C5572D54DB1b7f5b25 to {deposit_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x53D5BD0E7fAa9ee3eafEf7C5572D54DB1b7f5b25'),
         ), EvmEvent(
@@ -301,9 +297,8 @@ def test_gearbox_withdraw(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.002506078391975991'),
+            amount=FVal('0.002506078391975991'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -357,9 +352,8 @@ def test_gearbox_deposit_arbitrum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000249681'),
+            amount=FVal('0.00000249681'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -413,9 +407,8 @@ def test_gearbox_deposit_arbitrum_lp(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.0000022431'),
+            amount=FVal('0.0000022431'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -471,9 +464,8 @@ def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000246911'),
+            amount=FVal('0.00000246911'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -526,9 +518,8 @@ def test_gearbox_withdraw_arbitrum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000250989'),
+            amount=FVal('0.00000250989'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -582,9 +573,8 @@ def test_gearbox_deposit_usdc_arbitrum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000368093'),
+            amount=FVal('0.00000368093'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -594,9 +584,8 @@ def test_gearbox_deposit_usdc_arbitrum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
-            amount=FVal(approval_amount := '125.164428'),
+            amount=FVal('125.164428'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Set USDC.e spending approval of {arbitrum_one_accounts[0]} by 0xD72e1B9A5FC74b35435f71603a81dAE217c2D863 to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0xD72e1B9A5FC74b35435f71603a81dAE217c2D863'),
         ), EvmEvent(
@@ -621,7 +610,6 @@ def test_gearbox_deposit_usdc_arbitrum(
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
             amount=ZERO,
             location_label=arbitrum_one_accounts[0],
-            notes=f'Revoke USDC.e spending approval of {arbitrum_one_accounts[0]} by 0xD72e1B9A5FC74b35435f71603a81dAE217c2D863',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0xD72e1B9A5FC74b35435f71603a81dAE217c2D863'),
         ), EvmEvent(
@@ -663,9 +651,8 @@ def test_gearbox_deposit_optimism(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000010672234173866'),
+            amount=FVal('0.000010672234173866'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -720,9 +707,8 @@ def test_gearbox_deposit_usdc_optimism(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000011648221611152'),
+            amount=FVal('0.000011648221611152'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -745,9 +731,8 @@ def test_gearbox_deposit_usdc_optimism(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
-            amount=FVal(approval_amount := '394.3605'),
+            amount=FVal('394.3605'),
             location_label=optimism_accounts[0],
-            notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525 to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525'),
         ), EvmEvent(
@@ -789,9 +774,8 @@ def test_gearbox_withdraw_optimism_usdc(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000001104938540339'),
+            amount=FVal('0.000001104938540339'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -840,9 +824,8 @@ def test_gearbox_staking(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.0008970313372218'),
+            amount=FVal('0.0008970313372218'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -854,7 +837,6 @@ def test_gearbox_staking(
             asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
             amount=FVal(stake_amount := '260.869836197270890866'),
             location_label=ethereum_accounts[0],
-            notes=f'Set GEAR spending approval of {ethereum_accounts[0]} by {GEAR_STAKING_CONTRACT} to {stake_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=GEAR_STAKING_CONTRACT,
         ), EvmEvent(
@@ -866,7 +848,6 @@ def test_gearbox_staking(
             asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
             amount=ZERO,
             location_label=ethereum_accounts[0],
-            notes=f'Revoke GEAR spending approval of {ethereum_accounts[0]} by {GEAR_STAKING_CONTRACT}',  # noqa: E501
             tx_ref=tx_hash,
             address=GEAR_STAKING_CONTRACT,
         ), EvmEvent(
@@ -902,9 +883,8 @@ def test_gearbox_unstaking(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000287410296179888'),
+            amount=FVal('0.000287410296179888'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -944,9 +924,8 @@ def test_gearbox_claim_from_angle(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.00005385590405946'),
+        amount=FVal('0.00005385590405946'),
         location_label=(user_account := ethereum_accounts[0]),
-        notes=f'Burn {gas} ETH for gas',
         tx_ref=tx_hash,
         counterparty=CPT_GAS,
     ), EvmEvent(
@@ -986,9 +965,8 @@ def test_gearbox_claim(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.000026898409237966'),
+        amount=FVal('0.000026898409237966'),
         location_label=(user_account := ethereum_accounts[0]),
-        notes=f'Burn {gas} ETH for gas',
         tx_ref=tx_hash,
         counterparty=CPT_GAS,
     ), EvmEvent(
@@ -1029,9 +1007,8 @@ def test_gearbox_claim_farming_token(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.00000905784'),
+        amount=FVal('0.00000905784'),
         location_label=(user_account := ethereum_accounts[0]),
-        notes=f'Burn {gas} ETH for gas',
         tx_ref=tx_hash,
         counterparty=CPT_GAS,
     ), EvmEvent(

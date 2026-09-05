@@ -46,9 +46,8 @@ def test_extrafi_deposit_and_stake(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000000295568286412'),
+            amount=FVal('0.000000295568286412'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -60,7 +59,6 @@ def test_extrafi_deposit_and_stake(
             asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
             amount=FVal('10180971820322352348298.271714677763401611'),
             location_label=optimism_accounts[0],
-            notes=f'Set VELO spending approval of 0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3 by {EXTRAFI_POOL_CONTRACT} to 10180971820322352348298.271714677763401611',  # noqa: E501
             address=EXTRAFI_POOL_CONTRACT,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -98,9 +96,8 @@ def test_extrafi_unstake_and_withdraw(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.00000029164013947'),
+            amount=FVal('0.00000029164013947'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -137,9 +134,8 @@ def test_extrafi_claim_from_pool(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000012215355410845'),
+            amount=FVal('0.000012215355410845'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -189,9 +185,8 @@ def test_extrafi_lock_token(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000002162513212219'),
+            amount=FVal('0.000002162513212219'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -203,7 +198,6 @@ def test_extrafi_lock_token(
             asset=Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
             amount=ZERO,
             location_label=optimism_accounts[0],
-            notes=f'Revoke EXTRA spending approval of 0xfE9182CD69F9fEb2A22C8bB88D03dCBBDfF77f11 by {VOTE_ESCROW}',  # noqa: E501
             address=VOTE_ESCROW,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -240,9 +234,8 @@ def test_extrafi_repay(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000001297692870133'),
+            amount=FVal('0.000001297692870133'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -292,9 +285,8 @@ def test_extrafi_repay_with_token(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000076904200008685'),
+            amount=FVal('0.000076904200008685'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -306,7 +298,6 @@ def test_extrafi_repay_with_token(
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             amount=FVal('115792089237316195423570985008687907853269984665640564039457584007873814.838605'),
             location_label=optimism_accounts[0],
-            notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0xf9cFB8a62f50e10AdDE5Aa888B44cF01C5957055 to 115792089237316195423570985008687907853269984665640564039457584007873814.838605',  # noqa: E501
             address=EXTRAFI_FARMING_CONTRACT,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -356,9 +347,8 @@ def test_close_position(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000001936939279642'),
+            amount=FVal('0.000001936939279642'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -395,9 +385,8 @@ def test_farm_investment(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000027486262250944'),
+            amount=FVal('0.000027486262250944'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -409,7 +398,6 @@ def test_farm_investment(
             asset=Asset('eip155:10/erc20:0x1e925De1c68ef83bD98eE3E130eF14a50309C01B'),
             amount=FVal(2),
             location_label=optimism_accounts[0],
-            notes=f'Set EXA spending approval of 0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E by {EXTRAFI_FARMING_CONTRACT} to 2',  # noqa: E501
             address=EXTRAFI_FARMING_CONTRACT,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -470,9 +458,8 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.000006907473477667'),
+            amount=FVal('0.000006907473477667'),
             location_label=base_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -519,9 +506,8 @@ def test_new_farm_position_on_base(base_inquirer, base_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.000003258939143014'),
+            amount=FVal('0.000003258939143014'),
             location_label=base_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -556,9 +542,8 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.000002859618316575'),
+            amount=FVal('0.000002859618316575'),
             location_label=base_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -570,7 +555,6 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             asset=Asset('eip155:8453/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
             amount=ZERO,
             location_label=base_accounts[0],
-            notes=f'Revoke EXTRA spending approval of {base_accounts[0]} by 0xe0BeC4F45aEF64CeC9dCB9010d4beFfB13e91466',  # noqa: E501
             address=VOTE_ESCROW,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -612,9 +596,8 @@ def test_extrafi_claim_lending(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000000266809434775'),
+            amount=FVal('0.000000266809434775'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -669,9 +652,8 @@ def test_extrafi_claim_lending_base(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000001803922832983'),
+            amount=FVal('0.000001803922832983'),
             location_label=base_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

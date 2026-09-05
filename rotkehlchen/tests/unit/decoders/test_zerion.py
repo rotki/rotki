@@ -25,9 +25,8 @@ def test_zerion_token_to_token(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.002307329927255016'),
+        amount=FVal('0.002307329927255016'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -70,9 +69,8 @@ def test_zerion_chained_adapters(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.019651626'),
+        amount=FVal('0.019651626'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -115,9 +113,8 @@ def test_zerion_eth_to_multiple_tokens(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.050256672'),
+        amount=FVal('0.050256672'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -175,9 +172,8 @@ def test_zerion_token_to_eth(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.01379231'),
+        amount=FVal('0.01379231'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

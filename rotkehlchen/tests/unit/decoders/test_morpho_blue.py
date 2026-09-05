@@ -53,7 +53,6 @@ def test_morpho_blue_supply(
             asset=A_BASE_USDC,
             amount=FVal(deposit_amount := '800'),
             location_label=user_address,
-            notes=f'Set USDC spending approval of {user_address} by {spender} to {deposit_amount}',
             address=spender,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -104,7 +103,6 @@ def test_morpho_blue_borrow(
         asset=A_ETH,
         amount=FVal('0.000016064193613886'),
         location_label=user_address,
-        notes='Burn 0.000016064193613886 ETH for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -357,9 +355,8 @@ def test_morpho_blue_arbitrum_withdrawal(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000002324465626'),
+            amount=FVal('0.000002324465626'),
             location_label=(user_address := arbitrum_one_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty='gas',
         ), EvmEvent(
             tx_ref=tx_hash,

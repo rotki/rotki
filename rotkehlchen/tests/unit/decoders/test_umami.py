@@ -44,7 +44,6 @@ def test_umami_deposit_request(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -137,7 +136,6 @@ def test_umami_withdraw_request(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -228,7 +226,6 @@ def test_umami_stake(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -268,7 +265,6 @@ def test_umami_unstake(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -321,7 +317,6 @@ def test_umami_claim_rewards(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

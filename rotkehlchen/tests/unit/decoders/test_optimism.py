@@ -49,7 +49,6 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
             asset=A_ETH,
             amount=FVal('0.0002038856162166'),
             location_label=ADDY,
-            notes='Burn 0.0002038856162166 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -83,9 +82,8 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000007620095114963'),
+            amount=FVal('0.000007620095114963'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -119,9 +117,8 @@ def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.00000030058552275'),
+            amount=FVal('0.00000030058552275'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -235,7 +232,6 @@ def test_optimism_delegate_change(optimism_inquirer):
             asset=A_ETH,
             amount=FVal('0.00005701303160652'),
             location_label=ADDY,
-            notes='Burn 0.00005701303160652 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

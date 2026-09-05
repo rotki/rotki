@@ -25,9 +25,8 @@ def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00560851737819982'),
+            amount=FVal('0.00560851737819982'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

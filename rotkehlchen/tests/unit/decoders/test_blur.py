@@ -35,9 +35,8 @@ def test_blur_claim_and_stake(ethereum_inquirer: EthereumInquirer, ethereum_acco
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.005302886935404245'),
+            amount=FVal('0.005302886935404245'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -83,9 +82,8 @@ def test_blur_stake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.000533750631510369'),
+            amount=FVal('0.000533750631510369'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -117,9 +115,8 @@ def test_blur_unstake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: li
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.000802495016237112'),
+            amount=FVal('0.000802495016237112'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

@@ -27,6 +27,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
+from rotkehlchen.history.events.structures.auto_notes import AUTO_NOTES_SQL
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -1080,9 +1081,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             )
         if notes_substring is not None:
             filters.append(
-                DBSubStringFilter(
+                DBSubStringFilter(  # a NULL notes column means the notes are auto generated, so search what they would be  # noqa: E501
                     and_op=True,
-                    field='notes',
+                    field=f'COALESCE(notes, {AUTO_NOTES_SQL})',
                     search_string=notes_substring,
                 ),
             )

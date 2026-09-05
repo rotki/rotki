@@ -32,7 +32,6 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -45,7 +44,6 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=FVal(approve_amount),
             location_label=user_address,
             address=string_to_evm_address('0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9'),
-            notes=f'Set auraBAL spending approval of {user_address} by 0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9 to {approve_amount}',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=5,
@@ -94,7 +92,6 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -144,7 +141,6 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -193,7 +189,6 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -218,7 +213,6 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'),
             amount=FVal(approval_amount),
             location_label=user_address,
-            notes=f'Set AURA spending approval of {user_address} by 0x3Fa73f1E5d8A792C80F426fc8F84FBF7Ce9bBCAC to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x3Fa73f1E5d8A792C80F426fc8F84FBF7Ce9bBCAC'),
         ),
     ]
@@ -253,7 +247,6 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -265,7 +258,6 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             asset=Asset('eip155:1/erc20:0xfbfaD5fa9E99081da6461F36f229B5cC88A64c63'),
             amount=FVal(approval_amount),
             location_label=user_address,
-            notes=f'Set ECLP-GYD-USDT spending approval of {user_address} by 0xA57b8d98dAE62B26Ec3bcC4a365338157060B234 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0xA57b8d98dAE62B26Ec3bcC4a365338157060B234'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -314,7 +306,6 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -377,7 +368,6 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -439,7 +429,6 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -564,9 +553,8 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00000802845'),
+            amount=FVal('0.00000802845'),
             location_label=(user_address := arbitrum_one_accounts[0]),
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

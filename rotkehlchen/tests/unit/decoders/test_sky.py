@@ -37,7 +37,6 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -82,9 +81,8 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00044435901000267'),
+        amount=FVal('0.00044435901000267'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -131,9 +129,8 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.001458066094125402'),
+        amount=FVal('0.001458066094125402'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -182,7 +179,6 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -227,9 +223,8 @@ def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00011343597080725'),
+        amount=FVal('0.00011343597080725'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -275,9 +270,8 @@ def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000237343245854033'),
+        amount=FVal('0.000237343245854033'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -322,9 +316,8 @@ def test_direct_psm_swap(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000004413535309216'),
+        amount=FVal('0.000004413535309216'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

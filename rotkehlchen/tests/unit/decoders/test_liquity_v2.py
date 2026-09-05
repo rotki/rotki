@@ -36,7 +36,6 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             asset=A_ETH,
             amount=FVal('0.000106660179104193'),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.000106660179104193 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -48,7 +47,6 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             asset=A_LQTY,
             amount=FVal('0'),
             location_label=ethereum_accounts[0],
-            notes='Revoke LQTY spending approval of 0xD77Eb80F38fEC10D87A192d07329415173307E93 by 0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',  # noqa: E501
             counterparty=None,
             address=(proxy_address := string_to_evm_address('0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205')),  # noqa: E501
         ), EvmEvent(
@@ -118,7 +116,6 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
             asset=A_ETH,
             amount=FVal('0.000105997036620882'),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.000105997036620882 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -167,9 +164,8 @@ def test_lqty_v2_deploy_proxy(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000368349229435'),
+        amount=FVal('0.00000368349229435'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

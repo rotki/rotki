@@ -84,7 +84,6 @@ def test_ethereum_make_donation(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -140,7 +139,6 @@ def test_optimism_create_project(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -188,7 +186,6 @@ def test_ethereum_project_apply(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -223,7 +220,6 @@ def test_ethereum_project_update(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -260,7 +256,6 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -272,7 +267,6 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
         asset=op_dai,
         amount=FVal('147.7'),
         location_label=user_address,
-        notes=f'Set DAI spending approval of {user_address} by 0x15fa08599EB017F89c1712d0Fe76138899FdB9db to 147.7',  # noqa: E501
         address='0x15fa08599EB017F89c1712d0Fe76138899FdB9db',
     )]
 
@@ -401,7 +395,6 @@ def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POL,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -489,7 +482,6 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         amount=FVal(gas),
         location_label=user_address,
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -501,7 +493,6 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ARB,
         amount=FVal(approve),
         location_label=user_address,
-        notes=f'Set ARB spending approval of {user_address} by 0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174 to {approve}',  # noqa: E501
         address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -513,7 +504,6 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ARB,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke ARB spending approval of {user_address} by 0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',  # noqa: E501
         address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -563,7 +553,6 @@ def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         amount=FVal(gas),
         location_label=user_address,
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -613,7 +602,6 @@ def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         amount=FVal(gas),
         location_label=user_address,
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -649,7 +637,6 @@ def test_create_profile(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -691,7 +678,6 @@ def test_update_profile_metadata(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -728,7 +714,6 @@ def test_registered_retro_strategy(arbitrum_one_inquirer, arbitrum_one_accounts)
         asset=A_ETH,
         amount=FVal(gas),
         location_label=user_address,
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -782,10 +767,9 @@ def test_arbitrum_direct_allocation_native_token_donation(arbitrum_one_inquirer,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000114785'),
+        amount=FVal('0.00000114785'),
         counterparty=CPT_GAS,
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=1,

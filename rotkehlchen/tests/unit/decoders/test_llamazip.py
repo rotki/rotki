@@ -36,9 +36,8 @@ def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_account
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000000114027950239'),
+            amount=FVal('0.000000114027950239'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -83,9 +82,8 @@ def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_account
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000000754413255739'),
+            amount=FVal('0.000000754413255739'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -130,9 +128,8 @@ def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accou
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.000000292773423793'),
+            amount=FVal('0.000000292773423793'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -179,9 +176,8 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.0000306163'),
+            amount=FVal('0.0000306163'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -193,7 +189,6 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
             asset=a_usdce,
             amount=ZERO,
             location_label=arbitrum_one_accounts[0],
-            notes=f'Revoke USDC.e spending approval of {arbitrum_one_accounts[0]} by {ARBITRUM_ROUTER_ADDRESSES[0]}',  # noqa: E501
             address=ARBITRUM_ROUTER_ADDRESSES[0],
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -239,9 +234,8 @@ def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.0000419029'),
+            amount=FVal('0.0000419029'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -288,9 +282,8 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.0000360038'),
+            amount=FVal('0.0000360038'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -302,7 +295,6 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
             asset=a_weth,
             amount=ZERO,
             location_label=arbitrum_one_accounts[0],
-            notes=f'Revoke WETH spending approval of {arbitrum_one_accounts[0]} by {ARBITRUM_ROUTER_ADDRESSES[0]}',  # noqa: E501
             address=ARBITRUM_ROUTER_ADDRESSES[0],
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -348,9 +340,8 @@ def test_llamazip_arbitrum_swap_eth_to_arb(arbitrum_one_inquirer, arbitrum_one_a
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount := '0.00000154191'),
+            amount=FVal('0.00000154191'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,

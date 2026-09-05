@@ -66,7 +66,6 @@ def test_1inchv1_swap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.00896373909'),
             location_label=ADDY,
-            notes='Burn 0.00896373909 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -78,7 +77,6 @@ def test_1inchv1_swap(ethereum_inquirer):
             asset=A_CHI,
             amount=ZERO,
             location_label=ADDY,
-            notes=f'Revoke CHI spending approval of {ADDY} by {chispender_addy}',
             address=chispender_addy,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -130,7 +128,6 @@ def test_1inchv2_swap_for_eth(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.002618947'),
             location_label=ADDY,
-            notes='Burn 0.002618947 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -142,7 +139,6 @@ def test_1inchv2_swap_for_eth(ethereum_inquirer):
             asset=A_PAN,
             amount=FVal('115792089237316195423570985008687907853269984665640564037304.954007913129639935'),
             location_label=ADDY,
-            notes=f'Set PAN spending approval of {ADDY} by {ONEINCH_V2_MAINNET_ROUTER} to 115792089237316195423570985008687907853269984665640564037304.954007913129639935',  # noqa: E501
             address=ONEINCH_V2_MAINNET_ROUTER,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -190,7 +186,6 @@ def test_1inchv3_swap_for_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.0103897731'),
             location_label=user_address,
-            notes='Burn 0.0103897731 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -243,7 +238,6 @@ def test_1inchv4_swap_on_uniswapv3(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.005753512813468296'),
             location_label=user_address,
-            notes='Burn 0.005753512813468296 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -290,9 +284,8 @@ def test_1inchv4_orderfilledrfq(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.010777074'),
+            amount=FVal('0.010777074'),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -347,7 +340,6 @@ def test_1inchv4_swap_on_sushiswap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.003337072472716185'),
             location_label=user_address,
-            notes='Burn 0.003337072472716185 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -402,7 +394,6 @@ def test_1inchv4_multiple_swaps(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.007395128691813344'),
             location_label=user_address,
-            notes='Burn 0.007395128691813344 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -414,7 +405,6 @@ def test_1inchv4_multiple_swaps(ethereum_inquirer):
             asset=Asset('eip155:1/erc20:0xE60779CC1b2c1d0580611c526a8DF0E3f870EC48'),
             amount=FVal('115792089237316195423570985008687907853269984665640563937640.413716264772814197'),
             location_label=user_address,
-            notes=f'Set USH spending approval of {user_address} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640563937640.413716264772814197',  # noqa: E501
             address=ONEINCH_V4_ROUTER,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -469,7 +459,6 @@ def test_1inchv4_weth_eth_swap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.001057637854578432'),
             location_label=user_address,
-            notes='Burn 0.001057637854578432 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -524,7 +513,6 @@ def test_1inchv4_eth_weth_swap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.002694727747581802'),
             location_label=user_address,
-            notes='Burn 0.002694727747581802 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -578,7 +566,6 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POL,
             amount=FVal('0.0579902'),
             location_label=user_addy,
-            notes='Burn 0.0579902 POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -591,7 +578,6 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             amount=FVal('115792089237316195423570985008687907853269984665640564039457584007913032.844935'),
             location_label=user_addy,
             address=ONEINCH_V4_ROUTER,
-            notes=f'Set USDT0 spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039457584007913032.844935',  # noqa: E501
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=278,
@@ -639,7 +625,6 @@ def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
             asset=A_XDAI,
             amount=FVal('0.0004273965'),
             location_label=user_addy,
-            notes='Burn 0.0004273965 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -689,7 +674,6 @@ def test_1inch_velodrome(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal('0.000274323853192674'),
             location_label=user_addy,
-            notes='Burn 0.000274323853192674 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -735,9 +719,8 @@ def test_1inch_wombatv2_swap(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000210503989653813'),
+            amount=FVal('0.000210503989653813'),
             location_label=(user_addy := optimism_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -790,7 +773,6 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.00205570157007332'),
             location_label=user_address,
-            notes='Burn 0.00205570157007332 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -802,7 +784,6 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
             asset=A_LUSD,
             amount=FVal('115792089237316195423570985008687907853269984665640564038929.427407919914021705'),
             location_label=user_address,
-            notes='Set LUSD spending approval of 0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379 by 0x1111111254EEB25477B68fb85Ed929f73A960582 to 115792089237316195423570985008687907853269984665640564038929.427407919914021705',  # noqa: E501
             address=ONEINCH_V5_ROUTER,
             counterparty=None,
         ), EvmSwapEvent(
@@ -891,9 +872,8 @@ def test_1inch_base_v6_swap(base_inquirer, base_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000019908608867869'),
+            amount=FVal('0.000019908608867869'),
             location_label=base_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -905,7 +885,6 @@ def test_1inch_base_v6_swap(base_inquirer, base_accounts):
             asset=Asset('eip155:8453/erc20:0xAd1C24dE53fAD18270D5C99026302E989D212b41'),
             amount=ZERO,
             location_label=base_accounts[0],
-            notes=f'Revoke BERD spending approval of {base_accounts[0]} by {ONEINCH_V6_ROUTER}',
             address=ONEINCH_V6_ROUTER,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -952,9 +931,8 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas := '0.015694020167926014'),
+            amount=FVal('0.015694020167926014'),
             location_label=user,
-            notes=f'Burn {gas} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -966,7 +944,6 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=Asset('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'),  # DAI
             amount=FVal('115792089237316195423570985008687907853269984665640564039283.378007913129639935'),
             location_label=user,
-            notes=f'Set DAI spending approval of {user} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039283.378007913129639935',  # noqa: E501
             address=ONEINCH_V4_ROUTER,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -1010,9 +987,8 @@ def test_1inch4_swap_via_defi_plaza(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.01345755735660528'),
+        amount=FVal('0.01345755735660528'),
         location_label=user,
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1056,9 +1032,8 @@ def test_1inch_swap_via_pancake(arbitrum_one_inquirer, arbitrum_one_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000003936113484'),
+        amount=FVal('0.000003936113484'),
         location_label=(user := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1068,9 +1043,8 @@ def test_1inch_swap_via_pancake(arbitrum_one_inquirer, arbitrum_one_accounts):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:42161/erc20:0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978'),
-        amount=FVal(approval_amount := '47.534435349931445199'),
+        amount=FVal('47.534435349931445199'),
         location_label=user,
-        notes=f'Set CRV spending approval of {user} by {ONEINCH_V6_ROUTER} to {approval_amount}',
         address=ONEINCH_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1117,7 +1091,6 @@ def test_1inch_limit_order_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_acc
         asset=pendle,
         amount=ZERO,
         location_label=(user := arbitrum_one_accounts[0]),
-        notes=f'Revoke PENDLE spending approval of {user} by {ONEINCH_V6_ROUTER}',
         address=ONEINCH_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1162,9 +1135,8 @@ def test_1inch_v5_liquidity_book_swap_arbitrum(arbitrum_one_inquirer, arbitrum_o
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0001195154'),
+        amount=FVal('0.0001195154'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1176,7 +1148,6 @@ def test_1inch_v5_liquidity_book_swap_arbitrum(arbitrum_one_inquirer, arbitrum_o
         asset=Asset('eip155:42161/erc20:0x912CE59144191C1204E64559FE8253a0e49E6548'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke ARB spending approval of {user_address} by {ONEINCH_V5_ROUTER}',
         address=ONEINCH_V5_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1224,9 +1195,8 @@ def test_limit_order_swap(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_gno := Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb')),
-        amount=(approval_amount := FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935')),  # noqa: E501
+        amount=(FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935')),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Set GNO spending approval of {user_address} by 0x111111125421cA6dc452d289314280a0f8842A65 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x111111125421cA6dc452d289314280a0f8842A65'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1271,9 +1241,8 @@ def test_limit_order_swap_via_uniswap(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_ai2027 := Asset('eip155:1/erc20:0xC0138Db8a5eB4EB9885bc7a30501C8C79ea0ffbf')),
-        amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039457580394609.129639935'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457580394609.129639935'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Set AI2027 spending approval of {user_address} by 0x111111125421cA6dc452d289314280a0f8842A65 to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x111111125421cA6dc452d289314280a0f8842A65'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1321,9 +1290,8 @@ def test_1inch_v6_fusion_swap_via_balancer_v3(ethereum_inquirer, ethereum_accoun
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000022375634850778'),
+        amount=FVal('0.000022375634850778'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

@@ -35,7 +35,6 @@ def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_a
             asset=A_ETH,
             amount=FVal('0.001207084037700187'),
             location_label=user_address,
-            notes='Burn 0.001207084037700187 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -111,7 +110,6 @@ def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
             asset=A_ETH,
             amount=FVal('0.0000646535'),
             location_label=user_address,
-            notes='Burn 0.0000646535 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -154,7 +152,6 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.001688346842833805'),
             location_label=user_address,
-            notes='Burn 0.001688346842833805 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -197,7 +194,6 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum
             asset=Asset('ETH'),
             amount=FVal('0.002442413931855385'),
             location_label=user_address,
-            notes='Burn 0.002442413931855385 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -290,7 +286,6 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
             asset=A_ETH,
             amount=FVal('0.0000597064'),
             location_label=user_address,
-            notes='Burn 0.0000597064 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -302,7 +297,6 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
             asset=Asset('eip155:42161/erc20:0x289ba1701C2F088cf0faf8B3705246331cB8A839'),
             amount=FVal('115792089237316195423570985008687907853269984665640564015506.584007913129639935'),
             location_label=user_address,
-            notes=f'Set LPT spending approval of {user_address} by {gateway_address} to 115792089237316195423570985008687907853269984665640564015506.584007913129639935',  # noqa: E501
             address=gateway_address,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -354,7 +348,6 @@ def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
             asset=A_ETH,
             amount=FVal('0.00032141102469615'),
             location_label=user_address,
-            notes='Burn 0.00032141102469615 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -396,7 +389,6 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.006476938263774547'),
             location_label=user_address,
-            notes='Burn 0.006476938263774547 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -439,7 +431,6 @@ def test_receive_erc20_on_ethereum_old_bridge(ethereum_inquirer, ethereum_accoun
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

@@ -45,9 +45,8 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_fees := '0.00403543'),
+        amount=FVal('0.00403543'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -57,9 +56,8 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_LUSD,
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564035457.584007913129639935'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564035457.584007913129639935'),
         location_label=ethereum_accounts[0],
-        notes=f'Set LUSD spending approval of {ethereum_accounts[0]} by {ETH_ROUTER} to {approval_amount}',  # noqa: E501
         address=ETH_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -116,9 +114,8 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_fees := '0.0000798467'),
+        amount=FVal('0.0000798467'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -128,9 +125,8 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_WETH_ARB,
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457.580725740003253015'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457.580725740003253015'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Set WETH spending approval of {arbitrum_one_accounts[0]} by {ARB_ROUTER} to {approval_amount}',  # noqa: E501
         address=ARB_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -195,9 +191,8 @@ def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_fees := '0.000108989578875775'),
+        amount=FVal('0.000108989578875775'),
         location_label=optimism_accounts[0],
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -242,9 +237,8 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_fees := '0.022903685'),
+        amount=FVal('0.022903685'),
         location_label=polygon_pos_accounts[0],
-        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -305,7 +299,6 @@ def test_swap_bnb_to_token_binance_sc(
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

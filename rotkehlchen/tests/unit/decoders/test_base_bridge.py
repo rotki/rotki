@@ -29,7 +29,6 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.0008732662'),
             location_label=user_address,
-            notes='Burn 0.0008732662 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -71,7 +70,6 @@ def test_withdraw_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.0011436799352069'),
             location_label=user_address,
-            notes='Burn 0.0011436799352069 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -113,7 +111,6 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.00227258431919723'),
             location_label=user_address,
-            notes='Burn 0.00227258431919723 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -156,7 +153,6 @@ def test_withdraw_token(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.002955477492625515'),
             location_label=user_address,
-            notes='Burn 0.002955477492625515 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

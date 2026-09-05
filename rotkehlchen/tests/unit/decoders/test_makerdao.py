@@ -25,9 +25,8 @@ def test_makerdao_simple_transaction(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=(gas := FVal('0.00926134')),
+            amount=(FVal('0.00926134')),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -62,9 +61,8 @@ def test_withdraw_with_transfer_after(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=(gas := FVal('0.000147117137791243')),
+            amount=(FVal('0.000147117137791243')),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

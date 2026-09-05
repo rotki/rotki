@@ -61,7 +61,6 @@ def test_uniswap_v2_swap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(0.00847616),
             location_label=ADDY_1,
-            notes='Burn 0.00847616 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -108,7 +107,6 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(0.006697194528224109),
             location_label=ADDY_1,
-            notes='Burn 0.006697194528224109 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -168,7 +166,6 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             asset=Asset('ETH'),
             amount=FVal('0.003227029072809172'),
             location_label=user_address,
-            notes='Burn 0.003227029072809172 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -180,7 +177,6 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
             amount=FVal('115792089237316195423570985008687907853269984665640564039436.930578017129639935'),
             location_label=user_address,
-            notes='Set MPL spending approval of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 by 0x617Dee16B86534a5d792A4d7A62FB491B544111E to 115792089237316195423570985008687907853269984665640564039436.930578017129639935',  # noqa: E501
             address=string_to_evm_address('0x617Dee16B86534a5d792A4d7A62FB491B544111E'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -232,7 +228,6 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.002931805211106758'),
             location_label=ADDY_2,
-            notes='Burn 0.002931805211106758 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -299,7 +294,6 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.00468942'),
             location_label=ADDY_3,
-            notes='Burn 0.00468942 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -311,7 +305,6 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             asset=Asset('eip155:1/erc20:0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
             amount=FVal('9.6176228659E-8'),
             location_label=ADDY_3,
-            notes='Set UNI-V2 spending approval of 0x65fc65C639467423Bf19801a59FCfd62f0F29777 by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 0.000000096176228659',  # noqa: E501
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -505,7 +498,6 @@ def test_uniswap_v2_swap_events_order(
             asset=A_ETH,
             amount=FVal('0.00468942'),
             location_label=user_address,
-            notes='Burn 0.00468942 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -517,7 +509,6 @@ def test_uniswap_v2_swap_events_order(
             asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
             amount=FVal('115792089237316195423570985008687907853269984665640564039434.499460237779741194'),
             location_label=user_address,
-            notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985008687907853269984665640564039434.499460237779741194',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmSwapEvent(
@@ -566,7 +557,6 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.018446778'),
             location_label=user_address,
-            notes='Burn 0.018446778 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -632,7 +622,6 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -669,9 +658,8 @@ def test_swap_on_polygon(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=EvmToken('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.004645614'),
+        amount=FVal('0.004645614'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -681,9 +669,8 @@ def test_swap_on_polygon(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=EvmToken('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'),
-        amount=FVal(approve_amount := '369.980225'),
+        amount=FVal('369.980225'),
         location_label=user_address,
-        notes=f'Set USDT0 spending approval of {user_address} by 0xedf6066a2b290C185783862C7F4776A2C8077AD1 to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0xedf6066a2b290C185783862C7F4776A2C8077AD1'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -730,9 +717,8 @@ def test_add_liquidity_on_optimism(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000204747173407'),
+        amount=FVal('0.000000204747173407'),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -742,9 +728,8 @@ def test_add_liquidity_on_optimism(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=EvmToken('eip155:10/erc20:0x68f180fcCe6836688e9084f035309E29Bf0A2095'),
-        amount=FVal(approval_amount := '1157920892373161954235709850086879078532699846656405640394575840079131.29639764'),  # noqa: E501
+        amount=FVal('1157920892373161954235709850086879078532699846656405640394575840079131.29639764'),
         location_label=user_address,
-        notes=f'Set WBTC spending approval of {user_address} by 0x4A7b5Da61326A6379179b40d00F57E5bbDC962c2 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x4A7b5Da61326A6379179b40d00F57E5bbDC962c2'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -807,9 +792,8 @@ def test_remove_liquidity_on_arbitrum_one(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0000013865'),
+        amount=FVal('0.0000013865'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

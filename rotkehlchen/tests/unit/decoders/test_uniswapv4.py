@@ -55,10 +55,9 @@ def test_swap_eth_to_token(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000981255025667122'),
+        amount=FVal('0.000981255025667122'),
         location_label=(user_address := ethereum_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -115,10 +114,9 @@ def test_swap_token_to_eth(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000007410256564'),
+        amount=FVal('0.000007410256564'),
         location_label=(user_address := arbitrum_one_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -176,10 +174,9 @@ def test_swap_token_to_token(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000046217643623'),
+        amount=FVal('0.000000046217643623'),
         location_label=(user_address := optimism_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=76,
@@ -188,9 +185,8 @@ def test_swap_token_to_token(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_usdce := Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607')),
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457584007913128.639935'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457584007913128.639935'),
         location_label=user_address,
-        notes=f'Set USDC.e spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -236,10 +232,9 @@ def test_swap_token_to_bnb(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('BNB'),
-        amount=FVal(gas_amount := '0.00001673050033461'),
+        amount=FVal('0.00001673050033461'),
         location_label=(user_address := binance_sc_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} BNB for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -248,9 +243,8 @@ def test_swap_token_to_bnb(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_bsc_eth := Asset('eip155:56/erc20:0x2170Ed0880ac9A755fd29B2688956BD959F933F8')),
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457.578777913129639935'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457.578777913129639935'),
         location_label=user_address,
-        notes=f'Set ETH spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -314,10 +308,9 @@ def test_multi_pool_swap_to_second_address(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000226223279121'),
+        amount=FVal('0.000000226223279121'),
         location_label=optimism_accounts[0],
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -361,10 +354,9 @@ def test_create_lp_position(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.012086010300538782'),
+        amount=FVal('0.012086010300538782'),
         location_label=(user_address := polygon_pos_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} POL for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=446,
@@ -373,9 +365,8 @@ def test_create_lp_position(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_oauto := Asset('eip155:137/erc20:0x7f426F6Dc648e50464a0392E60E1BB465a67E9cf')),
-        amount=FVal(oauto_approval := '577.561778438973357269'),
+        amount=FVal('577.561778438973357269'),
         location_label=user_address,
-        notes=f'Set oAUTO spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {oauto_approval}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -385,9 +376,8 @@ def test_create_lp_position(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(a_usdt := Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')),
-        amount=FVal(usdt_approval := '637.938815'),
+        amount=FVal('637.938815'),
         location_label=user_address,
-        notes=f'Set USDT0 spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {usdt_approval}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -451,10 +441,9 @@ def test_create_lp_position_with_native_refund(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000004281262202'),
+        amount=FVal('0.000004281262202'),
         location_label=(user_address := arbitrum_one_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -514,10 +503,9 @@ def test_increase_liquidity(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000225013656822'),
+        amount=FVal('0.000000225013656822'),
         location_label=(user_address := optimism_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -563,10 +551,9 @@ def test_exit_lp_position(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00005128618368435'),
+        amount=FVal('0.00005128618368435'),
         location_label=(user_address := ethereum_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -628,7 +615,6 @@ def test_decrease_liquidity(
         amount=FVal('0.005868403632678156'),
         location_label=(user_address := polygon_pos_accounts[0]),
         counterparty=CPT_GAS,
-        notes='Burn 0.005868403632678156 POL for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -676,10 +662,9 @@ def test_uniswapv4_swap_with_internal_fee_transaction(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000205039'),
+        amount=FVal('0.00000205039'),
         location_label=(user_address := arbitrum_one_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,

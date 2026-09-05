@@ -54,7 +54,6 @@ def test_farcaster_pro_purchase(base_inquirer, base_accounts) -> None:
             asset=A_ETH,
             amount=FVal('0.000000197978205154'),
             location_label=(user_address := base_accounts[0]),
-            notes='Burn 0.000000197978205154 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

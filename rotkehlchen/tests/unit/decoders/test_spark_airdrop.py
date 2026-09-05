@@ -39,7 +39,6 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -82,7 +81,6 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

@@ -59,7 +59,6 @@ def test_openocean_swap_token_to_token(
             asset=A_POL,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -71,7 +70,6 @@ def test_openocean_swap_token_to_token(
             asset=pos_usdt,
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set USDT0 spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -122,7 +120,6 @@ def test_openocean_swap_eth_to_token(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -174,7 +171,6 @@ def test_openocean_swap_token_to_eth(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -186,7 +182,6 @@ def test_openocean_swap_token_to_eth(
             asset=op_usdce,
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set USDC.e spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -236,7 +231,6 @@ def test_openocean_swap_uniswap_with_swapped_log(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -248,7 +242,6 @@ def test_openocean_swap_uniswap_with_swapped_log(
             asset=A_ARB,
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set ARB spending approval of {user_address} by {OPENOCEAN_EXCHANGE_ADDRESS} to {approve_amount}',  # noqa: E501
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -298,7 +291,6 @@ def test_openocean_swap_uniswapv2(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -348,7 +340,6 @@ def test_openocean_swap_uniswapv3(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -398,7 +389,6 @@ def test_openocean_swap_on_binance_sc(
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -410,7 +400,6 @@ def test_openocean_swap_on_binance_sc(
         asset=a_bsc_eth,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set ETH spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -460,7 +449,6 @@ def test_openocean_swap_xdai_to_token(
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,

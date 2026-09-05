@@ -146,7 +146,7 @@ class EventsAccountant:
             if (remaining_in_amount := in_event.amount - transferred_in_amount) > ZERO:
                 self.pot.add_in_event(
                     event_type=AccountingEventType.TRANSACTION_EVENT,
-                    notes=in_event.notes or '',
+                    notes=in_event.notes_or_auto() or '',
                     location=in_event.location,
                     timestamp=in_event.get_timestamp_in_sec(),
                     asset=in_event.asset,
@@ -205,7 +205,7 @@ class EventsAccountant:
         self.pot.add_asset_change_event(
             direction=event_direction,
             event_type=AccountingEventType.TRANSACTION_EVENT,
-            notes=event.notes or '',
+            notes=event.notes_or_auto() or '',
             location=event.location,
             timestamp=timestamp,
             asset=event.asset,
@@ -253,7 +253,7 @@ class EventsAccountant:
         _, trade_taxable_amount = self.pot.add_out_event(
             originating_event_id=out_event.identifier,
             event_type=out_event.get_accounting_event_type(),
-            notes=out_event.notes or '',
+            notes=out_event.notes_or_auto() or '',
             location=out_event.location,
             timestamp=timestamp,
             asset=out_event.asset,
@@ -271,7 +271,7 @@ class EventsAccountant:
 
         add_in_event_kwargs = {
             'event_type': in_event.get_accounting_event_type(),
-            'notes': in_event.notes or '',
+            'notes': in_event.notes_or_auto() or '',
             'location': in_event.location,
             'timestamp': timestamp,
             'asset': in_event.asset,
@@ -304,7 +304,7 @@ class EventsAccountant:
             fee_out_event = (self.pot.add_out_event, {
                 'originating_event_id': fee_event.identifier,
                 'event_type': AccountingEventType.FEE,
-                'notes': fee_event.notes or '',
+                'notes': fee_event.notes_or_auto() or '',
                 'location': fee_event.location,
                 'timestamp': timestamp,
                 'asset': fee_event.asset,

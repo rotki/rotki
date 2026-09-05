@@ -40,9 +40,8 @@ def test_beets_v3_join(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.021755361'),
+        amount=FVal('0.021755361'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -91,9 +90,8 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.014681300000293626'),
+        amount=FVal('0.014681300000293626'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -142,9 +140,8 @@ def test_beets_v2_join(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.01822623'),
+        amount=FVal('0.01822623'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -219,9 +216,8 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.016167450000323349'),
+        amount=FVal('0.016167450000323349'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -308,9 +304,8 @@ def test_ws_wrap(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.0103176'),
+        amount=FVal('0.0103176'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -358,9 +353,8 @@ def test_ws_unwrap(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.001908100000038162'),
+        amount=FVal('0.001908100000038162'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -409,9 +403,8 @@ def test_beets_v2_swap(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.008759322'),
+        amount=FVal('0.008759322'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -459,9 +452,8 @@ def test_beets_v3_exit(sonic_inquirer, sonic_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_S,
-        amount=FVal(gas_amount := '0.0296091592182'),
+        amount=FVal('0.0296091592182'),
         location_label=user,
-        notes=f'Burn {gas_amount} S for gas',
         counterparty=CPT_GAS,
     )
     assert [event for event in events if event.counterparty == CPT_BEETS_V3] == [EvmEvent(

@@ -273,9 +273,8 @@ def test_sftusd_unstake_queued(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000264618530553404'),
+            amount=FVal('0.000264618530553404'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -371,9 +370,8 @@ def test_circuit_breaker_release_unstake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000069128536608282'),
+            amount=FVal('0.000069128536608282'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -411,9 +409,8 @@ def test_ftusd_redeem_queued(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000069450523131154'),
+            amount=FVal('0.000069450523131154'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -479,9 +476,8 @@ def test_circuit_breaker_release_redeem(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.00001493588304054'),
+            amount=FVal('0.00001493588304054'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

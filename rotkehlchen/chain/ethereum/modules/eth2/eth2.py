@@ -470,19 +470,19 @@ class Eth2(EthereumModule):
 
         validators: dict[ChecksumEvmAddress, set[int | Eth2PubKey]] = defaultdict(set)
         for event in deposit_events:
-            if event.notes is None:
+            if (notes := event.notes_or_auto()) is None:
                 log.error(f'Could not match extraction regex for {event} due to absence of notes')  # should not really happen  # noqa: E501
                 continue
 
             # Check if it matches either type 1 (with pubkey) or type 2 (with validator index)
-            if (match := self.deposits_re.match(event.notes)) is not None:
+            if (match := self.deposits_re.match(notes)) is not None:
                 if (location_label := event.location_label) is None:
-                    log.error(f'Could not find depositor address for "{event.notes}"')
+                    log.error('Could not find depositor address for eth2 deposit', notes=notes)
                     continue
                 try:
                     depositor = deserialize_evm_address(location_label)
                 except DeserializationError:
-                    log.error(f'Could not deserialize depositor address {location_label} for "{event.notes}"')  # noqa: E501
+                    log.error('Could not deserialize eth2 depositor address', location_label=location_label, notes=notes)  # noqa: E501
                     continue
 
                 if (pubkey := match.group('pubkey')) is not None:
@@ -492,7 +492,7 @@ class Eth2(EthereumModule):
                 else:
                     validators[depositor].add(int(match.group('index')))
             else:
-                log.error(f'Could not match extraction regex for "{event.notes}"')
+                log.error('Could not match eth2 deposit extraction regex', notes=notes)
 
         return validators
 
@@ -1018,15 +1018,13 @@ class Eth2(EthereumModule):
             return
 
         staking_changes = []
-        history_changes = []
         validators = []
         for result in results:
-            identifier, amount_str = pubkey_to_data[result.public_key]
+            identifier, _ = pubkey_to_data[result.public_key]
             if result.validator_index is None:
                 continue  # no index set yet
 
             staking_changes.append((result.validator_index, identifier))
-            history_changes.append((f'Deposit {amount_str} ETH to validator {result.validator_index}', identifier))  # noqa: E501
             validators.append((result.validator_index, result.public_key, result.validator_type.serialize_for_db(), '1.0'))  # noqa: E501
 
         if len(staking_changes) == 0:
@@ -1037,9 +1035,9 @@ class Eth2(EthereumModule):
                 'UPDATE eth_staking_events_info SET validator_index=? WHERE identifier=?',
                 staking_changes,
             )
-            write_cursor.executemany(
-                'UPDATE history_events SET extra_data=null, notes=? WHERE identifier=?',
-                history_changes,
+            write_cursor.executemany(  # the deposit notes follow the validator index, see EthDepositEvent.auto_notes  # noqa: E501
+                'UPDATE history_events SET extra_data=null, notes=NULL WHERE identifier=?',
+                [(identifier,) for _, identifier in staking_changes],
             )
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO eth2_validators(validator_index, public_key, validator_type, ownership_proportion) VALUES(?, ?, ?, ?)',  # noqa: E501

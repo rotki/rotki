@@ -40,9 +40,8 @@ def test_gold_sponsorship(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000243015590156846')),
+        amount=(FVal('0.000243015590156846')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmSwapEvent(
@@ -90,9 +89,8 @@ def test_silver_sponsorship(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000270510471626436')),
+        amount=(FVal('0.000270510471626436')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmSwapEvent(
@@ -140,9 +138,8 @@ def test_bronze_sponsorship(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000220485364898432')),
+        amount=(FVal('0.000220485364898432')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmSwapEvent(

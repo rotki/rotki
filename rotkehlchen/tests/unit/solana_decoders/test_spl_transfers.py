@@ -34,9 +34,8 @@ def test_spl_token_transfer(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_SOL,
-        amount=FVal(fee_amount := '0.000015'),
+        amount=FVal('0.000015'),
         location_label=(user := solana_accounts[0]),
-        notes=f'Spend {fee_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(
         tx_ref=signature,
@@ -98,9 +97,8 @@ def test_nft_transfer(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_SOL,
-        amount=FVal(fee_amount := '0.000080001'),
+        amount=FVal('0.000080001'),
         location_label=(user := solana_accounts[0]),
-        notes=f'Spend {fee_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(
         tx_ref=signature,

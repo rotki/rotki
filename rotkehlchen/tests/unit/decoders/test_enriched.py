@@ -93,7 +93,6 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             asset=A_ETH,
             amount=FVal(0.00393701451),
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
-            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=deserialize_evm_tx_hash(
@@ -183,7 +182,6 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             asset=A_ETH,
             amount=FVal(0.00393701451),
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
-            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

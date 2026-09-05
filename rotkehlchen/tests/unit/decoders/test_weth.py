@@ -67,7 +67,6 @@ def test_weth_deposit(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.00057313513694104'),
             location_label='0x4B078a6A7026C32D2D6Aff763E2F37336cf552Dd',
-            notes='Burn 0.00057313513694104 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -120,7 +119,6 @@ def test_weth_withdrawal(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.00062372398538032'),
             location_label='0x4b2975AfF4DeF34D3Cd4f4759b45faF738D790D3',
-            notes='Burn 0.00062372398538032 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -173,7 +171,6 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.004777703202235758'),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Burn 0.004777703202235758 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -240,7 +237,6 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.011940359686863452'),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Burn 0.011940359686863452 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -293,7 +289,6 @@ def test_weth_interaction_errors(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(0.003535483550478045),
             location_label='0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',
-            notes='Burn 0.003535483550478045 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -342,7 +337,6 @@ def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -393,7 +387,6 @@ def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
             asset=A_XDAI,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -444,7 +437,6 @@ def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -495,7 +487,6 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=user,
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -545,7 +536,6 @@ def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -595,7 +585,6 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -644,7 +633,6 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts, allow_scroll_eth
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=scroll_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -693,7 +681,6 @@ def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts, allow_scroll_ethe
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=scroll_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -743,7 +730,6 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=base_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -789,9 +775,8 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees := '0.000000775794575663'),
+            amount=FVal('0.000000775794575663'),
             location_label=base_accounts[0],
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -845,9 +830,8 @@ def test_weth_withdraw_base_without_transfer_log(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000000329002950171')),
+        amount=(FVal('0.000000329002950171')),
         location_label=user,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -884,7 +868,6 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POL,
             amount=FVal(gas_fees),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -935,7 +918,6 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             asset=A_POL,
             amount=FVal(gas_fees),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

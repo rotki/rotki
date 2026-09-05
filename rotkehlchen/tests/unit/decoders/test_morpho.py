@@ -89,9 +89,8 @@ def test_morpho_deposit_base(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000007106536379632'),
+            amount=FVal('0.000007106536379632'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -103,7 +102,6 @@ def test_morpho_deposit_base(
             asset=A_BASE_USDC,
             amount=FVal(deposit_amount := '51.573591'),
             location_label=user_address,
-            notes=f'Set USDC spending approval of {user_address} by 0x23055618898e202386e6c13955a58D3C68200BFB to {deposit_amount}',  # noqa: E501
             address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -166,9 +164,8 @@ def test_morpho_deposit_base_bundler(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000033559670856685'),
+            amount=FVal('0.000033559670856685'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -180,7 +177,6 @@ def test_morpho_deposit_base_bundler(
             asset=Asset(f'eip155:8453/erc20:{re7_addr}'),
             amount=FVal('0.080036912194887522'),
             location_label=user_address,
-            notes=f'Set Re7WETH spending approval of {user_address} by 0x23055618898e202386e6c13955a58D3C68200BFB to 0.080036912194887522',  # noqa: E501
             address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -277,9 +273,8 @@ def test_morpho_withdraw_base(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000009372834639654'),
+            amount=FVal('0.000009372834639654'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -330,9 +325,8 @@ def test_morpho_claim_reward_base(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000024248426432951'),
+            amount=FVal('0.000024248426432951'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -375,9 +369,8 @@ def test_morpho_deposit_ethereum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.019537376734385857'),
+            amount=FVal('0.019537376734385857'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -389,7 +382,6 @@ def test_morpho_deposit_ethereum(
             asset=A_USDC,
             amount=FVal(deposit_amount := '200'),
             location_label=user_address,
-            notes=f'Set USDC spending approval of {user_address} by 0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077 to {deposit_amount}',  # noqa: E501
             address=string_to_evm_address('0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -446,9 +438,8 @@ def test_morpho_withdraw_ethereum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.035931819008110328'),
+            amount=FVal('0.035931819008110328'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -458,9 +449,8 @@ def test_morpho_withdraw_ethereum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset(f'eip155:1/erc20:{vault_addr}'),
-            amount=FVal(approve_amount := '1141398.660779466856241893'),
+            amount=FVal('1141398.660779466856241893'),
             location_label=user_address,
-            notes=f'Set USUALUSDC+ spending approval of {user_address} by 0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -543,9 +533,8 @@ def test_morpho_deposit_eth_and_weth_base(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000014687937701214'),
+        amount=FVal('0.000014687937701214'),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -618,9 +607,8 @@ def test_morpho_bundle_deposit_split_across_vaults_base(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000006784491541182')),
+        amount=(FVal('0.000006784491541182')),
         location_label=(user_address := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -695,9 +683,8 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000002356763597462')),
+        amount=(FVal('0.000002356763597462')),
         location_label=(user_address := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -707,9 +694,8 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset(f'eip155:8453/erc20:{mw_usdc_addr}'),
-        amount=(approval_amount := FVal('2404.324028784031837625')),
+        amount=FVal('2404.324028784031837625'),
         location_label=user_address,
-        notes=f'Set mwUSDC spending approval of {user_address} by 0xb98c948CFA24072e58935BC004a8A7b376AE746A to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0xb98c948CFA24072e58935BC004a8A7b376AE746A'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -719,9 +705,8 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
-        amount=(approval_amount := FVal('4.3323')),
+        amount=(FVal('4.3323')),
         location_label=user_address,
-        notes=f'Set USDC spending approval of {user_address} by 0xb98c948CFA24072e58935BC004a8A7b376AE746A to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0xb98c948CFA24072e58935BC004a8A7b376AE746A'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -800,9 +785,8 @@ def test_morpho_deposit_arbitrum(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000958025'),
+        amount=FVal('0.00000958025'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -814,7 +798,6 @@ def test_morpho_deposit_arbitrum(
         asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
         amount=FVal(deposit_amount := '2000'),
         location_label=user_address,
-        notes=f'Set USDC spending approval of {user_address} by 0x9954aFB60BB5A222714c478ac86990F221788B88 to {deposit_amount}',  # noqa: E501
         address=string_to_evm_address('0x9954aFB60BB5A222714c478ac86990F221788B88'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -867,9 +850,8 @@ def test_morpho_deposit_native_polygon(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.0164379715283458'),
+        amount=FVal('0.0164379715283458'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
