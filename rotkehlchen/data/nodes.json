@@ -166,5 +166,37 @@
         "owned": false,
         "active": true,
         "blockchain": "SONIC"
+    },
+    {
+        "name": "robinhood official",
+        "endpoint": "https://rpc.mainnet.chain.robinhood.com",
+        "weight": 0.30,
+        "owned": false,
+        "active": true,
+        "blockchain": "ROBINHOOD"
+    },
+    {
+        "name": "robinhood publicnode",
+        "endpoint": "https://robinhood-rpc.publicnode.com",
+        "weight": 0.25,
+        "owned": false,
+        "active": true,
+        "blockchain": "ROBINHOOD"
+    },
+    {
+        "name": "robinhood ordofi",
+        "endpoint": "https://rpc.ordofi.network",
+        "weight": 0.25,
+        "owned": false,
+        "active": true,
+        "blockchain": "ROBINHOOD"
+    },
+    {
+        "name": "robinhood nodeflare",
+        "endpoint": "https://rpc.nodeflare.app/robinhood/public",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "ROBINHOOD"
     }
 ]

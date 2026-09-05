@@ -15,6 +15,7 @@ describe('useSupportedChains', () => {
       expect(isEarlyIntegrationChain('hyperliquid')).toBe(true);
       expect(isEarlyIntegrationChain('monad')).toBe(true);
       expect(isEarlyIntegrationChain('sonic')).toBe(true);
+      expect(isEarlyIntegrationChain('robinhood')).toBe(true);
     });
 
     it('should return false for fully supported or unknown chains', () => {

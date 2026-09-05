@@ -320,6 +320,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: APIServer) -> None:
             hyperliquid_addresses=[common_account],
             monad_addresses=[common_account],
             sonic_addresses=[common_account],
+            robinhood_addresses=[common_account],
               zksync_lite_addresses=[common_account],
         )
         stack.enter_context(patched_modify_blockchain_accounts)
@@ -375,6 +376,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: APIServer) -> None:
                 'binance_sc',
                 'monad',
                 'sonic',
+                'robinhood',
                 'zksync_lite',
               ],
           },
@@ -464,6 +466,11 @@ def test_detect_evm_accounts(
         ))
         stack.enter_context(patch.object(
             rotki.chains_aggregator.sonic.node_inquirer,
+            'has_activity',
+            return_value=HasChainActivity.NONE,
+        ))
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.robinhood.node_inquirer,
             'has_activity',
             return_value=HasChainActivity.NONE,
         ))
@@ -612,6 +619,7 @@ def test_evm_address_async(rotkehlchen_api_server: APIServer) -> None:
             hyperliquid_addresses=[common_account],
             monad_addresses=[common_account],
             sonic_addresses=[common_account],
+            robinhood_addresses=[common_account],
               zksync_lite_addresses=[common_account],
         )
 
@@ -722,6 +730,16 @@ def test_adding_safe(
             'has_activity',
             return_value=HasChainActivity.NONE,
         ))
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.robinhood.node_inquirer,
+            'is_contract',
+            return_value=False,
+        ))
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.robinhood.node_inquirer,
+            'has_activity',
+            return_value=HasChainActivity.NONE,
+        ))
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             'evmaccountsresource',
@@ -776,6 +794,7 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
             hyperliquid_addresses=[addy],
             monad_addresses=[addy],
               sonic_addresses=[addy],
+            robinhood_addresses=[addy],
         )
 
         response = requests.put(
@@ -784,7 +803,7 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
         )
         result = assert_proper_sync_response_with_result(response)
         assert result == {
-            'added': {addy: ['optimism', 'polygon_pos', 'arbitrum_one', 'base', 'hyperliquid', 'gnosis', 'scroll', 'binance_sc', 'monad', 'sonic']},  # noqa: E501
+            'added': {addy: ['optimism', 'polygon_pos', 'arbitrum_one', 'base', 'hyperliquid', 'gnosis', 'scroll', 'binance_sc', 'monad', 'sonic', 'robinhood']},  # noqa: E501
             'existed': {addy: ['eth']},
         }
 

@@ -6,6 +6,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
 from rotkehlchen.chain.hyperliquid.constants import HYPERLIQUID_GENESIS
 from rotkehlchen.chain.monad.constants import MONAD_GENESIS
+from rotkehlchen.chain.robinhood.constants import ROBINHOOD_GENESIS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.chain.sonic.constants import SONIC_GENESIS
 from rotkehlchen.errors.misc import InputError
@@ -89,6 +90,8 @@ def get_earliest_ts(chain_id: SUPPORTED_CHAIN_IDS) -> Timestamp:
             return MONAD_GENESIS
         case ChainID.SONIC:
             return SONIC_GENESIS
+        case ChainID.ROBINHOOD:
+            return ROBINHOOD_GENESIS
         case ChainID.POLYGON_POS:
             return Timestamp(1590856200)
 

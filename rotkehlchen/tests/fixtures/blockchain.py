@@ -39,6 +39,8 @@ from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+from rotkehlchen.chain.robinhood.manager import RobinhoodManager
+from rotkehlchen.chain.robinhood.node_inquirer import RobinhoodInquirer
 from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
@@ -112,6 +114,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.MONAD
     elif klass == SonicInquirer:
         blockchain = SupportedBlockchain.SONIC
+    elif klass == RobinhoodInquirer:
+        blockchain = SupportedBlockchain.ROBINHOOD
 
     EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
@@ -270,6 +274,11 @@ def fixture_sonic_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='robinhood_accounts')
+def fixture_robinhood_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -283,6 +292,7 @@ def fixture_blockchain_accounts(
         hyperliquid_accounts: list[ChecksumEvmAddress],
         monad_accounts: list[ChecksumEvmAddress],
         sonic_accounts: list[ChecksumEvmAddress],
+        robinhood_accounts: list[ChecksumEvmAddress],
         zksync_lite_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
@@ -303,6 +313,7 @@ def fixture_blockchain_accounts(
         hyperliquid=tuple(hyperliquid_accounts),
         monad=tuple(monad_accounts),
         sonic=tuple(sonic_accounts),
+        robinhood=tuple(robinhood_accounts),
         zksync_lite=tuple(zksync_lite_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
@@ -754,6 +765,42 @@ def fixture_sonic_manager(sonic_inquirer):
     return SonicManager(node_inquirer=sonic_inquirer)
 
 
+@pytest.fixture(name='robinhood_manager_connect_at_start')
+def fixture_robinhood_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='robinhood_inquirer')
+def fixture_robinhood_inquirer(
+        robinhood_manager_connect_at_start,
+        task_supervisor,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=RobinhoodInquirer,
+            class_path='rotkehlchen.chain.robinhood.node_inquirer.RobinhoodInquirer',
+            manager_connect_at_start=robinhood_manager_connect_at_start,
+            task_supervisor=task_supervisor,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='robinhood_manager')
+def fixture_robinhood_manager(robinhood_inquirer):
+    return RobinhoodManager(node_inquirer=robinhood_inquirer)
+
+
 @pytest.fixture(name='gnosis_manager_connect_at_start')
 def fixture_gnosis_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
     """A sequence of nodes to connect to at the start of the test.
@@ -1116,6 +1163,7 @@ def fixture_blockchain(
         hyperliquid_manager,
         monad_manager,
         sonic_manager,
+        robinhood_manager,
         gnosis_manager,
         scroll_manager,
         binance_sc_manager,
@@ -1158,6 +1206,7 @@ def fixture_blockchain(
         hyperliquid_manager=hyperliquid_manager,
         monad_manager=monad_manager,
         sonic_manager=sonic_manager,
+        robinhood_manager=robinhood_manager,
         gnosis_manager=gnosis_manager,
         scroll_manager=scroll_manager,
         binance_sc_manager=binance_sc_manager,

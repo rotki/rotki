@@ -19,6 +19,7 @@ pub enum SupportedBlockchain {
     Hyperliquid,
     Monad,
     Sonic,
+    Robinhood,
     Optimism,
     PolygonPos,
     Scroll,
@@ -45,6 +46,7 @@ impl SupportedBlockchain {
             Self::Hyperliquid => "HYPERLIQUID",
             Self::Monad => "MONAD",
             Self::Sonic => "SONIC",
+            Self::Robinhood => "ROBINHOOD",
             Self::Optimism => "OPTIMISM",
             Self::PolygonPos => "POLYGON_POS",
             Self::Scroll => "SCROLL",
@@ -55,9 +57,12 @@ impl SupportedBlockchain {
     /// matching Python's `SupportedBlockchain.get_native_token_id()`.
     pub fn native_token_id(self) -> &'static str {
         match self {
-            Self::Optimism | Self::ArbitrumOne | Self::Base | Self::Scroll | Self::ZksyncLite => {
-                "ETH"
-            }
+            Self::Optimism
+            | Self::ArbitrumOne
+            | Self::Base
+            | Self::Scroll
+            | Self::Robinhood
+            | Self::ZksyncLite => "ETH",
             Self::PolygonPos => "eip155:137/erc20:0x0000000000000000000000000000000000001010",
             Self::Gnosis => "XDAI",
             Self::BinanceSc => "BNB",
@@ -83,6 +88,7 @@ impl SupportedBlockchain {
             43114 => Some(Self::Avalanche),
             143 => Some(Self::Monad),
             146 => Some(Self::Sonic),
+            4663 => Some(Self::Robinhood),
             999 => Some(Self::Hyperliquid),
             8453 => Some(Self::Base),
             42161 => Some(Self::ArbitrumOne),
@@ -121,6 +127,14 @@ mod tests {
     }
 
     #[test]
+    fn test_from_chain_id_includes_robinhood() {
+        assert_eq!(
+            SupportedBlockchain::from_chain_id(4663),
+            Some(SupportedBlockchain::Robinhood)
+        );
+    }
+
+    #[test]
     fn test_from_chain_id_includes_sonic() {
         assert_eq!(
             SupportedBlockchain::from_chain_id(146),
@@ -140,13 +154,15 @@ mod tests {
     fn test_native_token_id_for_new_chains() {
         assert_eq!(SupportedBlockchain::Monad.native_token_id(), "MON");
         assert_eq!(SupportedBlockchain::Sonic.native_token_id(), "S");
-          assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
+        assert_eq!(SupportedBlockchain::Robinhood.native_token_id(), "ETH");
+        assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
     }
 
     #[test]
     fn test_as_str_for_new_chains() {
         assert_eq!(SupportedBlockchain::Monad.as_str(), "MONAD");
         assert_eq!(SupportedBlockchain::Sonic.as_str(), "SONIC");
-          assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
+        assert_eq!(SupportedBlockchain::Robinhood.as_str(), "ROBINHOOD");
+        assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
     }
 }

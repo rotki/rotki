@@ -4886,9 +4886,12 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db_v53.conn.write_ctx() as write_cursor:
-        # make sure the Sonic location is not in the old DB
+        # make sure the Sonic and Robinhood locations are not in the old DB
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
+        ).fetchone()[0] == 0
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM location WHERE location = char(127) AND seq = 63',
         ).fetchone()[0] == 0
         # v52->v53 already removed the obsolete unsupported-assets update setting
         assert write_cursor.execute(
@@ -4903,9 +4906,12 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db.conn.write_ctx() as cursor:
-        # make sure the Sonic location exists
+        # make sure the Sonic and Robinhood locations exist
         assert cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM location WHERE location = char(127) AND seq = 63',
         ).fetchone()[0] == 1
         # and the obsolete setting was removed
         assert cursor.execute(

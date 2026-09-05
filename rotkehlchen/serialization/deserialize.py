@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.evm.constants import ARBITRUM_NITRO_CHAIN_IDS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAINIDS_WITH_L1_FEES,
     L2ChainIdsWithL1FeesType,
@@ -714,11 +715,11 @@ def deserialize_evm_transaction(
                         f'and no evm_inquirer or indexer available',
                     )
 
-            # In Arbitrum One the gas price included in the data is the "Gas Price Bid" and not
-            # the "Gas Price Paid". The latter is the actual gas price paid for the transaction
-            # and is included in the transaction receipt as the effectiveGasPrice.
+            # In Arbitrum Nitro chains the gas price included in the data is the "Gas Price
+            # Bid" and not the "Gas Price Paid". The latter is the actual gas price paid for the
+            # transaction and is included in the transaction receipt as the effectiveGasPrice.
             # Also, we've seen cases where gasPrice has no valid value.
-            if gas_price is None or chain_id == ChainID.ARBITRUM_ONE:
+            if gas_price is None or chain_id in ARBITRUM_NITRO_CHAIN_IDS:
                 gas_price = read_integer(raw_receipt_data, 'effectiveGasPrice', source)  # type: ignore[arg-type]  # receipt will be present.
 
         if 'gasUsed' not in data:

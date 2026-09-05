@@ -1,7 +1,7 @@
 import re
 from typing import Final
 
-from rotkehlchen.types import deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 
 from .types import string_to_evm_address
 
@@ -71,3 +71,7 @@ MINT_TOPIC: Final = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x
 STAKING_DEPOSIT: Final = b'\xf9C\xcf\x10\xefM\x1e29\xf4qm\xde\xcd\xf5F\xe8\xba\x8a\xb0\xe4\x1d\xea\xfd\x9aq\xa9\x996\x82~E'  # noqa: E501
 REWARDS_CLAIMED_TOPIC: Final = b'V7\xd7\xf9b$\x8a\x7f\x05\xa7\xabi\xee\xc6Dn1\xf3\xd0\xa2\x99\xd9\x97\xf15\xa6\\b\x80nx\x91'  # noqa: E501
 HARVEST_TOPIC: Final = b'q\xba\xb6\\\xed.WPwZ\x06\x13\xbe\x06}\xf4\x8e\xf0l\xf9*In\xbfvc\xae\x06`\x92IT'  # noqa: E501
+
+# Chains running Arbitrum Nitro. Their transaction data carries the gas price bid, while the
+# price actually paid is only in the receipt's effectiveGasPrice.
+ARBITRUM_NITRO_CHAIN_IDS: Final = {ChainID.ARBITRUM_ONE, ChainID.ROBINHOOD}

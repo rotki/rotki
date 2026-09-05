@@ -16,6 +16,7 @@ export enum Blockchain {
   SCROLL = 'scroll',
   MONAD = 'monad',
   SONIC = 'sonic',
+  ROBINHOOD = 'robinhood',
   ZKSYNC_LITE = 'zksync_lite',
   HYPERLIQUID = 'hyperliquid',
 }
