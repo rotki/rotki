@@ -1,0 +1,130 @@
+name: Bank connector
+description: Track the integration of a bank (new connector or FinTS onboarding)
+title: "[Bank]: "
+labels: ["bank connector"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Part of the bank integrations meta issue: https://github.com/rotki/rotki/issues/13052
+
+        **Access tiers** (full definitions in the meta issue):
+        **T0** FinTS/HBCI protocol (German banks) · **T1** official customer API ·
+        **T2** unofficial/reverse-engineered API · **T3** web scraping · **T4** file import only.
+        We always implement the highest tier the bank offers.
+
+  - type: input
+    id: bank
+    attributes:
+      label: Bank
+      description: Name, country, BLZ/BIC if applicable
+      placeholder: "Qonto (business banking, FR-based, EU-wide)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Tier
+      options:
+        - "T0 — FinTS/HBCI"
+        - "T1 — official customer API"
+        - "T2 — unofficial API"
+        - "T3 — web scraping"
+        - "T4 — file import only"
+    validations:
+      required: true
+
+  - type: textarea
+    id: access
+    attributes:
+      label: Access method and tier justification
+      description: Why is this the highest available tier, and what was checked? FinTS endpoint / API docs URL / reverse-engineering notes.
+      placeholder: |
+        Official Business API, docs at https://docs.qonto.com
+        No FinTS support (checked against the FinTS bank list).
+        Production base: https://thirdparty.qonto.com/v2
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: capabilities
+    attributes:
+      label: Capabilities
+      options:
+        - label: Balances
+        - label: Transaction history
+        - label: Holdings / securities depot
+        - label: Incremental sync (native fetch-since)
+
+  - type: input
+    id: history_depth
+    attributes:
+      label: Max transaction history depth
+      placeholder: "e.g. 90 days / 2 years / full account history / TBD in spike"
+
+  - type: textarea
+    id: auth
+    attributes:
+      label: Auth flow
+      description: Declarative description using framework primitives. Include observed SCA/re-auth frequency, quirks (device tokens, rate limits, IP sensitivity), and credential safety notes for users (read-only key? can it initiate payments?).
+      placeholder: |
+        static_secret(api_login, api_secret_key)
+        SCA/re-auth: none for read endpoints
+        Quirks: rate limits via response headers
+        Credential safety: verify key scope, document in setup instructions
+    validations:
+      required: true
+
+  - type: input
+    id: maintainer
+    attributes:
+      label: Maintainer(s) with a live account
+      description: "GitHub handle(s), or: NONE — seeking account-holding contributor (see meta issue for the cassette-contribution process)"
+      placeholder: "@LefterisJP"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sandbox
+    attributes:
+      label: Sandbox available
+      options:
+        - "yes"
+        - "no"
+        - unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: verification
+    attributes:
+      label: Verification level
+      description: verified = maintainer-held account, fresh cassettes · community = user-contributed cassettes, user-run live verification · unmaintained = no active account holder (surfaced as such in the UI)
+      options:
+        - verified
+        - community
+        - unmaintained
+    validations:
+      required: true
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Progress and acceptance criteria
+      description: Leave the pre-filled task list; edit only to add bank-specific items (e.g. spike questions).
+      value: |
+        **Verification**
+        - [ ] Cassettes recorded and redacted
+        - [ ] Contract tests passing
+        - [ ] Live verification run by an account holder on the release candidate
+
+        **Acceptance criteria**
+        - [ ] Manifest complete (tier, capabilities, secrets schema, version, maintainer)
+        - [ ] Secrets flow exclusively through the framework (nothing in code/logs)
+        - [ ] Output passes normalization contract tests (schema, cursors, dedup keys)
+        - [ ] Auth flow uses framework primitives only (no bespoke UI)
+        - [ ] Cassettes + contract tests in CI
+        - [ ] Docs: user-facing setup instructions (where to get credentials/keys)
+    validations:
+      required: true
