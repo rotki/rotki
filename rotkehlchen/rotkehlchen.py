@@ -46,6 +46,8 @@ from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+from rotkehlchen.chain.robinhood.manager import RobinhoodManager
+from rotkehlchen.chain.robinhood.node_inquirer import RobinhoodInquirer
 from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
@@ -555,6 +557,16 @@ class Rotkehlchen:
             ),
             sonic_manager=SonicManager(
                 node_inquirer=SonicInquirer(
+                    task_supervisor=self.task_supervisor,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                    blockscout=blockscout,
+                    routescan=routescan,
+                ),
+                premium=self.premium,
+            ),
+            robinhood_manager=RobinhoodManager(
+                node_inquirer=RobinhoodInquirer(
                     task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,

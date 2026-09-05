@@ -96,6 +96,12 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://sonicscan.org/token/',
     transaction: 'https://sonicscan.org/tx/',
   },
+  [Blockchain.ROBINHOOD]: {
+    address: 'https://robinhoodchain.blockscout.com/address/',
+    block: 'https://robinhoodchain.blockscout.com/block/',
+    token: 'https://robinhoodchain.blockscout.com/token/',
+    transaction: 'https://robinhoodchain.blockscout.com/tx/',
+  },
   [Blockchain.SCROLL]: {
     address: 'https://scrollscan.com/address/',
     block: 'https://scrollscan.com/block/',

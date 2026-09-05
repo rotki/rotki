@@ -163,6 +163,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.monad.manager import MonadManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+    from rotkehlchen.chain.robinhood.manager import RobinhoodManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
     from rotkehlchen.chain.solana.manager import SolanaManager
     from rotkehlchen.chain.sonic.manager import SonicManager
@@ -269,6 +270,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.BINANCE_SC: (WoofiBalances, FlyingTulipLendBalances),
     ChainID.MONAD: (),
     ChainID.SONIC: (BeetsV2Balances, BeetsV3Balances),
+    ChainID.ROBINHOOD: (),
 }
 
 
@@ -291,6 +293,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             binance_sc_manager: BinanceSCManager,
             monad_manager: MonadManager,
             sonic_manager: SonicManager,
+            robinhood_manager: RobinhoodManager,
             kusama_manager: SubstrateManager,
             polkadot_manager: SubstrateManager,
             avalanche_manager: AvalancheManager,
@@ -320,6 +323,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.binance_sc = binance_sc_manager
         self.monad = monad_manager
         self.sonic = sonic_manager
+        self.robinhood = robinhood_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -353,6 +357,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.binance_sc_lock = Semaphore()
         self.monad_lock = Semaphore()
         self.sonic_lock = Semaphore()
+        self.robinhood_lock = Semaphore()
         self.zksync_lite_lock = Semaphore()
 
         # Guards every iteration/mutation of self.balances and self.totals: per-chain

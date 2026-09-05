@@ -19,6 +19,7 @@ from rotkehlchen.chain.gnosis.constants import GNOSIS_GENESIS
 from rotkehlchen.chain.monad.constants import MONAD_GENESIS
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
+from rotkehlchen.chain.robinhood.constants import ROBINHOOD_GENESIS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.chain.sonic.constants import SONIC_GENESIS
 from rotkehlchen.db.constants import (
@@ -738,6 +739,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 timestamp = MONAD_GENESIS
             elif chain_id == ChainID.SONIC:
                 timestamp = SONIC_GENESIS
+            elif chain_id == ChainID.ROBINHOOD:
+                timestamp = ROBINHOOD_GENESIS
             else:
                 timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(

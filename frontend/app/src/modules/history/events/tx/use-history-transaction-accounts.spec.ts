@@ -8,7 +8,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
     isEvmLikeChains: vi.fn((chain: string) => chain === 'zksync_lite'),
     isSolanaChains: vi.fn(() => false),
     supportsTransactions: vi.fn((chain: string) =>
-      ['eth', 'optimism', 'polygon_pos', 'arbitrum_one', 'avax', 'base', 'gnosis', 'scroll', 'binance_sc', 'hyperliquid', 'monad', 'sonic'].includes(chain),
+      ['eth', 'optimism', 'polygon_pos', 'arbitrum_one', 'avax', 'base', 'gnosis', 'scroll', 'binance_sc', 'hyperliquid', 'monad', 'sonic', 'robinhood'].includes(chain),
     ),
   })),
 }));

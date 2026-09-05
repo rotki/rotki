@@ -28,6 +28,7 @@ class BlockchainAccounts:
     binance_sc: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     monad: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     sonic: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    robinhood: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
     bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)

@@ -7,6 +7,7 @@ const allEvmChains: EvmChainEntries = [
   { id: 1, label: 'Ethereum', name: 'ethereum' },
   { id: 143, label: 'Monad', name: 'monad' },
   { id: 146, label: 'Sonic', name: 'sonic' },
+  { id: 4663, label: 'Robinhood', name: 'robinhood' },
   { id: 999, label: 'Hyperliquid', name: 'hyperliquid' },
 ];
 
@@ -33,6 +34,18 @@ describe('getTokenChain', () => {
     );
 
     expect(chain).toBe('sonic');
+  });
+
+  it('should resolve the evm chain name from a Robinhood chain token identifier', () => {
+    const chain = getTokenChain(
+      {
+        tokenIdentifier: 'eip155:4663/erc20:0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+        tokenKind: NewDetectedTokenKind.EVM,
+      },
+      allEvmChains,
+    );
+
+    expect(chain).toBe('robinhood');
   });
 
   it('should resolve the evm chain name from a Hyperliquid token identifier', () => {

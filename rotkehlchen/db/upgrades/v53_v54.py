@@ -25,4 +25,11 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             (Location.SONIC.serialize_for_db(), Location.SONIC.value),
         )
 
+    @progress_step(description='Add Robinhood chain location.')
+    def _add_robinhood_location(write_cursor: DBCursor) -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+            (Location.ROBINHOOD.serialize_for_db(), Location.ROBINHOOD.value),
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

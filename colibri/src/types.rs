@@ -281,6 +281,7 @@ pub enum ChainID {
     Hyperliquid = 999,
     Ink = 57073,
     Megaeth = 4326,
+    Robinhood = 4663,
 }
 
 impl ChainID {
@@ -310,6 +311,7 @@ impl ChainID {
             999 => Ok(ChainID::Hyperliquid),
             57073 => Ok(ChainID::Ink),
             4326 => Ok(ChainID::Megaeth),
+            4663 => Ok(ChainID::Robinhood),
             _ => Err(format!("Unknown chain ID: {value}")),
         }
     }
@@ -342,6 +344,7 @@ impl ChainID {
             "hyperliquid" => Some(ChainID::Hyperliquid),
             "ink" => Some(ChainID::Ink),
             "megaeth" => Some(ChainID::Megaeth),
+            "robinhood" => Some(ChainID::Robinhood),
             _ => None,
         }
     }
@@ -372,6 +375,7 @@ impl ChainID {
             ChainID::Hyperliquid => "hyperliquid".to_string(),
             ChainID::Ink => "ink".to_string(),
             ChainID::Megaeth => "megaeth".to_string(),
+            ChainID::Robinhood => "robinhood".to_string(),
         }
     }
 }
