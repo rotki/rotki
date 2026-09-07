@@ -1,22 +1,16 @@
 <script lang="ts" setup>
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { ConflictResolution } from '@/modules/assets/types';
-import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
 import type {
   AccountingRuleConflict,
-  AccountingRuleConflictRequestPayload,
-  AccountingRuleConflictResolution,
   AccountingTreatment,
 } from '@/modules/settings/types/accounting';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
-import { useServerTable } from '@/modules/core/table/use-server-table';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import AccountingRuleWithLinkedSettingDisplay
   from '@/modules/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
-import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
+import { useAccountingRuleConflictResolution } from '@/modules/settings/accounting/rule/use-accounting-rule-conflict-resolution';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 
@@ -25,22 +19,31 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const close = () => emit('close');
-
-const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccountingSettings();
+const close = (): void => emit('close');
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { collection, isLoading, pagination, refetch } = useServerTable<
-  AccountingRuleConflict,
-  AccountingRuleConflictRequestPayload
->({
-  fetch: getAccountingRulesConflicts,
-  urlState: { mode: 'route' },
+const {
+  collection,
+  isLoading,
+  loading,
+  modelResolution,
+  modelSolveAllUsing,
+  pagination,
+  refetch,
+  remaining,
+  resolutionLength,
+  save,
+  valid,
+} = useAccountingRuleConflictResolution({
+  onResolved: (): void => {
+    emit('refresh');
+    close();
+  },
 });
 
-onMounted(() => {
-  refetch();
+onMounted(async () => {
+  await refetch();
 });
 
 const tableHeaders = computed<DataTableColumn<AccountingRuleConflict>[]>(() => [
@@ -119,60 +122,7 @@ function diffClass(
   return '';
 }
 
-const resolution = ref<ConflictResolution>({});
-const resolutionLength = computed(() => Object.keys(get(resolution)).length);
-
-const solveAllUsing = ref<ConflictResolutionStrategy>();
-
-const { setMessage } = useMessageStore();
-
-const loading = ref<boolean>(false);
-
 const { total } = getCollectionData<AccountingRuleConflict>(collection);
-
-const remaining = computed(() => {
-  const resolved = get(resolutionLength);
-  return get(total) - resolved;
-});
-
-const valid = computed(() => !!get(solveAllUsing) || get(resolutionLength) > 0);
-
-async function save() {
-  set(loading, true);
-  const resolutionVal = get(resolution);
-  const solveAllVal = get(solveAllUsing);
-
-  let payload: AccountingRuleConflictResolution;
-  if (solveAllVal) {
-    payload = { solveAllUsing: solveAllVal };
-  }
-  else {
-    const conflicts = Object.keys(resolutionVal).map(localId => ({
-      localId,
-      solveUsing: resolutionVal[localId],
-    }));
-
-    payload = { conflicts };
-  }
-
-  const result = await resolveAccountingRuleConflicts(payload);
-
-  if (result.success) {
-    emit('refresh');
-    close();
-  }
-  else {
-    setMessage({
-      description: t('accounting_settings.rule.conflicts.error.description', {
-        error: result.message,
-      }),
-      success: false,
-      title: t('accounting_settings.rule.conflicts.error.title'),
-    });
-  }
-
-  set(loading, false);
-}
 </script>
 
 <template>
@@ -189,29 +139,29 @@ async function save() {
     <template #default>
       <div class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4">
         <RuiCheckbox
-          :model-value="!!solveAllUsing"
+          :model-value="!!modelSolveAllUsing"
           color="primary"
           hide-details
-          @update:model-value="solveAllUsing = $event ? 'local' : undefined"
+          @update:model-value="modelSolveAllUsing = $event ? 'local' : undefined"
         >
           {{ t('conflict_dialog.all_buttons_description') }}
         </RuiCheckbox>
         <RuiButtonGroup
-          v-model="solveAllUsing"
-          :disabled="!solveAllUsing"
+          v-model="modelSolveAllUsing"
+          :disabled="!modelSolveAllUsing"
           color="primary"
           required
           variant="outlined"
         >
           <RuiButton
             model-value="local"
-            @click="solveAllUsing = 'local'"
+            @click="modelSolveAllUsing = 'local'"
           >
             {{ t('conflict_dialog.keep_local') }}
           </RuiButton>
           <RuiButton
             model-value="remote"
-            @click="solveAllUsing = 'remote'"
+            @click="modelSolveAllUsing = 'remote'"
           >
             {{ t('conflict_dialog.keep_remote') }}
           </RuiButton>
@@ -220,7 +170,7 @@ async function save() {
 
       <div class="text-caption pt-4 pb-1">
         <i18n-t
-          v-if="!solveAllUsing"
+          v-if="!modelSolveAllUsing"
           scope="global"
           keypath="conflict_dialog.hint"
           tag="span"
@@ -239,7 +189,7 @@ async function save() {
           tag="span"
         >
           <template #source>
-            <span class="font-medium">{{ solveAllUsing }}</span>
+            <span class="font-medium">{{ modelSolveAllUsing }}</span>
           </template>
         </i18n-t>
       </div>
@@ -402,8 +352,8 @@ async function save() {
         </template>
         <template #item.actions="{ row }">
           <RuiButtonGroup
-            v-model="resolution[row.localId]"
-            :disabled="!!solveAllUsing"
+            v-model="modelResolution[row.localId]"
+            :disabled="!!modelSolveAllUsing"
             class="w-full"
             color="primary"
             required
