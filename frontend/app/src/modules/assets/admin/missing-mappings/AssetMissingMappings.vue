@@ -1,84 +1,28 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { Filters } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-filter';
-import type { CexMapping } from '@/modules/assets/types';
-import type { MissingMapping } from '@/modules/user-data/schemas';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
-import { type MissingMappingsRequestPayload, useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
-import { useMissingMappingsFields } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-fields';
+import { useAssetMissingMappings } from '@/modules/assets/admin/missing-mappings/use-asset-missing-mappings';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useServerTable } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
-const mapping = ref<CexMapping>();
-
-const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
 
-const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
-  align: 'center',
-  cellClass: 'py-3',
-  key: 'location',
-  label: t('common.location'),
-  sortable: true,
-}, {
-  cellClass: 'py-3',
-  key: 'identifier',
-  label: t('common.asset'),
-  sortable: true,
-}, {
-  cellClass: 'py-3 border-x border-default',
-  class: 'border-x border-default',
-  key: 'details',
-  label: t('common.details'),
-}, {
-  align: 'center',
-  cellClass: 'py-3 w-24',
-  key: 'actions',
-  label: t('common.actions_text'),
-}]);
-
-const { getData, remove } = useMissingMappingsDB();
-
-const fields = useMissingMappingsFields();
-
 const {
-  collection: mappings,
-  filter,
+  cols,
+  fields,
+  mappings,
+  modelFilter,
+  modelMapping,
+  onAddClick,
+  onAddComplete,
   pagination,
   refetch,
   sort,
-} = useServerTable<MissingMapping, MissingMappingsRequestPayload, Filters>({
-  fetch: getData,
-  fields,
-  sort: {
-    default: {
-      column: 'location',
-      direction: 'asc',
-    },
-  },
-});
+} = useAssetMissingMappings();
 
-useRememberTableSorting<MissingMapping>(TableId.ASSET_MISSING_MAPPINGS, sort, cols);
-
-function onAddClick(item: MissingMapping) {
-  set(mapping, {
-    asset: '',
-    location: item.location,
-    locationSymbol: item.identifier,
-  });
-}
-
-async function onAddComplete(item: CexMapping) {
-  await remove({
-    identifier: item.locationSymbol,
-    location: item.location ?? '',
-  });
-  await refetch();
-}
+useRememberTableSorting(TableId.ASSET_MISSING_MAPPINGS, sort, cols);
 
 onMounted(async () => {
   await refetch();
@@ -94,7 +38,7 @@ onMounted(async () => {
     <RuiCard>
       <div class="mb-4 flex">
         <PillFilterBar
-          v-model:matches="filter"
+          v-model:matches="modelFilter"
           class="flex-1 min-w-[12rem] md:min-w-[24rem]"
           :fields="fields"
           :labels="pillLabels"
@@ -139,7 +83,7 @@ onMounted(async () => {
     </RuiCard>
 
     <ManageCexMappingFormDialog
-      v-model="mapping"
+      v-model="modelMapping"
       @refresh="onAddComplete($event)"
     />
   </TablePageLayout>
