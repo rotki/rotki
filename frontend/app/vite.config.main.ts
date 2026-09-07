@@ -30,21 +30,23 @@ export default defineConfig({
       formats: ['es'],
     },
     rolldownOptions: {
-      // httpxy is only loaded via dynamic import on the dev proxy path
-      // (see AppServer.startDevelopmentProxy); keep it out of the production bundle.
+      // httpxy is dynamically imported on the dev proxy path only, so it stays out of production.
       external: ['electron', 'httpxy', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: 'main.js',
-        // Keep our code in `main.js` and dependencies in `background-vendor`, so a stack frame from
-        // the minified production bundle (no sourcemaps here) says which side it came from.
-        //
-        // Only *statically* reachable dependencies are claimed. A blanket `node_modules` test also
-        // swallows lazily imported subtrees, and since `background-vendor` is itself statically
-        // imported by the entry, that silently drags them back into the startup path: it is what
-        // kept electron-updater's 290 KB eager. Reachability is derived from the module graph rather
-        // than a hand-listed exclusion, so it stays correct as dependencies move around. A module
-        // needed by both sides is statically reachable, lands in the vendor chunk, and the lazy
-        // chunk simply imports it from there.
+        /**
+         * Keeps our code in `main.js` and dependencies in `background-vendor`, so a stack frame
+         * from the minified production bundle, which ships no sourcemaps, says which side it came
+         * from.
+         *
+         * Only statically reachable dependencies are claimed. A blanket `node_modules` test also
+         * swallows lazily imported subtrees, and since `background-vendor` is itself statically
+         * imported by the entry, that silently drags them back into the startup path: it is what
+         * kept electron-updater's 290 KB eager. Reachability is derived from the module graph
+         * rather than a hand-listed exclusion, so it stays correct as dependencies move around. A
+         * module needed by both sides is statically reachable, lands in the vendor chunk, and the
+         * lazy chunk imports it from there.
+         */
         manualChunks(id, { getModuleInfo }) {
           if (!id.includes('node_modules'))
             return;

@@ -7,10 +7,8 @@ import { type SnapshotFixturePaths, writeFixturesToTmp } from '../../helpers/sna
 import { DashboardPage } from '../../pages/dashboard-page';
 import { SnapshotListPage } from '../../pages/snapshot-list-page';
 
-// Fixed snapshot timestamp seven days back, snapped to midnight UTC. Stable
-// enough to be deterministic, far enough in the past to render inside the
-// chart's default range, and unlikely to collide with anything else seeded by
-// the e2e suite (which uses now-based timestamps).
+/* Seven days back at midnight UTC: deterministic, inside the chart's default range, and clear
+   of the now-based timestamps the rest of the suite seeds. */
 const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
 const SNAPSHOT_TIMESTAMP = Math.floor(Date.now() / 1000 / 86400) * 86400 - SEVEN_DAYS_SECONDS;
 
@@ -27,8 +25,7 @@ test.describe.serial('snapshot edit', () => {
         { amount: '0.5', assetIdentifier: 'BTC', category: 'asset', usdValue: '30000' },
         { amount: '500', assetIdentifier: 'USD', category: 'asset', usdValue: '500' },
       ],
-      // Locations must reconcile with the balances total (50500), otherwise the
-      // editor loads with a sum-mismatch and locks balance editing.
+      // A sum that does not reconcile makes the editor load locked on a mismatch.
       [
         { location: 'blockchain', usdValue: '50500' },
         { location: 'total', usdValue: '50500' },
@@ -50,11 +47,7 @@ test.describe.serial('snapshot edit', () => {
     await importDialog.uploadLocationCsv(fixtures.locationsPath);
     await importDialog.import();
 
-    // Auto-logout fires ~3s after a successful import; the most reliable
-    // signal that we're back at the login screen is the username field.
-    // We call `login()` directly rather than `relogin()` because the auto-
-    // logout has already detached the session — `relogin()` would try to
-    // click a logout button that no longer exists.
+    // Auto-logout has already detached the session, so `relogin` would click a button that is gone.
     await ctx.sharedPage.locator('[data-testid=username-input]').waitFor({ state: 'visible', timeout: 10_000 });
     await ctx.app.login(ctx.username);
 
@@ -76,8 +69,7 @@ test.describe.serial('snapshot edit', () => {
     await expect(editor.mismatchBanner).toBeHidden();
     await expect(editor.balanceEditButton('ETH')).toBeEnabled();
 
-    // Reconciling the self-inflicted mismatch restores the original values, so
-    // nothing is left dirty and the persisted snapshot is untouched downstream.
+    // Reconciling restores the original values, leaving the persisted snapshot untouched.
     await expect(editor.dirtyBadge).toBeHidden();
   });
 
@@ -121,8 +113,7 @@ test.describe.serial('snapshot edit', () => {
     await editor.editLocationRow('blockchain', '40000');
     await editor.save();
 
-    // Use the page's request context so the GET shares the browser session
-    // (the test-level `request` fixture lost its cookies during the re-login).
+    // The page's context still has the session; the `request` fixture lost its cookies.
     const snapshot = await apiGetSnapshot(ctx.sharedPage.request, SNAPSHOT_TIMESTAMP);
     const eth = snapshot.balances_snapshot.find(b => b.asset_identifier === 'ETH');
     const blockchain = snapshot.location_data_snapshot.find(l => l.location === 'blockchain');
@@ -132,8 +123,7 @@ test.describe.serial('snapshot edit', () => {
 
   test('exports the snapshot zip', async () => {
     const dashboard = new DashboardPage(ctx.sharedPage);
-    // The previous test left the browser on the editor page; return to the
-    // dashboard so the chart is rendered again before clicking it.
+    // The previous test left the browser on the editor, so the chart needs rendering again.
     await dashboard.visit();
     const editor = await dashboard.openSnapshotEditorAt();
     const exportDialog = await editor.openExport();
@@ -158,14 +148,12 @@ test.describe.serial('snapshot edit', () => {
     await list.visit();
     await list.deleteSnapshot(SNAPSHOT_TIMESTAMP);
 
-    // The list is sourced from the net-value series, which the detail/list pages
-    // refresh after a delete — so the row is gone without a manual reload.
+    // The list reads the net-value series, refreshed after a delete, so no reload is needed.
     expect(await list.hasSnapshot(SNAPSHOT_TIMESTAMP)).toBe(false);
   });
 });
 
-// A separate snapshot (its own user) with TWO locations, so a balance removal can
-// be split across them — the single-location suite above can't exercise this.
+// Its own user, with two locations, so a balance removal can be split across them.
 test.describe.serial('snapshot split editing', () => {
   let ctx: SharedTestContext;
   let fixtures: SnapshotFixturePaths;
@@ -225,10 +213,8 @@ test.describe.serial('snapshot split editing', () => {
   });
 });
 
-// A separate snapshot (its own user) for adding a balance. The add form gates the
-// value field on `:disabled="fetching"` while it fetches the asset's historic
-// price, so we pre-seed a manual EUR->USD price into the global DB to make that
-// fetch resolve instantly and auto-fill the USD value.
+/* Its own user, for adding a balance. The add form disables the value field while it fetches
+   the asset's historic price, so a manual EUR to USD price is seeded to resolve that at once. */
 test.describe.serial('snapshot add balance', () => {
   let ctx: SharedTestContext;
   let fixtures: SnapshotFixturePaths;
@@ -237,8 +223,7 @@ test.describe.serial('snapshot add balance', () => {
 
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request, { disableModules: true });
-    // Manual (source_type 'A') EUR->USD price at the snapshot timestamp, so the
-    // add form's historic-price fetch resolves and the value field unlocks.
+    // Priced at the snapshot timestamp, so the add form's fetch resolves and unlocks the field.
     seedHistoricPrices([{ fromAsset: 'EUR', price: '1.1' }], ADD_TIMESTAMP);
     fixtures = writeFixturesToTmp(
       ADD_TIMESTAMP,

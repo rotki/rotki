@@ -109,9 +109,7 @@ async function setup(mode: string, rendererOnly: boolean): Promise<void> {
         injectEnv(`.env.${mode}`);
       updateEnvVars(urlsVars);
 
-      // The preload and main bundles are electron-only, and a web-served build never
-      // loads them. Skipping them is what makes the e2e build cheap enough to run
-      // before every sharded run.
+      // Preload and main are electron-only, and skipping them is what makes the e2e build cheap.
       if (!rendererOnly) {
         await setupPreloadBuilder(mode);
         await setupMainBuilder(mode);

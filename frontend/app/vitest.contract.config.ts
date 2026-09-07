@@ -9,7 +9,7 @@ import viteConfig from './vite.config.ts';
  *
  * Runs the API-composable contract tests against a LIVE backend booted on a
  * golden user profile, exercising the full real client pipeline (URL
- * construction, snake_case<->camelCase transforms and zod parsing) instead of
+ * construction, `snake_case` to `camelCase` transforms and zod parsing) instead of
  * MSW fixtures. Run through `pnpm run test:contract`, which boots the backend
  * and provides CONTRACT_BACKEND_URL.
  *

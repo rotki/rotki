@@ -46,8 +46,7 @@ test.describe.serial('settings::accounting-rules', () => {
     await page.expectOnlyEventType('Deposit');
   });
 
-  // The negative control: the same bar, one value different, and the previous set is gone. Without
-  // it, a filter that quietly matched everything of one kind would still have passed above.
+  // The negative control: a filter matching everything of one kind would have passed above.
   test('follows the filter when the value changes', async () => {
     await filter.openPillEditor('eventTypes');
     await filter.selectValue('deposit', 'Deposit');
@@ -61,13 +60,11 @@ test.describe.serial('settings::accounting-rules', () => {
     await filter.clearAll();
 
     await filter.expectNoPill('eventTypes');
-    // The deposit rules the previous test filtered out are back, which the withdrawal-only table
-    // left on screen would not satisfy.
+    // The deposit rules are back, which the previous test's withdrawal-only table would not show.
     await page.expectEventTypePresent('Deposit');
   });
 
-  // The two tabs are one request parameter, not a client-side split: the custom tab asks for the
-  // rules written for a single event each, and none of the seeded or default rules is one.
+  // The tabs are one request parameter, and no seeded or default rule is written for one event.
   test('switches between general and event-specific rules', async () => {
     await page.selectRuleTab('custom');
     await page.expectNoRules();

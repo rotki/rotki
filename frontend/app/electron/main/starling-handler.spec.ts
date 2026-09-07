@@ -9,9 +9,7 @@ import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StarlingHandler } from './starling-handler';
 
-// Mutable os identity the handler's version gates read through. Only the two
-// identity calls are faked; the rest of the builtin stays real, since other
-// modules in the graph (cargo-env) read it too.
+// Mutable os identity for the version gates; the rest of the builtin stays real for cargo-env.
 const osState = { platform: 'linux', release: '5.0.0' };
 vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();
@@ -22,9 +20,7 @@ vi.mock('node:os', async (importOriginal) => {
   return { ...actual, default: { ...actual, ...identity }, ...identity };
 });
 
-// `spawn` hands back whatever fake child the test installs; the rest of the
-// builtin stays real (other modules in the graph rely on it). `vi.hoisted` keeps
-// the mock fn defined before the hoisted vi.mock factory references it.
+// `spawn` hands back whatever fake child the test installs; the rest of the builtin stays real.
 const { buildStarlingInvocationMock, selectPortMock, spawnMock } = vi.hoisted(() => ({
   buildStarlingInvocationMock: vi.fn(),
   selectPortMock: vi.fn(),
@@ -35,10 +31,7 @@ vi.mock('node:child_process', async (importOriginal) => {
   return { ...actual, default: { ...actual, spawn: spawnMock }, spawn: spawnMock };
 });
 
-// The invocation builder touches the filesystem / uv detection in real life —
-// the handler only forwards its result to spawn(), so a stub is enough. The rest
-// of the module stays real: SHUTDOWN_GRACE_SECS is what the handler derives its
-// stop timeouts from, and a stubbed-away value would make those NaN.
+// Only the builder is stubbed: SHUTDOWN_GRACE_SECS feeds the stop timeouts and would go NaN.
 vi.mock('@shared/starling/starling-args', async importOriginal => ({
   ...await importOriginal<typeof import('@shared/starling/starling-args')>(),
   buildStarlingInvocation: buildStarlingInvocationMock,
@@ -128,8 +121,6 @@ describe('starlingHandler', () => {
   });
 
   it('should drive the initial bring-up via the start request and collapse the renderer onto the proxy origin', async () => {
-    // starling boots idle; the handler drives the first start and resolves on
-    // its reply (not on an event), so record which control methods it sends.
     const methods: string[] = [];
     const child = makeFakeChild((message, stdout) => {
       if (message.method)
@@ -146,8 +137,7 @@ describe('starlingHandler', () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(methods).toContain(StarlingMethod.START); // renderer drives the first bring-up
     expect(onProcessError).not.toHaveBeenCalled();
-    // Single-origin posture: the renderer gets the proxy origin and nothing else;
-    // colibri sits under /colibri. The direct core/colibri ports are its upstreams.
+    // Single-origin posture: the renderer gets only the proxy origin, with colibri under /colibri.
     expect(config.apiUrl).toBe('http://127.0.0.1:4141');
     expect(handler.getMcpServerEndpoint()).toBe('http://127.0.0.1:4445/mcp');
     expect(selectPortMock).toHaveBeenCalledWith(4242, '127.0.0.1');
@@ -159,9 +149,6 @@ describe('starlingHandler', () => {
     );
   });
 
-  // The dev-proxy sits between starling and core, so starling has to be told its
-  // port. The renderer keeps the proxy origin either way — it is starling that
-  // routes through the dev tool, not the app.
   it('should not name a core upstream when no dev-proxy was started', async () => {
     spawnMock.mockImplementation(() => makeFakeChild(nullResponder));
     const handler = new StarlingHandler(makeLogger(), makeConfig());
@@ -188,9 +175,7 @@ describe('starlingHandler', () => {
     );
   });
 
-  it('should refuse to start when core cannot bind the port the dev-proxy forwards to', async () => {
-    // Coming up on another port would leave the proxy pointed at nothing, so
-    // every /api/1/* request would fail with the app looking healthy otherwise.
+  it('should refuse to start when core cannot bind the port the dev-proxy forwards to, rather than leave the proxy pointed at nothing', async () => {
     selectPortMock.mockImplementation(async (port: number) => port === 4242 ? 4250 : port);
     spawnMock.mockImplementation(() => makeFakeChild(nullResponder));
     const config = makeConfig();
@@ -397,8 +382,7 @@ describe('starlingHandler', () => {
     const handler = new StarlingHandler(makeLogger({ debug, info }), makeConfig());
 
     await handler.restartBackend({}, { onProcessError: vi.fn() });
-    // The crash event has its own tests; the rest are informational, so the log
-    // line is the only evidence they were routed rather than falling through.
+    // The crash event has its own tests; for the rest the log line is the only evidence of routing.
     for (const method of [StarlingEvent.READY, StarlingEvent.RESTARTING, StarlingEvent.STOPPED])
       writeMessage(child.stdout, { method });
     writeMessage(child.stdout, { method: 'event.unknown' });
@@ -429,10 +413,7 @@ describe('starlingHandler', () => {
     expect(onProcessError).toHaveBeenCalledTimes(1);
   });
 
-  it('should surface the actual start-failure reason instead of a generic message', async () => {
-    // starling stays alive (it supervises), but the `start` RPC rejects with the
-    // dead core's own error text. The handler must relay that so the renderer's
-    // error screen shows why it failed and the user can exit manually.
+  it('should surface the dead core\'s own text when a supervising starling rejects the start', async () => {
     const reason = 'failed to start the backend: service \'core\' exited before becoming ready: '
       + 'ERROR at initialization: Tables {\'asset_flags\'} are missing from your global database';
     const child = makeFakeChild((message, stdout) => {

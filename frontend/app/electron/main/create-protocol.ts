@@ -39,6 +39,20 @@ function resolveFilePath(baseDir: string, requestFile: string): string | undefin
   return filePath;
 }
 
+/**
+ * Whether a sanitized request path asks for the entry document rather than a file.
+ *
+ * @remarks
+ * The renderer loads `app://localhost/index.html`, but a reload or an in-app navigation can
+ * request the bare origin or a hash route instead. Neither names a file, so both would resolve
+ * to the served directory itself and fail to read. `sanitizePath` has already stripped the
+ * leading slash by this point, so the bare origin arrives as an empty string and a hash route
+ * as `#/...`, not `/` and `/#/...`.
+ */
+function isEntryDocumentRequest(requestFile: string): boolean {
+  return !requestFile || requestFile.startsWith('#/');
+}
+
 async function fileResponse(filePath: string): Promise<Response> {
   const data = await readFile(filePath);
   return new Response(new Uint8Array(data), {
@@ -62,11 +76,7 @@ export function createProtocol(
       const pathname = decodeURIComponent(url.pathname);
       let requestFile = sanitizePath(pathname);
 
-      // Serve index.html for the bare origin and SPA (hash) routes. The renderer
-      // is loaded via `app://localhost/index.html`, but a reload or navigation
-      // can request the bare origin (`app://localhost/`), which would otherwise
-      // resolve to the `dist` directory and fail.
-      if (!requestFile || requestFile === '/' || requestFile.startsWith('/#/'))
+      if (isEntryDocumentRequest(requestFile))
         requestFile = INDEX_HTML;
 
       const filePath = resolveFilePath(baseDir, requestFile);
@@ -81,9 +91,7 @@ export function createProtocol(
         return await fileResponse(filePath);
       }
       catch {
-        // The file is missing. If the request has no extension it is a client
-        // route rather than an asset, so fall back to index.html and let the
-        // router resolve it. Genuine missing assets get a 404.
+        // No extension means a client route rather than an asset; a missing asset gets its 404.
         if (path.extname(requestFile) === '') {
           const indexPath = resolveFilePath(baseDir, INDEX_HTML);
           if (indexPath) {

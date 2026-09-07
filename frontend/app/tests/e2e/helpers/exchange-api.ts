@@ -130,9 +130,7 @@ async function putHistoryEvent(
 ): Promise<void> {
   const response = await request.put(`${backendUrl}/api/1/history/events`, { data: payload });
   const body = await response.json().catch(() => null);
-  // Rotki's API often returns HTTP 200 with `result: false` and a non-empty
-  // `message` on validation errors, so check both transport status and the
-  // body envelope.
+  // A validation error often comes back as HTTP 200 with `result: false`, so check both.
   const apiOk = body && body.result !== false && body.result !== null && body.result !== undefined;
   if (!response.ok() || !apiOk) {
     throw new Error(

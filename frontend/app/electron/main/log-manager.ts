@@ -67,7 +67,7 @@ export class LogManager {
 
   /**
    * Get the appropriate file extension based on the compression setting
-  */
+   */
   private getRotatedFileName(baseFilename: string, extension: string, index: number, compressed?: boolean): string {
     const baseName = `${baseFilename}.${index}${extension}`;
     if (compressed ?? this.rotationConfig.compressRotated) {
@@ -174,9 +174,6 @@ export class LogManager {
     }
   }
 
-  /**
-   * Stop rotation timer
-   */
   stopRotationTimer(): void {
     if (this.rotationTimer) {
       clearInterval(this.rotationTimer);
@@ -184,11 +181,7 @@ export class LogManager {
     }
   }
 
-  /**
-   * Increments the count of writes by one.
-   *
-   * @return {void} No return value.
-   */
+  /** Increments the count of writes by one. */
   incrementWriteCount(): void {
     this.writeCount++;
   }
@@ -197,8 +190,6 @@ export class LogManager {
    * Checks if log rotation is necessary and performs the rotation based on the configured timing.
    * If the timing is set to BEFORE_WRITE, the rotation is performed immediately.
    * Otherwise, the rotation is executed on a deferred background task.
-   *
-   * @return {void} Does not return any value.
    */
   checkRotation(): void {
     if (this.shouldCheckRotation()) {

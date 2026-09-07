@@ -18,16 +18,16 @@ import { backendIcons } from './backend-icons.generated.ts';
 import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups.ts';
 import { backendIconsCachePlugin } from './scripts/extract-backend-icons.ts';
 
-// The three relative imports above keep their `.ts` extension on purpose: vite 8 loads this config
-// natively instead of bundling it, and warns about every extensionless relative import. The
-// `@rotki/no-dot-ts-imports` autofix would strip them back off, so it is disabled for config files
-// in eslint.config.js, and tsconfig.node.json sets `allowImportingTsExtensions` for vue-tsc.
+/*
+ * The three relative imports above keep their `.ts` extension on purpose: vite 8 loads this config
+ * natively instead of bundling it, and warns about every extensionless relative import. The
+ * `@rotki/no-dot-ts-imports` autofix would strip them back off, so it is disabled for config files
+ * in eslint.config.js, and tsconfig.node.json sets `allowImportingTsExtensions` for vue-tsc.
+ */
 const PACKAGE_ROOT = import.meta.dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
 
-// Read from the manifest instead of npm_package_version: the latter depends on how
-// the process was launched and is the workspace root's version when it is not vite
-// that pnpm invoked directly.
+/** Read from the manifest: `npm_package_version` is the workspace root's unless pnpm ran vite directly. */
 const appVersion: string = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')).version;
 
 /**
@@ -87,19 +87,21 @@ const previewProxy = e2eShard > 0
       '^/colibri/': { target: e2eProxyTarget },
     }
   : undefined;
-// Single source of truth for the accounting-update feature: the backend gates its
-// endpoints behind ROTKI_ACCOUNTING_UPDATE, so we mirror that same shell var into a
-// VITE_-prefixed entry, which Vite then exposes on import.meta.env. Exporting the one
-// var drives both backend and frontend with no drift and no separate frontend flag.
-// We must match the backend's exact check (feature_flags.py: `== 'True'`) — copying
-// the raw value would let e.g. `=1` enable the frontend while the backend stays off.
+/*
+ * Single source of truth for the accounting-update feature: the backend gates its endpoints
+ * behind ROTKI_ACCOUNTING_UPDATE, so the same shell var is mirrored into a VITE_-prefixed entry,
+ * which Vite exposes on import.meta.env. Exporting the one var drives both sides with no drift
+ * and no separate frontend flag. The check matches the backend's exactly (feature_flags.py uses
+ * `== 'True'`): copying the raw value would let `=1` enable the frontend while the backend stays
+ * off.
+ */
 if (process.env.ROTKI_ACCOUNTING_UPDATE === 'True')
   process.env.VITE_ACCOUNTING_UPDATE = 'true';
 
 /**
  * Hot-swap locale messages instead of losing the app state on every en.json edit.
  *
- * Vite 8 no longer ships a JS `vite:json` plugin, so @intlify/unplugin-vue-i18n falls
+ * Vite 8 no longer ships a JS `vite:json` plugin, so `@intlify/unplugin-vue-i18n` falls
  * back to its virtual-module path and serves each locale as `virtual:intlify-i18n-N`.
  * That path has no HMR wiring: the compiled module is cached and never invalidated, so
  * locale edits are invisible even across a full page reload until the dev server is
@@ -152,9 +154,11 @@ if (envPath)
 if (!hmrEnabled)
   console.info('HMR is disabled');
 
-// vue-tsc in the dev server is expensive (it type-checks the whole project on every
-// change), so it is opt-in: set ENABLE_TYPE_CHECKER=1 when you want inline type errors.
-// `pnpm run typecheck` remains the canonical check and CI runs it separately.
+/*
+ * vue-tsc in the dev server type-checks the whole project on every change, so it is opt-in
+ * through ENABLE_TYPE_CHECKER=1. `pnpm run typecheck` remains the canonical check, and CI runs
+ * it separately.
+ */
 const enableChecker = !!process.env.ENABLE_TYPE_CHECKER && !((process.env.CI ?? isTest) || process.env.VITEST);
 
 if (enableChecker)
@@ -270,8 +274,7 @@ export default defineConfig({
         'lu-palette',
         'lu-slash',
         'lu-monitor',
-        // task-center activity outcomes: named in activity-outcome.ts, so the source scan of
-        // templates never sees them (see the warning on `ActivityOutcome.icon`)
+        // task-center activity outcomes, named in activity-outcome.ts rather than in a template.
         'lu-activity',
         'lu-ban',
         'lu-check',
@@ -285,10 +288,11 @@ export default defineConfig({
       include: [resolve(PACKAGE_ROOT, './src/locales/**')],
     }),
     hmrLocaleMessages(),
-    // Opt-in and deliberately NOT tied to ENABLE_DEV_TOOLS (which only opens Electron's
-    // Chrome DevTools, see electron/main/window-manager.ts): vite-plugin-vue-devtools
-    // breaks Vue SFC hot reload, so every .vue edit needs a manual page reload while it
-    // is installed. Enable it only when you actually need the Vue DevTools panel.
+    /*
+     * Opt-in, and deliberately not tied to ENABLE_DEV_TOOLS, which only opens Electron's Chrome
+     * DevTools: vite-plugin-vue-devtools breaks Vue SFC hot reload, so every .vue edit needs a
+     * manual page reload while it is installed. Enable it only for the Vue DevTools panel.
+     */
     ...(!isTest && process.env.ENABLE_VUE_DEVTOOLS ? [vueDevTools()] : []),
   ],
   server: {
@@ -322,16 +326,16 @@ export default defineConfig({
       output: {
         chunkFileNames: (assetInfo: { name: string }) => {
           const currentName = assetInfo.name;
-          const name = currentName.endsWith('.vue_vue_type_style_index_0_lang')
-            || currentName.endsWith('.vue_vue_type_script_setup_true_lang')
-            ? currentName.split('.')[0]
+          const suffixStart = currentName.indexOf('.');
+          const name = (currentName.endsWith('.vue_vue_type_style_index_0_lang')
+            || currentName.endsWith('.vue_vue_type_script_setup_true_lang')) && suffixStart !== -1
+            ? currentName.slice(0, suffixStart)
             : currentName;
           return `${name}-[hash].js`;
         },
         codeSplitting: {
           groups: [
-            // Must outrank the vendor groups below so these land in `helpers` rather than
-            // in whichever vendor chunk happens to claim them first.
+            // Outranks the vendor groups below, or whichever claims them first wins.
             {
               name: 'helpers',
               priority: 100,

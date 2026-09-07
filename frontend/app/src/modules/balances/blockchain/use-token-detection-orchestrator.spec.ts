@@ -101,13 +101,7 @@ describe('useTokenDetectionOrchestrator', () => {
   });
 
   describe('detectForChain', () => {
-    /**
-     * Detection must not share `BALANCES_LANE` with the chain job that awaits it. That job
-     * holds a balances slot for its whole body, and the cap is 2 — so children queued on the same
-     * lane could never get one, and two chain jobs would sit waiting on addresses that cannot
-     * start. A hang, not a slowdown, and no unit test that stubs `submitTask` can see it: the lane
-     * is only honoured by the real scheduler. Assert the lane itself.
-     */
+    // Only the lane can be asserted here: `submitTask` is stubbed, so nothing schedules.
     it('should queue detection on the per-chain lane, never the balances lane', async () => {
       set(mockAddresses, { eth: ['0xaddr1', '0xaddr2'] });
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();

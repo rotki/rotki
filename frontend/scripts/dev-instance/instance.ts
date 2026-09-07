@@ -49,10 +49,7 @@ function envKeysDiverge(
 }
 
 function computeDesiredManagedEnv(name: string, slot: number, ports: PortSet, useProxy: boolean): Record<string, string> {
-  // Nothing addresses core or colibri directly any more: starling fronts both
-  // behind its reverse proxy, and the premium dev-proxy (when on) fronts that
-  // in turn. One origin covers both, colibri under `/colibri`, so the whole
-  // chain is described by a single url.
+  // starling fronts core and colibri (under `/colibri`), so one origin covers the whole chain.
   const starlingOrigin = `http://127.0.0.1:${ports.starlingProxy}`;
   return {
     INSTANCE_NAME: name,
@@ -176,10 +173,7 @@ function buildMeta(
 export async function prepareInstance(opts: PrepareInstanceOptions): Promise<InstanceRuntime> {
   const name = sanitizeName(opts.name);
   const dir = resolveInstanceDir(name);
-  // Claim the directory before the slot: the allocator releases slots whose
-  // directory is gone, and an instance that has not created its own yet would
-  // look exactly like one of those to a second `dev:web` running concurrently.
-  // `ensureInstanceData` still treats an empty directory as needing a seed.
+  // Claim the directory before the slot: the allocator releases slots whose directory is gone.
   fs.mkdirSync(dir, { recursive: true });
   const slot = await allocatePortSlot(name, {
     hint: opts.slotHint,

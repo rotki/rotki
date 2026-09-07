@@ -18,8 +18,7 @@ const ESC = String.fromCharCode(27);
 const ANSI_GLOBAL = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 const ANSI_AT_START = new RegExp(`^${ESC}\\[[0-9;]*m`);
 
-// Shared color for orchestrator tags: blue (not white, and not one of the reserved
-// child-label colors red/green/yellow/magenta).
+// Blue: not white, and not one of the child-label colors red/green/yellow/magenta.
 const TAG_COLOR = '\u001B[34m';
 const RESET = '\u001B[0m';
 

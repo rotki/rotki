@@ -7,7 +7,7 @@ import { mount } from '@vue/test-utils';
  * calling such a composable bare in a test emits a Vue warning and the hook
  * silently no-ops.
  *
- * @param composable factory invoked inside setup; its return value is exposed as `result`
+ * @param composable - factory invoked inside setup; its return value is exposed as `result`
  * @returns the composable's return value and the test wrapper (call `wrapper.unmount()` to trigger teardown hooks)
  */
 export function withSetup<T>(composable: () => T): { result: T; wrapper: ReturnType<typeof mount> } {

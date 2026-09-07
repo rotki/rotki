@@ -40,13 +40,16 @@ export class StarlingRpc {
     private readonly onNotification: StarlingNotificationHandler,
   ) {}
 
-  /** Point the client at the current child's stdin. Called once per spawn. */
+  /**
+   * Point the client at the current child's stdin. Called once per spawn.
+   *
+   * @remarks
+   * Writing to a pipe whose reader is gone fails the write callback and also emits `error` on the
+   * stream, which node treats as fatal when nothing is listening. The pending request already
+   * rejects through the callback, so the listener only keeps a dead starling from taking the
+   * launcher down with an EPIPE stack trace instead of a reported failure.
+   */
   attach(stdin: Writable): void {
-    // Writing to a pipe whose reader is gone fails the write callback *and*
-    // emits 'error' on the stream, which node treats as fatal when nothing is
-    // listening. The pending request already rejects through the callback, so
-    // this only has to keep a dead starling from taking the launcher down with
-    // an EPIPE stack trace instead of a reported failure.
     stdin.on('error', error => this.logger.warn(`starling stdin: ${error.message}`));
     this.stdin = stdin;
   }

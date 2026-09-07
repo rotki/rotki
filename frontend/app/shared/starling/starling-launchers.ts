@@ -42,28 +42,31 @@ const DEV_BACKEND_DIRECTORY = path.join('target', BACKEND_DIRECTORY);
  */
 let resolvedUvPython: string | null | undefined;
 
+/**
+ * The uv interpreter, resolved once per electron run.
+ *
+ * @remarks
+ * The cached path is re-resolved when it has since gone, as when a venv is recreated mid-session:
+ * a stale one would otherwise fail every restart with ENOENT until the app itself is restarted.
+ */
 function uvPythonPath(root: string): string | undefined {
-  // Re-resolve if the cached interpreter has since gone (a venv recreated mid
-  // session): the path is cached for the whole electron run, and a stale one
-  // would otherwise fail every restart with ENOENT until the app is restarted.
   if (resolvedUvPython && !fs.existsSync(resolvedUvPython))
     resolvedUvPython = undefined;
 
   if (resolvedUvPython === undefined) {
     try {
-      // `--no-sync`: the dev warm-up has already run `uv sync --locked`, so this
-      // only has to report the interpreter. Skipping the resolve keeps it off the
-      // seconds-long path — this runs synchronously on the electron main thread.
+      // `--no-sync`: the warm-up already synced, and this runs on the electron main thread.
       const out = execSync('uv run --no-sync python -c "import sys; print(sys.executable)"', {
         cwd: root,
         encoding: 'utf-8',
         stdio: ['ignore', 'pipe', 'ignore'],
       });
-      // Only the last line is ours: anything else uv chose to put on stdout would
-      // otherwise be spliced into the path and spawned verbatim. `trimEnd` first
-      // so the trailing newline does not make the last line an empty one.
-      // (`findLast` would read better but this file is typechecked under the
-      // renderer's DOM config, which pins lib to ES2022 to match vite's target.)
+      /*
+       * Only the last line is ours: anything else uv put on stdout would be spliced into the path
+       * and spawned verbatim. `trimEnd` runs first so the trailing newline does not make the last
+       * line an empty one. `findLast` would read better, but this file is typechecked under the
+       * renderer's DOM config, which pins lib to ES2022 to match vite's target.
+       */
       const exe = out.trimEnd().split('\n').pop()?.trim();
       resolvedUvPython = exe && fs.existsSync(exe) ? exe : null;
     }
@@ -119,29 +122,32 @@ export function describeResolvedCore(args: string[]): ResolvedCore {
  * branch hands starling a real interpreter rather than a wrapper (see
  * `uvPythonPath`); with a venv active, `python` is already the venv's own.
  */
+/**
+ * How the dev launcher starts core: a frozen build when the build job shipped one, otherwise the
+ * uv interpreter.
+ *
+ * @remarks
+ * A frozen core is preferred for the same reason the packaged build uses it: it exercises what
+ * actually ships, so a missing hidden import or data file fails the e2e run rather than a
+ * release. It takes no prefix, since the binary is the entrypoint and must not be passed
+ * `-m rotkehlchen`, and runs with its own directory as the cwd, exactly as `packagedLauncherArgs`
+ * does.
+ */
 export function devCoreLauncherArgs(root: string): string[] {
-  // A frozen core, when the build job shipped one (see DEV_BACKEND_DIRECTORY).
-  // Preferred over the interpreter for the same reason the packaged build uses
-  // it: it exercises what actually ships, so a missing hidden import or data
-  // file fails the e2e run rather than a release. No prefix - the binary is the
-  // entrypoint, so `-m rotkehlchen` must not be passed - and its own directory
-  // is the cwd, exactly as `packagedLauncherArgs` does.
   const frozen = findCoreBinary(path.join(root, DEV_BACKEND_DIRECTORY));
   if (frozen)
     return ['--core-binary', frozen.binary, '--core-cwd', frozen.dir];
 
   const profilingCmd = process.env.ROTKI_BACKEND_PROFILING_CMD;
   const profilingArgs = process.env.ROTKI_BACKEND_PROFILING_ARGS;
-  // Interpreter args, so they precede `-m`: opt out of the GIL on a free-threaded
-  // build. Same switch the web-mode launcher reads (`scripts/dev/services.ts`).
+  // Interpreter args precede `-m`. Same switch the web-mode launcher reads in dev/services.ts.
   const interpreterArgs = process.env.ROTKI_GIL === 'false' ? ['-X', 'gil=0'] : [];
   const moduleArgs = ['-m', 'rotkehlchen'];
 
   let binary: string;
   let prefix: string[];
   if (profilingCmd) {
-    // The profiler runs python, so its own args come first and the interpreter
-    // args attach to the `python` it launches.
+    // The profiler runs python, so its args come first and the interpreter args attach to that.
     prefix = [
       ...(profilingArgs?.split(' ') ?? []).filter(Boolean),
       'python',

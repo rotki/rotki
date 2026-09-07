@@ -7,15 +7,11 @@ describe('resolveLogLevel', () => {
     expect(resolveLogLevel(undefined, true)).toBe(LogLevel.DEBUG);
   });
 
-  it('should fall back to CRITICAL in production when no loglevel is provided', () => {
-    // Matches the frontend default in getDefaultLogLevel() so both loggers
-    // stay consistent when no explicit level has been persisted.
+  it('should fall back in production to CRITICAL, the same default the frontend logger uses', () => {
     expect(resolveLogLevel(undefined, false)).toBe(LogLevel.CRITICAL);
   });
 
   it('should honor the provided loglevel in production (regression #12079)', () => {
-    // The inline ?? / ?: expression previously applied wrong precedence and
-    // always returned DEBUG whenever any loglevel was supplied.
     expect(resolveLogLevel(LogLevel.CRITICAL, false)).toBe(LogLevel.CRITICAL);
     expect(resolveLogLevel(LogLevel.WARNING, false)).toBe(LogLevel.WARNING);
     expect(resolveLogLevel(LogLevel.ERROR, false)).toBe(LogLevel.ERROR);

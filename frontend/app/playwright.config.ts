@@ -16,11 +16,9 @@ const BASE_FRONTEND_PORT = 30301;
 const BASE_BACKEND_PORT = 30302;
 const BASE_COLIBRI_PORT = 30303;
 const BASE_MOCK_RPC_PORT = 30304;
-// starling's reverse proxy: the single origin the tests address. Core and colibri
-// stay on their own ports as its upstreams, but nothing dials them directly.
+/** starling's reverse proxy, the single origin the tests address. Nothing dials the upstreams. */
 const BASE_PROXY_PORT = 30305;
-// starling also wants an MCP port. Nothing in the suite uses it, but it must not
-// collide with another block, so it rides along.
+/** Unused by the suite, but starling wants one and it must not collide with another block. */
 const BASE_MCP_PORT = 30306;
 
 const BASE_PORTS = [
@@ -66,8 +64,7 @@ function resolvePortOffset(): number {
   if (process.env.CI)
     return 0;
 
-  // A non-empty value is either inherited from the main process or set deliberately in the
-  // shell to pin a block; `'0'` is truthy, so the base block still round-trips.
+  // Inherited from the main process or set in the shell to pin a block; `'0'` is truthy.
   const inherited = process.env.E2E_PORT_OFFSET;
   if (inherited && Number.isInteger(Number(inherited)))
     return Number(inherited);
@@ -98,22 +95,24 @@ const PROXY_PORT = BASE_PROXY_PORT + portOffset;
 const MCP_PORT = BASE_MCP_PORT + portOffset;
 
 const frontendUrl = `http://localhost:${FRONTEND_PORT}`;
-// One origin for both backends, matching every shipping mode: `/api/1/*` and
-// `/ws/` reach core, `/colibri/*` reaches colibri with the prefix stripped.
+/**
+ * One origin for both backends, matching every shipping mode: `/api/1/*` and `/ws/` reach core,
+ * `/colibri/*` reaches colibri with the prefix stripped.
+ */
 const backendUrl = `http://127.0.0.1:${PROXY_PORT}`;
 const colibriUrl = `${backendUrl}/colibri`;
 const mockRpcUrl = `http://127.0.0.1:${MOCK_RPC_PORT}`;
 
-// `.e2e` is resolved from the cwd, so parallel runs in different worktrees already get
-// their own data and log directories. Shards run inside ONE worktree, so they need a
-// subdirectory each: they share a cwd and would otherwise hand the same user database
-// to several backends at once.
+/**
+ * `.e2e` resolves from the cwd, so parallel runs in different worktrees already get their own
+ * data and log directories. Shards run inside one worktree and share a cwd, so each needs a
+ * subdirectory of its own or several backends are handed the same user database.
+ */
 const testDir = path.join(process.cwd(), '.e2e');
 const shardDir = shard > 0 ? path.join(testDir, `shard-${shard}`) : testDir;
 const dataDir = path.join(shardDir, 'data');
 const logDir = path.join(shardDir, 'logs');
-// Shards report into one shared directory under distinct names; the runner merges the
-// blobs into a single html report once every shard has finished.
+/** Shards report here under distinct names; the runner merges the blobs into one html report. */
 const blobDir = path.join(testDir, 'blob-report');
 
 function ensureDirectories(): void {
@@ -162,8 +161,8 @@ function detectSystemChromium(): string | undefined {
 
 /**
  * CI runs against the browser the runner image already ships. runner-images symlinks its
- * Chromium to /usr/bin/chromium, so detectSystemChromium() finds it and no `playwright
- * install` step is needed. That binary tracks the runner image rather than the Playwright
+ * Chromium to /usr/bin/chromium, so detectSystemChromium() finds it and no `playwright install`
+ * step is needed. That binary tracks the runner image rather than the Playwright
  * release, so the browser version is deliberately not pinned. If a future image drops the
  * symlink, fail here with a named error instead of silently falling back to a bundled
  * browser that CI never downloads.
@@ -198,17 +197,23 @@ function isInteractiveRun(): boolean {
 
 const interactive = isInteractiveRun();
 
+/**
+ * How the frontend is served for a run.
+ *
+ * @remarks
+ * `--no-open` because this is a test harness and Playwright drives its own browser, while
+ * `serve.ts` auto-opens a tab in web mode. `--strictPort` so a taken port fails loudly instead of
+ * serving elsewhere and leaving the tests pointed at nothing.
+ *
+ * The build is skipped when something else already produced the bundle: CI builds it in its own
+ * workflow job and downloads the artifact, and the shard runner builds the single bundle every
+ * shard shares before starting any of them.
+ */
 function buildFrontendCommand(): string {
-  // --no-open: this is a test harness, don't pop a browser tab (serve.ts
-  // auto-opens in web mode by default). Playwright drives its own browser.
   if (interactive)
     return `tsx scripts/serve.ts --web --no-open --port ${FRONTEND_PORT}`;
 
-  // --strictPort: fail loudly instead of silently serving on another port, which would
-  // leave the tests pointing at a URL nothing is listening on.
   const preview = `vite preview --port ${FRONTEND_PORT} --strictPort`;
-  // CI builds the frontend in its own workflow job and downloads the artifact, and the
-  // shard runner builds the one bundle every shard shares before starting any of them.
   return process.env.CI || shard > 0 ? preview : `pnpm run build:app --mode e2e && ${preview}`;
 }
 
@@ -296,23 +301,24 @@ export default defineConfig({
         ...(process.env.MOCK_RPC_TARGET && { MOCK_RPC_TARGET: process.env.MOCK_RPC_TARGET }),
       },
     },
+    /*
+     * One supervisor brings up core and colibri and fronts both behind its proxy. The gate is the
+     * supervisor's own `/health`, which answers 200 only once every service has passed its
+     * readiness probe: core `/api/1/ping`, colibri `/health`. Probing core through the proxy
+     * instead let the suite start with colibri still coming up, since the proxy binds and serves
+     * before the tree is brought up.
+     *
+     * `gracefulShutdown` is not politeness either. Playwright otherwise SIGKILLs the server's
+     * process tree, and starling puts core and colibri in their own process groups so it can reap
+     * them, so that kill never reaches them and both survive the run. SIGTERM plus a wait lets the
+     * supervisor drive the ordered shutdown; the window covers its own 10s grace with room spare.
+     */
     {
-      // One supervisor brings up core and colibri and fronts both behind its
-      // proxy. The gate is the supervisor's own `/health`, which answers 200 only
-      // once every service has passed its readiness probe (core `/api/1/ping`,
-      // colibri `/health`). Probing core through the proxy instead let the suite
-      // start with colibri still coming up: the proxy binds and serves before the
-      // tree is brought up, so core answering says nothing about the rest.
       command: `tsx scripts/start-starling.ts --port ${PROXY_PORT} --core-port ${BACKEND_PORT} --colibri-port ${COLIBRI_PORT} --mcp-port ${MCP_PORT} --data ${dataDir} --logs ${logDir}`,
       url: `${backendUrl}/health`,
       reuseExistingServer,
       // Covers a cold `cargo run` for both Rust services on a fresh checkout.
       timeout: 180_000,
-      // Playwright otherwise SIGKILLs the server's process tree. starling puts
-      // core and colibri in their own process groups so it can tree-kill them
-      // itself, so that kill never reaches them and both survive the run. Send
-      // SIGTERM instead and wait, which lets the wrapper drive the ordered
-      // shutdown; the window covers starling's own 10s grace with room to spare.
       gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
       env: {
         ROTKEHLCHEN_ENVIRONMENT: 'test',
@@ -322,8 +328,7 @@ export default defineConfig({
       command: frontendCommand,
       url: frontendUrl,
       reuseExistingServer,
-      // The local non-interactive path builds before serving (~15s on a warm machine),
-      // so it gets more headroom than starting a dev server or serving an existing dist.
+      // The local non-interactive path builds first, so it gets more headroom than serving does.
       timeout: interactive || process.env.CI ? 180_000 : 300_000,
       env: {
         VITE_BACKEND_URL: backendUrl,

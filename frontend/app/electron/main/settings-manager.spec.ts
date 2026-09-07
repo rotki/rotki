@@ -42,8 +42,7 @@ describe('settingsManager', () => {
     });
   });
 
-  it('should default the keys a stored file omits', () => {
-    // The tray defaults to on, so a file predating the setting must not silently disable it.
+  it('should default the keys a stored file omits, so a file predating the tray setting does not disable it', () => {
     writeSettings({ mcpAutoStart: true });
     const settings = new SettingsManager(app).appSettings;
 

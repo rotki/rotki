@@ -68,10 +68,13 @@ export class MenuManager {
    * pass an empty string when the backend goes away to disable it again. Only
    * the entry's enabled state changes, so the menu is not rebuilt: a rebuild on
    * every connect and disconnect would collapse any open menu.
+   *
+   * @remarks
+   * Anything that is not a real directory disables the entry, because the click handler ends in
+   * `shell.openPath`, which opens a file as readily as a folder. Without the check, a path that
+   * named a file would hand the user's OS a file to open from a menu entry labelled Data Directory.
    */
   setDataDirectory(dataDirectory: string): void {
-    // `shell.openPath` runs whatever the path names, a file as readily as a
-    // folder, so the entry only ever points at a directory that exists here.
     this.dataDirectory = isDirectory(dataDirectory) ? dataDirectory : '';
     const item = this.menu?.getMenuItemById(DATA_DIRECTORY_ID);
     if (item)
@@ -87,10 +90,15 @@ export class MenuManager {
     shell.openExternal(url).catch(error => this.logger.error(error));
   }
 
+  /**
+   * Hands a local path to the OS file manager, logging whichever way it fails.
+   *
+   * @remarks
+   * Both arms are needed. `shell.openPath` reports a failure it reached the OS with by resolving
+   * with a non-empty message rather than by rejecting, so the `then` arm is the usual failure
+   * path and an empty string is success. The `catch` only covers the call itself throwing.
+   */
   private openPath(path: string): void {
-    // `openPath` reports a failure by resolving with a non-empty message rather
-    // than by rejecting, so a bare `catch` would let a path that never opened
-    // pass silently.
     shell.openPath(path)
       .then((error) => {
         if (error)
@@ -117,10 +125,7 @@ export class MenuManager {
       this.getViewMenu(),
       this.getHelpMenu(),
       ...(this.config.isDev ? [this.getDebugMenu()] : []),
-      // Re-render the menu with the 'Get rotki Premium' button if the user who just logged in
-      // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
-      // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
-      // (see https://github.com/electron/electron/issues/8703).
+      // A top-level item cannot be hidden, so it is added and removed instead (electron#8703).
       ...(!this.isPremium ? [this.getPremiumMenu()] : []),
     ];
   }

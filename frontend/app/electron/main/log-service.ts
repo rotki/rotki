@@ -13,8 +13,7 @@ const CORE_LOG_FILENAME = 'rotkehlchen.log';
 const COLIBRI_LOG_FILENAME = 'colibri.log';
 const LOG_DIR = 'logs';
 
-// ANSI colors for the level badge on the console. The file stays plain so it
-// remains greppable; honor NO_COLOR for redirected/piped output.
+// Console only: the log file stays plain so it remains greppable. NO_COLOR is honoured.
 const ANSI_RESET = '\u001B[0m';
 const LEVEL_COLORS: Record<LogLevel, string> = {
   [LogLevel.CRITICAL]: '\u001B[1;31m', // bold red
@@ -97,10 +96,7 @@ export class LogService {
     }
   }
 
-  /**
-   * Set the minimum log level
-   * @param level
-   */
+  /** Messages below this level are dropped rather than written. */
   setLogLevel(level: LogLevel): void {
     this.currentLogLevel = level;
   }
@@ -165,7 +161,7 @@ export class LogService {
   }
 
   private outputToConsole(level: LogLevel, logMessage: string): void {
-    /* eslint-disable no-console */
+    /* eslint-disable no-console -- this is the console sink itself; every other path goes through the logger */
     const consoleMethodMap = new Map<LogLevel, (message: string) => void>([
       [LogLevel.DEBUG, console.debug],
       [LogLevel.INFO, console.log],
@@ -176,7 +172,7 @@ export class LogService {
     ]);
 
     const consoleMethod = consoleMethodMap.get(level) ?? console.log;
-    /* eslint-enable no-console */
+    /* eslint-enable no-console -- back to the normal ban below this line */
     consoleMethod(logMessage);
   }
 
@@ -195,14 +191,12 @@ export class LogService {
       const timestamp = new Date(Date.now()).toISOString();
       const levelString = this.getLogLevelString(level);
       const message = this.formatMessage(...args);
-      // Tag logs that originate in the electron main process. Forwarded logs
-      // (renderer, starling) already carry their own source marker ([vue], [starling]).
+      // Forwarded logs already carry their own marker, so only main's needs adding.
       const sourceTag = source === 'main' ? '[main] ' : '';
       const rest = `: ${sourceTag}${message}`;
 
-      // The file keeps the full ISO timestamp and plain markers for later reading;
-      // stdout skips the timestamp (the terminal already shows time) and colors the
-      // level badge and source marker for readability.
+      /* The file keeps the ISO timestamp and plain markers for later reading; stdout drops the
+         timestamp, which the terminal already shows, and colours the badge and marker. */
       fs.appendFileSync(this.electronLogPath, `${timestamp} [${levelString}]${rest}\n`, { encoding: 'utf8' });
 
       if (USE_COLOR) {

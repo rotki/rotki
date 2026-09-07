@@ -18,7 +18,13 @@ const STARLING_LEVELS: Record<string, LogLevel> = {
   ERROR: LogLevel.ERROR,
 };
 
-/** Forward one starling stderr line to the electron log under the `[starling]` marker. */
+/**
+ * Forward one starling stderr line to the electron log under the `[starling]` marker.
+ *
+ * @remarks
+ * That stream carries more than starling's own output: the backend processes inherit its stderr,
+ * so their lines arrive here too, which is why the level is parsed per line rather than assumed.
+ */
 export function forwardStarlingLine(logger: LogService, line: string): void {
   const clean = line.replace(ANSI_PATTERN, '');
   const match = STARLING_LOG_LINE.exec(clean);

@@ -37,7 +37,7 @@ const CURRENCY_ILS = 'ILS';
 const CURRENCY_MXN = 'MXN';
 const CURRENCY_PHP = 'PHP';
 
-// eslint-disable-next-line unused-imports/no-unused-vars
+// eslint-disable-next-line unused-imports/no-unused-vars -- read only through `typeof SUPPORTED_CURRENCIES`, which the rule does not count as a use
 const SUPPORTED_CURRENCIES = [
   CURRENCY_USD,
   CURRENCY_EUR,

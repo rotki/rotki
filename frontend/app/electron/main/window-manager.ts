@@ -90,8 +90,7 @@ export class WindowManager {
   };
 
   readonly activate = async (): Promise<void> => {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
+    // On macOS a dock click re-creates the window when none is open.
     if (this.window === null)
       await this.create();
     else
@@ -120,8 +119,7 @@ export class WindowManager {
   }
 
   private async loadDevExtensions(window: BrowserWindow): Promise<void> {
-    // Path from dist/ to tools/chrome-task-tracker
-    // import.meta.dirname points to dist/ in dev mode
+    // In dev `import.meta.dirname` is dist/, from which the extension is three levels up.
     const extensionPath = path.resolve(import.meta.dirname, '..', '..', '..', 'tools', 'chrome-task-tracker');
 
     // Check if the extension directory exists
@@ -350,7 +348,6 @@ export class WindowManager {
         },
       });
 
-      // Function to inject URL display
       const injectUrlDisplay = async () => {
         try {
           await oauthWindow.webContents.executeJavaScript(`

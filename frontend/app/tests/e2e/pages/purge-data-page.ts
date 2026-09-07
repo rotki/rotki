@@ -9,9 +9,7 @@ export class PurgeDataPage {
   constructor(private readonly page: Page) {}
 
   async visit(): Promise<void> {
-    // Reuse the same user-menu → settings → tab path the rest of the e2e suite
-    // uses; navigating directly to `/#/settings/database` lands on a blank
-    // shell because the layout's data-bootstrapping never runs.
+    // Navigating straight to the route lands on a blank shell: the layout never bootstraps.
     await this.page.locator('[data-testid=user-menu-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();
@@ -64,8 +62,7 @@ export class PurgeDataPage {
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     await dialog.locator('[data-testid=button-confirm]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-    // The component shows an inline ActionStatusIndicator on success; wait for
-    // the success state so subsequent assertions see the post-purge DB state.
+    // The success indicator is what tells later assertions the purge has landed.
     await expect(this.page.getByText('Data was successfully deleted')).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }
 

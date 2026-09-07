@@ -26,16 +26,14 @@ import consola from 'consola';
  */
 const appDir = path.resolve(import.meta.dirname, '..');
 const packagedGlobalDb = path.join(appDir, '..', '..', 'rotkehlchen', 'data', 'global.db');
-// `.e2e` is resolved from the cwd exactly as `playwright.config.ts` resolves it, so a
-// worktree still gets its own directory.
+// Resolved from the cwd as `playwright.config.ts` does, so a worktree gets its own directory.
 const dataDir = path.join(process.cwd(), '.e2e', 'data');
 
 if (!fs.existsSync(packagedGlobalDb)) {
   throw new Error(`Packaged global database not found at ${packagedGlobalDb}`);
 }
 
-// Only the global database is replaced. Users are created per run anyway, and the icon cache
-// beside them is worth keeping - it is a pure cache, but a cold one costs minutes.
+// Only the global database is replaced: the icon cache beside it costs minutes to refill.
 const globalDir = path.join(dataDir, 'global');
 fs.rmSync(globalDir, { recursive: true, force: true });
 fs.mkdirSync(globalDir, { recursive: true });

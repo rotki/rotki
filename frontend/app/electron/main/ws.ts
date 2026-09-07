@@ -260,8 +260,7 @@ export class WalletBridgeWebSocketServer {
   public async stop(): Promise<void> {
     const server = this.wsServer;
 
-    // Terminate rather than close: a graceful close waits on a peer that may
-    // never reply while we are quitting.
+    // Terminate rather than close, which would wait on a peer that may never reply.
     for (const client of server?.clients ?? [])
       client.terminate();
 

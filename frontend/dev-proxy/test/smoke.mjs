@@ -1,8 +1,12 @@
-// End-to-end smoke test for the dev-proxy: the parts the unit tests cannot
-// reach — pass-through, the locally served statistics route, CORS, body
-// forwarding and websocket upgrades — against a stub backend.
-//
-// Run with: pnpm run --filter @rotki/dev-proxy test:smoke
+/**
+ * End-to-end smoke test for the dev-proxy, covering what the unit tests cannot reach:
+ * pass-through, the locally served statistics route, CORS, body forwarding and websocket
+ * upgrades, all against a stub backend.
+ *
+ * Run with `pnpm run --filter @rotki/dev-proxy test:smoke`.
+ *
+ * @packageDocumentation
+ */
 import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -19,8 +23,7 @@ const componentsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-proxy-premium-'
 fs.mkdirSync(path.join(componentsDir, 'dist'));
 fs.writeFileSync(path.join(componentsDir, 'dist', 'premium_components_v16.js'), 'console.log("bundle")');
 
-// The proxy reads async-mock.json from its working directory. Keep a personal
-// one untouched if it is there.
+// The proxy reads async-mock.json from its working directory; a personal one is put back after.
 const mockPath = path.join(proxyDir, 'async-mock.json');
 const hadMock = fs.existsSync(mockPath);
 if (!hadMock) {
@@ -40,23 +43,20 @@ const backend = http.createServer((req, res) => {
   req.on('end', () => {
     received.push({ body: Buffer.concat(chunks).toString(), method: req.method, url: req.url });
     res.setHeader('Content-Type', 'application/json');
-    // A mocked path the backend rejects: the mock still applies, since faking an
-    // endpoint the dev backend refuses is most of what the mock file is for.
+    // A mocked path the backend rejects: the mock still applies, which is most of what it is for.
     if (req.url === '/api/1/premium/sync') {
       res.statusCode = 402;
       res.end(JSON.stringify({ message: 'no premium subscription', result: null }));
       return;
     }
-    // A task poll the backend rejects: NOT mocked, so the error must survive
-    // rather than being merged into a 200 that reads as "nothing running".
+    // A task poll the backend rejects, unmocked: the error must survive rather than merge into a 200.
     if (req.url === '/api/1/tasks/999') {
       res.statusCode = 401;
       res.end(JSON.stringify({ message: 'not logged in', result: null }));
       return;
     }
     if (req.url === '/api/1/tasks') {
-      // Deliberately split across two chunks: the old res.write override parsed
-      // each chunk on its own and dropped the body when it was not whole JSON.
+      // Split across two chunks on purpose: the old res.write override parsed each chunk alone.
       const payload = JSON.stringify({ message: '', result: { completed: [], pending: [1] } });
       const half = Math.floor(payload.length / 2);
       res.write(payload.slice(0, half));
@@ -181,17 +181,14 @@ try {
 
   check('websocket upgrade forwarded', (await upgrade()) === 101);
 
-  // The premium components exist but were never built, or a rebuild removed dist
-  // mid-run. The reads are synchronous inside the request listener, so an
-  // unhandled throw would take the whole proxy down with it.
+  // dist missing: a synchronous throw in the request listener would take the proxy down.
   fs.rmSync(path.join(componentsDir, 'dist'), { force: true, recursive: true });
   const noDist = await request('GET', '/api/1/statistics/renderer');
   check('a missing dist serves an empty renderer', noDist.status === 200 && JSON.parse(noDist.body).result === '', `${noDist.status} ${noDist.body}`);
   const stillAlive = await request('GET', '/api/1/settings');
   check('the proxy survives a missing dist', stillAlive.status === 200, String(stillAlive.status));
 
-  // Last, since it takes the stub backend down: an unreachable backend must fail
-  // fast rather than hang, now that every /api/1/* call passes through here.
+  // Last, since it takes the stub backend down: an unreachable backend must fail fast, not hang.
   await new Promise(resolve => backend.close(resolve));
   const unreachable = await Promise.race([
     request('GET', '/api/1/settings'),

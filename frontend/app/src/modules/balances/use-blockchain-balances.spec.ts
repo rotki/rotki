@@ -314,13 +314,7 @@ describe('useBlockchainBalances', () => {
       }
     });
 
-    /**
-     * The umbrella settles COMPLETE whenever its children settle — `allSettled`, so even when
-     * every one of them FAILED. Sharing its children's kind meant it wrote a success to the
-     * completion ledger, and `statusOf(BLOCKCHAIN_BALANCES).everCompleted` aggregates by kind: the
-     * dashboard then read "loaded" after a total failure and showed a settled, empty portfolio.
-     */
-    it('should mark the run umbrella as a container, so it claims no freshness', async () => {
+    it('should mark the run umbrella as a container, so it claims no freshness for its kind', async () => {
       await blockchainBalances.refreshBlockchainBalances({}, 'background');
 
       const umbrella = submitTask.mock.calls

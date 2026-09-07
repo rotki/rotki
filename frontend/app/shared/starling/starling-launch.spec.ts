@@ -67,8 +67,7 @@ describe('spawnStarling', () => {
     const env = { PATH: '/only/this' };
     spawnStarling({ invocation: { ...invocation, env }, rpc: makeRpc(), onStderr: vi.fn() });
 
-    // Not a superset: an overlay would hand a windows child both `Path` and
-    // `PATH` and let it pick which one wins.
+    // Not a superset: an overlay hands a windows child both `Path` and `PATH`.
     expect(spawnOptions().env).toEqual(env);
   });
 
@@ -159,9 +158,7 @@ describe('definedOptions', () => {
     expect(definedOptions({ logDirectory: '/logs', dataDirectory: undefined })).toEqual({ logDirectory: '/logs' });
   });
 
-  it('should keep an option that is set to a falsy value', () => {
-    // `false` and `0` are chosen values, not absent ones, so they must reach
-    // starling — an absent field is what leaves the setting unchanged.
+  it('should keep a falsy option, since only an absent one leaves the setting unchanged', () => {
     expect(definedOptions({ mcpAutoStart: false, sleepSeconds: 0 })).toEqual({ mcpAutoStart: false, sleepSeconds: 0 });
   });
 });
@@ -231,9 +228,11 @@ describe('stopStarling', () => {
   });
 
   it('should give the supervisor its exit margin once the stop grace elapses', async () => {
-    // The regression this helper exists for: the dev launcher raced `stop` against the grace and
-    // then killed as soon as that race resolved, so a starling still reaping core and colibri got
-    // SIGKILLed mid-teardown and orphaned both.
+    /*
+     * The regression this helper exists for: the dev launcher raced `stop` against the grace and
+     * killed as soon as that race resolved, so a starling still reaping core and colibri got
+     * SIGKILLed mid-teardown and orphaned both.
+     */
     vi.spyOn(rpc, 'request').mockReturnValue(new Promise<never>(() => {}));
     const starling = launch();
 
@@ -272,9 +271,7 @@ describe('stopStarling', () => {
     expect(child.kill).not.toHaveBeenCalled();
   });
 
-  it('should keep waiting for the exit when the stop request rejects', async () => {
-    // A child that dies mid-request rejects every pending one, so a rejected `stop` usually means
-    // the teardown is already happening — escalating on it would kill what is on its way out.
+  it('should keep waiting for the exit when the stop request rejects, never escalating to a kill', async () => {
     vi.spyOn(rpc, 'request').mockRejectedValue(new Error('starling exited'));
     const starling = launch();
 

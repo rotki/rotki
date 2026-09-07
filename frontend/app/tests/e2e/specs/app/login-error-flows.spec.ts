@@ -2,13 +2,10 @@ import { expect } from '@playwright/test';
 import { test } from '../../fixtures/test-fixtures';
 import { mockLoginResult, submitLogin } from '../../helpers/mock-login';
 
-// `test` comes from the fixtures module rather than from playwright directly: that is where
-// coverage is armed on the `page` fixture this spec drives.
+// `test` comes from the fixtures module, which arms coverage on the `page` fixture.
 
-// Drives the real login UI + unlock flow with the login handshake intercepted, exercising
-// the response -> error-mapping integration (use-unlock-steps -> useUsersApi ->
-// queryTaskResult -> SyncConflictError/IncompleteUpgradeError -> store-driven alert) that
-// the unit tests stub. These backend states are impractical to provoke against a real backend.
+/* The real login UI with the handshake intercepted, covering the response-to-error mapping the
+   unit tests stub. These backend states are impractical to provoke against a real backend. */
 test.describe('login error flows', () => {
   test('surfaces the premium sync-conflict alert when the login task reports a conflict', async ({ page }) => {
     await mockLoginResult(page, 'sync-conflict');

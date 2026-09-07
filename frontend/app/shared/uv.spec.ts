@@ -1,8 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Probing uv shells out, so it is mocked: these must give the same answer on a
-// box with uv installed and on one without.
+// Probing uv shells out, so it is mocked: the answer must not depend on uv being installed.
 const { execSyncMock } = vi.hoisted(() => ({ execSyncMock: vi.fn() }));
 
 vi.mock('node:child_process', async (importOriginal) => {

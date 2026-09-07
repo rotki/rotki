@@ -116,9 +116,7 @@ const containerQueryPlugin = plugin((pluginAPI: PluginAPI) => {
         return -1;
       }
 
-      // Sort labels alphabetically in the English locale
-      // We are intentionally overriding the locale because we do not want the sort to
-      // be affected by the machine's locale (be it a developer or CI environment)
+      // Pinned to `en` so the order does not follow the developer's or CI machine's locale.
       return aLabel.localeCompare(zLabel, 'en', { numeric: true });
     },
     values,

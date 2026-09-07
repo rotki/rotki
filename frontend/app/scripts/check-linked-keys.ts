@@ -4,11 +4,11 @@
  * Nothing else catches this. `@intlify/vue-i18n/no-missing-keys` only looks at `t()` call sites in
  * source, never at link targets sitting inside locale values, and `@rotki/no-unused-i18n-keys`
  * builds its linked-key set from the single file being linted, so it can tell you a target is
- * *used* but never that it is *missing*. A link whose target has been deleted lints green and
+ * used* but never that it is *missing*. A link whose target has been deleted lints green and
  * renders the raw `@:some.key` text to the user.
  *
  * That is not hypothetical: `common.rewards` was dropped while `liquity_pools.rewards`
- * ("Unclaimed @:common.rewards", rendered by LiquityPools.vue) still pointed at it. It had two
+ * (`Unclaimed @:common.rewards`, rendered by LiquityPools.vue) still pointed at it. It had two
  * referrers, the other one went away in the same commit, and the survivor was missed. The delete
  * also took the cn/ru/fr translations of the key with it.
  *
@@ -52,7 +52,7 @@ function flatten(messages: LocaleMessages, prefix: string, out: Map<string, stri
   return out;
 }
 
-/** Trailing dots are sentence punctuation, not part of the key: "see @:common.rewards." */
+/** Trailing dots are sentence punctuation, not part of the key: `see @:common.rewards.` */
 function extractLinkTargets(value: string): string[] {
   return Array.from(value.matchAll(LINKED_MESSAGE), match => (match[1] ?? match[2]).replace(/\.+$/, ''));
 }

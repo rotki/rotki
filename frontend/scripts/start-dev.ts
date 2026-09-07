@@ -2,22 +2,12 @@ import fs from 'node:fs';
 import process from 'node:process';
 import { cac } from 'cac';
 import { config } from 'dotenv';
-import {
-  cleanAll,
-  cleanInstance,
-  clearManagedEnvBlock,
-  DEFAULT_PORTS,
-  type InstanceRuntime,
-  PortSlotAllocationError,
-  prepareInstance,
-  printInstanceList,
-  pruneInstances,
-  readManagedBlockEnv,
-  readManagedInstanceName,
-  repairRegistry,
-} from './dev-instance';
+import { clearManagedEnvBlock, readManagedBlockEnv, readManagedInstanceName } from './dev-instance/env-file';
 import { errorMessage, formatPort } from './dev-instance/format';
 import { getCurrentGitBranch } from './dev-instance/git';
+import { type InstanceRuntime, prepareInstance } from './dev-instance/instance';
+import { cleanAll, cleanInstance, printInstanceList, pruneInstances, repairRegistry } from './dev-instance/lifecycle';
+import { DEFAULT_PORTS, PortSlotAllocationError } from './dev-instance/port-registry';
 import { createDevLogger } from './dev/logger';
 import { ensurePrerequisites, parsePort, verifyBackendReady } from './dev/prerequisites';
 import { registerShutdownHandlers, terminateSubprocesses } from './dev/process-pool';
@@ -83,11 +73,7 @@ async function dispatchManagementSubcommand(options: DevCliOptions): Promise<boo
 }
 
 function loadDevEnv(): void {
-  // `.env.development.local` (instance/dev overrides) wins; `app/.env` is the
-  // base. dotenv never overrides an already-set var, so load the override
-  // first. This makes PREMIUM_COMPONENT_DIR — configured once in `app/.env` —
-  // visible to start-dev and the children it spawns (electron, proxy), so the
-  // dev-proxy no longer needs its own `frontend/dev-proxy/.env`.
+  // dotenv never overrides a set var, so the override file is loaded before the `app/.env` base.
   if (fs.existsSync(ENV_FILE_RELATIVE)) {
     config({ path: ENV_FILE_RELATIVE });
   }
@@ -104,11 +90,10 @@ const DEV_PROXY_ASYNC_MOCK = 'dev-proxy/async-mock.json';
  *  - else auto-on if PREMIUM_COMPONENT_DIR resolves to a real dir, or
  *    dev-proxy/async-mock.json exists (the two features the proxy provides
  *    beyond plain pass-through)
- *  - else off — the frontend talks directly to the backend (CORS allows it)
+ *  - else off, and the frontend talks directly to the backend (CORS allows it)
  *
- * Note: `PREMIUM_COMPONENT_DIR` must be set in `frontend/app/.env.development.local`
- * or in the shell for auto-detect to see it — `frontend/dev-proxy/.env` is only
- * read by the proxy subprocess itself.
+ * Note: `PREMIUM_COMPONENT_DIR` must be set in `frontend/app/.env.development.local` or in the
+ * shell for auto-detect to see it. `frontend/dev-proxy/.env` is read only by the proxy itself.
  */
 function shouldUseProxy(options: DevCliOptions): boolean {
   if (options.proxy === true)
@@ -127,15 +112,13 @@ function pickInstanceName(option: DevCliOptions['instance']): string | undefined
   if (typeof option === 'string' && option.length > 0)
     return option;
   if (option === true) {
-    // Bare `--instance` → user explicitly wants instance mode without typing a name.
-    // Fall back to INSTANCE_NAME env (wt-managed case), then current git branch,
-    // then error.
+    // Bare `--instance`: fall back to INSTANCE_NAME, then the git branch, then error.
     const envName = process.env.INSTANCE_NAME;
     if (envName)
       return envName;
     const branch = getCurrentGitBranch();
     if (branch) {
-      logger.info(`--instance with no name — deriving from current git branch "${branch}"`);
+      logger.info(`--instance with no name, deriving from current git branch "${branch}"`);
       return branch;
     }
     logger.error(
@@ -152,10 +135,7 @@ function readSlotHint(resolvedName: string): number | undefined {
   const raw = process.env.INSTANCE_PORT_SLOT;
   if (raw === undefined)
     return undefined;
-  // INSTANCE_NAME and INSTANCE_PORT_SLOT are written as a pair by the managed
-  // env block. If the resolved instance differs from the name that block was
-  // written for, the slot hint doesn't apply to us — ignore it rather than
-  // trying to grab another instance's slot.
+  // Name and slot are written as a pair, so a hint paired with another name is not ours.
   const pairedName = process.env.INSTANCE_NAME;
   if (pairedName && pairedName !== resolvedName) {
     logger.info(
@@ -174,9 +154,7 @@ function readSlotHint(resolvedName: string): number | undefined {
 
 async function resolveInstance(options: DevCliOptions, useProxy: boolean): Promise<InstanceRuntime | null> {
   if (options.instance === false) {
-    // Explicit --no-instance: force default mode. runDevAction already stripped
-    // the managed block (via useDefaultDevEnv) before loading env, so there's
-    // nothing to do here beyond signalling default mode.
+    // `runDevAction` already stripped the managed block, so this only signals default mode.
     return null;
   }
   const name = pickInstanceName(options.instance);
@@ -279,14 +257,10 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
   ensurePrerequisites();
   verifyBackendReady();
 
-  // Warm the rust builds and sync the python deps before either mode reaches its
-  // start point, so a fresh worktree doesn't hit a cold compile or a dep resolve
-  // at launch. Both modes need colibri and starling: web mode now runs the same
-  // supervisor electron does.
+  // Warmed here so a fresh worktree does not hit a cold rust compile or a dep resolve at launch.
   await warmDevServices();
 
-  // Decide instance vs default from CLI/shell before loading env, then for a
-  // default run strip the managed block first so it can't leak into process.env.
+  // A default run strips the managed block before loading env, so it cannot leak into process.env.
   if (!wantsInstanceMode(options.instance))
     useDefaultDevEnv();
   loadDevEnv();

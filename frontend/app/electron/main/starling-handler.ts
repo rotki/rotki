@@ -61,7 +61,9 @@ export class StarlingHandler {
   private checkIfMacOsVersionIsSupported(): boolean {
     if (os.platform() !== 'darwin')
       return true;
-    const majorVersion = Number.parseInt(os.release().split('.')[0]);
+    const release = os.release();
+    const minorStart = release.indexOf('.');
+    const majorVersion = Number.parseInt(minorStart === -1 ? release : release.slice(0, minorStart));
     return !(majorVersion < 17);
   }
 
@@ -76,9 +78,11 @@ export class StarlingHandler {
     return true;
   }
 
-  // Start the backend (first start) or apply a restart: starling is spawned once
-  // and reconfigured in place over the control RPC, except a data/log directory
-  // switch, which respawns it (the data-dir lock is keyed to the launch dir).
+  /**
+   * Starts the backend, or applies a restart to a running one. starling is spawned once and
+   * reconfigured in place over the control RPC, except for a data or log directory switch, which
+   * respawns it: the data-dir lock is keyed to the launch directory.
+   */
   async restartBackend(options: Partial<BackendOptions>, listener: StarlingErrorListener): Promise<void> {
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logger.warn('Skipped starting the backend (SKIP_PYTHON_BACKEND)');
@@ -133,28 +137,14 @@ export class StarlingHandler {
     this.exiting = false;
 
     const corePort = await this.resolvePort(StarlingService.CORE);
-    // The dev-proxy is handed core's port when `pnpm dev` spawns it and cannot
-    // learn a new one, so core probing upward would leave it forwarding
-    // `/api/1/*` to a dead port. Refuse rather than come up broken: the whole
-    // point of the proxy being in the chain is that it is in the chain.
-    if (this.config.ports.coreUpstreamPort !== undefined && corePort !== this.config.ports.corePort) {
-      listener.onProcessError(
-        `The dev-proxy is forwarding to port ${this.config.ports.corePort}, but that port is taken `
-        + `and core would bind ${corePort} instead. Free it, or restart without the dev-proxy `
-        + '(unset PREMIUM_COMPONENT_DIR, or pass --no-proxy).',
-        BackendCode.TERMINATED,
-      );
+    if (this.refuseCoreThatWouldStrandTheProxy(corePort, listener))
       return;
-    }
+
     const colibriPort = await this.resolvePort(StarlingService.COLIBRI);
     const mcpPort = await this.resolvePort(StarlingService.MCP);
     const proxyPort = await this.resolvePort(StarlingService.PROXY);
     const logsDir = this.logsDirectory();
 
-    // Collapse the renderer onto the single proxy origin: `/api/1/*` and `/ws/`
-    // reach core, `/colibri/*` reaches colibri (the proxy strips the prefix). The
-    // direct core/colibri ports stay the proxy's upstream targets, passed to
-    // starling above; the renderer never dials them.
     this.config.apiUrl = `http://${API_HOST}:${proxyPort}`;
 
     const invocation = buildStarlingInvocation({
@@ -163,9 +153,6 @@ export class StarlingHandler {
       colibriPort,
       mcpPort,
       proxyPort,
-      // Only set when `pnpm dev` started the premium dev-proxy, which then sits
-      // between starling and core. The renderer keeps addressing the proxy origin
-      // set above either way.
       coreUpstreamPort: this.config.ports.coreUpstreamPort,
       apiHost: API_HOST,
       logsDir,
@@ -177,19 +164,48 @@ export class StarlingHandler {
     this.currentDataDir = options.dataDirectory;
     this.currentLogDir = options.logDirectory;
 
-    // starling boots idle and serves its control channel immediately. Drive the
-    // first bring-up with the `start` request, carrying the backend options
-    // (log level, tunables, data dir) the CLI no longer passes. It resolves once
-    // the whole tree is ready, and rejects on a failed bring-up or early exit.
+    await this.driveInitialStart(options, listener);
+  }
+
+  /**
+   * Whether core would land somewhere a running dev-proxy cannot follow, reported as a process
+   * error when it would.
+   *
+   * @remarks
+   * The dev-proxy is handed core's port when it spawns and cannot learn a new one, so a core that
+   * probed upward past a taken port would leave it forwarding `/api/1/*` to a dead port. Refusing
+   * is the honest outcome, since the alternative comes up looking healthy and answers nothing.
+   */
+  private refuseCoreThatWouldStrandTheProxy(corePort: number, listener: StarlingErrorListener): boolean {
+    if (this.config.ports.coreUpstreamPort === undefined || corePort === this.config.ports.corePort)
+      return false;
+
+    listener.onProcessError(
+      `The dev-proxy is forwarding to port ${this.config.ports.corePort}, but that port is taken `
+      + `and core would bind ${corePort} instead. Free it, or restart without the dev-proxy `
+      + '(unset PREMIUM_COMPONENT_DIR, or pass --no-proxy).',
+      BackendCode.TERMINATED,
+    );
+    return true;
+  }
+
+  /**
+   * Brings the service tree up over the control channel, reporting a failure to the listener.
+   *
+   * @remarks
+   * starling boots idle, so `start` is what raises the tree, carrying the options the CLI no
+   * longer passes; it resolves once the tree is ready and rejects on a failure or an early exit.
+   * A rejection is only reported while the child is still alive, because the `exit` handler
+   * reports a dead one with a more precise reason. starling's own message is preferred over the
+   * generic text, since it carries the dead core's stderr tail.
+   */
+  private async driveInitialStart(options: Partial<BackendOptions>, listener: StarlingErrorListener): Promise<void> {
     try {
       await this.rpc.request(StarlingMethod.START, this.startParams(options));
     }
     catch (error) {
-      // Report only while the child is still alive: an already-exited child had its
-      // precise reason reported by the `exit` handler, and re-reporting doubles it.
       if (!this.exiting && this.child) {
         this.logger.error('Backend start failed', error);
-        // Relay starling's real reason (now carrying the dead core's stderr tail).
         const message = error instanceof Error && error.message.length > 0
           ? error.message
           : 'Failed to start the rotki backend. Please check the logs for more details.';
@@ -215,8 +231,6 @@ export class StarlingHandler {
   private spawnChild(invocation: StarlingInvocation, listener: StarlingErrorListener): void {
     this.logger.info(`Spawning starling: ${invocation.command} ${invocation.args.join(' ')}`);
 
-    // stderr carries starling's own logs and the inherited backend stderr, so
-    // supervisor diagnostics land in the Electron log (gotcha 2).
     const { child, exited } = spawnStarling({
       invocation,
       rpc: this.rpc,
@@ -256,9 +270,7 @@ export class StarlingHandler {
     const listener = this.currentListener;
     switch (method) {
       case StarlingEvent.READY:
-        // The whole backend tree is up. Initial readiness is gated on the `start`
-        // request's reply, not this event, so this is purely informational (it
-        // also fires after a restart brings the tree back up).
+        // Informational: readiness is gated on the `start` reply, and this repeats after a restart.
         this.logger.info('Backend event: event.ready');
         break;
       case StarlingEvent.CRASHED: {
@@ -321,8 +333,6 @@ export class StarlingHandler {
     if (!child)
       return;
 
-    // `exiting` stays here rather than moving into stopStarling: the exit handler reads it to tell
-    // an expected teardown from a crash, which is this class's business, not the helper's.
     this.exiting = true;
     await stopStarling({
       child,
@@ -339,8 +349,8 @@ export class StarlingHandler {
     this.exiting = false;
   }
 
+  /** The directory holding the per-process logfiles, which is what starling takes rather than a path. */
   private logsDirectory(): string {
-    // LogService writes the per-process logfiles here; starling needs the dir.
     return path.dirname(this.logger.coreProcessLogPath);
   }
 

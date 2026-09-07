@@ -92,8 +92,7 @@ function collectBundle(result: unknown): Bundle {
 
 /** A package lands in a chunk other than the one the shared rules assign it. */
 function checkOwnership(chunks: Chunk[]): string[] {
-  // Keyed by "<package> -> <actual>" so a package split across chunks reports once per chunk
-  // rather than once per module.
+  // Keyed by "<package> -> <actual>", so a split package reports per chunk, not per module.
   const violations = new Set<string>();
 
   for (const chunk of chunks) {

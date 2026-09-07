@@ -45,8 +45,7 @@ export function spawnStarling(options: SpawnStarlingOptions): StarlingProcess {
 
   const child = spawn(invocation.command, invocation.args, {
     cwd: invocation.cwd,
-    // A complete env, not an overlay: spreading it over `process.env` would hand
-    // a Windows child both `Path` and `PATH` and let it pick. See StarlingInvocation.
+    // A complete env, not an overlay: spread over process.env a Windows child gets Path and PATH.
     env: invocation.env ?? process.env,
     stdio: ['pipe', 'pipe', 'pipe'],
   });
@@ -145,6 +144,12 @@ async function wait(ms: number): Promise<void> {
  * Callers keep their own re-entry guard. This function does not own one, because the flag also tells
  * each caller's `exit` handler whether the exit was expected, which is caller state — but it is safe
  * to call on an already-dead child, which it reports as `alreadyExited`.
+ *
+ * @remarks
+ * There are two waits, and they measure different things. The first waits on the `stop` request:
+ * a rejection is as good as an answer, since a child dying mid-request rejects every pending one.
+ * The second waits on the child itself, because `stop` answering does not mean the process is
+ * gone, and it timing out does not mean the shutdown failed.
  */
 export async function stopStarling(options: StopStarlingOptions): Promise<StopStarlingResult> {
   const {
@@ -161,15 +166,11 @@ export async function stopStarling(options: StopStarlingOptions): Promise<StopSt
 
   logger?.debug('stopping starling');
 
-  // A rejected `stop` is not a failure to handle: the child dying mid-request rejects every pending
-  // one (see spawnStarling), and that is the outcome we were waiting for anyway.
   const acknowledged = await Promise.race([
     rpc.request(StarlingMethod.STOP).then(() => true).catch(() => false),
     wait(stopTimeoutMs).then(() => false),
   ]);
 
-  // Second wait, on the child rather than the request: `stop` answering does not mean the process is
-  // gone, and it timing out does not mean the shutdown failed.
   const exitedInTime = await Promise.race([
     exited.then(() => true),
     wait(exitMarginMs).then(() => false),

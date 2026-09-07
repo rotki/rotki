@@ -97,8 +97,7 @@ describe('protectHtmlAssociation', () => {
 
   it('should heal an already-corrupted handler using the default web browser', () => {
     setPlatform('linux');
-    // text/html is already rotki.desktop (corrupted on a previous launch) and the
-    // guard skips re-registration on this launch
+    // Corrupted by a previous launch, and this launch skips re-registration.
     const state = { htmlHandler: 'rotki.desktop', defaultBrowser: 'google-chrome.desktop' };
     mockCommands(state);
     const register = vi.fn((): boolean => false);

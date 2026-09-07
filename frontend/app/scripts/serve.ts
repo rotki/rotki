@@ -10,9 +10,7 @@ import { type BuildOutput, LOG_LEVEL, sharedConfig } from './setup';
 
 /** Messages on stderr that match any of the contained patterns will be stripped from output */
 const stderrFilterPatterns = [
-  // warning about devtools extension
-  // https://github.com/cawa-93/vite-electron-builder/issues/492
-  // https://github.com/MarshallOfSound/electron-devtools-installer/issues/143
+  // Devtools extension warning: cawa-93/vite-electron-builder#492.
   /ExtensionLoadWarning/,
 ];
 
@@ -160,8 +158,7 @@ async function serve(options: ServeOptions): Promise<void> {
   const { web, remoteDebuggingPort, mode, port, open } = options;
 
   try {
-    // A plain boolean here, so Vite opens the resolved server URL and honours the
-    // instance's port.
+    // A plain boolean, so Vite opens the resolved URL and honours the instance's port.
     const openBrowser = shouldOpenBrowser(web, open);
     const viteDevServer = await createServer({
       ...sharedConfig,

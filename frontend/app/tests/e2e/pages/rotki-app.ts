@@ -47,8 +47,7 @@ export class RotkiApp {
     await this.page.locator('[data-testid=connection-loading-content]').waitFor({ state: 'detached' });
     await this.page.locator('[data-testid=account-management-forms]').waitFor({ state: 'visible' });
 
-    // Check if we're on the login page (accounts exist) or create page (fresh start)
-    // On fresh start without any accounts, it might show create account form directly
+    // Existing accounts give the login page; a fresh start may open the create form directly.
     const newAccountButton = this.page.locator('[data-testid=new-account]');
     const introductionContinue = this.page.locator('[data-testid=create-account-introduction-create]');
 
@@ -153,9 +152,7 @@ export class RotkiApp {
     await submitButton.waitFor({ state: 'visible' });
     await submitButton.click();
 
-    // Use Promise.race to wait for either:
-    // 1. Asset update dialog (needs handling)
-    // 2. Premium button (already logged in, no dialog)
+    // Either the asset update dialog appears, or the premium button means login went through.
     const updateButton = this.page.getByRole('button', { name: 'Update' });
 
     const result = await Promise.race([
@@ -246,7 +243,7 @@ export class RotkiApp {
 
   async shouldHaveQueryParam(key: string, value: string): Promise<void> {
     const url = this.page.url();
-    const query = new URLSearchParams(url.split('?')[1] || '');
+    const query = new URL(url).searchParams;
     const actualValue = query.get(key);
     if (actualValue !== value) {
       throw new Error(`Expected query param "${key}" to be "${value}" but got "${actualValue}"`);
@@ -255,7 +252,7 @@ export class RotkiApp {
 
   async shouldNotHaveQueryParam(key: string): Promise<void> {
     const url = this.page.url();
-    const query = new URLSearchParams(url.split('?')[1] || '');
+    const query = new URL(url).searchParams;
     const actualValue = query.get(key);
     if (actualValue !== null) {
       throw new Error(`Expected query param "${key}" to not exist but got "${actualValue}"`);

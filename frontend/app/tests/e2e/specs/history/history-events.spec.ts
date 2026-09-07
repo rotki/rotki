@@ -115,9 +115,7 @@ test.describe.serial('history events', () => {
   test('edit swap event', async () => {
     const updatedReceiveAmount = '3500';
 
-    // A swap row renders spend then receive, one `event-amount` each, so the second one is what
-    // this edit changes. Asserting that it *changed* holds whatever the amount display rounds it
-    // to, and unlike a swap count it is false until the edit lands.
+    // A swap renders spend then receive, so the second amount is the one this edit changes.
     const receiveAmount = swapRow.locator('[data-testid=event-amount]').nth(1);
     const before = await receiveAmount.textContent();
 
@@ -132,8 +130,7 @@ test.describe.serial('history events', () => {
   });
 
   test('delete fee sub-event from online swap', async () => {
-    // The swap created earlier has 3 sub-events: spend, receive, fee.
-    // Expand it, delete the fee, and verify the swap group survives.
+    // The swap created earlier has three sub-events: spend, receive and fee.
     const rowsBeforeExpand = await page.getExpandedEventRows();
     await page.rows.expand(swapRow);
 
@@ -166,18 +163,14 @@ test.describe.serial('history events', () => {
     await page.fillAssetMovementForm(assetMovementEventFixture);
     await page.saveForm();
 
-    // Wait for the deposit itself. A row count cannot serve as the gate here: the swap expanded by
-    // the previous test leaves its sub-events in the table under the same `history-event-row`
-    // selector, so any `>= n` guard is already satisfied before this event arrives.
+    // A row count cannot gate this: the previous test's expanded sub-events share the selector.
     await expect(assetMovementRow(ctx)).toHaveCount(1);
   });
 
   test('edit asset movement event', async () => {
     const updatedAmount = '0.75';
 
-    // Anchor on the deposit's notes rather than on a row index. The movement sorts to the top of the
-    // table (it is the newest timestamp), so every index shifts by one the moment it renders, and an
-    // index picked before that would land on a swap sub-event, which carries no edit action.
+    // Anchored on the notes: the movement sorts to the top and shifts every index by one.
     const row = assetMovementRow(ctx);
     await row.hover();
     await row.locator('[data-testid=row-edit]').click();
@@ -192,8 +185,7 @@ test.describe.serial('history events', () => {
   });
 
   test('delete history event', async () => {
-    // The online event, named. A total over the whole table cannot say *which* row went away, and
-    // the swap expanded by an earlier test leaves its sub-events under the same selector.
+    // Named, since a total over the table cannot say which row went away.
     await page.rows.delete(onlineRow);
 
     await expect(onlineRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
@@ -313,25 +305,18 @@ test.describe.serial('history events', () => {
   });
 
   test('delete solana event', async () => {
-    // The solana event, named. Reading the top row's notes and then deleting the top row asserts
-    // only that *something* changed there, which a re-sort or a refetch also produces.
+    // Named: reading the top row and then deleting the top row would also pass on a re-sort.
     await page.rows.delete(solanaRow);
 
     await expect(solanaRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   });
 
   test('delete swap event', async () => {
-    // Named, not counted. A total over every swap on the page cannot say *which* swap went away,
-    // so any compensating change reads as success or failure at random — an earlier test leaves a
-    // swap expanded, and an expanded swap renders its collapse header instead of a swap row.
-    // `data-subgroup-id` is on both of those, so it survives a re-render and only a real deletion
-    // takes it out of the DOM.
-    // Addressed by event id throughout. Reading a row and then re-querying `nth(0)` to delete it
-    // deleted a *different* swap: the list is timestamp DESC and re-renders under the test, so the
-    // index no longer names the row that was read. The id is on both the collapsed row and the
-    // collapse header, so a swap that merely expands still matches and only a deletion clears it.
-    // The solana swap, because the online one is still expanded from `delete fee sub-event` and an
-    // expanded group renders its collapse header, which carries no row actions.
+    /* Addressed by id, never by index: the list is timestamp DESC and re-renders under the test,
+       so `nth(0)` deleted a different swap than the one read. `data-subgroup-id` is on both the
+       collapsed row and the collapse header, so expanding still matches and only a deletion
+       clears it. The solana swap, because the online one is left expanded by an earlier test and
+       an expanded group's header carries no row actions. */
     await page.rows.delete(solanaSwapRow);
 
     await expect(solanaSwapRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
@@ -351,9 +336,7 @@ test.describe.serial('evm history events', () => {
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request, {
       seed: (username) => {
-        // Historic prices go into the global DB, which is plain SQLite with no lock concerns. The
-        // transactions go into the user DB, so they are written here, while the account is created
-        // but logged back out, rather than afterwards.
+        // The user DB is only writable here, while the account exists but is logged out.
         seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
 
         seedEvmTransaction(username, evmEventFixture.txRef);
@@ -445,9 +428,7 @@ test.describe.serial('evm history events', () => {
   });
 
   test('delete extra sub-event from multi-asset swap', async () => {
-    // The multi-asset swap has 2 spend + 2 receive + 2 fee = 6 sub-events.
-    // It was added last so it has the most recent timestamp, which with the descending sort puts
-    // its sub-events first once expanded — that is what the `deleteSubEvent` index below relies on.
+    // Six sub-events, and the newest timestamp puts them first, which the index below relies on.
     const rowsBeforeExpand = await page.getExpandedEventRows();
     await page.rows.expand(multiSwapRow);
 
@@ -459,8 +440,7 @@ test.describe.serial('evm history events', () => {
 
     const rowsBefore = await page.getExpandedEventRows();
 
-    // Delete the last fee sub-event (index 5 within the swap — the 6th expanded row).
-    // The swap sub-events are the first event-rows on the page since this group is first.
+    // The last fee sub-event, sixth of the six this group renders first on the page.
     await page.deleteSubEvent(5);
 
     await expect(async () => {
@@ -504,13 +484,8 @@ test.describe.serial('evm history events', () => {
   });
 
   test('the row action on a lone evm event excludes it from accounting', async () => {
-    // rotki does not delete the only event of a decoded EVM transaction — it would come back with
-    // the transaction — so `HistoryEventsListItemAction.deleteEvent` turns the row action into an
-    // ignore for that case. The row therefore stays and its group gains the ignored badge.
-    //
-    // The old test asserted a total row count that merely went down, and passed: `first()` handed
-    // it a sub-event of the multi-asset swap the previous test left expanded, so it deleted that
-    // instead and never touched the evm event.
+    /* The only event of a decoded EVM transaction would come back with the transaction, so the
+       row action becomes an ignore: the row stays and its group gains the ignored badge. */
     const ignored = ctx.sharedPage.locator('[data-testid=ignored-in-accounting]');
     await expect(ignored).toHaveCount(0);
 
@@ -521,8 +496,7 @@ test.describe.serial('evm history events', () => {
   });
 
   test('delete evm swap event', async () => {
-    // The single-asset swap: the multi-asset one is still expanded from the sub-event test, and an
-    // expanded group renders a collapse header, which carries no row actions.
+    // The multi-asset swap is still expanded, and its collapse header carries no row actions.
     await page.rows.delete(evmSwapRow);
 
     await expect(evmSwapRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
@@ -575,10 +549,7 @@ test.describe.serial('history event filter persistence', () => {
     }).toPass({ timeout: 10000 });
   });
 
-  // Carried over from the TableFilter era, where editing an applied filter chip failed to
-  // re-open its suggestions once the menu had fully closed. The pill bar's equivalent is
-  // clicking a pill to re-open its value editor, and it must survive the editor closing in
-  // between — that close-then-reopen is what the original bug broke.
+  // Carried over from TableFilter, where a chip's suggestions never reopened once fully closed.
   test('clicking a pill reopens its value editor', async () => {
     await page.visit();
     await waitForNoRunningTasks(ctx.sharedPage);

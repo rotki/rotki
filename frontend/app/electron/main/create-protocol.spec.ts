@@ -1,7 +1,5 @@
-// Seam: MIME detection stays stable, and the registered app protocol handler serves files,
-// falls back to the SPA entry point, and rejects invalid paths with the expected status.
 import type { Protocol } from 'electron';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createMock } from '@test/utils/create-mock';
@@ -45,18 +43,23 @@ describe('getMimeType', () => {
 type Handler = Parameters<Protocol['handle']>[1];
 
 describe('createProtocol', () => {
+  let outsideDir: string;
   let baseDir: string;
 
   beforeEach(async () => {
-    baseDir = await mkdtemp(join(tmpdir(), 'rotki-protocol-'));
+    outsideDir = await mkdtemp(join(tmpdir(), 'rotki-protocol-'));
+    baseDir = join(outsideDir, 'dist');
+    await mkdir(baseDir);
     await writeFile(join(baseDir, 'index.html'), '<html>root</html>');
     await writeFile(join(baseDir, 'main.js'), 'console.log(1)');
+    await writeFile(join(baseDir, 'secret.txt'), 'inside');
+    await writeFile(join(outsideDir, 'secret.txt'), 'outside');
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(async () => {
-    await rm(baseDir, { force: true, recursive: true });
+    await rm(outsideDir, { force: true, recursive: true });
     vi.restoreAllMocks();
   });
 
@@ -122,14 +125,30 @@ describe('createProtocol', () => {
     expect(response.status).toBe(404);
   });
 
-  it('should not escape the served directory on path traversal attempts', async () => {
+  it('should serve the sibling file once the URL has normalized away a dot segment', async () => {
     const handler = registerHandler();
 
     const response = await handler(request('/../../secret.txt'));
 
-    // sanitizePath strips the traversal sequence, so it can never reach a file
-    // outside baseDir; the request resolves within the directory instead.
-    expect(response.status).not.toBe(500);
-    expect([200, 403, 404]).toContain(response.status);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('inside');
+  });
+
+  it('should strip an encoded traversal the URL leaves intact', async () => {
+    const handler = registerHandler();
+
+    const response = await handler(request('/..%2F..%2Fsecret.txt'));
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('inside');
+  });
+
+  it('should return 404 for an encoded traversal whose target exists only above the served directory', async () => {
+    await rm(join(baseDir, 'secret.txt'));
+    const handler = registerHandler();
+
+    const response = await handler(request('/..%2F..%2Fsecret.txt'));
+
+    expect(response.status).toBe(404);
   });
 });

@@ -4,8 +4,7 @@ import process from 'node:process';
 
 const HTML_MIME_TYPE = 'text/html';
 const ROTKI_DESKTOP = 'rotki.desktop';
-// Cap each xdg-* invocation so a hanging tool (slow dbus/portal, networked home)
-// cannot freeze the startup path while we wait for it.
+/** Caps each xdg-* call, so a hanging tool (slow dbus, networked home) cannot freeze startup. */
 const XDG_TIMEOUT_MS = 3000;
 
 function runXdg(command: string, args: string[], logger: LogService): string | undefined {
@@ -42,9 +41,9 @@ function restoreHtmlHandler(handler: string, logger: LogService): void {
 /**
  * Runs `register` while protecting the system's text/html association (issue #12323).
  *
- * On Linux/GNOME with old xdg-utils (<1.2.0, e.g. Ubuntu 24.04's 1.1.3), Electron's
- * app.setAsDefaultProtocolClient shells out to `xdg-settings set
- * default-url-scheme-handler`, whose buggy GNOME path (xdg-utils#180) also rewrites
+ * On Linux/GNOME with old xdg-utils (before 1.2.0, e.g. Ubuntu 24.04's 1.1.3), Electron's
+ * app.setAsDefaultProtocolClient shells out to `xdg-settings set default-url-scheme-handler`,
+ * whose buggy GNOME path (xdg-utils#180) also rewrites
  * the default text/html handler in ~/.config/mimeapps.list. Registering rotki:// thus
  * hijacks HTML files.
  *
@@ -69,13 +68,10 @@ export function protectHtmlAssociation(logger: LogService, register: () => boole
 
   const registered = register();
 
-  // Only an actual registration can change text/html; if we skipped it the state
-  // is unchanged, so reuse `before` instead of spawning a second query.
   const after = registered ? queryHtmlHandler(logger) : before;
+  const hijacked = after === ROTKI_DESKTOP;
 
-  // Only act if text/html ended up pointing at rotki; anything else we leave
-  // untouched so we can never make the association worse.
-  if (after !== ROTKI_DESKTOP)
+  if (!hijacked)
     return;
 
   const restoreTo = before && before !== ROTKI_DESKTOP ? before : queryDefaultWebBrowser(logger);

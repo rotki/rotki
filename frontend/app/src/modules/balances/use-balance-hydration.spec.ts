@@ -213,11 +213,6 @@ describe('useBalanceHydration', () => {
     expect(h.queryBlockchainBalances).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * Hydration is not an activity, so the orchestrator cannot report it. Every spinner that used
-   * to read `useIsActive(BLOCKCHAIN_BALANCES)` for the cached phase reads this instead; if it were
-   * never set the whole phase would render as settled-and-empty.
-   */
   it('should let a read abandoned by reset settle without touching the next session', async () => {
     addAccount(Blockchain.ETH);
     const releases: (() => void)[] = [];

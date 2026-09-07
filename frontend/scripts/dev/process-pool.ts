@@ -38,33 +38,35 @@ export interface SpawnOpts {
 
 /**
  * Quotes a single argument so the shell (`shell: true` mode of spawn) treats
- * it as a single token. Without this, an arg like `--data-dir=/Users/jo/My
- * Project/data` gets re-split by /bin/sh on whitespace and the child sees
+ * it as a single token. Without this, an arg holding a path with a space
+ * (`--data-dir=/Users/jo/My Project/data`) gets re-split by /bin/sh and the child sees
  * two broken args. Used for every arg we pass through process-pool because
  * we don't control whether the data-dir / log-path contains spaces.
  */
 function shellQuoteArg(arg: string): string {
   if (arg === '')
     return '""';
-  // Conservative allowlist of shell-safe chars — anything outside gets quoted.
+  // Conservative allowlist of shell-safe chars; anything outside gets quoted.
   if (/^[\w%+,./:=@-]+$/.test(arg))
     return arg;
   if (process.platform === 'win32') {
     // cmd.exe: double-quote, escape inner double quotes by doubling.
     return `"${arg.replace(/"/g, '""')}"`;
   }
-  // POSIX sh: single quotes preserve literally; escape any single-quote
-  // inside by closing, inserting an escaped quote, and reopening.
+  // POSIX sh: single quotes preserve literally, so an inner one closes, escapes and reopens.
   return `'${arg.replace(/'/g, '\'\\\'\'')}'`;
 }
 
 export function startProcess(cmd: string, tag: string, name: string, args: string[] = [], opts: SpawnOpts = {}): ChildProcess {
-  // Format each child line as `<label> <time> <line>` on the LEFT and write it
-  // straight through. consola's tagged reporter right-aligned the tag+timestamp
-  // to the terminal width, which misfired on multi-line chunks and on any line
-  // wider than the terminal (the badge wrapped in front of the next line). A plain
-  // left format is stable regardless of line length. Split per line so a chunk
-  // carrying several lines is formatted line-by-line.
+  /**
+   * Formats each child line as `label time line`, left-aligned, and writes it straight through.
+   *
+   * @remarks
+   * consola's tagged reporter right-aligns the tag and timestamp to the terminal width, which
+   * misfires on multi-line chunks and on any line wider than the terminal: the badge wraps in
+   * front of the next line. A plain left format is stable regardless of line length. A chunk is
+   * split so several lines are formatted one by one.
+   */
   const emit = (buffer: Buffer): void => {
     for (const line of buffer.toString().split(/\r?\n/)) {
       if (line.length > 0)
@@ -75,18 +77,14 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
 
   const env: NodeJS.ProcessEnv = {
     FORCE_COLOR: '1',
-    // The forwarder prepends its own `<label> <time>` to every child line, so tell
-    // child tools (Vite) to drop their own timestamp and avoid a doubled clock.
+    // The forwarder prepends its own time, so child tools (Vite) must drop theirs.
     ROTKI_DEV_FORWARDED: '1',
     ...process.env,
     NODE_ENV: 'development',
     ...(opts.env ?? {}),
   };
 
-  // Node 24 deprecates passing `args` together with `shell: true` (DEP0190),
-  // so we hand-build the full command string ourselves with each arg shell-
-  // quoted. Functionally identical to spawn(cmd, args, {shell:true}) — the
-  // shell concatenates them the same way — but the deprecation no longer fires.
+  // Node 24's DEP0190 deprecates `args` alongside `shell: true`, so the command is built here.
   const fullCmd = args.length === 0
     ? cmd
     : `${cmd} ${args.map(shellQuoteArg).join(' ')}`;
@@ -95,16 +93,9 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
     shell: true,
     stdio: [process.stdin, 'pipe', 'pipe'],
     env,
-    // POSIX: each child becomes its own process-group leader so a kill on
-    // `-pid` reaches the whole tree (e.g. `cargo run` → colibri binary,
-    // `pnpm run … serve` → vite). Without this, shell:true means SIGTERM
-    // only kills the shell and the real worker leaks.
-    //
-    // Windows: detached:true with shell:true spawns a new console window
-    // for every child, and POSIX process groups don't exist anyway — we
-    // tree-kill via `taskkill /T /F` in `killGroup`. windowsHide keeps the
-    // cmd.exe wrapper from flashing a console.
+    // Own process group, so killing `-pid` reaches the tree rather than just the shell.
     detached: !isWindows,
+    // Windows has no process groups, and `killGroup` uses taskkill; this hides the cmd.exe flash.
     windowsHide: isWindows,
   });
 
@@ -116,18 +107,10 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
 
 function killGroup(pid: number, signal: NodeJS.Signals, windowed = false): void {
   if (isWindows) {
-    // No POSIX process groups on Windows. `taskkill /T` walks the child
-    // tree via the job/parent-pid table — this is the only reliable way
-    // to reach cargo's spawned colibri.exe or pnpm's node workers.
-    //
-    // `/F` is an unconditional TerminateProcess. Forcing a windowed child during
-    // the graceful phase kills electron mid-quit, before it can run its ordered
-    // backend teardown, so those get a polite close (WM_CLOSE) instead and their
-    // exit unwinds the serve/pnpm/cmd chain behind them.
-    //
-    // Everything else we spawn is a windowless console process, which rejects a
-    // polite close outright. Asking anyway would just burn the whole grace period
-    // before the forced kill that was always going to happen.
+    /* Windows has no process groups, so `taskkill /T` walks the parent-pid table instead. `/F`
+       is an unconditional terminate, which would kill electron mid-quit: a windowed child gets
+       a polite close during the graceful phase, while a windowless one, which would reject it,
+       goes straight to the forced kill rather than burning the grace period first. */
     const force = windowed && signal !== 'SIGKILL' ? [] : ['/F'];
     spawnSync('taskkill', ['/pid', String(pid), '/T', ...force], { windowsHide: true });
     return;
@@ -163,11 +146,8 @@ function softKill(entry: TrackedProcess): boolean {
   logger.info(`terminating process: ${name} (${pid})`);
   child.stdout?.off('data', listeners.out);
   child.stderr?.off('data', listeners.err);
-  // SIGINT, not SIGTERM: detached:true puts each child in its own process
-  // group, so the terminal's Ctrl+C never reaches them. Electron, vite and
-  // cargo all install graceful SIGINT handlers (they expect Ctrl+C) but
-  // electron's main process does not treat SIGTERM the same way and hangs
-  // on shutdown. Match the Ctrl+C semantics they expect.
+  /* SIGINT, not SIGTERM: a detached child never sees the terminal's Ctrl+C, and electron,
+     vite and cargo all handle SIGINT gracefully where electron hangs on SIGTERM. */
   killGroup(pid, 'SIGINT', windowed);
   return true;
 }

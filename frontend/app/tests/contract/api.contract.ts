@@ -24,7 +24,7 @@ function isEvmAccountBalances(value: BlockchainAssetBalances | BtcBalances): val
  * Contract tests (measurement framework §5.1): the frontend's own api
  * composables against a live backend booted on a golden profile. Each call
  * exercises the full client pipeline — URL construction, parameter
- * serialization, snake_case<->camelCase transforms and zod schema parsing —
+ * serialization, `snake_case` to `camelCase` transforms and zod schema parsing —
  * so a passing test means the real frontend understands the real backend.
  * Assertions compare against the profile generator's expected.json, never
  * against hand-written fixtures that could drift.
@@ -45,8 +45,7 @@ describe('users api contract', () => {
 describe('settings api contract', () => {
   it('should fetch and parse the user settings', async () => {
     const settings = await useSettingsApi().getSettings();
-    // camelCase fields with meaningful values prove the response went
-    // through the case transform and the UserSettingsModel zod parse
+    // camelCase with real values proves the case transform and the zod parse both ran.
     expect(settings.data.version).toBeGreaterThan(0);
     expect(settings.general.mainCurrency.tickerSymbol).toBeTruthy();
   });
@@ -88,8 +87,7 @@ describe('manual balances api contract', () => {
       expect(match?.asset).toBe(seeded.asset);
       expect(match?.amount.toString()).toBe(seeded.amount);
       expect(match?.location).toBe(seeded.location);
-      // a positive value proves the valuation resolved from the seeded
-      // manual latest prices without any oracle round-trip
+      // A positive value proves the seeded manual prices resolved without an oracle call.
       expect(match?.value.isPositive()).toBe(true);
     }
   });
@@ -118,8 +116,7 @@ describe('manual balances api contract', () => {
 });
 
 describe('blockchain balances api contract', () => {
-  // runs before the balances test below: the balance query covers the
-  // tokens this detection discovers
+  // Runs first: the balance query below covers the tokens this detection discovers.
   it('should detect the seeded erc20 tokens per holder', async () => {
     const expected: Record<string, Record<string, string>> = contractExpected().blockchain_balances;
     const addresses = Object.keys(expected);

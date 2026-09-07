@@ -79,9 +79,7 @@ export class AccountingSettingsPage {
       this.page.locator(`[data-testid=accounting-rule-tab-${tab}]`).click(),
     ]);
 
-    // What the tab is *for*: it asks the backend for one half of the rules. Asserted on the request
-    // because both halves can legitimately be empty, and then the rendered table says nothing about
-    // whether the tab did anything at all.
+    // Asserted on the request, because either half may be empty and the table then says nothing.
     const expected = tab === 'custom' ? 'only' : 'exclude';
     expect(response.request().postDataJSON()).toMatchObject({ custom_rule_handling: expected });
   }

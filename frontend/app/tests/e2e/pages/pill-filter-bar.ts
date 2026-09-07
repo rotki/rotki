@@ -74,7 +74,7 @@ export class PillFilterBar {
    *
    * The list is virtualized, so a value far down it is not in the DOM until the list is
    * narrowed — every selection goes through the search box first. Search matches the option's
-   * *label*, so pass `search` explicitly whenever the label differs from the wire value
+   * label*, so pass `search` explicitly whenever the label differs from the wire value
    * (`uniswap-v2` renders as `Uniswap V2`).
    *
    * Narrowing is only enough when the query names the value. On the asset field the search runs
@@ -195,15 +195,11 @@ export class PillFilterBar {
    * is lost either way.
    */
   async closeEditor(fieldKey?: string): Promise<void> {
-    // Whichever editor is open, its own first control stands in for it: there is no shared root to
-    // wait on. Leaving one open matters beyond the editor itself, since its popover covers part of
-    // the bar and swallows the next click.
-    //
-    // The date editor takes two presses, and `setDateBound` has already spent the first: escape
-    // closes the picker's calendar before it means anything to the editor, so the press sent here
-    // is the one that reaches `DateValueEditor`'s own handler and closes it. That same press is
-    // what commits a bound typed as a bare date, which is why the date editor has to be waited on
-    // here rather than left to the caller.
+    /* There is no shared root to wait on, so whichever editor is open stands in through its own
+       first control. An editor left open covers part of the bar and swallows the next click.
+       The date editor takes two presses, and `setDateBound` has spent the first on the picker's
+       calendar, so the press here is the one `DateValueEditor` sees, and the one that commits a
+       bound typed as a bare date. */
     const editor = this.page
       .locator([
         '[data-testid=value-select-search]',
@@ -219,8 +215,7 @@ export class PillFilterBar {
 
     await this.page.keyboard.press('Escape');
 
-    // The menu takes a moment to go, so give Escape time to work before falling back — clicking
-    // the pill against an already-closing menu would just open it again.
+    // Clicking the pill against an already-closing menu would just open it again.
     const closed = await editor
       .waitFor({ state: 'hidden', timeout: 2000 })
       .then(() => true)

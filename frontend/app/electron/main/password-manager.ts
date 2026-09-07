@@ -41,10 +41,18 @@ export class PasswordManager {
     return success;
   }
 
+  /**
+   * Reads back a password saved by {@link storePassword}.
+   *
+   * @remarks
+   * The on-disk store is probed before `safeStorage`, because touching `safeStorage` can raise an
+   * OS keyring prompt. A user who never opted into saving a password must never see that prompt,
+   * so the order of these two guards is the behaviour, not an optimization.
+   *
+   * @returns the decrypted password, or an empty string when none is stored for this user or the
+   * platform cannot decrypt it.
+   */
   async retrievePassword(username: string): Promise<string> {
-    // Never touch safeStorage (which triggers an OS keyring prompt) unless a
-    // password was actually saved for this user. If nothing is stored, the user
-    // never opted in to saving the password, so there is nothing to decrypt.
     if (!this.hasStoredPassword(username))
       return '';
 
@@ -54,9 +62,14 @@ export class PasswordManager {
     return this.getPassword(username);
   }
 
+  /**
+   * Removes every saved password.
+   *
+   * @remarks
+   * Clearing the on-disk store needs no `safeStorage`, so the emptiness check keeps a user with
+   * nothing saved from being shown an OS keyring prompt on their way out.
+   */
   async clearPasswords(): Promise<void> {
-    // Clearing the on-disk store does not require safeStorage; only access the
-    // keyring when there is actually a saved password to clear.
     if (this.hasAnyStoredPassword())
       this.clearPassword();
   }

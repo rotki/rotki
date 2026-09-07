@@ -96,8 +96,7 @@ async function startStarling(options: StarlingE2eOptions): Promise<void> {
   const { child, exited } = spawnStarling({
     invocation,
     rpc,
-    // starling's own logs plus the inherited core/colibri stderr. Playwright
-    // captures this and the workflow uploads it with the run artifacts.
+    // starling's logs and the inherited core/colibri stderr, which Playwright uploads.
     onStderr: line => process.stderr.write(`${line}\n`),
   });
 
@@ -112,10 +111,7 @@ async function startStarling(options: StarlingE2eOptions): Promise<void> {
       return;
     stopping = true;
     consola.info(`Received ${signal}, stopping starling...`);
-    // A signal handler cannot await, so the teardown is deliberately left running: the `exited`
-    // await at the end of this function is what holds the process open until the tree is down.
-    // Previously this fired `stop` and started a kill timer in parallel, so it never learned whether
-    // the request was even accepted and escalated on a clock rather than on the child.
+    // A handler cannot await, so the `exited` await below is what holds the process open.
     stopStarling({ child, exited, logger: stopLogger, rpc })
       .catch(error => consola.error(`stopping starling failed: ${error instanceof Error ? error.message : String(error)}`));
   }
@@ -143,8 +139,7 @@ async function startStarling(options: StarlingE2eOptions): Promise<void> {
 
   consola.success(`Backend services ready behind http://${API_HOST}:${options.port}`);
 
-  // Stay alive for the run: Playwright owns this process and signals it on
-  // teardown. Exit with the supervisor so a crash fails the run loudly.
+  // Playwright signals this process on teardown; exiting with the supervisor fails a crash loudly.
   const { code } = await exited;
   consola.info(`starling exited with code ${code}`);
   process.exit(code ?? 0);

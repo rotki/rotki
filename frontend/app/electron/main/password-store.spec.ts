@@ -47,8 +47,6 @@ describe('passwordStore', () => {
   });
 
   it('should recover a dot-prop nested entry written by electron-store', () => {
-    // conf's dot-prop `set` turned the username `john.doe` into nested objects, which every read
-    // path then missed. The password was saved and could never be restored.
     writeStore({ john: { doe: 'ciphertext' } });
 
     expect(new PasswordStore(filePath).get('john.doe')).toBe('ciphertext');
@@ -109,9 +107,7 @@ describe('passwordStore', () => {
     expect(store.get('alice')).toBe('ciphertext');
   });
 
-  it('should ignore values that are not passwords', () => {
-    // Only strings are credentials. Anything else is not something this store wrote, and it is
-    // dropped on the next write rather than being carried around.
+  it('should drop non-string values on the next write, since only strings are credentials', () => {
     writeStore({ alice: 'ciphertext', count: 42, empty: null, list: ['a'] });
     const store = new PasswordStore(filePath);
     store.set('bob', 'second');

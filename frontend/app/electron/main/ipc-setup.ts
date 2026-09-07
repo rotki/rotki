@@ -4,15 +4,13 @@ import type { SettingsManager } from '@electron/main/settings-manager';
 import type { BackendOptions, Credentials, McpServerStatus, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
-import {
-  BackendHandlers,
-  OAuthHandlers,
-  SecurityHandlers,
-  SystemHandlers,
-  UpdateHandlers,
-  WalletBridgeIpcHandlers,
-  WalletImportHandlers,
-} from '@electron/main/ipc-handlers';
+import { BackendHandlers } from '@electron/main/ipc-handlers/backend-handlers';
+import { OAuthHandlers } from '@electron/main/ipc-handlers/oauth-handlers';
+import { SecurityHandlers } from '@electron/main/ipc-handlers/security-handlers';
+import { SystemHandlers } from '@electron/main/ipc-handlers/system-handlers';
+import { UpdateHandlers } from '@electron/main/ipc-handlers/update-handlers';
+import { WalletBridgeIpcHandlers } from '@electron/main/ipc-handlers/wallet-bridge-ipc-handlers';
+import { WalletImportHandlers } from '@electron/main/ipc-handlers/wallet-import-handlers';
 import { WalletBridgeHandlers } from '@electron/main/wallet-bridge-handlers';
 import { WalletBridgeWebSocketServer } from '@electron/main/ws';
 import { startPromise } from '@shared/utils';
@@ -212,11 +210,16 @@ export class IpcManager {
     startPromise(this.oauthHandlers.clearOAuthCookies('startup'));
   }
 
+  /**
+   * Drops every registered handler.
+   *
+   * @remarks
+   * Handlers close over this manager and its handler classes, so a live one can keep the
+   * process from exiting.
+   */
   async cleanup(): Promise<void> {
     this.logger.info('Cleaning up IPC manager resources...');
 
-    // Drop every registered handler. They close over this manager and its
-    // handler classes, and a live handler can keep the process from exiting.
     for (const channel of this.registeredListeners)
       ipcMain.removeAllListeners(channel);
 

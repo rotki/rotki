@@ -57,8 +57,7 @@ export class Application {
       corePort: instancePort('ROTKI_INSTANCE_CORE_PORT', DEFAULT_PORT),
       mcpPort: instancePort('ROTKI_INSTANCE_MCP_PORT', DEFAULT_MCP_PORT),
       proxyPort: instancePort('ROTKI_INSTANCE_PROXY_PORT', DEFAULT_PROXY_PORT),
-      // No fallback: absent means no dev-proxy, and starling must then be left
-      // pointing at core.
+      // No fallback: absent means no dev-proxy, so starling stays pointed at core.
       coreUpstreamPort: optionalPort('ROTKI_DEV_CORE_UPSTREAM_PORT'),
     },
   };
@@ -110,20 +109,15 @@ export class Application {
     }
   }
 
+  /** Guarded because registering a URL scheme can hijack the text/html association (#12323). */
   private registerAsDefaultProtocolHandler() {
-    // On Linux, registering a URL-scheme handler via xdg-settings can hijack the
-    // default text/html association on GNOME with old xdg-utils (issue #12323,
-    // xdg-utils#180). Run the registration inside a guard that snapshots and
-    // restores the text/html handler if our call corrupts it.
     protectHtmlAssociation(this.logger, () => this.registerProtocolClient());
   }
 
   private registerProtocolClient(): boolean {
     if (process.defaultApp) {
-      // In development we always (re)register so rotki:// deep links point at the
-      // current dev binary. On Linux app.isDefaultProtocolClient ignores the
-      // path/args, so guarding here would wrongly skip when a production install
-      // already claimed the scheme.
+      /* Dev always re-registers so rotki:// points at the current binary. Guarding on
+         isDefaultProtocolClient would skip wrongly: on Linux it ignores the path and args. */
       if (process.argv.length < 2)
         return false;
 
@@ -137,9 +131,7 @@ export class Application {
       return true;
     }
 
-    // In production, skip re-registering when we are already the default handler
-    // so we do not re-run the (destructive on affected Linux setups) xdg-settings
-    // call on every launch.
+    // Production: already the default, so the destructive xdg-settings call is not re-run.
     if (app.isDefaultProtocolClient('rotki')) {
       this.logger.info('rotki:// protocol handler already registered; skipping');
       return false;
@@ -263,11 +255,17 @@ export class Application {
     app.removeAllListeners('before-quit');
   }
 
+  /**
+   * Tears the app down in an order the renderer can survive.
+   *
+   * @remarks
+   * The renderer is told first so it can swap in the shutdown screen, which unmounts the
+   * notification popup: requests unwinding against the dying backend then cannot surface errors
+   * over a closing window. The window is destroyed only after the backend is down, since it holds
+   * that screen, and the IPC handlers are dropped last because the renderer keeps invoking them
+   * throughout, provider detection among others.
+   */
   private async quit() {
-    // Tell the renderer before anything is torn down: it swaps in the shutdown
-    // screen, which unmounts the notification popup, so requests unwinding
-    // against the dying backend cannot surface errors over a closing window.
-    // Must run before window.cleanup() drops the webContents.
     this.window.notifyClosing();
 
     this.cleanup();
@@ -277,21 +275,10 @@ export class Application {
       await this.processHandler.stop();
     }
     finally {
-      // Destroy the window only now: it kept the shutdown screen visible while
-      // the backend was torn down, and releasing it here makes sure it cannot
-      // keep the process alive.
       this.window.destroy();
-
-      // Drop the IPC handlers only once the renderer is gone. It stays alive
-      // for the whole teardown above and keeps invoking (provider detection,
-      // for one), which would fail with "No handler registered" if the handlers
-      // were released any earlier.
       await this.ipc.cleanup();
 
-      // `will-quit` preventDefault()s, so this is the only thing that ends the
-      // process - every platform must reach it.
-      //
-      // In some cases the app object might be already disposed
+      // `will-quit` preventDefault()s, so this is the only thing that ends the process.
       try {
         app.exit();
       }

@@ -26,15 +26,14 @@ const EXCLUDED_PATHS = [
  * Check if a filename looks like a bundled/hashed file (e.g., utils-D1WHamuv.js)
  */
 function isBundledFile(pathname: string): boolean {
-  // Bundled files have pattern: Name-[hash].js or Name-[hash].css
-  // Hash is typically 8 alphanumeric characters
+  // `Name-[hash].js` or `.css`, where the hash is eight alphanumeric characters.
   return /^\/[^/]+-\w{8}\.(js|css)$/.test(pathname);
 }
 
 /**
  * Convert a URL from the dev/preview server to a local file path.
- * Dev server: http://localhost:8080/src/App.vue -> /absolute/path/to/src/App.vue
- * Preview (bundled): http://localhost:8080/utils-D1WHamuv.js -> /absolute/path/to/dist/utils-D1WHamuv.js
+ * Dev server: http://localhost:8080/src/App.vue → /absolute/path/to/src/App.vue
+ * Preview (bundled): http://localhost:8080/utils-D1WHamuv.js → /absolute/path/to/dist/utils-D1WHamuv.js
  */
 function urlToFilePath(url: string): string | null {
   try {
@@ -53,8 +52,7 @@ function urlToFilePath(url: string): string | null {
     if (EXCLUDED_PATHS.some(excluded => pathname.endsWith(excluded)))
       return null;
 
-    // For bundled assets (production/preview), map to dist directory
-    // c8 will use source maps to resolve back to original source files
+    // A bundled asset maps to dist, from which c8 follows source maps back to the source.
     if (isBundledFile(pathname))
       return join(APP_ROOT, 'dist', pathname);
 

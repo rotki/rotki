@@ -57,20 +57,12 @@ export interface StarlingDevPorts {
  * origin exactly as the desktop app does.
  *
  * The `start` request is the readiness gate — it resolves only once the whole
- * tree is up — so there is nothing here to poll.
+ * tree is up, so there is nothing here to poll.
  */
 export async function startStarlingSupervisor(
   options: StarlingDevOptions,
 ): Promise<{ env: StarlingDevEnv; ports: StarlingDevPorts }> {
-  // In instance mode every port is reserved by the slot, so bind it exactly and
-  // fail loudly if something else holds it. Otherwise the caller's values are
-  // only a starting point and a busy port walks up, which is how two concurrent
-  // plain `dev:web` runs stay off each other without reserving a slot.
-  //
-  // `selectPort` closes its probe socket before returning and nothing binds
-  // until starling spawns, so two services whose start values converge would
-  // otherwise be handed the same port (e.g. `--web-port 4141`, which collides
-  // with the proxy default). Track what we've handed out and keep walking.
+  // A slot reserves every port, so instance mode binds exactly and fails if something holds it.
   const taken = new Set<number>();
   const resolve = async (port: number): Promise<number> => {
     if (options.strictPorts) {
@@ -78,6 +70,7 @@ export async function startStarlingSupervisor(
       return port;
     }
     let candidate = await selectPort(port, API_HOST);
+    // `selectPort` closes its probe before returning, so converging start values collide.
     while (taken.has(candidate))
       candidate = await selectPort(candidate + 1, API_HOST);
     taken.add(candidate);
@@ -104,12 +97,9 @@ export async function startStarlingSupervisor(
     apiHost: API_HOST,
     logsDir: options.logDir,
     options: backendOptions,
-    // serve.ts exports this before Vite boots, so it is only set for a dev
-    // server started earlier in this process tree; undefined falls back to the
-    // `http://localhost:*` allowance, which covers the default web-dev origin.
+    // Set only for a dev server started earlier in this tree; undefined allows `localhost:*`.
     devServerUrl: process.env.VITE_DEV_SERVER_URL,
-    // The dev scripts run from `frontend`, Electron from `frontend/app`, so the
-    // default two-levels-up would land above the repo.
+    // The dev scripts run from `frontend`, so the default two levels up would land above the repo.
     repoRoot: path.resolve(process.cwd(), '..'),
   });
 
@@ -121,10 +111,9 @@ export async function startStarlingSupervisor(
   );
 
   const rpc = new StarlingRpc({ warn: message => logger.warn(message) }, (method) => {
-    // The `start` reply is the readiness gate, so events are informational here;
-    // a crash still needs surfacing because it can arrive long after startup.
+    // The `start` reply is the readiness gate, so only a crash, which arrives later, matters.
     if (method === 'event.crashed')
-      logger.error('a backend service crashed — see the starling output above');
+      logger.error('a backend service crashed, see the starling output above');
     else
       logger.info(`starling event: ${method}`);
   });
@@ -132,8 +121,7 @@ export async function startStarlingSupervisor(
   const { child, exited } = spawnStarling({
     invocation,
     rpc,
-    // starling's stderr carries its own logs plus the inherited core/colibri
-    // stderr, which is the only place those surface in web dev.
+    // starling's stderr also carries core's and colibri's, their only outlet in web dev.
     onStderr: line => process.stdout.write(`${formatDevLine('starling', line)}\n`),
   });
 
@@ -144,8 +132,7 @@ export async function startStarlingSupervisor(
     if (stopping || child.exitCode !== null)
       return;
     stopping = true;
-    // The teardown rule lives in stopStarling. This used to kill as soon as the stop race resolved,
-    // which SIGKILLed a supervisor that was still reaping core and colibri.
+    // The teardown rule lives in `stopStarling`, which waits out the reaping of core and colibri.
     await stopStarling({
       child,
       exited,
@@ -155,8 +142,7 @@ export async function startStarlingSupervisor(
     });
   });
 
-  // A supervisor that dies before `start` replies rejects the request below, but
-  // one that dies later would otherwise leave the dev server pointed at nothing.
+  // Dying before `start` replies rejects the request below; dying later needs reporting here.
   exited.then(({ code, signal }) => {
     if (!stopping)
       logger.error(`starling exited unexpectedly (code: ${code}, signal: ${signal})`);

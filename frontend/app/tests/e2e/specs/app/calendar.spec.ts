@@ -56,15 +56,11 @@ test.describe.serial('calendar', () => {
     await page.cancelDialog();
   });
 
-  // The reminder rows validate as part of the event form. That used to happen implicitly, because
-  // each row registered itself with the form's validator; it is now an explicit call, and this is
-  // what proves the save is still gated on it.
+  // Reminder rows used to register themselves with the form's validator; it is an explicit call now.
   test('blocks saving while a reminder is out of range', async () => {
     await page.openAddDialog();
     await page.createEventFields({ name: 'quarterly review' });
-    // Out of range by the amount, not by the unit: the row starts at 15 minutes, and 15 of any
-    // larger unit is over the ceiling too, so a test that never got its own amount in would still
-    // see the error and pass.
+    // Out of range by the amount: the row's own 15 would clear the ceiling in any larger unit.
     await page.addReminder('99', 'Weeks');
 
     await page.submitDialog();
@@ -91,9 +87,7 @@ test.describe.serial('calendar', () => {
     await page.deleteEvent('release cut');
   });
 
-  // The three below cover the persistence paths, which differ between creating and editing an
-  // event: a new event's reminders are held back until it has an id, an existing one's are written
-  // per row as they change.
+  // A new event's reminders wait for its id; an existing event's are written per row as they change.
   test('persists a reminder edited on an existing event', async () => {
     await page.createEvent({ name: 'sprint demo' });
     await page.openEventByName('sprint demo');

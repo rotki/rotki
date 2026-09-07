@@ -62,8 +62,7 @@ async function seedPillFilterUser(
   request: APIRequestContext,
 ): Promise<SharedTestContext> {
   const ctx = await createLoggedInContext(browser, request, {
-    // The mock answers an unrecorded call immediately, where real nodes would keep the balance
-    // query the seeded addresses trigger alive past the test timeout.
+    // Real nodes would keep the seeded addresses' balance query alive past the test timeout.
     rpcMockCassette: 'pill-filter',
     seed: (username) => {
       seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
@@ -155,9 +154,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Narrowing matches a value's *display label*, never its wire id, so the query here is the
-  // label ("Optimism"), not the value (`optimism`). Only one location carries that label, which
-  // keeps the row it offers stable regardless of how long the location list grows.
+  // Narrowing matches the display label, not the wire id, and only one location carries this one.
   test('typing a value in the bar applies the filter in one step', async () => {
     await bar.narrow('Optimism');
     await bar.expectValueSuggestion('location', 'optimism');
@@ -209,8 +206,7 @@ test.describe.serial('history events pill filter', () => {
     await expect.poll(() => url(), { timeout: 10000 }).toContain('minAmount=100');
     expect(url()).toContain('maxAmount=1000');
 
-    // Switching to "greater than" leaves no upper bound, so it must leave the URL too —
-    // a stale maxAmount would silently keep filtering.
+    // "Greater than" leaves no upper bound, and a stale maxAmount would keep filtering.
     await bar.pill('amount').click();
     await bar.selectOperator('gt');
     await bar.closeEditor();
@@ -223,8 +219,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Closing an editor commits rather than cancels. The range and notes editors push their value
-  // through a debounce, so dismissing inside that window used to discard what was typed.
+  // Closing commits, and the range and notes editors debounce, so a quick dismiss used to discard.
   test('a range dismissed without enter is still committed', async () => {
     await bar.addField('amount');
     await bar.setRangeBound('min', '100');
@@ -238,9 +233,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Regression: clearing a pill left the bar still believing that field's editor was open, so
-  // adding the same field again changed nothing and no editor appeared. Only visible in a real
-  // browser — the unit spec stubs the menu to render its content inline either way.
+  // Regression: a cleared pill left the bar believing its editor was still open.
   test('re-adding a cleared field opens its editor again', async () => {
     await bar.addField('counterparties');
     await bar.selectValue('curve');
@@ -332,8 +325,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The other direction of the codec: nav-and-back replays in-memory state, while a cold load
-  // has to rebuild the pills from the query string alone. That is the shareable-link promise.
+  // The codec's other direction: a cold load rebuilds the pills from the query string alone.
   test('loading a url that already carries filters rebuilds the pills', async () => {
     await ctx.sharedPage.goto('/#/history/events?counterparties=curve');
     await bar.waitForVisible();
@@ -346,16 +338,11 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The asset field is the only one whose values are fetched rather than listed, so its editor
-  // drives a remote search instead of filtering a local list.
-  //
-  // Searched by identifier rather than by `USDC`, because a symbol search cannot say *which* USDC
-  // comes back: every chain's USDC scores an identical levenshtein distance, and assets tied on
-  // distance come out in whatever order the query returns them. The list is virtualized, so a row
-  // ranked past the first screenful is not in the DOM at all, which is how a symbol search left
-  // this waiting for an option that was in the results but never rendered. An identifier (or a bare
-  // address) is parsed into an address search by `parseAssetSearchKeyword`, which matches the one
-  // token and leaves nothing to rank.
+  /* The asset field is the only one whose values are fetched, so its editor drives a remote
+     search. Searched by identifier: every chain's USDC ties on levenshtein distance and comes
+     back in query order, and the virtualized list never renders a row past the first screenful.
+     `parseAssetSearchKeyword` turns an identifier into an address search, leaving nothing to
+     rank. */
   test('the asset editor filters on a remotely searched asset', async () => {
     await bar.addField('asset');
     await bar.selectValue(A_USDC);
@@ -368,12 +355,9 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Asset suggestions reach the bar's inline list asynchronously and are appended after the
-  // synchronous ones, which is where a stale response or a moving highlight would show up.
-  //
-  // Which asset ranks first is the remote search's business, not the bar's: `USDC` exists on
-  // many chains and only the first few survive the per-field cap. So this asserts that an async
-  // row arrives and applies in one step, and leaves picking an exact asset to the editor test.
+  /* Asset suggestions arrive asynchronously and are appended after the synchronous ones, which
+     is where a stale response or a moving highlight would show. Which asset ranks first is the
+     remote search's business, so this asserts only that an async row arrives and applies. */
   test('the bar offers a remotely searched asset as a value suggestion', async () => {
     await bar.narrow('USDC');
     await bar.pickFirstValueSuggestion('asset');
@@ -403,8 +387,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // A free-text field has no option list, so a value it was filtered by before is the only thing
-  // the bar can offer for it. The bucket is persisted as a frontend setting.
+  // A free-text field has no option list, so a previously used value is all the bar can offer.
   test('a value used before is offered again by the bar', async () => {
     const note = `${NOTE_PREFIX} gamma`;
 
@@ -439,10 +422,9 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // A range is usually thought of in whole days, and a bound typed as a bare date used to be
-  // dropped without a word: no value reached the filter and the pill stayed empty. The two ends
-  // complete it from opposite sides of the day, so a From/To on the same date covers all of it
-  // rather than collapsing onto its first instant.
+  /* A bound typed as a bare date used to be dropped silently, leaving the pill empty. The two
+     ends complete it from opposite sides, so a From/To on one date covers the whole day rather
+     than collapsing onto its first instant. */
   test('a bound given as a bare date covers the whole day', async () => {
     await bar.addField('period');
     await bar.setDateBound('from', DATE_DAY_DIGITS);
@@ -457,9 +439,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The account pill is the bar's only param-bound field: it does not travel through `matches`
-  // like every other filter, but through a separate param source that feeds the request and the
-  // URL as `locationLabels`. That second binding is a distinct branch of the codec.
+  // The only param-bound field, reaching the request outside `matches` through `locationLabels`.
   test('the account pill filters through its param binding', async () => {
     await bar.addField('account');
     await bar.selectValue(ADDRESS_ALPHA, ADDRESS_ALPHA.toLowerCase());
@@ -474,16 +454,11 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The state pill is the first field bound to a param that goes to BOTH the request and the URL,
-  // and the only one whose read-back is hand-written rather than codec-generic: the route's
-  // comma-joined `stateMarkers` is split and validated in `applyHistoryEventRouteQuery`, then
-  // bridged into the bar's param bag. Loading a URL that carries it is the only way to drive that
-  // direction — the account pill covers state -> URL, and the matcher fields cover URL -> pill,
-  // but nothing covers URL -> pill for a param. The failure it guards is quiet: the filter still
-  // reaches the request while its pill silently never appears.
-  //
-  // Deliberately no row assertion. No seeded event is customized (that state is derived by the
-  // backend from an edit), so the rows here say nothing about the binding under test.
+  /* The state pill's read-back is hand-written rather than codec-generic: the route's
+     comma-joined `stateMarkers` is split and validated in `applyHistoryEventRouteQuery`, then
+     bridged into the param bag. Nothing else covers URL -> pill for a param, and the failure is
+     quiet, the filter reaching the request while its pill never appears. No row assertion: no
+     seeded event is customized, so the rows say nothing about the binding. */
   test('a url carrying a state marker rebuilds its pill', async () => {
     await ctx.sharedPage.goto('/#/history/events?stateMarkers=customized');
     await bar.waitForVisible();
@@ -491,18 +466,14 @@ test.describe.serial('history events pill filter', () => {
     await bar.expectPillVisible('state');
     expect(await bar.pillValue('state')).toContain('Customized');
 
-    // And back out again: clearing the pill has to take the param with it, or the request keeps
-    // filtering by a state the bar no longer shows.
+    // Clearing has to take the param with it, or the request filters by a state nothing shows.
     await bar.clearAll();
     await bar.expectNoPill('state');
     await expect.poll(() => url(), { timeout: 10000 }).not.toContain('stateMarkers');
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // A view stores both halves of the bar, so the pair under test is deliberately one matcher pill
-  // (location) and one param pill (account): the account is exactly what the old saved-filter
-  // shape could not express, and the failure worth catching is a view that comes back with only
-  // half of what was saved.
+  // One matcher and one param pill, since a view restoring only half is the failure worth catching.
   test('a saved view stores and restores both a matcher and a param pill', async () => {
     await views.open();
     // Nothing is filtered yet, so there is nothing to name.
@@ -536,8 +507,7 @@ test.describe.serial('history events pill filter', () => {
     await expect.poll(() => url(), { timeout: 10000 }).toContain(`locationLabels=${ADDRESS_ALPHA}`);
   });
 
-  // Deleting is the other half of the round trip, and it has to leave the applied filters alone:
-  // removing a view is not the same gesture as clearing the bar.
+  // Removing a view is not clearing the bar, so the applied filters have to survive it.
   test('a saved view can be deleted without disturbing the filters it applied', async () => {
     await views.open();
     await views.remove('Alpha on mainnet');
@@ -551,10 +521,9 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The whole menu, from opening it to applying a view, without touching the mouse. Only a real
-  // browser can answer this: jsdom does not model focus or tab order, and every bug this menu has
-  // had was a focus bug — the menu's own Escape handler is dead unless the list holds focus, and
-  // saving used to strand focus on a button that had just disappeared.
+  /* Every bug this menu has had was a focus bug, which jsdom cannot model: the Escape handler
+     is dead unless the list holds focus, and saving used to strand focus on a button that had
+     just disappeared. */
   test('the views menu can be driven entirely from the keyboard', async () => {
     await bar.addField('location');
     await bar.selectValue('optimism');
@@ -576,10 +545,9 @@ test.describe.serial('history events pill filter', () => {
     expect(await bar.keyboard.focusedTestId()).toBe('pill-views-list');
     await views.close();
 
-    // A second view, so moving the highlight is a move rather than a wrap onto itself. Saved with
-    // the mouse: the keyboard save is proven above, and with a view in the list Tab lands on that
-    // row rather than on the name field.
-    // Location is single-select, so picking another value replaces the one already there.
+    /* A second view, so moving the highlight is a move rather than a wrap onto itself. Saved
+       with the mouse, since with a view in the list Tab lands on that row, not the name field.
+       Location is single-select, so picking another value replaces the one there. */
     await bar.openPillEditor('location');
     await bar.selectValue('kraken');
     await bar.closeEditor('location');
@@ -615,8 +583,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // An amount and a date are written, not picked, so before this the inline input had nothing to
-  // offer for them: the query was only ever ranked against field labels and option values.
+  // An amount is written, not picked, and the query used to rank against labels and options only.
   test('a typed amount is offered as a filter in both directions', async () => {
     await bar.narrow('100');
 
@@ -650,8 +617,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The date field reads the query through the user's own date format, so this also pins that the
-  // bar and the picker agree about what a written date means: same cutoff as the picker test above.
+  // The date field reads through the user's own format, so bar and picker have to agree.
   test('a typed date is offered as a period filter', async () => {
     await bar.narrow(DATE_CUTOFF_TYPED);
 
@@ -678,10 +644,9 @@ test.describe.serial('history events pill filter', () => {
     await bar.pressInNarrow('Escape');
   });
 
-  // Picking a field and thinking better of it used to leave an empty pill that filters nothing and
-  // can only be got rid of by finding its remove button. Focus is the half only a browser can
-  // answer: the pill and its editor are gone, so without help focus falls to the document body and
-  // the next keystroke goes nowhere.
+  /* Abandoning a pick used to leave an empty pill that filters nothing. Focus is the half only
+     a browser can answer: with the pill and its editor gone, focus falls to the document body
+     and the next keystroke goes nowhere. */
   test('abandoning a field pick drops its pill and leaves the caret in the bar', async () => {
     await bar.addField('counterparties');
     await bar.expectPillVisible('counterparties');
@@ -693,8 +658,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // The add menu has had arrow-key navigation since `a542339f41` but nothing ever exercised it,
-  // and it is the entry point to every other filter: unreachable here means unreachable full stop.
+  // The add menu is the entry point to every filter, so unreachable here is unreachable at all.
   test('a field can be picked from the add menu with the keyboard', async () => {
     await bar.openAddMenu();
     // The menu focuses its search on mount, so typing narrows without clicking into it.
@@ -712,9 +676,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Escape had to reach the surrounding menu to close a checklist editor, which only worked while
-  // that menu held focus — so what Escape did depended on which editor was open. The list now owns
-  // it and tells the bar to close, the same as the range and text editors already did.
+  // Escape used to need the surrounding menu to hold focus; the list owns it now.
   test('escape alone closes a checklist editor', async () => {
     await bar.addField('counterparties');
     await bar.selectValue('curve');
@@ -731,12 +693,10 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Both bounds and the operator chips, without a mouse. Moving between min and max relies on
-  // plain Tab, and nothing asserted the chips could be reached or toggled at all.
+  // Moving between the bounds relies on plain Tab, and nothing covered the chips at all.
   test('the range editor and its operator chips work from the keyboard', async () => {
     await bar.addField('amount');
-    // The editor focuses its first bound itself: `autofocus` is ignored for an input added to an
-    // already-loaded document, which is why this is worth pinning.
+    // The editor focuses this itself, since `autofocus` is ignored on a loaded document.
     await bar.keyboard.expectFocusedField('range-min');
 
     await bar.keyboard.typeFocused('10');
@@ -767,17 +727,15 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // A pill used to be unreachable by keyboard entirely: its root was a div with a click handler,
-  // so Tab skipped straight past it and an existing filter could not be reopened without a mouse.
-  // Only a real browser can answer this — jsdom does not model tab order, and asserting that the
-  // element is a `<button>` in a unit test is not the same claim.
+  /* A pill's root was a div with a click handler, so Tab skipped it and an existing filter could
+     not be reopened without a mouse. jsdom does not model tab order, and asserting the element
+     is a `<button>` is not the same claim. */
   test('an existing pill can be reached and reopened from the keyboard', async () => {
     await bar.addField('counterparties');
     await bar.selectValue('uniswap-v2', 'uniswap');
     await bar.closeEditor('counterparties');
 
-    // The pills sit before the input in the DOM, so shift-tabbing out of it walks back into the
-    // last pill: its remove control first, then the region that opens the editor.
+    // Pills precede the input, so shift-tab walks back into the last one's remove control first.
     await bar.focusNarrowInput();
     await bar.keyboard.pressFocused('Shift+Tab');
     expect(await bar.keyboard.focusedTestId()).toBe('filter-pill-remove');
@@ -794,9 +752,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // Driven entirely from the keyboard. Every bug this bar has had was a focus bug that only
-  // shows up in a real browser: a menu stealing focus after the first keystroke, or `autofocus`
-  // being ignored on an input added to a loaded document. Clicking rows cannot catch either.
+  // Every bug here was a focus bug, and clicking rows catches none of them.
   test('a suggestion can be highlighted and applied from the keyboard', async () => {
     await bar.narrow('Optimism');
     await bar.expectValueSuggestion('location', 'optimism');
@@ -814,9 +770,7 @@ test.describe.serial('history events pill filter', () => {
 
   test('a checklist value can be ticked from the keyboard', async () => {
     await bar.addField('location');
-    // Focus belongs to the checklist's own search box once the editor opens. The search is
-    // narrowed to a single option on purpose: arrowing down wraps back onto it, so the row that
-    // gets ticked is the one intended rather than whichever the list happened to order second.
+    // Narrowed to one option on purpose: arrowing down wraps onto it, so the row ticked is known.
     await bar.searchValues('Optimism');
     await bar.toggleHighlightedValue();
     await bar.closeEditor('location');
@@ -849,9 +803,7 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  // A pill shows an icon per value up to ICON_VALUE_CAP (2) and collapses the rest to "+N", so
-  // the count appears from the third value on. Asserted at the boundary: two values must NOT
-  // collapse, or a cap regression in either direction passes unnoticed.
+  // Asserted at the boundary: two values must not collapse, or a cap regression either way passes.
   test('a pill collapses values past the icon cap', async () => {
     await bar.addField('counterparties');
     for (const [value, search] of [
@@ -941,7 +893,7 @@ test.describe.serial('history events pill filter paging', () => {
   });
 
   test('a filter survives sorting by date', async () => {
-    // Newest first by default, so the last kraken event leads.
+    /** Newest first by default, so the last kraken event leads. */
     const firstNote = async (): Promise<string | null> =>
       ctx.sharedPage.locator(ROW).first().locator('[data-testid=event-notes]').textContent();
     expect(await firstNote()).toContain(`paged ${PAGED_KRAKEN - 1}`);
@@ -991,10 +943,9 @@ test.describe.serial('history events pill filter across chains', () => {
     await bar.waitForVisible();
     await expect.poll(async () => ctx.sharedPage.locator(ROW).count(), { timeout: 15000 }).toBe(2);
 
-    // Driven through the URL rather than the asset picker: which USDC the remote search ranks
-    // first is not ours to predict (the picker's own async path is covered elsewhere). What
-    // matters here is that two assets showing the identical symbol select different rows — a
-    // mix-up no assertion based on the symbol text could ever reveal.
+    /* Driven through the URL, since which USDC the remote search ranks first is not ours to
+       predict. What matters is that two assets showing the identical symbol select different
+       rows, a mix-up no assertion on the symbol text could reveal. */
     for (const [identifier, expected] of [
       [A_USDC_OPTIMISM, 'usdc optimism'],
       [A_USDC, 'usdc mainnet'],

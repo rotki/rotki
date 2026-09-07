@@ -6,7 +6,7 @@ import { useMainStore } from '@/modules/core/common/use-main-store';
 import { createAutoLogin } from './use-auto-login';
 
 const { checkIfPasswordConfirmationNeeded, confirmPassword, controllerStateRef, lastLoginRef, needsPasswordConfirmationRef, resetSessionBackend, startAuto } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
   const { ref: vueRef } = require('vue');
   return {
     checkIfPasswordConfirmationNeeded: vi.fn(),
