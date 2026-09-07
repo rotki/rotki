@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import type { CustomAsset } from '@/modules/assets/types';
-import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import CustomAssetForm from '@/modules/assets/admin/custom/CustomAssetForm.vue';
-import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useCustomAssetFormDialog } from '@/modules/assets/admin/custom/use-custom-asset-form-dialog';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const open = defineModel<boolean>('open', { required: true });
@@ -25,87 +22,17 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const modelValue = ref<CustomAsset>();
-const loading = ref(false);
-const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof CustomAssetForm>>('form');
-const stateUpdated = ref(false);
+const stateUpdated = ref<boolean>(false);
 
-const { setMessage } = useMessageStore();
-const { addCustomAsset, editCustomAsset } = useAssetManagementApi();
-
-const emptyCustomAsset: () => CustomAsset = () => ({
-  customAssetType: '',
-  identifier: '',
-  name: '',
-  notes: '',
-});
-
-async function save() {
-  if (!isDefined(modelValue))
-    return false;
-
-  const formRef = get(form);
-  const valid = formRef?.validate();
-  if (!valid)
-    return false;
-
-  const data = get(modelValue);
-  let success;
-  let identifier = data.identifier;
-
-  const editMode = !!editableItem;
-  set(loading, true);
-  try {
-    if (editMode) {
-      success = await editCustomAsset(data);
-    }
-    else {
-      identifier = await addCustomAsset(omit(data, ['identifier']));
-      success = !!identifier;
-    }
-
-    if (identifier) {
-      formRef?.saveIcon(identifier);
-    }
-  }
-  catch (error: unknown) {
-    success = false;
-    const obj = { message: getErrorMessage(error) };
-    setMessage({
-      description: editMode
-        ? t('asset_management.edit_error', obj)
-        : t('asset_management.add_error', obj),
-    });
-  }
-
-  set(loading, false);
-  if (success) {
-    set(modelValue, undefined);
+const { dialogTitle, loading, modelErrorMessages, modelValue, save } = useCustomAssetFormDialog({
+  editableItem: () => editableItem,
+  form,
+  onSaved: (identifier): void => {
     emit('refresh');
     set(savedAssetId, identifier);
-  }
-  return success;
-}
-
-const dialogTitle = computed<string>(() =>
-  editableItem
-    ? t('asset_management.edit_title')
-    : t('asset_management.add_title'),
-);
-
-watchImmediate([open, () => editableItem], ([open, editableItem]) => {
-  if (!open) {
-    set(modelValue, undefined);
-  }
-  else {
-    if (editableItem) {
-      set(modelValue, editableItem);
-    }
-    else {
-      set(modelValue, emptyCustomAsset());
-    }
-  }
+  },
+  open,
 });
 </script>
 
@@ -123,7 +50,7 @@ watchImmediate([open, () => editableItem], ([open, editableItem]) => {
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelErrorMessages"
       v-model:state-updated="stateUpdated"
       :types="types"
     />
