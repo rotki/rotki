@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import type { BigNumber, FailedHistoricalAssetPriceResponse } from '@rotki/common';
+import type { FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
-import type { EditableMissingPrice } from '@/modules/reports/report-types';
-import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
+import { useEditableMissingPrices } from '@/modules/assets/prices/use-editable-missing-prices';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -23,21 +19,46 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const prices = ref<HistoricalPrice[]>([]);
-const errorMessages = ref<Record<string, string[]>>({});
-
-const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
-const tab = ref(0);
+const tab = ref<number>(0);
 
 const { useAssetField } = useAssetInfoRetrieval();
-const { failedDailyPrices, resetHistoricalPricesData, resolvedFailedDailyPrices } = useHistoricPriceCache();
+const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
 const currencySymbol = useSetting('currencySymbol');
-const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 
 const name = useAssetField(() => asset, 'name');
 
 const failedPrices = computed<FailedHistoricalAssetPriceResponse>(() => get(failedDailyPrices)[asset]);
+
+const missingPrices = computed<MissingPrice[]>(() => get(failedPrices).noPricesTimestamps.map(time => ({
+  fromAsset: asset,
+  time,
+  toAsset: get(currencySymbol),
+})));
+
+function markResolved(item: EditableMissingPrice): void {
+  const resolved = { ...get(resolvedFailedDailyPrices) };
+  const assetResolved = resolved[item.fromAsset];
+  if (assetResolved) {
+    assetResolved.push(item.time);
+  }
+  else {
+    resolved[item.fromAsset] = [item.time];
+  }
+  set(resolvedFailedDailyPrices, resolved);
+}
+
+const {
+  clearError,
+  errorMessages,
+  formattedItems,
+  getHistoricalPrices,
+  updatePrice,
+} = useEditableMissingPrices({
+  items: missingPrices,
+  keyOf: item => item.time.toString(),
+  onPriceUpdated: markResolved,
+});
 
 const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
   {
@@ -50,90 +71,6 @@ const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
     label: t('common.price'),
   },
 ]);
-
-const formattedItems = computed<EditableMissingPrice[]>(() => {
-  const fromAsset = asset;
-  const toAsset = get(currencySymbol);
-
-  return get(failedPrices).noPricesTimestamps.map((time) => {
-    const savedHistoricalPrice = get(prices).find(
-      price => price.fromAsset === fromAsset && price.toAsset === toAsset && price.timestamp === time,
-    );
-
-    const savedPrice = savedHistoricalPrice?.price;
-    const refreshedHistoricalPrice = get(refreshedHistoricalPrices)[time];
-
-    const useRefreshedHistoricalPrice = !savedPrice && !!refreshedHistoricalPrice;
-
-    const price = (useRefreshedHistoricalPrice ? refreshedHistoricalPrice : savedPrice)?.toFixed() ?? '';
-
-    return {
-      fromAsset,
-      price,
-      saved: !!savedPrice,
-      time,
-      toAsset,
-      useRefreshedHistoricalPrice,
-    };
-  });
-});
-
-async function getHistoricalPrices() {
-  set(prices, await fetchHistoricalPrices());
-}
-
-async function updatePrice(item: EditableMissingPrice) {
-  if (item.useRefreshedHistoricalPrice)
-    return;
-
-  const payload: HistoricalPriceDeletePayload = {
-    fromAsset: item.fromAsset,
-    sourceType: PriceOracle.MANUAL,
-    timestamp: item.time,
-    toAsset: item.toAsset,
-  };
-
-  try {
-    if (item.price) {
-      const formPayload: HistoricalPriceFormPayload = {
-        ...payload,
-        price: item.price,
-      };
-
-      if (item.saved)
-        await editHistoricalPrice(formPayload);
-      else await addHistoricalPrice(formPayload);
-    }
-    else if (item.saved) {
-      await deleteHistoricalPrice(payload);
-    }
-  }
-  catch (error: unknown) {
-    let errorMessage = getErrorMessage(error);
-    if (error instanceof ApiValidationError) {
-      const errors = error.getValidationErrors({ price: '' });
-      errorMessage = typeof errors === 'string' ? error.message : errors.price[0];
-    }
-
-    set(errorMessages, {
-      ...get(errorMessages),
-      [item.time]: errorMessage,
-    });
-  }
-
-  resetHistoricalPricesData([payload]);
-  const resolved = { ...get(resolvedFailedDailyPrices) };
-  const assetResolved = resolved[item.fromAsset];
-  if (assetResolved) {
-    assetResolved.push(item.time);
-  }
-  else {
-    resolved[item.fromAsset] = [item.time];
-  }
-  set(resolvedFailedDailyPrices, resolved);
-
-  await getHistoricalPrices();
-}
 
 onMounted(async () => {
   await getHistoricalPrices();
@@ -196,8 +133,9 @@ onMounted(async () => {
                 variant="outlined"
                 :success-messages="row.saved ? [t('profit_loss_report.actionable.missing_prices.price_is_saved')] : []"
                 :error-messages="errorMessages[row.time]"
-                @focus="delete errorMessages[row.time]"
-                @update:model-value="delete errorMessages[row.time]"
+                data-testid="missing-daily-price-input"
+                @focus="clearError(row)"
+                @update:model-value="clearError(row)"
                 @blur="updatePrice(row)"
               />
             </template>
@@ -229,6 +167,7 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         class="mt-2"
+        data-testid="close-missing-daily-prices"
         @click="emit('close')"
       >
         {{ t('common.actions.close') }}
