@@ -148,6 +148,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class EventDecoderFunction(Protocol):
+    """Event rules forward strict error handling when invoking nested enrichment rules."""
 
     def __call__(
             self,
@@ -157,6 +158,7 @@ class EventDecoderFunction(Protocol):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
+            strict: bool = False,
     ) -> EvmDecodingOutput:
         ...
 
@@ -471,6 +473,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
+            strict: bool = False,
     ) -> EvmDecodingOutput | None:
         """
         Execute event rules for the current tx log. Returns None when no
@@ -486,6 +489,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 tx_reference=str(transaction.tx_hash),
                 blockchain=self.evm_inquirer.blockchain,
                 func=rule,
+                raise_on_error=strict,
+                strict=strict,
                 token=token,
                 tx_log=tx_log,
                 transaction=transaction,
@@ -505,7 +510,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         return None
 
-    def decode_by_address_rules(self, context: DecoderContext) -> EvmDecodingOutput:
+    def decode_by_address_rules(
+            self,
+            context: DecoderContext,
+            strict: bool = False,
+    ) -> EvmDecodingOutput:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -526,6 +535,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             method,
             str(context.transaction.tx_hash),
             *(context, *args),
+            raise_on_error=strict,
         )
         if err:
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -538,6 +548,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             counterparties: set[str],
+            strict: bool = False,
     ) -> tuple[list[EvmEvent], bool]:
         """
         The post-decoding rules list consists of tuples (priority, rule) and must be
@@ -577,6 +588,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 tx_reference=str(transaction.tx_hash),
                 blockchain=self.evm_inquirer.blockchain,
                 func=rule,
+                raise_on_error=strict,
                 transaction=transaction,
                 decoded_events=decoded_events,
                 all_logs=all_logs,
@@ -594,10 +606,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+            strict: bool = False,
     ) -> tuple[list[EvmEvent], bool, set[str] | None]:
         """
         Decodes an evm transaction and its receipt and saves result in the DB.
         If write_buffer is given the DB write is deferred into it instead.
+        With strict=True, rule errors propagate instead of returning partial decoding results.
 
         Returns
         - the list of decoded events
@@ -663,13 +677,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     tx_reference=str(context.transaction.tx_hash),
                     blockchain=self.evm_inquirer.blockchain,
                     func=input_rule,
+                    raise_on_error=strict,
                     context=context,
                 )
                 if not is_err and result.events:
                     events.extend(result.events)
                     continue  # since the input data rule found events for this log
 
-            decoding_output = self.decode_by_address_rules(context)
+            decoding_output = self.decode_by_address_rules(context, strict=strict)
             if decoding_output.stop_processing is True:
                 self._write_new_tx_events_to_the_db(
                     events=[],
@@ -705,6 +720,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 )
 
             rules_decoding_output = self.try_all_rules(
+                strict=strict,
                 token=token,
                 tx_log=tx_log,
                 transaction=transaction,
@@ -768,6 +784,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         # should run after monerium special handling as in paraswap decoder, during post-decoding,
         # the extra EURe event receive is seen as a receival
         events, maybe_modified = self.run_all_post_decoding_rules(
+            strict=strict,
             transaction=transaction,
             decoded_events=events,
             all_logs=tx_receipt.logs,
@@ -827,6 +844,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         The regular decoder's deferred-write path is used so sequence-index normalization is
         identical to a persisted decode. The buffer is deliberately discarded, leaving both the
         history events and the transaction's decoded marker unchanged.
+
+        Rule failures propagate instead of returning partially decoded events.
         """
         with self.undecoded_tx_query_lock:
             with self.database.conn.read_ctx() as cursor:
@@ -836,6 +855,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 transaction=transaction,
                 tx_receipt=tx_receipt,
                 write_buffer=[],
+                strict=True,
             )
         return events
 
@@ -1009,6 +1029,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         if (
             tx_log.topics[0] != ERC20_OR_ERC721_APPROVE or
@@ -1198,6 +1219,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            strict: bool = False,
     ) -> EvmDecodingOutput:
         if (
             tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
@@ -1312,6 +1334,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         # Add additional information to transfers for different protocols
         enrichment_output = self._enrich_protocol_transfers(
+            strict=strict,
             context=EnricherContext(
                 tx_log=tx_log,
                 transaction=transaction,
@@ -1428,7 +1451,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         """Calculates gas burn based on relevant chain's formula."""
         return from_wei(FVal(tx.gas_used * tx.gas_price))
 
-    def _enrich_protocol_transfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
+    def _enrich_protocol_transfers(
+            self,
+            context: EnricherContext,
+            strict: bool = False,
+    ) -> TransferEnrichmentOutput:
         """Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.
         It assumes that the event being decoded has been already filtered and is a transfer.
@@ -1441,6 +1468,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 tx_reference=str(context.transaction.tx_hash),
                 blockchain=self.evm_inquirer.blockchain,
                 func=enrich_call,
+                raise_on_error=strict,
                 context=context,
             )
             if err:

@@ -933,6 +933,7 @@ def test_decode_transaction_without_persistence_discards_write_buffer(
         transaction=transaction,
         tx_receipt=receipt,
         write_buffer=[],
+        strict=True,
     )
 
 

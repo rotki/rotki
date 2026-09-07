@@ -136,6 +136,7 @@ class KittenswapDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         return self._decode_swap(DecoderContext(
             tx_log=tx_log,

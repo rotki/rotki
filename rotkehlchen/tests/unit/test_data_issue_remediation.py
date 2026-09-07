@@ -1,12 +1,15 @@
+from dataclasses import replace
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
@@ -142,7 +145,7 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
             relevant_address=TEST_ADDR1,
         )
         dbtx.add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, {
-            'transactionHash': spend_tx_hash.hex(),
+            'transactionHash': str(spend_tx_hash),
             'type': '0x0',
             'status': 1,
             'contractAddress': None,
@@ -401,3 +404,90 @@ def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) 
         'reason': 'receipt unavailable',
     }
     assert _get_saved_event_rows(database) == saved_rows
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+@pytest.mark.parametrize('rule_stage', [
+    'address', 'input', 'event', 'post_decoding', 'enrichment',
+])
+@pytest.mark.parametrize('error_type', [RemoteError, ValueError])
+def test_decoder_rule_failure_is_reported_as_failed_comparison(
+        database: DBHandler,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        rule_stage: str,
+        error_type: type[Exception],
+) -> None:
+    """A rule failure invalidates previews without changing normal decoding's error tolerance."""
+    issue_id, tx_hash = _add_negative_balance_issue(database, customized=True)
+    dbtx = DBEvmTx(database)
+    with database.user_write() as cursor:
+        dbtx.add_or_ignore_receipt_data(cursor, ChainID.ETHEREUM, {
+            'transactionHash': str(tx_hash),
+            'type': '0x0',
+            'status': 1,
+            'contractAddress': None,
+            'logs': [{
+                'logIndex': 0,
+                'data': '0x' + (1000000).to_bytes(32, 'big').hex(),
+                'address': (
+                    '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+                    if rule_stage == 'enrichment' else TEST_ADDR2
+                ),
+                'topics': [
+                    '0x' + ERC20_OR_ERC721_TRANSFER.hex(),
+                    '0x' + '00' * 12 + TEST_ADDR1[2:],
+                    '0x' + '00' * 12 + TEST_ADDR2[2:],
+                ] if rule_stage == 'enrichment' else ['0x' + '01' * 32],
+            }],
+        })
+    with database.conn.read_ctx() as cursor:
+        receipt = dbtx.get_receipt(cursor, tx_hash, ChainID.ETHEREUM)
+    assert receipt is not None
+    saved_rows = _get_saved_event_rows(database)
+    decoder = ethereum_transaction_decoder
+    failing_rule = Mock(__name__='failing_rule', side_effect=error_type('rule unavailable'))
+    chains_aggregator = MagicMock()
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder = decoder
+
+    with (
+        patch.object(
+            decoder,
+            'rules',
+            replace(
+                decoder.rules,
+                address_mappings=(
+                    {TEST_ADDR2: (failing_rule,)} if rule_stage == 'address' else {}
+                ),
+                input_data_rules=(
+                    {b'': {bytes.fromhex('01' * 32): failing_rule}}
+                    if rule_stage == 'input' else {}
+                ),
+                event_rules=(
+                    [failing_rule] if rule_stage == 'event' else
+                    [decoder._maybe_decode_erc20_721_transfer]
+                ),
+                token_enricher_rules=[failing_rule] if rule_stage == 'enrichment' else [],
+            ),
+        ),
+        patch.object(
+            decoder,
+            '_chain_specific_post_decoding_rules',
+            return_value=[(0, failing_rule)] if rule_stage == 'post_decoding' else [],
+        ),
+    ):
+        run_data_issue_remediation(database, chains_aggregator)
+        issue = DataIssuesManager(database).get_issue(issue_id)
+        assert issue.state == IssueState.UNRESOLVED
+        assert issue.auto_remediation_attempts[0]['result'] == 'redecoding_failed'
+        assert issue.auto_remediation_attempts[0]['reason'] == 'rule unavailable'
+        failing_rule.assert_called_once()
+        assert _get_saved_event_rows(database) == saved_rows
+
+        events, _, _ = decoder._decode_transaction(
+            transaction=_make_transaction(tx_hash),
+            tx_receipt=receipt,
+            write_buffer=[],
+        )
+        assert failing_rule.call_count == 2
+        assert len(events) != 0
+        assert any('failed' in message for message in decoder.msg_aggregator.consume_errors())
