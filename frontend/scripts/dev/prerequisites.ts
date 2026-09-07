@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import process from 'node:process';
 import { uvVersion } from '../../app/shared/uv';
-import { MAX_PORT } from '../dev-instance';
+import { MAX_PORT } from '../dev-instance/port-registry';
 import { createDevLogger } from './logger';
 
 const logger = createDevLogger('dev:prerequisites');

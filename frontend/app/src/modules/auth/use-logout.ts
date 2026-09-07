@@ -2,7 +2,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import { promiseTimeout } from '@vueuse/core';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useUsersApi } from '@/modules/auth/use-users-api';
-import { api } from '@/modules/core/api';
+import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';

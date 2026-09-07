@@ -12,7 +12,7 @@ export * from './color';
 
 export * from './data';
 
-export * from './history';
+export * from './history/events';
 
 export * from './liquity';
 
@@ -22,9 +22,13 @@ export * from './numbers';
 
 export type * from './premium';
 
-export * from './settings';
+export * from './settings/frontend';
 
-export * from './staking';
+export * from './settings/graphs';
+
+export * from './settings/themes';
+
+export * from './staking/eth2';
 
 export * from './statistics';
 

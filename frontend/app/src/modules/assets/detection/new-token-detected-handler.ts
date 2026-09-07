@@ -1,6 +1,7 @@
+import type { NewDetectedToken } from '@/modules/assets/detection/types';
 import type { MessageHandler } from '@/modules/core/messaging/interfaces';
 import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { type NewDetectedToken, useNewlyDetectedTokens } from '@/modules/assets/detection';
+import { useNewlyDetectedTokens } from '@/modules/assets/detection/use-newly-detected-tokens';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 

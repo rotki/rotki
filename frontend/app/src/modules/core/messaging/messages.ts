@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { NewDetectedToken } from '@/modules/assets/detection';
+import { NewDetectedToken } from '@/modules/assets/detection/types';
 import { CalendarEventWithReminder } from '@/modules/calendar/types';
 import { LegacyMessageData, SocketMessageType } from './types/base';
 import {

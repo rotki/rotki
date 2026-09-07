@@ -1,6 +1,6 @@
 import type { MatchSuggestions } from '@/modules/history/events/matching/types';
-import { snakeCaseTransformer } from '@/modules/core/api';
 import { api } from '@/modules/core/api/rotki-api';
+import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 

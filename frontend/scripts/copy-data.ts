@@ -4,7 +4,9 @@ import process from 'node:process';
 import { cancel, intro, isCancel, multiselect, outro, spinner } from '@clack/prompts';
 import { cac } from 'cac';
 import consola from 'consola';
-import { baseDataDir, buildSeedSkip, copyTree, type CopyTreeOptions, humanBytes, type WalkSkip } from './dev-instance';
+import { humanBytes } from './dev-instance/format';
+import { buildSeedSkip, copyTree, type CopyTreeOptions, type WalkSkip } from './dev-instance/fs-walk';
+import { baseDataDir } from './dev-instance/paths';
 
 const APP_NAME = 'rotki';
 const DATA_DIR = 'data';
