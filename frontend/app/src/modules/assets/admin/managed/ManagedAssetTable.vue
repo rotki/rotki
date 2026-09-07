@@ -2,6 +2,7 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
+import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
@@ -12,7 +13,6 @@ import { useAssetDisplayHelpers } from '@/modules/assets/admin/use-asset-display
 import { useManagedAssetOperations } from '@/modules/assets/admin/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/modules/assets/admin/use-managed-asset-table';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
-import { EVM_TOKEN, type IgnoredAssetsHandlingType, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
@@ -62,10 +62,11 @@ const {
   toggleWhitelistAsset,
 } = useManagedAssetOperations(() => emit('refresh'), () => ignoredHandling, selected);
 
-const { cols, data, expand, isExpanded } = useManagedAssetTable(
+const { cols, data, expand, getAssetLocation, isExpanded, spamDisabled } = useManagedAssetTable(
   paginationModel,
   expanded,
   () => collection,
+  selected,
 );
 
 useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
@@ -76,37 +77,6 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAss
 );
 
 const { fetchIgnoredAssets } = useIgnoredAssetOperations();
-
-const spamDisabled = computed<boolean>(() => {
-  const selectedIds = get(selected);
-  if (selectedIds.length === 0)
-    return false;
-
-  const assets = collection.data;
-  return !selectedIds.some((id) => {
-    const asset = assets.find(a => a.identifier === id);
-    return asset && isSpammableAssetType(asset.assetType);
-  });
-});
-
-/**
- * The chain whose explorer can show this asset, when one can.
- *
- * @remarks
- * Hyperliquid Core tokens have none: their ids are not HyperEVM addresses, so no explorer would
- * resolve them. Their icon comes from the resolved asset type instead, so nothing is lost.
- *
- * @returns the chain, or undefined when the asset has no explorer page
- */
-function getAssetLocation(row: SupportedAsset): string | undefined {
-  if (row.assetType === EVM_TOKEN)
-    return row?.evmChain ?? undefined;
-
-  if (row.assetType === SOLANA_TOKEN)
-    return SOLANA_CHAIN;
-
-  return undefined;
-}
 </script>
 
 <template>
