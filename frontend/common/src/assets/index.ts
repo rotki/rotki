@@ -1,3 +1,4 @@
+/* eslint-disable e18e/prefer-slice-over-split-index -- asset identifiers are multi-segment (`eip155:1/erc20:0x…`), so these reads take a middle segment rather than splitting in two; indexOf/slice cannot express that without bounding both ends */
 import { EvmTokenKind } from '../data';
 import { isValidEthAddress, isValidHyperliquidTokenAddress, isValidSolanaAddress } from '../text';
 

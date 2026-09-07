@@ -34,9 +34,13 @@ const statusConfig = computed<{ borderClass: string; bgClass: string }>(() => {
 </script>
 
 <template>
-  <div :class="`p-0.5 rounded-full size-3 border ${statusConfig.borderClass}`">
+  <div
+    class="p-0.5 rounded-full size-3 border"
+    :class="statusConfig.borderClass"
+  >
     <div
-      :class="`size-full rounded-full ${statusConfig.bgClass} ${animate ? 'animate-pulse' : ''}`"
+      class="size-full rounded-full"
+      :class="[statusConfig.bgClass, { 'animate-pulse': animate }]"
     />
   </div>
 </template>

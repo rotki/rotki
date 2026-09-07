@@ -2,7 +2,8 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockEngine, DEFAULT_TASK_COMPLETION_MS, type MockedAsyncCalls, type MockRequest } from './mock-engine';
 
 function request(method: string, url: string, body?: unknown): MockRequest {
-  return { body, method, path: url.split('?')[0], url };
+  const queryStart = url.indexOf('?');
+  return { body, method, path: queryStart === -1 ? url : url.slice(0, queryStart), url };
 }
 
 /** Reads the task id out of an async-query response, failing loudly if it is not there. */
@@ -41,9 +42,7 @@ describe('mock engine', () => {
     });
 
     it('should not let a mock answer for a path it merely starts with', () => {
-      // The old match was `mockKey.includes(requestPath)`, so a mock declared
-      // for /api/1/assets/updates also answered /api/1/assets, and with several
-      // matching keys the first declared one won.
+      // Regression: `mockKey.includes(requestPath)` let a mock for /api/1/assets/updates answer /api/1/assets.
       const engine = createMockEngine({ [UPDATES]: { GET: { result: 'wrong' } } });
 
       expect(engine.transformResponse(request('GET', '/api/1/assets'), { result: 'backend' })).toBeUndefined();
@@ -76,8 +75,7 @@ describe('mock engine', () => {
     });
 
     it('should advance the same cursor whatever query string the url carries', () => {
-      // The cursor used to be keyed on the full url in one branch and on the
-      // path in another, so the same endpoint advanced two separate counters.
+      // Regression: the cursor was keyed on the full url in one branch and on the path in another.
       const engine = createMockEngine(mocks);
 
       expect(engine.transformResponse(request('GET', UPDATES), {})).toStrictEqual({ result: 1 });
@@ -182,8 +180,7 @@ describe('mock engine', () => {
     });
 
     it('should merge into the path the app actually polls, without a trailing slash', () => {
-      // use-task-api.ts calls `/tasks`. The old code matched only `/api/1/tasks/`,
-      // so the merge never fired against the real frontend.
+      // Regression: matching only `/api/1/tasks/` meant the merge never fired for the app's `/tasks`.
       const engine = createMockEngine(mocks);
       const taskId = taskIdOf(engine.transformResponse(request('POST', UPDATES, { async_query: true }), {}));
 

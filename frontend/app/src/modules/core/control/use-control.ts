@@ -98,9 +98,12 @@ const available = ref<boolean>(false);
 
 /** Raised for a JSON-RPC `error` reply, so callers see a refused op as a failure. */
 export class ControlError extends Error {
-  constructor(readonly code: number, message: string) {
-    super(message);
+  readonly code: number;
+
+  constructor(message: string, options: ErrorOptions & { code: number }) {
+    super(message, options);
     this.name = 'ControlError';
+    this.code = options.code;
   }
 }
 
@@ -133,11 +136,11 @@ async function postRpc(
   });
 
   if (!response.ok)
-    throw new ControlError(response.status, t(transportErrorKey(response.status)));
+    throw new ControlError(t(transportErrorKey(response.status)), { code: response.status });
 
   const parsed = ControlRpcResponse.parse(await response.json());
   if (parsed.error)
-    throw new ControlError(parsed.error.code, parsed.error.message);
+    throw new ControlError(parsed.error.message, { code: parsed.error.code });
 
   return parsed.result;
 }
