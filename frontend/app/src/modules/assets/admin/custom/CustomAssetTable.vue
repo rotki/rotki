@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { some } from 'es-toolkit/compat';
+import { useCustomAssetTable } from '@/modules/assets/admin/custom/use-custom-asset-table';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -36,50 +36,12 @@ const { t } = useI18n({ useScope: 'global' });
 
 const pillLabels = usePillBarLabels();
 
-const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
-  {
-    cellClass: 'py-0',
-    class: 'w-1/2',
-    key: 'name',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  {
-    cellClass: 'py-0',
-    class: 'w-1/2',
-    key: 'custom_asset_type',
-    label: t('common.type'),
-    sortable: true,
-  },
-  {
-    cellClass: 'py-0',
-    key: 'actions',
-    label: '',
-  },
-]);
+const { cols, expand, getAsset, isExpanded } = useCustomAssetTable(expandedModel);
 
 useRememberTableSorting<CustomAsset>(TableId.CUSTOM_ASSET, sortModel, cols);
 
-const edit = (asset: CustomAsset) => emit('edit', asset);
-const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
-
-function getAsset(item: CustomAsset) {
-  return {
-    customAssetType: item.customAssetType,
-    identifier: item.identifier,
-    isCustomAsset: true,
-    name: item.name,
-    symbol: item.customAssetType,
-  };
-}
-
-function isExpanded(identifier: string) {
-  return some(get(expandedModel), { identifier });
-}
-
-function expand(item: CustomAsset) {
-  set(expandedModel, isExpanded(item.identifier) ? [] : [item]);
-}
+const edit = (asset: CustomAsset): void => emit('edit', asset);
+const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
 </script>
 
 <template>
