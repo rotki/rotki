@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import { useLogout } from '@/modules/auth/use-logout';
-import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { useSync } from '@/modules/session/use-session-sync';
 import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -13,163 +9,46 @@ import { useLinks } from '@/modules/shell/layout/use-links';
 import SyncButtons from '@/modules/shell/sync-progress/SyncButtons.vue';
 import SyncSettings from '@/modules/shell/sync-progress/SyncSettings.vue';
 import SyncUploadStatusAlert from '@/modules/shell/sync-progress/SyncUploadStatusAlert.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
-
-const syncSettingMenuOpen = ref<boolean>(false);
-const pending = ref<boolean>(false);
-const visible = ref<boolean>(false);
+import { useSyncIndicator } from '@/modules/shell/sync-progress/use-sync-indicator';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { premium, premiumSync } = storeToRefs(usePremiumStore());
 const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
-const { allowed: cloudBackupAllowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
-
-const {
-  cancelSync,
-  clearUploadStatus,
-  confirmChecked,
-  displaySyncConfirmation,
-  forceSync,
-  showSyncConfirmation,
-  syncAction,
-  uploadProgress,
-  uploadStatus,
-} = useSync();
-const { cancelActivity } = useNativeTask();
-const { useIsActive } = useTaskCenter();
-const { logout } = useLogout();
 const { href, onLinkClick } = useLinks();
 
-const isSyncing = useIsActive(ActivityKind.SYNC);
-
-const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
-
-const textChoice = computed<number>(() => (get(syncAction) === SYNC_UPLOAD ? 1 : 2));
-
-const message = computed<string>(() =>
-  get(syncAction) === SYNC_UPLOAD
-    ? t('sync_indicator.upload_confirmation.message_upload')
-    : t('sync_indicator.upload_confirmation.message_download'),
-);
-
-const { counter, pause, resume } = useInterval(600, {
-  controls: true,
-  immediate: false,
-});
-
-const icon = computed(() => {
-  const tick = get(counter) % 2 === 0;
-  if (get(isDownload))
-    return tick ? 'lu-cloud-download-2-fill' : 'lu-cloud-download-fill';
-
-  return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
-});
-
-const uploadProgressIcon = computed<string>(() => {
-  const progress = get(uploadProgress);
-  if (!progress)
-    return 'lu-cloud-fill';
-
-  const tick = get(counter) % 2 === 0;
-
-  switch (progress.type) {
-    case 'compressing':
-      return tick ? 'lu-folder-shrink-1' : 'lu-folder-shrink-2';
-    case 'encrypting':
-      return 'lu-shield';
-    case 'uploading': {
-      return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
-    }
-    default:
-      return 'lu-cloud-fill';
-  }
-});
-
-const tooltip = computed<string>(() => {
-  if (!get(cloudBackupAllowed))
-    return t('sync_indicator.cloud_backup_unavailable');
-
-  if (get(uploadStatus)) {
-    const title = t('sync_indicator.db_upload_result.title');
-    const message = t('sync_indicator.db_upload_result.message', {
-      reason: get(uploadStatus)?.message,
-    });
-    return `${title}: ${message}`;
-  }
-  return t('sync_indicator.menu_tooltip');
-});
-
-const currentProgressText = computed<string>(() => {
-  if (!isDefined(uploadProgress)) {
-    return '';
-  }
-
-  const type = get(uploadProgress).type;
-  switch (type) {
-    case 'compressing':
-      return t('sync_indicator.upload_progress.compressing');
-    case 'encrypting':
-      return t('sync_indicator.upload_progress.encrypting');
-    case 'uploading':
-      return t('sync_indicator.upload_progress.uploading');
-    default:
-      return '';
-  }
-});
-
-function showConfirmation(action: SyncAction) {
-  set(visible, false);
-  showSyncConfirmation(action);
-}
-
-async function performSync() {
-  if (get(syncAction) === SYNC_UPLOAD)
-    clearUploadStatus();
-
-  set(pending, true);
-  await forceSync(logout);
-  set(pending, false);
-}
-
-async function cancelForceSync() {
-  cancelActivity(ActivityKind.SYNC);
-  await nextTick(() => clearUploadStatus());
-}
-
-const runCounter = computed(() => {
-  if (get(pending)) {
-    return true;
-  }
-
-  const type = get(uploadProgress)?.type;
-  return type && ['compressing', 'uploading'].includes(type);
-});
-
-watch(isSyncing, (current, prev) => {
-  if (current !== prev && !current)
-    cancelSync();
-});
-
-watchImmediate(runCounter, (runCounter) => {
-  if (runCounter) {
-    resume();
-  }
-  else {
-    pause();
-  }
-});
+const {
+  cancelForceSync,
+  cancelSync,
+  clearUploadStatus,
+  cloudBackupAllowed,
+  confirmChecked,
+  currentProgressText,
+  displaySyncConfirmation,
+  icon,
+  isDownload,
+  isSyncing,
+  message,
+  modelSyncSettingMenuOpen,
+  modelVisible,
+  pending,
+  performSync,
+  showConfirmation,
+  textChoice,
+  tooltip,
+  uploadProgress,
+  uploadProgressIcon,
+  uploadStatus,
+} = useSyncIndicator();
 </script>
 
 <template>
   <template v-if="premium">
     <RuiMenu
       id="balances-saved-dropdown"
-      v-model="visible"
+      v-model="modelVisible"
       :class-names="{ menu: 'z-[215]' }"
-      :persistent="syncSettingMenuOpen"
+      :persistent="modelSyncSettingMenuOpen"
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton
@@ -238,7 +117,7 @@ watchImmediate(runCounter, (runCounter) => {
             </div>
           </div>
           <SyncSettings
-            v-model="syncSettingMenuOpen"
+            v-model="modelSyncSettingMenuOpen"
             :disabled="!cloudBackupAllowed"
           />
         </div>
@@ -298,6 +177,7 @@ watchImmediate(runCounter, (runCounter) => {
             <RuiButton
               variant="text"
               color="primary"
+              data-testid="cancel-force-sync"
               @click="cancelForceSync()"
             >
               {{ t('common.actions.cancel') }}
