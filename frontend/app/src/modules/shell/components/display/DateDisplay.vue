@@ -19,8 +19,10 @@ const dateFormat = computed<string>(() => {
     ? get(dateDisplayFormat)
     : get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
 
-  if (noTime)
-    return display.split(' ')[0];
+  if (noTime) {
+    const timeStart = display.indexOf(' ');
+    return timeStart === -1 ? display : display.slice(0, timeStart);
+  }
 
   return display;
 });

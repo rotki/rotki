@@ -215,7 +215,10 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     const chain = blockchain ? toValue(blockchain) : undefined;
     const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
     return entries
-      .map(entry => entry.split('#')[0])
+      .map((entry) => {
+        const chainStart = entry.indexOf('#');
+        return chainStart === -1 ? entry : entry.slice(0, chainStart);
+      })
       .filter(uniqueStrings);
   });
 

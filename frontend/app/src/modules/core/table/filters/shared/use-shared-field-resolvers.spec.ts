@@ -23,7 +23,7 @@ describe('useSharedFieldResolvers', () => {
       const shown = resolveHex(ADDRESS);
 
       expect(shown).toBe('0xd8dA...6045');
-      expect(ADDRESS.startsWith(shown.split('...')[0])).toBe(true);
+      expect(ADDRESS.startsWith(shown.slice(0, shown.indexOf('...')))).toBe(true);
     });
 
     it('should scramble an address once privacy is on', () => {

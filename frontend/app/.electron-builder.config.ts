@@ -49,8 +49,8 @@ async function afterSign(context: AfterPackContext): Promise<void> {
 }
 
 /**
- module.exports = {
- * @type {import("electron-builder").Configuration}
+ * The electron-builder configuration, typed by the `Configuration` export of the package itself.
+ *
  * @see https://www.electron.build/configuration#configuration
  */
 export default {
@@ -70,7 +70,7 @@ export default {
     releaseType: 'draft',
   },
   buildVersion: process.env.ROTKI_VERSION,
-  // eslint-disable-next-line no-template-curly-in-string
+  // eslint-disable-next-line no-template-curly-in-string -- electron-builder interpolates these placeholders itself; a JS template literal would resolve them here instead
   artifactName: '${productName}-${platform}_${arch}-v${buildVersion}.${ext}',
   extraResources: [{
     from: '../../build/backend',

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createDatabaseIdentifier, createShortHash } from './hash';
 
+/** The identifier is `<hash>.<username>`; the assertions here compare only the hash. */
+function hashOf(identifier: string): string {
+  const separator = identifier.indexOf('.');
+  return separator === -1 ? identifier : identifier.slice(0, separator);
+}
+
 describe('createShortHash', () => {
   it('should return a 6-character string', () => {
     const hash = createShortHash('/home/user/data');
@@ -42,20 +48,14 @@ describe('createDatabaseIdentifier', () => {
     const id1 = createDatabaseIdentifier('/same/path', 'user1');
     const id2 = createDatabaseIdentifier('/same/path', 'user2');
 
-    const hash1 = id1.split('.')[0];
-    const hash2 = id2.split('.')[0];
-
-    expect(hash1).toBe(hash2);
+    expect(hashOf(id1)).toBe(hashOf(id2));
   });
 
   it('should produce different hash for different dataDirectory', () => {
     const id1 = createDatabaseIdentifier('/path/one', 'sameuser');
     const id2 = createDatabaseIdentifier('/path/two', 'sameuser');
 
-    const hash1 = id1.split('.')[0];
-    const hash2 = id2.split('.')[0];
-
-    expect(hash1).not.toBe(hash2);
+    expect(hashOf(id1)).not.toBe(hashOf(id2));
   });
 
   it('should preserve username in identifier', () => {

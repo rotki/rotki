@@ -50,10 +50,11 @@ const requestBodies = new WeakMap<IncomingMessage, unknown>();
 
 function describe(req: IncomingMessage): MockRequest {
   const url = req.url ?? '';
+  const queryStart = url.indexOf('?');
   return {
     body: requestBodies.get(req),
     method: req.method ?? 'GET',
-    path: url.split('?')[0],
+    path: queryStart === -1 ? url : url.slice(0, queryStart),
     url,
   };
 }
@@ -92,6 +93,17 @@ function copyHeaders(proxyRes: IncomingMessage, res: ServerResponse, omit: strin
  * the engine can actually rewrite. A compressed body is passed through: it would
  * have to be inflated to be parsed, and the backend does not compress in dev.
  */
+/**
+ * Whether the engine gets to rewrite this response instead of it being piped straight through.
+ *
+ * @remarks
+ * A declared mock replaces the response outright, so it applies whatever the backend said: faking
+ * an endpoint the dev backend rejects (a premium 402, an unimplemented 404) is most of what
+ * `async-mock.json` is for.
+ *
+ * The task endpoints instead merge into the backend's own answer, so they need it to be one.
+ * Rewriting an error into a 200 would report "no tasks running" for what is actually a failure.
+ */
 function canRewrite(req: IncomingMessage, proxyRes: IncomingMessage): boolean {
   const request = describe(req);
   if (!engine.handles(request))
@@ -100,15 +112,9 @@ function canRewrite(req: IncomingMessage, proxyRes: IncomingMessage): boolean {
   if (proxyRes.headers['content-encoding'])
     return false;
 
-  // A declared mock replaces the response outright, so it applies whatever the
-  // backend said — faking an endpoint the dev backend rejects (a premium 402, an
-  // unimplemented 404) is most of what async-mock.json is for.
   if (engine.isMocked(request))
     return true;
 
-  // The task endpoints merge into the backend's own answer, so they need it to be
-  // one: rewriting an error into a 200 would report "no tasks running" for what
-  // is actually a failure.
   const status = proxyRes.statusCode ?? 200;
   if (status < 200 || status > 299)
     return false;
@@ -128,9 +134,7 @@ function onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: Server
   proxyRes.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
   proxyRes.on('end', () => {
     const raw = Buffer.concat(chunks);
-    // A rejected or non-JSON body is still worth handing to the engine: a mock
-    // ignores it entirely. Only the task merge needs it, and that path is gated
-    // on a 2xx JSON response above.
+    // A non-JSON body still reaches the engine; only the task merge reads it, gated in canRewrite.
     let backend: unknown;
     try {
       backend = JSON.parse(raw.toString());
@@ -160,10 +164,7 @@ function onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: Server
     // The rewritten payload has its own length.
     copyHeaders(proxyRes, res, ['content-length']);
     res.setHeader('content-length', payload.byteLength.toString());
-    // Deliberately unlogged: the task poll runs on a timer, so a line per
-    // rewrite is one every couple of seconds and drowns everything else. What is
-    // worth seeing already logs itself — a mock task appearing and completing,
-    // and each renderer bundle served.
+    // Deliberately unlogged: the task poll is on a timer, so a line per rewrite drowns the rest.
     res.end(payload);
   });
 }
@@ -172,11 +173,15 @@ const proxy = createProxyServer({ selfHandleResponse: true, target: backend, ws:
 
 proxy.on('proxyRes', onProxyRes);
 
-// httpxy emits `error` and resolves; it writes no response of its own, and with
-// an `error` listener registered it never will. Without this the client is left
-// hanging until it times out — and since starling now routes every `/api/1/*`
-// through here, a core that is down or restarting would hang the whole app
-// rather than failing fast. http-proxy-middleware answered 502 for us before.
+/**
+ * Answers a failed hop, which httpxy will not do for us.
+ *
+ * @remarks
+ * httpxy emits `error` and resolves; it writes no response of its own, and with an `error`
+ * listener registered it never will. Without this the client hangs until it times out, and since
+ * starling routes every `/api/1/*` through here, a core that is down or restarting would hang the
+ * whole app rather than failing fast. http-proxy-middleware answered 502 for us before.
+ */
 proxy.on('error', (error, _req, res) => {
   consola.error(error);
   if (!res)
@@ -210,8 +215,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // A preflight for a mocked endpoint is answered here: the CORS headers above
-  // are the whole response, so the backend hop would add nothing.
+  // A preflight for a mocked endpoint ends here: the CORS headers above are the whole answer.
   if (request.method === 'OPTIONS' && engine.isMocked(request)) {
     res.statusCode = 200;
     res.end();
@@ -232,8 +236,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('upgrade', (req, socket, head) => {
-  // Node types the upgrade socket as Duplex, but HTTP/1.1 upgrades are always
-  // net.Socket, which is what httpxy expects.
+  // Node types the upgrade socket as Duplex; an HTTP/1.1 upgrade is always the net.Socket httpxy wants.
   if (!(socket instanceof net.Socket)) {
     socket.destroy();
     return;
