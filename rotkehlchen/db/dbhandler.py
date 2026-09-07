@@ -2576,6 +2576,17 @@ class DBHandler:
                 '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
                 (name, location.serialize_for_db(), api_key, api_secret.decode() if api_secret is not None else None, passphrase),  # noqa: E501
             )
+            # Older versions did not clear the per-instance query progress (Coinbase account
+            # cursors, Bitstamp offset, Binance pair progress and lending range) when an
+            # exchange was removed or renamed, so stale progress under this name would make
+            # the new connection skip everything before it. Nothing can legitimately exist
+            # under the name of an exchange that is only now being added, so drop it. Has
+            # to happen before the binance history start range is written below.
+            self.delete_used_query_range_for_exchange(
+                write_cursor=cursor,
+                location=location,
+                exchange_name=name,
+            )
 
             if location == Location.KRAKEN:
                 if kraken_account_type is not None:
@@ -2780,10 +2791,13 @@ class DBHandler:
                 ],
             )
             # move the per-instance query progress (Coinbase account cursors, Bitstamp
-            # offset, Binance pair progress) to the new name so history isn't re-queried
+            # offset, Binance pair progress) to the new name so history isn't re-queried.
+            # OR REPLACE since older versions left the keys of removed or renamed exchanges
+            # behind and no live exchange can hold the new name (user_credentials PK), so
+            # anything already under it is stale and must not block the rename.
             cache_prefix = f'{location!s}_{name}_'
             write_cursor.executemany(
-                'UPDATE key_value_cache SET name=? WHERE name=?',
+                'UPDATE OR REPLACE key_value_cache SET name=? WHERE name=?',
                 [
                     (f'{location!s}_{new_name}_{key.removeprefix(cache_prefix)}', key)
                     for key in self._get_exchange_instance_cache_keys(
