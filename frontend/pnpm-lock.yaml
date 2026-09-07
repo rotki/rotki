@@ -138,9 +138,6 @@ catalogs:
     eslint:
       specifier: 10.8.0
       version: 10.8.0
-    eslint-plugin-jsdoc:
-      specifier: 64.2.1
-      version: 64.2.1
     eslint-plugin-tsdoc:
       specifier: 0.5.2
       version: 0.5.2
@@ -310,9 +307,6 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.8.0(jiti@2.7.0)(supports-color@10.2.2)
-      eslint-plugin-jsdoc:
-        specifier: 'catalog:'
-        version: 64.2.1(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       eslint-plugin-tsdoc:
         specifier: 'catalog:'
         version: 0.5.2(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
@@ -3697,12 +3691,6 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
-
-  eslint-plugin-jsdoc@64.2.1:
-    resolution: {integrity: sha512-6GpSYxLPcbMw38S94Cngrgs1Zv8yLinQS1O17OxJVZ6deLbrMRCERUYQKceweSqEuG2kx5Amn4l3aKPkCp4geQ==}
-    engines: {node: ^22.22.2 || >=24.15.0}
-    peerDependencies:
-      eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
 
   eslint-plugin-jsdoc@64.3.2:
     resolution: {integrity: sha512-9/j8KKTdLt5Gy7FbayPASLKabm9wcntcwkOJ+kidikNudqglqxjbsZBddkPwK9/6AeOyCwlwwAtuzHQzwTQP7A==}
@@ -9993,26 +9981,6 @@ snapshots:
   eslint-plugin-import-lite@0.6.0(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2)):
     dependencies:
       eslint: 10.8.0(jiti@2.7.0)(supports-color@10.2.2)
-
-  eslint-plugin-jsdoc@64.2.1(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2):
-    dependencies:
-      '@es-joy/jsdoccomment': 0.95.1
-      '@es-joy/resolve.exports': 1.2.0
-      are-docs-informative: 0.1.1
-      comment-parser: 1.4.8
-      debug: 4.4.3(supports-color@10.2.2)
-      escape-string-regexp: 5.0.0
-      eslint: 10.8.0(jiti@2.7.0)(supports-color@10.2.2)
-      espree: 11.2.0
-      esquery: 1.7.0
-      html-entities: 2.6.0
-      object-deep-merge: 2.0.1
-      parse-imports-exports: 0.2.4
-      semver: 7.8.5
-      spdx-expression-parse: 5.0.0
-      to-valid-identifier: 1.0.0
-    transitivePeerDependencies:
-      - supports-color
 
   eslint-plugin-jsdoc@64.3.2(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3):
     dependencies:

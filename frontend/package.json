@@ -56,7 +56,6 @@
     "consola": "catalog:",
     "dotenv": "catalog:",
     "eslint": "catalog:",
-    "eslint-plugin-jsdoc": "catalog:",
     "eslint-plugin-tsdoc": "catalog:",
     "flag-icons": "catalog:",
     "husky": "catalog:",
