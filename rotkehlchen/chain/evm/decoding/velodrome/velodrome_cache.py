@@ -191,7 +191,7 @@ def query_velodrome_data_from_chain(
     pool_data: list[dict] = []
     pool_data_chunk: list[dict] = []
     offset = initial_offset = 0 if reload_all else len(existing_pools)
-    limit, last_notified_ts = POOL_DATA_CHUNK_SIZE, Timestamp(0)
+    limit = POOL_DATA_CHUNK_SIZE
     while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == initial_offset):  # noqa: E501
         try:
             pool_data_chunk = data_contract.call(
@@ -209,17 +209,8 @@ def query_velodrome_data_from_chain(
         pool_data.extend(pool_data_chunk)
         offset += limit
 
-        last_notified_ts = maybe_notify_new_pools_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=counterparty,
-            chain=inquirer.chain_id,
-            get_new_pools_count=lambda: len(pool_data),
-        )
-
     deserialized_pools: list[VelodromePoolData] = []
-    all_pools_length = len(pool_data)
-    for idx, raw_pool in enumerate(pool_data):
+    for raw_pool in pool_data:
         try:
             if (pool_address := deserialize_evm_address(raw_pool[0])) in existing_pools:
                 continue  # This pool is already present in the cache
@@ -243,13 +234,28 @@ def query_velodrome_data_from_chain(
             continue
 
         deserialized_pools.append(pool)
+
+    if len(deserialized_pools) == 0:
+        return []
+
+    # Only start progress once there are uncached pools to process. Fetched pools may all
+    # be cached already, in which case a discovery update would leave a pending 0/N row.
+    last_notified_ts = maybe_notify_new_pools_status(
+        msg_aggregator=msg_aggregator,
+        last_notified_ts=Timestamp(0),
+        protocol=counterparty,
+        chain=inquirer.chain_id,
+        get_new_pools_count=lambda: len(deserialized_pools),
+    )
+    all_pools_length = len(deserialized_pools)
+    for processed, pool in enumerate(deserialized_pools, start=1):
         save_velodrome_pool_to_cache(database=inquirer.database, pool=pool)
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=msg_aggregator,
             last_notified_ts=last_notified_ts,
             protocol=counterparty,
             chain=inquirer.chain_id,
-            processed=(processed := idx + 1),
+            processed=processed,
             total=all_pools_length,
         )
         log.debug(
