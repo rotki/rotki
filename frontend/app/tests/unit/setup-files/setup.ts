@@ -130,6 +130,11 @@ vi.mock('vue-router', () => {
         set(route, { ...get(route), query });
         return true;
       }),
+      // Components that clear a `?add=`-style parameter call replace, so the mock must expose it.
+      replace: vi.fn(({ query }) => {
+        set(route, { ...get(route), query });
+        return true;
+      }),
     })),
     createRouter: vi.fn().mockImplementation(() => ({
       beforeEach: vi.fn(),
