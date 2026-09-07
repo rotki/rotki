@@ -22,6 +22,7 @@ from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.migrations.manager import LAST_GLOBALDB_DATA_MIGRATION
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
@@ -31,15 +32,16 @@ from rotkehlchen.tests.utils.globaldb import (
     find_non_checksummed_addresses_in_db,
 )
 from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     ChainID,
     Location,
     Timestamp,
 )
+from rotkehlchen.utils.network import query_file
 
 if TYPE_CHECKING:
     from rotkehlchen.db.updates import RotkiDataUpdater
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -77,6 +79,40 @@ IGNORED_PROTOCOLS: Final = {
     SPAM_PROTOCOL,
     CPT_GEARBOX,
 }
+
+
+@requires_env([TestEnvironment.STANDARD])
+def test_rpc_node_updates_consistency_with_packaged_db(
+        data_updater: RotkiDataUpdater,
+) -> None:
+    """Check all supported EVM chains have remote and packaged default RPC nodes."""
+    data_updater.branch = os.environ.get('TARGET_BRANCH', 'develop')
+    latest_version = data_updater._get_remote_info_json()[UpdateType.RPC_NODES.value]['latest']
+    remote_data = query_file(
+        f'https://raw.githubusercontent.com/rotki/data/{data_updater.branch}/updates/'
+        f'{UpdateType.RPC_NODES.value}/v{latest_version}.json',
+        is_json=True,
+    )
+
+    expected_chains = {chain.value for chain in EVM_CHAINS_WITH_TRANSACTIONS}
+    remote_chains = {node['blockchain'] for node in remote_data[UpdateType.RPC_NODES.value]}
+    globaldb = GlobalDBHandler()
+    with globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor:
+        packaged_chains = {
+            row[0]
+            for row in packaged_db_cursor.execute(
+                'SELECT DISTINCT blockchain FROM default_rpc_nodes',
+            )
+        }
+
+    assert (missing_chains := {
+        source: sorted(expected_chains - available_chains)
+        for source, available_chains in (
+            ('remote RPC updates', remote_chains),
+            ('packaged global DB', packaged_chains),
+        )
+        if expected_chains - available_chains
+    }) == {}, f'Missing RPC nodes for EVM chains: {missing_chains}'
 
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=False)
