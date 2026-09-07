@@ -451,13 +451,32 @@ def test_get_historical_balance_with_filters(
         }],
     }
 
-    for filters, error_msg in (  # test validation errors
-        ({'timestamp': START_TS, 'location_label': make_evm_address()}, 'Unknown location label'),
-        ({'timestamp': START_TS, 'protocol': 'idontexist'}, 'Unknown protocol'),
-    ):
+    validation_cases: tuple[tuple[str, dict[str, object], str], ...] = (
+        (
+            'timestamphistoricalbalanceresource',
+            {'timestamp': START_TS, 'location_label': make_evm_address()},
+            'Unknown location label',
+        ),
+        (
+            'timestamphistoricalbalanceresource',
+            {'timestamp': START_TS, 'protocol': 'idontexist'},
+            'Unknown protocol',
+        ),
+        (
+            'currenthistoricalbalanceresource',
+            {'location_label': make_evm_address()},
+            'Unknown location label',
+        ),
+        (
+            'currenthistoricalbalanceresource',
+            {'protocol': 'idontexist'},
+            'Unknown protocol',
+        ),
+    )
+    for resource_name, filters, error_msg in validation_cases:
         assert_error_response(
             response=requests.post(
-                api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
+                api_url_for(rotkehlchen_api_server, resource_name),
                 json=filters,
             ),
             contained_in_msg=error_msg,

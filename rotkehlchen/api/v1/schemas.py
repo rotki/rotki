@@ -4822,13 +4822,7 @@ class DataIssueManualResolveSchema(Schema):
     note = EmptyAsNoneStringField(load_default=None)
 
 
-class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):
-    asset = AssetField(expected_type=Asset, load_default=None)
-    location = LocationField(load_default=None)
-    location_label = EmptyAsNoneStringField(load_default=None)
-    protocol = EmptyAsNoneStringField(load_default=None)
-    group_by_account = fields.Boolean(load_default=False)
-
+class HistoricalBalanceFilterValidationSchemaMixin(Schema):
     def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
         super().__init__()
         self.db = db
@@ -4859,6 +4853,18 @@ class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryAr
                         message=f'Unknown location label "{location_label}" provided',
                         field_name='location_label',
                     )
+
+
+class HistoricalPerAssetBalanceSchema(
+        HistoricalBalanceFilterValidationSchemaMixin,
+        SnapshotTimestampQuerySchema,
+        AsyncQueryArgumentSchema,
+):
+    asset = AssetField(expected_type=Asset, load_default=None)
+    location = LocationField(load_default=None)
+    location_label = EmptyAsNoneStringField(load_default=None)
+    protocol = EmptyAsNoneStringField(load_default=None)
+    group_by_account = fields.Boolean(load_default=False)
 
     @post_load
     def make_historical_balance_query(
@@ -4880,42 +4886,14 @@ class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryAr
         }
 
 
-class CurrentHistoricalBalanceSchema(AsyncQueryArgumentSchema):
+class CurrentHistoricalBalanceSchema(
+        HistoricalBalanceFilterValidationSchemaMixin,
+        AsyncQueryArgumentSchema,
+):
     asset = AssetField(expected_type=Asset, load_default=None)
     location = LocationField(load_default=None)
     location_label = EmptyAsNoneStringField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
-
-    def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
-        super().__init__()
-        self.db = db
-        self.known_counterparties = known_counterparties
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if (
-                (protocol := data['protocol']) is not None and
-                protocol not in self.known_counterparties
-        ):
-            raise ValidationError(
-                message=f'Unknown protocol "{protocol}" provided',
-                field_name='protocol',
-            )
-
-        if (location_label := data['location_label']) is not None:
-            with self.db.conn.read_ctx() as cursor:
-                if cursor.execute(
-                    'SELECT COUNT(*) FROM history_events WHERE location_label = ?',
-                    (location_label,),
-                ).fetchone()[0] == 0:
-                    raise ValidationError(
-                        message=f'Unknown location label "{location_label}" provided',
-                        field_name='location_label',
-                    )
 
     @post_load
     def make_historical_balance_query(
