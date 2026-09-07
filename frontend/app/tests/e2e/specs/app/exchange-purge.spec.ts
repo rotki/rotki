@@ -12,11 +12,9 @@ import { PurgeDataPage } from '../../pages/purge-data-page';
 const LOCATION = 'kraken';
 
 async function seedAllCategories(request: Parameters<typeof apiSeedSwap>[0]): Promise<void> {
-  // Tests share a backend, so re-seeds run sequentially. The IDs embedded in
-  // each helper's `unique_id`/`group_identifier` are stamped from the
-  // timestamp, so every reseed creates fresh rows even after a prior purge.
-  // Use a base timestamp safely in the past so the default
-  // `to_timestamp = now()` query filter on the events endpoint includes them.
+  /* The ids in each helper's `unique_id` are stamped from the timestamp, so every reseed makes
+     fresh rows even after a purge. In the past, so the endpoint's `to_timestamp = now()` filter
+     includes them. */
   const base = Date.now() - 60_000;
   await apiSeedSwap(request, { location: LOCATION, sequenceIndex: 0, timestampMs: base });
   await apiSeedAssetMovement(request, { location: LOCATION, sequenceIndex: 0, timestampMs: base + 1 });
@@ -38,16 +36,12 @@ test.describe.serial('exchange purge by category', () => {
   });
 
   test.beforeEach(async ({ request }) => {
-    // Wipe-and-seed so each test starts from a known {1 trade, 1 movement, 1 other}.
-    // Using the purge endpoint itself for cleanup keeps setup light and verifies
-    // no test leaves residual state behind.
+    // Purging here starts every test from a known set and proves nothing was left behind.
     await apiPurgeExchangeData(request, LOCATION, 'all');
     await seedAllCategories(request);
   });
 
-  // A single seeded swap expands into spend+receive sub-events (entry_type
-  // `swap event`), so the trade-bucket count is 2 per swap. Asset movements
-  // and `history event` rows stay 1:1 with seeds.
+  // A swap expands into spend and receive, so a trade counts two; the others stay 1:1.
   const seededCounts = { assetMovements: 1, other: 1, trades: 2 };
 
   test('purges only trades', async ({ request }) => {

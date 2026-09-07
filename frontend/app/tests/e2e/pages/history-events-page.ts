@@ -44,8 +44,7 @@ export class HistoryEventsPage {
     await entryTypeSelect.locator('[data-id=activator]').click();
     const menu = this.page.locator('[role=menu]');
     await menu.waitFor({ state: 'visible' });
-    // RuiMenuSelect uses a virtual list — ensure the target option is rendered
-    // by scrolling the internal scroller to the top before clicking.
+    // RuiMenuSelect virtualises, so the target option renders only once scrolled to.
     await menu.evaluate((el) => {
       const scrollers = el.querySelectorAll('*');
       for (const element of scrollers) {
@@ -68,17 +67,13 @@ export class HistoryEventsPage {
     const digits = `${TEST_EVENT_DATE_DIGITS}${seconds}000`;
 
     const input = this.page.locator('[data-testid=datetime] input');
-    // Click at the far left to focus the first segment (DD).
-    // The component uses cursor position to determine the active segment.
+    // Cursor position picks the active segment, so the far left focuses DD.
     await input.click({ position: { x: 1, y: 1 } });
-    // Type digits — the component auto-advances between segments
-    // (DD/MM/YYYY HH:mm:ss.SSS).
+    // The component auto-advances between segments as the digits arrive.
     for (const digit of digits)
       await input.press(digit);
     await input.press('Tab');
-    // The datetime input opens a calendar popover on click; Tab does not
-    // always close it. Press Escape and wait for the popover to detach so
-    // the next form click is not intercepted by the calendar overlay.
+    // Tab does not always close the calendar popover, which would intercept the next click.
     await input.press('Escape');
     await this.page.locator('[role=menu] h3').waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
@@ -92,8 +87,7 @@ export class HistoryEventsPage {
     const option = menu.getByText(value, { exact: false }).first();
     await option.waitFor({ state: 'visible' });
     await option.click();
-    // Wait for the menu to close so the next activator click is not
-    // intercepted by the still-visible menu overlay.
+    // A still-visible menu overlay would intercept the next activator click.
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
@@ -164,15 +158,13 @@ export class HistoryEventsPage {
    */
   async applyTableFilter(fieldKey: string, value: string): Promise<void> {
     const bar = new PillFilterBar(this.page);
-    // A field that already has a pill is no longer offered by the add menu, so re-filtering the
-    // same field means editing its pill instead. Callers apply a location filter per test.
+    // The add menu drops a field that already has a pill, so re-filtering edits the pill.
     if (await bar.pill(fieldKey).count() > 0)
       await bar.pill(fieldKey).click();
     else
       await bar.addField(fieldKey);
 
-    // Ticking is a toggle, so a value the pill already carries would be turned back off, and an
-    // emptied pill is dropped when the editor closes. Applying a filter has to be idempotent.
+    // Ticking toggles, so re-ticking a carried value would empty the pill and drop it.
     await bar.selectValueOnce(value);
     await bar.closeEditor();
     await bar.expectPillVisible(fieldKey);
@@ -281,8 +273,7 @@ export class HistoryEventsPage {
     const identifier = getValidSelectorFromEvmAddress((id ?? value).toLocaleLowerCase());
     const option = this.page.locator(`#asset-${identifier}`);
     await option.click();
-    // Wait for the dropdown menu to close so subsequent activator clicks
-    // are not intercepted by the still-visible menu overlay.
+    // A still-visible menu overlay would intercept the next activator click.
     await option.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 

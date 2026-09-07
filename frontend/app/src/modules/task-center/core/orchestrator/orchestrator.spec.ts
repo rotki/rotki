@@ -826,15 +826,7 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, child.spec.id)?.status).toBe(Status.RUNNING);
     });
 
-    /**
-     * The chain-job shape, against the real scheduler. A parent that *awaits its own children*
-     * holds its lane slot for the whole body, so the children must not need a slot on that lane —
-     * with a cap of 2, two such parents would wait forever on work that can never start.
-     *
-     * This is why token detection has its own `detect:<chain>` family instead of sharing
-     * `BALANCES_LANE` with the chain job. Nothing above the orchestrator can catch it: every
-     * producer spec stubs `submitTask` to run inline, where lanes do not exist.
-     */
+    // The only level that can catch this: a producer spec stubs `submitTask`, where lanes do not exist.
     it('should let a parent awaiting children hold its lane without deadlocking them', async () => {
       const bothBalancesSlotsGoToTheChainJobs = 2;
       const orchestrator = createTaskOrchestrator({ caps: { balances: bothBalancesSlotsGoToTheChainJobs }, defaultCap: 4 });
@@ -902,13 +894,7 @@ describe('createTaskOrchestrator', () => {
   });
 
   describe('container activities', () => {
-    /**
-     * A fan-out umbrella settles COMPLETE whenever its children settle — `allSettled`, on
-     * purpose, because a failure belongs to the subject that failed. Sharing its children's kind
-     * then wrote a *success* to the completion ledger even when every child FAILED, and
-     * `statusOf(kind)` aggregates by kind: the dashboard read "loaded" after a total failure.
-     */
-    it('should not let a container claim freshness for its kind', async () => {
+    it('should not let a container claim freshness for its kind, even when every child failed', async () => {
       const orchestrator = createTaskOrchestrator({ caps: { default: 10 } });
       const umbrella = controllable('run', { container: true });
       const child = controllable('subject', { parent: umbrella.spec.id });

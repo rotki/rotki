@@ -11,11 +11,9 @@ import { afterAll, afterEach, beforeAll, beforeEach, onTestFailed, vi } from 'vi
 import { server } from './server';
 import 'fake-indexeddb/auto';
 
-// Consola (the app logger) noise control: buffer app log output per test and only
-// replay it when that test fails. Passing tests stay quiet; failing tests keep
-// their logs for debugging. Vue warnings and MSW warnings go through console.* and
-// are intentionally left untouched so genuine issues stay visible and get fixed at
-// the source. Set VITEST_VERBOSE=1 to disable buffering and see all logger output.
+/* Buffer the app logger per test and replay it only on failure, so passing tests stay quiet.
+   Vue and MSW warnings go through console.* and are left visible. VITEST_VERBOSE=1 disables
+   the buffering. */
 if (!process.env.VITEST_VERBOSE) {
   type LogArgs = Parameters<ConsolaReporter['log']>;
   let capturedReporters: ConsolaReporter[] | undefined;
@@ -102,11 +100,9 @@ vi.mock('@vueuse/core', async () => {
   };
 });
 
-// `@/i18n` builds the real instance from `locales/en.json`, which costs ~835ms to import.
-// Nothing in a unit test uses it: `createI18n` is already mocked below, no spec imports the
-// module, and its only other consumer - the dev key-existence warning in `@/message-key` - is
-// compiled out under MODE === 'test'. It is reached transitively though (message-key is imported
-// by every settings registry slice), so leaving it real taxes any spec that touches a setting.
+/* `@/i18n` builds the real instance from `locales/en.json`, ~835ms to import, and nothing in a
+   unit test uses it. It is reached transitively from `@/message-key`, which every settings
+   registry slice imports, so leaving it real taxes any spec that touches a setting. */
 vi.mock('@/i18n', () => ({
   i18n: { global: { te: (): boolean => true } },
   loadLocaleMessages: vi.fn(async () => Promise.resolve()),
@@ -220,8 +216,7 @@ config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
 config.global.stubs.I18nT = true;
-// JsonInput lazy-loads the heavy `vanilla-jsoneditor` on mount; no spec asserts its
-// DOM, so stub it globally to keep form mounts fast.
+// JsonInput lazy-loads `vanilla-jsoneditor` on mount, and no spec asserts its DOM.
 config.global.stubs.JsonInput = true;
 
 // A leaked wrapper keeps reacting to module-level state during later tests.

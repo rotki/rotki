@@ -148,7 +148,7 @@ describe('useHistoryQueryProgress', () => {
     expect(value?.percentage).toBe(100);
   });
 
-  // eslint-disable-next-line complexity
+  // eslint-disable-next-line complexity -- the case walks every fallback branch in turn; splitting it would hide which one is being exercised
   it('should fall back to an active event when no transactions are active', () => {
     setTxStatuses({
       a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x1'),

@@ -11,15 +11,10 @@ export type DeepPartial<T> = T extends (...args: infer A) => infer R
     ? { [K in keyof T]?: DeepPartial<T[K]> }
     : T;
 
-// Properties that must never be auto-mocked: `then`/`catch`/`finally` would make
-// the mock look thenable (so `await mock` hangs), and the inspection hooks would
-// break `console.log(mock)` / util.inspect. Returning undefined for them keeps
-// the proxy inert to the runtime.
-//
-// The `__v_*` entries are Vue's reactivity markers. `toRaw` follows `__v_raw`
-// until it is undefined, so auto-materialising it hands back another proxy with
-// its own `__v_raw` and the unwrap never terminates — which is what happens the
-// moment a mocked pinia store reaches Vue.
+/* Never auto-mocked: `then`/`catch`/`finally` would make the mock thenable, so `await mock`
+   hangs, and the inspection hooks would break `util.inspect`. The `__v_*` entries are Vue's
+   reactivity markers, and `toRaw` follows `__v_raw` until it is undefined, so materialising
+   one hands back a proxy with its own `__v_raw` and the unwrap never terminates. */
 const passthroughUndefined = new Set<PropertyKey>([
   'then',
   'catch',
@@ -41,9 +36,7 @@ function createProxy(overrides: Record<PropertyKey, unknown>): unknown {
   const cache = new Map<PropertyKey, unknown>();
 
   return new Proxy(vi.fn(), {
-    // Report overridden keys as present so `key in mock` (and destructuring
-    // guards like `'counterparty' in event`) behave as they would on a real
-    // object. Non-overridden keys fall back to the vi.fn() target.
+    // Overridden keys report as present, so `'counterparty' in event` behaves as on a real object.
     has(target, prop) {
       return prop in overrides || Reflect.has(target, prop);
     },
@@ -54,13 +47,11 @@ function createProxy(overrides: Record<PropertyKey, unknown>): unknown {
       if (passthroughUndefined.has(prop))
         return undefined;
 
-      // Expose the underlying vi.fn()'s own members (mock, mockReturnValue, …)
-      // so the returned value behaves as a real Vitest mock function.
+      // The target's own members (mock, mockReturnValue) keep it a real Vitest mock function.
       if (prop in target)
         return Reflect.get(target, prop, receiver);
 
-      // Lazily materialise (and cache) a nested mock so deep access such as
-      // `event.sender.send` resolves to a callable mock as well.
+      // A cached nested mock, so deep access like `event.sender.send` is callable too.
       if (!cache.has(prop))
         cache.set(prop, createProxy({}));
 

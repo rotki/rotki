@@ -81,8 +81,7 @@ export class PasswordStore {
     const temporary = `${this.filePath}.tmp`;
     try {
       fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
-      // Written to a sibling and renamed, because a half-written file here loses every saved
-      // password. This is what `atomically` did for us under electron-store.
+      // Write and rename, as `atomically` did: a half-written file loses every saved password.
       fs.writeFileSync(temporary, data, { encoding: 'utf8', mode: CONFIG_FILE_MODE });
       fs.renameSync(temporary, this.filePath);
     }

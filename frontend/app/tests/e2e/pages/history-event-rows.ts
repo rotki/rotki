@@ -22,7 +22,7 @@ export const MOVEMENT_ROW = '[data-testid=history-event-movement]';
  * The rule has a second half, which `waitForNewRow` exists to enforce: **an id resolved too early
  * names the wrong event, and pinning it does not save you.** A save is followed by a refetch, and
  * for as long as that is in flight the table still holds the previous rows. Waiting for a row
- * *count* does not close that window — the specs run serial against a shared page, so any
+ * count* does not close that window — the specs run serial against a shared page, so any
  * `>= n` guard is already satisfied by the rows earlier tests left behind and passes on the first
  * tick. Wait for the event itself.
  */

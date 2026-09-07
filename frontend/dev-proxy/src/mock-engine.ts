@@ -140,8 +140,10 @@ export function createMockEngine(
     return undefined;
   }
 
-  // The app polls `/api/1/tasks`; the old code only recognised the trailing
-  // slash form, so the merge never fired against the real frontend.
+  /**
+   * The app polls `/api/1/tasks` without a trailing slash. Recognising only the slash form is
+   * what kept the merge from firing against the real frontend.
+   */
   function isTaskStatus(req: MockRequest): boolean {
     return req.path === TASKS_PATH || req.path === `${TASKS_PATH}/`;
   }

@@ -26,8 +26,10 @@ const MAX_LOG_SIZE = 'max_size_in_mb_all_logs';
 const MAX_LOG_NUMBER = 'max_logfiles_num';
 const SQLITE_INSTRUCTIONS = 'sqlite_instructions';
 
-// `config` is an untrusted JSON blob; each field is validated/coerced the same
-// way the caller always has, so the values are read as `any` by design.
+/**
+ * `config` is an untrusted JSON blob; each field is validated and coerced the same way the caller
+ * always has, so the values are read as `any` by design.
+ */
 function applyConfig(config: Record<string, any>, options: Writeable<Partial<BackendOptions>>): void {
   if (LOGLEVEL in config) {
     const configLogLevel = config[LOGLEVEL];
@@ -71,9 +73,8 @@ export function loadConfig(): Partial<BackendOptions> {
       applyConfig(config, options);
     }
     catch {
-      // An unreadable or malformed config is ignored, as it always has been — but the instance
-      // override below still has to run, or a broken config file would silently put an instance
-      // back on the shared data directory.
+      /* A malformed config is ignored, as always, but the instance override below still has to
+         run: otherwise a broken file silently puts an instance back on the shared data dir. */
     }
   }
 

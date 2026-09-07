@@ -4,7 +4,6 @@ import { IpcCommands } from '@electron/ipc-commands';
 import { type LogLevel, LogLevel as LogLevelEnum } from '@shared/log-level';
 import { contextBridge, ipcRenderer } from 'electron';
 
-// Helper function to log to file
 function logToFile(level: LogLevel, message: string): void {
   ipcRenderer.send(IpcCommands.LOG_TO_FILE, level, message);
 }
@@ -17,10 +16,9 @@ let walletBridgeConnected = false;
 const walletEventCallbacks = new Map<string, (data: any) => void>();
 let walletEventIpcSetup = false;
 
-// Connection status type
 type WalletBridgeConnectionStatus = 'connected' | 'disconnected' | 'reconnected';
 
-// Helper function to fetch chain ID from bridge
+/** Falls back to mainnet when the bridge cannot answer, so the injected provider always has a chain. */
 async function fetchChainId(): Promise<string> {
   try {
     const response = await ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_REQUEST, {
@@ -35,7 +33,7 @@ async function fetchChainId(): Promise<string> {
   }
 }
 
-// Helper function to fetch accounts from bridge
+/** An unreachable bridge reads as no accounts rather than an error, matching a locked wallet. */
 async function fetchAccounts(): Promise<string[]> {
   try {
     const response = await ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_REQUEST, {
@@ -75,7 +73,7 @@ async function disableWalletBridge(): Promise<void> {
   }
 }
 
-// Set up wallet event forwarding from main process
+/** Registers the IPC listener once; later calls only add callbacks to the existing one. */
 function setupWalletEventForwarding(): void {
   if (!walletEventIpcSetup) {
     ipcRenderer.on('WALLET_BRIDGE_EVENT', (_, { eventName, eventData }) => {
@@ -88,9 +86,7 @@ function setupWalletEventForwarding(): void {
   }
 }
 
-// Set up connection status listener
 function setupConnectionStatusListener(): void {
-  // Listen for wallet bridge connection status events
   ipcRenderer.on(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, (_, status: WalletBridgeConnectionStatus) => {
     if (status === 'connected') {
       walletBridgeConnected = true;
@@ -131,7 +127,6 @@ function setupConnectionStatusListener(): void {
   });
 }
 
-// Initialize wallet bridge
 export function initializeWalletBridge(): void {
   setupConnectionStatusListener();
 

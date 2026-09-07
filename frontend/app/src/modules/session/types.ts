@@ -81,7 +81,7 @@ export type Pinned = {
  * the pinned payload is asserted.
  */
 export function toPinned<K extends PinnedName>(name: K, props: PinnedPanelProps[K]): Pinned {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the generic pair is sound but does not narrow to one arm of the distributive union, as the block above explains
   return { name, props } as Pinned;
 }
 

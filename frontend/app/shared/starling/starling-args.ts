@@ -69,7 +69,9 @@ export interface StarlingLaunchInput {
   /**
    * Dev only: forward `/api/1/*` here instead of straight to `corePort`, putting
    * the premium dev-proxy between starling and core. The renderer keeps
-   * addressing starling either way, so nothing downstream changes.
+   * addressing starling either way, so nothing downstream changes. Left undefined,
+   * the flag is omitted entirely and a run is byte-identical to one from before the
+   * option existed.
    */
   coreUpstreamPort?: number;
   /** Loopback host the backends bind (always 127.0.0.1 in embedded mode). */
@@ -132,8 +134,7 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
     colibriPort.toString(),
     '--mcp-port',
     mcpPort.toString(),
-    // Bind the reverse proxy on this loopback port; core and colibri (above) are
-    // its upstream targets. The renderer talks to this single origin.
+    // The single origin the renderer talks to; core and colibri above are its upstreams.
     '--proxy-port',
     proxyPort.toString(),
     '--api-host',
@@ -146,24 +147,22 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
     SHUTDOWN_GRACE_SECS.toString(),
   ];
 
-  // Only forward a data dir when the user explicitly chose one. Otherwise starling
-  // computes the platform default itself (production `data` vs `develop_data`),
-  // keyed to its own build via the same version gate the backends use. Electron's
-  // `isDev` (a Vite build-time flag) does not track the release tag, so deciding
-  // here would diverge for packaged nightlies — starling is the single source of
-  // truth, and it holds the data-dir lock, so it must own the choice regardless.
+  /*
+   * Only forward a data dir when the user explicitly chose one. Otherwise starling computes the
+   * platform default itself (production `data` versus `develop_data`), keyed to its own build via
+   * the same version gate the backends use. Electron's `isDev`, a Vite build-time flag, does not
+   * track the release tag, so deciding here would diverge for packaged nightlies. starling holds
+   * the data-dir lock, so it owns the choice regardless.
+   */
   if (options.dataDirectory) {
     args.push('--data-dir', options.dataDirectory);
   }
 
-  // A bare flag, and a launch fact rather than a tunable: core cannot be told to
-  // pick its task manager back up over the control channel.
+  // A launch fact, not a tunable: core cannot pick its task manager back up over the control channel.
   if (input.disableTaskManager) {
     args.push('--disable-task-manager');
   }
 
-  // Omitted unless the dev-proxy is on, so a normal run is byte-identical to
-  // what it was before the flag existed.
   if (input.coreUpstreamPort !== undefined) {
     args.push('--core-upstream-port', input.coreUpstreamPort.toString());
   }
@@ -194,11 +193,12 @@ export function buildStarlingInvocation(input: StarlingLaunchInput): StarlingInv
   ];
   const built = devBuiltBinary(path.join(root, 'target'), STARLING_DIRECTORY);
 
-  // The windows Strawberry Perl shim is needed by any cargo in the tree, and the
-  // two launchers decide independently: starling may be prebuilt while colibri
-  // still falls back to `cargo run` (vendored openssl), and that child inherits
-  // this env. Keying the shim off starling's own branch would leave that case
-  // building openssl with the wrong perl.
+  /*
+   * The windows Strawberry Perl shim is needed by any cargo in the tree, and the two launchers
+   * decide independently: starling may be prebuilt while colibri still falls back to `cargo run`
+   * for vendored openssl, and that child inherits this env. Keying the shim off starling's own
+   * branch would leave that case building openssl with the wrong perl.
+   */
   const env = built && !colibri.usesCargo ? undefined : buildCargoEnv() ?? undefined;
 
   if (built)

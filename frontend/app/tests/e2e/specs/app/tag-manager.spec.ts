@@ -38,8 +38,7 @@ test.describe.serial('tag manager', () => {
   });
 
   test('paginates when more than 10 tags exist', async () => {
-    // After previous tests there are 4 tags (Contract reserved + alpha + beta + gamma).
-    // Add 9 more to push total to 13 and force a second page (default page size is 10).
+    // Four tags exist by now, so nine more pass the default page size of 10.
     for (let i = 0; i < 9; i++)
       await page.createTag(`tag-${i.toString().padStart(2, '0')}`, `tag ${i}`);
 

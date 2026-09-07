@@ -61,9 +61,11 @@ describe('starlingRpc', () => {
     await expect(pending).rejects.toThrow('starling exited');
   });
 
-  // The CI failure this guards: starling died before answering, the write hit a
-  // dead pipe, and the stream's own 'error' event had no listener — so node took
-  // the whole launcher down with an EPIPE trace instead of the request failing.
+  /**
+   * The CI failure this guards: starling died before answering, the write hit a dead pipe, and
+   * the stream's own `error` event had no listener, so node took the whole launcher down with an
+   * EPIPE trace instead of the request failing.
+   */
   it('should reject rather than throw when the pipe is already gone', async () => {
     const logger = makeLogger();
     const rpc = new StarlingRpc(logger, () => {});

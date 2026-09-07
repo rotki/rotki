@@ -2,9 +2,11 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { describeResolvedCore } from './starling-launchers';
 
-// The dev launchers probe the filesystem (is the warm-up build there?) and shell
-// out to uv (which interpreter?). Both are mocked so these run identically on a
-// CI box with no rust target dir and no uv installed.
+/**
+ * The dev launchers probe the filesystem for the warm-up build and shell out to uv for the
+ * interpreter. Both are mocked so the suite runs identically on a CI box with no rust target
+ * directory and no uv installed.
+ */
 const { existsSyncMock, statSyncMock, readdirSyncMock, execSyncMock, buildCargoEnvMock } = vi.hoisted(() => ({
   existsSyncMock: vi.fn(),
   statSyncMock: vi.fn(),
@@ -13,16 +15,20 @@ const { existsSyncMock, statSyncMock, readdirSyncMock, execSyncMock, buildCargoE
   buildCargoEnvMock: vi.fn(),
 }));
 
-// Stubbed so the cargo-env assertions hold on every platform: the real helper
-// returns undefined off windows, which would make them windows-only.
+/**
+ * Stubbed so the cargo-env assertions hold on every platform: the real helper returns undefined
+ * off windows, which would make them windows-only.
+ */
 const CARGO_ENV = { Path: 'C:\\Strawberry\\perl\\bin;C:\\Windows' };
 vi.mock('@shared/cargo-env', () => ({
   buildCargoEnv: buildCargoEnvMock,
 }));
 
-// `statSync`/`readdirSync` are stubbed alongside `existsSync` because the core
-// launcher probes for a frozen build, not just a file: with only `existsSync`
-// mocked, a broad `true` sends the real `statSync` at a path that is not there.
+/**
+ * `statSync` and `readdirSync` are stubbed alongside `existsSync` because the core launcher
+ * probes for a frozen build rather than a single file: with only `existsSync` mocked, a broad
+ * `true` sends the real `statSync` at a path that is not there.
+ */
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   const stubs = { existsSync: existsSyncMock, statSync: statSyncMock, readdirSync: readdirSyncMock };
@@ -71,8 +77,7 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     delete process.env.ROTKI_GIL;
     buildCargoEnvMock.mockReturnValue(CARGO_ENV);
     statSyncMock.mockReturnValue({ isDirectory: () => true });
-    // No frozen core unless a case says so, so the default stays the dev
-    // interpreter every branch below asserts on.
+    // No frozen core unless a case says so, so the default stays the dev interpreter.
     readdirSyncMock.mockReturnValue([]);
     execSyncMock.mockImplementation((cmd: string) => {
       if (cmd.includes('--version'))
@@ -106,11 +111,12 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       expect(flagValue(invocation.args, '--colibri-binary')).not.toContain(path.join('colibri', 'target'));
     });
 
-    // The regression this guards: starling signals the whole process group but
-    // wait()s only on its direct child. A wrapper that dies faster than the
-    // service (uv takes CTRL_BREAK straight to the default terminator) reports
-    // "stopped" while python is still closing its DB, and the tree reap then
-    // kills it mid-shutdown - leaving the sqlite WAL/SHM behind.
+    /**
+     * The regression this guards: starling signals the whole process group but waits only on its
+     * direct child. A wrapper that dies faster than the service (uv takes CTRL_BREAK straight to
+     * the default terminator) reports "stopped" while python is still closing its DB, and the
+     * tree reap then kills it mid-shutdown, leaving the sqlite WAL and SHM behind.
+     */
     it('should resolve core to a real interpreter, never the uv wrapper', async () => {
       const { args } = await buildDevInvocation();
       expect(flagValue(args, '--core-binary')).toBe(VENV_PYTHON);
@@ -125,9 +131,11 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     });
   });
 
-  // The e2e run ships a frozen core the same way it ships the Rust binaries, so
-  // the suite drives the binary that actually ships: a missing hidden import or
-  // data file then fails the run rather than a release.
+  /**
+   * The e2e run ships a frozen core the same way it ships the Rust binaries, so the suite drives
+   * the binary that actually ships: a missing hidden import or data file then fails the run
+   * rather than a release.
+   */
   describe('when a frozen core is present', () => {
     const FROZEN_CORE = 'rotki-core-1.43.0-linux';
     const frozenDir = path.join('target', 'backend', 'rotki-core');
@@ -144,16 +152,14 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       expect(flagValue(args, '--core-binary')).not.toBe(VENV_PYTHON);
     });
 
-    // The binary is the entrypoint; passing `-m rotkehlchen` would have it
-    // treat the module flags as its own CLI args and refuse to start.
+    // The binary is the entrypoint: `-m rotkehlchen` would read as its own CLI args.
     it('should not pass the module prefix', async () => {
       const { args } = await buildDevInvocation();
       expect(args).not.toContain('--core-prefix=-m');
       expect(args).not.toContain('--core-prefix=rotkehlchen');
     });
 
-    // What the launcher logs, so a silent fall back to the interpreter is visible in a CI run
-    // rather than looking exactly like a frozen one.
+    // What the launcher logs, so a silent fall back to the interpreter is visible in a CI run.
     it('should report the frozen binary as the resolved core', async () => {
       const { args } = await buildDevInvocation();
       const resolved = describeResolvedCore(args);
@@ -167,10 +173,12 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     });
   });
 
-  // How CI runs: the build job compiles both services once with --release and
-  // ships only those binaries, and the jobs that consume them have no rust
-  // toolchain at all. Falling back to cargo there is not a slow path, it is a
-  // dead one, so the release profile has to satisfy the same branch debug does.
+  /**
+   * How CI runs: the build job compiles both services once with `--release` and ships only those
+   * binaries, and the jobs that consume them have no rust toolchain at all. Falling back to cargo
+   * there is not a slow path but a dead one, so the release profile has to satisfy the same
+   * branch debug does.
+   */
   describe('when only the release profile is built', () => {
     beforeEach(() => {
       existsSyncMock.mockImplementation((p: string) => !String(p).includes(path.join('target', 'debug')));
@@ -190,9 +198,6 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     });
 
     it('should pass starling its own args, never cargo run args', async () => {
-      // The CI failure this guards: the command was swapped to the release
-      // binary while cargo's `run --locked -p starling --` args were kept, so
-      // starling rejected its arguments and died before answering `start`.
       const { args } = await buildDevInvocation();
       expect(args).not.toContain('run');
       expect(args).not.toContain('--locked');
@@ -206,10 +211,12 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     expect(invocation.command).toContain(path.join('target', 'debug'));
   });
 
-  // The two launchers decide independently, so they can disagree: a prebuilt
-  // starling still spawns colibri through cargo when only that build is missing.
-  // The Strawberry Perl shim has to follow the cargo, not starling's own branch,
-  // or that colibri builds vendored openssl with mingw perl and fails.
+  /**
+   * The two launchers decide independently, so they can disagree: a prebuilt starling still
+   * spawns colibri through cargo when only that build is missing. The Strawberry Perl shim has to
+   * follow the cargo, not starling's own branch, or that colibri builds vendored openssl with
+   * mingw perl and fails.
+   */
   it('should still pass the cargo env when only colibri falls back to cargo', async () => {
     existsSyncMock.mockImplementation((p: string) => !String(p).includes('colibri'));
     const invocation = await buildDevInvocation();
@@ -224,9 +231,6 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     expect(invocation.env).toBeUndefined();
   });
 
-  // The dev-proxy sits between starling and core, so starling has to be told to
-  // forward `/api/1/*` through it. Off by default: without the flag a run is
-  // byte-identical to what it was before the option existed.
   it('should not name a core upstream unless the dev-proxy is on', async () => {
     existsSyncMock.mockReturnValue(true);
     const { args } = await buildDevInvocation();
@@ -243,9 +247,11 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     expect(flagValue(args, '--core-port')).toBe('4242');
   });
 
-  // StarlingHandler.stop() outwaits this same constant before it SIGKILLs, so
-  // starling must be told the grace rather than left on its own default: the two
-  // sides drifting means killing starling mid-teardown and orphaning a backend.
+  /**
+   * `StarlingHandler.stop()` outwaits this same constant before it SIGKILLs, so starling is told
+   * the grace rather than left on its own default: the two sides drifting means killing starling
+   * mid-teardown and orphaning a backend.
+   */
   it('should tell starling the shutdown grace it is held to', async () => {
     existsSyncMock.mockReturnValue(true);
     const { args } = await buildDevInvocation();
@@ -313,8 +319,7 @@ describe('buildStarlingInvocation (dev launchers)', () => {
       expect(args).not.toContain('--core-prefix=gil=0');
     });
 
-    // `-X gil=0` configures the interpreter, so it is only honoured ahead of
-    // `-m`; after it, python passes it through to rotkehlchen as a module arg.
+    // `-X gil=0` configures the interpreter, so python only honours it ahead of `-m`.
     it('should disable the GIL before the module args when ROTKI_GIL is false', async () => {
       process.env.ROTKI_GIL = 'false';
       const { args } = await buildDevInvocation();

@@ -3,13 +3,11 @@ import { TIMEOUT_MEDIUM } from '../helpers/constants';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
-// Checksummed addresses used only inside the mocked airdrop payload. They are
-// rendered by the frontend and never sent back to the backend.
+// Rendered from the mocked payload only, and never sent back to the backend.
 const ADDRESS_ONE = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 const ADDRESS_TWO = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
-// Fixed cutoff timestamps (seconds) so the 'missed' vs 'unclaimed' split is
-// deterministic regardless of when the suite runs.
+// Fixed, so the 'missed' against 'unclaimed' split does not depend on when the suite runs.
 const CUTOFF_PAST = 1_600_000_000; // 2020-09-13
 const CUTOFF_FUTURE = 4_102_444_800; // 2100-01-01
 
@@ -18,11 +16,11 @@ const CUTOFF_FUTURE = 4_102_444_800; // 2100-01-01
  * key on receipt, so it is written here exactly as the backend would return it.
  *
  * The mix is chosen to exercise every status branch:
- * - uniswap    -> claimed
- * - gitcoin    -> unclaimed (decoder present, cutoff in the future)
- * - shapeshift -> unknown (no decoder)
- * - badger     -> missed (decoder present, unclaimed, cutoff in the past)
- * - poap       -> expandable POAP delivery details
+ * - uniswap    → claimed
+ * - gitcoin    → unclaimed (decoder present, cutoff in the future)
+ * - shapeshift → unknown (no decoder)
+ * - badger     → missed (decoder present, unclaimed, cutoff in the past)
+ * - poap       → expandable POAP delivery details
  */
 const AIRDROPS_RESULT = {
   [ADDRESS_ONE]: {
@@ -87,8 +85,7 @@ export class AirdropsPage {
       });
     });
 
-    // Task list -> merge our completed airdrop task ids into the real response so
-    // unrelated background tasks keep resolving normally.
+    // Merged into the real response, so unrelated background tasks keep resolving.
     await this.page.route('**/api/1/tasks', async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();

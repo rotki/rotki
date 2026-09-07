@@ -82,9 +82,6 @@ describe('loadConfig', () => {
     });
 
     it('should let the instance data directory win over the config file', () => {
-      // An instance exists so as not to touch the shared data directory, so the file must not be
-      // able to pull it back onto one. This is the case that failed: ports were isolated, the data
-      // directory was not, and the run died on the shared lock.
       existsSync.mockReturnValue(true);
       readFileSync.mockReturnValue(JSON.stringify({ 'data-dir': '/shared/develop_data' }));
       vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '/instances/scratch');
@@ -108,9 +105,7 @@ describe('loadConfig', () => {
       expect(loadConfig()).toStrictEqual({ dataDirectory: '/instances/scratch', logDirectory: '/var/log' });
     });
 
-    it('should leave the config file in charge when the env var is empty', () => {
-      // An empty string is how an unset instance reaches a child process, and it must not blank out
-      // a configured data directory.
+    it('should leave the config file in charge when the env var is an empty string rather than absent', () => {
       existsSync.mockReturnValue(true);
       readFileSync.mockReturnValue(JSON.stringify({ 'data-dir': '/configured' }));
       vi.stubEnv('ROTKI_INSTANCE_DATA_DIR', '');

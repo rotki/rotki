@@ -126,8 +126,7 @@ export class DashboardPage {
       throw new Error('net-worth chart canvas has no bounding box');
     }
     const editor = new SnapshotEditorPage(this.page);
-    // Echarts plots the leftmost data point a bit inside the axis margin;
-    // sweep through a handful of x positions until the page navigates.
+    // Echarts plots the leftmost point inside the axis margin, so sweep for it.
     for (const xRatio of [0.06, 0.08, 0.04, 0.1, 0.02]) {
       await canvas.click({
         position: { x: box.width * xRatio, y: box.height * 0.4 },

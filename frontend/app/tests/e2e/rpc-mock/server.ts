@@ -207,8 +207,7 @@ function handleReplayRequest(req: JsonRpcRequest, hash: string): string {
     if (entry.body !== undefined) {
       return patchResponseId(entry.body, req.id);
     }
-    // Legacy cassette entries without the raw body — reconstruct from
-    // parsed result/error. May lose precision on huge integers.
+    // A legacy cassette has no raw body, and rebuilding it can lose precision on big integers.
     return buildResponseBody(req.id, {
       ...(entry.result !== undefined && { result: entry.result }),
       ...(entry.error !== undefined && { error: entry.error }),

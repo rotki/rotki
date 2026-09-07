@@ -352,8 +352,7 @@ async function runShard(
   const args = ['playwright', 'test', `--shard=${shard}/${shards}`, ...passthrough];
   const child = spawn('npx', args, {
     cwd: appDir,
-    // Its own process group, so cleanup and memory accounting can address the whole
-    // stack rather than just the playwright process.
+    // Its own process group, so cleanup and accounting reach the whole stack.
     detached: true,
     env: {
       ...process.env,
@@ -386,8 +385,7 @@ async function runShard(
     child.on('exit', (code) => {
       clearInterval(sampler);
       if (pgid !== undefined) {
-        // Playwright stops its own webServers, but a crashed or killed shard may not
-        // have; make sure nothing outlives the run.
+        // Playwright stops its own webServers, but a crashed or killed shard may not have.
         killGroup(pgid, 'SIGKILL');
         shardGroups.delete(pgid);
       }

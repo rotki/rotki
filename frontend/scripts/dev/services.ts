@@ -1,3 +1,4 @@
+import type { InstanceRuntime } from '../dev-instance/instance';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { platform } from 'node:os';
@@ -5,8 +6,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { buildCargoEnv, STRAWBERRY_MISSING_WARNING } from '../../app/shared/cargo-env';
 import { isPortFree } from '../../app/shared/port-utils';
-import { DEFAULT_PORTS, type InstanceRuntime } from '../dev-instance';
 import { formatPort } from '../dev-instance/format';
+import { DEFAULT_PORTS } from '../dev-instance/port-registry';
 import { createDevLogger } from './logger';
 import { getDebuggerPort, isUsingUvForPython } from './prerequisites';
 import { startProcess } from './process-pool';
@@ -109,21 +110,14 @@ export interface DevServerOptions {
 export function startDevServer(opts: DevServerOptions): void {
   logger.info('Starting rotki dev mode');
 
-  // --remote-debugging-port only does something in electron mode (it forwards
-  // to the spawned electron child via setupMainPackageWatcher). In --web mode
-  // serve.ts ignores it, so don't bother passing it.
+  // --remote-debugging-port reaches the electron child only; serve.ts ignores it in web mode.
   const debuggerPort = opts.noElectron ? null : getDebuggerPort();
   const debuggerArgs = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
   if (debuggerArgs)
     logger.info(`starting rotki with args:${debuggerArgs}`);
 
   const baseServeCmd = opts.noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
-  // Forward `--port` to the serve script directly — no `--` separator. With
-  // `--` cac inside serve.ts treats following flags as positional and ignores
-  // `--port`, so the dev server keeps listening on its default 8080. Applies to
-  // both modes: in electron mode this runs the instance's Vite dev server on the
-  // instance `dev` port (serve.ts sets VITE_DEV_SERVER_URL from it, so electron
-  // loads the right origin); plain `pnpm dev` leaves devPort undefined → 8080.
+  // No `--` separator: cac in serve.ts would then read `--port` as positional and keep 8080.
   const serveCmd = opts.devPort !== undefined
     ? `${baseServeCmd} --port ${opts.devPort}`
     : baseServeCmd;
@@ -131,9 +125,7 @@ export function startDevServer(opts: DevServerOptions): void {
   const env = { ...opts.backendEnv, ...opts.extraEnv };
   const child = startProcess(`${serveCmd}${debuggerArgs}`, colors.magenta(APP), APP, [], {
     env: Object.keys(env).length > 0 ? env : undefined,
-    // Electron mode only: this chain ends in an electron window, the one child
-    // that can act on a polite close and quit cleanly (which is what lets starling
-    // stop the backends gracefully). In web mode it ends in vite, which cannot.
+    // Only an electron window can act on a polite close and let starling stop the backends.
     windowed: !opts.noElectron,
   });
 
@@ -165,8 +157,8 @@ export interface DevEnvironmentOptions {
  * Bring the backend tree up for web mode. starling supervises core and colibri
  * and fronts both behind its own proxy, so there is no readiness polling here:
  * the `start` control request it is driven with resolves only once the whole
- * tree is up. In instance mode every port starling binds — core, colibri, its
- * own proxy and mcp — comes from the reserved slot, so the slot owns them all.
+ * tree is up. In instance mode every port starling binds (core, colibri, its own proxy and
+ * mcp) comes from the reserved slot, so the slot owns them all.
  */
 async function startBackendForMode(
   instance: InstanceRuntime | null,
@@ -186,12 +178,9 @@ async function startBackendForMode(
     colibriPort: instance ? instance.ports.colibri : opts.colibriPort,
     proxyPort: instance ? instance.ports.starlingProxy : DEFAULT_PORTS.starlingProxy,
     mcpPort: instance ? instance.ports.mcp : DEFAULT_PORTS.mcp,
-    // With the dev-proxy on, starling forwards `/api/1/*` through it. The port is
-    // known up front (a slot reservation or the default), so it can be named at
-    // launch even though the proxy itself starts once starling is up.
+    // The port is reserved up front, so it can be named before the proxy itself starts.
     coreUpstreamPort: opts.useProxy ? devProxyPort(instance) : undefined,
-    // An instance owns its slot outright; otherwise the defaults are only a
-    // starting point and a busy port walks up, as it did before starling.
+    // An instance owns its slot; otherwise a busy port walks up, as it did before starling.
     strictPorts: instance !== null,
   });
   return { backendEnv: env, corePort: ports.corePort, devPort: instance?.ports.dev };
@@ -204,9 +193,9 @@ function devProxyPort(instance: InstanceRuntime | null): number {
 /**
  * starling is told the dev-proxy's port at launch, before the proxy has bound it,
  * and unlike starling's own ports it never walks upward. A leftover proxy from an
- * earlier run still holding the port would take the new one's place silently —
- * still pointed at that run's core — so every `/api/1/*` call would reach the
- * wrong backend with nothing reporting it. Refuse instead.
+ * earlier run still holding the port would take the new one's place silently, still pointed at
+ * that run's core, so every `/api/1/*` call would reach the wrong backend unreported. Refuse
+ * instead.
  */
 async function assertDevProxyPortFree(port: number): Promise<void> {
   if (await isPortFree(port, '127.0.0.1'))
@@ -220,14 +209,9 @@ async function assertDevProxyPortFree(port: number): Promise<void> {
 }
 
 function spawnProxyForBackend(instance: InstanceRuntime | null, corePort: number): void {
-  // The premium dev-proxy sits *between* starling and core:
-  // frontend -> starling proxy -> dev-proxy -> core. starling stays the single
-  // renderer origin in every mode, so `VITE_BACKEND_URL` is untouched here — it
-  // used to be redirected at the proxy, which the vite child then overrode with
-  // starling's url anyway, leaving the proxy running with nothing routed to it.
-  //
-  // Only `/api/1/*` is routed through it, which is the whole of what it
-  // intercepts. `/colibri/*`, `/ws/*` and `/_control` never leave starling.
+  /* The premium dev-proxy sits between starling and core: frontend -> starling proxy ->
+     dev-proxy -> core. starling stays the single renderer origin, so `VITE_BACKEND_URL` is
+     untouched, and only `/api/1/*` is routed through the proxy. */
   startDevProxy({
     PORT: String(devProxyPort(instance)),
     BACKEND: `http://127.0.0.1:${corePort}`,
@@ -235,13 +219,9 @@ function spawnProxyForBackend(instance: InstanceRuntime | null, corePort: number
 }
 
 function spawnProxyForElectron(instance: InstanceRuntime | null): void {
-  // Electron spawns its own starling, which routes `/api/1/*` through this proxy
-  // once it is told the port (ROTKI_DEV_CORE_UPSTREAM_PORT, below). The renderer
-  // is handed starling's origin over IPC and must keep it, so nothing here
-  // touches VITE_BACKEND_URL: redirecting it would only be overridden by that
-  // IPC value anyway, which is how the proxy came to be bypassed entirely.
-  //
-  // The backend port is the one electron is told to bind, or the default.
+  /* Electron spawns its own starling, which routes `/api/1/*` through this proxy once told the
+     port below. The renderer is handed starling's origin over IPC and must keep it, so nothing
+     here touches VITE_BACKEND_URL. */
   const backendPort = instance?.ports.restApi ?? DEFAULT_PORTS.restApi;
   startDevProxy({
     PORT: String(devProxyPort(instance)),
@@ -280,12 +260,15 @@ function envForElectron(instance: InstanceRuntime | null, useProxy: boolean): Re
   return Object.keys(env).length > 0 ? env : undefined;
 }
 
+/**
+ * Points Vite at starling's proxy, the single origin the packaged renderer uses too.
+ *
+ * @remarks
+ * The dev-proxy, when on, is upstream of starling and never visible here. Core answers
+ * `/api/1/*` and colibri `/colibri/*`, and the CORS allowance starling passes both backends
+ * covers the Vite origin.
+ */
 function pointFrontendAtBackend(backendEnv: StarlingDevEnv): void {
-  // Vite talks to starling's proxy, the same single origin the packaged renderer
-  // uses, whether or not the dev-proxy is enabled — with it on, starling routes
-  // `/api/1/*` through it upstream, which the renderer never sees. Core answers
-  // `/api/1/*`, colibri `/colibri/*`, and the CORS allowance starling passes both
-  // backends permits the Vite origin.
   process.env.VITE_BACKEND_URL = backendEnv.VITE_BACKEND_URL;
 }
 
@@ -304,11 +287,7 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
       spawnProxyForBackend(instance, corePort);
   }
   else {
-    // Electron mode: electron's main process spawns its own backend + colibri.
-    // In instance mode hand it the instance's reserved ports + data dir so it
-    // binds there rather than on the shared defaults, and run the Vite dev
-    // server on the instance's dev port (electron loads that origin). Plain
-    // `pnpm dev` leaves devPort undefined, keeping the default 8080.
+    // Electron spawns its own backend, so an instance hands it reserved ports and a data dir.
     extraEnv = envForElectron(instance, useProxy);
     devPort = instance?.ports.dev;
     if (useProxy) {
@@ -319,8 +298,7 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
 
   startDevServer({ noElectron, devPort, backendEnv, extraEnv, onExit: onChildExit });
 
-  // win32 historically had no readiness wait — give hot-reload subscribers a
-  // moment to attach before the first Vite compile.
+  // win32 has no readiness wait, so let hot-reload subscribers attach before the first compile.
   if (noElectron && platform() === 'win32') {
     await new Promise(resolve => setTimeout(resolve, 1_000));
   }

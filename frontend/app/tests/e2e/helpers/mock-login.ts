@@ -11,8 +11,11 @@ async function fulfillJson(route: Route, result: unknown, status = 200): Promise
   });
 }
 
-// The login task outcome. statusCode 300 with a payload => SyncConflictError; with an
-// empty result => IncompleteUpgradeError (modules/core/tasks/use-task-api.ts).
+/**
+ * The login task outcome, shaped the way `modules/core/tasks/use-task-api.ts` reads it: a
+ * `statusCode` of 300 with a payload is a `SyncConflictError`, and with an empty result an
+ * `IncompleteUpgradeError`.
+ */
 function loginTaskOutcome(kind: LoginResult): unknown {
   if (kind === 'wrong-password') {
     // a plain task failure: null result + a message the login form routes to the password field

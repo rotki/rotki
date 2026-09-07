@@ -15,10 +15,7 @@ describe('isLogLevelActive', () => {
     expect(isLogLevelActive(LogLevel.TRACE, LogLevel.DEBUG)).toBe(false);
   });
 
-  it('should let CRITICAL through when the threshold is DEBUG (regression #12079)', () => {
-    // The previous string-based comparison returned false for
-    // `'critical' >= 'debug'`, silently dropping critical errors whenever the
-    // user switched the log level to debug.
+  it('should rank by severity, not alphabetically, so CRITICAL passes a DEBUG threshold (regression #12079)', () => {
     expect(isLogLevelActive(LogLevel.CRITICAL, LogLevel.DEBUG)).toBe(true);
     expect(isLogLevelActive(LogLevel.ERROR, LogLevel.WARNING)).toBe(true);
   });

@@ -31,11 +31,7 @@ type Locations = Record<string, Location>;
 
 interface Counterparty { identifier: string; label: string; image: string }
 
-// An active virtualenv used to be required because this script spawned python
-// itself. starling resolves the interpreter now: the venv's when one is active,
-// otherwise the one uv resolves against uv.lock, so either is enough. Only the
-// case where neither exists still needs rejecting, since the remaining fallback
-// is whatever bare `python` happens to be on PATH.
+// Without a venv or uv.lock, starling falls back to whatever bare `python` is on PATH.
 if (!process.env.VIRTUAL_ENV && !isUvAvailable()) {
   consola.error(
     'No python virtualenv active and `uv` is not on PATH.\n'
@@ -44,9 +40,7 @@ if (!process.env.VIRTUAL_ENV && !isUvAvailable()) {
   process.exit(1);
 }
 
-// The supervisor's proxy port, which is what this script talks to; core, colibri
-// and MCP sit behind it on the next three. Well clear of the app's dev and e2e
-// ranges so a running dev session or test run does not collide.
+// The supervisor's proxy, with core, colibri and MCP behind it, clear of the dev and e2e ranges.
 const PORT = 55551;
 const CORE_PORT = 55552;
 const COLIBRI_PORT = 55553;
@@ -68,9 +62,11 @@ let backendProcess: ChildProcess | null = null;
  */
 const TEARDOWN_TIMEOUT_MS = (SHUTDOWN_GRACE_SECS + 5) * 1000;
 
-// Ensure the backend is terminated when the script is interrupted. The handlers
-// wait for the teardown rather than exiting under it, otherwise this process dies
-// first and leaves core and colibri behind holding their ports.
+/**
+ * Terminates the backend when the script is interrupted. The handler waits for the teardown
+ * rather than exiting under it: otherwise this process dies first and leaves core and colibri
+ * behind, still holding their ports.
+ */
 function handleSignal(signal: NodeJS.Signals): void {
   consola.info(`Received ${signal} signal`);
   stopBackend()
@@ -96,10 +92,7 @@ async function waitForExit(child: ChildProcess): Promise<void> {
   });
 }
 
-/**
- * Stops the backend tree and waits for it to actually be down.
- * @returns {Promise<void>}
- */
+/** Stops the backend tree and waits for it to actually be down. */
 async function stopBackend(): Promise<void> {
   const child = backendProcess;
   backendProcess = null;
@@ -112,16 +105,12 @@ async function stopBackend(): Promise<void> {
     return;
 
   consola.info('Terminating backend...');
-  // SIGTERM the supervisor script alone, never its group: it answers by asking
-  // starling to stop over RPC, and starling then tree-kills core and colibri in
-  // the order they have to come down in. Signalling the group would hit starling
-  // directly, racing that teardown and stranding whatever it had not reaped yet.
+  /* Signal this child alone, never its group: it stops starling over RPC, and starling brings
+     core and colibri down in order. A group signal would hit starling directly and strand
+     whatever it had not reaped. The escalation below is a kill for the same single child, whose
+     death closes starling's stdin, which starling reads as its own cue to tear the tree down. */
   child.kill('SIGTERM');
 
-  // Kill this child only, never its group. It holds the write end of starling's
-  // stdin, so its death is an EOF there, and starling answers that by tearing the
-  // tree down itself. A group kill would take starling with it and strand exactly
-  // the core and colibri it was about to reap.
   const escalation = setTimeout(() => {
     consola.warn(`Backend did not exit within ${TEARDOWN_TIMEOUT_MS}ms, killing the supervisor`);
     child.kill('SIGKILL');
@@ -138,7 +127,7 @@ async function stopBackend(): Promise<void> {
 
 /**
  * Generates a UUID username in the format "protocols-xxxxxx" with six random digits
- * @returns {string} The generated username
+ * @returns The generated username
  */
 function generateUsername(): string {
   const randomDigits = Array.from({ length: 6 }, () => randomInt(0, 10)).join('');
@@ -149,8 +138,7 @@ function generateUsername(): string {
 const username = generateUsername();
 const password = '123456789';
 
-// Scratch data directory for the throwaway user. Named at module scope so the
-// teardown can remove it without depending on `startBackend` having run.
+// At module scope so the teardown can remove it without `startBackend` having run.
 const userDir = path.join('/tmp', username);
 
 /**
@@ -172,7 +160,7 @@ function cleanupUserData(): void {
 
 /**
  * Checks if the backend is running by pinging the endpoint
- * @returns {Promise<boolean>} True if the backend is running, false otherwise
+ * @returns True if the backend is running, false otherwise
  */
 async function isBackendRunning(): Promise<boolean> {
   try {
@@ -184,10 +172,7 @@ async function isBackendRunning(): Promise<boolean> {
   }
 }
 
-/**
- * Starts the backend with minimal parameters
- * @returns {Promise<void>}
- */
+/** Starts the backend with minimal parameters. */
 async function startBackend(): Promise<void> {
   // Create a folder in /tmp with the username
   const dataDir = path.join(userDir, 'data');
@@ -206,9 +191,7 @@ async function startBackend(): Promise<void> {
     fs.mkdirSync(logsDir, { recursive: true });
   }
 
-  // Run the backend under the starling supervisor, the same launcher the app and
-  // the e2e suite use, rather than spawning core directly. Only `/api/1/*` is
-  // needed here and that reaches core through the proxy unchanged.
+  // The same launcher the app and the e2e suite use; `/api/1/*` reaches core through it.
   const args = [
     path.join(process.cwd(), 'scripts', 'start-starling.ts'),
     '--data',
@@ -227,26 +210,16 @@ async function startBackend(): Promise<void> {
 
   consola.info('Starting backend...');
 
-  // Spawn the backend process in its own process group. That insulates it from
-  // the terminal's Ctrl+C, so the teardown runs in one order, driven by the signal
-  // handlers here rather than by every process in the group being signalled at
-  // once. Deliberately not unref'd: this script owns the child's lifetime now and
-  // has to stay alive long enough to see it exit.
-  //
-  // `tsx` directly, never `pnpm run`: the stop below is a directed SIGTERM at this
-  // child, and pnpm does not forward signals to the command it spawns. Putting it
-  // in front would swallow the stop and strand the whole backend tree. tsx does
-  // forward, which is what makes the directed signal reach start-starling.ts.
+  /* Its own process group insulates it from the terminal's Ctrl+C, so the handlers here drive
+     the teardown in one order. Not unref'd: this script owns the child's lifetime. `tsx`
+     directly, never `pnpm run`, which does not forward the directed SIGTERM below. */
   backendProcess = spawn('tsx', args, {
     stdio: 'inherit',
     detached: true,
   });
 }
 
-/**
- * Waits until the backend is ready
- * @returns {Promise<void>}
- */
+/** Waits until the backend answers, or gives up after the retry budget. */
 async function waitForBackend(): Promise<void> {
   const maxRetries = 30;
   let retries = 0;
@@ -268,7 +241,7 @@ async function waitForBackend(): Promise<void> {
 
 /**
  * Creates a user with the given username and password
- * @returns {Promise<boolean>} True if the user was created successfully, false otherwise
+ * @returns True if the user was created successfully, false otherwise
  */
 async function createUser(): Promise<boolean> {
   try {
@@ -295,8 +268,8 @@ async function createUser(): Promise<boolean> {
 
 /**
  * Fetches data from the backend API
- * @param {string} endpoint - The API endpoint to fetch data from
- * @returns {Promise<any>} The fetched data
+ * @param endpoint - The API endpoint to fetch data from
+ * @returns The fetched data
  */
 async function fetchFromApi(endpoint: string): Promise<any> {
   try {
@@ -341,7 +314,8 @@ function getCounterparties(counterparties: Counterparty[]) {
 
   // Group protocols by their base name (part before any dash)
   const protocolGroups = filteredCounterparties.reduce<Record<string, string[]>>((groups, item: string) => {
-    const baseProtocol = item.split('-')[0];
+    const dash = item.indexOf('-');
+    const baseProtocol = dash === -1 ? item : item.slice(0, dash);
     if (!groups[baseProtocol]) {
       groups[baseProtocol] = [];
     }
@@ -370,8 +344,7 @@ function getCounterparties(counterparties: Counterparty[]) {
       return;
     }
 
-    // If we only have versioned variants, create a synthetic base protocol
-    // and use the first item's data
+    // With only versioned variants, the synthetic base stands in, carrying the first's data.
     selectedProtocols.push(baseProtocol);
   });
 
@@ -405,7 +378,7 @@ function getCounterparties(counterparties: Counterparty[]) {
 
 /**
  * Generates the JSON data for protocols, blockchains, and exchanges
- * @returns {Promise<string>} The generated JSON data
+ * @returns The generated JSON data
  */
 async function generateJsonData(): Promise<string> {
   try {
@@ -460,8 +433,7 @@ catch (error) {
   // Terminate the backend even if there's an error
   await stopBackend();
 
-  // Deliberately keep the data directory on failure: its logs are the only record
-  // of why the backend would not come up.
+  // Kept on failure: its logs are the only record of why the backend would not come up.
   consola.info(`Left the backend data directory behind for inspection: ${userDir}`);
 
   process.exit(1);

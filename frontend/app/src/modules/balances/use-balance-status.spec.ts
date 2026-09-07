@@ -49,11 +49,7 @@ describe('useBalanceStatus', () => {
       expect(get(isInitialLoading)).toBe(false);
     });
 
-    /**
-     * Hydration is not an activity, so the orchestrator reports a chain being read from the DB
-     * as idle. Without the store half, the whole cached phase renders settled-and-empty.
-     */
-    it('should cover a chain being hydrated as well as refreshed', () => {
+    it('should read loading from the store for a hydrating chain, which the orchestrator calls idle', () => {
       const refreshState = useBalanceRefreshState();
       const { isInitialLoading } = useBalanceStatus('eth');
 

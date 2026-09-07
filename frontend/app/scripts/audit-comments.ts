@@ -38,9 +38,9 @@ interface Finding {
 const ROOT = ['src', 'app/src'].find(candidate => existsSync(candidate)) ?? 'src';
 
 /**
- * "Used to" is ambiguous. History reads `<subject> used to <verb>`; purpose reads `, used to
- * <verb>` or `is used to <verb>`, and neither is about the past. Only the first is matched: a
- * lowercase word in front, but not a comma and not a copula.
+ * "Used to" is ambiguous. History reads `subject used to verb`; purpose reads `, used to verb`
+ * or `is used to verb`, and neither is about the past. Only the first is matched: a lowercase
+ * word in front, but not a comma and not a copula.
  */
 const HISTORY = /(?<!\bis\s)(?<!\bare\s)(?<!\bbe\s)(?<!\bbeing\s)(?<!\bbeen\s)(?<=[a-z]\s)used to\b|\b(?:previously|no longer|before this|has been replaced)\b|\bnow that\b/i;
 const FILEREF = /[a-z0-9_-]+\.(?:ts|py|vue):\d+|§\d/;
@@ -145,8 +145,7 @@ function classifyLineComment(lines: string[], index: number, text: string): stri
   if (NARRATION.test(text))
     return 'narration';
 
-  // Indented, so inside a body rather than above a declaration, and long enough to be an
-  // explanation rather than a label.
+  // Indented puts it in a body, and length separates an explanation from a label.
   const indented = /^\s{4,}\/\//.test(lines[index]);
   return indented && text.length > 60 ? 'hoist' : undefined;
 }
@@ -231,8 +230,7 @@ function duplicateTests(lines: string[]): Finding[] {
   const findings: Finding[] = [];
 
   for (const test of readTests(lines)) {
-    // Joined with newlines rather than stripped of whitespace, so two calls differing only inside
-    // a string literal (`''` against `'   '`) stay distinct.
+    // Joined, not stripped, so calls differing only inside a literal stay distinct.
     const key = test.body.slice(1).join('\n');
     if (key.length <= 40)
       continue;

@@ -99,7 +99,7 @@ export class DateFormatter {
     if (regex.lastIndex > 0)
       regex.lastIndex = 0;
 
-    // eslint-disable-next-line no-cond-assign
+    // eslint-disable-next-line no-cond-assign -- the assignment is the loop: exec advances lastIndex and returns null at the end
     while ((m = regex.exec(format)) !== null) {
       if (m.index === regex.lastIndex)
         regex.lastIndex++;

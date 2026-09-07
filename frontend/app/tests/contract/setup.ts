@@ -5,8 +5,7 @@ import { ref } from 'vue';
 import { api } from '@/modules/core/api/rotki-api';
 import { contractBackendUrl, contractUsername } from './contract-env';
 
-// i18n is a UI concern, not part of the API contract, but some zod schema
-// transforms reach for useI18n — mock it the same way the unit setup does.
+// Not part of the API contract, but some zod schema transforms reach for `useI18n`.
 vi.mock('vue-i18n', () => ({
   createI18n: () => ({}),
   useI18n: () => ({

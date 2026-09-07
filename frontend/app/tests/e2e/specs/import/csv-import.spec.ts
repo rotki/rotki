@@ -8,9 +8,9 @@ import { ImportPage } from '../../pages/import-page';
 /**
  * Amount formatting notes:
  * Default settings: floatingPrecision=2, amountRoundingMode=ROUND_UP
- * - Values with >2 decimals are rounded up and prefixed with '<'
- *   e.g. 0.091 → "<0.10", 392.887 → "<392.89", 0.0513 → "<0.06"
- * - Values with ≤2 decimals display as-is: 5 → "5.00"
+ * - Values with more than 2 decimals are rounded up and prefixed with `<`
+ *   e.g. 0.091 → `<0.10`, 392.887 → `<392.89`, 0.0513 → `<0.06`
+ * - Values with 2 decimals or fewer display as-is: 5 → `5.00`
  */
 
 test.describe.serial('csv import', () => {

@@ -46,8 +46,7 @@ export async function selectAsset(page: Page, element: string, value: string, id
   const identifier = getValidSelectorFromEvmAddress((id ?? value).toLocaleLowerCase());
   const option = page.locator(`#asset-${identifier}`);
   await option.click();
-  // Wait for the dropdown menu to close so subsequent activator clicks
-  // are not intercepted by the still-visible menu overlay.
+  // A still-visible menu overlay would intercept the next activator click.
   await option.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
 }
 

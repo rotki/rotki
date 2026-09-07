@@ -19,7 +19,9 @@ export type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
  * instead of being repeated across specs.
  *
  * @example
+ * ```ts
  * const vm = componentVm<{ save: () => void }>(wrapper);
+ * ```
  */
 export function componentVm<T>(wrapper: VueWrapper): T {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- vm never exposes <script setup> internals in its public type; contained to this helper

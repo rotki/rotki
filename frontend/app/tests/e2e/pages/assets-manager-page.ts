@@ -139,8 +139,7 @@ export class AssetsManagerPage {
    */
   async selectShowAll(): Promise<void> {
     await this.openIgnoredValues();
-    // Clicked directly rather than through the bar's search box: the box narrows on an option's
-    // label, and this list is two entries long, so searching would only risk hiding the one wanted.
+    // The search box narrows on a label, and this list of two would only risk hiding the target.
     const option = this.page.locator(`[data-testid=value-select-option][data-key="${SHOW_ALL}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     if (await option.getAttribute('aria-checked') !== 'true')

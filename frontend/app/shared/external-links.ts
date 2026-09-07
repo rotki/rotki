@@ -12,8 +12,10 @@ export const TWITTER_URL = 'https://twitter.com/rotkiapp';
 
 export const SUPPORT_EMAIL = 'support@rotki.com';
 
-// Cannot be checked with fetch because it always returns 403, because it needs authentication,
-// and will be redirected to the register page instead
+/**
+ * Not reachable by the link checker: it needs authentication, so it always answers 403 and
+ * redirects to the register page.
+ */
 export const etherscanLink = 'https://etherscan.io/myapikey';
 
 export const heliusLink = 'https://dev.helius.xyz/dashboard/app';

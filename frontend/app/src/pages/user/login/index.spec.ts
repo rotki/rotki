@@ -8,7 +8,7 @@ import { UnlockPhase } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import LoginPage from './index.vue';
 
 const { applyUpdate, clearErrors, errorsRef, loadingRef, performInitialChecks, reset, skipUpdate, stateRef, upgradeVisibleRef, userLogin } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.hoisted runs before the import graph is evaluated, so ref has to be required here
   const { ref: vueRef } = require('vue');
   return {
     applyUpdate: vi.fn().mockResolvedValue(undefined),
@@ -37,12 +37,12 @@ vi.mock('@/pages/user/login/use-login-initial-checks', () => ({
 }));
 
 vi.mock('@/modules/core/messaging/use-dynamic-messages', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- the factory is hoisted above the imports, so ref has to be required inside it
   useDynamicMessages: vi.fn(() => ({ activeWelcomeMessages: require('vue').ref([]), fetchMessages: vi.fn(), welcomeHeader: require('vue').ref(undefined), welcomeMessage: require('vue').ref(undefined) })),
 }));
 
 vi.mock('@/modules/core/messaging/use-update-message', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- the factory is hoisted above the imports, so ref has to be required inside it
   useUpdateMessage: vi.fn(() => ({ showReleaseNotes: require('vue').ref(false) })),
 }));
 

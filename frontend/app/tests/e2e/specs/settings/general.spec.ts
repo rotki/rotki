@@ -88,23 +88,20 @@ test.describe.serial('settings::general', () => {
     await pageGeneral.verify(settings);
   });
 
-  // A rejected separator stays in its input. If the other field is validated against that value
-  // rather than against the pair, both settings can be walked into the same character, which makes
-  // every amount ambiguous. Runs last: it deliberately leaves the separators changed.
+  /* A rejected separator stays in its input, and validating the other field against that value
+     rather than the pair walks both onto one character, making every amount ambiguous. Runs
+     last, since it leaves the separators changed. */
   test('cannot persist identical separators through a rejected value', async () => {
     await pageGeneral.setThousandSeparator(settings.decimalSeparator);
     await expect
       .poll(async () => pageGeneral.separatorMessages('thousand'))
       .toContain('cannot be the same as the decimal separator');
 
-    // The rejected '.' is still sitting in the thousand field. Setting the decimal separator to the
-    // thousand one must not slip past on that stale value.
+    // The rejected '.' still sits in the thousand field, and must not let this slip past.
     await pageGeneral.setDecimalSeparator(settings.thousandSeparator);
     await confirmInlineSuccess(ctx.sharedPage, '[data-testid=decimal-separator-input] .details');
 
-    // Re-login rather than navigate: navigating re-reads the in-memory settings repo, which merges
-    // both patches locally even if what reached the backend did not. Only a fresh login proves what
-    // was persisted.
+    // Navigating re-reads the in-memory repo, so only a fresh login proves what was persisted.
     await ctx.app.relogin(ctx.username);
     await pageGeneral.visit();
 

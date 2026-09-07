@@ -70,16 +70,14 @@ export class SnapshotEditorPage {
     await dialog.waitFor({ state: 'visible' });
     await selectAsset(this.page, '[data-testid=asset]', asset, assetId);
     await dialog.locator('[data-testid=amount] input').fill(amount);
-    // The USD value is derived from the seeded historic price once the fetch
-    // settles; wait for it before confirming so validation passes.
+    // Validation needs the USD value, derived from the seeded price once the fetch settles.
     await expect(dialog.locator('[data-testid=secondary] input')).not.toHaveValue('');
     await this.page.locator('[data-testid=confirm]').click();
     await dialog.waitFor({ state: 'hidden' });
   }
 
   async editBalanceRow(asset: string, newAmount: string): Promise<void> {
-    // Scope to a data row (one with a row-edit action): the "USD Value" column
-    // header also contains some asset symbols, so a bare hasText can match it.
+    // The "USD Value" header carries asset symbols too, so a bare hasText can match it.
     const row = this.balancesTable
       .locator('tr', { hasText: asset })
       .filter({ has: this.page.locator('[data-testid=row-edit]') })
@@ -135,8 +133,7 @@ export class SnapshotEditorPage {
       .filter({ has: this.page.locator('[data-testid=row-delete]') })
       .first();
     await row.locator('[data-testid=row-delete]').click();
-    // SnapshotBalanceDeleteDialog (a ConfirmDialog). With a single eligible
-    // location it's auto-selected, so confirm is enabled immediately.
+    // A single eligible location is auto-selected, so confirm is enabled immediately.
     await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=button-confirm]').click();
     await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'hidden' });

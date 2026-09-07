@@ -44,7 +44,7 @@ async function countEvents(): Promise<number> {
 
 describe('use-sigil-queue', () => {
   beforeEach(() => {
-    // eslint-disable-next-line no-global-assign
+    // eslint-disable-next-line no-global-assign -- a fresh fake-indexeddb per case; the queue keeps no handle across tests
     indexedDB = new IDBFactory();
     vi.resetModules();
   });

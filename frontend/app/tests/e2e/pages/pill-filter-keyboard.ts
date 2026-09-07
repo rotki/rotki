@@ -51,7 +51,7 @@ export class PillFilterKeyboard {
   /**
    * Waits for a field to hold focus and to be the one named by `key`. The operator chips share the
    * `pill-op` id and tell themselves apart by `data-key`, so the id alone would only prove that
-   * *some* chip has focus, not that Shift+Tab reached the last one.
+   * some* chip has focus, not that Shift+Tab reached the last one.
    */
   async expectFocusedFieldKey(testId: string, key: string): Promise<void> {
     await this.expectFocusedField(testId);

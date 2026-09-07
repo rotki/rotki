@@ -10,7 +10,7 @@ import { readMetadata } from './sidecar';
 
 /**
  * Note the two distinct proxies: `proxy` is the optional premium dev-proxy
- * (@rotki/dev-proxy), `starlingProxy` is the reverse proxy starling itself
+ * (`@rotki/dev-proxy`), `starlingProxy` is the reverse proxy starling itself
  * serves — the single origin the renderer talks to. Both need their own port.
  */
 export const DEFAULT_PORTS = {
@@ -83,15 +83,18 @@ export type PortIndex = z.infer<typeof PortIndexSchema>;
 
 const logger = createDevLogger('dev-instance:port-registry');
 
+/**
+ * The ports an instance slot owns.
+ *
+ * @remarks
+ * dev sits on the base port, so the URL opened in a browser is the round number (13000, say),
+ * and the services follow in order: python, dev-proxy, colibri, starling proxy, mcp. The first
+ * four keep their original offsets, so an instance created before starling stays on its ports.
+ */
 export function portsForSlot(slot: number): PortSet {
   if (slot === 0) {
     return { ...DEFAULT_PORTS };
   }
-  // Layout within a slot's block: dev sits on the base port so the URL you
-  // open in the browser is the "round" number (e.g. 13000), and the backend
-  // services follow in order python → dev-proxy → colibri → starling proxy →
-  // mcp. The first four keep the offsets they have always had, so an instance
-  // created before starling joined the block stays on the same ports.
   const base = INSTANCE_BASE_PORT + (slot - 1) * INSTANCE_SLOT_STEP;
   return {
     dev: base,
@@ -276,8 +279,7 @@ async function pruneOrphanedSlots(
     if (reason === null) {
       continue;
     }
-    // Never take ports out from under a process that is still serving on them:
-    // the reservation is stale on paper, but the instance is demonstrably alive.
+    // Stale on paper, but demonstrably still serving, so leave its ports alone.
     if (await isSlotLive(slot)) {
       continue;
     }

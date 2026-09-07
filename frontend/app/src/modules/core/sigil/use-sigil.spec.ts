@@ -488,7 +488,7 @@ describe('useSigil', () => {
       scope.run(() => useSigil());
       await nextTick();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- the spy is the assertion target; it is never called through this reference
       expect(router.afterEach).toHaveBeenCalled();
       expect(afterEachCallback).toBeDefined();
     });

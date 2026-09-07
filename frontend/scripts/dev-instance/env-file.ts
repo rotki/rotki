@@ -7,9 +7,7 @@ export const MANAGED_ENV_KEYS = [
   'INSTANCE_NAME',
   'INSTANCE_PORT_SLOT',
   'VITE_BACKEND_URL',
-  // No longer written: colibri shares the core origin under `/colibri`. Kept in
-  // the managed set so a line left by an older version is stripped rather than
-  // lingering in a developer's env file as a url nothing reads.
+  // No longer written, but kept managed so a line left by an older version is stripped.
   'VITE_COLIBRI_URL',
   'DEV_PORT',
 ] as const;
@@ -94,10 +92,7 @@ function rewriteEnvBlock(
   let inBlock = false;
   let blockEmitted = false;
   for (const rawLine of lines) {
-    // Tolerate CRLF line endings: an .env edited on Windows or copied from a
-    // CRLF source ends each line with \r after splitting on '\n'. Strip a
-    // trailing \r before matching the sentinel comments so the block is
-    // detected and not duplicated on every run.
+    // A CRLF file leaves a trailing \r that would hide the sentinel and duplicate the block.
     const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine;
     if (line === BLOCK_START) {
       inBlock = true;

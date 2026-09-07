@@ -104,8 +104,7 @@ export class AddressBookPage {
     await this.rowFor(address).first().locator('[data-testid=row-edit]').click();
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    // Wait for the dialog to bind to the editable row's data; the title flips
-    // from the empty "Add" form to "Edit address book entry" once that lands.
+    // The title flips from "Add" to "Edit" once the dialog binds to the row's data.
     await expect(dialog.locator('h5').filter({ hasText: /edit/i })).toBeVisible({ timeout: TIMEOUT_MEDIUM });
     const nameInput = this.page.getByTestId('address-book-form-name').locator('input');
     await nameInput.fill(newName);

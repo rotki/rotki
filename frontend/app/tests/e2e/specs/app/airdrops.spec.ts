@@ -61,8 +61,7 @@ test.describe.serial('airdrops', () => {
     await page.expectRowCount(5);
   });
 
-  // Kept last: expanding the POAP row injects a nested detail table whose rows
-  // would otherwise inflate the main row count for any following test.
+  // Kept last: the POAP row's nested detail table would inflate any later row count.
   test('expands POAP delivery details', async () => {
     await page.expandPoapRow();
     await page.expectPoapDetail('YFI OG');

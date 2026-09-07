@@ -99,14 +99,14 @@ describe('date-utils', () => {
     });
 
     it('should work in New York timezone', () => {
-      // eslint-disable-next-line no-extend-native
+      // eslint-disable-next-line no-extend-native -- the case pins the host timezone; the offset is restored before the test ends
       Date.prototype.getTimezoneOffset = function (): number {
         return -240;
       };
 
       expect(getDayNames('en')).toStrictEqual(result);
 
-      // eslint-disable-next-line no-extend-native
+      // eslint-disable-next-line no-extend-native -- the case pins the host timezone; the offset is restored before the test ends
       Date.prototype.getTimezoneOffset = function (): number {
         return 0;
       };

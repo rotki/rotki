@@ -5,23 +5,18 @@ import { RotkiApp } from './rotki-app';
 
 async function selectAsset(testId: string, asset: string, page: Page): Promise<void> {
   const select = page.getByTestId(testId);
-  // Clear any pre-existing selection (chip) first so the new typeahead query
-  // is not blocked by the previously selected value (e.g. when swapping filters).
+  // A previously selected chip would block the new typeahead query.
   const clearButton = select.locator('[data-id=clear]');
   if ((await clearButton.count()) > 0)
     await clearButton.first().click();
-  // RuiAutoComplete renders a zero-size input behind a clickable wrapper.
-  // Click the wrapper to focus the typeahead, then type via keyboard.
+  // RuiAutoComplete hides a zero-size input behind the wrapper, so the wrapper takes the click.
   await select.click();
   await page.keyboard.type(asset);
   const menu = page.locator('[role="listbox"], [role="menu"]').last();
   await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  // Prefer matching by identifier id (stable for fiats like EUR/USD), but fall
-  // back to the first menu option for assets whose identifier we cannot predict
-  // (e.g. custom assets which use a UUID identifier).
-  // The asset search inside AssetSelect is debounced (~800ms) and asynchronous,
-  // so wait for the by-id option to appear before falling back to the first
-  // option — otherwise we'd click whatever stale entry is currently rendered.
+  /* The id is stable for fiats but unpredictable for a custom asset's UUID, so the first
+     option is the fallback. AssetSelect's search is debounced (~800ms), so the by-id option
+     has to be waited for first, or the fallback clicks whatever stale entry is rendered. */
   const byId = menu.locator(`#asset-${asset.toLowerCase()}`).first();
   const firstOption = menu.locator('button[type="button"]').first();
   let option = byId;
@@ -154,8 +149,7 @@ export class HistoricPricePage {
     const datetimeInput = this.page.getByTestId('historic-price-datetime').locator('input').first();
     await datetimeInput.click();
     await datetimeInput.fill(timestamp);
-    // The datetime input opens a calendar popover on click; press Escape to dismiss
-    // so the next form click is not intercepted by the calendar overlay.
+    // The calendar popover opens on click and would intercept the next form click.
     await this.page.keyboard.press('Escape');
     await this.page.getByTestId('historic-price-value').locator('input').fill(value);
     await confirmDialog(this.page);

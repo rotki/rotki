@@ -12,9 +12,7 @@ test.describe.serial('address book', () => {
     ctx = await createLoggedInContext(browser, request, { disableModules: true });
     page = new AddressBookPage(ctx.sharedPage);
     await page.visit();
-    // The global address book is seeded by rotki's global DB (~500+ entries
-    // shared across users). Tests stay in the private scope which is per-user
-    // and starts empty.
+    // The global book carries ~500 shared entries; the private scope is per-user and empty.
     await page.selectScope('private');
   });
 
@@ -73,16 +71,13 @@ test.describe.serial('address book', () => {
     await page.expectNextPageEnabled(false);
   });
 
-  // Runs on the 11 entries the pagination test left behind, so the filter has both something to
-  // find and plenty to exclude.
+  // Runs on the 11 entries left by the pagination test, so there is plenty to exclude.
   test('filters the entries by name', async () => {
     await page.filterByName('entry-03');
     await page.expectVisibleRowCount(1);
     await page.expectRowByName('entry-03');
 
-    // The negative control: the same pill, a name nothing carries, and the row is gone. Without it
-    // a filter that quietly did nothing would still have passed above, since entry-03 was on the
-    // page to begin with.
+    // The negative control: entry-03 was already on the page, so a no-op filter would have passed.
     await page.clearFilters();
     await page.filterByName('no-such-entry');
     await page.expectVisibleRowCount(0);

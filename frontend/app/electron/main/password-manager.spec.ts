@@ -50,10 +50,6 @@ describe('passwordManager', () => {
 
   describe('retrievePassword', () => {
     it('should not touch safeStorage when no password is stored for the user', async () => {
-      // Regression: creating/using an account without opting in to "save password"
-      // must never trigger an OS keyring prompt. With nothing stored, safeStorage
-      // (including isEncryptionAvailable, which is what prompts on macOS) must not
-      // be accessed at all.
       const password = await manager.retrievePassword('alice');
 
       expect(password).toBe('');

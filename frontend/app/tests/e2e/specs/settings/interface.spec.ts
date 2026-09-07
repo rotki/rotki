@@ -32,8 +32,7 @@ test.describe.serial('settings::interface', () => {
     expect(await page.explorerSaveDisabled('address')).toBe(true);
   });
 
-  // 'https://' passes the https rule and fails only the url rule, so this covers the url check
-  // instead of duplicating the test above. A value failing BOTH rules would prove nothing here.
+  // 'https://' fails only the url rule, so it covers that check rather than repeating the one above.
   test('rejects an explorer url that is only a scheme', async () => {
     await page.setExplorerUrl('address', 'https://');
     expect(await page.explorerMessages('address')).not.toBe('');
@@ -45,8 +44,7 @@ test.describe.serial('settings::interface', () => {
     expect(await page.explorerSaveDisabled('address')).toBe(false);
     await page.saveExplorerUrl('address');
 
-    // Explorers are frontend settings: only a fresh login proves what was persisted, since
-    // navigating re-reads the in-memory settings repo.
+    // Navigating re-reads the in-memory repo, so only a fresh login proves what was persisted.
     await ctx.app.relogin(ctx.username);
     await page.visit();
     expect(await page.explorerValue('address')).toBe(explorerUrl);

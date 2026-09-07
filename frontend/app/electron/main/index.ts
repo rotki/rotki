@@ -12,7 +12,7 @@ process.stderr.on('error', ignoreEpipe);
 
 const app = new Application();
 
-// eslint-disable-next-line unicorn/prefer-top-level-await
+// eslint-disable-next-line unicorn/prefer-top-level-await -- the electron main bundle is CommonJS, which has no top-level await
 app.start().catch((error) => {
   console.error(error);
   process.exit(1);

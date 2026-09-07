@@ -7,19 +7,19 @@ describe('date-formatter', () => {
   let originalOffset: () => number;
 
   function overrideTimezoneOffset(offset: number): void {
-    // eslint-disable-next-line no-extend-native
+    // eslint-disable-next-line no-extend-native -- the suite pins the host timezone; afterEach restores the original
     Date.prototype.getTimezoneOffset = (): number => offset;
   }
 
   beforeEach((): void => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- kept unbound on purpose: it is put back on the prototype in afterEach
     originalOffset = Date.prototype.getTimezoneOffset;
     overrideTimezoneOffset(0);
     date = new Date(Date.parse('03 Feb 2019 13:09:09 UTC'));
   });
 
   afterEach((): void => {
-    // eslint-disable-next-line no-extend-native
+    // eslint-disable-next-line no-extend-native -- restores what overrideTimezoneOffset replaced
     Date.prototype.getTimezoneOffset = originalOffset;
   });
 

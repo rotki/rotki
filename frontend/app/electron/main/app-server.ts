@@ -34,8 +34,7 @@ export class AppServer {
   }
 
   private async startDevelopmentProxy(port: number, devServerUrl: string, initialRoute?: string): Promise<void> {
-    // httpxy is a dev-only dependency, dynamically imported so it stays out of
-    // the production main bundle (it is marked external in vite.config.main.ts).
+    // Dynamic so httpxy, a dev-only dependency, stays out of the production main bundle.
     const { createProxyServer } = await import('httpxy');
 
     return new Promise((resolve, reject) => {
@@ -57,8 +56,7 @@ export class AppServer {
       // Handle WebSocket upgrade requests (for HMR)
       server.on('upgrade', (req, socket, head) => {
         this.logger.debug(`WebSocket upgrade request: ${req.url}`);
-        // Node types the upgrade socket as Duplex, but HTTP/1.1 upgrades are
-        // always net.Socket, which is what httpxy expects.
+        // Node types it as Duplex; an HTTP/1.1 upgrade is always the net.Socket httpxy wants.
         if (!(socket instanceof net.Socket)) {
           socket.destroy();
           return;

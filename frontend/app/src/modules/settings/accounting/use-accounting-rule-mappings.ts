@@ -6,7 +6,7 @@ import { settingsRegistry } from '@/modules/settings/settings-registry';
 import { type SettingKey, useSetting } from '@/modules/settings/use-setting';
 
 export const useAccountingRuleMappings = createSharedComposable(() => {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n binds t and te to the composer it returns, so destructuring them is safe
   const { t, te } = useI18n({ useScope: 'global' });
 
   const { getAccountingRuleLinkedMapping } = useAccountingApi();

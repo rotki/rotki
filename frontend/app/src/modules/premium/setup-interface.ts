@@ -42,7 +42,7 @@ export function createPremiumApi(): PremiumApi {
   };
 
   function createSettings(): SettingsApi {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n binds t and te to the composer it returns, so destructuring them is safe
     const { t, te } = useI18n({ useScope: 'global' });
     const { updateFrontendSetting } = useSettingsOperations();
     const { darkTheme, lightTheme } = useThemeSettings();

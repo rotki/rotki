@@ -63,7 +63,6 @@ export const WalletBridgeMessageSchema = z.union([
 
 type WalletBridgeMessage = z.infer<typeof WalletBridgeMessageSchema>;
 
-// Type guards
 export function isWalletBridgeRequest(message: unknown): message is WalletBridgeRequest {
   return WalletBridgeRequestSchema.safeParse(message).success;
 }
@@ -72,7 +71,7 @@ export function isWalletBridgeNotification(message: unknown): message is WalletB
   return WalletBridgeNotificationSchema.safeParse(message).success;
 }
 
-// Validation functions
+/** Throws rather than returning a result: the caller cannot proceed with an unparsed message. */
 export function validateWalletBridgeMessage(message: unknown): WalletBridgeMessage {
   const result = WalletBridgeMessageSchema.safeParse(message);
   if (!result.success) {

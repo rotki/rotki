@@ -125,9 +125,6 @@ export class WalletBridgeConnectionManager {
     return this.connectionsById.get(this.activeConnectionId);
   }
 
-  /**
-   * Get the active connection ID
-   */
   getActiveConnectionId(): number {
     return this.activeConnectionId;
   }
