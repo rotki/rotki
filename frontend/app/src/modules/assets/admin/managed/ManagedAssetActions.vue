@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
+import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import { useManagedAssetActions } from '@/modules/assets/admin/managed/use-managed-asset-actions';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import IgnoreButtons from '@/modules/history/IgnoreButtons.vue';
@@ -32,14 +33,11 @@ const { t } = useI18n({ useScope: 'global' });
 
 const pillLabels = usePillBarLabels();
 
-const disabledIgnoreActions = computed<{ ignore: boolean; unIgnore: boolean }>(() => ({
-  ignore: ignoredHandling === IgnoredAssetHandlingType.SHOW_ONLY,
-  unIgnore: ignoredHandling === IgnoredAssetHandlingType.EXCLUDE,
-}));
-
-function clearSelection() {
-  set(selected, []);
-}
+const { clearSelection, disabledIgnoreActions } = useManagedAssetActions({
+  ignoredHandling: () => ignoredHandling,
+  onIgnoredStale: (): void => emit('refresh:ignored'),
+  selected,
+});
 
 function handleIgnore(ignored: boolean): void {
   emit('ignore', ignored);
@@ -48,11 +46,6 @@ function handleIgnore(ignored: boolean): void {
 function handleMarkSpam(): void {
   emit('mark-spam');
 }
-
-watch(() => ignoredHandling, (handling) => {
-  if (handling === IgnoredAssetHandlingType.SHOW_ONLY)
-    emit('refresh:ignored');
-});
 </script>
 
 <template>
