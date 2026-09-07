@@ -233,6 +233,85 @@ def _query_curve_data_from_api(
     return processed_new_pools
 
 
+def _query_curve_pool(
+        evm_inquirer: EvmNodeInquirer,
+        metaregistry: EvmContract,
+        metaregistry_address: ChecksumEvmAddress,
+        pool_index: int,
+        pools_to_skip: set[str | ChecksumEvmAddress],
+        processed: int,
+        total: int,
+) -> CurvePoolData | None:
+    """Query and deserialize a single Curve pool from the metaregistry."""
+    try:
+        if (pool_address := metaregistry.call(
+            node_inquirer=evm_inquirer,
+            method_name='pool_list',
+            arguments=[pool_index],
+        )) in pools_to_skip:
+            return None
+
+        log.debug(
+            'Processing Curve pool %s/%s %s on %s.',
+            processed, total, pool_address, evm_inquirer.chain_name,
+        )
+        raw_pool_properties = evm_inquirer.multicall_2(
+            calls=[(
+                metaregistry_address,
+                metaregistry.encode(method_name=method_name, arguments=[pool_address]),
+            ) for method_name in CURVE_METAREGISTRY_METHODS],
+            require_success=False,
+        )
+    except RemoteError as e:
+        log.error(
+            'Failed to retrieve Curve pool address for index %s from the metaregistry on %s '
+            'due to %s',
+            pool_index, evm_inquirer.chain_name, e,
+        )
+        return None
+
+    decoded_pool_properties: list[Any] = []
+    for (success, result), method_name in zip(raw_pool_properties, CURVE_METAREGISTRY_METHODS, strict=True):  # length should be same due to the call  # noqa: E501
+        if success is False:
+            if method_name == 'get_pool_name':  # There are a number of pools (especially later ones) where the pool name query fails  # noqa: E501
+                decoded_pool_properties.append(None)  # Pool name will be constructed from the underlying tokens later instead  # noqa: E501
+                continue
+            break
+
+        try:
+            decoded_pool_properties.append(metaregistry.decode(
+                result=result,
+                method_name=method_name,
+                arguments=[pool_address],
+            )[0])
+        except DeserializationError as e:
+            log.error(
+                'Failed to decode the %s property of curve pool %s on %s due to %s',
+                method_name, pool_address, evm_inquirer.chain_name, e,
+            )
+            break
+
+    if len(decoded_pool_properties) != len(CURVE_METAREGISTRY_METHODS):
+        log.error(
+            'Failed to query properties of curve pool %s on %s. Skipping.',
+            pool_address, evm_inquirer.chain_name,
+        )
+        return None
+
+    # the decoded addresses are already checksummed by the contract decoding
+    pool_name, gauge_address, lp_token_address, coins_raw, underlying_coins_raw = decoded_pool_properties  # noqa: E501
+    coins = [x for x in coins_raw if x != ZERO_ADDRESS]
+    u_coins = [x for x in underlying_coins_raw if x != ZERO_ADDRESS]
+    return CurvePoolData(
+        pool_address=pool_address,
+        pool_name=pool_name,
+        lp_token_address=lp_token_address,
+        gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
+        coins=coins,
+        underlying_coins=None if u_coins == coins or len(u_coins) == 0 else u_coins,
+    )
+
+
 def _query_curve_data_from_chain(
         evm_inquirer: EvmNodeInquirer,
         existing_pools: set[ChecksumEvmAddress],
@@ -298,87 +377,39 @@ def _query_curve_data_from_chain(
     new_pools, last_notified_ts = [], Timestamp(0)
     pools_to_skip = IGNORED_CURVE_POOLS | existing_pools
     for pool_index in range((start_idx := pool_count - pools_to_query_count), pool_count):
-        last_notified_ts = maybe_notify_cache_query_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=CPT_CURVE,
-            chain=evm_inquirer.chain_id,
-            processed=(processed := pool_index - start_idx + 1),
+        processed = pool_index - start_idx + 1
+        if (pool := _query_curve_pool(
+            evm_inquirer=evm_inquirer,
+            metaregistry=metaregistry,
+            metaregistry_address=metaregistry_address,
+            pool_index=pool_index,
+            pools_to_skip=pools_to_skip,
+            processed=processed,
             total=pools_to_query_count,
-        )
+        )) is not None:
+            new_pools.append(pool)
 
-        try:
-            if (pool_address := metaregistry.call(
-                node_inquirer=evm_inquirer,
-                method_name='pool_list',
-                arguments=[pool_index],
-            )) in pools_to_skip:
-                continue
-
-            log.debug(
-                f'Processing Curve pool {processed}/{pools_to_query_count} {pool_address} '
-                f'on {evm_inquirer.chain_name}.',
+        if processed != pools_to_query_count:
+            last_notified_ts = maybe_notify_cache_query_status(
+                msg_aggregator=msg_aggregator,
+                last_notified_ts=last_notified_ts,
+                protocol=CPT_CURVE,
+                chain=evm_inquirer.chain_id,
+                processed=processed,
+                total=pools_to_query_count,
             )
-            raw_pool_properties = evm_inquirer.multicall_2(
-                calls=[(
-                    metaregistry_address,
-                    metaregistry.encode(method_name=method_name, arguments=[pool_address]),
-                ) for method_name in CURVE_METAREGISTRY_METHODS],
-                require_success=False,
-            )
-        except RemoteError as e:
-            log.error(
-                f'Failed to retrieve Curve pool address for index {pool_index} '
-                f'from the metaregistry on {evm_inquirer.chain_name} due to {e!s}',
-            )
-            continue
-
-        decoded_pool_properties: list[Any] = []
-        for (success, result), method_name in zip(raw_pool_properties, CURVE_METAREGISTRY_METHODS, strict=True):  # length should be same due to the call  # noqa: E501
-            if success is False:
-                if method_name == 'get_pool_name':  # There are a number of pools (especially later ones) where the pool name query fails  # noqa: E501
-                    decoded_pool_properties.append(None)  # Pool name will be constructed from the underlying tokens later instead  # noqa: E501
-                    continue
-                else:
-                    break
-
-            try:
-                decoded_pool_properties.append(metaregistry.decode(
-                    result=result,
-                    method_name=method_name,
-                    arguments=[pool_address],
-                )[0])
-            except DeserializationError as e:
-                log.error(
-                    'Failed to decode the %s property of curve pool %s on %s due to %s',
-                    method_name, pool_address, evm_inquirer.chain_name, e,
-                )
-                break
-
-        if len(decoded_pool_properties) != len(CURVE_METAREGISTRY_METHODS):
-            log.error(
-                f'Failed to query properties of curve pool {pool_address} '
-                f'on {evm_inquirer.chain_name}. Skipping.',
-            )
-            continue
-
-        # the decoded addresses are already checksummed by the contract decoding
-        pool_name, gauge_address, lp_token_address, coins_raw, underlying_coins_raw = decoded_pool_properties  # noqa: E501
-        coins = [x for x in coins_raw if x != ZERO_ADDRESS]
-        u_coins = [x for x in underlying_coins_raw if x != ZERO_ADDRESS]
-        underlying_coins = None if u_coins == coins or len(u_coins) == 0 else u_coins
-        new_pools.append(CurvePoolData(
-            pool_address=pool_address,
-            pool_name=pool_name,
-            lp_token_address=lp_token_address,
-            gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
-            coins=coins,
-            underlying_coins=underlying_coins,
-        ))
 
     if len(new_pools) > 0:
         _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=new_pools)
 
+    maybe_notify_cache_query_status(
+        msg_aggregator=msg_aggregator,
+        last_notified_ts=last_notified_ts,
+        protocol=CPT_CURVE,
+        chain=evm_inquirer.chain_id,
+        processed=pools_to_query_count,
+        total=pools_to_query_count,
+    )
     return new_pools
 
 

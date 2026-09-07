@@ -305,10 +305,13 @@ def test_curve_cache_progress(skip_reason):
     inquirer = MagicMock(chain_id=ChainID.OPTIMISM)
     messages = MagicMock()
     address = make_evm_address()
-    with patch(
-        'rotkehlchen.chain.evm.contracts.EvmContract.call',
+    query = MagicMock(
         side_effect=[2, address if skip_reason == 'cached' else RemoteError('pool unavailable')],
-    ) as query:
+    )
+    call_order = MagicMock()
+    call_order.attach_mock(query, 'query')
+    call_order.attach_mock(messages.add_message, 'notify')
+    with patch('rotkehlchen.chain.evm.contracts.EvmContract.call', new=query):
         assert _query_curve_data_from_chain(
             evm_inquirer=inquirer,
             existing_pools={address},
@@ -317,9 +320,43 @@ def test_curve_cache_progress(skip_reason):
         ) == []
 
     assert query.call_count == 2
+    assert [call[0] for call in call_order.mock_calls] == ['query', 'query', 'notify']
     assert messages.add_message.call_args_list == [
         make_call_object(CPT_CURVE, ChainID.OPTIMISM, processed=1, total=1),
     ]
+
+
+def test_curve_cache_progress_finishes_after_saving():
+    """The completion notification must only be sent after new pools are persisted."""
+    inquirer = MagicMock(chain_id=ChainID.OPTIMISM)
+    inquirer.contracts.contract_by_address.return_value.call.return_value = make_evm_address()
+    messages = MagicMock()
+    pool = MagicMock()
+    query_pool = MagicMock(return_value=pool)
+    save = MagicMock()
+    call_order = MagicMock()
+    call_order.attach_mock(query_pool, 'query_pool')
+    call_order.attach_mock(save, 'save')
+    call_order.attach_mock(messages.add_message, 'notify')
+    with (
+        patch('rotkehlchen.chain.evm.contracts.EvmContract.call', return_value=1),
+        patch(
+            'rotkehlchen.chain.evm.decoding.curve.curve_cache._query_curve_pool',
+            new=query_pool,
+        ),
+        patch(
+            'rotkehlchen.chain.evm.decoding.curve.curve_cache._save_curve_data_to_cache',
+            new=save,
+        ),
+    ):
+        assert _query_curve_data_from_chain(
+            evm_inquirer=inquirer,
+            existing_pools=set(),
+            msg_aggregator=messages,
+            reload_all=False,
+        ) == [pool]
+
+    assert [call[0] for call in call_order.mock_calls] == ['query_pool', 'save', 'notify']
 
 
 @pytest.mark.parametrize('query_result', ['empty', 'failed', 'success'])
@@ -367,7 +404,6 @@ def test_gearbox_cache_progress(globaldb, query_result):  # pylint: disable=unus
     with (
         patch('rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.get_existing_pools', return_value={address} if query_result == 'cached' else set()),  # noqa: E501
         patch('rotkehlchen.chain.evm.contracts.EvmContract.encode', return_value='0x'),
-        patch('rotkehlchen.chain.evm.utils.ts_now', side_effect=[100, 106]),
     ):
         result = query_gearbox_data(
             inquirer=inquirer,
