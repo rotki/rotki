@@ -68,7 +68,19 @@
       "chain": "Chain"
     },
     "per_chain": "Per chain",
-    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
+    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
+    "skip_queries": {
+      "chain_marker": "rotki does not query this account on {chain}",
+      "chain_skipped": "skipped",
+      "chain_whole": "entire chain",
+      "entire_chain": "Skipped in Settings → Chains as an entire chain",
+      "error": "Skipped chains and addresses",
+      "menu": "Choose which chains rotki skips for this account",
+      "resume": "Query this account again on {chains}",
+      "resume_all": "Query this chain again | Query all {count} chains again",
+      "skip": "Skip balance and history queries for this account on {chains}",
+      "skip_all": "Skip queries on this chain | Skip all {count} chains"
+    }
   },
   "account_form": {
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",

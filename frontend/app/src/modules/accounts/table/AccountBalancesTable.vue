@@ -3,6 +3,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/modules/core/common/collection';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
@@ -104,6 +105,7 @@ defineExpose({
     <template #item.chain="{ row }">
       <AccountChains
         v-model:chain-filter="chainFilter"
+        :address="getAccountAddress(row)"
         :row="row"
       />
     </template>
