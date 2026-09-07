@@ -669,7 +669,7 @@ def test_coinbase_query_history_events(
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
-        amount=FVal('10.482180'),
+        amount=FVal('10.382341'),
         location_label=coinbase.name,
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
@@ -704,6 +704,8 @@ def test_coinbase_query_history_events(
 
 
 def test_asset_conversion(mock_coinbase):
+    """A conversion without an explicit trade.fee gets no fee event. The difference between
+    the two legs' native valuations (1000 USD vs 910 USD) is coinbase's spread, not a fee."""
     tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_b = {
         'id': tx_id,
@@ -792,21 +794,13 @@ def test_asset_conversion(mock_coinbase):
             location=Location.COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
-    ), SwapEvent(
-        timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_USDC,
-        amount=FVal('90.000000'),
-        location_label='coinbase1',
-        group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
-            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
-        ),
     )]
 
 
 def test_conversion_with_fee(mock_coinbase):
+    """Real payload of a coinbase conversion with an explicit fee. The USDC wallet balance
+    dropped by 10.571942 in total, so the fee of 0.109974 USDC is part of that amount and the
+    spend is what remains after the fee, not the full amount with the fee added on top."""
     tx_id = '61258a99-7e8a-4ece-94cf-485b33d09319'
     trade_b = {'amount': {'amount': '-10.571942', 'currency': 'USDC'}, 'created_at': '2024-12-06T10:27:56Z', 'id': '39073929-386e-58a2-9ec4-d8371a395a9e', 'native_amount': {'amount': '-10.00', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/40e03599-5601-534c-95c2-0db5f5c5e652/transactions/39073929-386e-58a2-9ec4-d8371a395a9e', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': '61258a99-7e8a-4ece-94cf-485b33d09319', 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
     trade_a = {'amount': {'amount': '0.00266121', 'currency': 'ETH'}, 'created_at': '2024-12-06T10:27:57Z', 'id': 'e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'native_amount': {'amount': '9.70', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/16ff1367-5834-5827-95f3-f503d891421c/transactions/e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': '61258a99-7e8a-4ece-94cf-485b33d09319', 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
@@ -818,7 +812,7 @@ def test_conversion_with_fee(mock_coinbase):
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
-        amount=FVal('10.571942'),
+        amount=FVal('10.461968'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
@@ -840,7 +834,7 @@ def test_conversion_with_fee(mock_coinbase):
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
-        amount=FVal('0.1162638749508'),
+        amount=FVal('0.109974'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
@@ -903,7 +897,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
-        amount=FVal('10.571942'),
+        amount=FVal('10.461968'),
         location_label=coinbase.name,
         group_identifier=group_identifier,
     ), SwapEvent(
@@ -919,7 +913,7 @@ def test_conversion_across_wallets(function_scope_coinbase):
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
-        amount=FVal('0.1162638749508'),
+        amount=FVal('0.109974'),
         location_label=coinbase.name,
         group_identifier=group_identifier,
     )]
@@ -960,7 +954,7 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_XTZ,
-        amount=FVal('450'),
+        amount=FVal('449'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
@@ -1081,17 +1075,6 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
             location=Location.COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
         ),
-    ), SwapEvent(
-        timestamp=TimestampMS(1623119536000),
-        location=Location.COINBASE,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_1INCH,
-        amount=FVal('540.000000'),
-        location_label='coinbase1',
-        group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
-            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
-        ),
     )]
 
 
@@ -1184,114 +1167,6 @@ def test_asset_conversion_zero_fee(mock_coinbase):
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
             unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
-        ),
-    )]
-
-
-def test_asset_conversion_choosing_fee_asset(mock_coinbase):
-    """Test that the fee asset is correctly chosen when the received asset transaction
-    is created before the giving transaction.
-    """
-    tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
-    trade_a = {
-        'id': tx_id,
-        'type': 'trade',
-        'status': 'completed',
-        'amount': {
-            'amount': '-37734.034561',
-            'currency': 'ETH',
-        },
-        'native_amount': {
-            'amount': '-79362.22',
-            'currency': 'USD',
-        },
-        'description': None,
-        'created_at': '2021-10-12T13:23:56Z',
-        'updated_at': '2021-10-12T13:23:56Z',
-        'resource': 'transaction',
-        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
-        'instant_exchange': False,
-        'trade': {
-            'id': 'id_of_trade',
-            'resource': 'trade',
-            'resource_path': '/v2/accounts/REDACTED/trades/id_of_trade',
-        },
-        'details': {
-            'title': 'Converted from ETH',
-            'subtitle': 'Using ETH Wallet',
-            'header': 'Converted 37,734.034561 ETH ($79,362.22)',
-            'health': 'positive',
-            'payment_method_name': 'ETH Wallet',
-        },
-        'hide_native_amount': False,
-    }
-    trade_b = {
-        'id': tx_id,
-        'type': 'trade',
-        'status': 'completed',
-        'amount': {
-            'amount': '552.315885836',
-            'currency': 'BTC',
-        },
-        'native_amount': {
-            'amount': '77827.94',
-            'currency': 'USD',
-        },
-        'description': None,
-        'created_at': '2021-10-12T13:23:55Z',
-        'updated_at': '2021-10-12T13:23:57Z',
-        'resource': 'transaction',
-        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
-        'instant_exchange': False,
-        'trade': {
-            'id': 'id_of_trade',
-            'resource': 'trade',
-            'resource_path': '/v2/accounts/REDACTED/trades/id_of_trade',
-        },
-        'details': {
-            'title': 'Converted to BTC',
-            'subtitle': 'Using ETH Wallet',
-            'header': 'Converted 552.31588584 BTC ($77,827.94)',
-            'health': 'positive',
-            'payment_method_name': 'ETH Wallet',
-        },
-        'hide_native_amount': False,
-    }
-
-    assert mock_coinbase._process_trades_from_conversion(
-        transaction_pairs={tx_id: [trade_a, trade_b]},
-    ) == [SwapEvent(
-        timestamp=TimestampMS(1634045036000),
-        location=Location.COINBASE,
-        event_subtype=HistoryEventSubType.SPEND,
-        asset=A_ETH,
-        amount=FVal('37734.034561'),
-        location_label='coinbase1',
-        group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
-            unique_id='id_of_trade',
-        ),
-    ), SwapEvent(
-        timestamp=TimestampMS(1634045036000),
-        location=Location.COINBASE,
-        event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_BTC,
-        amount=FVal('552.315885836'),
-        location_label='coinbase1',
-        group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
-            unique_id='id_of_trade',
-        ),
-    ), SwapEvent(
-        timestamp=TimestampMS(1634045036000),
-        location=Location.COINBASE,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_BTC,
-        amount=FVal('10.8882133758192505159458158599598036386418553542596656162298526724464247672494'),
-        location_label='coinbase1',
-        group_identifier=create_group_identifier_from_unique_id(
-            location=Location.COINBASE,
-            unique_id='id_of_trade',
         ),
     )]
 
