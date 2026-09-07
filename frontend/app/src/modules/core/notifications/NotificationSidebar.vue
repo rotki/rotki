@@ -1,106 +1,36 @@
 <script setup lang="ts">
-import { type NotificationData, Priority, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
-import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
-import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
+import { TAB_ORDER, useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const display = defineModel<boolean>({ required: true });
 
-enum TabCategory {
-  VIEW_ALL = 'view_all',
-  NEEDS_ACTION = 'needs_action',
-  REMINDER = 'reminder',
-  ERROR = 'error',
-}
-
-const contentWrapper = useTemplateRef<HTMLDivElement>('contentWrapper');
-const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
-const initialAppear = ref<boolean>(false);
-const pendingTasksExpanded = ref<boolean>(false);
-
 const { t } = useI18n({ useScope: 'global' });
 
-const confirmStore = useConfirmStore();
-const { visible: dialogVisible } = storeToRefs(confirmStore);
-const { show } = confirmStore;
-
-const notificationStore = useNotificationsStore();
-const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
-const { remove } = notificationStore;
-const { isActive: hasRunningTasks } = useTaskCenter();
-const { silent, toggle: toggleSilent } = useSilentNotifications();
-const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
+const contentWrapper = useTemplateRef<HTMLDivElement>('contentWrapper');
 const { y } = useScroll(contentWrapper);
 
-const tabCategoriesLabel = computed(() => ({
-  [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
-  [TabCategory.NEEDS_ACTION]: t('notification_sidebar.tabs.needs_action'),
-  [TabCategory.REMINDER]: t('notification_sidebar.tabs.reminder'),
-  [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
-}));
+const { visible: dialogVisible } = storeToRefs(useConfirmStore());
 
-const selectedNotifications = computed(() => {
-  const all = get(allNotifications);
-  const tab = get(selectedTab);
-  const filters: Partial<Record<TabCategory, (item: NotificationData) => boolean>> = {
-    [TabCategory.ERROR]: (item: NotificationData) => item.severity === Severity.ERROR,
-    [TabCategory.NEEDS_ACTION]: (item: NotificationData) => item.priority === Priority.ACTION,
-    [TabCategory.REMINDER]: (item: NotificationData) => item.severity === Severity.REMINDER,
-  };
+const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 
-  const filterBy = filters[tab];
-  if (filterBy) {
-    return all.filter(filterBy);
-  }
-
-  return all;
-});
-
-function close() {
-  set(display, false);
-}
-
-function toggleSilentMode(): void {
-  startPromise(toggleSilent());
-}
-
-function clear() {
-  notificationStore.$reset();
-  close();
-}
-
-function showConfirmation() {
-  show({
-    message: t('notification_sidebar.confirmation.message'),
-    title: t('notification_sidebar.confirmation.title'),
-    type: 'info',
-  }, clear);
-}
-
-watchDebounced(hasRunningTasks, (running) => {
-  if (!running)
-    set(pendingTasksExpanded, false);
-}, { debounce: 1000 });
-
-watch(
-  [y, selectedTab, selectedNotifications],
-  ([currentY, currSelectedTab, currNotifications], [_, prevSelectedTab, prevNotifications]) => {
-    if (currSelectedTab !== prevSelectedTab || (prevNotifications.length === 0 && currNotifications.length > 0)) {
-      set(initialAppear, false);
-      nextTick(() => {
-        set(initialAppear, true);
-      });
-    }
-    else {
-      set(initialAppear, currentY <= 0);
-    }
-  },
-);
+const {
+  allNotifications,
+  close,
+  hasRunningTasks,
+  initialAppear,
+  messageOverflow,
+  modelPendingTasksExpanded,
+  modelSelectedTab,
+  remove,
+  selectedNotifications,
+  showConfirmation,
+  silent,
+  tabCategoriesLabel,
+  toggleSilentMode,
+} = useNotificationSidebar({ display, scrollY: y });
 </script>
 
 <template>
@@ -146,6 +76,7 @@ watch(
           <RuiButton
             variant="text"
             icon
+            data-testid="close-notifications"
             @click="close()"
           >
             <RuiIcon name="lu-x" />
@@ -158,14 +89,14 @@ watch(
         v-else
         class="flex flex-col h-[calc(100%-133px)]"
       >
-        <PendingTasks v-model="pendingTasksExpanded" />
+        <PendingTasks v-model="modelPendingTasksExpanded" />
         <div class="border-b border-default mx-4">
           <RuiTabs
-            v-model="selectedTab"
+            v-model="modelSelectedTab"
             color="primary"
           >
             <RuiTab
-              v-for="item in Object.values(TabCategory)"
+              v-for="item in TAB_ORDER"
               :key="item"
               size="sm"
               class="!min-w-0"
@@ -218,6 +149,7 @@ watch(
           variant="text"
           color="primary"
           :disabled="allNotifications.length === 0"
+          data-testid="clear-notifications"
           @click="showConfirmation()"
         >
           {{ t('notification_sidebar.clear_tooltip') }}
