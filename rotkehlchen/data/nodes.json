@@ -198,5 +198,21 @@
         "owned": false,
         "active": true,
         "blockchain": "ROBINHOOD"
+    },
+    {
+        "name": "ink gelato",
+        "endpoint": "https://rpc-gel.inkonchain.com",
+        "weight": 0.5,
+        "owned": false,
+        "active": true,
+        "blockchain": "INK"
+    },
+    {
+        "name": "ink pocket",
+        "endpoint": "https://ink.api.pocket.network",
+        "weight": 0.5,
+        "owned": false,
+        "active": true,
+        "blockchain": "INK"
     }
 ]

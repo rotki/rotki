@@ -124,6 +124,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('z', 58);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);
 /* Robinhood */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('\x7f', 63);
+/* Ink */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x80', 64);
 /* Gate */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
 /* Bit2me */

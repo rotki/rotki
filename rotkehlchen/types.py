@@ -315,6 +315,7 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.MONAD,
     ChainID.SONIC,
     ChainID.ROBINHOOD,
+    ChainID.INK,
 ]
 
 
@@ -328,6 +329,7 @@ BLOCKSCOUT_SUPPORTED_CHAINS: Final = (
     ChainID.GNOSIS,
     ChainID.SCROLL,
     ChainID.ROBINHOOD,
+    ChainID.INK,
 )
 
 
@@ -469,6 +471,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     MONAD = 'MONAD'
     SONIC = 'SONIC'
     ROBINHOOD = 'ROBINHOOD'
+    INK = 'INK'
     ZKSYNC_LITE = 'ZKSYNC_LITE'
     SOLANA = 'SOLANA'
 
@@ -506,7 +509,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
     def get_native_token_id(self) -> str:
         """Returns the string identifier of the native token for the chain"""
-        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE, SupportedBlockchain.SCROLL, SupportedBlockchain.ROBINHOOD, SupportedBlockchain.ZKSYNC_LITE):  # noqa: E501
+        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE, SupportedBlockchain.SCROLL, SupportedBlockchain.ROBINHOOD, SupportedBlockchain.INK, SupportedBlockchain.ZKSYNC_LITE):  # noqa: E501
             return 'ETH'
         if self == SupportedBlockchain.MONAD:
             return 'MON'
@@ -632,6 +635,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.MONAD: 'monad.svg',
     SupportedBlockchain.SONIC: 'sonic.svg',
     SupportedBlockchain.ROBINHOOD: 'robinhood.svg',
+    SupportedBlockchain.INK: 'ink.svg',
     SupportedBlockchain.SOLANA: 'solana.svg',
 }
 
@@ -648,6 +652,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.MONAD,
     SupportedBlockchain.SONIC,
     SupportedBlockchain.ROBINHOOD,
+    SupportedBlockchain.INK,
 ]
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
 
@@ -682,6 +687,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.MONAD,
     ChainID.SONIC,
     ChainID.ROBINHOOD,
+    ChainID.INK,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -700,6 +706,7 @@ SUPPORTED_EVM_CHAINS_TYPE = Literal[
     SupportedBlockchain.MONAD,
     SupportedBlockchain.SONIC,
     SupportedBlockchain.ROBINHOOD,
+    SupportedBlockchain.INK,
 ]
 SUPPORTED_EVM_CHAINS: tuple[SUPPORTED_EVM_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVM_CHAINS_TYPE)  # noqa: E501
 
@@ -727,6 +734,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.MONAD,
     SupportedBlockchain.SONIC,
     SupportedBlockchain.ROBINHOOD,
+    SupportedBlockchain.INK,
     SupportedBlockchain.SOLANA,
 ]
 
@@ -756,6 +764,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.MONAD: ChainID.MONAD,
     SupportedBlockchain.SONIC: ChainID.SONIC,
     SupportedBlockchain.ROBINHOOD: ChainID.ROBINHOOD,
+    SupportedBlockchain.INK: ChainID.INK,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
@@ -836,6 +845,7 @@ class Location(DBCharEnumMixIn):
     COINEX = 61
     SONIC = 62  # on-chain Sonic events
     ROBINHOOD = 63  # on-chain Robinhood chain events
+    INK = 64  # on-chain Ink chain events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
@@ -872,6 +882,9 @@ class Location(DBCharEnumMixIn):
         if chain_id == ChainID.ROBINHOOD:
             return Location.ROBINHOOD
 
+        if chain_id == ChainID.INK:
+            return Location.INK
+
         # else
         return Location.POLYGON_POS
 
@@ -903,6 +916,8 @@ class Location(DBCharEnumMixIn):
             return ChainID.SONIC.value
         if self == Location.ROBINHOOD:
             return ChainID.ROBINHOOD.value
+        if self == Location.INK:
+            return ChainID.INK.value
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return ChainID.POLYGON_POS.value
 
@@ -934,6 +949,8 @@ class Location(DBCharEnumMixIn):
                 return Location.SONIC
             case SupportedBlockchain.ROBINHOOD:
                 return Location.ROBINHOOD
+            case SupportedBlockchain.INK:
+                return Location.INK
             case SupportedBlockchain.ZKSYNC_LITE:
                 return Location.ZKSYNC_LITE
             case SupportedBlockchain.BITCOIN:
@@ -958,7 +975,7 @@ class Location(DBCharEnumMixIn):
         return self in BITCOIN_LOCATIONS
 
 
-EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC, Location.MONAD, Location.SONIC, Location.ROBINHOOD]  # noqa: E501
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC, Location.MONAD, Location.SONIC, Location.ROBINHOOD, Location.INK]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
 EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)

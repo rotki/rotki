@@ -40,6 +40,8 @@ from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
+from rotkehlchen.chain.ink.manager import InkManager
+from rotkehlchen.chain.ink.node_inquirer import InkInquirer
 from rotkehlchen.chain.monad.manager import MonadManager
 from rotkehlchen.chain.monad.node_inquirer import MonadInquirer
 from rotkehlchen.chain.optimism.manager import OptimismManager
@@ -567,6 +569,16 @@ class Rotkehlchen:
             ),
             robinhood_manager=RobinhoodManager(
                 node_inquirer=RobinhoodInquirer(
+                    task_supervisor=self.task_supervisor,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                    blockscout=blockscout,
+                    routescan=routescan,
+                ),
+                premium=self.premium,
+            ),
+            ink_manager=InkManager(
+                node_inquirer=InkInquirer(
                     task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,

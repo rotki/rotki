@@ -202,6 +202,7 @@ def patch_and_enter_before_unlock(
         monad_manager_connect_at_start,
         sonic_manager_connect_at_start,
         robinhood_manager_connect_at_start,
+        ink_manager_connect_at_start,
         kusama_manager_connect_at_start,
         have_decoders,
         use_custom_database,
@@ -239,6 +240,8 @@ def patch_and_enter_before_unlock(
             return sonic_manager_connect_at_start
         elif blockchain == SupportedBlockchain.ROBINHOOD:
             return robinhood_manager_connect_at_start
+        elif blockchain == SupportedBlockchain.INK:
+            return ink_manager_connect_at_start
 
         raise AssertionError(f'Got to get_rpc_nodes during test with unknown {blockchain=}')
     evm_rpcconnect_patch = patch(
@@ -320,6 +323,7 @@ def patch_no_op_unlock(rotki, stack, should_mock_settings=True) -> None:
         monad_manager_connect_at_start=[],
         sonic_manager_connect_at_start=[],
         robinhood_manager_connect_at_start=[],
+        ink_manager_connect_at_start=[],
         kusama_manager_connect_at_start=[],
         have_decoders=False,
         use_custom_database=False,
@@ -361,6 +365,7 @@ def initialize_mock_rotkehlchen_instance(
         monad_manager_connect_at_start,
         sonic_manager_connect_at_start,
         robinhood_manager_connect_at_start,
+        ink_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -441,6 +446,7 @@ def initialize_mock_rotkehlchen_instance(
             monad_manager_connect_at_start=monad_manager_connect_at_start,
             sonic_manager_connect_at_start=sonic_manager_connect_at_start,
             robinhood_manager_connect_at_start=robinhood_manager_connect_at_start,
+            ink_manager_connect_at_start=ink_manager_connect_at_start,
             kusama_manager_connect_at_start=kusama_manager_connect_at_start,
             have_decoders=have_decoders,
             use_custom_database=use_custom_database,
@@ -497,6 +503,7 @@ def initialize_mock_rotkehlchen_instance(
             (SupportedBlockchain.MONAD, monad_manager_connect_at_start, rotki.chains_aggregator.monad),  # noqa: E501
             (SupportedBlockchain.SONIC, sonic_manager_connect_at_start, rotki.chains_aggregator.sonic),  # noqa: E501
             (SupportedBlockchain.ROBINHOOD, robinhood_manager_connect_at_start, rotki.chains_aggregator.robinhood),  # noqa: E501
+            (SupportedBlockchain.INK, ink_manager_connect_at_start, rotki.chains_aggregator.ink),
     ):
         actual_nodes = maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
@@ -631,6 +638,7 @@ def fixture_rotkehlchen_api_server(
         monad_manager_connect_at_start,
         sonic_manager_connect_at_start,
         robinhood_manager_connect_at_start,
+        ink_manager_connect_at_start,
         kusama_manager_connect_at_start,
         solana_nodes_connect_at_start,
         ksm_rpc_endpoint,
@@ -694,6 +702,7 @@ def fixture_rotkehlchen_api_server(
         monad_manager_connect_at_start=monad_manager_connect_at_start,
         sonic_manager_connect_at_start=sonic_manager_connect_at_start,
         robinhood_manager_connect_at_start=robinhood_manager_connect_at_start,
+        ink_manager_connect_at_start=ink_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -737,6 +746,7 @@ def fixture_rotkehlchen_api_server(
                         ('hyperliquid', [], {}),
                           ('sonic', [], {}),
                         ('robinhood', [], {}),
+                        ('ink', [], {}),
                 ):
                     maybe_mock_evm_inquirer(
                         should_mock=mock_other_web3,
@@ -795,6 +805,7 @@ def rotkehlchen_instance(
         monad_manager_connect_at_start,
         sonic_manager_connect_at_start,
         robinhood_manager_connect_at_start,
+        ink_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -847,6 +858,7 @@ def rotkehlchen_instance(
         monad_manager_connect_at_start=monad_manager_connect_at_start,
         sonic_manager_connect_at_start=sonic_manager_connect_at_start,
         robinhood_manager_connect_at_start=robinhood_manager_connect_at_start,
+        ink_manager_connect_at_start=ink_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
