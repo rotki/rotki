@@ -82,6 +82,7 @@ LOCATION_DETAILS: dict = {
     Location.MONAD: {'image': 'monad.svg'},
     Location.SONIC: {'image': 'sonic.svg'},
     Location.ROBINHOOD: {'image': 'robinhood.svg'},
+    Location.INK: {'image': 'ink.svg'},
     Location.AVALANCHE: {'image': 'avalanche.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},

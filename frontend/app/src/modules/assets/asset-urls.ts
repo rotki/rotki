@@ -102,6 +102,12 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://robinhoodchain.blockscout.com/token/',
     transaction: 'https://robinhoodchain.blockscout.com/tx/',
   },
+  [Blockchain.INK]: {
+    address: 'https://explorer.inkonchain.com/address/',
+    block: 'https://explorer.inkonchain.com/block/',
+    token: 'https://explorer.inkonchain.com/token/',
+    transaction: 'https://explorer.inkonchain.com/tx/',
+  },
   [Blockchain.SCROLL]: {
     address: 'https://scrollscan.com/address/',
     block: 'https://scrollscan.com/block/',

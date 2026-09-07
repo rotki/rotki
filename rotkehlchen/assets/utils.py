@@ -27,6 +27,7 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_WETH_ARB,
     A_WETH_BASE,
+    A_WETH_INK,
     A_WETH_OPT,
     A_WETH_ROBINHOOD,
     A_WETH_SCROLL,
@@ -769,4 +770,5 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.MONAD: A_WMON,
     SupportedBlockchain.SONIC: A_WS,
     SupportedBlockchain.ROBINHOOD: A_WETH_ROBINHOOD,
+    SupportedBlockchain.INK: A_WETH_INK,
 }

@@ -196,5 +196,6 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
         ChainID.MONAD: (EvmIndexer.ETHERSCAN,),  # Only etherscan (monadscan) is available for Monad  # noqa: E501
         ChainID.SONIC: (EvmIndexer.ETHERSCAN,),  # Only etherscan (sonicscan) is available for Sonic  # noqa: E501
         ChainID.ROBINHOOD: (EvmIndexer.BLOCKSCOUT,),  # Etherscan and Routescan do not support Robinhood chain. Only the blockscout PRO api does  # noqa: E501
+        ChainID.INK: (EvmIndexer.BLOCKSCOUT,),
     },
 )

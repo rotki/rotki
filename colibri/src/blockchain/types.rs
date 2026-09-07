@@ -20,6 +20,7 @@ pub enum SupportedBlockchain {
     Monad,
     Sonic,
     Robinhood,
+    Ink,
     Optimism,
     PolygonPos,
     Scroll,
@@ -47,6 +48,7 @@ impl SupportedBlockchain {
             Self::Monad => "MONAD",
             Self::Sonic => "SONIC",
             Self::Robinhood => "ROBINHOOD",
+            Self::Ink => "INK",
             Self::Optimism => "OPTIMISM",
             Self::PolygonPos => "POLYGON_POS",
             Self::Scroll => "SCROLL",
@@ -62,6 +64,7 @@ impl SupportedBlockchain {
             | Self::Base
             | Self::Scroll
             | Self::Robinhood
+            | Self::Ink
             | Self::ZksyncLite => "ETH",
             Self::PolygonPos => "eip155:137/erc20:0x0000000000000000000000000000000000001010",
             Self::Gnosis => "XDAI",
@@ -89,6 +92,7 @@ impl SupportedBlockchain {
             143 => Some(Self::Monad),
             146 => Some(Self::Sonic),
             4663 => Some(Self::Robinhood),
+            57073 => Some(Self::Ink),
             999 => Some(Self::Hyperliquid),
             8453 => Some(Self::Base),
             42161 => Some(Self::ArbitrumOne),
@@ -135,6 +139,14 @@ mod tests {
     }
 
     #[test]
+    fn test_from_chain_id_includes_ink() {
+        assert_eq!(
+            SupportedBlockchain::from_chain_id(57073),
+            Some(SupportedBlockchain::Ink)
+        );
+    }
+
+    #[test]
     fn test_from_chain_id_includes_sonic() {
         assert_eq!(
             SupportedBlockchain::from_chain_id(146),
@@ -155,6 +167,7 @@ mod tests {
         assert_eq!(SupportedBlockchain::Monad.native_token_id(), "MON");
         assert_eq!(SupportedBlockchain::Sonic.native_token_id(), "S");
         assert_eq!(SupportedBlockchain::Robinhood.native_token_id(), "ETH");
+        assert_eq!(SupportedBlockchain::Ink.native_token_id(), "ETH");
         assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
     }
 
@@ -163,6 +176,7 @@ mod tests {
         assert_eq!(SupportedBlockchain::Monad.as_str(), "MONAD");
         assert_eq!(SupportedBlockchain::Sonic.as_str(), "SONIC");
         assert_eq!(SupportedBlockchain::Robinhood.as_str(), "ROBINHOOD");
+        assert_eq!(SupportedBlockchain::Ink.as_str(), "INK");
         assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
     }
 }

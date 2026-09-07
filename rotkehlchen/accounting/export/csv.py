@@ -105,6 +105,7 @@ class CSVExporter(CustomizableDateMixin):
             SupportedBlockchain.MONAD: ETHERSCAN_EXPLORER_TX_URL.format(base_url='monadscan.com'),
             SupportedBlockchain.SONIC: ETHERSCAN_EXPLORER_TX_URL.format(base_url='sonicscan.org'),
             SupportedBlockchain.ROBINHOOD: 'https://robinhoodchain.blockscout.com/tx/',
+            SupportedBlockchain.INK: 'https://explorer.inkonchain.com/tx/',
             SupportedBlockchain.ZKSYNC_LITE: 'https://zkscan.io/explorer/transactions/',
         }
         with self.database.conn.read_ctx() as cursor:

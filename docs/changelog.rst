@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`13033` You can now stop rotki querying an account from the accounts table itself, on one of its chains or on all of them, instead of having to remember the address and find it again in the chain settings. The chains that are skipped are marked on the account's row.
+* :feature:`-` Ink is now a supported EVM chain. Balances and transactions can be tracked on it.
 * :feature:`13050` Robinhood Chain is now a supported EVM chain. Balances and transactions can be tracked on it. Transaction history on it needs a Blockscout API key.
 * :feature:`1981` Deposits to and withdrawals from the 1inch Liquidity Protocol and Mooniswap pools are now decoded.
 * :feature:`1988` Transactions going through the zerion SDK router are now understood properly.

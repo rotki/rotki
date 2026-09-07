@@ -32,4 +32,11 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             (Location.ROBINHOOD.serialize_for_db(), Location.ROBINHOOD.value),
         )
 
+    @progress_step(description='Add Ink chain location.')
+    def _add_ink_location(write_cursor: DBCursor) -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+            (Location.INK.serialize_for_db(), Location.INK.value),
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)
