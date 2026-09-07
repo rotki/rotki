@@ -655,79 +655,42 @@ class Coinbase(ExchangeInterface):
             formatstr='iso8601',
             location='coinbase',
         )
-        fee = None
         if tx_b is not None:
             # Trade b will represent the asset we are converting to
             if tx_b['amount']['amount'].startswith('-'):
                 tx_a, tx_b = tx_b, tx_a
 
-            tx_amount = abs(deserialize_fval(tx_a['amount']['amount']))
-            tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
             native_amount = abs(deserialize_fval(tx_b['amount']['amount']))
             native_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
-
-            amount_after_fee = deserialize_fval(tx_b['native_amount']['amount'])
-            amount_before_fee = deserialize_fval(tx_a['native_amount']['amount'])
-            if (
-                    (fee_a := tx_a['trade'].get('fee')) is not None and
-                    (fee_b := tx_b['trade'].get('fee')) is not None and
-                    fee_a['amount'] == fee_b['amount']
-            ):
-                # Lefteris mentioned that conversions for him didn't have at least in the past the
-                # fee section. I've kept both of them but we might have to revisit this part of the logic.  # noqa: E501
-                # Using the fee field as value for the fee the rate that calculates rotki is correct  # noqa: E501
-                # and displays the exact same amounts that the accounting report from coinbase.
-                conversion_native_fee_amount = deserialize_fval(
-                    value=tx_a['trade']['fee']['amount'],
-                    name='conversion fee',
-                    location='coinbase conversion',
-                )
-            else:
-                # Obtain fee amount in the native currency using data from both trades
-                # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive  # noqa: E501
-                conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
-
-            if ZERO not in {tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee}:  # noqa: E501
-                # To get the asset in which the fee is nominated we pay attention to the creation
-                # date of each event. As per our hypothesis the fee is nominated in the asset
-                # for which the first transaction part was initialized
-                time_created_a = deserialize_timestamp_from_date(
-                    date=tx_a['created_at'],
-                    formatstr='iso8601',
-                    location='coinbase',
-                )
-                time_created_b = deserialize_timestamp_from_date(
-                    date=tx_b['created_at'],
-                    formatstr='iso8601',
-                    location='coinbase',
-                )
-                if time_created_a < time_created_b:
-                    # We have the fee amount in the native currency. To get it in the
-                    # converted asset we have to get the rate
-                    asset_native_rate = tx_amount / abs(amount_before_fee)
-                    fee = AssetAmount(
-                        amount=conversion_native_fee_amount * asset_native_rate,
-                        asset=asset_from_coinbase(tx_a['amount']['currency'], time=timestamp),
-                    )
-                else:
-                    tx_b_amount = abs(deserialize_fval(tx_b['amount']['amount']))
-                    asset_native_rate = tx_b_amount / abs(amount_after_fee)
-                    fee = AssetAmount(
-                        amount=conversion_native_fee_amount * asset_native_rate,
-                        asset=asset_from_coinbase(tx_b['amount']['currency'], time=timestamp),
-                    )
-
+            fee_data = tx_a['trade'].get('fee') or tx_b['trade'].get('fee')
         else:  # only one transaction
-            tx_amount = abs(deserialize_fval(tx_a['amount']['amount']))
-            tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
             native_amount = abs(deserialize_fval(tx_a['native_amount']['amount']))
             native_asset = asset_from_coinbase(tx_a['native_amount']['currency'], time=timestamp)
-            # For a single transaction fee may or may not exist in the transaction.
-            if (fee_data := tx_a['trade'].get('fee')) is not None:
-                fee = AssetAmount(
-                    asset=asset_from_coinbase(fee_data['currency']),
-                    amount=abs(deserialize_fval(fee_data['amount'])),
-                )
+            fee_data = tx_a['trade'].get('fee')
+
+        tx_amount = abs(deserialize_fval(tx_a['amount']['amount']))
+        tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
+        # The fee is only ever the one coinbase reports explicitly under trade.fee. The difference
+        # between the two legs' native_amount valuations is coinbase's spread, i.e. a worse rate,
+        # and not an amount that leaves the user's wallets, so it must not become a fee event.
+        fee = None
+        if (
+                fee_data is not None and
+                (fee_amount := abs(deserialize_fval(
+                    value=fee_data['amount'],
+                    name='conversion fee',
+                    location='coinbase conversion',
+                ))) != ZERO
+        ):
+            fee = AssetAmount(
+                asset=asset_from_coinbase(fee_data['currency'], time=timestamp),
+                amount=fee_amount,
+            )
+            if fee.asset == tx_asset:
+                # The wallet transaction amount is the total debit, fee included.
+                # e.g. amount -10.571942 USDC with fee 0.109974 USDC means 10.461968 USDC were
+                # exchanged and 0.109974 USDC were paid as fee, not 10.571942 + 0.109974.
+                tx_amount -= fee_amount
 
         if _is_same_asset_amount_trade(
             spend=(spend := AssetAmount(asset=tx_asset, amount=tx_amount)),

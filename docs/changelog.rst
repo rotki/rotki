@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Coinbase conversions no longer get a made-up fee consisting of the difference between the two legs' fiat valuations.
 * :bug:`-` Swaps through any newer 0x Settler deployment are now decoded, including any future ones.
 * :bug:`12795` When every RPC node of one chain fails, blockchain balances of the other chains are no longer discarded from balance snapshot.
 * :bug:`13034` Withdrawals from a validator whose withdrawal address you do not track no longer show up in your history or count as staking income.
