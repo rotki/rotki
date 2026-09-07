@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Hovering the last-queried time in the dashboard sync bar no longer turns the cursor into a question mark.
 * :bug:`-` Coinbase conversions no longer get a made-up fee consisting of the difference between the two legs' fiat valuations.
 * :bug:`-` Swaps through any newer 0x Settler deployment are now decoded, including any future ones.
 * :bug:`12795` When every RPC node of one chain fails, blockchain balances of the other chains are no longer discarded from balance snapshot.
