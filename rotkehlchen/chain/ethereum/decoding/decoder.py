@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-    from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.externalapis.monerium import Monerium
@@ -309,24 +309,18 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 extra_data={'tx_hashes': [transaction.tx_hash.hex()]},
             ))
 
-    def _decode_transaction(
+    def _post_decode_transaction(
             self,
             transaction: EvmTransaction,
-            tx_receipt: EvmTxReceipt,
+            decoded_events: list[EvmEvent],
             write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
-    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
-        """Decode an Ethereum transaction and run produced-block fallback enrichment."""
-        decoded_events, refresh_balances, reload_decoders = super()._decode_transaction(
-            transaction=transaction,
-            tx_receipt=tx_receipt,
-            write_buffer=write_buffer,
-        )
+    ) -> None:
+        """Persist produced-block fallback rewards after fresh transaction decoding."""
         self._maybe_create_produced_block_event_from_eth_receive(
             transaction=transaction,
             decoded_events=decoded_events,
             write_buffer=write_buffer,
         )
-        return decoded_events, refresh_balances, reload_decoders
 
     def _maybe_enrich_transfers(
             self,

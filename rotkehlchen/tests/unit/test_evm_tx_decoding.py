@@ -43,8 +43,14 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    INFURA_ETH_NODE,
+    TEST_ADDR1,
+    TEST_ADDR2,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
     make_evm_address,
@@ -767,6 +773,125 @@ def test_write_events_relocates_sequence_index_collision(
         (3, 'first at 3'),
         (4, 'second at 3'),  # relocated past the max used index instead of being dropped
     ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+@pytest.mark.parametrize('existing_mev_reward', [False, True])
+def test_reward_fallback_only_persists_after_normal_decoding(
+        database: DBHandler,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        existing_mev_reward: bool,
+) -> None:
+    """Preview preserves customized events and rewards; fresh decoding persists the fallback."""
+    decoder = ethereum_transaction_decoder
+    transaction = EvmTransaction(
+        tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1739574323),
+        block_number=21847848,
+        from_address=TEST_ADDR2,
+        to_address=TEST_ADDR1,
+        value=2 * 10**18,
+        gas=21000,
+        gas_price=0,
+        gas_used=21000,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=transaction.tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=0,
+    )
+    dbevents = DBHistoryEvents(database)
+    with database.user_write() as cursor:
+        DBEvmTx(database).add_transactions(cursor, [transaction], relevant_address=TEST_ADDR1)
+        cursor.execute(
+            'INSERT INTO eth2_validators(validator_index, public_key, validator_type, '
+            'ownership_proportion, activation_timestamp) VALUES(?, ?, ?, ?, ?)',
+            (397160, '0xaabb', 1, '1', 0),
+        )
+        dbevents.add_history_event(cursor, EvmEvent(
+            tx_ref=transaction.tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(transaction.timestamp * 1000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(3),
+            location_label=TEST_ADDR1,
+            notes='Customized receive',
+        ), mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED})
+        if existing_mev_reward:
+            dbevents.add_history_event(cursor, EthBlockEvent(
+                validator_index=397160,
+                timestamp=TimestampMS(transaction.timestamp * 1000),
+                amount=FVal(1),
+                fee_recipient=TEST_ADDR1,
+                fee_recipient_tracked=True,
+                block_number=transaction.block_number,
+                is_mev_reward=True,
+                extra_data={'tx_hashes': []},
+            ))
+
+    tables = (
+        'history_events', 'chain_events_info', 'history_events_mappings',
+        'eth_staking_events_info', 'evm_tx_mappings',
+    )
+    with database.conn.read_ctx() as cursor:
+        before_preview = [cursor.execute(f'SELECT * FROM {table}').fetchall() for table in tables]
+
+    with (
+        patch.object(decoder, 'beacon_chain', Mock(has_api_key=Mock(return_value=False))),
+        patch.object(decoder, '_get_beacon_node', return_value=Mock(
+            query_block_proposer=Mock(return_value=397160),
+        )),
+        patch.object(decoder.evm_inquirer, '_try_indexers', return_value={
+            'blockMiner': TEST_ADDR1,
+            'blockReward': str(10**18),
+        }),
+    ):
+        preview = decoder.decode_transaction_without_persistence(transaction, receipt)
+        assert len(preview) == 1
+        assert preview[0].amount == FVal(2)
+        with database.conn.read_ctx() as cursor:
+            assert [cursor.execute(f'SELECT * FROM {table}').fetchall() for table in tables] == before_preview  # noqa: E501
+
+        write_buffer: list[tuple[list[EvmEvent], str, int]] = []
+        events, _, _ = decoder._get_or_decode_transaction_events(
+            transaction, receipt, ignore_cache=True, delete_customized=True,
+            write_buffer=write_buffer,
+        )
+        assert events == preview
+        assert write_buffer == []
+
+    with database.conn.read_ctx() as cursor:
+        rewards = cursor.execute(
+            'SELECT amount, extra_data FROM history_events WHERE subtype=?',
+            (HistoryEventSubType.MEV_REWARD.serialize(),),
+        ).fetchall()
+        assert len(rewards) == 1
+        assert FVal(rewards[0][0]) == FVal(3)
+        assert transaction.tx_hash.hex() in rewards[0][1]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE subtype=?',
+            (HistoryEventSubType.BLOCK_PRODUCTION.serialize(),),
+        ).fetchone()[0] == (0 if existing_mev_reward else 1)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE value=?', (TX_DECODED,),
+        ).fetchone()[0] == 1
+
+    with patch.object(decoder, '_maybe_create_produced_block_event_from_eth_receive') as fallback:
+        cached_events, _, _ = decoder._get_or_decode_transaction_events(
+            transaction, receipt, ignore_cache=False,
+        )
+        assert len(cached_events) == 1
+        assert cached_events[0].tx_ref == transaction.tx_hash
+        assert cached_events[0].amount == FVal(2)
+        fallback.assert_not_called()
 
 
 def test_decode_transaction_without_persistence_discards_write_buffer(

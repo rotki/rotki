@@ -887,11 +887,28 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             return events, False, None
 
         # else we should decode now
-        return self._decode_transaction(
+        events, refresh_balances, reload_decoders = self._decode_transaction(
             transaction=transaction,
             tx_receipt=tx_receipt,
             write_buffer=write_buffer,
         )
+        self._post_decode_transaction(
+            transaction=transaction,
+            decoded_events=events,
+            write_buffer=write_buffer,
+        )
+        return events, refresh_balances, reload_decoders
+
+    def _post_decode_transaction(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> None:
+        """Run chain-specific persistence after fresh decoding, excluding previews and cache hits.
+
+        Implementations may flush pending event writes before persisting related events.
+        """
 
     def _maybe_decode_internal_transactions(
             self,
