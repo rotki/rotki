@@ -303,7 +303,7 @@ def _query_curve_data_from_chain(
             last_notified_ts=last_notified_ts,
             protocol=CPT_CURVE,
             chain=evm_inquirer.chain_id,
-            processed=(processed := pool_index - start_idx),
+            processed=(processed := pool_index - start_idx + 1),
             total=pools_to_query_count,
         )
 

@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     read_convex_data_from_cache,
 )
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     query_balancer_data,
     read_balancer_pools_and_gauges_from_cache,
@@ -29,7 +30,10 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     CURVE_API_URL,
     CURVE_CHAIN_ID,
 )
-from rotkehlchen.chain.evm.decoding.curve.curve_cache import read_curve_pools_and_gauges
+from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
+    _query_curve_data_from_chain,
+    read_curve_pools_and_gauges,
+)
 from rotkehlchen.chain.evm.decoding.gearbox.constants import (
     CHAIN_ID_TO_DATA_COMPRESSOR,
     CPT_GEARBOX,
@@ -41,13 +45,16 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     read_gearbox_data_from_cache,
     read_gearbox_farming_token_to_pool_addresses,
 )
+from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
+from rotkehlchen.chain.evm.decoding.morpho.utils import query_morpho_vaults
 from rotkehlchen.chain.evm.decoding.superfluid.utils import (
     _get_token_list as get_superfluid_token_list,
     query_superfluid_tokens,
 )
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     POOL_DATA_CHUNK_SIZE,
+    query_velodrome_data_from_chain,
     query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
 )
@@ -58,7 +65,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -241,6 +248,144 @@ def make_call_object(protocol: str, chain: ChainID, processed: int, total: int) 
             'total': total,
         },
     )
+
+
+@pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.BASE])
+@pytest.mark.parametrize('pool_case', ['cached', 'empty', 'new_with_skipped_tail'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_velodrome_cache_progress(database, chain_id, pool_case):
+    """Only start progress for uncached pools, and finish despite a skipped tail."""
+    existing_pools = {make_evm_address() for _ in range(67)}
+    raw_pools = [[address, 'cached pool', *([ZERO_ADDRESS] * 16)] for address in existing_pools]
+    new_address = make_evm_address()
+    if pool_case == 'empty':
+        raw_pools = []
+    elif pool_case == 'new_with_skipped_tail':
+        raw_pools.insert(0, [new_address, 'new pool', *([ZERO_ADDRESS] * 16)])
+        raw_pools.append(['invalid address'])
+
+    inquirer = MagicMock(database=database, chain_id=chain_id)
+    with (
+        patch('rotkehlchen.chain.evm.contracts.EvmContract.call', return_value=raw_pools) as query,
+        patch.object(database.msg_aggregator, 'add_message') as messages,
+    ):
+        pools = query_velodrome_data_from_chain(
+            inquirer=inquirer,
+            existing_pools=existing_pools,
+            msg_aggregator=database.msg_aggregator,
+            reload_all=False,
+        )
+
+    query.assert_called_once_with(
+        node_inquirer=inquirer,
+        method_name='all',
+        arguments=[POOL_DATA_CHUNK_SIZE, 67, 0],
+    )
+    if pool_case != 'new_with_skipped_tail':
+        assert pools == []
+        messages.assert_not_called()
+        return
+
+    assert [pool.pool_address for pool in pools] == [new_address]
+    protocol = CPT_VELODROME if chain_id == ChainID.OPTIMISM else CPT_AERODROME
+    assert messages.call_args_list == [
+        make_call_object(protocol, chain_id, processed=0, total=1),
+        make_call_object(protocol, chain_id, processed=1, total=1),
+    ]
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert new_address in globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.VELODROME_POOL_ADDRESS if chain_id == ChainID.OPTIMISM else CacheType.AERODROME_POOL_ADDRESS,),  # noqa: E501
+        )
+
+
+@pytest.mark.parametrize('skip_reason', ['cached', 'remote_error'])
+def test_curve_cache_progress(skip_reason):
+    """The last attempted pool completes progress even when it cannot be added."""
+    inquirer = MagicMock(chain_id=ChainID.OPTIMISM)
+    messages = MagicMock()
+    address = make_evm_address()
+    with patch(
+        'rotkehlchen.chain.evm.contracts.EvmContract.call',
+        side_effect=[2, address if skip_reason == 'cached' else RemoteError('pool unavailable')],
+    ) as query:
+        assert _query_curve_data_from_chain(
+            evm_inquirer=inquirer,
+            existing_pools={address},
+            msg_aggregator=messages,
+            reload_all=False,
+        ) == []
+
+    assert query.call_count == 2
+    assert messages.add_message.call_args_list == [
+        make_call_object(CPT_CURVE, ChainID.OPTIMISM, processed=1, total=1),
+    ]
+
+
+@pytest.mark.parametrize('query_result', ['empty', 'failed', 'success'])
+def test_morpho_cache_progress(globaldb, query_result):
+    """Discovery must succeed before publishing progress; processing still finishes."""
+    address, underlying = make_evm_address(), make_evm_address()
+    vaults = [] if query_result == 'empty' else [{'address': address, 'asset': {'address': underlying}}]  # noqa: E501
+    responses = [MockResponse(text=json.dumps({'data': {'vaults': {'items': vaults}}}), status_code=200)]  # noqa: E501
+    if query_result == 'failed':
+        responses.append(requests.RequestException('second query failed'))
+    else:
+        responses.append(MockResponse(text=json.dumps({'data': {'vaultV2s': {'items': []}}}), status_code=200))  # noqa: E501
+
+    messages = MagicMock()
+    with patch('requests.post', side_effect=responses) as query:
+        query_morpho_vaults(chain_id=ChainID.BASE, msg_aggregator=messages)
+
+    assert query.call_count == 2
+    with globaldb.conn.read_ctx() as cursor:
+        cached = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.MORPHO_VAULTS, str(ChainID.BASE.serialize())),
+        )
+    if query_result == 'success':
+        assert f'{address},{underlying}' in cached
+        assert messages.add_message.call_args_list[-1] == make_call_object(
+            CPT_MORPHO, ChainID.BASE, processed=1, total=1,
+        )
+    else:
+        assert f'{address},{underlying}' not in cached
+        messages.add_message.assert_not_called()
+
+
+@pytest.mark.parametrize('query_result', ['cached', 'failed'])
+def test_gearbox_cache_progress(globaldb, query_result):  # pylint: disable=unused-argument
+    """Cached-only discovery and a later RPC failure must not leave a pending update."""
+    address, underlying, token = make_evm_address(), make_evm_address(), make_evm_address()
+    pools = [[address, underlying, 0, 0, 'pool', *([0] * 18), []]]
+    if query_result == 'failed':
+        pools.append([make_evm_address(), underlying, 0, 0, 'pool', *([0] * 18), [[ZERO_ADDRESS, token]]])  # noqa: E501
+    messages = MagicMock()
+    inquirer = MagicMock(chain_id=ChainID.ETHEREUM)
+    inquirer.contracts.contract.return_value.call.return_value = pools
+    inquirer.multicall_2.side_effect = RemoteError('second pool failed')
+    with (
+        patch('rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.get_existing_pools', return_value={address} if query_result == 'cached' else set()),  # noqa: E501
+        patch('rotkehlchen.chain.evm.contracts.EvmContract.encode', return_value='0x'),
+        patch('rotkehlchen.chain.evm.utils.ts_now', side_effect=[100, 106]),
+    ):
+        result = query_gearbox_data(
+            inquirer=inquirer,
+            cache_type=CacheType.GEARBOX_POOL_ADDRESS,
+            msg_aggregator=messages,
+            reload_all=False,
+        )
+
+    inquirer.contracts.contract.return_value.call.assert_called_once_with(
+        node_inquirer=inquirer, method_name='getPoolsV3List',
+    )
+    if query_result == 'failed':
+        assert result is None
+        inquirer.multicall_2.assert_called_once()
+    else:
+        assert result == []
+        inquirer.multicall_2.assert_not_called()
+    messages.add_message.assert_not_called()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -473,7 +618,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
         assert mock_notify.call_args_list == []
     else:
         assert any(
-            call == make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=0, total=2)
+            call == make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=2, total=2)
             for call in mock_notify.call_args_list
         )
 
@@ -553,7 +698,6 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
     assert farming_token_to_pool['eip155:1/erc20:0x9ef444a6d7F4A5adcd68FD5329aA5240C90E14d2'] == usdc_pool.evm_address  # noqa: E501
 
     assert mock_notify.call_args_list == [
-        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=0, total=0),
         make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=1, total=8),
         make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=8, total=8),
     ]

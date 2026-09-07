@@ -12,10 +12,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import (
     CPT_GEARBOX,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.evm.utils import (
-    maybe_notify_cache_query_status,
-    maybe_notify_new_pools_status,
-)
+from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -364,7 +361,6 @@ def get_gearbox_pool_tokens(inquirer: EvmNodeInquirer, pool_data: list[str], und
 def query_gearbox_data_from_chain(
         evm_inquirer: EvmNodeInquirer,
         existing_pools: set[ChecksumEvmAddress],
-        msg_aggregator: MessagesAggregator,
 ) -> list[GearboxPoolData] | None:
     """
     Query all Gearbox information(lp tokens, pools, lp coins) from data compressor.
@@ -376,21 +372,12 @@ def query_gearbox_data_from_chain(
         CHAIN_ID_TO_DATA_COMPRESSOR[evm_inquirer.chain_id],
     ).call(node_inquirer=evm_inquirer, method_name='getPoolsV3List')
     new_pools: list[GearboxPoolData] = []
-    last_notified_ts = Timestamp(0)
     staking_token_encoded = EvmContract(
         address=ZERO_ADDRESS,
         abi=evm_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
         deployed_block=0,  # is not used here
     ).encode(method_name='stakingToken')
     for pool_data in pools_data:
-        last_notified_ts = maybe_notify_new_pools_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=CPT_GEARBOX,
-            chain=evm_inquirer.chain_id,
-            get_new_pools_count=lambda: len(new_pools),
-        )
-
         try:
             pool_address = deserialize_evm_address(pool_data[0])
         except DeserializationError:
@@ -459,7 +446,6 @@ def query_gearbox_data(
         if (pools_data := query_gearbox_data_from_chain(
             evm_inquirer=inquirer,
             existing_pools=existing_pools,
-            msg_aggregator=msg_aggregator,
         )) is None:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 globaldb_update_cache_last_ts(  # update the last_queried_ts of db entries
