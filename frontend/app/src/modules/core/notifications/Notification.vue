@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
-import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
-import dayjs from 'dayjs';
-import { arrayify } from '@/modules/core/common/data/array';
+import { type NotificationData, Severity } from '@rotki/common';
 import MissingKeyNotification from '@/modules/core/notifications/MissingKeyNotification.vue';
+import { useNotificationCard } from '@/modules/core/notifications/use-notification-card';
 
 const { notification, popup = false } = defineProps<{
   notification: NotificationData;
@@ -15,152 +13,31 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { copy: copyToClipboard } = useClipboard();
 
-const actions = computed<NotificationAction[]>(() => {
-  const action = notification.action;
+const message = useTemplateRef<HTMLDivElement>('message');
+const { height } = useElementSize(message);
 
-  if (!action)
-    return [];
-
-  return arrayify(action);
-});
-
-function dismiss(id: number) {
+function dismiss(id: number): void {
   emit('dismiss', id);
 }
 
-const icon = computed<RuiIcons>(() => {
-  switch (notification.severity) {
-    case Severity.ERROR:
-    case Severity.INFO:
-      return 'lu-circle-alert';
-    case Severity.WARNING:
-      return 'lu-siren';
-    case Severity.REMINDER:
-      return 'lu-alarm-clock';
-    default:
-      return 'lu-circle-alert';
-  }
-});
-
-const color = computed<string>(() => {
-  if (notification.action)
-    return 'warning';
-
-  switch (notification.severity) {
-    case Severity.ERROR:
-      return 'error';
-    case Severity.INFO:
-      return 'info';
-    case Severity.WARNING:
-      return 'warning';
-    case Severity.REMINDER:
-      return 'reminder';
-    default:
-      return '';
-  }
-});
-
-const colorBgClass = computed<string>(() => {
-  switch (get(color)) {
-    case 'warning':
-      return '!bg-rui-warning/10';
-    case 'error':
-      return '!bg-rui-error/10';
-    case 'info':
-      return '!bg-rui-info/10';
-    case 'reminder':
-      return '!bg-rui-secondary/10';
-    default:
-      return '';
-  }
-});
-
-const expandButtonClass = computed<string>(() => {
-  switch (get(color)) {
-    case 'warning':
-      return '!to-rui-warning/10';
-    case 'error':
-      return '!to-rui-error/10';
-    case 'info':
-      return '!to-rui-info/10';
-    case 'reminder':
-      return '!to-rui-secondary/10';
-    default:
-      return '';
-  }
-});
-
-const circleBgClass = computed(() => {
-  switch (notification.severity) {
-    case Severity.ERROR:
-      return 'bg-rui-error';
-    case Severity.INFO:
-      return 'bg-rui-info';
-    case Severity.WARNING:
-      return 'bg-rui-warning';
-    case Severity.REMINDER:
-      return 'bg-rui-secondary';
-    default:
-      return 'bg-rui-success';
-  }
-});
-
-const date = computed(() => dayjs(notification.date).format('LLL'));
-
-async function copy() {
-  const { i18nParam, message } = notification;
-  let messageText = message;
-
-  if (i18nParam) {
-    messageText = t(i18nParam.message, {
-      location: i18nParam.props.location,
-      service: i18nParam.props.service,
-      url: i18nParam.props.url,
-    });
-  }
-  await copyToClipboard(messageText);
-}
-
-function doAction(id: number, action: NotificationAction) {
-  action.action?.();
-  if (!action.persist)
-    dismiss(id);
-}
-
-const message = useTemplateRef<HTMLDivElement>('message');
-const MAX_HEIGHT = 64;
-
-const { height } = useElementSize(message);
-
-const showExpandArrow = computed(() => get(height) > MAX_HEIGHT);
-const expanded = ref<boolean>(false);
-
-const messageWrapperStyle = computed(() => {
-  if (!get(showExpandArrow))
-    return {};
-
-  const usedHeight = get(expanded) ? get(height) + 24 : MAX_HEIGHT;
-  return {
-    height: `${usedHeight}px`,
-  };
-});
-
-function messageClicked() {
-  if (!get(showExpandArrow) && get(expanded))
-    return;
-
-  set(expanded, true);
-}
-
-function buttonClicked() {
-  set(expanded, !get(expanded));
-}
-
-function getIcon(action: NotificationAction): RuiIcons {
-  return isRuiIcon(action.icon) ? action.icon : 'lu-arrow-right';
-}
+const {
+  actions,
+  buttonClicked,
+  circleBgClass,
+  color,
+  colorBgClass,
+  copy,
+  date,
+  doAction,
+  expandButtonClass,
+  expanded,
+  getIcon,
+  icon,
+  messageClicked,
+  messageWrapperStyle,
+  showExpandArrow,
+} = useNotificationCard(() => notification, { dismiss, height });
 </script>
 
 <template>
@@ -264,7 +141,7 @@ function getIcon(action: NotificationAction): RuiIcons {
         :color="action.danger ? 'error' : 'primary'"
         variant="text"
         size="sm"
-        @click="doAction(notification.id, action)"
+        @click="doAction(action)"
       >
         {{ action.label }}
         <template #append>
