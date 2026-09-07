@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import type { Nullable } from '@rotki/common';
-import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
-import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/types';
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
-import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
-import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
-import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
-import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
+import { useCustomAssetDialog } from '@/modules/assets/admin/custom/use-custom-asset-dialog';
+import { useCustomAssetsTable } from '@/modules/assets/admin/custom/use-custom-assets-table';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { identifier = null, mainPage = false } = defineProps<{
@@ -19,92 +12,37 @@ const { identifier = null, mainPage = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const types = ref<string[]>([]);
-
-const router = useRouter();
-const route = useRoute();
-
-const { deleteCustomAsset, getCustomAssetTypes, queryAllCustomAssets } = useAssetManagementApi();
-const { editableItem, expanded } = useCommonTableProps<CustomAsset>();
-const openCustomAssetDialog = ref<boolean>(false);
-
-const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
-  confirm: item => ({
-    message: t('asset_management.confirm_delete.message', { asset: item?.name ?? '' }),
-    title: t('asset_management.confirm_delete.title'),
-  }),
-  deleteItem: item => deleteCustomAsset(item.identifier),
-  errorMessage: (item, error) => t('asset_management.delete_error', {
-    address: item.identifier,
-    message: getErrorMessage(error),
-  }),
-  onDeleted: refresh,
-});
-
-const fields = useCustomAssetFields(types);
-
 const {
   collection,
-  filter,
-  isLoading: loading,
-  pagination,
-  refetch,
-  sort,
-} = useServerTable<
-  CustomAsset,
-  CustomAssetRequestPayload,
-  Filters
->({
-  fetch: queryAllCustomAssets,
   fields,
-  sort: {
-    default: [{
-      column: 'name',
-      direction: 'desc',
-    }],
-  },
-  urlState: routeWhen(mainPage),
+  loading,
+  modelExpanded,
+  modelFilter,
+  pagination,
+  refresh,
+  showDeleteConfirmation,
+  sort,
+  types,
+} = useCustomAssetsTable({
+  mainPage: () => mainPage,
 });
 
-function add() {
-  set(editableItem, null);
-  set(openCustomAssetDialog, true);
-}
-
-function edit(editAsset: CustomAsset) {
-  set(editableItem, editAsset);
-  set(openCustomAssetDialog, true);
-}
-
-function editAsset(assetId: Nullable<string>) {
-  if (assetId) {
-    const asset = get(collection).data.find(({ identifier: id }) => id === assetId);
-    if (asset)
-      edit(asset);
-  }
-}
-
-async function refreshTypes() {
-  set(types, await getCustomAssetTypes());
-}
-
-async function refresh() {
-  await Promise.all([refetch(), refreshTypes()]);
-}
+const {
+  add,
+  consumeAddQuery,
+  edit,
+  editAsset,
+  modelEditableItem,
+  modelOpenDialog,
+} = useCustomAssetDialog({
+  assets: () => get(collection).data,
+  identifier: () => identifier,
+});
 
 onMounted(async () => {
   await refresh();
   editAsset(identifier);
-
-  const query = get(route).query;
-  if (query.add) {
-    add();
-    await router.replace({ query: {} });
-  }
-});
-
-watch(() => identifier, (assetId) => {
-  editAsset(assetId);
+  await consumeAddQuery();
 });
 </script>
 
@@ -137,8 +75,8 @@ watch(() => identifier, (assetId) => {
       </RuiButton>
     </template>
     <CustomAssetTable
-      v-model:filters="filter"
-      v-model:expanded="expanded"
+      v-model:filters="modelFilter"
+      v-model:expanded="modelExpanded"
       v-model:pagination="pagination"
       v-model:sort="sort"
       :assets="collection.data"
@@ -149,9 +87,9 @@ watch(() => identifier, (assetId) => {
       @delete-asset="showDeleteConfirmation($event)"
     />
     <CustomAssetFormDialog
-      v-model:open="openCustomAssetDialog"
+      v-model:open="modelOpenDialog"
       :types="types"
-      :editable-item="editableItem"
+      :editable-item="modelEditableItem"
       @refresh="refresh()"
     />
   </TablePageLayout>
