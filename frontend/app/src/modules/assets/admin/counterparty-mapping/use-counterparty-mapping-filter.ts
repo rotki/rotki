@@ -6,7 +6,7 @@ export const CounterpartyMappingFilterKeys = {
   COUNTERPARTY_SYMBOL: 'counterpartySymbol',
 } as const;
 
-export type CounterpartyMappingFilterKey =
+type CounterpartyMappingFilterKey =
   typeof CounterpartyMappingFilterKeys[keyof typeof CounterpartyMappingFilterKeys];
 
 export type Filters = MatchedKeyword<CounterpartyMappingFilterKey>;

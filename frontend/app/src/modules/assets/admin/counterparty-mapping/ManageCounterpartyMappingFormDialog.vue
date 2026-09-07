@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
 import { useTemplateRef } from 'vue';
-import ManageCounterpartyMappingForm from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingForm.vue';
+import ManageCounterpartyMappingForm
+  from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useMappingFormDialog } from '@/modules/assets/admin/use-mapping-form-dialog';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<CounterpartyMapping | undefined>({ required: true });
@@ -20,56 +20,19 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const form = useTemplateRef<InstanceType<typeof ManageCounterpartyMappingForm>>('form');
-const loading = ref(false);
-const stateUpdated = ref(false);
-const errorMessages = ref<Record<string, string[]>>({});
-
-const dialogTitle = computed<string>(() =>
-  editMode
-    ? t('asset_management.cex_mapping.edit_title')
-    : t('asset_management.cex_mapping.add_title'),
-);
+const stateUpdated = ref<boolean>(false);
 
 const { addCounterpartyMapping, editCounterpartyMapping } = useCounterpartyMappingApi();
-const { setMessage } = useMessageStore();
 
-async function save(): Promise<boolean> {
-  if (!isDefined(modelValue))
-    return false;
-
-  const formRef = get(form);
-  const valid = formRef?.validate();
-  if (!valid)
-    return false;
-
-  const data = get(modelValue);
-  let success;
-
-  set(loading, true);
-  try {
-    if (editMode)
-      success = await editCounterpartyMapping(data);
-    else
-      success = await addCounterpartyMapping(data);
-  }
-  catch (error: unknown) {
-    success = false;
-    const obj = { message: getErrorMessage(error) };
-    setMessage({
-      description: editMode
-        ? t('asset_management.cex_mapping.add_error', obj)
-        : t('asset_management.cex_mapping.edit_error', obj),
-    });
-  }
-
-  set(loading, false);
-  if (success) {
-    const mapping = get(modelValue);
-    set(modelValue, undefined);
-    emit('refresh', mapping);
-  }
-  return success;
-}
+const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog({
+  add: addCounterpartyMapping,
+  edit: editCounterpartyMapping,
+  editMode: () => editMode ?? false,
+  form,
+  modelValue,
+  onSaved: (mapping): void => emit('refresh', mapping),
+  toPayload: (mapping): CounterpartyMapping => mapping,
+});
 </script>
 
 <template>
@@ -86,7 +49,7 @@ async function save(): Promise<boolean> {
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelErrorMessages"
       v-model:state-updated="stateUpdated"
       :edit-mode="editMode"
     />
