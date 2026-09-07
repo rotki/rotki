@@ -2,7 +2,7 @@ import type { Ref } from 'vue';
 import { BackendCode, type DebugStateGroup, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { api } from '@/modules/core/api';
+import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';

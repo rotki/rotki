@@ -3,7 +3,8 @@ import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
 import type { Filters } from '@/modules/history/events/use-events-filter';
-import { AccountingOverlayToggle, BalanceDivergenceToggle } from '@/modules/history/balances/components';
+import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
+import BalanceDivergenceToggle from '@/modules/history/balances/BalanceDivergenceToggle.vue';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {

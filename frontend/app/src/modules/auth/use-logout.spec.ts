@@ -61,7 +61,7 @@ vi.mock('@/modules/auth/use-session-auth-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/core/api', () => ({
+vi.mock('@/modules/core/api/rotki-api', () => ({
   api: createMock<RotkiApi>({
     cancel: vi.fn(),
     cancelAllQueued: vi.fn(),

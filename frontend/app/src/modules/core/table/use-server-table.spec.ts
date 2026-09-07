@@ -50,13 +50,16 @@ function getLastPersistenceOptions(): RememberTableFilterOptions {
   return rememberTableFilterSpy.mock.calls.at(-1)![0];
 }
 
-vi.mock('@/modules/core/api', () => ({
+vi.mock('@/modules/core/api/request-queue/errors', () => ({
   RequestCancelledError: class RequestCancelledError extends Error {
     constructor(message: string = 'Request was cancelled') {
       super(message);
       this.name = 'RequestCancelledError';
     }
   },
+}));
+
+vi.mock('@/modules/core/api/rotki-api', () => ({
   api: createMock<RotkiApi>({
     cancelByTag: (tag: string): void => cancelByTagSpy(tag),
   }),
@@ -886,7 +889,7 @@ describe('request.cancelTag', () => {
   });
 
   it('should silently ignore RequestCancelledError in onError', async () => {
-    const { RequestCancelledError: MockRequestCancelledError } = await import('@/modules/core/api');
+    const { RequestCancelledError: MockRequestCancelledError } = await import('@/modules/core/api/request-queue/errors');
     const requestFn = vi.fn().mockRejectedValue(new MockRequestCancelledError());
 
     scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({

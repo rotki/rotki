@@ -6,7 +6,7 @@ import type {
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import AccountBalanceDetails from '@/modules/accounts/balances/AccountBalanceDetails.vue';
-import { AccountBalancesTable } from '@/modules/accounts/table';
+import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';

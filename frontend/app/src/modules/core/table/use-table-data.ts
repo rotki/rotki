@@ -1,7 +1,8 @@
 import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import { FetchError } from 'ofetch';
-import { api, RequestCancelledError } from '@/modules/core/api';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { api } from '@/modules/core/api/rotki-api';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';

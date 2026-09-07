@@ -1,5 +1,5 @@
 import type { ActionResult } from '@rotki/common';
-import { api } from '@/modules/core/api';
+import { api } from '@/modules/core/api/rotki-api';
 import {
   VALID_STATUS_CODES,
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,

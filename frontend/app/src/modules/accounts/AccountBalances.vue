@@ -8,7 +8,7 @@ import AccountAssetSelectionActions from '@/modules/accounts/AccountAssetSelecti
 import AccountBalancesFilterBar from '@/modules/accounts/AccountBalancesFilterBar.vue';
 import AccountExpandedRowContent from '@/modules/accounts/AccountExpandedRowContent.vue';
 import AccountTokenDetectionControls from '@/modules/accounts/AccountTokenDetectionControls.vue';
-import { AccountBalancesTable } from '@/modules/accounts/table';
+import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 import { useAccountAssetSelection } from '@/modules/accounts/use-account-asset-selection';
 import { useAccountBalancesPagination } from '@/modules/accounts/use-account-balances-pagination';
 import { useAccountBalancesRefresh } from '@/modules/accounts/use-account-balances-refresh';

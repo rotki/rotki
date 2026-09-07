@@ -71,8 +71,8 @@ vi.mock('@/modules/settings/backend/use-mcp-server-state', () => ({ setMcpServer
 
 vi.mock('@/modules/shell/app/debug-state-reset', () => ({ resetDebugState }));
 
-vi.mock('@/modules/core/api', async importOriginal => ({
-  ...await importOriginal<typeof import('@/modules/core/api')>(),
+vi.mock('@/modules/core/api/rotki-api', async importOriginal => ({
+  ...await importOriginal<typeof import('@/modules/core/api/rotki-api')>(),
   api: { stopRequests },
 }));
 

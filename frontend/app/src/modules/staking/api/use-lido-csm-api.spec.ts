@@ -16,8 +16,8 @@ const { mockDelete, mockGet, mockPost, mockPut } = vi.hoisted(() => ({
   mockPut: vi.fn(),
 }));
 
-vi.mock('@/modules/core/api', async importOriginal => ({
-  ...await importOriginal<typeof import('@/modules/core/api')>(),
+vi.mock('@/modules/core/api/rotki-api', async importOriginal => ({
+  ...await importOriginal<typeof import('@/modules/core/api/rotki-api')>(),
   api: createMock<RotkiApi>({
     delete: mockDelete,
     get: mockGet,
