@@ -6,6 +6,6 @@ export const CexMappingFilterKeys = {
   LOCATION_SYMBOL: 'locationSymbol',
 } as const;
 
-export type CexMappingFilterKey = typeof CexMappingFilterKeys[keyof typeof CexMappingFilterKeys];
+type CexMappingFilterKey = typeof CexMappingFilterKeys[keyof typeof CexMappingFilterKeys];
 
 export type Filters = MatchedKeyword<CexMappingFilterKey>;
