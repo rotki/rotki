@@ -1,12 +1,7 @@
 <script setup lang="ts">
-import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
-import { NoteLocation, type UserNote, type UserNoteDraft, type UserNotesRequestPayload } from '@/modules/core/common/notes';
-import { useServerTable } from '@/modules/core/table/use-server-table';
-import { useNotesCount } from '@/modules/notes/use-notes-count';
-import { useUserNotesApi } from '@/modules/notes/use-user-notes-api';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { useUserNotesList } from '@/modules/notes/use-user-notes-list';
 import UserNotesFormDialog from '@/modules/notes/UserNotesFormDialog.vue';
-import { usePremium } from '@/modules/premium/use-premium';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
@@ -14,186 +9,46 @@ const open = defineModel<boolean>('open', { required: true });
 
 const { location = NoteLocation.GLOBAL } = defineProps<{ location?: string }>();
 
-function getDefaultForm(): UserNoteDraft {
-  return {
-    content: '',
-    isPinned: false,
-    location: NoteLocation.GLOBAL,
-    title: '',
-  };
-}
-
-const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
-
-const showDeleteConfirmation = ref<boolean>(false);
-const idToDelete = ref<number | null>(null);
-const form = ref<UserNoteDraft>(getDefaultForm());
-const editMode = ref<boolean>(false);
-const loading = ref<boolean>(false);
-const search = ref<string>('');
-const titleSubstring = ref<string>('');
-
-const { deleteUserNote, fetchUserNotes, updateUserNote } = useUserNotesApi();
-
-const { refresh: refreshNotesCount } = useNotesCount();
-
-const extraParams = computed(() => ({
-  location,
-  titleSubstring: get(titleSubstring),
-}));
-
-const {
-  collection: notes,
-  pagination,
-  refetch,
-} = useServerTable<UserNote, UserNotesRequestPayload>({
-  fetch: fetchUserNotes,
-  params: [{ to: 'both', values: extraParams }],
-  sort: {
-    default: [{
-      column: 'isPinned',
-      direction: 'desc',
-    }, {
-      column: 'lastUpdateTimestamp',
-      direction: 'desc',
-    }],
-  },
-});
-
-const { data, limit } = getCollectionData(notes);
-
 const { t } = useI18n({ useScope: 'global' });
 
-async function fetchNotes(loadingIndicator = false): Promise<void> {
-  if (loadingIndicator)
-    set(loading, true);
-
-  await refetch();
-  set(loading, false);
-}
-
-async function refreshNotes(): Promise<void> {
-  await fetchNotes();
-  await refreshNotesCount();
-}
-
-const { found, limit: itemsPerPage, total } = getCollectionData<UserNote>(notes);
-
-const { showUpgradeRow } = setupEntryLimit(itemsPerPage, found, total);
-
-const page = ref<number>(1);
-const nextPageDisabled = ref<boolean>(true);
-
-const LIMIT = 10;
-watch(page, (page) => {
-  set(pagination, {
-    ...get(pagination),
-    limit: LIMIT * page,
-    page: 1,
-  });
-});
-
-async function togglePin(note: UserNote) {
-  const payload = {
-    ...note,
-    isPinned: !note.isPinned,
-  };
-
-  await callUpdateNote(payload);
-}
-
-function resetForm() {
-  set(editMode, false);
-  set(form, getDefaultForm());
-  set(open, false);
-}
-
-function addNote() {
-  resetForm();
-  set(open, true);
-}
-
-function editNote(note: UserNote) {
-  set(editMode, true);
-  set(form, { ...note });
-  set(open, true);
-}
-
-async function callUpdateNote(payload: Partial<UserNote>): Promise<void> {
-  await updateUserNote(payload);
-  await refreshNotes();
-}
-
-function deleteNote(identifier: number) {
-  set(showDeleteConfirmation, true);
-  set(idToDelete, identifier);
-}
-
-function clearDeleteDialog(): void {
-  set(showDeleteConfirmation, false);
-  set(idToDelete, null);
-}
-
-async function confirmDelete(): Promise<void> {
-  const id = get(idToDelete);
-  if (id === null)
-    return;
-
-  await deleteUserNote(id);
-  clearDeleteDialog();
-  await refreshNotes();
-}
-
-function onBeforeLeave(el: Element): void {
-  if (!(el instanceof HTMLElement))
-    return;
-
-  el.style.height = `${el.offsetHeight}px`;
-  el.style.width = `${el.offsetWidth}px`;
-}
-
-const premium = usePremium();
-const { logged } = storeToRefs(useSessionAuthStore());
-
-watch([premium], async () => {
-  if (get(logged))
-    await fetchNotes();
-});
-
-watchDebounced(
-  search,
-  (search) => {
-    set(titleSubstring, search);
-  },
-  { debounce: 400 },
-);
-
-onMounted(async () => {
-  await fetchNotes(true);
-});
-
+const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 const { arrivedState } = useScroll(wrapper);
 
-watch(notes, (notes) => {
-  set(nextPageDisabled, notes.data.length >= notes.found);
+const {
+  addNote,
+  clearDeleteDialog,
+  confirmDelete,
+  data,
+  deleteNote,
+  editMode,
+  editNote,
+  idToDelete,
+  limit,
+  loadInitialNotes,
+  loading,
+  modelForm,
+  modelSearch,
+  onBeforeLeave,
+  refreshNotes,
+  resetForm,
+  showDeleteConfirmation,
+  showUpgradeRow,
+  togglePin,
+} = useUserNotesList({
+  arrivedBottom: () => arrivedState.bottom,
+  location: () => location,
+  open,
 });
 
-const bottom = ref<boolean>(false);
-watch(arrivedState, (arrived) => {
-  set(bottom, arrived.bottom && get(notes).data.length > 0);
-});
-
-const shouldIncreasePage = logicAnd(bottom, logicNot(nextPageDisabled));
-watch(shouldIncreasePage, (increasePage) => {
-  if (increasePage)
-    set(page, get(page) + 1);
+onMounted(async () => {
+  await loadInitialNotes();
 });
 </script>
 
 <template>
   <div class="p-4 flex items-center gap-3">
     <RuiTextField
-      v-model="search"
+      v-model="modelSearch"
       variant="outlined"
       color="primary"
       dense
@@ -202,12 +57,14 @@ watch(shouldIncreasePage, (increasePage) => {
       :label="t('notes_menu.search')"
       clearable
       hide-details
+      data-testid="notes-search"
     />
 
     <RuiButton
       color="primary"
       class="py-2"
       :disabled="showUpgradeRow"
+      data-testid="notes-add"
       @click="addNote()"
     >
       <template #prepend>
@@ -274,6 +131,7 @@ watch(shouldIncreasePage, (increasePage) => {
           :key="note.identifier"
           dense
           class="overflow-hidden group"
+          data-testid="note-card"
         >
           <div class="flex justify-between items-center">
             <div class="font-bold overflow-hidden whitespace-nowrap text-ellipsis flex-1">
@@ -283,6 +141,7 @@ watch(shouldIncreasePage, (increasePage) => {
               class="!p-2"
               variant="text"
               icon
+              data-testid="note-pin"
               @click="togglePin(note)"
             >
               <RuiIcon
@@ -316,6 +175,7 @@ watch(shouldIncreasePage, (increasePage) => {
               icon
               size="sm"
               color="error"
+              data-testid="note-delete-cancel"
               @click="clearDeleteDialog()"
             >
               <RuiIcon
@@ -329,6 +189,7 @@ watch(shouldIncreasePage, (increasePage) => {
               variant="text"
               icon
               size="sm"
+              data-testid="note-delete-confirm"
               @click="confirmDelete()"
             >
               <RuiIcon
@@ -356,6 +217,7 @@ watch(shouldIncreasePage, (increasePage) => {
               variant="text"
               icon
               size="sm"
+              data-testid="note-edit"
               @click="editNote(note)"
             >
               <RuiIcon
@@ -367,6 +229,7 @@ watch(shouldIncreasePage, (increasePage) => {
               variant="text"
               icon
               size="sm"
+              data-testid="note-delete"
               @click="deleteNote(note.identifier)"
             >
               <RuiIcon
@@ -389,7 +252,7 @@ watch(shouldIncreasePage, (increasePage) => {
 
   <UserNotesFormDialog
     v-model:open="open"
-    v-model="form"
+    v-model="modelForm"
     :edit-mode="editMode"
     :location="location"
     @reset="resetForm()"
