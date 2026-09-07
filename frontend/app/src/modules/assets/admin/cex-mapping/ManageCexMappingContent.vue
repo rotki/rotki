@@ -4,23 +4,17 @@ import { omit } from 'es-toolkit';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
 import { useCexMappingFields } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-fields';
-import { type CexMappingFilterKey, CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
+import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
+import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { firstQueryValue } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-const route = useRoute();
 
 const { deleteCexMapping, fetchAllCexMapping } = useAssetCexMappingApi();
-
-const editMode = ref<boolean>(false);
-
-const modelValue = ref<CexMapping>();
 
 const fields = useCexMappingFields();
 
@@ -40,47 +34,20 @@ const {
   urlState: { mode: 'route' },
 });
 
-/** The bag types every value as one-or-many; both of these fields are single-valued. */
-function filterValue(key: CexMappingFilterKey): string {
-  const picked = get(filter)[key];
-  return (Array.isArray(picked) ? picked[0] : picked)?.toString() ?? '';
-}
-
-onMounted(async () => {
-  const { query } = get(route);
-  if (query.add) {
-    await router.replace({ query: {} });
-    add({
-      location: firstQueryValue(query.location),
-      locationSymbol: firstQueryValue(query.locationSymbol),
-    });
-  }
-
-  await refetch();
+const { add, consumeAddQuery, edit, editMode, modelValue } = useMappingAdmin<CexMapping, Filters>({
+  blank: () => ({ asset: '', location: '', locationSymbol: '' }),
+  filter,
+  seedFromFilter: {
+    location: CexMappingFilterKeys.LOCATION,
+    locationSymbol: CexMappingFilterKeys.LOCATION_SYMBOL,
+  },
+  seedFromQuery: { location: 'location', locationSymbol: 'locationSymbol' },
 });
 
-/**
- * Opens the form dialog on a blank mapping, seeded from whatever the pill bar is narrowed to.
- *
- * @remarks
- * Adding while filtered to an exchange should not ask for that exchange again, so the location
- * fields come from the filter. `payload` is spread last and wins, which is how the `?location=`
- * and `?locationSymbol=` query handled on mount reaches the form.
- */
-function add(payload?: Partial<CexMapping>) {
-  set(modelValue, {
-    asset: '',
-    location: filterValue(CexMappingFilterKeys.LOCATION),
-    locationSymbol: filterValue(CexMappingFilterKeys.LOCATION_SYMBOL),
-    ...payload,
-  });
-  set(editMode, false);
-}
-
-function edit(editMapping: CexMapping) {
-  set(modelValue, editMapping);
-  set(editMode, true);
-}
+onMounted(async () => {
+  await consumeAddQuery();
+  await refetch();
+});
 
 const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
   confirm: item => ({
