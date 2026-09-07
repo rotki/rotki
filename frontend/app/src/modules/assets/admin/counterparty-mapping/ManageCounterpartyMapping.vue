@@ -6,22 +6,16 @@ import ManageCounterpartyMappingFormDialog
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
 import { useCounterpartyMappingFields } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-fields';
-import { type CounterpartyMappingFilterKey, CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
+import { CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
+import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { firstQueryValue } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-const route = useRoute();
 
 const { deleteCounterpartyMapping, fetchAllCounterpartyMapping } = useCounterpartyMappingApi();
-
-const editMode = ref<boolean>(false);
-
-const modelValue = ref<CounterpartyMapping>();
 
 const fields = useCounterpartyMappingFields();
 
@@ -41,46 +35,20 @@ const {
   urlState: { mode: 'route' },
 });
 
-/** The bag types every value as one-or-many; both of these fields are single-valued. */
-function filterValue(key: CounterpartyMappingFilterKey): string {
-  const picked = get(filter)[key];
-  return (Array.isArray(picked) ? picked[0] : picked)?.toString() ?? '';
-}
-
-onMounted(async () => {
-  const { query } = get(route);
-  if (query.add) {
-    await router.replace({ query: {} });
-    add({
-      counterparty: firstQueryValue(query.counterparty),
-      counterpartySymbol: firstQueryValue(query.counterpartySymbol),
-    });
-  }
-
-  await refetch();
+const { add, consumeAddQuery, edit, editMode, modelValue } = useMappingAdmin<CounterpartyMapping, Filters>({
+  blank: () => ({ asset: '', counterparty: '', counterpartySymbol: '' }),
+  filter,
+  seedFromFilter: {
+    counterparty: CounterpartyMappingFilterKeys.COUNTERPARTY,
+    counterpartySymbol: CounterpartyMappingFilterKeys.COUNTERPARTY_SYMBOL,
+  },
+  seedFromQuery: { counterparty: 'counterparty', counterpartySymbol: 'counterpartySymbol' },
 });
 
-/**
- * Opens the mapping dialog on a new mapping, seeded from the filter bar.
- *
- * @remarks
- * The counterparty and its symbol default to whatever the bar is narrowed to, so adding a mapping
- * while filtered does not make the user pick the same values again; `payload` overrides them.
- */
-function add(payload?: Partial<CounterpartyMapping>) {
-  set(modelValue, {
-    asset: '',
-    counterparty: filterValue(CounterpartyMappingFilterKeys.COUNTERPARTY),
-    counterpartySymbol: filterValue(CounterpartyMappingFilterKeys.COUNTERPARTY_SYMBOL),
-    ...payload,
-  });
-  set(editMode, false);
-}
-
-function edit(editMapping: CounterpartyMapping) {
-  set(modelValue, editMapping);
-  set(editMode, true);
-}
+onMounted(async () => {
+  await consumeAddQuery();
+  await refetch();
+});
 
 const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
   confirm: item => ({
