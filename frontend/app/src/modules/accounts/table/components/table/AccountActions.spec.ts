@@ -82,6 +82,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       global: {
         plugins: [pinia],
         stubs: {
+          AccountSkipQueriesToggle: true,
           RuiButton: true,
           RuiIcon: true,
           RuiProgress: true,
@@ -333,6 +334,82 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
 
       const rowActions = wrapper.findComponent({ name: 'RowActions' });
       expect(rowActions.props('disabled')).toBe(false);
+    });
+  });
+
+  describe('skip queries toggle', () => {
+    beforeEach(() => {
+      supportsTransactionsMock.mockReturnValue(true);
+    });
+
+    it('should scope it to every chain the group stands for', () => {
+      wrapper = createWrapper({
+        accountOperation: false,
+        group: 'evm',
+        isSectionLoading: false,
+        isVirtual: false,
+        row: createGroupRow(['eth', 'optimism', 'base']),
+      });
+
+      const toggle = wrapper.findComponent({ name: 'AccountSkipQueriesToggle' });
+      expect(toggle.props('chains')).toEqual(['eth', 'optimism', 'base']);
+      expect(toggle.props('address')).toBe('0x1234567890abcdef1234567890abcdef12345678');
+    });
+
+    it('should scope it to the one chain of an account row', () => {
+      wrapper = createWrapper({
+        accountOperation: false,
+        isSectionLoading: false,
+        isVirtual: false,
+        row: createAccountRow('optimism'),
+      });
+
+      expect(wrapper.findComponent({ name: 'AccountSkipQueriesToggle' }).props('chains')).toEqual(['optimism']);
+    });
+
+    it('should hide it on a virtual row, which carries no actions', () => {
+      wrapper = createWrapper({
+        accountOperation: false,
+        group: 'xpub',
+        isSectionLoading: false,
+        isVirtual: true,
+        row: createAccountRow('btc'),
+      });
+
+      expect(wrapper.findComponent({ name: 'AccountSkipQueriesToggle' }).exists()).toBe(false);
+    });
+
+    it('should hide it for a validator, whose public key no rule matches', () => {
+      const row: AccountDataRow<BlockchainAccountWithBalance> = {
+        ...createAccountRow('eth2'),
+        data: {
+          index: 1,
+          publicKey: '0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c',
+          status: 'active',
+          type: 'validator',
+        },
+      };
+
+      wrapper = createWrapper({
+        accountOperation: false,
+        isSectionLoading: false,
+        isVirtual: false,
+        row,
+      });
+
+      expect(wrapper.findComponent({ name: 'AccountSkipQueriesToggle' }).exists()).toBe(false);
+    });
+
+    it('should disable it while an account operation is running', () => {
+      wrapper = createWrapper({
+        accountOperation: true,
+        group: 'evm',
+        isSectionLoading: false,
+        isVirtual: false,
+        row: createAccountRow('eth'),
+      });
+
+      expect(wrapper.findComponent({ name: 'AccountSkipQueriesToggle' }).props('disabled')).toBe(true);
     });
   });
 
