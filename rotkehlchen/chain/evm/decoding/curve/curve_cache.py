@@ -362,7 +362,7 @@ def _query_curve_data_from_chain(
         )
         return []
 
-    if (existing_pool_count := len(existing_pools)) == pool_count:
+    if (existing_pool_count := len(existing_pools)) >= pool_count:
         return []
     if reload_all:
         pools_to_query_count = pool_count

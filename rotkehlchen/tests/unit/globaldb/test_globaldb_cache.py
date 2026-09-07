@@ -299,14 +299,13 @@ def test_velodrome_cache_progress(database, chain_id, pool_case):
         )
 
 
-@pytest.mark.parametrize('skip_reason', ['cached', 'remote_error'])
-def test_curve_cache_progress(skip_reason):
-    """The last attempted pool completes progress even when it cannot be added."""
+def test_curve_cache_progress():
+    """Notify after each attempted pool, including cached and unavailable pools."""
     inquirer = MagicMock(chain_id=ChainID.OPTIMISM)
     messages = MagicMock()
     address = make_evm_address()
     query = MagicMock(
-        side_effect=[2, address if skip_reason == 'cached' else RemoteError('pool unavailable')],
+        side_effect=[3, address, RemoteError('pool unavailable')],
     )
     call_order = MagicMock()
     call_order.attach_mock(query, 'query')
@@ -319,11 +318,32 @@ def test_curve_cache_progress(skip_reason):
             reload_all=False,
         ) == []
 
-    assert query.call_count == 2
-    assert [call[0] for call in call_order.mock_calls] == ['query', 'query', 'notify']
-    assert messages.add_message.call_args_list == [
-        make_call_object(CPT_CURVE, ChainID.OPTIMISM, processed=1, total=1),
+    assert [call[0] for call in call_order.mock_calls] == [
+        'query', 'query', 'notify', 'query', 'notify',
     ]
+    assert messages.add_message.call_args_list == [
+        make_call_object(CPT_CURVE, ChainID.OPTIMISM, processed=1, total=2),
+        make_call_object(CPT_CURVE, ChainID.OPTIMISM, processed=2, total=2),
+    ]
+
+
+@pytest.mark.parametrize('pool_count', [0, 1])
+def test_curve_cache_progress_no_remaining_pools(pool_count):
+    """Do not publish progress when cached pools meet or exceed the registry count."""
+    inquirer = MagicMock(chain_id=ChainID.OPTIMISM)
+    messages = MagicMock()
+    with patch(
+        'rotkehlchen.chain.evm.contracts.EvmContract.call', return_value=pool_count,
+    ) as query:
+        assert _query_curve_data_from_chain(
+            evm_inquirer=inquirer,
+            existing_pools={make_evm_address()},
+            msg_aggregator=messages,
+            reload_all=False,
+        ) == []
+
+    query.assert_called_once_with(node_inquirer=inquirer, method_name='pool_count')
+    messages.add_message.assert_not_called()
 
 
 def test_curve_cache_progress_finishes_after_saving():
