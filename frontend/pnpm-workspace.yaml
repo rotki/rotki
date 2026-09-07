@@ -1,6 +1,8 @@
 allowUnusedPatches: true
 blockExoticSubdeps: true
 minimumReleaseAge: 10080
+minimumReleaseAgeExcludePrune: true
+
 minimumReleaseAgeExclude:
   - '@rotki/ui-library'
   - '@rotki/eslint-config'
@@ -11,10 +13,6 @@ minimumReleaseAgeExclude:
   - app-builder-lib@26.15.3
   - electron-builder-squirrel-windows@26.15.3
   - electron-publish@26.15.3
-saveExact: true
-shamefullyHoist: true
-shellEmulator: true
-strictDepBuilds: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - 'semver@5.7.2 || 6.3.1'
@@ -23,6 +21,13 @@ trustPolicyExclude:
   - '@noble/hashes@1.7.0'
   - slow-redact@0.3.2
   - tailwind-merge@2.6.1
+peerDependencyRules:
+  allowedVersions:
+    tailwind-variants>tailwind-merge: '>=2.0.0 <3.0.0'
+shamefullyHoist: true
+shellEmulator: true
+strictDepBuilds: true
+saveExact: true
 packages:
   - app
   - common
@@ -34,6 +39,17 @@ overrides:
 patchedDependencies:
   app-builder-lib: patches/app-builder-lib.patch
   bignumber.js@11.1.5: patches/bignumber.js@11.1.5.patch
+allowBuilds:
+  '@parcel/watcher': true
+  bufferutil: true
+  core-js-pure: false
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+  keccak: true
+  msw: false
+  utf-8-validate: true
+  vue-demi: true
 catalog:
   '@clack/prompts': 1.7.0
   '@electron/notarize': 3.1.1
@@ -43,8 +59,8 @@ catalog:
   '@intlify/unplugin-vue-i18n': 11.2.4
   '@pinia/testing': 2.0.1
   '@playwright/test': 1.62.1
-  '@rotki/eslint-config': 7.0.0
-  '@rotki/eslint-plugin': 1.5.1
+  '@rotki/eslint-config': 8.1.0
+  '@rotki/eslint-plugin': 1.6.1
   '@rotki/ui-library': 2.24.0
   '@tsconfig/node24': 24.0.4
   '@types/node': 24.13.3
@@ -125,17 +141,3 @@ catalog:
   vue-tsc: 3.3.9
   ws: 8.21.2
   zod: 4.4.3
-peerDependencyRules:
-  allowedVersions:
-    tailwind-variants>tailwind-merge: '>=2.0.0 <3.0.0'
-allowBuilds:
-  '@parcel/watcher': true
-  bufferutil: true
-  core-js-pure: false
-  electron: true
-  electron-winstaller: true
-  esbuild: true
-  keccak: true
-  msw: false
-  utf-8-validate: true
-  vue-demi: true
