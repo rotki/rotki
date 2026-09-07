@@ -8,7 +8,7 @@ from collections import defaultdict
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from threading import Semaphore
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Unpack, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Unpack, cast, overload
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -177,6 +177,19 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+EXCHANGE_INSTANCE_CACHE_KEY_PREFIX: Final = '{location}_{location_name}_'
+# Regexes for the tail of every DBCacheDynamic key scoped to a single exchange instance.
+# Each placeholder is a single underscore-free segment so that the name of one exchange can't
+# swallow the keys of another exchange whose name starts with it (`main` vs `main_backup`).
+EXCHANGE_INSTANCE_CACHE_KEY_TAILS: Final = tuple(
+    re.compile('[^_]+'.join(
+        re.escape(part)
+        for part in re.split(r'\{\w+\}', template.removeprefix(EXCHANGE_INSTANCE_CACHE_KEY_PREFIX))
+    ))
+    for template in (member.value[0] for member in DBCacheDynamic)
+    if template.startswith(EXCHANGE_INSTANCE_CACHE_KEY_PREFIX)
+)
 
 DBINFO_FILENAME = 'dbinfo.json'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
@@ -1119,7 +1132,7 @@ class DBHandler:
             self,
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_QUERY_ID],
-            value: int,
+            value: str,
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> None:
         ...
@@ -1742,15 +1755,38 @@ class DBHandler:
         return Timestamp(int(result[0])), Timestamp(int(result[1]))
 
     @staticmethod
-    def _is_binance_pair_cache_key(key: str, prefix: str) -> bool:
-        """Return whether key is a Binance pair ID or pair query timestamp cache.
+    def _is_exchange_instance_cache_key(key: str, prefix: str) -> bool:
+        """Return whether key is a key_value_cache entry scoped to one exchange instance,
+        such as a Coinbase per-account cursor, a Bitstamp offset or Binance per-pair progress.
 
-        Binance symbols are concatenated alphanumeric asset symbols. Checking the suffix keeps
-        exchange names such as ``main`` and ``main_backup`` unambiguous despite the legacy
-        underscore-delimited cache format.
+        The key's tail after ``{location}_{name}_`` has to match one of the DBCacheDynamic
+        templates with every placeholder (a Coinbase account UUID, a Binance pair) free of
+        underscores. That keeps exchange names such as ``main`` and ``main_backup``
+        unambiguous despite the legacy underscore-delimited cache format.
         """
-        suffix = key.removeprefix(prefix).removesuffix('_last_query_ts')
-        return suffix.isalnum()
+        tail = key.removeprefix(prefix)
+        return any(pattern.fullmatch(tail) for pattern in EXCHANGE_INSTANCE_CACHE_KEY_TAILS)
+
+    def _get_exchange_instance_cache_keys(
+            self,
+            cursor: DBCursor,
+            location: Location,
+            exchange_name: str,
+    ) -> list[str]:
+        """Return the key_value_cache keys holding the query progress of one exchange
+        instance. They are named {location}_{name}_... so a LIKE on the name alone would
+        also return the keys of any exchange whose name starts with this one."""
+        escaped_name = exchange_name.replace(
+            '\\',
+            '\\\\',
+        ).replace('%', '\\%').replace('_', '\\_')
+        prefix = f'{location!s}_{exchange_name}_'
+        return [
+            key for key, in cursor.execute(
+                'SELECT name FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
+                (f'{location!s}\\_{escaped_name}\\_%', '\\'),
+            ) if self._is_exchange_instance_cache_key(key=key, prefix=prefix)
+        ]
 
     def delete_used_query_range_for_exchange(
             self,
@@ -1762,34 +1798,22 @@ class DBHandler:
         """Delete the query ranges for the given exchange name"""
         if data_type == ExchangePurgeType.ALL:
             ranges_to_delete = [f'{location!s}\\_%']
-            escaped_name: str | None = None
             if exchange_name is not None:
                 escaped_name = exchange_name.replace(
                     '\\',
                     '\\\\',
                 ).replace('%', '\\%').replace('_', '\\_')
                 ranges_to_delete = [f'{location!s}\\_%\\_{escaped_name}']
-            write_cursor.execute(
-                'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
-                (ranges_to_delete[0], '\\'),
-            )
-            if (
-                    exchange_name is not None and
-                    escaped_name is not None and
-                    location in (Location.BINANCE, Location.BINANCEUS)
-            ):
-                cache_prefix = f'{location!s}_{exchange_name}_'
-                cache_keys = write_cursor.execute(
-                    'SELECT name FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
-                    (f'{location!s}\\_{escaped_name}\\_%', '\\'),
-                ).fetchall()
+                # The pattern above only catches keys ending in the exchange name. The
+                # per-instance caches (Coinbase account cursors, Bitstamp offset, Binance
+                # pair progress) are named {location}_{name}_... so match them separately.
                 write_cursor.executemany(
                     'DELETE FROM key_value_cache WHERE name=?;',
-                    [
-                        (key,)
-                        for key, in cache_keys
-                        if self._is_binance_pair_cache_key(key=key, prefix=cache_prefix)
-                    ],
+                    [(key,) for key in self._get_exchange_instance_cache_keys(
+                        cursor=write_cursor,
+                        location=location,
+                        exchange_name=exchange_name,
+                    )],
                 )
         elif data_type == ExchangePurgeType.TRADES:
             ranges_to_delete = [
@@ -2552,6 +2576,17 @@ class DBHandler:
                 '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
                 (name, location.serialize_for_db(), api_key, api_secret.decode() if api_secret is not None else None, passphrase),  # noqa: E501
             )
+            # Older versions did not clear the per-instance query progress (Coinbase account
+            # cursors, Bitstamp offset, Binance pair progress and lending range) when an
+            # exchange was removed or renamed, so stale progress under this name would make
+            # the new connection skip everything before it. Nothing can legitimately exist
+            # under the name of an exchange that is only now being added, so drop it. Has
+            # to happen before the binance history start range is written below.
+            self.delete_used_query_range_for_exchange(
+                write_cursor=cursor,
+                location=location,
+                exchange_name=name,
+            )
 
             if location == Location.KRAKEN:
                 if kraken_account_type is not None:
@@ -2736,7 +2771,7 @@ class DBHandler:
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if new_name is not None:
-            exchange_re = re.compile(r'(.*?)_(margins|history_events).*')
+            exchange_re = re.compile(r'(.*?)_(margins|history_events|lending_history).*')
             used_ranges = write_cursor.execute(
                 'SELECT * from used_query_ranges WHERE name LIKE ?',
                 (f'{location!s}_%_{name}',),
@@ -2753,6 +2788,23 @@ class DBHandler:
                 [
                     (f'{location!s}_{entry_type}_{new_name}', f'{location!s}_{entry_type}_{name}')
                     for entry_type in entry_types
+                ],
+            )
+            # move the per-instance query progress (Coinbase account cursors, Bitstamp
+            # offset, Binance pair progress) to the new name so history isn't re-queried.
+            # OR REPLACE since older versions left the keys of removed or renamed exchanges
+            # behind and no live exchange can hold the new name (user_credentials PK), so
+            # anything already under it is stale and must not block the rename.
+            cache_prefix = f'{location!s}_{name}_'
+            write_cursor.executemany(
+                'UPDATE OR REPLACE key_value_cache SET name=? WHERE name=?',
+                [
+                    (f'{location!s}_{new_name}_{key.removeprefix(cache_prefix)}', key)
+                    for key in self._get_exchange_instance_cache_keys(
+                        cursor=write_cursor,
+                        location=location,
+                        exchange_name=name,
+                    )
                 ],
             )
 

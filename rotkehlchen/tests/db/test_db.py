@@ -2231,6 +2231,328 @@ def test_delete_binance_exchange_clears_pair_query_progress(
             ) is not None
 
 
+@pytest.mark.parametrize(('deleted_name', 'remaining_name'), [
+    ('coinbase_1', 'coinbase_1_backup'),
+    ('coinbase_1_backup', 'coinbase_1'),
+])
+def test_delete_exchange_clears_instance_cache(
+        database: DBHandler,
+        deleted_name: str,
+        remaining_name: str,
+) -> None:
+    """Deleting one Coinbase/Bitstamp key clears only that key's query cursors.
+
+    Regression test: the by-name purge only matched cache keys ending in the exchange
+    name, but the Coinbase per-account cursors and the Bitstamp offset are named
+    {location}_{name}_..., so removing and re-adding an exchange under the same name never
+    re-fetched the transactions before the old cursor.
+    """
+    account_id = '3c04e35e-8e5a-5ff1-9155-00675db4ac02'
+    exchange_names = (deleted_name, remaining_name)
+    with database.user_write() as write_cursor:
+        for location_name in exchange_names:
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_ID,
+                value='tx_id',
+                location=Location.COINBASE.serialize(),
+                location_name=location_name,
+                account_id=account_id,
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_TS,
+                value=Timestamp(1800000000),
+                location=Location.COINBASE.serialize(),
+                location_name=location_name,
+                account_id=account_id,
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                value=7,
+                location=Location.BITSTAMP.serialize(),
+                location_name=location_name,
+            )
+
+        for location in (Location.COINBASE, Location.BITSTAMP):
+            database.delete_used_query_range_for_exchange(
+                write_cursor=write_cursor,
+                location=location,
+                exchange_name=deleted_name,
+            )
+
+    with database.conn.read_ctx() as cursor:
+        for cache_name in (DBCacheDynamic.LAST_QUERY_ID, DBCacheDynamic.LAST_QUERY_TS):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=cache_name,
+                location=Location.COINBASE.serialize(),
+                location_name=deleted_name,
+                account_id=account_id,
+            ) is None
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=cache_name,
+                location=Location.COINBASE.serialize(),
+                location_name=remaining_name,
+                account_id=account_id,
+            ) is not None
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+            location=Location.BITSTAMP.serialize(),
+            location_name=deleted_name,
+        ) is None
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+            location=Location.BITSTAMP.serialize(),
+            location_name=remaining_name,
+        ) == 7
+
+
+@pytest.mark.parametrize(('renamed_name', 'sibling_name'), [
+    ('main', 'main_backup'),
+    ('main_backup', 'main'),
+])
+def test_rename_exchange_moves_instance_cache(
+        database: DBHandler,
+        renamed_name: str,
+        sibling_name: str,
+) -> None:
+    """Renaming an exchange moves its query progress to the new name and leaves alone
+    a sibling whose name shares a prefix with it.
+
+    Regression test: edit_exchange renamed the used_query_ranges rows but not the
+    key_value_cache cursors (Coinbase per-account, Bitstamp offset, Binance per-pair), so a
+    renamed exchange re-queried its whole history and the old keys were orphaned. The
+    Binance lending history range was not renamed either.
+    """
+    new_name = 'renamed'
+    account_id = '3c04e35e-8e5a-5ff1-9155-00675db4ac02'
+    for location in (Location.COINBASE, Location.BITSTAMP, Location.BINANCE):
+        for name in (renamed_name, sibling_name):
+            database.add_exchange(
+                name=name,
+                location=location,
+                api_key=ApiKey(f'{location!s}_{name}_key'),
+                api_secret=ApiSecret(f'{location!s}_{name}_secret'.encode()),
+            )
+
+    with database.user_write() as write_cursor:
+        for name in (renamed_name, sibling_name):
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_ID,
+                value=f'tx_of_{name}',
+                location=Location.COINBASE.serialize(),
+                location_name=name,
+                account_id=account_id,
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                value=7,
+                location=Location.BITSTAMP.serialize(),
+                location_name=name,
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                value=42,
+                location=Location.BINANCE.serialize(),
+                location_name=name,
+                queried_pair='ETHBTC',
+            )
+            database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=f'{Location.BINANCE!s}_lending_history_{name}',
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(1500000000),
+            )
+
+        for location in (Location.COINBASE, Location.BITSTAMP, Location.BINANCE):
+            database.edit_exchange(
+                write_cursor,
+                name=renamed_name,
+                location=location,
+                new_name=new_name,
+                api_key=None,
+                api_secret=None,
+                passphrase=None,
+                kraken_account_type=None,
+                kraken_futures_api_key=None,
+                kraken_futures_api_secret=None,
+                binance_selected_trade_pairs=None,
+                okx_location=None,
+            )
+
+    with database.conn.read_ctx() as cursor:
+        for name, expected_tx in ((renamed_name, None), (new_name, f'tx_of_{renamed_name}'), (sibling_name, f'tx_of_{sibling_name}')):  # noqa: E501
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_QUERY_ID,
+                location=Location.COINBASE.serialize(),
+                location_name=name,
+                account_id=account_id,
+            ) == expected_tx
+        for name, expected in ((renamed_name, None), (new_name, 7), (sibling_name, 7)):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                location=Location.BITSTAMP.serialize(),
+                location_name=name,
+            ) == expected
+        for name, expected in ((renamed_name, None), (new_name, 42), (sibling_name, 42)):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                location=Location.BINANCE.serialize(),
+                location_name=name,
+                queried_pair='ETHBTC',
+            ) == expected
+            assert (database.get_used_query_range(
+                cursor,
+                f'{Location.BINANCE!s}_lending_history_{name}',
+            ) is None) == (expected is None)
+
+
+def test_rename_exchange_replaces_orphan_instance_cache(database: DBHandler) -> None:
+    """Renaming an exchange onto a name whose query progress an older version left
+    behind replaces the orphan keys instead of failing the whole rename.
+
+    Regression test: older versions did not clear key_value_cache on exchange removal or
+    rename, so a plain UPDATE to the new name hit the key_value_cache.name primary key
+    with an IntegrityError that nothing caught.
+    """
+    database.add_exchange(
+        name=(name := 'current'),
+        location=Location.COINBASE,
+        api_key=ApiKey('key'),
+        api_secret=ApiSecret(b'secret'),
+    )
+    with database.user_write() as write_cursor:
+        for location_name in (name, (orphan_name := 'orphan')):
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_ID,
+                value=f'tx_of_{location_name}',
+                location=Location.COINBASE.serialize(),
+                location_name=location_name,
+                account_id=(account_id := '3c04e35e-8e5a-5ff1-9155-00675db4ac02'),
+            )
+        database.edit_exchange(
+            write_cursor,
+            name=name,
+            location=Location.COINBASE,
+            new_name=orphan_name,
+            api_key=None,
+            api_secret=None,
+            passphrase=None,
+            kraken_account_type=None,
+            kraken_futures_api_key=None,
+            kraken_futures_api_secret=None,
+            binance_selected_trade_pairs=None,
+            okx_location=None,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_QUERY_ID,
+            location=Location.COINBASE.serialize(),
+            location_name=orphan_name,
+            account_id=account_id,
+        ) == f'tx_of_{name}'
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_QUERY_ID,
+            location=Location.COINBASE.serialize(),
+            location_name=name,
+            account_id=account_id,
+        ) is None
+
+
+def test_add_exchange_clears_stale_instance_cache(database: DBHandler) -> None:
+    """Adding an exchange drops any query progress an older version left under its
+    name, so the new connection queries its history from scratch, while the keys of an
+    exchange whose name merely starts with the same prefix are kept."""
+    with database.user_write() as write_cursor:
+        for location_name in ((name := 'main'), (sibling_name := 'main_backup')):
+            database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=f'{Location.BINANCE!s}_lending_history_{location_name}',
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(1500000000),
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_ID,
+                value=f'tx_of_{location_name}',
+                location=Location.COINBASE.serialize(),
+                location_name=location_name,
+                account_id=(account_id := '3c04e35e-8e5a-5ff1-9155-00675db4ac02'),
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                value=7,
+                location=Location.BITSTAMP.serialize(),
+                location_name=location_name,
+            )
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                value=42,
+                location=Location.BINANCE.serialize(),
+                location_name=location_name,
+                queried_pair='ETHBTC',
+            )
+
+    for location in (Location.COINBASE, Location.BITSTAMP, Location.BINANCE):
+        database.add_exchange(
+            name=name,
+            location=location,
+            api_key=ApiKey(f'{location!s}_key'),
+            api_secret=ApiSecret(f'{location!s}_secret'.encode()),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        for location_name, expected_tx in ((name, None), (sibling_name, f'tx_of_{sibling_name}')):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_QUERY_ID,
+                location=Location.COINBASE.serialize(),
+                location_name=location_name,
+                account_id=account_id,
+            ) == expected_tx
+        for location_name, expected in ((name, None), (sibling_name, 7)):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
+                location=Location.BITSTAMP.serialize(),
+                location_name=location_name,
+            ) == expected
+        for location_name, expected in ((name, None), (sibling_name, 42)):
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                location=Location.BINANCE.serialize(),
+                location_name=location_name,
+                queried_pair='ETHBTC',
+            ) == expected
+            assert (database.get_used_query_range(
+                cursor,
+                f'{Location.BINANCE!s}_lending_history_{location_name}',
+            ) is None) == (expected is None)
+        # the binance history start range written by add_exchange itself must survive
+        assert database.get_used_query_range(
+            cursor,
+            f'{Location.BINANCE!s}_history_events_{name}',
+        ) is not None
+
+
 def test_remove_multichain_address_keeps_tags_on_other_chains(database: DBHandler) -> None:
     """Removing a multi-chain address from one chain must not delete its tags while
     the same address is still tracked on another chain.
