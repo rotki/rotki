@@ -3,9 +3,12 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from freezegun import freeze_time
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -16,16 +19,17 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
-from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+    from rotkehlchen.concurrency import Task
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.tasks.manager import TaskManager
     from rotkehlchen.types import EVMTxHash
-    from rotkehlchen.user_messages import MessagesAggregator
 
 pytestmark = pytest.mark.accounting_update
 
@@ -116,12 +120,32 @@ def _get_saved_event_rows(database: DBHandler) -> tuple[list[tuple], list[tuple]
         )
 
 
+def _wait_for_background_task(tasks: list[Task] | None) -> None:
+    assert tasks is not None
+    assert len(tasks) == 1
+    task = tasks[0]
+    task.join(timeout=10)
+    assert task.dead, f'{task.task_name} did not finish'
+    task.get()
+
+
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+@pytest.mark.usefixtures('ethereum_transaction_decoder')
+@pytest.mark.parametrize(('decoded_spend', 'missing_receipt', 'expected_result'), [
+    (5, False, 'redecoding_would_change_balance'),
+    (11, False, 'redecoding_would_not_change_balance'),
+    (5, True, 'redecoding_would_change_balance'),
+])
+@freeze_time('2026-09-07 12:00:00')
 def test_negative_balance_customized_spend_is_compared_with_real_decoder(
         database: DBHandler,
-        messages_aggregator: MessagesAggregator,
-        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        task_manager: TaskManager,
+        request: pytest.FixtureRequest,
+        decoded_spend: int,
+        missing_receipt: bool,
+        expected_result: str,
 ) -> None:
+    """Schedule balance processing and real previews, preserving events across attempts."""
     receive_tx_hash, spend_tx_hash = make_evm_tx_hash(), make_evm_tx_hash()
     spend_transaction = EvmTransaction(
         tx_hash=spend_tx_hash,
@@ -130,13 +154,20 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
         block_number=1,
         from_address=TEST_ADDR1,
         to_address=TEST_ADDR2,
-        value=5 * 10**18,
+        value=decoded_spend * 10**18,
         gas=21_000,
         gas_price=0,
         gas_used=0,
         input_data=b'',
         nonce=0,
     )
+    receipt_data = {
+        'transactionHash': str(spend_tx_hash),
+        'type': '0x0',
+        'status': 1,
+        'contractAddress': None,
+        'logs': [],
+    }
     dbevents, dbtx = DBHistoryEvents(database), DBEvmTx(database)
     with database.user_write() as write_cursor:
         dbtx.add_transactions(
@@ -144,13 +175,8 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
             evm_transactions=[spend_transaction],
             relevant_address=TEST_ADDR1,
         )
-        dbtx.add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, {
-            'transactionHash': str(spend_tx_hash),
-            'type': '0x0',
-            'status': 1,
-            'contractAddress': None,
-            'logs': [],
-        })
+        if missing_receipt is False:
+            dbtx.add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, receipt_data)
         dbevents.add_history_event(
             write_cursor=write_cursor,
             event=_make_event(
@@ -159,14 +185,30 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
                 event_type=HistoryEventType.RECEIVE,
             ),
         )
+        dbevents.add_history_event(write_cursor, EvmEvent(
+            tx_ref=spend_tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(2_000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(0),
+            location_label=TEST_ADDR1,
+            counterparty=CPT_GAS,
+            notes='Burn 0 ETH for gas',
+        ))
+        saved_spend = _make_event(tx_hash=spend_tx_hash, amount='11', timestamp=2_000)
+        saved_spend.sequence_index = 1
         spend_event_id = dbevents.add_history_event(
             write_cursor=write_cursor,
-            event=_make_event(tx_hash=spend_tx_hash, amount='11', timestamp=2_000),
+            event=saved_spend,
             mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
         )
     assert spend_event_id is not None
 
-    process_historical_balances(database=database, msg_aggregator=messages_aggregator)
+    assert task_manager._maybe_run_data_issue_remediation() is None
+    _wait_for_background_task(task_manager._maybe_process_historical_balances())
     issues_manager = DataIssuesManager(database)
     issues = issues_manager.list_issues()
     assert len(issues) == 1
@@ -178,27 +220,66 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
         'derived_balance_before_event': '10',
     }
     saved_rows = _get_saved_event_rows(database)
-
-    chains_aggregator = MagicMock()
-    chains_aggregator.get_evm_manager.return_value.transactions_decoder = (
-        ethereum_transaction_decoder
-    )
-    run_data_issue_remediation(
-        database=database,
-        chains_aggregator=chains_aggregator,
-    )
+    with database.conn.read_ctx() as cursor:
+        saved_tx_mappings = cursor.execute('SELECT * FROM evm_tx_mappings').fetchall()
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+        ) == ts_now()
+    _wait_for_background_task(task_manager._maybe_run_data_issue_remediation())
 
     issue = issues_manager.get_issue(issues[0].id)
     assert issue.state == IssueState.UNRESOLVED
-    assert issue.auto_remediation_attempts == [{
+    assert len(issue.auto_remediation_attempts) == 1
+    attempt = issue.auto_remediation_attempts[0]
+    assert {key: value for key, value in attempt.items() if key != 'reason'} == {
         'attribution': 'system',
         'strategy': 'redecode_customized_transactions',
-        'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
-        'result': 'redecoding_would_change_balance',
+        'timestamp': ts_now(),
+        'result': 'redecoding_failed' if missing_receipt else expected_result,
         'customized_transaction_count': 1,
-        'changed_transaction_count': 1,
-    }]
+        'changed_transaction_count': int(not missing_receipt and decoded_spend != 11),
+    }
     assert _get_saved_event_rows(database) == saved_rows
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT * FROM evm_tx_mappings').fetchall() == saved_tx_mappings
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+        ) == ts_now()
+    assert task_manager._maybe_run_data_issue_remediation() is None
+
+    if missing_receipt:
+        assert 'Missing transaction data' in attempt['reason']
+        with database.user_write() as cursor:
+            dbtx.add_or_ignore_receipt_data(cursor, ChainID.ETHEREUM, receipt_data)
+
+    with freeze_time('2026-09-08 12:00:01'):
+        _wait_for_background_task(task_manager._maybe_run_data_issue_remediation())
+        issue = issues_manager.get_issue(issue.id)
+        assert issue.state == IssueState.UNRESOLVED
+        assert _get_saved_event_rows(database) == saved_rows
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT * FROM evm_tx_mappings').fetchall() == saved_tx_mappings
+            assert database.get_static_cache(
+                cursor, DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            ) == ts_now()
+
+        if missing_receipt:
+            request.applymarker(pytest.mark.xfail(
+                strict=True,
+                reason='Step 5: unresolved failed comparisons are not retried yet',
+            ))
+            assert len(issue.auto_remediation_attempts) == 2
+            assert issue.auto_remediation_attempts[0] == attempt
+            assert issue.auto_remediation_attempts[1] == {
+                'attribution': 'system',
+                'strategy': 'redecode_customized_transactions',
+                'timestamp': ts_now(),
+                'result': expected_result,
+                'customized_transaction_count': 1,
+                'changed_transaction_count': 1,
+            }
+        else:
+            assert issue.auto_remediation_attempts == [attempt]
 
 
 @pytest.mark.parametrize(('preview_amount', 'expected_result', 'expected_changed'), [
