@@ -3867,11 +3867,26 @@ class RestAPI:
             task_manager.trigger_historical_balance_processing()
         return OK_RESULT
 
+    @accounting_update_required('Data issue remediation is disabled')
+    def _trigger_data_issue_remediation(self) -> dict[str, Any]:
+        if (
+            (task_manager := self.rotkehlchen.task_manager) is None or
+            task_manager._maybe_run_data_issue_remediation(force=True) is None
+        ):
+            return wrap_in_fail_result(
+                message='Data issue remediation cannot start before historical balance processing '
+                'completes or while history work is running.',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        return OK_RESULT
+
     @async_api_call()
     def trigger_task(self, task: TaskName) -> dict[str, Any]:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
             return self._trigger_historical_balance_processing()
+        elif __debug__ and task == TaskName.DATA_ISSUE_REMEDIATION:
+            return self._trigger_data_issue_remediation()
 
         else:  # task in (TaskName.ASSET_MOVEMENT_MATCHING, TaskName.BRIDGE_MATCHING)
             if has_premium_capability(

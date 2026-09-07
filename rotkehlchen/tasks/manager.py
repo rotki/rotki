@@ -687,10 +687,12 @@ class TaskManager:
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
         )
 
-    def _maybe_run_data_issue_remediation(self) -> list[Task] | None:
+    def _maybe_run_data_issue_remediation(self, force: bool = False) -> list[Task] | None:
+        """Schedule remediation, optionally bypassing the daily cooldown."""
         if (
             self.history_processing_coordinator.is_history_fetching() or
-            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
+            self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME) or
+            self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME)
         ):
             return None
 
@@ -701,7 +703,7 @@ class TaskManager:
             ) is None:
                 return None
 
-        if should_run_periodic_task(
+        if not force and should_run_periodic_task(
             database=self.database,
             key_name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
             refresh_period=DATA_ISSUE_REMEDIATION_REFRESH,

@@ -140,6 +140,7 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
 ) -> None:
     with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
         assert task_manager._maybe_run_data_issue_remediation() is None
+        assert task_manager._maybe_run_data_issue_remediation(force=True) is None
         spawn_task.assert_not_called()
 
         with task_manager.database.user_write() as write_cursor:
@@ -170,6 +171,10 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
         assert task_manager._maybe_run_data_issue_remediation() is None
         spawn_task.assert_not_called()
 
+        assert task_manager._maybe_run_data_issue_remediation(force=True) == [
+            spawn_task.return_value,
+        ]
+
         with task_manager.database.user_write() as write_cursor:
             task_manager.database.set_static_cache(
                 write_cursor=write_cursor,
@@ -180,18 +185,25 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
         assert task_manager._maybe_run_data_issue_remediation() == [spawn_task.return_value]
 
 
-def test_data_issue_remediation_skips_active_historical_processing(
+@pytest.mark.parametrize('force', [False, True])
+@pytest.mark.parametrize('active_task', [
+    HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
+    DATA_ISSUE_REMEDIATION_TASK_NAME,
+])
+def test_data_issue_remediation_skips_active_history_tasks(
         task_manager: TaskManager,
+        force: bool,
+        active_task: str,
 ) -> None:
     with (
         patch.object(
             task_manager.task_supervisor,
             'has_task',
-            side_effect=lambda name: name == HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
+            side_effect=lambda name: name == active_task,
         ),
         patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task,
     ):
-        assert task_manager._maybe_run_data_issue_remediation() is None
+        assert task_manager._maybe_run_data_issue_remediation(force=force) is None
 
     spawn_task.assert_not_called()
 

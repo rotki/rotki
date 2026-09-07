@@ -1,6 +1,8 @@
+import subprocess  # noqa: S404
+import sys
 from http import HTTPStatus
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import requests
@@ -23,6 +25,54 @@ pytestmark = pytest.mark.accounting_update
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+
+
+@pytest.mark.parametrize('can_schedule', [False, True])
+def test_trigger_data_issue_remediation(
+        rotkehlchen_api_server: APIServer,
+        can_schedule: bool,
+) -> None:
+    task_manager = rotkehlchen_api_server.rest_api.rotkehlchen.task_manager
+    assert task_manager is not None
+    with patch.object(
+        task_manager,
+        '_maybe_run_data_issue_remediation',
+        return_value=[Mock()] if can_schedule else None,
+    ) as schedule:
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'triggertaskresource'),
+            json={'task': 'data_issue_remediation', 'async_query': False},
+        )
+    schedule.assert_called_once_with(force=True)
+    if can_schedule:
+        assert assert_proper_sync_response_with_result(response) is True
+    else:
+        assert_error_response(
+            response,
+            contained_in_msg='Data issue remediation cannot start',
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+
+@pytest.mark.parametrize('optimized', [False, True])
+def test_remediation_task_api_validation_requires_debug(optimized: bool) -> None:
+    """The actual request schema rejects the debug-only task under python -O."""
+    result = subprocess.run([  # noqa: S603
+        sys.executable,
+        *(['-O'] if optimized else []),
+        '-c',
+        ('from marshmallow import ValidationError\n'
+        'from rotkehlchen.api.v1.schemas import TriggerTaskSchema\n'
+        'schema = TriggerTaskSchema()\n'
+        'schema.load({"task": "historical_balance_processing"})\n'
+        'try:\n'
+        '    schema.load({"task": "data_issue_remediation"})\n'
+        'except ValidationError:\n'
+        '    print("rejected")\n'
+        'else:\n'
+        '    print("accepted")\n'),
+    ], capture_output=True, text=True, check=True, timeout=30)
+    assert result.stdout.strip() == ('rejected' if optimized else 'accepted')
 
 
 def _write_issue(
