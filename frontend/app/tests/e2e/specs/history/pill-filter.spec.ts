@@ -532,17 +532,17 @@ test.describe.serial('history events pill filter', () => {
 
     await views.open();
     // Opening lands focus on the list, which is where the arrow keys and Escape are handled.
-    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-list');
+    await bar.keyboard.expectFocused('pill-views-list');
 
     // The name field is one Tab away while the list holds no view of its own.
     await bar.keyboard.pressFocused('Tab');
-    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-name');
+    await bar.keyboard.expectFocused('pill-views-name');
     await bar.keyboard.typeFocused('kb optimism');
     await bar.keyboard.pressFocused('Enter');
 
     // Saving hands focus back to the list, which now holds the view.
     await views.expectVisible('kb optimism');
-    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-list');
+    await bar.keyboard.expectFocused('pill-views-list');
     await views.close();
 
     /* A second view, so moving the highlight is a move rather than a wrap onto itself. Saved
@@ -556,9 +556,9 @@ test.describe.serial('history events pill filter', () => {
     await views.open();
     // Tab out of the list reaches the stored view itself, so a row is reachable without a mouse.
     await bar.keyboard.pressFocused('Tab');
-    expect(await bar.keyboard.focusedTestId()).toBe('pill-views-apply');
+    await bar.keyboard.expectFocused('pill-views-apply');
     // The index matters: Tab must land on the FIRST row, not merely on some row.
-    expect(await bar.keyboard.focusedIndex()).toBe('0');
+    await bar.keyboard.expectFocusedIndex('0');
     await views.save('kb kraken');
     await views.close();
 
@@ -654,7 +654,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.dismissEditor();
 
     await bar.expectNoPill('counterparties');
-    expect(await bar.keyboard.focusedFieldTestId()).toBe('pill-narrow-input');
+    await bar.keyboard.expectFocusedField('pill-narrow-input');
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
@@ -662,7 +662,7 @@ test.describe.serial('history events pill filter', () => {
   test('a field can be picked from the add menu with the keyboard', async () => {
     await bar.openAddMenu();
     // The menu focuses its search on mount, so typing narrows without clicking into it.
-    expect(await bar.keyboard.focusedFieldTestId()).toBe('pill-menu-search');
+    await bar.keyboard.expectFocusedField('pill-menu-search');
     await bar.keyboard.typeFocused('proto');
     await bar.keyboard.pressFocused('Enter');
 
@@ -738,10 +738,10 @@ test.describe.serial('history events pill filter', () => {
     // Pills precede the input, so shift-tab walks back into the last one's remove control first.
     await bar.focusNarrowInput();
     await bar.keyboard.pressFocused('Shift+Tab');
-    expect(await bar.keyboard.focusedTestId()).toBe('filter-pill-remove');
+    await bar.keyboard.expectFocused('filter-pill-remove');
 
     await bar.keyboard.pressFocused('Shift+Tab');
-    expect(await bar.keyboard.focusedTestId()).toBe('filter-pill-open');
+    await bar.keyboard.expectFocused('filter-pill-open');
 
     // Enter on the focused pill has to open the same editor a click does.
     await bar.keyboard.pressFocused('Enter');
