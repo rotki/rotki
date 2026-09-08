@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import { type Account, Blockchain, getTextToken } from '@rotki/common';
-import { omit, uniqBy } from 'es-toolkit';
+import { type Account, Blockchain } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { hasAccountAddress } from '@/modules/accounts/account-helpers';
+import { matchesAccountQuery, selectableAccounts } from '@/modules/accounts/account-selection';
 import { getAccountAddress, getAccountId } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
-import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getNonRootAttrs, getRootAttrs } from '@/modules/core/common/helpers/attrs';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
@@ -90,53 +90,14 @@ const internalValue = computed<AccountWithExtra | undefined>(() => {
   return { ...first, address: getAccountAddress(first), key: getAccountId(first) };
 });
 
-const selectableAccounts = computed<AccountWithAddressData[]>(() => {
-  const accountData = get(accounts);
-  const selectedChains = get(chains);
-
-  const filteredAccounts = selectedChains.length === 0
-    ? accountData
-    : accountData.filter(({ chain }) => chain === 'ALL' || selectedChains.includes(chain));
-
-  const filteredByUnique: AccountWithAddressData[] = source?.unique
-    ? uniqBy(filteredAccounts, account => getAccountAddress(account))
-    : filteredAccounts;
-
-  if (source?.multichain) {
-    const entries: Record<string, number> = {};
-    filteredByUnique.forEach((account) => {
-      const address = getAccountAddress(account);
-      if (entries[address])
-        entries[address] += 1;
-      else entries[address] = 1;
-    });
-
-    for (const address in entries) {
-      const count = entries[address];
-      if (count <= 1)
-        continue;
-
-      filteredByUnique.push(
-        createAccount(
-          {
-            address,
-            label: null,
-            tags: null,
-          },
-          {
-            chain: 'ALL',
-            nativeAsset: '',
-          },
-        ),
-      );
-    }
-  }
-
-  return filteredByUnique;
-});
+const offeredAccounts = computed<AccountWithAddressData[]>(() => selectableAccounts(get(accounts), {
+  chains: get(chains),
+  multichain: source?.multichain,
+  unique: source?.unique,
+}));
 
 const displayedAccounts = computed<AccountWithExtra[]>(() => {
-  const accounts = Array.from(get(selectableAccounts), item => ({
+  const accounts = Array.from(get(offeredAccounts), item => ({
     ...item,
     address: getAccountAddress(item),
     key: getAccountId(item),
@@ -148,24 +109,9 @@ const displayedAccounts = computed<AccountWithExtra[]>(() => {
   return get(hideOnEmptyUsable) ? [] : accounts;
 });
 
-function filter(item: BlockchainAccount, queryText: string) {
-  const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
-  const text = getTextToken(getAddressName(getAccountAddress(item), chain) ?? '');
-  const address = getTextToken(getAccountAddress(item));
-  const query = getTextToken(queryText);
-
-  const labelMatches = text.includes(query);
-  const addressMatches = address.includes(query);
-
-  if (labelMatches || addressMatches)
-    return true;
-
-  return item.tags
-    ? item.tags
-        .map(tag => getTextToken(tag))
-        .join(' ')
-        .includes(query)
-    : false;
+function filter(item: BlockchainAccount, queryText: string): boolean {
+  return matchesAccountQuery(item, queryText, account =>
+    getAddressName(getAccountAddress(account), account.chain === 'ALL' ? Blockchain.ETH : account.chain));
 }
 
 /**
