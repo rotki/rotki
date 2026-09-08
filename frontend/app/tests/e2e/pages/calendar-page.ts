@@ -46,7 +46,6 @@ export class CalendarPage {
 
   async clickToday(): Promise<void> {
     await this.page.getByTestId('calendar-today').click();
-    await this.page.waitForTimeout(150);
   }
 
   async expectTodayDisabled(): Promise<void> {
@@ -236,17 +235,10 @@ export class CalendarPage {
 
   async goToNextMonth(): Promise<void> {
     await this.page.getByTestId('calendar-next-month').click();
-    await this.page.waitForTimeout(150);
   }
 
   async goToPrevMonth(): Promise<void> {
     await this.page.getByTestId('calendar-prev-month').click();
-    await this.page.waitForTimeout(150);
-  }
-
-  async currentMonthLabel(): Promise<string> {
-    const value = await this.page.getByTestId('calendar-month-label').locator('input').inputValue();
-    return value;
   }
 
   async expectMonthLabel(label: string): Promise<void> {

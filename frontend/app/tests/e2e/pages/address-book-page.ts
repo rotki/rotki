@@ -56,10 +56,14 @@ export class AddressBookPage {
     return this.rows().filter({ hasText: name });
   }
 
+  /**
+   * @remarks
+   * Waits on the table rather than on the tab's own selected state: the caller is usually about to
+   * assert that state, and a helper that waited for it would make that assertion tautological.
+   */
   async selectScope(scope: Scope): Promise<void> {
     await this.page.locator(`[data-testid=address-book-scope-tab][data-key="${scope}"]`).click();
-    // Wait for any in-flight fetch to settle by checking row attachment.
-    await this.page.waitForTimeout(200);
+    await this.table().waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
   async expectScopeActive(scope: Scope): Promise<void> {
