@@ -93,14 +93,15 @@ def query_morpho_vaults(chain_id: ChainID, msg_aggregator: MessagesAggregator) -
                 f'{vault} due to {error}. Skipping.',
             )
 
-        last_notified_ts = maybe_notify_cache_query_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=CPT_MORPHO,
-            chain=chain_id,
-            processed=idx + 1,
-            total=total_entries,
-        )
+        if (processed := idx + 1) != total_entries:
+            last_notified_ts = maybe_notify_cache_query_status(
+                msg_aggregator=msg_aggregator,
+                last_notified_ts=last_notified_ts,
+                protocol=CPT_MORPHO,
+                chain=chain_id,
+                processed=processed,
+                total=total_entries,
+            )
 
     if len(cache_entries) > 0:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -109,6 +110,16 @@ def query_morpho_vaults(chain_id: ChainID, msg_aggregator: MessagesAggregator) -
                 key_parts=(CacheType.MORPHO_VAULTS, str(chain_id.serialize())),
                 values=cache_entries,
             )
+
+    if total_entries > 0:
+        maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=Timestamp(0),
+            protocol=CPT_MORPHO,
+            chain=chain_id,
+            processed=total_entries,
+            total=total_entries,
+        )
 
 
 def query_morpho_reward_distributors(chain_id: ChainID) -> None:

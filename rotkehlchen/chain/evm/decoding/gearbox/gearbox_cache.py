@@ -225,14 +225,15 @@ def ensure_gearbox_tokens_existence(
         should_notify=False,
     )
     for idx, pool in enumerate(all_pools):
-        last_notified_ts = maybe_notify_cache_query_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=CPT_GEARBOX,
-            chain=evm_inquirer.chain_id,
-            processed=idx + 1,
-            total=all_pools_length,
-        )
+        if (processed := idx + 1) != all_pools_length:
+            last_notified_ts = maybe_notify_cache_query_status(
+                msg_aggregator=msg_aggregator,
+                last_notified_ts=last_notified_ts,
+                protocol=CPT_GEARBOX,
+                chain=evm_inquirer.chain_id,
+                processed=processed,
+                total=all_pools_length,
+            )
 
         # Ensure pool coins and underlying tokens exist in the globaldb.
         if pool.underlying_token is not None:
@@ -469,4 +470,14 @@ def query_gearbox_data(
         new_data=verified_pools,
         chain_id=inquirer.chain_id,
     )
+    if (pool_count := len(pools_data)) > 0:
+        maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=Timestamp(0),
+            protocol=CPT_GEARBOX,
+            chain=inquirer.chain_id,
+            processed=pool_count,
+            total=pool_count,
+        )
+
     return verified_pools

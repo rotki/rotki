@@ -410,6 +410,29 @@ def test_morpho_cache_progress(globaldb, query_result):
         messages.add_message.assert_not_called()
 
 
+def test_morpho_cache_progress_finishes_after_saving(globaldb):  # pylint: disable=unused-argument
+    """The completion notification must only be sent after vaults are persisted."""
+    address, underlying = make_evm_address(), make_evm_address()
+    messages = MagicMock()
+    save = MagicMock()
+    call_order = MagicMock()
+    call_order.attach_mock(save, 'save')
+    call_order.attach_mock(messages.add_message, 'notify')
+    with (
+        patch(
+            'rotkehlchen.chain.evm.decoding.morpho.utils._query_morpho_vaults_api',
+            return_value=[{'address': address, 'asset': {'address': underlying}}],
+        ),
+        patch(
+            'rotkehlchen.chain.evm.decoding.morpho.utils.globaldb_set_general_cache_values',
+            new=save,
+        ),
+    ):
+        query_morpho_vaults(chain_id=ChainID.BASE, msg_aggregator=messages)
+
+    assert [call[0] for call in call_order.mock_calls] == ['save', 'notify']
+
+
 @pytest.mark.parametrize('query_result', ['cached', 'failed'])
 def test_gearbox_cache_progress(globaldb, query_result):  # pylint: disable=unused-argument
     """Cached-only discovery and a later RPC failure must not leave a pending update."""
@@ -442,6 +465,46 @@ def test_gearbox_cache_progress(globaldb, query_result):  # pylint: disable=unus
         assert result == []
         inquirer.multicall_2.assert_not_called()
     messages.add_message.assert_not_called()
+
+
+def test_gearbox_cache_progress_finishes_after_saving(globaldb):  # pylint: disable=unused-argument
+    """Progress precedes each pool's registration; completion follows the last
+    registration and the cache save."""
+    inquirer = MagicMock(chain_id=ChainID.ETHEREUM)
+    messages = MagicMock()
+    pools = [GearboxPoolData(
+        pool_address=make_evm_address(),
+        pool_name='pool',
+        farming_pool_token=None,
+        lp_tokens=set(),
+    ) for _ in range(2)]
+    register, save, call_order = MagicMock(), MagicMock(), MagicMock()
+    call_order.attach_mock(register, 'register')
+    call_order.attach_mock(save, 'save')
+    call_order.attach_mock(messages.add_message, 'notify')
+    with (
+        patch(
+            'rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.query_gearbox_data_from_chain',
+            return_value=pools,
+        ),
+        patch('rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.register_token', new=register),
+        patch(
+            'rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.save_gearbox_data_to_cache',
+            new=save,
+        ),
+    ):
+        assert query_gearbox_data(
+            inquirer=inquirer,
+            cache_type=CacheType.GEARBOX_POOL_ADDRESS,
+            msg_aggregator=messages,
+            reload_all=False,
+        ) == pools
+
+    assert [call[0] for call in call_order.mock_calls] == ['notify', 'register', 'register', 'save', 'notify']  # noqa: E501
+    assert messages.add_message.call_args_list == [
+        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=1, total=2),
+        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=2, total=2),
+    ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
