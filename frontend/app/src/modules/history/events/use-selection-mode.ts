@@ -62,6 +62,19 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
     };
   });
 
+  /**
+   * Leaves the select-all-matching mode, because a manual pick has replaced it.
+   *
+   * @remarks
+   * The mode stands for every row the current filter matches, most of which are never loaded, so
+   * it is a claim about the query rather than a set of ids. The moment the user toggles a row the
+   * selection becomes an explicit set, and the two cannot both hold.
+   */
+  const leaveSelectAllMatching = (): void => {
+    if (get(selectAllMatching))
+      set(selectAllMatching, false);
+  };
+
   const actions: SelectionActions = {
     clear: () => {
       set(selectedIds, new Set());
@@ -77,7 +90,6 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
         actions.clear();
     },
     toggleAll: () => {
-      // If selectAllMatching is enabled, disable it and clear
       if (get(selectAllMatching)) {
         actions.clear();
         return;
@@ -89,9 +101,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
         set(selectedIds, new Set(get(availableIds)));
     },
     toggleEvent: (eventId: number) => {
-      // Disable selectAllMatching when manually toggling events
-      if (get(selectAllMatching))
-        set(selectAllMatching, false);
+      leaveSelectAllMatching();
 
       const ids = new Set(get(selectedIds));
       if (ids.has(eventId))
@@ -102,9 +112,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
       set(selectedIds, ids);
     },
     toggleSwap: (eventIds: number[]) => {
-      // Disable selectAllMatching when manually toggling events
-      if (get(selectAllMatching))
-        set(selectAllMatching, false);
+      leaveSelectAllMatching();
 
       const ids = new Set(get(selectedIds));
       const allSelected = eventIds.every(id => ids.has(id));

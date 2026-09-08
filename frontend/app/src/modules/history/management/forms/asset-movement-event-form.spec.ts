@@ -60,8 +60,7 @@ describe('assetMovementSchema', () => {
     expect(issuePaths(emptyAssetMovementForm(''))).toEqual(['asset', 'location']);
   });
 
-  it('should accept an enabled fee that is entirely blank', () => {
-    // Which is how the form has always let a movement have no fee while the checkbox is on.
+  it('should accept an enabled fee that is entirely blank, so the checkbox can be on with no fee', () => {
     expect(issuePaths({ ...validState(), hasFee: true })).toEqual([]);
   });
 

@@ -322,12 +322,18 @@ export function useHistoryEventsDeletion(
     });
   }
 
+  /**
+   * Deletes a selection that cuts through a swap.
+   *
+   * @remarks
+   * A swap is only meaningful whole, so selecting any of its legs deletes the group entire. The id
+   * list therefore spans every `groupIds` member, not the `selectedIds` the user actually picked.
+   */
   async function handlePartialSwapDeletion(
     partialSwapGroups: Array<{ groupIds: number[]; selectedIds: number[] }>,
     remainingEventIds: number[],
     transactions: Map<string, TransactionGroup>,
   ): Promise<void> {
-    // Collect all event IDs that need to be deleted (including full swap groups)
     const allEventIds = [
       ...partialSwapGroups.flatMap(group => group.groupIds),
       ...remainingEventIds,

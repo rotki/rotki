@@ -179,8 +179,15 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
     set(loading, false);
   }
 
+  /**
+   * Clears the lookup back to its idle state.
+   *
+   * @remarks
+   * Bumping the request id is what makes this safe to call mid-flight: a lookup already in the air
+   * compares its own id on return, finds it stale, and drops its result instead of writing it over
+   * the cleared fields.
+   */
   function reset(): void {
-    // Bump the id so any in-flight result is treated as stale and discarded.
     currentRequestId++;
     set(loading, false);
     set(canRetry, false);

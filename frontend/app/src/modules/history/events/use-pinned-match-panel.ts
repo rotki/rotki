@@ -226,15 +226,23 @@ export function usePinnedMatchPanel<T extends PinnedMatchSubject>(
     }
   });
 
-  // Watch for prop changes to handle navigation when the panel is already open
-  watch(highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
-    // Only trigger if the highlight actually changed (not on initial mount)
+  /**
+   * Follows a highlight that changed while the panel was already open.
+   *
+   * @remarks
+   * The mount path above has already navigated to whatever highlight the panel opened with, so
+   * this exists for the prop changing underneath a panel that stays put. Comparing against the
+   * previous value is what keeps it from repeating that first navigation.
+   */
+  function navigateToChangedHighlight(newHighlight?: string, oldHighlight?: string): void {
     if (!newHighlight || newHighlight === oldHighlight)
       return;
 
     set(activeGroupIdentifier, newHighlight);
     navigateToHighlighted(newHighlight);
-  });
+  }
+
+  watch(highlightedGroupIdentifier, navigateToChangedHighlight);
 
   return {
     activeGroupIdentifier: readonly(activeGroupIdentifier),

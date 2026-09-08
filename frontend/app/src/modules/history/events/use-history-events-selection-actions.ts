@@ -73,8 +73,14 @@ export function useHistoryEventsSelectionActions(
     return { ignoredCount, notIgnoredCount };
   });
 
+  /**
+   * Leaves selection mode once an accounting rule has been created.
+   *
+   * @remarks
+   * The rule reclassifies the selected events, so the selection the user made against the old
+   * classification no longer describes anything they would want to act on again.
+   */
   function handleAccountingRuleRefresh(): void {
-    // Exit selection mode after successfully creating a rule
     selectionMode.actions.exit();
   }
 

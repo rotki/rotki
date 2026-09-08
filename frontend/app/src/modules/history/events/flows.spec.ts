@@ -36,8 +36,7 @@ const flows: Declared[] = Object.entries(modules).flatMap(([file, exported]) =>
 );
 
 describe('history flow declarations', () => {
-  it('should find at least one declared flow', () => {
-    // A glob that silently matches nothing would make every assertion below vacuous.
+  it('should find at least one declared flow, without which every test below passes vacuously', () => {
     expect(flows.length).toBeGreaterThan(0);
   });
 
@@ -49,8 +48,7 @@ describe('history flow declarations', () => {
     expect(value, `missing i18n key: ${declared.flow.titleKey}`).toBeDefined();
   });
 
-  it.each(flows.map(f => [f.name, f] as const))('%s should build an id under its own kind', (_name, declared) => {
-    // The id is what dedups re-entry, so it has to actually belong to the kind it claims.
+  it.each(flows.map(f => [f.name, f] as const))('%s should build an id under its own kind, which is what makes re-entry dedupe against the right flow', (_name, declared) => {
     expect(declared.flow.id().startsWith(declared.flow.kind)).toBe(true);
   });
 
@@ -59,8 +57,7 @@ describe('history flow declarations', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('should declare every flow beside a producer, not in a shared registry', () => {
-    // The co-location contract: a declaration lives in the module whose work it names.
+  it('should declare every flow in the module whose work it names, not in a shared registry', () => {
     for (const declared of flows)
       expect(declared.file).toMatch(/\/modules\/.+\.flow\.ts$/);
   });
