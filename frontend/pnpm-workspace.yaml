@@ -76,8 +76,8 @@ catalog:
   '@vueuse/core': 14.4.0
   '@vueuse/math': 14.4.0
   '@vueuse/shared': 14.4.0
-  '@walletconnect/core': 2.23.10
-  '@walletconnect/universal-provider': 2.23.10
+  '@walletconnect/core': 2.24.0
+  '@walletconnect/universal-provider': 2.24.0
   autoprefixer: 10.5.4
   bignumber.js: 11.1.5
   bufferutil: 4.1.0
@@ -127,7 +127,7 @@ catalog:
   unplugin-vue-components: 32.1.0
   utf-8-validate: 6.0.6
   vanilla-jsoneditor: 3.13.0
-  viem: 2.55.10
+  viem: 2.56.1
   vite: 8.2.2
   vite-plugin-checker: 0.14.5
   vite-plugin-vue-devtools: 8.2.1
