@@ -79,14 +79,23 @@ watchImmediate([balanceValueThreshold, open], ([thresholds]) => {
   form.state.hideBelow = threshold ?? DEFAULT_THRESHOLD;
 });
 
-watch(() => form.state.hide, (hide) => {
-  // Switching hiding off puts the field back to a value that cannot be blocking the save.
+/**
+ * Keeps the threshold field valid as hiding is switched on and off.
+ *
+ * @remarks
+ * Switching hiding off restores the default threshold rather than leaving whatever was typed. The
+ * field is still validated while hidden, so an incomplete value left behind would block the save
+ * for a setting the user has just turned off.
+ */
+function resetThresholdForHiding(hide: boolean): void {
   form.reset({
     applyToAllBalances: form.state.applyToAllBalances,
     hide,
     hideBelow: hide ? form.state.hideBelow : DEFAULT_THRESHOLD,
   });
-});
+}
+
+watch(() => form.state.hide, resetThresholdForHiding);
 </script>
 
 <template>

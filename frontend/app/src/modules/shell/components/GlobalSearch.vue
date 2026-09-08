@@ -63,12 +63,23 @@ watch(open, (isOpen) => {
   });
 });
 
+/**
+ * Whether this keystroke is the search shortcut on the platform the app is running on.
+ *
+ * @remarks
+ * macOS puts the shortcut on Command and every other platform on Control, and the check is one way
+ * round rather than accepting either, so the wrong modifier does not open the palette.
+ */
+function isSearchShortcut(event: KeyboardEvent): boolean {
+  const modifier = get(isMac) ? event.metaKey : event.ctrlKey;
+  return modifier && event.key === key;
+}
+
 onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 
   window.addEventListener('keydown', (event) => {
-    // Mac uses Command, others use Control
-    if (((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey)) && event.key === key)
+    if (isSearchShortcut(event))
       set(open, true);
   });
 });

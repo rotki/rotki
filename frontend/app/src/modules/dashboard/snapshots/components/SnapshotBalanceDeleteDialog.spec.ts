@@ -87,8 +87,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     expect(wrapper.find<HTMLInputElement>('.loc').element.value).toBe('ledger');
   });
 
-  it('should disable a location that cannot absorb the removal and block confirm', async () => {
-    // kraken only holds 40 but the balance is 100 — it can't cover the removal.
+  it('should disable a location that cannot absorb the removal and block confirm, kraken holding 40 against a balance of 100', async () => {
     wrapper = createWrapper(createSnapshot(40));
     wrapper.vm.open(0);
     await nextTick();

@@ -25,6 +25,18 @@ interface UseBackendMessagesInternalReturn {
   unregisterOAuthCallbackHandler: (handler: OAuthCallback) => void;
 }
 
+/**
+ * Wipes the requested debug state and reloads if anything was actually cleared.
+ *
+ * @remarks
+ * The reload is what makes the wipe visible. Storage-backed refs keep their value in memory once
+ * read, so clearing the underlying storage leaves the running app showing the old state.
+ */
+function reloadAfterWipingDebugState(group: DebugStateGroup): void {
+  if (resetDebugState(group).length > 0)
+    window.location.reload();
+}
+
 function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const startupErrorMessage = shallowRef<string>('');
   const isMacOsVersionUnsupported = shallowRef<boolean>(false);
@@ -131,11 +143,7 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
         haltBackendActivity();
         api.stopRequests();
       },
-      onResetDebugState: (group: DebugStateGroup) => {
-        // Storage-backed refs hold their value in memory, so a wipe only shows after a reload.
-        if (resetDebugState(group).length > 0)
-          window.location.reload();
-      },
+      onResetDebugState: reloadAfterWipingDebugState,
       onRestart: () => {
         set(startupErrorMessage, '');
         // Re-enable connections for the restart attempt

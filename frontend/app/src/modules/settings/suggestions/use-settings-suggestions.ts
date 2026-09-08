@@ -38,13 +38,16 @@ function getCurrentValue(
 /**
  * Turns one suggestion into the row the dialog shows, or nothing when this user has no reason to see
  * it. The three shapes differ in what "already satisfied" means for them.
+ *
+ * @remarks
+ * A suggestion offering choices always stands, even when one of them is what the user already has,
+ * because only its own builder knows which of them count. The other two shapes are filtered here.
  */
 function shapePending(
   suggestion: SettingsSuggestion,
   currentValue: unknown,
   fromVersion: string,
 ): PendingSuggestion | undefined {
-  // A choice stands even when an option is what the user already has; its builder gates it instead.
   if (suggestion.choices)
     return { ...suggestion, currentValue, fromVersion };
 

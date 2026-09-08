@@ -51,12 +51,21 @@ onKeyStroke('Escape', () => {
     collapse();
 });
 
-watch(phase, (newPhase, oldPhase) => {
-  // Reset dismissed state when a new sync starts
+/**
+ * Brings the panel back for a sync the user has not dismissed yet.
+ *
+ * @remarks
+ * Only the complete-to-syncing edge counts as a new sync. Dismissing applies to the sync that was
+ * running at the time, so it must not carry over to the next one, and must not be undone by any
+ * other phase change within the same sync.
+ */
+function undismissOnNewSync(newPhase: SyncPhase, oldPhase: SyncPhase | undefined): void {
   if (oldPhase === SyncPhase.COMPLETE && newPhase === SyncPhase.SYNCING) {
     set(dismissed, false);
   }
-});
+}
+
+watch(phase, undismissOnNewSync);
 </script>
 
 <template>

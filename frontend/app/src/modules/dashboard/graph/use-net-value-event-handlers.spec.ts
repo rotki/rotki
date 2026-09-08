@@ -60,8 +60,7 @@ describe('resolveZoomRange', () => {
     });
   });
 
-  it('should map percentage range against the times window when axis values are absent', () => {
-    // 25%..75% of [1000, 5000] -> [2000, 4000]
+  it('should map percentage range against the times window when axis values are absent, so 25%..75% of [1000, 5000] is [2000, 4000]', () => {
     expect(resolveZoomRange({ end: 75, start: 25 }, times)).toEqual({ end: 4000, start: 2000 });
   });
 

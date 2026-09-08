@@ -39,6 +39,8 @@ export function readZoomFields(event: unknown): ZoomFields | undefined {
 
 const ZOOM_MS = 1000;
 
+const DRAG_FLAG_CLEAR_DELAY_MS = 10;
+
 export function resolveZoomRange(fields: ZoomFields | undefined, times: number[]): NetValueZoomRange | undefined {
   if (typeof fields?.startValue === 'number' && typeof fields?.endValue === 'number') {
     return { end: Math.ceil(fields.endValue / ZOOM_MS), start: Math.floor(fields.startValue / ZOOM_MS) };
@@ -104,7 +106,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
    * @returns the tooltip's adjusted `x` and `y`, in container coordinates
    */
   function calculateTooltipPosition(): { x: number; y: number } {
-    // Start from the last known mouse coordinates
     const pos = get(mousePos);
     let cursorX = pos.x + 20;
     let cursorY = pos.y + 20;
@@ -232,8 +233,21 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
    * A timer holds the single-click action back long enough for a second click to cancel it, and
    * mousedown/mouseup positions are tracked so a drag is not mistaken for a click.
    */
+  /**
+   * Clears the drag flag once the click that follows this mouseup has been dispatched.
+   *
+   * @remarks
+   * The browser fires `click` after `mouseup`, so clearing the flag synchronously would let the
+   * click that merely ended a drag read it as false and act as an ordinary click. The delay only
+   * has to outlast that dispatch.
+   */
+  function clearDragAfterClickIsDispatched(): void {
+    setTimeout(() => {
+      set(isDragging, false);
+    }, DRAG_FLAG_CLEAR_DELAY_MS);
+  }
+
   function setupContainerClickHandler(container: HTMLElement): void {
-    // Track mouse down/up for drag detection
     containerEventHandlers.mousedown = (e): void => {
       set(dragStartPos, { x: e.offsetX, y: e.offsetY });
       set(isDragging, false);
@@ -253,12 +267,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       }
     };
 
-    containerEventHandlers.mouseup = (): void => {
-      // Reset drag flag after a short delay to ensure click event sees the correct state
-      setTimeout(() => {
-        set(isDragging, false);
-      }, 10);
-    };
+    containerEventHandlers.mouseup = clearDragAfterClickIsDispatched;
 
     containerEventHandlers.click = (): void => {
       if (get(isDragging)) {
