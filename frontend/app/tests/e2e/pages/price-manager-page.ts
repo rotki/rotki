@@ -3,7 +3,29 @@ import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
-async function selectAsset(testId: string, asset: string, page: Page): Promise<void> {
+/**
+ * How to recognise the wanted option once the typeahead has answered.
+ *
+ * A symbol carries a stable option id, so `id` names the exact entry. A custom asset's id is a
+ * UUID the spec never sees, so `name` matches on the text instead.
+ */
+export type AssetMatch = 'id' | 'name';
+
+/**
+ * Picks an asset out of a RuiAutoComplete typeahead.
+ *
+ * @remarks
+ * AssetSelect debounces its search (~800ms), so the option has to be waited for rather than read
+ * off whatever the menu is showing at click time. The caller says which kind of asset it is asking
+ * for: choosing between the two by racing a timeout would let a slow search downgrade a symbol
+ * lookup into "click whatever rendered", and the test would go on asserting about the wrong asset.
+ *
+ * @param testId - the select's `data-testid`
+ * @param asset - a symbol for `id`, the asset's name for `name`
+ * @param page - the page holding the select
+ * @param match - which of the two the caller is passing
+ */
+async function selectAsset(testId: string, asset: string, page: Page, match: AssetMatch = 'id'): Promise<void> {
   const select = page.getByTestId(testId);
   // A previously selected chip would block the new typeahead query.
   const clearButton = select.locator('[data-id=clear]');
@@ -14,19 +36,10 @@ async function selectAsset(testId: string, asset: string, page: Page): Promise<v
   await page.keyboard.type(asset);
   const menu = page.locator('[role="listbox"], [role="menu"]').last();
   await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  /* The id is stable for fiats but unpredictable for a custom asset's UUID, so the first
-     option is the fallback. AssetSelect's search is debounced (~800ms), so the by-id option
-     has to be waited for first, or the fallback clicks whatever stale entry is rendered. */
-  const byId = menu.locator(`#asset-${asset.toLowerCase()}`).first();
-  const firstOption = menu.locator('button[type="button"]').first();
-  let option = byId;
-  try {
-    await byId.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  }
-  catch {
-    option = firstOption;
-    await firstOption.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  }
+  const option = match === 'id'
+    ? menu.locator(`#asset-${asset.toLowerCase()}`).first()
+    : menu.locator('button[type="button"]').filter({ hasText: asset }).first();
+  await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   await option.click();
   await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_SHORT });
 }
@@ -68,9 +81,16 @@ export class LatestPricePage {
     return this.rows().filter({ hasText: value });
   }
 
-  async addPrice(fromAsset: string, toAsset: string, value: string): Promise<void> {
+  /**
+   * Adds a latest price.
+   *
+   * @remarks
+   * `fromMatch` is `name` when `fromAsset` is a custom asset, whose id is a UUID the spec never
+   * sees. The `to` asset is always a symbol.
+   */
+  async addPrice(fromAsset: string, toAsset: string, value: string, fromMatch: AssetMatch = 'id'): Promise<void> {
     await this.page.getByTestId('latest-price-add').click();
-    await selectAsset('latest-price-from-asset', fromAsset, this.page);
+    await selectAsset('latest-price-from-asset', fromAsset, this.page, fromMatch);
     await selectAsset('latest-price-to-asset', toAsset, this.page);
     await this.page.getByTestId('latest-price-value').locator('input').fill(value);
     await confirmDialog(this.page);
