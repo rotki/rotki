@@ -79,15 +79,11 @@ export class DashboardPage {
   }
 
   async amountDisplayIsBlurred(): Promise<void> {
-    const amountDisplay = this.page.locator('[data-testid=amount-display]').first();
-    const filter = await amountDisplay.evaluate(el => getComputedStyle(el).filter);
-    expect(filter).toMatch(/^blur/);
+    await expect(this.page.locator('[data-testid=amount-display]').first()).toHaveCSS('filter', /^blur/);
   }
 
   async amountDisplayIsNotBlurred(): Promise<void> {
-    const amountDisplay = this.page.locator('[data-testid=amount-display]').first();
-    const filter = await amountDisplay.evaluate(el => getComputedStyle(el).filter);
-    expect(filter).not.toMatch(/^blur/);
+    await expect(this.page.locator('[data-testid=amount-display]').first()).not.toHaveCSS('filter', /^blur/);
   }
 
   async percentageDisplayIsBlurred(): Promise<void> {
