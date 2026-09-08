@@ -404,7 +404,7 @@ def _query_curve_data_from_chain(
 
     maybe_notify_cache_query_status(
         msg_aggregator=msg_aggregator,
-        last_notified_ts=last_notified_ts,
+        last_notified_ts=Timestamp(0),
         protocol=CPT_CURVE,
         chain=evm_inquirer.chain_id,
         processed=pools_to_query_count,
