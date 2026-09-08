@@ -118,9 +118,11 @@ export function useManagedAssetsTable(
       title: t('asset_management.confirm_delete.title'),
     }),
     deleteItem: async item => deleteAsset(item.identifier),
-    errorMessage: (item, error) => t('asset_management.delete_error', {
-      address: item.identifier,
-      message: getErrorMessage(error),
+    errorMessage: (item, error) => ({
+      description: t('asset_management.delete_error', {
+        address: item.identifier,
+        message: getErrorMessage(error),
+      }),
     }),
     onDeleted: async (item) => {
       await refetch();

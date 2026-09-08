@@ -2,10 +2,10 @@ import type { Blockchain } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { camelCase } from 'es-toolkit';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useEvmNodesApi } from '@/modules/settings/api/use-evm-nodes-api';
 import { NODE_STATUS, type NodeStatus } from '@/modules/settings/general/rpc/rpc-node-status';
@@ -70,7 +70,6 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   const { notify } = useNotificationDispatcher();
   const { setMessage } = useMessageStore();
   const { connectedNodes, coolingDownNodes, failedToConnect } = storeToRefs(useSessionMetadataStore());
-  const { show } = useConfirmStore();
   const { useChainName } = useSupportedChains();
   const api = useEvmNodesApi(() => toValue(chain));
 
@@ -133,21 +132,28 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     });
   }
 
-  async function deleteNode(node: BlockchainRpcNode): Promise<void> {
-    try {
-      await api.deleteEvmNode(node.identifier);
-      await loadNodes();
-    }
-    catch (error: unknown) {
-      setMessage({
-        description: getErrorMessage(error),
-        success: false,
-        title: t('evm_rpc_node_manager.delete_error.title', {
-          chain: toValue(chain),
+  const { showDeleteConfirmation } = useTableRowDeletion<BlockchainRpcNode>({
+    confirm: (item) => {
+      const chainProp = get(chainName);
+      return {
+        message: t('evm_rpc_node_manager.confirm.message', {
+          chain: chainProp,
+          endpoint: item.endpoint,
+          node: item.name,
         }),
-      });
-    }
-  }
+        title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
+      };
+    },
+    deleteItem: async node => api.deleteEvmNode(node.identifier),
+    errorMessage: (_node, error) => ({
+      description: getErrorMessage(error),
+      success: false,
+      title: t('evm_rpc_node_manager.delete_error.title', {
+        chain: toValue(chain),
+      }),
+    }),
+    onDeleted: loadNodes,
+  });
 
   async function onActiveChange(active: boolean, node: BlockchainRpcNode): Promise<void> {
     try {
@@ -163,21 +169,6 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
         }),
       });
     }
-  }
-
-  function showDeleteConfirmation(item: BlockchainRpcNode): void {
-    const chainProp = get(chainName);
-    show(
-      {
-        message: t('evm_rpc_node_manager.confirm.message', {
-          chain: chainProp,
-          endpoint: item.endpoint,
-          node: item.name,
-        }),
-        title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
-      },
-      async () => deleteNode(item),
-    );
   }
 
   async function reConnect(identifier?: number): Promise<void> {

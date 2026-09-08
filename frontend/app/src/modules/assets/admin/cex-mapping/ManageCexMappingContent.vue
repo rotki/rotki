@@ -58,8 +58,10 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
     title: t('asset_management.cex_mapping.confirm_delete.title'),
   }),
   deleteItem: mapping => deleteCexMapping(omit(mapping, ['asset'])),
-  errorMessage: (_item, error) => t('asset_management.cex_mapping.delete_error', {
-    message: getErrorMessage(error),
+  errorMessage: (_item, error) => ({
+    description: t('asset_management.cex_mapping.delete_error', {
+      message: getErrorMessage(error),
+    }),
   }),
   onDeleted: refetch,
 });
