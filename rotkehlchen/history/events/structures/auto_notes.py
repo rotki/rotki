@@ -5,8 +5,9 @@ Every template here is used twice. `AutoNotesTemplate.format` builds the text in
 SQLite, so the notes substring filter keeps matching events whose notes column is NULL.
 Sharing one template string per note kind is what keeps the two from drifting apart.
 
-The SQL side has no access to asset symbols (they live in the global DB) and substitutes the
-asset identifier, which equals the symbol for the native assets that dominate these events.
+The SQL side has no access to asset symbols (they live in the global DB), so it renders the
+text without the symbol: the notes filter matches the words around it and searching by asset
+is what the asset filter is for.
 """
 from string import Formatter
 from typing import Final
@@ -32,15 +33,18 @@ class AutoNotesTemplate:
     def format(self, **kwargs: object) -> str:
         return self.template.format(**kwargs)
 
-    def to_sql(self, **fields: str) -> str:
+    def to_sql(self, **fields: str | None) -> str:
         """Render the template as an SQL expression, replacing each placeholder with the given
-        SQL expression for it. Placeholders missing from `fields` raise KeyError."""
+        SQL expression for it. A placeholder mapped to None is left out of the text together
+        with the space before it. Placeholders missing from `fields` raise KeyError."""
         parts = []
         for literal, name, _, _ in Formatter().parse(self.template):
-            if literal:
-                parts.append(sql_string_literal(literal))
-            if name is not None:
-                parts.append(fields[name])
+            expression = fields[name] if name is not None else None
+            omitted = name is not None and expression is None
+            if (text := literal.removesuffix(' ') if omitted else literal):
+                parts.append(sql_string_literal(text))
+            if expression is not None:
+                parts.append(expression)
 
         return ' || '.join(parts)
 
@@ -154,7 +158,7 @@ _NATIVE_ASSET_SQL: Final = '(' + ' OR '.join(
     f'(location={sql_string_literal(location.serialize_for_db())} AND asset={sql_string_literal(asset_id)})'  # noqa: E501
     for location, asset_id in NATIVE_ASSET_BY_LOCATION.items()
 ) + ')'
-_COMMON_FIELDS: Final = {'amount': 'amount', 'symbol': 'asset', 'location': _LOCATION_NAME_SQL}
+_COMMON_FIELDS: Final[dict[str, str | None]] = {'amount': 'amount', 'symbol': None, 'location': _LOCATION_NAME_SQL}  # noqa: E501
 
 
 def _when(condition: str, result: str) -> str:

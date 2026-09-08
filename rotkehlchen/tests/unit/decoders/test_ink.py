@@ -33,9 +33,8 @@ def test_eth_transfer(ink_inquirer, ink_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000026108517193'),
+        amount=FVal('0.000000026108517193'),
         location_label=(user := ink_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -68,9 +67,8 @@ def test_weth_wrap(ink_inquirer, ink_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000030797162263'),
+        amount=FVal('0.000000030797162263'),
         location_label=(user := ink_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

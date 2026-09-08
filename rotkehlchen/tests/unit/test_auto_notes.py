@@ -21,6 +21,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
+    EthStakingEvent,
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -138,8 +139,9 @@ def _sql_notes(database: DBHandler) -> dict[int, str | None]:
 
 def test_auto_notes_match_between_python_and_sql(database: DBHandler) -> None:
     """Every template is rendered identically by the event class and by the SQL expression
-    the notes filter uses, apart from the asset symbol which SQL replaces by the identifier.
-    Also checks that events without notes are stored with NULL notes.
+    the notes filter uses, apart from the asset symbol which SQL leaves out. The staking
+    templates spell ETH out as text, so it stays. Also checks that events without notes are
+    stored with NULL notes.
     """
     events_and_notes = _events_with_auto_notes()
     with database.user_write() as write_cursor:
@@ -153,8 +155,10 @@ def test_auto_notes_match_between_python_and_sql(database: DBHandler) -> None:
         assert event.auto_notes() == expected
         assert event.serialize()['auto_notes'] == expected
         assert 'user_notes' not in event.serialize()
-        symbol = event.asset.symbol_or_name()
-        assert sql_notes[identifier] == expected.replace(f' {symbol} ', f' {event.asset.identifier} ')  # noqa: E501
+        if isinstance(event, EthStakingEvent):
+            assert sql_notes[identifier] == expected
+        else:
+            assert sql_notes[identifier] == expected.replace(f' {event.asset.symbol_or_name()}', '', 1)  # noqa: E501
 
 
 def test_notes_equal_to_auto_notes_are_not_stored(database: DBHandler) -> None:
@@ -180,7 +184,7 @@ def test_notes_equal_to_auto_notes_are_not_stored(database: DBHandler) -> None:
     assert events[1].serialize()['user_notes'] == extended.notes
     assert events[2].notes_or_auto() == 'My expensive transaction'
     assert events[0].notes_or_auto() == f'Send 0.5 ETH to {OTHER}'
-    assert _sql_notes(database) == {1: f'Send 0.5 ETH to {OTHER}', 2: extended.notes, 3: 'My expensive transaction'}  # noqa: E501
+    assert _sql_notes(database) == {1: f'Send 0.5 to {OTHER}', 2: extended.notes, 3: 'My expensive transaction'}  # noqa: E501
 
 
 def test_unknown_asset_keeps_notes() -> None:
@@ -192,6 +196,8 @@ def test_unknown_asset_keeps_notes() -> None:
 
 @pytest.mark.parametrize(('substring', 'expected_notes'), [
     ('for gas', {'Burn 0.001 ETH for gas', 'Burn 0.002 ETH for gas of a failed transaction'}),
+    ('0.001 for gas', {'Burn 0.001 ETH for gas'}),
+    ('0.001 ETH', set()),
     ('spending approval of', {f'Set USDC spending approval of {USER} by {OTHER} to 115', f'Revoke USDC spending approval of {USER} by {OTHER}'}),  # noqa: E501
     (f'to {OTHER}', {f'Send 0.5 ETH to {OTHER}', f'Transfer 10 USDC from {USER} to {OTHER}'}),
     ('ETH from validator 42', {'Withdraw 0.01 ETH from validator 42'}),
@@ -204,7 +210,8 @@ def test_notes_filter_searches_auto_notes(
         substring: str,
         expected_notes: set[str],
 ) -> None:
-    """The notes substring filter finds events whose notes are not stored but generated"""
+    """The notes substring filter finds events whose notes are not stored but generated. The
+    generated text is matched without the asset symbol, which the asset filter is for."""
     dbevents = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
         dbevents.add_history_events(write_cursor, [event for event, _ in _events_with_auto_notes()])  # noqa: E501
