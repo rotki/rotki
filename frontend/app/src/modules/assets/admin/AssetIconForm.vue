@@ -95,7 +95,8 @@ defineExpose({
     <div class="grid grid-cols-[auto_1fr] gap-6 h-full">
       <RuiCard
         rounded="sm"
-        class="w-32 items-center justify-center [&>div]:!p-6 relative"
+        class="w-32 items-center justify-center relative"
+        :class-names="{ content: '!p-6' }"
       >
         <RuiTooltip
           v-if="preview && refreshable"

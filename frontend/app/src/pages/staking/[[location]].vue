@@ -30,7 +30,7 @@ const { getRedirectLink, modelLocation, page, staking } = useStakingPage(() => l
 
 <template>
   <div class="container">
-    <RuiCard class="[&>div:first-child]:flex">
+    <RuiCard :class-names="{ content: 'flex' }">
       <DefineIcon #default="{ image }">
         <AppImage
           class="icon-bg"

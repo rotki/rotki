@@ -80,7 +80,7 @@ onMounted(async () => {
     <RuiCard
       v-for="n in 10"
       :key="n"
-      class="[&>div]:flex [&>div]:flex-col"
+      :class-names="{ content: 'flex flex-col' }"
     >
       <RuiSkeletonLoader class="w-20 mb-3" />
       <RuiSkeletonLoader class="w-24 mb-6" />
