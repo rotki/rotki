@@ -13,8 +13,14 @@ export interface NetValueDeltaResult {
   balanceDelta: BigNumber;
 }
 
+/**
+ * The first value in the range that is not zero, or the range's first value if all are.
+ *
+ * @remarks
+ * Leading zeros are skipped because a portfolio reports zero for every point before its first
+ * snapshot. Measuring a delta from one of those would report the whole balance as growth.
+ */
 function firstNonZero(data: BigNumber[], from: number, to: number): BigNumber {
-  // Skip leading zeros — a fresh portfolio reports zero before its first snapshot.
   let start = data[from];
   if (!start)
     return Zero;

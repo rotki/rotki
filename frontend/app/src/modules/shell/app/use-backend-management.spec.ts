@@ -245,8 +245,7 @@ describe('useBackendManagement', () => {
       expect(mockConnect).toHaveBeenCalled();
     });
 
-    it('should stay a no-op where no control endpoint is served', async () => {
-      // The plain web build: probing says no, so the old behaviour stands.
+    it('should stay a no-op on the plain web build, where probing finds no control endpoint', async () => {
       packaged = false;
       mockControlProbe.mockResolvedValue(false);
 

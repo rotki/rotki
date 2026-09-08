@@ -311,8 +311,7 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
       expect(wrapper.emitted('update:stateUpdated')).toBeUndefined();
     });
 
-    it('should still read an edited field as an unsaved change', async () => {
-      // The contrast that makes the assertion above mean something.
+    it('should still read an edited field as an unsaved change, the contrast that keeps the test above honest', async () => {
       wrapper = createWrapper({ modelValue: createRule() });
 
       toggle('taxable').vm.$emit('update:modelValue', { value: true });

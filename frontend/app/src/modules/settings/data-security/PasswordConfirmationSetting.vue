@@ -55,8 +55,14 @@ const hasChanged = computed<boolean>(() => {
   return currentDays !== storedDays || get(enabled) !== get(enablePasswordConfirmation);
 });
 
+/**
+ * Applies the toggle, asking first when it is being turned off.
+ *
+ * @remarks
+ * Turning the confirmation off weakens the account, so unlike turning it on it goes through a
+ * warning rather than being applied directly.
+ */
 function handleToggleChange(value: boolean): void {
-  // Turning the confirmation off weakens the account, so it is confirmed rather than just applied.
   if (!value)
     set(showDisableWarning, true);
   else

@@ -96,8 +96,7 @@ describe('usePinnedPersistence', () => {
     expect(get(store.activePinnedId)).toBe(PinnedNames.MATCH_ASSET_MOVEMENTS);
   });
 
-  it('should ignore a corrupt or legacy-shaped stored value instead of throwing', () => {
-    // `names` is not an array (corruption or an old schema).
+  it('should ignore a stored value whose `names` is not an array, instead of throwing', () => {
     localStorage.setItem(TABS_KEY, JSON.stringify({ activeId: 'x', names: 'oops' }));
     const store = useAreaVisibilityStore();
     const { pinnedPanels } = storeToRefs(store);

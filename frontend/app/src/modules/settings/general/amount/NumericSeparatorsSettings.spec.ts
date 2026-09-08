@@ -51,19 +51,27 @@ describe('numericSeparatorsSettings', () => {
     return writeManyMock.mock.calls.at(-1)?.[0];
   }
 
+  /**
+   * Stands in for the settings repository: a successful write becomes the new source of truth.
+   *
+   * @remarks
+   * The component reads back what it wrote, so a mock that only recorded the call would leave the
+   * sources on their old values and the test would pass against a component that never persisted.
+   */
+  async function writeThroughToSources(patch: Record<string, string>): Promise<{ success: boolean }> {
+    if (patch.thousandSeparator !== undefined)
+      set(thousandSource, patch.thousandSeparator);
+    if (patch.decimalSeparator !== undefined)
+      set(decimalSource, patch.decimalSeparator);
+    return { success: true };
+  }
+
   beforeEach(() => {
     vi.useFakeTimers();
     thousandSource = ref<string>(',');
     decimalSource = ref<string>('.');
     writeManyMock.mockReset();
-    writeManyMock.mockImplementation(async (patch: Record<string, string>) => {
-      // Mirror the repo: a successful write becomes the new source of truth.
-      if (patch.thousandSeparator !== undefined)
-        set(thousandSource, patch.thousandSeparator);
-      if (patch.decimalSeparator !== undefined)
-        set(decimalSource, patch.decimalSeparator);
-      return { success: true };
-    });
+    writeManyMock.mockImplementation(writeThroughToSources);
     useSettingMock.mockImplementation((key: string) => (key === 'thousandSeparator' ? thousandSource : decimalSource));
   });
 

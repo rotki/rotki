@@ -104,6 +104,21 @@ function isDone(status: AddressStatus): boolean {
     || status === AddressStatus.FAILED;
 }
 
+/**
+ * Orders chains for the panel: those with work in flight first, then alphabetically.
+ *
+ * @remarks
+ * Only whether a chain has any address in progress separates the two ranks, not how many, so a
+ * chain does not jump around the list as its own addresses finish one by one.
+ */
+function byActiveThenName(a: ChainProgress, b: ChainProgress): number {
+  if (a.inProgress > 0 && b.inProgress === 0)
+    return -1;
+  if (b.inProgress > 0 && a.inProgress === 0)
+    return 1;
+  return a.chain.localeCompare(b.chain);
+}
+
 function calculateChainProgress(addresses: AddressProgress[]): number {
   if (addresses.length === 0)
     return 0;
@@ -172,13 +187,6 @@ export function useChainProgress(
         progress: calculateChainProgress(addresses),
         total: addresses.length,
       };
-    }).sort((a, b) => {
-      // Sort by: in-progress first, then by chain name
-      if (a.inProgress > 0 && b.inProgress === 0)
-        return -1;
-      if (b.inProgress > 0 && a.inProgress === 0)
-        return 1;
-      return a.chain.localeCompare(b.chain);
-    });
+    }).sort(byActiveThenName);
   });
 }

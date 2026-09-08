@@ -28,8 +28,7 @@ describe('textSettingSchema', () => {
     expect(messagesOf(schema, 'abc')).toStrictEqual([]);
   });
 
-  it('should not report a length error for an optional blank value', () => {
-    // Reporting both would show "too long" on an empty field the user never has to fill in.
+  it('should not report a length error for an optional blank value, which would read as "too long" on an empty field', () => {
     expect(messagesOf(textSettingSchema({ maxLength: 3, messages }), '')).toStrictEqual([]);
   });
 });

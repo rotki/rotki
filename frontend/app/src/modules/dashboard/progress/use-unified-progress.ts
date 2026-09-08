@@ -76,14 +76,19 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   const { transactionStatusSummary } = storeToRefs(historyStore);
   const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
 
+  /**
+   * What the indicator says it is doing, or an empty string when it is idle.
+   *
+   * @remarks
+   * A balance or token detection query wins over history events. Both can run at once and the
+   * indicator has one line, so the one the user started is the one it reports.
+   */
   const processingMessage = computed<string>(() => {
-    // Prioritize balance/token detection over history events
     const balanceProgressData = get(balanceProgress);
     if (balanceProgressData?.currentOperation) {
       return balanceProgressData.currentOperation;
     }
 
-    // Only show history events progress if no balance queries are running
     if (get(processing) && !get(isBalanceQuerying)) {
       const progressData = get(historyProgress);
       if (progressData && progressData.totalSteps > 0) {
@@ -97,8 +102,8 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     return '';
   });
 
+  /** How far along that work is, following the same precedence as {@link processingMessage}. */
   const processingPercentage = computed<number>(() => {
-    // Prioritize balance/token detection percentage
     const balanceProgressData = get(balanceProgress);
     if (balanceProgressData) {
       return balanceProgressData.percentage;

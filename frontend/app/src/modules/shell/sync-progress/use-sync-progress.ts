@@ -76,6 +76,18 @@ function mapLocationStatus(data: HistoryEventsQueryData): LocationProgress {
  * Events (exchange history) have medium weight (30%) as they involve external API calls.
  * Decoding has the lowest weight (20%) as it's a local operation that's typically fast.
  */
+/** Locations in the order the panel lists them: what is running, then what is still to come. */
+const STATUS_PRIORITY: Record<LocationProgress['status'], number> = {
+  [LocationStatus.QUERYING]: 0,
+  [LocationStatus.PENDING]: 1,
+  [LocationStatus.CANCELLED]: 2,
+  [LocationStatus.COMPLETE]: 3,
+};
+
+function byStatusPriority(a: LocationProgress, b: LocationProgress): number {
+  return STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
+}
+
 const PROGRESS_WEIGHTS = {
   decoding: 0.2,
   events: 0.3,
@@ -142,16 +154,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
     const statusMap = get(eventsQueryStatus);
     return Object.values(statusMap)
       .map(data => mapLocationStatus(data))
-      .sort((a, b) => {
-        // Sort by: querying first, then pending, then cancelled, then complete
-        const priority: Record<LocationProgress['status'], number> = {
-          [LocationStatus.QUERYING]: 0,
-          [LocationStatus.PENDING]: 1,
-          [LocationStatus.CANCELLED]: 2,
-          [LocationStatus.COMPLETE]: 3,
-        };
-        return priority[a.status] - priority[b.status];
-      });
+      .sort(byStatusPriority);
   });
 
   /**
