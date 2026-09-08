@@ -63,6 +63,10 @@ describe('settings/api-keys/exchange rendering', () => {
       global: {
         plugins: [pinia],
         stubs: {
+          /* Both binance children query the backend from `onMounted`, and this spec only asks
+             whether they are rendered, so stubbing them keeps the suite off the network. */
+          BinanceHistoryStartDate: true,
+          BinancePairsSelector: true,
           ExchangeInput: true,
           I18nT: { template: '<span><slot name="csvImport" /></span>' },
           // `InternalLink` renders a `RouterLink` with a scoped slot, which needs a real router.
