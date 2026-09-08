@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { SupportedAsset, Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/modules/assets/types';
-import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
-import { objectKeys } from '@/modules/core/common/data/array';
-import { uniqueObjects, uniqueStrings } from '@/modules/core/common/data/data';
 import AssetConflictRow from '@/modules/shell/app/AssetConflictRow.vue';
+import {
+  getConflictFields,
+  isDiff,
+  useAssetConflictResolution,
+} from '@/modules/shell/app/use-asset-conflict-resolution';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const { conflicts } = defineProps<{
@@ -38,102 +39,33 @@ const tableHeaders = computed<DataTableColumn<AssetUpdateConflictResult>[]>(() =
   },
 ]);
 
-const manualResolution = ref(false);
-const resolution = ref<ConflictResolution>({});
-const strategyModeForAll = ref<ConflictResolutionStrategy>();
-const resolutionLength = computed(() => Object.keys(get(resolution)).length);
-const activeStrategyForAll = computed(() => {
-  if (conflicts.length === 0 || get(resolutionLength) !== conflicts.length)
-    return { local: false, remote: false };
+const {
+  activeStrategyForAll,
+  duplicateIdentifiers,
+  enableManualResolution,
+  hasResolution,
+  manualResolution,
+  modelResolution,
+  onStrategyChange,
+  remaining,
+  setResolution,
+  valid,
+  warnDuplicate,
+} = useAssetConflictResolution(() => conflicts);
 
-  const strategy = get(strategyModeForAll);
+function resolve(): void {
+  emit('resolve', get(modelResolution));
+}
 
-  return { local: strategy === 'local', remote: strategy === 'remote' };
-});
-
-function setResolution(strategy: ConflictResolutionStrategy) {
-  const length = conflicts.length;
-  const resolutionStrategy: Writeable<ConflictResolution> = {};
-  for (let i = 0; i < length; i++) {
-    const conflict = conflicts[i];
-    resolutionStrategy[conflict.identifier] = strategy;
+/** Dismissing the bulk choices keeps what the user already has, rather than abandoning the update. */
+function cancel(): void {
+  if (get(manualResolution)) {
+    emit('cancel');
+    return;
   }
 
-  set(resolution, resolutionStrategy);
-  set(strategyModeForAll, strategy);
-}
-
-function onStrategyChange(strategy?: ConflictResolutionStrategy) {
-  if (Object.values(get(resolution)).every(strat => strat === strategy))
-    set(strategyModeForAll, strategy);
-  else set(strategyModeForAll, undefined);
-}
-
-type AssetKey = keyof SupportedAsset;
-
-function getConflictFields(conflict: AssetUpdateConflictResult): AssetKey[] {
-  function nonNull(key: AssetKey, asset: SupportedAsset): boolean {
-    return asset[key] !== null;
-  }
-  const remote = objectKeys(conflict.remote).filter(key => nonNull(key, conflict.remote));
-  const local = objectKeys(conflict.local).filter(key => nonNull(key, conflict.local));
-  return [...remote, ...local].filter(uniqueStrings);
-}
-
-function isDiff(conflict: AssetUpdateConflictResult, field: AssetKey) {
-  const localElement = conflict.local[field];
-  const remoteElement = conflict.remote[field];
-  return localElement !== remoteElement;
-}
-
-const remaining = computed(() => {
-  const resolved = get(resolutionLength);
-  return uniqueObjects(conflicts, ({ identifier }) => identifier).length - resolved;
-});
-
-const warnDuplicate = computed<boolean>(() => {
-  const identifiers = conflicts
-    .map(({ identifier }) => identifier)
-    .sort();
-  const uniqueIdentifiers = identifiers.filter(uniqueStrings);
-  return identifiers.length > uniqueIdentifiers.length;
-});
-
-const duplicateIdentifiers = computed<string[]>(() =>
-  conflicts
-    .map(({ identifier }) => identifier)
-    .sort()
-    .filter((e, i, a) => a.indexOf(e) !== i),
-);
-
-const valid = computed<boolean>(() => {
-  const identifiers = conflicts
-    .map(({ identifier }) => identifier)
-    .filter(uniqueStrings)
-    .sort();
-
-  const resolved = Object.keys(get(resolution)).sort();
-  if (identifiers.length !== resolved.length)
-    return false;
-
-  for (const [i, element] of resolved.entries()) {
-    if (element !== identifiers[i])
-      return false;
-  }
-
-  return true;
-});
-
-function resolve() {
-  emit('resolve', get(resolution));
-}
-
-function cancel() {
-  if (!get(manualResolution)) {
-    setResolution('local');
-    return resolve();
-  }
-  emit('cancel');
+  setResolution('local');
+  resolve();
 }
 
 onMounted(() => {
@@ -150,7 +82,7 @@ onMounted(() => {
       secondary: !manualResolution ? t('conflict_dialog.keep_local') : undefined,
     }"
     :layout="{ autoHeight: !manualResolution, divide: true, maxWidth: '75rem' }"
-    :persistent="resolutionLength > 0"
+    :persistent="hasResolution"
     display
     @confirm="resolve()"
     @cancel="cancel()"
@@ -273,10 +205,10 @@ onMounted(() => {
           </template>
           <template #item.keep="{ row: conflict }">
             <RuiButtonGroup
-              v-model="resolution[conflict.identifier]"
+              v-model="modelResolution[conflict.identifier]"
               color="primary"
               variant="outlined"
-              @update:model-value="onStrategyChange(resolution[conflict.identifier])"
+              @update:model-value="onStrategyChange(modelResolution[conflict.identifier])"
             >
               <RuiButton model-value="local">
                 {{ t('conflict_dialog.action.local') }}
@@ -297,7 +229,7 @@ onMounted(() => {
         data-testid="manage-conflicts"
         color="primary"
         variant="text"
-        @click="manualResolution = true"
+        @click="enableManualResolution()"
       >
         {{ t('conflict_dialog.manage') }}
       </RuiButton>
