@@ -147,6 +147,7 @@ export default {
     './src/layouts/**/*.vue',
     './src/modules/**/*.vue',
     './src/pages/**/*.vue',
+    './src/**/*.ts',
   ],
   theme: {
     container: {
@@ -198,7 +199,6 @@ export default {
     'min-h-[560px]',
     '!pt-0',
     'h-[30rem]',
-    '!bg-rui-error/15',
     '[&>span]:!text-xs',
     '!transition-none',
   ],
