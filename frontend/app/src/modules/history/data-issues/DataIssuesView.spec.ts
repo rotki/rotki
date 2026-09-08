@@ -40,6 +40,15 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
   }),
 }));
 
+/* The account pill's options are fetched from the backend when the bar is built, which this spec
+   neither stubs nor asserts on, so without this every mount made a real request. */
+vi.mock('@/modules/history/use-history-data-fetching', () => ({
+  useHistoryDataFetching: (): Record<string, unknown> => ({
+    fetchAssociatedLocations: vi.fn().mockResolvedValue(undefined),
+    fetchLocationLabels: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
 vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({
     dismiss: vi.fn(),
