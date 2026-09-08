@@ -13,12 +13,13 @@ from contextlib import contextmanager
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 
 from flask import Response, g, make_response, request, send_file
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
+from werkzeug.wsgi import ClosingIterator
 
 from rotkehlchen.accounting.export.csv import (
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
@@ -26,7 +27,10 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
-from rotkehlchen.api.rest_helpers.downloads import register_post_download_cleanup
+from rotkehlchen.api.rest_helpers.downloads import (
+    close_before_last_chunk,
+    register_post_download_cleanup,
+)
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
@@ -248,7 +252,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
@@ -2934,12 +2938,16 @@ class RestAPI:
             error_msg = f'DB backup file {filepath} is not in the user directory'
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
-        return send_file(
+        response = send_file(
             path_or_file=filepath,
             mimetype='application/octet-stream',
             as_attachment=True,
             download_name=filepath.name,
         )
+        # send_file yields bytes, unlike a generic Response which can also yield strings.
+        stream = ClosingIterator(cast('Iterable[bytes]', response.response))
+        response.response = ClosingIterator(close_before_last_chunk(stream), stream.close)
+        return response
 
     def delete_database_backups(self, files: list[Path]) -> Response:
         for filepath in files:

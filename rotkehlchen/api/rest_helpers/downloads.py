@@ -2,15 +2,37 @@ from __future__ import annotations
 
 import logging
 import tempfile
+from contextlib import closing
 from http import HTTPStatus
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from flask import Response, after_this_request, jsonify, make_response, send_file
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from werkzeug.wsgi import ClosingIterator
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def close_before_last_chunk(stream: ClosingIterator) -> Iterator[bytes]:
+    """Close a download before yielding the bytes that satisfy the client's Content-Length.
+
+    Keep one chunk pending so full and range downloads release their file before the
+    client can consider the transfer complete and request deletion of that file.
+    """
+    with closing(stream):
+        chunk = next(stream, b'')
+        for next_chunk in stream:
+            yield chunk
+            chunk = next_chunk
+    if chunk:
+        yield chunk
 
 
 def register_post_download_cleanup(temp_file: Path) -> None:
