@@ -178,10 +178,20 @@ watch(historicalBalanceProcessingCompleted, () => {
   startPromise(reloadAll());
 });
 
-onMounted(async () => {
-  // The dedicated page supersedes the overlay and pinned copies, which would show the same list twice.
+/**
+ * Closes the overlay and pinned copies of this list when it is shown as a page.
+ *
+ * @remarks
+ * The dedicated page supersedes them. Leaving them open would show the user the same issues twice,
+ * in two places that then have to be dismissed separately.
+ */
+function dismissCopiesSupersededByThisPage(): void {
   if (mainPage)
     dismissInlinePanels();
+}
+
+onMounted(async () => {
+  dismissCopiesSupersededByThisPage();
   await reloadAll();
 });
 </script>

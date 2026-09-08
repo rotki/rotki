@@ -8,8 +8,14 @@ const { isPinned, toggle: togglePanel } = usePinnedPanel(PinnedNames.BALANCE_DIV
 
 const active = isPinned;
 
+/**
+ * Opens or closes the divergence search.
+ *
+ * @remarks
+ * The search has no overlay of its own any more, so this pins the rail panel and reveals it, or
+ * closes it if it is already pinned. No payload is passed because the panel takes none.
+ */
 function toggle(): void {
-  // The divergence search lives only in the pinned rail now: pin it (and focus/reveal) or close it.
   togglePanel({});
 }
 </script>

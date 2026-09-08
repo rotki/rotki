@@ -46,12 +46,19 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { decodableTxChainsInfo, getChainName, isBtcChains, isEvmLikeChains } = useSupportedChains();
   const { fetchUndecodedTransactionsBreakdown } = useUndecodedTransactionsStatus();
 
+  /**
+   * Submits the decoding activity for one chain.
+   *
+   * @remarks
+   * The activity id is derived from the chain and the cache flag, so there is exactly one activity
+   * per chain. That is what makes liveness, cancellation and rerun per-chain: decoding another
+   * chain does not dedupe against this one, and cancelling this one leaves the others running.
+   */
   const decodeTransactionsTask = async (
     chain: string,
     ignoreCache = false,
     placement: DecodePlacement = {},
   ): Promise<void> => {
-    // One activity per chain, so liveness, cancellation and rerun are all per-chain.
     const outcome = await submitTask({
       deps: placement.deps,
       id: decodeActivityId(chain, ignoreCache),

@@ -138,15 +138,27 @@ interface UseVirtualRowsReturn {
   getCardHeight: (index: number) => number;
 }
 
+/**
+ * Flattens the grouped events into the single list the virtualizer renders.
+ *
+ * @remarks
+ * A `HistoryEventRow` that is an array is a subgroup, holding either the legs of a swap or the two
+ * sides of a matched asset movement. It carries no discriminant, so the two are told apart by
+ * inspecting the events, and each is rendered collapsed behind a single row until expanded.
+ *
+ * The three pieces of state here are all overrides of a default rather than the full picture. A
+ * group missing from `groupVisibleCounts` shows `INITIAL_EVENTS_LIMIT` rows, and a subgroup absent
+ * from the expanded sets is collapsed, so nothing has to be seeded when a group first arrives. The
+ * expanded sets are keyed by `subgroupKey`, not by identifier, because a subgroup has no id of its
+ * own.
+ */
 export function useVirtualRows(
   groups: ComputedRef<HistoryEventEntry[]>,
   eventsByGroup: ComputedRef<Record<string, HistoryEventRow[]>>,
   isSubgroupIncomplete: (events: HistoryEventEntry[]) => boolean,
 ): UseVirtualRowsReturn {
-  // Track how many items are visible per group (beyond initial limit)
   const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
   const expandedSwaps = shallowRef<Set<string>>(new Set());
-  // Track which matched movement rows are expanded (key: see `subgroupKey`)
   const expandedMovements = shallowRef<Set<string>>(new Set());
 
   const flattenedRows = computed<VirtualRow[]>(() => {
@@ -186,11 +198,9 @@ export function useVirtualRows(
       const visibleEvents = allEvents.slice(0, limit);
 
       visibleEvents.forEach((event, i) => {
-        // Handle array (subgroup - could be swap or matched movement)
         if (Array.isArray(event)) {
           const forcedOpenWithoutCollapseControls = isSubgroupIncomplete(event);
 
-          // Check if this is a matched asset movement (not a swap)
           if (isMatchedMovementGroup(event)) {
             const movementKey = subgroupKey(groupId, event);
             const isMovementExpanded = forcedOpenWithoutCollapseControls || expandedMovementsSet.has(movementKey);
