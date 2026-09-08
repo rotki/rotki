@@ -109,8 +109,20 @@ export class TagManagerPage {
     await this.search('');
   }
 
-  async visibleRowCount(): Promise<number> {
-    return this.rows().count();
+  /**
+   * Waits for the table to settle on a row count.
+   *
+   * @remarks
+   * Searching and creating both redraw the table asynchronously, so the count has to be polled for
+   * rather than read once off whatever is rendered when the assertion runs.
+   */
+  async expectVisibleRowCount(expected: number): Promise<void> {
+    await expect(this.rows()).toHaveCount(expected);
+  }
+
+  /** For a page whose size is bounded from below but not pinned, such as the last page. */
+  async expectAtLeastVisibleRows(expected: number): Promise<void> {
+    await expect.poll(async () => this.rows().count()).toBeGreaterThanOrEqual(expected);
   }
 
   async goToNextPage(): Promise<void> {

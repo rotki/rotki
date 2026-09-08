@@ -1,4 +1,3 @@
-import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { TagManagerPage } from '../../pages/tag-manager';
 
@@ -30,11 +29,11 @@ test.describe.serial('tag manager', () => {
     await page.createTag('gamma', 'third tag');
 
     await page.search('beta');
-    expect(await page.visibleRowCount()).toBe(1);
+    await page.expectVisibleRowCount(1);
     await page.expectTagVisible('beta');
 
     await page.clearSearch();
-    expect(await page.visibleRowCount()).toBeGreaterThanOrEqual(3);
+    await page.expectAtLeastVisibleRows(3);
   });
 
   test('paginates when more than 10 tags exist', async () => {
@@ -42,11 +41,11 @@ test.describe.serial('tag manager', () => {
     for (let i = 0; i < 9; i++)
       await page.createTag(`tag-${i.toString().padStart(2, '0')}`, `tag ${i}`);
 
-    expect(await page.visibleRowCount()).toBe(10);
+    await page.expectVisibleRowCount(10);
     await page.expectNextPageEnabled(true);
 
     await page.goToNextPage();
-    expect(await page.visibleRowCount()).toBeGreaterThan(0);
+    await page.expectAtLeastVisibleRows(1);
     await page.expectNextPageEnabled(false);
   });
 

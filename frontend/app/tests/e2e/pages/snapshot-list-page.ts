@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { RotkiApp } from './rotki-app';
 import { SnapshotEditorPage } from './snapshot-editor-page';
 
@@ -24,8 +24,17 @@ export class SnapshotListPage {
     await this.table.waitFor({ state: 'visible' });
   }
 
-  async hasSnapshot(timestamp: number): Promise<boolean> {
-    return this.row(timestamp).isVisible();
+  async expectSnapshot(timestamp: number): Promise<void> {
+    await expect(this.row(timestamp)).toBeVisible();
+  }
+
+  /**
+   * @remarks
+   * A delete refreshes the net-value series the list reads from, so the row goes some time after
+   * the request returns.
+   */
+  async expectNoSnapshot(timestamp: number): Promise<void> {
+    await expect(this.row(timestamp)).toHaveCount(0);
   }
 
   async openEditor(timestamp: number): Promise<SnapshotEditorPage> {

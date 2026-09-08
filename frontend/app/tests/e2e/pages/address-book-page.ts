@@ -156,7 +156,12 @@ export class AddressBookPage {
 
   /** Waits for the table to settle on a row count, which a filter changes asynchronously. */
   async expectVisibleRowCount(expected: number): Promise<void> {
-    await expect.poll(async () => this.visibleRowCount(), { timeout: TIMEOUT_MEDIUM }).toBe(expected);
+    await expect(this.rows()).toHaveCount(expected, { timeout: TIMEOUT_MEDIUM });
+  }
+
+  /** For a page whose size is bounded from below but not pinned, such as the last page. */
+  async expectAtLeastVisibleRows(expected: number): Promise<void> {
+    await expect.poll(async () => this.rows().count(), { timeout: TIMEOUT_MEDIUM }).toBeGreaterThanOrEqual(expected);
   }
 
   async expectRow(address: string, name?: string): Promise<void> {
@@ -172,10 +177,6 @@ export class AddressBookPage {
 
   async expectNoRow(address: string): Promise<void> {
     await expect(this.rowFor(address)).toHaveCount(0);
-  }
-
-  async visibleRowCount(): Promise<number> {
-    return this.rows().count();
   }
 
   async goToNextPage(): Promise<void> {

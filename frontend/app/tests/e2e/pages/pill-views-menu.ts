@@ -58,13 +58,13 @@ export class PillViewsMenu {
   }
 
   /** The muted line under a view's name, saying what it filters. */
-  async summary(name: string): Promise<string> {
-    return (await this.row(name).innerText()).trim();
+  async expectSummary(name: string, text: string): Promise<void> {
+    await expect(this.row(name)).toContainText(text);
   }
 
-  /** Whether the menu offers to save at all: with nothing filtered there is nothing to name. */
-  async canSave(): Promise<boolean> {
-    return this.page.locator('[data-testid=pill-views-save]').isEnabled();
+  /** With nothing filtered there is nothing to name, so the menu offers no save. */
+  async expectCannotSave(): Promise<void> {
+    await expect(this.page.locator('[data-testid=pill-views-save]')).toBeDisabled();
   }
 
   /** Dismisses the menu with Escape, which is the keyboard route out of it. */

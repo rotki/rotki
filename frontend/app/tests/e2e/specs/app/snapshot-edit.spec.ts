@@ -137,7 +137,7 @@ test.describe.serial('snapshot edit', () => {
   test('opens the editor from the snapshot list', async () => {
     const list = new SnapshotListPage(ctx.sharedPage);
     await list.visit();
-    expect(await list.hasSnapshot(SNAPSHOT_TIMESTAMP)).toBe(true);
+    await list.expectSnapshot(SNAPSHOT_TIMESTAMP);
 
     const editor = await list.openEditor(SNAPSHOT_TIMESTAMP);
     await editor.waitForLoaded();
@@ -148,8 +148,7 @@ test.describe.serial('snapshot edit', () => {
     await list.visit();
     await list.deleteSnapshot(SNAPSHOT_TIMESTAMP);
 
-    // The list reads the net-value series, refreshed after a delete, so no reload is needed.
-    expect(await list.hasSnapshot(SNAPSHOT_TIMESTAMP)).toBe(false);
+    await list.expectNoSnapshot(SNAPSHOT_TIMESTAMP);
   });
 });
 
