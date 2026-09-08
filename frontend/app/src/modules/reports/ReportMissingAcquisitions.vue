@@ -1,26 +1,15 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { MissingAcquisition } from '@/modules/reports/report-types';
-import { assert, type BigNumber } from '@rotki/common';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
+import { type GroupedMissingAcquisition, groupMissingAcquisitions } from '@/modules/reports/missing-acquisitions';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-
-type GroupedItems = Record<string, MissingAcquisition[]>;
-
-interface MappedGroupedItems {
-  asset: string;
-  startDate: number;
-  endDate: number;
-  totalAmountMissing: BigNumber;
-  acquisitions: MissingAcquisition[];
-}
 
 const { items, isPinned } = defineProps<{
   items: MissingAcquisition[];
@@ -39,36 +28,11 @@ const router = useRouter();
 const { ignoreAsset } = useIgnoredAssetOperations();
 const { isAssetIgnored } = useAssetsStore();
 
-const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
-  const grouped: GroupedItems = {};
+const groupedMissingAcquisitions = computed<GroupedMissingAcquisition[]>(() => groupMissingAcquisitions(items));
 
-  items.forEach((item: MissingAcquisition) => {
-    if (grouped[item.asset])
-      grouped[item.asset].push(item);
-    else grouped[item.asset] = [item];
-  });
+const expanded = ref<GroupedMissingAcquisition[]>([]);
 
-  return Object.keys(grouped).map((key) => {
-    const sortedAcquisitions = grouped[key].sort((a, b) => a.time - b.time);
-    const startDate = sortedAcquisitions[0].time;
-    const endDate = sortedAcquisitions.at(-1)?.time;
-    assert(endDate, 'end date is missing');
-
-    const totalAmountMissing = bigNumberSum(sortedAcquisitions.map(({ missingAmount }) => missingAmount));
-
-    return {
-      acquisitions: sortedAcquisitions,
-      asset: key,
-      endDate,
-      startDate,
-      totalAmountMissing,
-    };
-  });
-});
-
-const expanded = ref<MappedGroupedItems[]>([]);
-
-const sort = ref<DataTableSortData<MappedGroupedItems>>([]);
+const sort = ref<DataTableSortData<GroupedMissingAcquisition>>([]);
 const childSort = ref<DataTableSortData<MissingAcquisition>>({
   column: 'time',
   direction: 'asc' as const,
@@ -76,7 +40,7 @@ const childSort = ref<DataTableSortData<MissingAcquisition>>({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [{
+const headers = computed<DataTableColumn<GroupedMissingAcquisition>[]>(() => [{
   cellClass: '!py-0 !pr-0 !pl-3',
   class: '!py-0 !pr-0 !pl-3',
   key: 'expand',
@@ -102,7 +66,7 @@ const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [{
       label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
       sortable: true,
     },
-  ] satisfies DataTableColumn<MappedGroupedItems>[]), {
+  ] satisfies DataTableColumn<GroupedMissingAcquisition>[]), {
   align: 'end',
   key: 'total_amount_missing',
   label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
@@ -132,12 +96,12 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [{
   sortable: true,
 }]);
 
-useRememberTableSorting<MappedGroupedItems>(TableId.REPORT_MISSING_ACQUISITIONS, sort, headers);
+useRememberTableSorting<GroupedMissingAcquisition>(TableId.REPORT_MISSING_ACQUISITIONS, sort, headers);
 useRememberTableSorting<MissingAcquisition>(TableId.REPORT_MISSING_ACQUISITIONS_DETAIL, childSort, childHeaders);
 
 const isIgnored = (asset: string): boolean => isAssetIgnored(asset);
 
-const [CreateDate, ReuseDate] = createReusableTemplate<{ row: MappedGroupedItems }>();
+const [CreateDate, ReuseDate] = createReusableTemplate<{ row: GroupedMissingAcquisition }>();
 
 async function showInHistoryEvent(identifier: number) {
   emit('pin');
