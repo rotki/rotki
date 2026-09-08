@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { type BigNumber, Zero } from '@rotki/common';
 import { parseBigNumber, updateLocationBalance } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
@@ -12,11 +12,24 @@ export class DashboardPage {
     await RotkiApp.navigateTo(this.page, 'dashboard');
   }
 
+  /**
+   * Reads a settled amount out of an `AmountDisplay`.
+   *
+   * @remarks
+   * While the value is loading the component renders a skeleton and no text at all, so a bare
+   * `textContent` can return an empty string that `parseBigNumber` then reads as zero: a balance
+   * comparison against it fails for a reason that has nothing to do with the balances. Waiting for
+   * the element to hold text is the gate; the read after it is safe.
+   */
+  private async readAmount(amount: Locator): Promise<BigNumber> {
+    await expect(amount).not.toBeEmpty();
+    return parseBigNumber(await amount.textContent() ?? '0');
+  }
+
   async getOverallBalance(): Promise<BigNumber> {
-    const amountText = await this.page
-      .locator('[data-testid=overall-balances-net-worth] [data-testid=display-amount]')
-      .textContent();
-    return parseBigNumber(amountText ?? '0');
+    return this.readAmount(
+      this.page.locator('[data-testid=overall-balances-net-worth] [data-testid=display-amount]'),
+    );
   }
 
   async getBlockchainBalances(): Promise<Map<string, BigNumber>> {
@@ -32,8 +45,9 @@ export class DashboardPage {
       if (!location)
         continue;
 
-      const amountText = await element.locator('[data-testid=display-amount]').textContent();
-      updateLocationBalance(amountText ?? '0', balances, location);
+      const amount = element.locator('[data-testid=display-amount]');
+      await expect(amount).not.toBeEmpty();
+      updateLocationBalance(await amount.textContent() ?? '0', balances, location);
     }
 
     return balances;
@@ -54,8 +68,7 @@ export class DashboardPage {
       return Zero;
     }
 
-    const amountText = await displayAmount.textContent();
-    return parseBigNumber(amountText ?? '0');
+    return this.readAmount(displayAmount);
   }
 
   async getLocationBalances(): Promise<Map<string, BigNumber>> {
@@ -71,8 +84,9 @@ export class DashboardPage {
       if (!location)
         continue;
 
-      const amountText = await element.locator('[data-testid=display-amount]').textContent();
-      updateLocationBalance(amountText ?? '0', balances, location);
+      const amount = element.locator('[data-testid=display-amount]');
+      await expect(amount).not.toBeEmpty();
+      updateLocationBalance(await amount.textContent() ?? '0', balances, location);
     }
 
     return balances;

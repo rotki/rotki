@@ -33,13 +33,22 @@ export class PillFilterBar {
     return this.page.locator(`[data-testid=filter-pill][data-field="${fieldKey}"]`);
   }
 
-  async pillCount(): Promise<number> {
-    return this.page.locator('[data-testid=filter-pill]').count();
+  async expectPillCount(expected: number): Promise<void> {
+    await expect(this.page.locator('[data-testid=filter-pill]')).toHaveCount(expected, { timeout: TIMEOUT_MEDIUM });
   }
 
-  /** The value segment's text, i.e. what the pill claims is filtered. */
-  async pillValue(fieldKey: string): Promise<string> {
-    return (await this.pill(fieldKey).locator('[data-testid=filter-pill-value]').innerText()).trim();
+  /** The value segment, i.e. what the pill claims is filtered. */
+  private pillValue(fieldKey: string): Locator {
+    return this.pill(fieldKey).locator('[data-testid=filter-pill-value]');
+  }
+
+  async expectPillValue(fieldKey: string, text: string): Promise<void> {
+    await expect(this.pillValue(fieldKey)).toContainText(text, { timeout: TIMEOUT_MEDIUM });
+  }
+
+  /** The overflow counter is absent below the threshold, so its absence is what a test pins. */
+  async expectPillValueMissing(fieldKey: string, text: string): Promise<void> {
+    await expect(this.pillValue(fieldKey)).not.toContainText(text, { timeout: TIMEOUT_MEDIUM });
   }
 
   async expectPillVisible(fieldKey: string): Promise<void> {
@@ -121,9 +130,15 @@ export class PillFilterBar {
     await input.press('Enter');
   }
 
-  /** Whether the open free-text editor considers what is typed a valid value. */
-  async textValueIsValid(): Promise<boolean> {
-    return this.page.locator('[data-testid=text-valid]').isVisible();
+  /**
+   * The open free-text editor rejects what is typed.
+   *
+   * @remarks
+   * Validity is recomputed as the value changes, so the marker appears and disappears a tick behind
+   * the typing that drives it.
+   */
+  async expectTextValueInvalid(): Promise<void> {
+    await expect(this.page.locator('[data-testid=text-valid]')).toBeHidden({ timeout: TIMEOUT_MEDIUM });
   }
 
   async setRangeBound(bound: 'min' | 'max', value: string): Promise<void> {
@@ -174,15 +189,14 @@ export class PillFilterBar {
     await this.pill(fieldKey).click();
   }
 
-  /** The operator segment of a pill, absent when the field is on its default operator. */
-  async pillText(fieldKey: string): Promise<string> {
-    return (await this.pill(fieldKey).innerText()).trim();
+  /** The whole pill, including the operator segment that is absent on the default operator. */
+  async expectPillText(fieldKey: string, text: string): Promise<void> {
+    await expect(this.pill(fieldKey)).toContainText(text, { timeout: TIMEOUT_MEDIUM });
   }
 
-  /** Whether the open free-text editor is rejecting what is typed (invalid or already added). */
-  async textFieldError(): Promise<string> {
-    const editor = this.page.locator('[data-testid=text-input]');
-    return (await editor.innerText()).trim();
+  /** What the open free-text editor says about the value: invalid, or already added. */
+  async expectTextFieldError(text: string | RegExp): Promise<void> {
+    await expect(this.page.locator('[data-testid=text-input]')).toContainText(text, { timeout: TIMEOUT_MEDIUM });
   }
 
   /**
@@ -272,12 +286,12 @@ export class PillFilterBar {
     await expect(this.filterSuggestion(fieldKey, op)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }
 
-  async hasFilterSuggestion(fieldKey: string, op: string): Promise<boolean> {
-    return this.filterSuggestion(fieldKey, op).isVisible();
+  async expectNoFilterSuggestion(fieldKey: string, op: string): Promise<void> {
+    await expect(this.filterSuggestion(fieldKey, op)).toBeHidden({ timeout: TIMEOUT_MEDIUM });
   }
 
-  async filterSuggestionText(fieldKey: string, op: string): Promise<string> {
-    return (await this.filterSuggestion(fieldKey, op).innerText()).replace(/\s+/g, ' ').trim();
+  async expectFilterSuggestionText(fieldKey: string, op: string, text: string): Promise<void> {
+    await expect(this.filterSuggestion(fieldKey, op)).toContainText(text, { timeout: TIMEOUT_MEDIUM });
   }
 
   async pickFilterSuggestion(fieldKey: string, op: string): Promise<void> {
@@ -349,8 +363,8 @@ export class PillFilterBar {
   }
 
   /** The header's "1-10 of 24" summary, which is the only place the unpaged total is shown. */
-  async pageRange(): Promise<string> {
-    return (await this.page.locator('[data-testid=events-page-range]').innerText()).replace(/\s+/g, ' ').trim();
+  async expectPageRange(text: string): Promise<void> {
+    await expect(this.page.locator('[data-testid=events-page-range]')).toContainText(text, { timeout: TIMEOUT_MEDIUM });
   }
 
   async nextPage(): Promise<void> {

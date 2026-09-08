@@ -113,7 +113,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.waitForVisible();
 
     await expectRows(TOTAL_SEEDED_EVENTS);
-    expect(await bar.pillCount()).toBe(0);
+    await bar.expectPillCount(0);
   });
 
   test('adding a protocol filter from the add menu narrows the table', async () => {
@@ -123,7 +123,7 @@ test.describe.serial('history events pill filter', () => {
 
     await bar.expectPillVisible('counterparties');
     // The pill shows the protocol's display name, not its wire id.
-    expect(await bar.pillValue('counterparties')).toContain('Uniswap');
+    await bar.expectPillValue('counterparties', 'Uniswap');
 
     await expectRows(2);
     await expect.poll(() => url(), { timeout: 10000 }).toContain('counterparties=uniswap-v2');
@@ -173,7 +173,7 @@ test.describe.serial('history events pill filter', () => {
 
     // Not an address: the editor must not offer it as valid, and nothing reaches the URL.
     await bar.typeTextValue('not-an-address');
-    expect(await bar.textValueIsValid()).toBe(false);
+    await bar.expectTextValueInvalid();
     expect(url()).not.toContain('addresses=');
 
     await bar.typeTextValue(ADDRESS_ALPHA);
@@ -319,7 +319,7 @@ test.describe.serial('history events pill filter', () => {
     // Everything except the five EVM events, i.e. the one plain history event.
     await expectRows(TOTAL_SEEDED_EVENTS - pillFilterEvents.length);
     // A non-default operator is spelled out on the pill; the default `is` stays hidden.
-    expect(await bar.pillText('entryTypes')).toContain('is not');
+    await bar.expectPillText('entryTypes', 'is not');
 
     await bar.clearAll();
     await expectRows(TOTAL_SEEDED_EVENTS);
@@ -331,7 +331,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.waitForVisible();
 
     await bar.expectPillVisible('counterparties');
-    expect(await bar.pillValue('counterparties')).toContain('Curve');
+    await bar.expectPillValue('counterparties', 'Curve');
     await expectRows(2);
 
     await bar.clearAll();
@@ -379,7 +379,7 @@ test.describe.serial('history events pill filter', () => {
 
     // The second attempt is refused out loud rather than silently swallowed.
     await bar.typeTextValue(ADDRESS_ALPHA);
-    expect((await bar.textFieldError()).toLowerCase()).toContain('already added');
+    await bar.expectTextFieldError(/already added/i);
     await bar.closeEditor();
 
     await expectRows(2);
@@ -464,7 +464,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.waitForVisible();
 
     await bar.expectPillVisible('state');
-    expect(await bar.pillValue('state')).toContain('Customized');
+    await bar.expectPillValue('state', 'Customized');
 
     // Clearing has to take the param with it, or the request filters by a state nothing shows.
     await bar.clearAll();
@@ -477,7 +477,7 @@ test.describe.serial('history events pill filter', () => {
   test('a saved view stores and restores both a matcher and a param pill', async () => {
     await views.open();
     // Nothing is filtered yet, so there is nothing to name.
-    expect(await views.canSave()).toBe(false);
+    await views.expectCannotSave();
     await views.close();
 
     await bar.addField('location');
@@ -491,7 +491,7 @@ test.describe.serial('history events pill filter', () => {
     await views.open();
     await views.save('Alpha on mainnet');
     // The row says what it filters, so a view is recognisable by more than the name given to it.
-    expect(await views.summary('Alpha on mainnet')).toContain('Ethereum');
+    await views.expectSummary('Alpha on mainnet', 'Ethereum');
     await views.close();
 
     await bar.clearAll();
@@ -571,7 +571,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.keyboard.pressFocused('Enter');
 
     await bar.expectPillVisible('location');
-    expect(await bar.pillValue('location')).toContain('Kraken');
+    await bar.expectPillValue('location', 'Kraken');
     await expectRows(1);
     await expect.poll(() => url(), { timeout: 10000 }).toContain('location=kraken');
 
@@ -590,7 +590,7 @@ test.describe.serial('history events pill filter', () => {
     // Ambiguous on purpose: `100` cannot say which bound is meant, so both are offered.
     await bar.expectFilterSuggestion('amount', 'gt');
     await bar.expectFilterSuggestion('amount', 'lt');
-    expect(await bar.filterSuggestionText('amount', 'gt')).toContain('greater than 100');
+    await bar.expectFilterSuggestionText('amount', 'gt', 'greater than 100');
 
     await bar.pickFilterSuggestion('amount', 'gt');
 
@@ -638,7 +638,7 @@ test.describe.serial('history events pill filter', () => {
     await bar.narrow('100');
 
     await bar.expectFilterSuggestion('amount', 'gt');
-    expect(await bar.hasFilterSuggestion('period', 'after')).toBe(false);
+    await bar.expectNoFilterSuggestion('period', 'after');
 
     // Escape both clears the input and closes the popover, so the next test starts from a bare bar.
     await bar.pressInNarrow('Escape');
@@ -720,7 +720,7 @@ test.describe.serial('history events pill filter', () => {
     // "less than" keeps only the upper bound, so the lower one must leave the URL with it.
     await expect.poll(() => url(), { timeout: 10000 }).not.toContain('minAmount=');
     expect(url()).toContain('maxAmount=100');
-    expect(await bar.pillText('amount')).toContain('less than');
+    await bar.expectPillText('amount', 'less than');
 
     await bar.dismissEditor();
     await bar.clearAll();
@@ -813,13 +813,13 @@ test.describe.serial('history events pill filter', () => {
       await bar.selectValue(value, search);
     await bar.closeEditor('counterparties');
 
-    expect(await bar.pillValue('counterparties')).not.toContain('+');
+    await bar.expectPillValueMissing('counterparties', '+');
 
     await bar.openPillEditor('counterparties');
     await bar.selectValue('aave-v3', 'aave');
     await bar.closeEditor('counterparties');
 
-    expect(await bar.pillValue('counterparties')).toContain('+1');
+    await bar.expectPillValue('counterparties', '+1');
 
     await bar.clearAll();
     await expectRows(TOTAL_SEEDED_EVENTS);
@@ -876,12 +876,12 @@ test.describe.serial('history events pill filter paging', () => {
 
     await expectRows(PAGE_SIZE);
     // The header is the only place the unpaged total appears.
-    expect(await bar.pageRange()).toContain(String(PAGED_TOTAL));
+    await bar.expectPageRange(String(PAGED_TOTAL));
   });
 
   test('applying a filter from a later page returns to the first', async () => {
     await bar.nextPage();
-    await expect.poll(async () => bar.pageRange(), { timeout: 10000 }).toContain('11-20');
+    await bar.expectPageRange('11-20');
 
     await bar.addField('location');
     await bar.selectValue('kraken');
@@ -889,19 +889,18 @@ test.describe.serial('history events pill filter paging', () => {
 
     // Without a page reset the filtered rows would sit on a page that no longer exists.
     await expectRows(PAGED_KRAKEN);
-    expect(await bar.pageRange()).toContain(`1-${PAGED_KRAKEN}`);
+    await bar.expectPageRange(`1-${PAGED_KRAKEN}`);
   });
 
   test('a filter survives sorting by date', async () => {
     /** Newest first by default, so the last kraken event leads. */
-    const firstNote = async (): Promise<string | null> =>
-      ctx.sharedPage.locator(ROW).first().locator('[data-testid=event-notes]').textContent();
-    expect(await firstNote()).toContain(`paged ${PAGED_KRAKEN - 1}`);
+    const firstNote = ctx.sharedPage.locator(ROW).first().locator('[data-testid=event-notes]');
+    await expect(firstNote).toContainText(`paged ${PAGED_KRAKEN - 1}`);
 
     await bar.toggleDateSort();
 
     // The sort has to actually reverse the rows, or this test would pass on a dead button.
-    await expect.poll(firstNote, { timeout: 10000 }).toContain('paged 0');
+    await expect(firstNote).toContainText('paged 0', { timeout: 10000 });
     // And the filter has to still be applied on the other side of it.
     await bar.expectPillVisible('location');
     await expectRows(PAGED_KRAKEN);
@@ -958,7 +957,7 @@ test.describe.serial('history events pill filter across chains', () => {
       await expect(ctx.sharedPage.locator(ROW).first().locator('[data-testid=event-notes]'))
         .toContainText(expected);
       // Both pills read "USDC", so the label alone cannot tell which is applied.
-      expect(await bar.pillValue('asset')).toContain('USDC');
+      await bar.expectPillValue('asset', 'USDC');
     }
   });
 });

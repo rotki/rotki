@@ -1,4 +1,3 @@
-import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { AddressBookPage } from '../../pages/address-book-page';
 
@@ -63,11 +62,11 @@ test.describe.serial('address book', () => {
       await page.addEntry({ address: addr, name });
     }
 
-    expect(await page.visibleRowCount()).toBe(10);
+    await page.expectVisibleRowCount(10);
     await page.expectNextPageEnabled(true);
 
     await page.goToNextPage();
-    expect(await page.visibleRowCount()).toBeGreaterThan(0);
+    await page.expectAtLeastVisibleRows(1);
     await page.expectNextPageEnabled(false);
   });
 
