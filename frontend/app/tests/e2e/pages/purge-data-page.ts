@@ -19,10 +19,14 @@ export class PurgeDataPage {
   }
 
   /**
-   * Picks an option from a `RuiAutoComplete`-backed control identified by its
-   * test id. Selection-by-id (`#item-<key>`) is preferred for stability;
-   * if the option for the typed text isn't rendered yet (debounced search,
-   * lazy lists, etc.) we fall back to typing then clicking the first match.
+   * Picks an option out of a `RuiAutoComplete`-backed control.
+   *
+   * @remarks
+   * A short list renders every option up front; a long or debounced one renders the wanted option
+   * only once the query narrows it, so a miss means "type to filter" rather than "give up". Both
+   * routes end on the same exact-text option: clicking the first rendered one instead would pick a
+   * different option whenever the search was merely slow, and the purge would run on the wrong
+   * source.
    */
   private async selectOption(testId: string, text: string): Promise<void> {
     const select = this.page.getByTestId(testId);
@@ -33,14 +37,12 @@ export class PurgeDataPage {
     const byText = menu.getByText(text, { exact: true }).first();
     try {
       await byText.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-      await byText.click();
     }
     catch {
       await this.page.keyboard.type(text);
-      const firstOption = menu.locator('button[type="button"]').first();
-      await firstOption.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-      await firstOption.click();
+      await byText.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
     }
+    await byText.click();
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_SHORT });
   }
 

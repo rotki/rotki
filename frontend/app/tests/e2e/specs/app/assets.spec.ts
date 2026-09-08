@@ -166,7 +166,7 @@ test.describe('assets', () => {
       await customPage.expectRow(assetName);
 
       await pricePage.visit();
-      await pricePage.addPrice(assetName, 'USD', '4242');
+      await pricePage.addPrice(assetName, 'USD', '4242', 'name');
       await pricePage.expectRowWithValue('4,242');
     });
 
