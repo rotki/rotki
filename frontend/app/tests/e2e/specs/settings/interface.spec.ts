@@ -1,4 +1,3 @@
-import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { InterfaceSettingsPage } from '../../pages/interface-settings-page';
 
@@ -28,25 +27,25 @@ test.describe.serial('settings::interface', () => {
 
   test('rejects an explorer url that is not https', async () => {
     await page.setExplorerUrl('address', 'http://example.com/address/');
-    expect(await page.explorerMessages('address')).toContain('Only https urls are allowed');
-    expect(await page.explorerSaveDisabled('address')).toBe(true);
+    await page.expectExplorerMessage('address', 'Only https urls are allowed');
+    await page.expectSaveDisabled('address');
   });
 
   // 'https://' fails only the url rule, so it covers that check rather than repeating the one above.
   test('rejects an explorer url that is only a scheme', async () => {
     await page.setExplorerUrl('address', 'https://');
-    expect(await page.explorerMessages('address')).not.toBe('');
-    expect(await page.explorerSaveDisabled('address')).toBe(true);
+    await page.expectExplorerRejected('address');
+    await page.expectSaveDisabled('address');
   });
 
   test('saves a valid explorer url and keeps it after re-login', async () => {
     await page.setExplorerUrl('address', explorerUrl);
-    expect(await page.explorerSaveDisabled('address')).toBe(false);
+    await page.expectSaveEnabled('address');
     await page.saveExplorerUrl('address');
 
     // Navigating re-reads the in-memory repo, so only a fresh login proves what was persisted.
     await ctx.app.relogin(ctx.username);
     await page.visit();
-    expect(await page.explorerValue('address')).toBe(explorerUrl);
+    await page.expectExplorerValue('address', explorerUrl);
   });
 });
