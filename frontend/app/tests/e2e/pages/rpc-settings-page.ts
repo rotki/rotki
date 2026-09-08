@@ -90,8 +90,14 @@ export class RpcSettingsPage {
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached' });
   }
 
+  /**
+   * Asserts that a node with this name is listed, carrying this endpoint.
+   *
+   * @remarks
+   * The row is found by filtering the node list on the name rather than by position, so the
+   * assertion still names the right node when the list is reordered or another node is added.
+   */
   async confirmRPCAddition(name: string, endpoint: string): Promise<void> {
-    // Use filter to find the specific node row
     const nodeRow = this.page.locator('[data-testid=ethereum-node]').filter({ hasText: name });
     await expect(nodeRow).toBeVisible();
     await expect(nodeRow).toContainText(endpoint);

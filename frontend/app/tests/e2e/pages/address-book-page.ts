@@ -46,8 +46,14 @@ export class AddressBookPage {
     return this.table().locator('tbody tr[data-id="row"]');
   }
 
+  /**
+   * The row for an address or a name.
+   *
+   * @remarks
+   * The table renders an address truncated, so only its leading hex is on the page and matching
+   * the full string would find nothing. A name is rendered whole and is matched as given.
+   */
   rowFor(addressOrName: string) {
-    // For 0x... addresses match by the leading hex, otherwise match the full text.
     const needle = addressOrName.startsWith('0x') ? addressOrName.slice(0, 12) : addressOrName;
     return this.rows().filter({ hasText: needle });
   }

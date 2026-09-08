@@ -18,8 +18,8 @@ export class SnapshotListPage {
     return this.table.locator('tr', { has: this.page.locator(`[data-testid=snapshot-list-row][data-key="${timestamp}"]`) });
   }
 
+  /** Opens the snapshot list, a submenu leaf under the Statistics group. */
   async visit(): Promise<void> {
-    // Snapshots is a submenu leaf under the Statistics group.
     await RotkiApp.navigateTo(this.page, 'statistics', 'statistics-snapshots');
     await this.table.waitFor({ state: 'visible' });
   }

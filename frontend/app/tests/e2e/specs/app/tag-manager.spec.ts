@@ -1,6 +1,8 @@
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { TagManagerPage } from '../../pages/tag-manager';
 
+const DEFAULT_PAGE_SIZE = 10;
+
 test.describe.serial('tag manager', () => {
   let ctx: SharedTestContext;
   let page: TagManagerPage;
@@ -36,12 +38,11 @@ test.describe.serial('tag manager', () => {
     await page.expectAtLeastVisibleRows(3);
   });
 
-  test('paginates when more than 10 tags exist', async () => {
-    // Four tags exist by now, so nine more pass the default page size of 10.
-    for (let i = 0; i < 9; i++)
+  test('paginates once the tags from this suite outgrow a page', async () => {
+    for (let i = 0; i < DEFAULT_PAGE_SIZE; i++)
       await page.createTag(`tag-${i.toString().padStart(2, '0')}`, `tag ${i}`);
 
-    await page.expectVisibleRowCount(10);
+    await page.expectVisibleRowCount(DEFAULT_PAGE_SIZE);
     await page.expectNextPageEnabled(true);
 
     await page.goToNextPage();

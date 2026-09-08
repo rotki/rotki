@@ -9,8 +9,15 @@ export class ApiKeysPage {
     await RotkiApp.navigateTo(this.page, 'api-keys', submenu);
   }
 
+  /**
+   * Adds an exchange through the form, against mocked endpoints.
+   *
+   * @remarks
+   * Every route is registered before the form is touched. Playwright applies a route only to
+   * requests made after it is installed, so a mock added later lets the real request through and
+   * the assertion on the captured payload then reads an empty object.
+   */
   async addExchange(apiKey: string, apiSecret: string, exchange: string, name: string): Promise<void> {
-    // Set up route mocks BEFORE triggering any requests
     let capturedRequest: { api_key?: string; api_secret?: string; name?: string; location?: string } = {};
 
     await this.page.route('**/api/1/exchanges', async (route) => {

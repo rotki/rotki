@@ -42,8 +42,7 @@ test.describe.serial('settings::chains', () => {
     await chainsPage.verifyTabExists('default');
   });
 
-  test('can add and remove a chain-specific indexer order', async () => {
-    // First ensure the chain is not configured by removing it if it exists
+  test('can add and remove a chain-specific indexer order, freeing a slot first when all chains are configured', async () => {
     const isDisabled = await chainsPage.isAddChainButtonDisabled();
     if (isDisabled) {
       // All chains are configured, remove one first

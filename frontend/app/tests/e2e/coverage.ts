@@ -24,9 +24,11 @@ const EXCLUDED_PATHS = [
 
 /**
  * Check if a filename looks like a bundled/hashed file (e.g., utils-D1WHamuv.js)
+ *
+ * @remarks
+ * Matches `Name-[hash].js` or `.css`, where the hash is eight alphanumeric characters.
  */
 function isBundledFile(pathname: string): boolean {
-  // `Name-[hash].js` or `.css`, where the hash is eight alphanumeric characters.
   return /^\/[^/]+-\w{8}\.(js|css)$/.test(pathname);
 }
 

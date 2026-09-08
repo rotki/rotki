@@ -1,6 +1,8 @@
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { AddressBookPage } from '../../pages/address-book-page';
 
+const DEFAULT_PAGE_SIZE = 10;
+
 const ADDR_PRIVATE = '0x1111111111111111111111111111111111111111';
 
 test.describe.serial('address book', () => {
@@ -53,16 +55,15 @@ test.describe.serial('address book', () => {
     await page.cancelDialog();
   });
 
-  test('paginates when more than 10 entries exist', async () => {
-    // Default page size is 10, so 11 entries guarantees a second page.
-    for (let i = 0; i < 11; i++) {
+  test('paginates once the entries outgrow a page', async () => {
+    for (let i = 0; i < DEFAULT_PAGE_SIZE + 1; i++) {
       // Encode i in the address prefix so each entry has a unique value.
       const addr = `0x${i.toString(16).padStart(2, '0')}${'b'.repeat(38)}`;
       const name = `entry-${i.toString().padStart(2, '0')}`;
       await page.addEntry({ address: addr, name });
     }
 
-    await page.expectVisibleRowCount(10);
+    await page.expectVisibleRowCount(DEFAULT_PAGE_SIZE);
     await page.expectNextPageEnabled(true);
 
     await page.goToNextPage();

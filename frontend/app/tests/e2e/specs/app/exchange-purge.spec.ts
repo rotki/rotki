@@ -11,10 +11,15 @@ import { PurgeDataPage } from '../../pages/purge-data-page';
 
 const LOCATION = 'kraken';
 
+/**
+ * Seeds one row of every purgeable category for the exchange under test.
+ *
+ * @remarks
+ * The base timestamp is a minute in the past, so the purge endpoint's `to_timestamp = now()`
+ * filter takes the rows in. Each helper stamps its `unique_id` from that timestamp, which is what
+ * lets a reseed after a purge produce fresh rows rather than collide with the purged ones.
+ */
 async function seedAllCategories(request: Parameters<typeof apiSeedSwap>[0]): Promise<void> {
-  /* The ids in each helper's `unique_id` are stamped from the timestamp, so every reseed makes
-     fresh rows even after a purge. In the past, so the endpoint's `to_timestamp = now()` filter
-     includes them. */
   const base = Date.now() - 60_000;
   await apiSeedSwap(request, { location: LOCATION, sequenceIndex: 0, timestampMs: base });
   await apiSeedAssetMovement(request, { location: LOCATION, sequenceIndex: 0, timestampMs: base + 1 });
@@ -35,10 +40,21 @@ test.describe.serial('exchange purge by category', () => {
     await cleanupContext(ctx);
   });
 
-  test.beforeEach(async ({ request }) => {
-    // Purging here starts every test from a known set and proves nothing was left behind.
+  /**
+   * Returns the exchange to the full seeded set, whatever the previous test purged.
+   *
+   * @remarks
+   * The purge runs before the reseed rather than after each test, so a test that failed partway
+   * cannot leave rows behind that the next one would then count. Every test therefore starts from
+   * the same known set, and the counts it asserts are the seeding's, not the previous test's.
+   */
+  async function resetToSeededState(request: Parameters<typeof apiSeedSwap>[0]): Promise<void> {
     await apiPurgeExchangeData(request, LOCATION, 'all');
     await seedAllCategories(request);
+  }
+
+  test.beforeEach(async ({ request }) => {
+    await resetToSeededState(request);
   });
 
   // A swap expands into spend and receive, so a trade counts two; the others stay 1:1.

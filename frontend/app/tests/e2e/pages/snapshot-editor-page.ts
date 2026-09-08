@@ -76,8 +76,14 @@ export class SnapshotEditorPage {
     await dialog.waitFor({ state: 'hidden' });
   }
 
+  /**
+   * Edits the balance row for an asset, setting a new amount.
+   *
+   * @remarks
+   * The row must also hold an edit control, not just the asset text. The "USD Value" header
+   * carries asset symbols of its own, so filtering on text alone matches the header first.
+   */
   async editBalanceRow(asset: string, newAmount: string): Promise<void> {
-    // The "USD Value" header carries asset symbols too, so a bare hasText can match it.
     const row = this.balancesTable
       .locator('tr', { hasText: asset })
       .filter({ has: this.page.locator('[data-testid=row-edit]') })

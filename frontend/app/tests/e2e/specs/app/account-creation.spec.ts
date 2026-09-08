@@ -47,8 +47,7 @@ test.describe('accounts', () => {
         await app.logout();
       });
 
-      test('login', async () => {
-        // After logout we're already on the login page with animations disabled
+      test('login again without navigating, since the logout above lands on the login page', async () => {
         await app.login(username);
         await app.checkGetPremiumButton();
         await app.logout();
