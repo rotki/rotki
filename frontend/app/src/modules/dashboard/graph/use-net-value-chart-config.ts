@@ -163,6 +163,12 @@ export function useNetValueChartConfig(
     series: createSeriesConfig(),
     toolbox: createToolboxConfig(),
     tooltip: {
+      /**
+       * The axis trigger is kept for the `updateAxisPointer` event that drives our own
+       * `NewGraphTooltipWrapper`; `showContent` suppresses echarts' built-in tooltip element, which
+       * would otherwise render on top of it.
+       */
+      showContent: false,
       trigger: 'axis',
     },
     ...createAxisConfig(),
