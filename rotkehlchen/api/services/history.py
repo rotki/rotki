@@ -249,13 +249,13 @@ class HistoryService:
 
         file_path = response['result']['file_path']
         try:
-            register_post_download_cleanup(Path(file_path))
-            return send_file(
+            download_response = send_file(
                 path_or_file=file_path,
                 mimetype='application/zip',
                 as_attachment=True,
                 download_name='report.zip',
             )
+            return register_post_download_cleanup(download_response, Path(file_path))
         except FileNotFoundError:
             return {
                 'result': None,

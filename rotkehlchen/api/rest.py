@@ -26,7 +26,10 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
-from rotkehlchen.api.rest_helpers.downloads import register_post_download_cleanup
+from rotkehlchen.api.rest_helpers.downloads import (
+    close_stream_before_last_chunk,
+    register_post_download_cleanup,
+)
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
@@ -2934,12 +2937,13 @@ class RestAPI:
             error_msg = f'DB backup file {filepath} is not in the user directory'
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
-        return send_file(
+        response = send_file(
             path_or_file=filepath,
             mimetype='application/octet-stream',
             as_attachment=True,
             download_name=filepath.name,
         )
+        return close_stream_before_last_chunk(response)
 
     def delete_database_backups(self, files: list[Path]) -> Response:
         for filepath in files:
@@ -2950,7 +2954,13 @@ class RestAPI:
                     status_code=HTTPStatus.CONFLICT,
                 )
         for filepath in files:
-            filepath.unlink()  # should not raise file not found as marshmallow should check
+            try:
+                filepath.unlink()
+            except OSError as e:
+                return api_response(
+                    wrap_in_fail_result(f'Could not delete DB backup {filepath}: {e!s}'),
+                    status_code=HTTPStatus.CONFLICT,
+                )
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_pnl_report_data(self, report_id: int) -> Response:
@@ -3419,13 +3429,13 @@ class RestAPI:
 
         if directory_path is None:
             try:
-                register_post_download_cleanup(exportpath)
-                return send_file(
+                response = send_file(
                     path_or_file=exportpath,
                     mimetype='text/csv',
                     as_attachment=True,
                     download_name=FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
                 )
+                return register_post_download_cleanup(response, exportpath)
             except FileNotFoundError:
                 return api_response(
                     wrap_in_fail_result('No file was found'),
