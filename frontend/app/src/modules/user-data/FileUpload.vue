@@ -2,6 +2,7 @@
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
 import { size } from '@/modules/core/common/data/data';
 import FadeTransition from '@/modules/shell/components/FadeTransition.vue';
+import { checkFiles, formatFileFilter, useFileUploadFeedback } from '@/modules/user-data/use-file-upload';
 
 const file = defineModel<File | undefined>({ required: true });
 
@@ -25,32 +26,8 @@ const emit = defineEmits<{
 
 const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 
-const error = ref('');
 const select = useTemplateRef<HTMLInputElement>('select');
 const { t } = useI18n({ useScope: 'global' });
-
-/**
- * Whether a picked file satisfies the `accept` attribute.
- *
- * @remarks
- * `acceptString` is an `accept` attribute value, comma separated. A file matches on either its
- * extension or its MIME type, since a browser reports no type for some files and checking either
- * alone rejects files the user is allowed to pick. `image/*` is the one wildcard handled; other
- * `type/*` forms are compared literally and will not match.
- */
-function isValidFile(file: File, acceptString: string): boolean {
-  const fileName = file.name;
-  const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
-  const fileType = file.type;
-
-  const acceptTypes = acceptString.split(',').map(type => type.trim().toLowerCase());
-
-  for (const type of acceptTypes) {
-    if (type === fileExtension || type === fileType || (type === 'image/*' && fileType.startsWith('image/')))
-      return true;
-  }
-  return false;
-}
 
 function onDrop(files: File[] | null) {
   if (!files || files.length === 0)
@@ -73,38 +50,11 @@ function onSelect(event: Event) {
   else selected(target.files[0]);
 }
 
-function clearTimeoutHandler(timeout: Ref<NodeJS.Timeout | undefined>) {
-  const timeoutVal = get(timeout);
-  if (timeoutVal) {
-    clearTimeout(timeoutVal);
-    set(timeout, undefined);
-  }
-}
-
-const errorTimeout = ref<NodeJS.Timeout>();
-const uploadedTimeout = ref<NodeJS.Timeout>();
-
-function onError(message: string) {
-  if (!message) {
-    clearError();
-    return;
-  }
-
-  clearTimeoutHandler(errorTimeout);
-  clearTimeoutHandler(uploadedTimeout);
-
-  removeFile();
-  set(error, message);
-  const timeout = setTimeout(() => {
-    clearError();
-  }, 4000);
-  set(errorTimeout, timeout);
-}
-
-function clearError() {
-  set(error, '');
-  emit('update:error-message', '');
-}
+const { acknowledgeUpload, clearError, error, showError } = useFileUploadFeedback({
+  onErrorCleared: () => emit('update:error-message', ''),
+  onUploadedCleared: () => updateUploaded(false),
+  removeFile: () => removeFile(),
+});
 
 function removeFile() {
   const inputFile = get(select);
@@ -115,21 +65,16 @@ function removeFile() {
 }
 
 function check(files: File[] | FileList) {
-  if (files.length !== 1) {
-    onError(t('file_upload.many_files_selected'));
+  const result = checkFiles(files, fileFilter);
+
+  if (result.valid) {
+    selected(result.file);
     return;
   }
 
-  if (!isValidFile(files[0], fileFilter)) {
-    onError(
-      t('file_upload.only_files', {
-        fileFilter,
-      }),
-    );
-    return;
-  }
-
-  selected(files[0]);
+  showError(result.reason === 'many-files'
+    ? t('file_upload.many_files_selected')
+    : t('file_upload.only_files', { fileFilter }));
 }
 
 function selected(selected: File | null) {
@@ -146,42 +91,15 @@ function clickSelect() {
   get(select)?.click();
 }
 
-watch(() => uploaded, (uploaded) => {
-  clearTimeoutHandler(errorTimeout);
-  clearTimeoutHandler(uploadedTimeout);
+watch(() => uploaded, acknowledgeUpload);
 
-  if (!uploaded)
-    return;
-
-  removeFile();
-
-  const timeout = setTimeout(() => {
-    updateUploaded(false);
-  }, 4000);
-
-  set(uploadedTimeout, timeout);
-});
-
-watch(() => errorMessage, message => onError(message));
+watch(() => errorMessage, message => showError(message));
 
 watch(file, (file) => {
   if (!file) {
     removeFile();
   }
 });
-
-function formatFileFilter(fileFilter: string) {
-  return fileFilter
-    .split(',')
-    .map((item) => {
-      let text = item.trim();
-      if (text.startsWith('.'))
-        text = text.slice(1);
-
-      return text;
-    })
-    .join(', ');
-}
 
 defineExpose({
   removeFile,
