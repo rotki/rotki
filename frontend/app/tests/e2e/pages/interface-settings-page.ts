@@ -4,6 +4,8 @@ import { confirmInlineSuccess, openSettingsTab } from '../helpers/utils';
 
 const SECTION_IDS = ['interface_only', 'graph', 'alias', 'newly_detected_tokens', 'theme'] as const;
 
+type ExplorerField = 'address' | 'tx' | 'block' | 'token';
+
 export class InterfaceSettingsPage {
   constructor(private readonly page: Page) {}
 
@@ -21,7 +23,7 @@ export class InterfaceSettingsPage {
    * The explorer field. Its save button is a sibling of the field rather than a child, so it is
    * reached relative to the field instead of carrying a test id of its own.
    */
-  private explorer(field: 'address' | 'tx' | 'block' | 'token') {
+  private explorer(field: ExplorerField) {
     const input = this.page.locator(`[data-testid=explorer-${field}-input]`);
     return {
       input,
@@ -31,7 +33,7 @@ export class InterfaceSettingsPage {
     };
   }
 
-  async setExplorerUrl(field: 'address' | 'tx' | 'block' | 'token', url: string): Promise<void> {
+  async setExplorerUrl(field: ExplorerField, url: string): Promise<void> {
     const { textbox } = this.explorer(field);
     await textbox.scrollIntoViewIfNeeded();
     await textbox.clear();
@@ -39,20 +41,33 @@ export class InterfaceSettingsPage {
     await textbox.blur();
   }
 
-  async saveExplorerUrl(field: 'address' | 'tx' | 'block' | 'token'): Promise<void> {
+  async saveExplorerUrl(field: ExplorerField): Promise<void> {
     await this.explorer(field).save.click();
   }
 
-  async explorerMessages(field: 'address' | 'tx' | 'block' | 'token'): Promise<string> {
-    return this.explorer(field).messages.innerText();
+  /**
+   * Validation runs off the field's own reactivity, a tick or more after `blur` returns, so every
+   * assertion here has to poll rather than sample the DOM once.
+   */
+  async expectExplorerMessage(field: ExplorerField, text: string): Promise<void> {
+    await expect(this.explorer(field).messages).toContainText(text);
   }
 
-  async explorerSaveDisabled(field: 'address' | 'tx' | 'block' | 'token'): Promise<boolean> {
-    return this.explorer(field).save.isDisabled();
+  /** For a rule whose wording is not what the test is pinning: some complaint, not a specific one. */
+  async expectExplorerRejected(field: ExplorerField): Promise<void> {
+    await expect(this.explorer(field).messages).not.toBeEmpty();
   }
 
-  async explorerValue(field: 'address' | 'tx' | 'block' | 'token'): Promise<string> {
-    return this.explorer(field).textbox.inputValue();
+  async expectSaveDisabled(field: ExplorerField): Promise<void> {
+    await expect(this.explorer(field).save).toBeDisabled();
+  }
+
+  async expectSaveEnabled(field: ExplorerField): Promise<void> {
+    await expect(this.explorer(field).save).toBeEnabled();
+  }
+
+  async expectExplorerValue(field: ExplorerField, url: string): Promise<void> {
+    await expect(this.explorer(field).textbox).toHaveValue(url);
   }
 
   async toggleAnimations(): Promise<void> {
