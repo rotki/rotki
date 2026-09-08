@@ -88,8 +88,7 @@ describe('pendingTaskNode', () => {
     expect(wrapper.text()).toContain('0xbb');
   });
 
-  it('should show a parent its subtree tally in leaves', () => {
-    // One of the two accounts is done: the job is 1 of 2, not 1 of 3 activities.
+  it('should tally a parent over its leaves, not over every activity in the subtree', () => {
     expect(createWrapper().text()).toContain('pending_task.steps::1, 2');
   });
 

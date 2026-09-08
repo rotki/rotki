@@ -38,12 +38,17 @@ export function attemptPolyfillResizeObserver(): void {
       this.observer.disconnect();
     }
 
+    /**
+     * Queues one pending call per callback, flushed together on the next frame.
+     *
+     * @remarks
+     * Replacing this callback's queue entry rather than appending is what enforces the batch: only
+     * the latest entries for a given callback survive to the flush, so a burst of resizes cannot
+     * re-enter the observer and raise the loop-limit error this polyfill exists to avoid.
+     */
     check(entries: ResizeObserverEntry[]): void {
-      // remove previous invocations of "self"
       queue = queue.filter(x => x.cb !== this.callback);
-      // put a new one
       queue.push({ args: entries, cb: this.callback });
-      // trigger update
       queueFlushTimeout ??= requestAnimationFrame(() => {
         queueFlushTimeout = undefined;
         const q = queue;

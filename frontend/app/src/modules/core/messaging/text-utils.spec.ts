@@ -151,8 +151,7 @@ describe('text-utils', () => {
     expect(isValidBchAddress('bitcoin:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a')).toBe(false); // Wrong prefix
   });
 
-  it('should validate Solana addresses', () => {
-    // Valid Solana addresses (base58 encoded, 32-44 characters)
+  it('should accept only base58 Solana addresses of 32 to 44 characters', () => {
     expect(isValidSolanaAddress('7EqQdEULxWcraVx3mXKFjc84LhCkMGZCkRuDpvcMwJeK')).toBe(true);
     expect(isValidSolanaAddress('DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKK')).toBe(true);
     expect(isValidSolanaAddress('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')).toBe(true);
@@ -207,8 +206,7 @@ describe('text-utils', () => {
     expect(isValidSs58Address(undefined)).toBe(false);
   });
 
-  it('should validate EVM transaction hashes', () => {
-    // Valid EVM tx hashes (0x followed by 64 hex characters)
+  it('should accept only EVM transaction hashes of 0x plus 64 hex characters', () => {
     expect(isValidEvmTxHash('0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060')).toBe(true);
     expect(isValidEvmTxHash('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef')).toBe(true);
     expect(isValidEvmTxHash('0xABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890')).toBe(true);
@@ -221,8 +219,7 @@ describe('text-utils', () => {
     expect(isValidEvmTxHash('0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060G')).toBe(false); // Invalid hex
   });
 
-  it('should validate Bitcoin transaction hashes', () => {
-    // Valid BTC tx hashes (64 hex characters, no 0x prefix)
+  it('should accept only Bitcoin transaction hashes of 64 hex characters with no 0x prefix', () => {
     expect(isValidBtcTxHash('5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060')).toBe(true);
     expect(isValidBtcTxHash('1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef')).toBe(true);
     expect(isValidBtcTxHash('ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890')).toBe(true);
@@ -234,8 +231,7 @@ describe('text-utils', () => {
     expect(isValidBtcTxHash('5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060G')).toBe(false); // Invalid hex
   });
 
-  it('should validate Solana signatures', () => {
-    // Valid Solana signatures (base58, 87-88 characters, decodes to 64 bytes)
+  it('should accept only base58 Solana signatures of 87 to 88 characters decoding to 64 bytes', () => {
     expect(isValidSolanaSignature('5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW')).toBe(true);
     expect(isValidSolanaSignature('3nGJm9dqGhfyJzkLhL7KMQqGGQqyL5aLqWJNF8JvqSDqWqCRAkVVdDhTZmTHJHVQtDk3LLwYvBSVCH9Tg4CKnWqA')).toBe(true);
 
@@ -300,8 +296,7 @@ describe('text-utils', () => {
   });
 
   it('should decode HTML entities', () => {
-    // Numeric rather than `&bull;`: happy-dom decodes only the basic named entities.
-    expect(decodeHtmlEntities('&#8226;')).toBe('\u2022');
+    expect(decodeHtmlEntities('&#8226;')).toBe('\u2022'); // Numeric, since happy-dom decodes only the basic named entities
     expect(decodeHtmlEntities('&lt;div&gt;')).toBe('<div>');
     expect(decodeHtmlEntities('&amp;')).toBe('&');
     expect(decodeHtmlEntities('&quot;')).toBe('"');

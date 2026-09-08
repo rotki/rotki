@@ -282,9 +282,12 @@ export function createItemCache<T>(
   /**
    * Ensures the given key is queued for fetching if it's not already cached or pending.
    * Refreshes the cache expiry for entries that haven't expired yet.
+   *
+   * @remarks
+   * Everything read here is a plain record or Set rather than a reactive source, so `resolve`
+   * subscribes to a key only through `track` and not incidentally through this bookkeeping.
    */
   const ensureQueued = (key: string): void => {
-    // Non-reactive reads (plain record / Set) so `resolve` only depends via `track`.
     const cached = values[key];
     const now = Date.now();
     let valid = false;
@@ -313,8 +316,14 @@ export function createItemCache<T>(
     return values[key] ?? null;
   };
 
+  /**
+   * Requeues a key and restarts its expiry.
+   *
+   * @remarks
+   * Deleted before being set so the entry moves to the end of `recent`, keeping it ordered by
+   * ascending expiry. The eviction sweep relies on that order to stop at the first live entry.
+   */
   const refresh = (key: string): void => {
-    // delete-before-set preserves the expiry-ascending order the eviction sweep relies on.
     recent.delete(key);
     recent.set(key, Date.now() + expiry);
     if (unknown.has(key))
@@ -342,8 +351,14 @@ export function createItemCache<T>(
 
   const size = (): number => recent.size;
 
+  /**
+   * Empties the cache and every piece of bookkeeping around it.
+   *
+   * @remarks
+   * `values` is emptied key by key rather than reassigned, so the record keeps its identity and
+   * the callers already holding it keep reading the live one.
+   */
   const reset = (): void => {
-    // Clear the record in place so `values` keeps its identity, then wipe the rest.
     for (const key of Object.keys(values)) delete values[key];
     triggerRef(cache);
     pendingKeys.clear();

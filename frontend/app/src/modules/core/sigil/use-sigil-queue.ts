@@ -194,8 +194,14 @@ function handleVisibilityChange(): void {
   }
 }
 
+/**
+ * Starts the periodic flush and drains whatever a previous session left behind.
+ *
+ * @remarks
+ * Any existing timer is cleared first. This is module-level state, so a second call would
+ * otherwise overwrite the handle and leak the interval it was the only reference to.
+ */
 function startQueue(): void {
-  // Guard against double-invocation leaking the previous interval.
   if (flushTimer)
     clearInterval(flushTimer);
 

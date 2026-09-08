@@ -102,6 +102,13 @@ function writeEnumLike(field: FieldDef, target: SerializedState, filter: ActiveF
   writeTarget(field, target, field.multiple ? values : values[0]);
 }
 
+/**
+ * Whether any of the given bounds holds a value.
+ *
+ * @remarks
+ * An empty string counts as absent, not as a value. A bound the user typed into and then cleared
+ * holds one, and it should read the same as a bound never touched.
+ */
 function anyFilled(...values: (string | undefined)[]): boolean {
   return values.some(value => value !== undefined && value.length > 0);
 }
@@ -115,7 +122,6 @@ function anyFilled(...values: (string | undefined)[]): boolean {
  * the serializer already means by it.
  */
 export function hasWritableValue(field: FieldDef, filter: ActiveFilter): boolean {
-  // An empty string is as absent as a missing one: a bound the user cleared holds one.
   const { date = {}, range = {}, values } = filter;
 
   switch (field.valueType) {

@@ -10,7 +10,6 @@ import { createNotificationHandler } from '@/modules/core/messaging/utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 
 export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<CalendarEventWithReminder> {
-  // Capture all functions and stores at handler creation time (in setup context)
   const { getChainName } = useSupportedChains();
   const { getAddressName } = useAddressNameResolution();
   const { removeMatching } = useNotificationsStore();
