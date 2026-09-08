@@ -12,8 +12,14 @@ import { focusedAttribute, focusedFieldAttribute } from '../helpers/focused-elem
 export class PillFilterKeyboard {
   constructor(private readonly page: Page) {}
 
-  /** `data-testid` of whatever currently holds focus, for asserting tab order. */
-  async focusedTestId(): Promise<string | null> {
+  /**
+   * `data-testid` of whatever currently holds focus.
+   *
+   * @remarks
+   * Private, and so are its three siblings: each reads the document once, which is never what an
+   * assertion wants, so the `expect*` methods below are the only way to reach them.
+   */
+  private async focusedTestId(): Promise<string | null> {
     return focusedAttribute(this.page, 'data-testid');
   }
 
@@ -21,7 +27,7 @@ export class PillFilterKeyboard {
    * The focused element's `data-index`. Rows carry their position here rather than in the test id,
    * so asserting the id alone would only prove "some row of this kind" has focus.
    */
-  async focusedIndex(): Promise<string | null> {
+  private async focusedIndex(): Promise<string | null> {
     return focusedAttribute(this.page, 'data-index');
   }
 
@@ -31,13 +37,35 @@ export class PillFilterKeyboard {
    * The editors put their test ids on a field wrapper rather than on the `<input>` inside it, so
    * `focusedTestId` reads null for them even when the right field has the caret.
    */
-  async focusedFieldTestId(): Promise<string | null> {
+  private async focusedFieldTestId(): Promise<string | null> {
     return focusedFieldAttribute(this.page, 'data-testid');
   }
 
   /** The `data-key` of the focused field's test-id element, for families that carry their value there. */
-  async focusedFieldKey(): Promise<string | null> {
+  private async focusedFieldKey(): Promise<string | null> {
     return focusedFieldAttribute(this.page, 'data-key');
+  }
+
+  /**
+   * Waits for an element carrying `testId` to hold focus.
+   *
+   * @remarks
+   * The counterpart of `expectFocusedField` for elements that carry the test id themselves. Focus
+   * lands a tick or more after the key that moved it, so it has to be polled for.
+   */
+  async expectFocused(testId: string): Promise<void> {
+    await expect.poll(async () => this.focusedTestId(), { timeout: TIMEOUT_MEDIUM }).toBe(testId);
+  }
+
+  /**
+   * Waits for the focused element to be the one at `index` within its family.
+   *
+   * @remarks
+   * Asserted after `expectFocused`, never instead of it: the index alone would be satisfied by any
+   * element that happens to sit at that position.
+   */
+  async expectFocusedIndex(index: string): Promise<void> {
+    await expect.poll(async () => this.focusedIndex(), { timeout: TIMEOUT_MEDIUM }).toBe(index);
   }
 
   /**
