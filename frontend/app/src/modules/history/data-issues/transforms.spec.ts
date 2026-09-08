@@ -1,4 +1,5 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { describeIssue, humanizeStrategy, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
@@ -239,6 +240,7 @@ describe('data-issues transforms', () => {
 
   describe('toTimelineItems', () => {
     it('should order attempts oldest-first by timestamp', () => {
+      const transactions = [createDecodingComparison()];
       const issue = createIssue({
         autoRemediationAttempts: [
           {
@@ -248,6 +250,7 @@ describe('data-issues transforms', () => {
             strategy: 'second',
             success: true,
             timestamp: 200,
+            transactions,
           },
           { strategy: 'first', success: false, timestamp: 100 },
         ],
@@ -260,6 +263,7 @@ describe('data-issues transforms', () => {
         changedTransactionCount: 1,
         customizedTransactionCount: 2,
         result: 'redecoding_would_change_balance',
+        transactions,
       });
     });
 

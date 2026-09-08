@@ -20,6 +20,13 @@ class BaseIssuePayload(TypedDict):
     resolution: NotRequired[dict[str, Any]]
 
 
+class TransactionDecodingComparison(TypedDict):
+    tx_hash: str
+    group_identifier: str
+    saved_events: list[dict[str, Any]]
+    decoded_events: list[dict[str, Any]]
+
+
 class AutoRemediationAttempt(TypedDict):
     attribution: str
     strategy: str
@@ -29,6 +36,7 @@ class AutoRemediationAttempt(TypedDict):
     result: NotRequired[RedecodeComparisonResult]
     customized_transaction_count: NotRequired[int]
     changed_transaction_count: NotRequired[int]
+    transactions: NotRequired[list[TransactionDecodingComparison]]
 
 
 class NegativeBalanceIssuePayload(BaseIssuePayload):

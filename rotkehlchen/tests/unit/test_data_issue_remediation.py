@@ -32,7 +32,10 @@ if TYPE_CHECKING:
     from rotkehlchen.tasks.manager import TaskManager
     from rotkehlchen.types import EVMTxHash
 
-pytestmark = pytest.mark.accounting_update
+pytestmark = [
+    pytest.mark.accounting_update,
+    pytest.mark.parametrize('use_clean_caching_directory', [True]),
+]
 
 
 def _make_event(
@@ -231,7 +234,9 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
     assert issue.state == IssueState.UNRESOLVED
     assert len(issue.auto_remediation_attempts) == 1
     attempt = issue.auto_remediation_attempts[0]
-    assert {key: value for key, value in attempt.items() if key != 'reason'} == {
+    assert {
+        key: value for key, value in attempt.items() if key not in {'reason', 'transactions'}
+    } == {
         'attribution': 'system',
         'strategy': 'redecode_customized_transactions',
         'timestamp': ts_now(),
@@ -239,6 +244,16 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
         'customized_transaction_count': 1,
         'changed_transaction_count': int(not missing_receipt and decoded_spend != 11),
     }
+    if not missing_receipt and decoded_spend != 11:
+        comparison = attempt['transactions'][0]
+        assert comparison['tx_hash'] == str(spend_tx_hash)
+        assert [event['amount'] for event in comparison['saved_events']] == ['0', '11']
+        assert [event['customized'] for event in comparison['saved_events']] == [False, True]
+        assert [event['amount'] for event in comparison['decoded_events']] == [
+            '0', str(decoded_spend),
+        ]
+    else:
+        assert 'transactions' not in attempt
     assert _get_saved_event_rows(database) == saved_rows
     with database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT * FROM evm_tx_mappings').fetchall() == saved_tx_mappings
@@ -266,7 +281,11 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
         if missing_receipt:
             assert len(issue.auto_remediation_attempts) == 2
             assert issue.auto_remediation_attempts[0] == attempt
-            assert issue.auto_remediation_attempts[1] == {
+            retry_attempt = issue.auto_remediation_attempts[1]
+            assert retry_attempt['transactions'][0]['tx_hash'] == str(spend_tx_hash)
+            assert {
+                key: value for key, value in retry_attempt.items() if key != 'transactions'
+            } == {
                 'attribution': 'system',
                 'strategy': 'redecode_customized_transactions',
                 'timestamp': ts_now(),
@@ -300,6 +319,20 @@ def test_customized_transaction_redecode_comparison_preserves_saved_events(
     preview.assert_called_once()
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.UNRESOLVED
+    comparisons = issue.auto_remediation_attempts[0].get('transactions', [])
+    if expected_changed:
+        assert len(comparisons) == 1
+        comparison = comparisons[0]
+        assert comparison['tx_hash'] == str(tx_hash)
+        assert comparison['saved_events'][0]['amount'] == '2'
+        assert comparison['saved_events'][0]['customized'] is True
+        assert comparison['saved_events'][0]['balance_effect'] == '-2'
+        assert comparison['decoded_events'][0]['amount'] == preview_amount
+        assert comparison['decoded_events'][0]['customized'] is False
+        assert comparison['decoded_events'][0]['balance_effect'] == f'-{preview_amount}'
+        assert comparison['group_identifier'] == comparison['saved_events'][0]['group_identifier']
+    else:
+        assert comparisons == []
     assert issue.auto_remediation_attempts == [{
         'attribution': 'system',
         'strategy': 'redecode_customized_transactions',
@@ -307,6 +340,7 @@ def test_customized_transaction_redecode_comparison_preserves_saved_events(
         'result': expected_result,
         'customized_transaction_count': 1,
         'changed_transaction_count': expected_changed,
+        **({'transactions': comparisons} if expected_changed else {}),
     }]
     assert _get_saved_event_rows(database) == saved_rows
 

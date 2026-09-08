@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
 import { humanizeStrategy } from '@/modules/history/data-issues/transforms';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
-const { items } = defineProps<{
+const { items, asset } = defineProps<{
   items: RemediationTimelineItem[];
+  asset?: string | null;
+}>();
+
+const emit = defineEmits<{
+  navigate: [groupIdentifier: string];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -51,12 +57,34 @@ function getResultText(item: RemediationTimelineItem): string | undefined {
           :color="isFailure(item) ? 'error' : item.success ? 'success' : 'secondary'"
         />
         <div class="flex flex-col">
-          <span class="text-body-2 font-medium">{{ humanizeStrategy(item.strategy) }}</span>
+          <span class="text-body-2 font-medium">
+            {{ item.strategy === 'redecode_customized_transactions' ? t('data_issues.detail.checked_customizations') : humanizeStrategy(item.strategy) }}
+          </span>
           <span
             v-if="getResultText(item)"
             class="text-body-2 text-rui-text-secondary"
           >
             {{ getResultText(item) }}
+          </span>
+          <span
+            v-if="item.customizedTransactionCount !== undefined && item.changedTransactionCount !== undefined"
+            class="text-body-2 mt-2"
+            data-testid="data-issue-timeline-counts"
+          >
+            {{ t('data_issues.detail.comparison_counts', { total: item.customizedTransactionCount, changed: item.changedTransactionCount }) }}
+          </span>
+          <DataIssueDecodingReview
+            v-if="item.transactions?.length && asset"
+            :transactions="item.transactions"
+            :asset="asset"
+            :timestamp="item.timestamp"
+            @navigate="emit('navigate', $event)"
+          />
+          <span
+            v-else-if="item.result === 'redecoding_would_change_balance'"
+            class="text-body-2 text-rui-text-secondary mt-2"
+          >
+            {{ t('data_issues.detail.comparison_unavailable') }}
           </span>
           <span
             v-if="item.attribution"

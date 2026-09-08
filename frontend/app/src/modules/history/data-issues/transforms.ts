@@ -192,6 +192,7 @@ function toTimelineItem(attempt: AutoRemediationAttempt): RemediationTimelineIte
     strategy: attempt.strategy,
     success: attempt.success,
     timestamp: attempt.timestamp,
+    transactions: attempt.transactions,
   };
 }
 

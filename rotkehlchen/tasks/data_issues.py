@@ -1,8 +1,9 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -21,6 +22,7 @@ from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
     RedecodeComparisonResult,
+    TransactionDecodingComparison,
 )
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -158,6 +160,23 @@ def _make_comparison_attempt(
     return attempt
 
 
+def _serialize_comparison_events(
+        events: Sequence[EvmEvent],
+        bucket: Bucket,
+        treat_eth2_as_eth: bool,
+        customized_ids: set[int],
+) -> list[dict[str, Any]]:
+    """Snapshot all transaction events, including their effect on the issue's balance."""
+    return [event.serialize() | {
+        'customized': event.identifier in customized_ids,
+        'balance_effect': str(sum((
+            event.amount if direction == EventDirection.IN else -event.amount
+            for event_bucket, direction in Bucket.from_event(event, treat_eth2_as_eth)
+            if event_bucket == bucket
+        ), start=ZERO)),
+    } for event in sorted(events, key=lambda entry: entry.sequence_index)]
+
+
 def _check_issue(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
@@ -198,6 +217,7 @@ def _check_issue(
     )
     changed_transaction_count = 0
     customized_transaction_count = 0
+    comparisons: list[TransactionDecodingComparison] = []
     try:
         for tx_hash, saved_events in transactions.items():
             checkpoint()
@@ -222,6 +242,34 @@ def _check_issue(
                 customized_transaction_count += 1
             if saved_effects != preview_effects:
                 changed_transaction_count += 1
+                with database.conn.read_ctx() as cursor:
+                    mapping_states = DBHistoryEvents.get_event_mapping_states(
+                        cursor=cursor,
+                        location=location,
+                        entry_identifiers=[
+                            event.identifier for event in saved_events
+                            if event.identifier is not None
+                        ],
+                    )
+                comparisons.append(TransactionDecodingComparison(
+                    tx_hash=str(tx_hash),
+                    group_identifier=saved_events[0].group_identifier,
+                    saved_events=_serialize_comparison_events(
+                        events=saved_events,
+                        bucket=bucket,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                        customized_ids={
+                            identifier for identifier, states in mapping_states.items()
+                            if HistoryMappingState.CUSTOMIZED in states
+                        },
+                    ),
+                    decoded_events=_serialize_comparison_events(
+                        events=preview_events,
+                        bucket=bucket,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                        customized_ids=set(),
+                    ),
+                ))
     except preview_exceptions as e:
         log.exception('Failed to preview customized transactions for data issue %s', issue.id)
         attempt = _make_comparison_attempt(
@@ -253,6 +301,8 @@ def _check_issue(
             changed_transaction_count=changed_transaction_count,
         )
 
+    if comparisons:
+        attempt['transactions'] = comparisons
     issues_manager.update_state(
         issue_id=issue.id,
         state=IssueState.UNRESOLVED,

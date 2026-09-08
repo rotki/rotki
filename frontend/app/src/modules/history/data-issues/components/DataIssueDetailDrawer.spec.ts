@@ -56,6 +56,7 @@ function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIs
         DataIssueKindChip: true,
         DataIssueRemediationTimeline: true,
         DataIssueStateChip: true,
+        DateDisplay: true,
         HistoryEventAccount: true,
         LocationDisplay: true,
         RuiNavigationDrawer: DrawerStub,
@@ -97,6 +98,23 @@ describe('dataIssueDetailDrawer', () => {
         targetGroupIdentifier: 'grp-1',
       }),
     }));
+  });
+
+  it('should navigate to a compared transaction without filtering out its other assets', async () => {
+    const wrapper = createWrapper(createIssue());
+    wrapper.findComponent({ name: 'DataIssueRemediationTimeline' }).vm.$emit('navigate', 'earlier-transaction');
+    await wrapper.vm.$nextTick();
+    expect(push).toHaveBeenCalledWith({
+      name: '/history/events/',
+      query: { targetGroupIdentifier: 'earlier-transaction' },
+    });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toStrictEqual([false]);
+  });
+
+  it('should show the affected event time separately from detection time', () => {
+    const wrapper = createWrapper(createIssue({ createdAt: 1710000100, tsEnd: 1710000000000 }));
+    const date = wrapper.get('[data-testid="data-issue-event-date"]').findComponent({ name: 'DateDisplay' });
+    expect(date.props()).toMatchObject({ milliseconds: true, timestamp: 1710000000000 });
   });
 
   it('should show the resolution note when the payload carries a string note', () => {
