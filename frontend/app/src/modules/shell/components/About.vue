@@ -10,6 +10,7 @@ import AppUpdateIndicator from '@/modules/shell/components/AppUpdateIndicator.vu
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
+import { isWebVersion, useVersionText } from '@/modules/shell/components/use-version-text';
 
 const store = useMainStore();
 const { isPackaged, openPath, version: getVersion } = useInterop();
@@ -35,58 +36,22 @@ const componentsVersion = computed(() => {
 
 const webVersion = computed<WebVersion | null>(() => {
   const info = get(versionInfo);
-  if (!info || !('userAgent' in info))
-    return null;
-
-  return info;
+  return info && isWebVersion(info) ? info : null;
 });
 
 const electronVersion = computed<SystemVersion | null>(() => {
   const info = get(versionInfo);
-  if (!info || 'userAgent' in info)
-    return null;
-
-  return info;
+  return info && !isWebVersion(info) ? info : null;
 });
 
 const frontendVersion = __APP_VERSION__;
 
-const versionText = computed(() => {
-  const appVersionLabel = t('about.app_version');
-  const frontendVersionLabel = t('about.frontend_version');
-  let versionText = '';
-  versionText += `${appVersionLabel} ${get(version).version}\r\n`;
-  versionText += `${frontendVersionLabel} ${frontendVersion}\r\n`;
-
-  const web = get(webVersion);
-  const app = get(electronVersion);
-
-  const platform = t('about.platform');
-
-  if (web) {
-    const userAgent = t('about.user_agent');
-    versionText += `${platform} ${web.platform}\r\n`;
-    versionText += `${userAgent} ${web.userAgent}\r\n`;
-  }
-  else if (app) {
-    const electron = t('about.electron');
-    versionText += `${platform} ${app.os} ${app.arch} ${app.osVersion}\r\n`;
-    versionText += `${electron} ${app.electron}\r\n`;
-  }
-
-  if (get(premium)) {
-    const cmp = get(componentsVersion);
-    if (cmp) {
-      const cmpVersion = t('about.components.version');
-      const cmpBuild = t('about.components.build');
-
-      versionText += `${cmpVersion} ${cmp.version}\r\n`;
-      versionText += `${cmpBuild} ${cmp.build}\r\n`;
-    }
-  }
-
-  return versionText;
-});
+const versionText = useVersionText(() => ({
+  appVersion: get(version).version,
+  components: get(componentsVersion) ?? undefined,
+  frontendVersion,
+  system: get(versionInfo) ?? undefined,
+}));
 
 const { copy } = useClipboard({ source: versionText });
 </script>
