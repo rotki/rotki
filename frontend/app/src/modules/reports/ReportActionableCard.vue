@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
-import type { DialogType } from '@/modules/core/common/dialogs';
-import type { EditableMissingPrice, MissingAcquisition, MissingPrice, Report } from '@/modules/reports/report-types';
-import { toSentenceCase } from '@rotki/common';
+import type { EditableMissingPrice, Report } from '@/modules/reports/report-types';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import ReportActionableCardActions from '@/modules/reports/ReportActionableCardActions.vue';
+import {
+  summarizeMissingPrices,
+  useMissingPriceFinishPrompt,
+  useReportActionableStepper,
+} from '@/modules/reports/use-report-actionable-items';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { PinnedNames } from '@/modules/session/types';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
@@ -37,133 +39,27 @@ function setDialog(dialog: boolean) {
 const reportsStore = useReportsStore();
 const { actionableItems } = storeToRefs(reportsStore);
 
-const step = ref<number>(1);
-
-const actionableItemsLength = computed(() => {
-  let missingAcquisitionsLength = 0;
-  let missingPricesLength = 0;
-  let total = 0;
-
-  const items = get(actionableItems);
-
-  if (items) {
-    missingAcquisitionsLength = items.missingAcquisitions.length;
-    missingPricesLength = items.missingPrices.length;
-    total = missingAcquisitionsLength + missingPricesLength;
-  }
-
-  if (!missingAcquisitionsLength || !missingPricesLength)
-    set(step, 1);
-
-  return {
-    missingAcquisitionsLength,
-    missingPricesLength,
-    total,
-  };
-});
+const { counts: actionableItemsLength, modelStep: step, steps: stepperContents } = useReportActionableStepper(
+  actionableItems,
+  { missingAcquisitions: ReportMissingAcquisitions, missingPrices: ReportMissingPrices },
+);
 
 function pinSection() {
   pinPanel({ isPinned: true, report });
   setDialog(false);
 }
 
-const stepperContents = computed<
-  {
-    key: string;
-    title: string;
-    hint: string;
-    selector: Component;
-    items: MissingAcquisition[] | MissingPrice[];
-  }[]
->(() => {
-  const contents = [];
-
-  const missingAcquisitionsLength = get(actionableItemsLength).missingAcquisitionsLength;
-
-  if (missingAcquisitionsLength > 0) {
-    contents.push({
-      hint: t('profit_loss_report.actionable.missing_acquisitions.hint'),
-      items: get(actionableItems).missingAcquisitions,
-      key: 'missingAcquisitions',
-      selector: ReportMissingAcquisitions,
-      title: t('profit_loss_report.actionable.missing_acquisitions.title', {
-        total: missingAcquisitionsLength,
-      }),
-    });
-  }
-
-  const missingPricesLength = get(actionableItemsLength).missingPricesLength;
-  if (missingPricesLength > 0) {
-    contents.push({
-      hint: t('profit_loss_report.actionable.missing_prices.hint'),
-      items: get(actionableItems).missingPrices,
-      key: 'missingPrices',
-      selector: ReportMissingPrices,
-      title: t('profit_loss_report.actionable.missing_prices.title', {
-        total: missingPricesLength,
-      }),
-    });
-  }
-
-  return contents;
-});
-
-const totalMissingPrices = ref<number>(0);
-const filledMissingPrices = ref<number>(0);
-const skippedMissingPrices = ref<number>(0);
-
 const { show } = useConfirmStore();
-
-function showFinishDialog() {
-  let type: DialogType = 'success';
-  let title = t('profit_loss_report.actionable.missing_prices.all_prices_filled');
-  let message = toSentenceCase(t('profit_loss_report.actionable.missing_prices.regenerate_report_nudge'));
-
-  const filledMissingPricesVal = get(filledMissingPrices);
-  const skippedMissingPricesVal = get(skippedMissingPrices);
-
-  if (filledMissingPricesVal === 0) {
-    type = 'warning';
-    title = t('profit_loss_report.actionable.missing_prices.no_filled_prices');
-    message = t('profit_loss_report.actionable.missing_prices.skipped_all_events_confirmation');
-  }
-  else if (skippedMissingPricesVal) {
-    type = 'warning';
-    title = t('profit_loss_report.actionable.missing_prices.total_skipped_prices', {
-      total: skippedMissingPricesVal,
-    });
-    message = `${t('profit_loss_report.actionable.missing_prices.if_sure')} ${t(
-      'profit_loss_report.actionable.missing_prices.regenerate_report_nudge',
-    )}`;
-  }
-
-  const primaryAction = filledMissingPricesVal
-    ? t('profit_loss_report.actionable.actions.regenerate_report')
-    : t('common.actions.yes');
-
-  show(
-    {
-      message,
-      primaryAction,
-      title,
-      type,
-    },
-    () => {
-      if (filledMissingPricesVal)
-        regenerateReport();
-      else ignoreIssues();
-    },
-  );
-}
+const { promptFor } = useMissingPriceFinishPrompt();
 
 function submitActionableItems(missingPrices: EditableMissingPrice[]) {
-  const total = missingPrices.length;
-  const filled = missingPrices.filter((missingPrice: EditableMissingPrice) => !!missingPrice.price).length;
-  set(totalMissingPrices, total);
-  set(filledMissingPrices, filled);
-  set(skippedMissingPrices, total - filled);
+  const { message, outcome, primaryAction, title, type } = promptFor(summarizeMissingPrices(missingPrices));
 
-  showFinishDialog();
+  show({ message, primaryAction, title, type }, () => {
+    if (outcome === 'regenerate')
+      regenerateReport();
+    else ignoreIssues();
+  });
 }
 
 function ignoreIssues() {
