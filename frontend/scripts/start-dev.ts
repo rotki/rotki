@@ -72,8 +72,14 @@ async function dispatchManagementSubcommand(options: DevCliOptions): Promise<boo
   return false;
 }
 
+/**
+ * Loads the development environment, the override file taking precedence over the base.
+ *
+ * @remarks
+ * The order is the mechanism: dotenv never replaces a variable that is already set, so whichever
+ * file is read first wins. Loading the base first would make the override file inert.
+ */
 function loadDevEnv(): void {
-  // dotenv never overrides a set var, so the override file is loaded before the `app/.env` base.
   if (fs.existsSync(ENV_FILE_RELATIVE)) {
     config({ path: ENV_FILE_RELATIVE });
   }

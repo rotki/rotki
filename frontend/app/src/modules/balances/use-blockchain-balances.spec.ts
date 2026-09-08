@@ -380,7 +380,6 @@ describe('useBlockchainBalances', () => {
     it('should not query after being cancelled during detection', async () => {
       let stageCancelled = false;
       detectForChain.mockImplementation(async () => {
-        // The cancel lands while detection is in flight, exactly as a user click would.
         stageCancelled = true;
       });
       submitTask.mockImplementation(async (spec: SubmittedSpec) =>

@@ -76,13 +76,21 @@ function handleMergeSuggestion({ sourceAsset, targetAsset }: { sourceAsset: stri
       }),
       title: t('asset_management.solana_token_migration.merge_suggestion.title'),
     },
-    () => {
-      // User confirmed - open merge dialog with prefilled values
-      set(mergeSourceIdentifier, sourceAsset);
-      set(mergeTargetIdentifier, targetAsset);
-      set(mergeTool, true);
-    },
+    () => openMergePrefilledWith(sourceAsset, targetAsset),
   );
+}
+
+/**
+ * Opens the merge tool with both assets already chosen.
+ *
+ * @remarks
+ * Runs only once the user has accepted the suggestion, so the merge dialog opens on the pair the
+ * suggestion named rather than empty.
+ */
+function openMergePrefilledWith(sourceAsset: string, targetAsset: string): void {
+  set(mergeSourceIdentifier, sourceAsset);
+  set(mergeTargetIdentifier, targetAsset);
+  set(mergeTool, true);
 }
 
 function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; targetIdentifier: string }): void {

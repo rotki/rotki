@@ -32,10 +32,15 @@ EChartsCore.use([
   ToolboxComponent,
 ]);
 
+/**
+ * Publishes the shared runtime the premium bundle expects to find on `window`.
+ *
+ * @remarks
+ * Safe to call more than once. `window.Vue` being set is the marker that the setup has already
+ * run, and re-publishing would hand the premium components a second Vue instance rather than the
+ * one the app is mounted with.
+ */
 export async function setupPremium(): Promise<void> {
-  /**
-   * If setup has run already no need to do it again
-   */
   if (!window.Vue) {
     window.Vue = Vue;
     window.VueUse = VueUse;

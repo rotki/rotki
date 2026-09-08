@@ -12,8 +12,7 @@ describe('useAssetIgnoreApi', () => {
   });
 
   describe('getIgnoredAssets', () => {
-    it('should send GET request to colibri and returns asset list', async () => {
-      // Note: getIgnoredAssets targets colibri, so the URL is without /api/1
+    it('should send GET request to colibri, whose url carries no /api/1 prefix, and return the asset list', async () => {
       server.use(
         http.get(`${colibriUrl}/assets/ignored`, () =>
           HttpResponse.json({

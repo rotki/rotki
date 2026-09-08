@@ -53,6 +53,10 @@ function selectEntries<T extends BalanceEntry>(
  * Each field keeps its asset identifier: `balanceSum` returns only an amount and a value, and every
  * entry names the same asset for a given field.
  *
+ * @remarks
+ * The first entry is copied rather than accumulated into, and every field is then reassigned as a
+ * new object rather than mutated, so summing never writes through to the entries the store holds.
+ *
  * @returns the summed entry, or `null` when nothing was selected
  */
 export function aggregateEntries<T extends BalanceEntry>(
@@ -60,7 +64,6 @@ export function aggregateEntries<T extends BalanceEntry>(
   selectedAddresses: string[],
 ): T | null {
   return selectEntries(source, selectedAddresses).reduce<T | null>((total, entry) => {
-    // This copy is what keeps the store's objects intact; later fields are reassigned, not mutated.
     if (total === null)
       return { ...entry };
 

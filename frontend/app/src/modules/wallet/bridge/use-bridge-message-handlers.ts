@@ -61,10 +61,15 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     setupWalletEventForwarding(newProvider);
   });
 
+  /**
+   * Answers the bridge with the providers currently available, detecting them if needed.
+   *
+   * @remarks
+   * Only the descriptive fields are sent. A provider object holds a live reference back to its own
+   * connection, so passing one whole would put a cycle through the bridge's JSON encoding.
+   */
   async function rpcGetAvailableProviders(message: WalletBridgeRequest): Promise<WalletBridgeResponse> {
-    // Single async method that detects if needed and returns providers
     const providers = await getAvailableProviders();
-    // Serialize providers for bridge - remove circular references from provider objects
     const serializedProviders = providers.map(provider => ({
       info: provider.info,
       isConnected: provider.isConnected,
@@ -106,8 +111,14 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     return createSuccessResponse(message.id, success);
   }
 
+  /**
+   * Answers the bridge's readiness check.
+   *
+   * @remarks
+   * Rotki's own method rather than an RPC one, and deliberately so: it must answer before any
+   * provider is selected, which is exactly what the caller is waiting to find out.
+   */
   function rpcPing(message: WalletBridgeRequest): WalletBridgeResponse {
-    // Custom ping method for bridge readiness check - doesn't require RPC provider
     addLog('Received bridge ping - responding with pong', 'info');
     return createSuccessResponse(message.id, ROTKI_RPC_RESPONSES.PONG);
   }

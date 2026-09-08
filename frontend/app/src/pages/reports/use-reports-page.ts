@@ -43,8 +43,14 @@ export function useReportsPage(options: UseReportsPageOptions): UseReportsPageRe
   const router = useRouter();
   const route = useRoute();
 
+  /**
+   * Opens a freshly generated report, unless the user has moved on.
+   *
+   * @remarks
+   * Generation is asynchronous and can finish long after it was started, so the current route is
+   * checked first. Navigating regardless would pull the user out of wherever they went next.
+   */
   function navigateToReport(reportId: number): void {
-    // Guard against a late generation landing after the user has already navigated away.
     if (get(route).name !== '/reports/')
       return;
 

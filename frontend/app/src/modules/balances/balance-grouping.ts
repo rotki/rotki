@@ -22,7 +22,6 @@ export function getSortedProtocolBalances(protocolBalances: ProtocolBalancesWith
   return Object.entries(protocolBalances)
     .filter(([, balance]) => balance.amount.gt(0))
     .map(([protocol, balance]) => {
-      // Use conditional logic to determine the correct type without casting
       if (protocol === 'address' && balance.chains) {
         const result: ProtocolBalanceWithChains = {
           protocol,

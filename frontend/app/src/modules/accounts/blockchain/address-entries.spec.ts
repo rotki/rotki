@@ -75,8 +75,7 @@ describe('modules/accounts/blockchain/address-entries', () => {
       expect(messagesFor({ address: '', userAddresses: ADDRESS }, true)).toEqual([]);
     });
 
-    it('should ignore the field that is not on screen', () => {
-      // Only one of the two is ever shown, so an empty other field is not something to report.
+    it('should ignore the field that is not on screen, only one of the two ever being shown', () => {
       expect(messagesFor({ address: ADDRESS, userAddresses: '' }, false)).toEqual([]);
       expect(messagesFor({ address: '', userAddresses: ADDRESS }, true)).toEqual([]);
     });

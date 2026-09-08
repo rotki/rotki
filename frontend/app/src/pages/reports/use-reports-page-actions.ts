@@ -49,8 +49,14 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
 
   const importDataLoading = shallowRef<boolean>(false);
 
+  /**
+   * Generates a report for the period and navigates to it.
+   *
+   * @remarks
+   * The report-issues pin is cleared first, when it is the active one. It describes the report
+   * being replaced, so leaving it up would show issues against a report that no longer exists.
+   */
   async function generate(period: ProfitLossReportPeriod): Promise<void> {
-    // Clear the report-issues pin (if it is the active one) before regenerating.
     unpinReportCard();
 
     const formatDate = (timestamp: number): string =>

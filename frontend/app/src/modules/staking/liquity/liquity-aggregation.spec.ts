@@ -167,8 +167,7 @@ describe('modules/staking/liquity/collectProxies', () => {
   };
   const pools: LiquityPoolDetails = {};
 
-  it('should be null when no address was selected', () => {
-    // With no account filter there is no owner to attribute a proxy to.
+  it('should be null when no address was selected, leaving no owner to attribute a proxy to', () => {
     expect(collectProxies(staking, pools, [])).toBeNull();
   });
 

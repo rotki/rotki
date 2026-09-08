@@ -65,8 +65,14 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
     return Boolean(getApiKey(GNOSIS_PAY_SERVICE));
   };
 
+  /**
+   * Looks for a safe migration the user has not tracked yet.
+   *
+   * @remarks
+   * The request is premium-gated, so it is not made at all unless Gnosis Pay is configured. A user
+   * without it would otherwise be told about a premium requirement for a service they do not use.
+   */
   const checkMigration = async (): Promise<void> => {
-    // Skip the (premium-gated) request entirely when Gnosis Pay is not configured.
     if (!await isGnosisPayConfigured()) {
       set(untrackedSafe, undefined);
       return;

@@ -111,15 +111,28 @@ function createSingleTab(): UseSingleTabReturn {
     window.location.reload();
   }
 
+  /**
+   * Tells the other tabs this one is giving up the session.
+   *
+   * @remarks
+   * Only the active tab announces a release. A paused tab closing owns nothing to hand over, and
+   * announcing it would wake the others into claiming a session the active tab still holds.
+   */
   function broadcastRelease(): void {
-    // Only the active tab hands off; a paused tab closing must not wake the others.
     if (!supported || !get(active))
       return;
     ensureChannel()?.postMessage({ tabId, type: 'release' } satisfies TabMessage);
   }
 
+  /**
+   * Gives up the session and stops taking part in the tab handshake.
+   *
+   * @remarks
+   * The handoff is broadcast before the channel closes, since a closed channel delivers nothing.
+   * Marking this tab active afterwards is for its own sake: a paused tab that reloads lands on
+   * login, the session it was waiting for being gone.
+   */
   function release(): void {
-    // Hand off before dropping the channel; a paused tab reloads onto login, the session being gone.
     broadcastRelease();
     cancelScheduledReclaim();
     set(active, true);

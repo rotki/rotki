@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import net from 'node:net';
 import process from 'node:process';
-import { Readable } from 'node:stream';
+import { type Duplex, Readable } from 'node:stream';
 import consola, { LogLevels } from 'consola';
 import { createProxyServer } from 'httpxy';
 import { parseBody, readBody } from './body';
@@ -235,8 +235,15 @@ const server = http.createServer((req, res) => {
     .catch(error => consola.error(error));
 });
 
-server.on('upgrade', (req, socket, head) => {
-  // Node types the upgrade socket as Duplex; an HTTP/1.1 upgrade is always the net.Socket httpxy wants.
+/**
+ * Hands a websocket upgrade to the proxy.
+ *
+ * @remarks
+ * Node types the upgrade socket as a `Duplex`, while httpxy wants a `net.Socket`. An HTTP/1.1
+ * upgrade always is one, so the check is a narrowing rather than a case that happens, and the
+ * socket is destroyed rather than cast if it ever is not.
+ */
+function proxyUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void {
   if (!(socket instanceof net.Socket)) {
     socket.destroy();
     return;
@@ -245,7 +252,9 @@ server.on('upgrade', (req, socket, head) => {
     consola.error(error);
     socket.destroy();
   });
-});
+}
+
+server.on('upgrade', proxyUpgrade);
 
 server.listen(port, () => {
   consola.log(`Proxy server is running at http://127.0.0.1:${port}`);

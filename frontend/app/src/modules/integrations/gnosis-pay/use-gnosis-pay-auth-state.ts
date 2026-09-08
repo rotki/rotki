@@ -106,8 +106,14 @@ export function useGnosisPayAuthSteps(
   validatingAddress: MaybeRefOrGetter<boolean>,
   signInSuccess: MaybeRefOrGetter<boolean>,
 ): UseGnosisPayAuthStepsReturn {
+  /**
+   * The step the wizard is on, derived from what has been satisfied so far.
+   *
+   * @remarks
+   * Account verification has no step of its own: it happens in the background, so the wizard sits
+   * on `NOT_READY` until it completes rather than showing the user a stage they cannot act on.
+   */
   const currentStep = computed<number>(() => {
-    // Skip showing the account verification step - it happens in background
     if (!toValue(hasRegisteredAccounts))
       return AuthStep.NOT_READY;
     if (!toValue(isWalletConnected))

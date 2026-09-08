@@ -115,7 +115,6 @@ function isSelected(option: TradeAssetOption): boolean {
  * the whole list, which is already ordered native-first.
  */
 watchImmediate([() => address, chain, orderedAssets], ([, currentChain]) => {
-  // The display order, so the default is the row the dialog would show first.
   const owned = get(orderedAssets);
 
   if (!currentChain) {

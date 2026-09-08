@@ -127,8 +127,7 @@ describe('pages/reports/useReportDetail', () => {
     expect(getActionableItems).toHaveBeenCalledTimes(1);
   });
 
-  it('should skip the actionable items for an older report', async () => {
-    // The store still names LATEST_REPORT_ID as the last generated one, so this route is not it.
+  it('should skip the actionable items for a report that is not the last generated one', async () => {
     routeState.params = { id: String(OLDER_REPORT_ID) };
     storeState.reports = createReports([createReport({ identifier: OLDER_REPORT_ID })]);
 

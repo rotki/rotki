@@ -39,7 +39,6 @@ type WalletConnectInstance = ReturnType<typeof import('./use-wallet-connect').us
 type InjectedWalletInstance = ReturnType<typeof import('./bridge/use-injected-wallet').useInjectedWallet>;
 
 export const useWalletStore = defineStore(STORE_ID, () => {
-  // Core wallet state - centralized instead of delegated
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
   const walletMode = ref<WalletMode>(WALLET_MODES.LOCAL_BRIDGE);
