@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -16,9 +17,6 @@ const tag = ref<Tag | undefined>(undefined);
 const editMode = ref<boolean>(false);
 const search = ref<string>('');
 const originalName = ref<string>('');
-
-const route = useRoute();
-const router = useRouter();
 
 const { tags } = storeToRefs(useSessionMetadataStore());
 const { deleteTag } = useTagOperations();
@@ -79,12 +77,10 @@ function handleCreateTagClick() {
   set(tag, defaultTag());
 }
 
+const { consumeAddQuery } = useAddQuery(handleCreateTagClick);
+
 onMounted(async () => {
-  const { query } = get(route);
-  if (query.add) {
-    handleCreateTagClick();
-    await router.replace({ query: {} });
-  }
+  await consumeAddQuery();
 });
 </script>
 

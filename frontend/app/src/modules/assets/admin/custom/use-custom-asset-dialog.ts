@@ -1,6 +1,7 @@
 import type { Nullable } from '@rotki/common';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { CustomAsset } from '@/modules/assets/types';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 
 interface UseCustomAssetDialogOptions {
   /** The assets currently on the page, searched when the route names one to edit. */
@@ -15,10 +16,9 @@ interface UseCustomAssetDialogReturn {
   /**
    * Consumes an `?add=` query, opening the dialog on a blank asset.
    *
-   * @remarks
-   * The query is cleared afterwards, so a reload does not reopen the dialog.
+   * @returns whether the query asked for the dialog
    */
-  consumeAddQuery: () => Promise<void>;
+  consumeAddQuery: () => Promise<boolean>;
   /** Opens the dialog on an existing asset. */
   edit: (asset: CustomAsset) => void;
   /**
@@ -44,9 +44,6 @@ interface UseCustomAssetDialogReturn {
 export function useCustomAssetDialog(options: UseCustomAssetDialogOptions): UseCustomAssetDialogReturn {
   const { assets, identifier } = options;
 
-  const router = useRouter();
-  const route = useRoute();
-
   const modelEditableItem = shallowRef<CustomAsset | null>(null);
   const modelOpenDialog = shallowRef<boolean>(false);
 
@@ -69,13 +66,7 @@ export function useCustomAssetDialog(options: UseCustomAssetDialogOptions): UseC
       edit(asset);
   }
 
-  async function consumeAddQuery(): Promise<void> {
-    if (!get(route).query.add)
-      return;
-
-    add();
-    await router.replace({ query: {} });
-  }
+  const { consumeAddQuery } = useAddQuery(add);
 
   watch(() => toValue(identifier), (assetId) => {
     editAsset(assetId);

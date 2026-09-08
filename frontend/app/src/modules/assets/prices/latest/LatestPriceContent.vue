@@ -8,6 +8,7 @@ import { isNft } from '@/modules/assets/nft-utils';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -63,8 +64,6 @@ const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
 
 useRememberTableSorting<ManualPriceWithUsd>(TableId.LATEST_PRICES, sort, headers);
 
-const router = useRouter();
-const route = useRoute();
 const { deletePrice, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(t, filter);
 
 const { show } = useConfirmStore();
@@ -92,14 +91,11 @@ function edit(item: ManualPriceWithUsd) {
   set(openDialog, true);
 }
 
+const { consumeAddQuery } = useAddQuery(add);
+
 onMounted(async () => {
   await refreshCurrentPrices();
-  const query = get(route).query;
-
-  if (query.add) {
-    add();
-    await router.replace({ query: {} });
-  }
+  await consumeAddQuery();
 });
 </script>
 

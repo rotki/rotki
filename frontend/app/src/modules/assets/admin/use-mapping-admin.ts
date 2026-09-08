@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import { objectKeys } from '@/modules/core/common/data/array';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { firstQueryValue } from '@/modules/core/table/route';
 
 /** A filter bag value: the pill bar types every key as one-or-many, and some keys are toggles. */
@@ -58,9 +59,6 @@ export function useMappingAdmin<T extends object, TFilters extends Record<string
 ): UseMappingAdminReturn<T> {
   const { blank, filter, seedFromFilter, seedFromQuery } = options;
 
-  const router = useRouter();
-  const route = useRoute();
-
   const modelValue = ref<T>();
   const editMode = shallowRef<boolean>(false);
 
@@ -103,15 +101,9 @@ export function useMappingAdmin<T extends object, TFilters extends Record<string
     set(editMode, true);
   }
 
-  async function consumeAddQuery(): Promise<boolean> {
-    const { query } = get(route);
-    if (!query.add)
-      return false;
-
-    await router.replace({ query: {} });
+  const { consumeAddQuery } = useAddQuery((query) => {
     add(seededFromQuery(query));
-    return true;
-  }
+  });
 
   return {
     add,
