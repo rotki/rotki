@@ -134,9 +134,9 @@ catalog:
   vitest: 4.1.11
   vue: 3.5.42
   vue-component-type-helpers: 3.3.11
-  vue-echarts: 8.0.1
+  vue-echarts: 8.2.0
   vue-i18n: 11.4.10
-  vue-router: 5.2.0
+  vue-router: 5.3.0
   vue-tsc: 3.3.11
   ws: 8.21.3
   zod: 4.5.4
