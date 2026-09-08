@@ -5,13 +5,11 @@ import { useReportIssue } from '@/modules/core/common/use-report-issue';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
 import { useScrambleSetting } from '@/modules/settings/use-scramble-settings';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { githubIssueUrl, gmailComposeUrl, googleFormUrl, isSubmittable, type IssueDraft, MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH, supportMailtoUrl } from '@/modules/shell/components/report-issue-links';
 import ReportIssueDiscordTip from '@/modules/shell/components/ReportIssueDiscordTip.vue';
 import ReportIssueEmailButton from '@/modules/shell/components/ReportIssueEmailButton.vue';
 
 const { close, initialDescription: storeDescription, initialTitle: storeTitle, visible } = useReportIssue();
-
-const MAX_TITLE_LENGTH = 100;
-const MAX_DESCRIPTION_LENGTH = 1500;
 
 const uiClasses = {
   tipCard: 'flex items-start gap-3 p-3 bg-rui-grey-100 dark:bg-rui-grey-800 rounded',
@@ -53,13 +51,15 @@ const privacyStatusText = computed<string>(() => {
   return modes.join(', ');
 });
 
-const isFormValid = computed<boolean>(() => get(issueTitle).trim().length > 0);
+const draft = computed<IssueDraft>(() => ({
+  description: get(issueDescription),
+  title: get(issueTitle),
+}));
+
+const isFormValid = computed<boolean>(() => isSubmittable(get(draft)));
 
 const titleCharCount = computed<number>(() => get(issueTitle).length);
 const descriptionCharCount = computed<number>(() => get(issueDescription).length);
-
-const encodedTitle = computed<string>(() => encodeURIComponent(get(issueTitle).slice(0, MAX_TITLE_LENGTH)));
-const encodedDescription = computed<string>(() => encodeURIComponent(get(issueDescription).slice(0, MAX_DESCRIPTION_LENGTH)));
 
 function closeDialog(): void {
   close();
@@ -73,15 +73,19 @@ function openUrlAndClose(url: string): void {
 }
 
 function submitViaGithub(): void {
-  openUrlAndClose(`${externalLinks.githubNewBugReport}&title=${get(encodedTitle)}&body=${get(encodedDescription)}`);
+  openUrlAndClose(githubIssueUrl(get(draft)));
 }
 
 function submitViaGoogleForm(): void {
-  openUrlAndClose(`${GOOGLE_FORM_URL}?${GOOGLE_FORM_TITLE_ENTRY}=${get(encodedTitle)}&${GOOGLE_FORM_DESCRIPTION_ENTRY}=${get(encodedDescription)}`);
+  openUrlAndClose(googleFormUrl(get(draft), {
+    descriptionEntry: GOOGLE_FORM_DESCRIPTION_ENTRY,
+    titleEntry: GOOGLE_FORM_TITLE_ENTRY,
+    url: GOOGLE_FORM_URL,
+  }));
 }
 
 function submitViaEmail(): void {
-  openUrlAndClose(`mailto:${SUPPORT_EMAIL}?subject=${get(encodedTitle)}&body=${get(encodedDescription)}`);
+  openUrlAndClose(supportMailtoUrl(get(draft)));
 }
 
 function openDiscord(): void {
@@ -98,7 +102,7 @@ function copyEmail(): void {
 }
 
 function openGmail(): void {
-  openUrlAndClose(`${externalLinks.gmailCompose}&to=${encodeURIComponent(SUPPORT_EMAIL)}&su=${get(encodedTitle)}&body=${get(encodedDescription)}`);
+  openUrlAndClose(gmailComposeUrl(get(draft)));
 }
 
 onMounted(() => {
