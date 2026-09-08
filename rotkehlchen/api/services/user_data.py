@@ -390,13 +390,13 @@ class UserDataService:
             }
 
         try:
-            register_post_download_cleanup(Path(zipfile_path))
-            return send_file(
+            download_response = send_file(
                 path_or_file=zipfile_path,
                 mimetype='application/zip',
                 as_attachment=True,
                 download_name='snapshot.zip',
             )
+            return register_post_download_cleanup(download_response, Path(zipfile_path))
         except FileNotFoundError:
             return {
                 'result': None,

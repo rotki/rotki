@@ -13,13 +13,12 @@ from contextlib import contextmanager
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from flask import Response, g, make_response, request, send_file
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
-from werkzeug.wsgi import ClosingIterator
 
 from rotkehlchen.accounting.export.csv import (
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
@@ -28,7 +27,7 @@ from rotkehlchen.accounting.export.csv import (
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.api.rest_helpers.downloads import (
-    close_before_last_chunk,
+    close_stream_before_last_chunk,
     register_post_download_cleanup,
 )
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
@@ -252,7 +251,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Iterator, Mapping, Sequence
 
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
@@ -2944,10 +2943,7 @@ class RestAPI:
             as_attachment=True,
             download_name=filepath.name,
         )
-        # send_file yields bytes, unlike a generic Response which can also yield strings.
-        stream = ClosingIterator(cast('Iterable[bytes]', response.response))
-        response.response = ClosingIterator(close_before_last_chunk(stream), stream.close)
-        return response
+        return close_stream_before_last_chunk(response)
 
     def delete_database_backups(self, files: list[Path]) -> Response:
         for filepath in files:
@@ -2958,7 +2954,13 @@ class RestAPI:
                     status_code=HTTPStatus.CONFLICT,
                 )
         for filepath in files:
-            filepath.unlink()  # should not raise file not found as marshmallow should check
+            try:
+                filepath.unlink()
+            except OSError as e:
+                return api_response(
+                    wrap_in_fail_result(f'Could not delete DB backup {filepath}: {e!s}'),
+                    status_code=HTTPStatus.CONFLICT,
+                )
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_pnl_report_data(self, report_id: int) -> Response:
@@ -3427,13 +3429,13 @@ class RestAPI:
 
         if directory_path is None:
             try:
-                register_post_download_cleanup(exportpath)
-                return send_file(
+                response = send_file(
                     path_or_file=exportpath,
                     mimetype='text/csv',
                     as_attachment=True,
                     download_name=FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
                 )
+                return register_post_download_cleanup(response, exportpath)
             except FileNotFoundError:
                 return api_response(
                     wrap_in_fail_result('No file was found'),

@@ -3,6 +3,7 @@ import tempfile
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import psutil
 import pytest
@@ -154,11 +155,13 @@ def test_backup_download_closes_on_disconnect(
     """Closing an unstarted or partially consumed response must release the backup."""
     rest_api = rotkehlchen_api_server.rest_api
     filepath = rest_api.rotkehlchen.data.db.create_db_backup()
+    filepath.write_bytes(b'x' * (3 * 8192))
     with rotkehlchen_api_server.flask_app.test_request_context():
         response = rest_api.download_database_backup(filepath)
         try:
             if start_download:
                 assert len(next(iter(response.response))) < filepath.stat().st_size
+            assert str(filepath) in {entry.path for entry in psutil.Process().open_files()}
         finally:
             response.close()
         assert str(filepath) not in {entry.path for entry in psutil.Process().open_files()}
@@ -238,4 +241,20 @@ def test_delete_download_backup_errors(
         status_code=HTTPStatus.CONFLICT,
     )
     assert undeletable_file.exists()
+    assert filepath.exists()
+
+
+def test_delete_backup_in_use(rotkehlchen_api_server: APIServer) -> None:
+    rest_api = rotkehlchen_api_server.rest_api
+    filepath = rest_api.rotkehlchen.data.db.create_db_backup()
+    with patch.object(Path, 'unlink', side_effect=PermissionError('File is in use')):
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'databasebackupsresource'),
+            json={'files': [str(filepath)]},
+        )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Could not delete DB backup',
+        status_code=HTTPStatus.CONFLICT,
+    )
     assert filepath.exists()
