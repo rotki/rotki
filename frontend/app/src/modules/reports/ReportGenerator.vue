@@ -2,12 +2,12 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { startPromise } from '@shared/utils';
-import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/use-transaction-status-check';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
 import ReportDebugMenu from '@/modules/reports/ReportDebugMenu.vue';
+import { useBinanceMarketCheck } from '@/modules/reports/use-binance-market-check';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
 
@@ -22,39 +22,18 @@ const { t } = useI18n({ useScope: 'global' });
 const { isOutOfSync, processing } = useTransactionStatusCheck();
 const { overallProgress } = useSyncProgress();
 const { refreshTransactions } = useHistoryTransactions();
-const { queryBinanceUserMarkets } = useExchangeApi();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
+
+const {
+  checkMarketPairs,
+  exchangesWithoutMarkets: binanceExchangesWithoutMarkets,
+  hasExchangesWithoutMarkets: hasBinanceWithoutMarkets,
+} = useBinanceMarketCheck(connectedExchanges);
 
 const range = ref<{ start: number | undefined; end: number }>({ end: 0, start: undefined });
 const valid = ref<boolean>(false);
-const binanceExchangesWithoutMarkets = ref<string[]>([]);
-
-const hasBinanceWithoutMarkets = computed<boolean>(() => get(binanceExchangesWithoutMarkets).length > 0);
 
 const canGenerate = computed<boolean>(() => get(valid) && !get(processing) && !get(isOutOfSync) && !get(hasBinanceWithoutMarkets));
-
-async function checkBinanceMarketPairs(): Promise<void> {
-  const exchanges = get(connectedExchanges);
-  const binanceExchanges = exchanges.filter(
-    exchange => exchange.location === 'binance' || exchange.location === 'binanceus',
-  );
-
-  const exchangesWithoutMarkets: string[] = [];
-
-  for (const exchange of binanceExchanges) {
-    try {
-      const markets = await queryBinanceUserMarkets(exchange.name, exchange.location);
-      if (!markets || markets.length === 0)
-        exchangesWithoutMarkets.push(exchange.name);
-    }
-    catch {
-      // If we can't fetch markets, assume they're not set
-      exchangesWithoutMarkets.push(exchange.name);
-    }
-  }
-
-  set(binanceExchangesWithoutMarkets, exchangesWithoutMarkets);
-}
 
 function toReportPeriod(): ProfitLossReportPeriod {
   const { end, start } = get(range);
@@ -81,7 +60,7 @@ const accountSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/' }
 const exchangeSettingsRoute: RouteLocationRaw = { name: '/api-keys/exchanges/' };
 
 onMounted(async () => {
-  await checkBinanceMarketPairs();
+  await checkMarketPairs();
 });
 </script>
 
