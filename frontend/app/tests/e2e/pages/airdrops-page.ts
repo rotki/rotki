@@ -63,9 +63,12 @@ export class AirdropsPage {
    * dataset. The airdrops endpoint returns an async task; the task list and
    * task-result endpoints are mocked to complete it with {@link AIRDROPS_RESULT}.
    * Must be called before navigating to the page.
+   *
+   * The query endpoint hands out a fresh task id on every call, because the page queries it twice,
+   * once on mount and again on refresh, and a reused id would let the second read the first's
+   * result.
    */
   async setupMocks(): Promise<void> {
-    // Query endpoint -> hand out a fresh task id on every call (mount + refresh).
     await this.page.route('**/api/1/blockchains/eth/airdrops**', async (route) => {
       const id = this.nextTaskId++;
       this.airdropTaskIds.add(id);

@@ -8,8 +8,14 @@ type CexCategoryLabel = 'All' | 'Trades' | 'Deposits / Withdrawals' | 'Other eve
 export class PurgeDataPage {
   constructor(private readonly page: Page) {}
 
+  /**
+   * Reaches the purge-data settings through the user menu.
+   *
+   * @remarks
+   * Clicked through rather than navigated to. Going straight to the route lands on a blank shell,
+   * because the layout never bootstraps.
+   */
   async visit(): Promise<void> {
-    // Navigating straight to the route lands on a blank shell: the layout never bootstraps.
     await this.page.locator('[data-testid=user-menu-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=settings-button]').click();

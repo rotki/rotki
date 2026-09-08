@@ -192,8 +192,14 @@ export class AssetsManagerPage {
     await this.confirmDelete();
   }
 
+  /**
+   * Opens the add-asset dialog, closing whatever dialog is already open.
+   *
+   * @remarks
+   * Only one bottom dialog exists at a time, so a leftover one from an earlier step would be the
+   * dialog this method then went on to fill in.
+   */
   async showAddAssetModal(): Promise<void> {
-    // Ensure any existing dialog is closed first
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
     if (await dialog.isVisible()) {
       await this.page.keyboard.press('Escape');

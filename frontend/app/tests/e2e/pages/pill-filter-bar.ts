@@ -207,13 +207,14 @@ export class PillFilterBar {
    * remote search is in flight, so passing the field key adds a deterministic fallback: clicking
    * the pill toggles its own menu shut. Selections in these editors commit on click, so nothing
    * is lost either way.
+   *
+   * There is no shared root to wait on, so whichever editor is open stands in through its own
+   * first control. An editor left open covers part of the bar and swallows the next click. The
+   * date editor takes two presses, and `setDateBound` has spent the first on the picker's
+   * calendar, so the press here is the one `DateValueEditor` sees, and the one that commits a
+   * bound typed as a bare date.
    */
   async closeEditor(fieldKey?: string): Promise<void> {
-    /* There is no shared root to wait on, so whichever editor is open stands in through its own
-       first control. An editor left open covers part of the bar and swallows the next click.
-       The date editor takes two presses, and `setDateBound` has spent the first on the picker's
-       calendar, so the press here is the one `DateValueEditor` sees, and the one that commits a
-       bound typed as a bare date. */
     const editor = this.page
       .locator([
         '[data-testid=value-select-search]',

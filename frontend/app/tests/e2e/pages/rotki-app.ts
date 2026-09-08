@@ -17,8 +17,15 @@ export class RotkiApp {
     private readonly request: APIRequestContext,
   ) {}
 
+  /**
+   * Seeds the external-service keys the run needs.
+   *
+   * @remarks
+   * Under `MOCK_RPC_MODE` no key is set at all. A real etherscan key would let the app reach the
+   * live API for anything the mock does not answer, which is exactly the non-determinism the mock
+   * exists to remove.
+   */
   private async loadEnv(): Promise<void> {
-    // Skip etherscan key when using mock RPC to force all calls through the mock
     if (process.env.MOCK_RPC_MODE) {
       return;
     }

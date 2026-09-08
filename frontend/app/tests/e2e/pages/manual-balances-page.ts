@@ -43,8 +43,14 @@ export class ManualBalancesPage {
     await expect(this.page.locator('[data-testid=price-refresh]')).not.toBeDisabled();
   }
 
+  /**
+   * Asserts how many balance entries the table shows.
+   *
+   * @remarks
+   * The expected row count is one higher than the number of entries, because the table appends a
+   * total row that is not an entry.
+   */
   async visibleEntries(visible: number): Promise<void> {
-    // The total row is added to the visible entries
     await expect(this.page.locator('[data-testid=manual-balances] tbody tr')).toHaveCount(visible + 1);
   }
 

@@ -191,8 +191,15 @@ function buildResponseBody(id: number | string, fields: Record<string, unknown>)
   return JSON.stringify({ jsonrpc: '2.0', id, ...fields });
 }
 
+/**
+ * Answers one JSON-RPC call from the cassette.
+ *
+ * @remarks
+ * Balance scanner calls are resolved semantically, by address and token, before the hash lookup is
+ * tried. A hash covers the exact call as recorded, so it makes replay depend on the app asking for
+ * the same addresses in the same order; resolving from the balance maps does not.
+ */
 function handleReplayRequest(req: JsonRpcRequest, hash: string): string {
-  // Try semantic balance scanner resolution first (order-independent)
   if (balanceMaps) {
     const resolved = tryResolveBalanceCall(req.method, req.params, balanceMaps);
     if (resolved !== null) {
@@ -284,9 +291,11 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
 /**
  * Handles the server's control endpoints (health/cassette/save/stats).
  * Returns `true` when the request was one of them and a response was sent.
+ *
+ * @remarks
+ * `/health` is what Playwright polls to decide the mock is up before it starts a shard.
  */
 async function handleControlEndpoint(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
-  // Health check endpoint for Playwright
   if (req.url === '/health') {
     sendJson(res, 200, { status: 'ok', mode: MODE, cassette: cassetteName, entries: Object.keys(cassette).length });
     return true;

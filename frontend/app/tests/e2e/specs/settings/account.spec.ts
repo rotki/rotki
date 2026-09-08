@@ -21,8 +21,7 @@ test.describe.serial('settings::data & security', () => {
     await pageUserSecurity.confirmSuccess();
   });
 
-  test('verify that new password works', async () => {
-    // Logout and login with the new password
+  test('verify the new password works, by logging out and back in with it', async () => {
     await ctx.app.relogin(ctx.username, newPassword);
   });
 });

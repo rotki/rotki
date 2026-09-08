@@ -129,8 +129,7 @@ test.describe.serial('history events', () => {
     await expect.poll(async () => receiveAmount.textContent(), { timeout: TIMEOUT_MEDIUM }).not.toBe(before);
   });
 
-  test('delete fee sub-event from online swap', async () => {
-    // The swap created earlier has three sub-events: spend, receive and fee.
+  test('delete the fee sub-event of the online swap, leaving its spend and receive', async () => {
     const rowsBeforeExpand = await page.getExpandedEventRows();
     await page.rows.expand(swapRow);
 
@@ -184,8 +183,7 @@ test.describe.serial('history events', () => {
     await expect(row.locator('[data-testid=event-amount]').first()).toContainText(updatedAmount);
   });
 
-  test('delete history event', async () => {
-    // Named, since a total over the table cannot say which row went away.
+  test('delete the named history event, since a row total cannot say which row went', async () => {
     await page.rows.delete(onlineRow);
 
     await expect(onlineRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
@@ -304,19 +302,13 @@ test.describe.serial('history events', () => {
     await page.rows.expectNotes(row, updatedAmount);
   });
 
-  test('delete solana event', async () => {
-    // Named: reading the top row and then deleting the top row would also pass on a re-sort.
+  test('delete the named solana event, which a read-then-delete of the top row would fake', async () => {
     await page.rows.delete(solanaRow);
 
     await expect(solanaRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   });
 
-  test('delete swap event', async () => {
-    /* Addressed by id, never by index: the list is timestamp DESC and re-renders under the test,
-       so `nth(0)` deleted a different swap than the one read. `data-subgroup-id` is on both the
-       collapsed row and the collapse header, so expanding still matches and only a deletion
-       clears it. The solana swap, because the online one is left expanded by an earlier test and
-       an expanded group's header carries no row actions. */
+  test('delete the solana swap, the online one being left expanded by an earlier test with no row actions on its header', async () => {
     await page.rows.delete(solanaSwapRow);
 
     await expect(solanaSwapRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
@@ -336,7 +328,6 @@ test.describe.serial('evm history events', () => {
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request, {
       seed: (username) => {
-        // The user DB is only writable here, while the account exists but is logged out.
         seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
 
         seedEvmTransaction(username, evmEventFixture.txRef);
@@ -427,8 +418,7 @@ test.describe.serial('evm history events', () => {
     multiSwapRow = await page.rows.waitForNewRow(before, SWAP_ROW);
   });
 
-  test('delete extra sub-event from multi-asset swap', async () => {
-    // Six sub-events, and the newest timestamp puts them first, which the index below relies on.
+  test('delete a sub-event of the multi-asset swap, whose six sort first on the newest timestamp', async () => {
     const rowsBeforeExpand = await page.getExpandedEventRows();
     await page.rows.expand(multiSwapRow);
 
@@ -483,9 +473,7 @@ test.describe.serial('evm history events', () => {
     await page.rows.expectNotes(row, updatedAmount);
   });
 
-  test('the row action on a lone evm event excludes it from accounting', async () => {
-    /* The only event of a decoded EVM transaction would come back with the transaction, so the
-       row action becomes an ignore: the row stays and its group gains the ignored badge. */
+  test('the row action on the only event of a decoded evm transaction ignores it rather than deleting, since a delete would come back with the transaction', async () => {
     const ignored = ctx.sharedPage.locator('[data-testid=ignored-in-accounting]');
     await expect(ignored).toHaveCount(0);
 
@@ -495,8 +483,7 @@ test.describe.serial('evm history events', () => {
     await expect(evmRow).toHaveCount(1);
   });
 
-  test('delete evm swap event', async () => {
-    // The multi-asset swap is still expanded, and its collapse header carries no row actions.
+  test('delete the evm swap while the multi-asset swap stays expanded, its header offering no actions', async () => {
     await page.rows.delete(evmSwapRow);
 
     await expect(evmSwapRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });

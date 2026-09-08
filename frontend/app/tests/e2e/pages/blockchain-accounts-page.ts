@@ -14,8 +14,14 @@ export class BlockchainAccountsPage {
     await waitForNoRunningTasks(this.page);
   }
 
+  /**
+   * Opens the add-account dialog.
+   *
+   * @remarks
+   * Notifications are cleared first and waited out. They stack over this corner of the page, so a
+   * leftover one intercepts the click on the add button and the dialog never opens.
+   */
   async openAddDialog(): Promise<void> {
-    // Dismiss any notifications if present
     const dismissButton = this.page.locator('[data-testid=notification_dismiss-all]');
     if (await dismissButton.isVisible()) {
       await dismissButton.click();
@@ -82,12 +88,19 @@ export class BlockchainAccountsPage {
     await confirmDialog(this.page, 'Account delete');
   }
 
+  /**
+   * Deletes the account at the given row position and waits for the table to shrink.
+   *
+   * @remarks
+   * The drop in count is the settle signal: the delete is only complete once one account has gone,
+   * and neither the dialog closing nor the progress bar detaching proves that. Address displays are
+   * counted rather than `tr` elements, since there is exactly one per account and no row markup
+   * that could stand for something else.
+   */
   async deleteAccount(position: number): Promise<void> {
-    // Use labeled-address-display for reliable counting of actual account entries
     const accountAddresses = this.page.locator('[data-testid=account-table] [data-testid=labeled-address-display]');
     const initialCount = await accountAddresses.count();
 
-    // Use the row selector to find the delete button
     const rows = this.page.locator('[data-testid=account-table] tbody tr[data-id="row"]');
     await rows.nth(position).locator('button[data-testid=row-delete]').click();
     await this.confirmDelete();
@@ -96,7 +109,6 @@ export class BlockchainAccountsPage {
     await blockchainSection.waitFor({ state: 'attached', timeout: TIMEOUT_LONG });
     await blockchainSection.locator('tbody td div[role=progressbar]').waitFor({ state: 'detached', timeout: TIMEOUT_VERY_LONG });
 
-    // Wait for the account count to decrease (confirms delete completed)
     await expect(accountAddresses).toHaveCount(initialCount - 1, { timeout: TIMEOUT_LONG / 2 });
   }
 

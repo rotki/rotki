@@ -112,8 +112,14 @@ export class DashboardPage {
     await this.page.locator('[data-testid=snapshot-action]').click();
   }
 
+  /**
+   * Opens the snapshot import dialog.
+   *
+   * @remarks
+   * Call {@link DashboardPage.openSnapshotMenu} first. The Import button lives inside that menu,
+   * so this finds nothing while it is closed.
+   */
   async openImportSnapshotDialog(): Promise<SnapshotImportDialog> {
-    // The snapshot menu must already be open; the Import button lives inside it.
     await this.page.getByRole('button', { name: 'Import', exact: true }).click();
     const dialog = new SnapshotImportDialog(this.page);
     await dialog.waitForVisible();

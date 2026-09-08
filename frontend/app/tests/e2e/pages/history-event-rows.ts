@@ -122,6 +122,16 @@ export class HistoryEventRows {
     await row.locator('[data-testid=swap-expand]').click();
   }
 
+  /**
+   * Deletes an already-resolved row and confirms the dialog.
+   *
+   * @remarks
+   * Resolve the row by id, never by index. The list is timestamp descending and re-renders under
+   * the test, so an `nth(0)` read before the click and an `nth(0)` delete after it can name two
+   * different rows and the assertion still passes. `data-subgroup-id` sits on both the collapsed
+   * row and the collapse header, so a locator built on it survives expanding and only a real
+   * deletion clears it.
+   */
   async delete(row: Locator): Promise<void> {
     await row.hover();
     await row.locator('[data-testid=row-delete]').click();
