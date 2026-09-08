@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { isEqual } from 'es-toolkit';
-import { uniqueStrings } from '@/modules/core/common/data/data';
-import { getDomain } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import {
+  hasWhitelistChanges,
+  mergeWhitelist,
+  parseWhitelistInput,
+} from '@/modules/settings/general/nft/nft-whitelist';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
@@ -26,18 +28,15 @@ const renderAllNftImages = ref<RenderOption>(get(renderAllModel) ? 'all' : 'whit
 const whitelistedDomains = ref('');
 const showUpdateWhitelistConfirmation = ref(false);
 
-const decodedDomains = computed<string[]>(() =>
-  get(whitelistedDomains)
-    .split(',')
-    .filter(value => !!value)
-    .map(val => getDomain(val.trim())),
-);
+const decodedDomains = computed<string[]>(() => parseWhitelistInput(get(whitelistedDomains)));
 
 const whitelistedDomainsForNftImages = computed<string[]>(() =>
-  [...get(whitelistModel), ...get(decodedDomains)].filter(uniqueStrings),
+  mergeWhitelist(get(whitelistModel), get(decodedDomains)),
 );
 
-const changed = computed(() => !isEqual(get(whitelistedDomainsForNftImages), get(whitelistModel)));
+const changed = computed<boolean>(() =>
+  hasWhitelistChanges(get(whitelistModel), get(whitelistedDomainsForNftImages)),
+);
 
 function updateRenderingSetting(value: RenderOption | undefined): void {
   clearRenderMessages();
