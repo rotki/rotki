@@ -64,12 +64,9 @@ function showDeleteConfirmation() {
 
 <template>
   <div class="grid sm:grid-cols-3 gap-4">
-    <RuiCard
-      no-padding
-      class="[&>div:first-child]:pb-3"
-    >
+    <RuiCard no-padding>
       <template #custom-header>
-        <div class="px-4 pt-3 flex justify-between items-start">
+        <div class="px-4 pt-3 pb-3 flex justify-between items-start">
           <CardTitle>{{ t('common.price') }}</CardTitle>
           <RuiTooltip :open-delay="200">
             <template #activator>

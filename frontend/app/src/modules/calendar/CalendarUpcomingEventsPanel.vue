@@ -23,7 +23,7 @@ function edit(event: CalendarEvent): void {
 
 <template>
   <RuiCard
-    class="[&>div:last-child]:!pt-2"
+    :class-names="{ content: '!pt-2' }"
     data-testid="calendar-upcoming-list"
   >
     <template #header>
