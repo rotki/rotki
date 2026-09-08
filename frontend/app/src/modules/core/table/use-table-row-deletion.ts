@@ -1,3 +1,4 @@
+import type { Message, SemiPartial } from '@rotki/common';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -16,10 +17,10 @@ interface UseTableRowDeletionOptions<T> {
   /** Runs after a successful delete, e.g. refetch the table and purge caches. */
   onDeleted?: (item: T) => void | Promise<void>;
   /**
-   * The toast description shown when the delete throws. Each table phrases this
-   * differently, so it is a param; without one the raw error message is used.
+   * The toast shown when the delete throws. Each table phrases this differently, and some
+   * give it their own title, so it is a param; without one the raw error message is used.
    */
-  errorMessage?: (item: T, error: unknown) => string;
+  errorMessage?: (item: T, error: unknown) => SemiPartial<Message, 'description'>;
 }
 
 interface UseTableRowDeletionReturn<T> {
@@ -48,9 +49,7 @@ export function useTableRowDeletion<T>(
           await onDeleted?.(item);
       }
       catch (error: unknown) {
-        setMessage({
-          description: errorMessage ? errorMessage(item, error) : getErrorMessage(error),
-        });
+        setMessage(errorMessage?.(item, error) ?? { description: getErrorMessage(error) });
       }
     });
   }

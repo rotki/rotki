@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
@@ -37,37 +37,26 @@ export function useAccountingRuleMaintenance(
 
   const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
-  const { setMessage } = useMessageStore();
   const { useIsActive } = useTaskCenter();
   const { exportJSON, resetToDefaults } = useAccountingSettings();
   const { deleteAccountingRule } = useAccountingApi();
 
   const modelImportDialogOpen = shallowRef<boolean>(false);
 
-  async function deleteRule(item: AccountingRuleEntry): Promise<void> {
-    try {
-      const success = await deleteAccountingRule(item.identifier);
-      if (success)
-        await refetch();
-    }
-    catch {
-      setMessage({
-        description: t('accounting_settings.rule.delete_error'),
-      });
-    }
-  }
+  const { showDeleteConfirmation: confirmDelete } = useTableRowDeletion<AccountingRuleEntry>({
+    confirm: () => ({
+      message: t('accounting_settings.rule.confirm_delete'),
+      title: t('accounting_settings.rule.delete'),
+    }),
+    deleteItem: async item => deleteAccountingRule(item.identifier),
+    errorMessage: () => ({ description: t('accounting_settings.rule.delete_error') }),
+    onDeleted: refetch,
+  });
 
   async function resetRulesToDefaults(): Promise<void> {
     const result = await resetToDefaults();
     if (result?.success)
       await refresh();
-  }
-
-  function confirmDelete(item: AccountingRuleEntry): void {
-    show({
-      message: t('accounting_settings.rule.confirm_delete'),
-      title: t('accounting_settings.rule.delete'),
-    }, async () => deleteRule(item));
   }
 
   function confirmReset(): void {

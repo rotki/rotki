@@ -95,9 +95,11 @@ export function useCustomAssetsTable(options: UseCustomAssetsTableOptions): UseC
       title: t('asset_management.confirm_delete.title'),
     }),
     deleteItem: async item => deleteCustomAsset(item.identifier),
-    errorMessage: (item, error) => t('asset_management.delete_error', {
-      address: item.identifier,
-      message: getErrorMessage(error),
+    errorMessage: (item, error) => ({
+      description: t('asset_management.delete_error', {
+        address: item.identifier,
+        message: getErrorMessage(error),
+      }),
     }),
     onDeleted: refresh,
   });

@@ -59,8 +59,10 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
     title: t('asset_management.counterparty_mapping.confirm_delete.title'),
   }),
   deleteItem: mapping => deleteCounterpartyMapping(omit(mapping, ['asset'])),
-  errorMessage: (_item, error) => t('asset_management.cex_mapping.delete_error', {
-    message: getErrorMessage(error),
+  errorMessage: (_item, error) => ({
+    description: t('asset_management.cex_mapping.delete_error', {
+      message: getErrorMessage(error),
+    }),
   }),
   onDeleted: refetch,
 });

@@ -75,13 +75,28 @@ describe('useTableRowDeletion', () => {
     const { showDeleteConfirmation } = useTableRowDeletion<Row>({
       confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
       deleteItem: vi.fn().mockRejectedValue(new Error('boom')),
-      errorMessage: (item, error): string => `failed ${item.id}: ${error instanceof Error ? error.message : String(error)}`,
+      errorMessage: (item, error): { description: string } => ({
+        description: `failed ${item.id}: ${error instanceof Error ? error.message : String(error)}`,
+      }),
     });
 
     showDeleteConfirmation({ id: 'a' });
     await capturedOnConfirm()();
 
     expect(setMessage).toHaveBeenCalledWith({ description: 'failed a: boom' });
+  });
+
+  it('should pass through a title the table gives the toast', async (): Promise<void> => {
+    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
+      confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
+      deleteItem: vi.fn().mockRejectedValue(new Error('boom')),
+      errorMessage: (): { description: string; title: string } => ({ description: 'd', title: 'Delete failed' }),
+    });
+
+    showDeleteConfirmation({ id: 'a' });
+    await capturedOnConfirm()();
+
+    expect(setMessage).toHaveBeenCalledWith({ description: 'd', title: 'Delete failed' });
   });
 
   it('should fall back to the raw error message when none is provided', async (): Promise<void> => {

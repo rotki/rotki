@@ -2,8 +2,8 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/devices';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
@@ -24,7 +24,6 @@ const { premium } = storeToRefs(usePremiumStore());
 
 const { deletePremiumDevice, fetchPremiumDevices } = usePremiumDevicesApi();
 const { setMessage } = useMessageStore();
-const { show } = useConfirmStore();
 
 const cols = computed<DataTableColumn<PremiumDevice>[]>(() => [{
   key: 'deviceName',
@@ -78,28 +77,18 @@ function edit(device: PremiumDevice): void {
   set(editingDevice, device);
 }
 
-function showDeleteConfirmation(device: PremiumDevice): void {
-  show(
-    {
-      message: t('premium_devices.delete.message', { device: device.deviceName }),
-      title: t('premium_devices.delete.title'),
-    },
-    deleteDevice.bind(null, device),
-  );
-}
-
-async function deleteDevice(device: PremiumDevice): Promise<void> {
-  try {
-    await deletePremiumDevice(device.deviceIdentifier);
-    await fetchDevices();
-  }
-  catch (error: unknown) {
-    setMessage({
-      description: getErrorMessage(error),
-      title: t('premium_devices.delete.error.title'),
-    });
-  }
-}
+const { showDeleteConfirmation } = useTableRowDeletion<PremiumDevice>({
+  confirm: device => ({
+    message: t('premium_devices.delete.message', { device: device.deviceName }),
+    title: t('premium_devices.delete.title'),
+  }),
+  deleteItem: async device => deletePremiumDevice(device.deviceIdentifier),
+  errorMessage: (_device, error) => ({
+    description: getErrorMessage(error),
+    title: t('premium_devices.delete.error.title'),
+  }),
+  onDeleted: fetchDevices,
+});
 
 onMounted(async () => {
   if (get(premium)) {
