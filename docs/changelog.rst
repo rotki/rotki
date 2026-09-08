@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The chain picker now lists the chains alphabetically instead of in the order the backend happens to return them, so a chain can be found by scrolling to where its name belongs. "All Supported Chains" stays at the top, and it can now be found by typing part of its name, which matched nothing before.
 * :bug:`-` Hovering the last-queried time in the dashboard sync bar no longer turns the cursor into a question mark.
 * :bug:`-` Coinbase conversions no longer get a made-up fee consisting of the difference between the two legs' fiat valuations.
 * :bug:`-` Removing a Coinbase, Bitstamp or Binance connection now forgets how far its history had been queried, renaming one carries that progress over to the new name, and a connection added under the name of a previously removed one starts querying from scratch.
