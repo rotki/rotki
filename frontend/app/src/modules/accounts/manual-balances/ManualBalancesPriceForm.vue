@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
+import { useManualBalancePrice } from '@/modules/accounts/manual-balances/use-manual-balance-price';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
-import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
-import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
@@ -13,110 +10,17 @@ const { asset = '', pending } = defineProps<{
   asset?: string;
 }>();
 
-const price = ref<string>('');
-const priceAsset = ref<string>('');
-const fetchingPrice = ref<boolean>(false);
-const fetchedPrice = ref<string>('');
-const isCustomPrice = ref<boolean>(false);
-const fiatPriceHint = ref<BigNumber | null>();
-
 const currencySymbol = useSetting('currencySymbol');
-const { getAssetPrice } = usePriceUtils();
-const { fetchPrices } = usePriceTaskManager();
-const { addLatestPrice } = useAssetPricesApi();
 
-const { fetchLatestPrices } = useAssetPricesApi();
-
-async function getAssetPriceInFiat(asset: string): Promise<BigNumber | null> {
-  set(fetchingPrice, true);
-  await fetchPrices({
-    ignoreCache: true,
-    selectedAssets: [asset],
-  });
-  set(fetchingPrice, false);
-
-  const priceInFiat = getAssetPrice(asset);
-
-  if (priceInFiat && !priceInFiat.eq(0)) {
-    return priceInFiat;
-  }
-
-  return null;
-}
-
-function setPriceAndPriceAsset(newPrice = '', newPriceAsset = '') {
-  set(price, newPrice);
-  set(priceAsset, newPriceAsset);
-  set(fetchedPrice, newPrice);
-  set(isCustomPrice, !newPrice || !newPriceAsset);
-  set(fiatPriceHint, null);
-}
-
-async function searchAssetPrice() {
-  if (!asset) {
-    setPriceAndPriceAsset();
-    return;
-  }
-
-  const mainCurrency = get(currencySymbol);
-
-  const customLatestPrices = await fetchLatestPrices({ fromAsset: asset });
-  if (customLatestPrices.length > 0) {
-    const customLatestPrice = customLatestPrices[0];
-    const newPrice = customLatestPrice.price.toFixed();
-    const newPriceAsset = customLatestPrice.toAsset;
-
-    setPriceAndPriceAsset(newPrice, newPriceAsset);
-
-    if (mainCurrency !== newPriceAsset) {
-      const priceInFiat = await getAssetPriceInFiat(asset);
-      if (priceInFiat)
-        set(fiatPriceHint, priceInFiat);
-    }
-
-    return;
-  }
-
-  if (mainCurrency === asset) {
-    setPriceAndPriceAsset('1', mainCurrency);
-    return;
-  }
-
-  const priceInFiat = await getAssetPriceInFiat(asset);
-  if (priceInFiat) {
-    setPriceAndPriceAsset(priceInFiat.toFixed(), mainCurrency);
-    return;
-  }
-
-  setPriceAndPriceAsset();
-}
-
-async function savePrice(asset: string): Promise<boolean> {
-  if (get(isCustomPrice) && get(price) && get(priceAsset)) {
-    return await addLatestPrice({
-      fromAsset: asset,
-      price: get(price),
-      toAsset: get(priceAsset),
-    });
-  }
-
-  return false;
-}
-
-watch(isCustomPrice, (isCustomPrice) => {
-  if (isCustomPrice) {
-    set(price, '');
-    set(priceAsset, '');
-    set(fiatPriceHint, null);
-  }
-  else {
-    searchAssetPrice();
-  }
-});
-
-watchImmediate(() => asset, () => {
-  searchAssetPrice();
-});
+const {
+  fetchedPrice,
+  fetchingPrice,
+  fiatPriceHint,
+  modelIsCustomPrice: isCustomPrice,
+  modelPrice: price,
+  modelPriceAsset: priceAsset,
+  savePrice,
+} = useManualBalancePrice(() => asset, currencySymbol);
 
 const { t } = useI18n({ useScope: 'global' });
 
