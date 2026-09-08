@@ -172,13 +172,17 @@ async function isBackendRunning(): Promise<boolean> {
   }
 }
 
-/** Starts the backend with minimal parameters. */
+/**
+ * Starts the backend with minimal parameters.
+ *
+ * @remarks
+ * Runs against a throwaway data and log directory under the temporary user folder, so the script
+ * never touches a real rotki installation.
+ */
 async function startBackend(): Promise<void> {
-  // Create a folder in /tmp with the username
   const dataDir = path.join(userDir, 'data');
   const logsDir = path.join(userDir, 'logs');
 
-  // Create directories if they don't exist
   if (!fs.existsSync(userDir)) {
     fs.mkdirSync(userDir, { recursive: true });
   }
@@ -306,6 +310,55 @@ function getBlockchains(chains: Chain[]) {
     }));
 }
 
+/**
+ * The single identifier that stands for a group of related protocols.
+ *
+ * @remarks
+ * The unversioned identifier wins when the group contains it, then any variant that is not a
+ * `-v<n>`. Only when the group is versions all the way down does the base name stand in, as a
+ * synthetic entry that has no counterparty of its own.
+ */
+function representativeFor(baseProtocol: string, items: string[]): string {
+  if (items.includes(baseProtocol))
+    return baseProtocol;
+
+  const nonVersionedVariant = items.find(item =>
+    item.startsWith(baseProtocol)
+    && !new RegExp(`^${baseProtocol}-v\\d+$`).test(item),
+  );
+
+  return nonVersionedVariant ?? baseProtocol;
+}
+
+/**
+ * The image and label to publish for one selected protocol.
+ *
+ * @remarks
+ * A synthetic base name matches no counterparty, so its image is borrowed from its first versioned
+ * variant and its label built from the name itself. Every other identifier is looked up directly.
+ */
+function toProtocolEntry(item: string, counterparties: Counterparty[], known: string[]): { image: string; label: string } {
+  if (!known.includes(item)) {
+    const versionedVariant = known.find(protocol => protocol.startsWith(`${item}-v`));
+
+    if (versionedVariant) {
+      const variantData = counterparties.find(counterparty => counterparty.identifier === versionedVariant);
+      assert(variantData);
+      return {
+        image: `${imageUrl}${variantData.image}`,
+        label: toHumanReadable(item, 'sentence'),
+      };
+    }
+  }
+
+  const data = counterparties.find(counterparty => counterparty.identifier === item);
+  assert(data);
+  return {
+    image: `${imageUrl}${data.image}`,
+    label: toHumanReadable(data.label, 'sentence'),
+  };
+}
+
 function getCounterparties(counterparties: Counterparty[]) {
   const identifiers = counterparties.map((item: Counterparty) => item.identifier);
   const filteredCounterparties = identifiers
@@ -323,57 +376,10 @@ function getCounterparties(counterparties: Counterparty[]) {
     return groups;
   }, {});
 
-  const selectedProtocols: string[] = [];
+  const selectedProtocols = Object.entries(protocolGroups)
+    .map(([baseProtocol, items]) => representativeFor(baseProtocol, items));
 
-  // Process each group based on rules
-  Object.entries(protocolGroups).forEach(([baseProtocol, items]) => {
-    // Check if the base protocol exists by itself
-    if (items.includes(baseProtocol)) {
-      selectedProtocols.push(baseProtocol);
-      return;
-    }
-
-    // Check if there's another protocol that starts with the base name but isn't versioned
-    const nonVersionedVariant = items.find(item =>
-      item.startsWith(baseProtocol)
-      && !new RegExp(`^${baseProtocol}-v\\d+$`).test(item),
-    );
-
-    if (nonVersionedVariant) {
-      selectedProtocols.push(nonVersionedVariant);
-      return;
-    }
-
-    // With only versioned variants, the synthetic base stands in, carrying the first's data.
-    selectedProtocols.push(baseProtocol);
-  });
-
-  return selectedProtocols.map((item) => {
-    // For synthetic base protocols that don't exist in counterparties
-    if (!filteredCounterparties.includes(item)) {
-      // Find the first versioned variant to get its image
-      const versionedVariant = filteredCounterparties.find(protocol =>
-        protocol.startsWith(`${item}-v`),
-      );
-
-      if (versionedVariant) {
-        const variantData = counterparties.find(counterparty => counterparty.identifier === versionedVariant);
-        assert(variantData);
-        return {
-          image: `${imageUrl}${variantData.image}`,
-          label: toHumanReadable(item, 'sentence'),
-        };
-      }
-    }
-
-    // Normal case - protocol exists in counterparties
-    const data = counterparties.find(counterparty => counterparty.identifier === item);
-    assert(data);
-    return {
-      image: `${imageUrl}${data.image}`,
-      label: toHumanReadable(data.label, 'sentence'),
-    };
-  });
+  return selectedProtocols.map(item => toProtocolEntry(item, counterparties, filteredCounterparties));
 }
 
 /**

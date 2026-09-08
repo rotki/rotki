@@ -24,8 +24,15 @@ contextBridge.exposeInMainWorld('interop', {
   closeApp: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLOSE_APP),
   openDirectory: async (title: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_DIRECTORY, title),
   premiumUserLoggedIn: (premiumUser: boolean) => ipcRenderer.send(IpcCommands.PREMIUM_LOGIN, premiumUser),
+  /**
+   * Subscribes the renderer's callbacks to the messages the main process pushes.
+   *
+   * @remarks
+   * A startup error raised before this ran is not delivered here. The renderer fetches that one
+   * synchronously on init instead, which is why the main process keeps it rather than only
+   * emitting it.
+   */
   setListeners(listeners: Listeners): void {
-    // Listen for startup errors pushed after renderer is ready
     ipcRenderer.on(IpcCommands.STARTUP_ERROR, (_event, error: StartupError) => {
       listeners.onError(error.message, error.code);
     });

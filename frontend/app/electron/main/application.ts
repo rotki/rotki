@@ -87,8 +87,15 @@ export class Application {
     await this.initialize();
   }
 
+  /**
+   * Declares the privileged schemes the renderer is served over.
+   *
+   * @remarks
+   * Must run before `app.whenReady()`. Electron reads the privileged scheme list while it sets up
+   * the network stack, so registering later is silently ignored and `app://` then behaves as an
+   * ordinary scheme, without fetch support or a secure origin.
+   */
   private registerAppProtocols() {
-    // Standard scheme must be registered before the app is ready
     protocol.registerSchemesAsPrivileged([
       {
         scheme: 'app',
@@ -221,15 +228,22 @@ export class Application {
     };
   }
 
+  /**
+   * Wires the application-level Electron events.
+   *
+   * @remarks
+   * A deep link into a running instance arrives by two different routes. Windows and Linux start a
+   * second process and hand its argv to `second-instance`, while macOS delivers the url to the
+   * running process through `open-url`. Both are needed, and each is the only route on its
+   * platform.
+   */
   private setupAppEvents() {
     app.on('second-instance', (_event, commandLine, _workingDirectory) => {
-      // Handle protocol URL when app is already running
       this.handleProtocolUrl(commandLine);
       this.window.focus();
     });
 
     app.on('open-url', (event, url) => {
-      // Handle protocol URL on macOS
       event.preventDefault();
       this.handleProtocolUrl([url]);
     });

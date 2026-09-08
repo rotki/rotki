@@ -35,8 +35,15 @@ function parseFailureCallback(callbackUrl: URL): OAuthResult | undefined {
   };
 }
 
+/**
+ * Reads an OAuth callback url into a result.
+ *
+ * @remarks
+ * The path is what decides the outcome: `/success` and `/failure` are the two the provider sends.
+ * Anything else, including a url that does not parse, is reported as a failure rather than thrown,
+ * so a malformed callback cannot take down the handler that received it.
+ */
 export function parseToken(oAuthUrl: string): OAuthResult {
-  // Parse the OAuth callback URL
   try {
     const callbackUrl = new URL(oAuthUrl);
 

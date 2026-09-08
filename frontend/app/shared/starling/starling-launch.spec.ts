@@ -227,12 +227,7 @@ describe('stopStarling', () => {
     expect(child.kill).not.toHaveBeenCalled();
   });
 
-  it('should give the supervisor its exit margin once the stop grace elapses', async () => {
-    /*
-     * The regression this helper exists for: the dev launcher raced `stop` against the grace and
-     * killed as soon as that race resolved, so a starling still reaping core and colibri got
-     * SIGKILLed mid-teardown and orphaned both.
-     */
+  it('should wait the exit margin after the stop grace, rather than killing a supervisor still reaping core and colibri', async () => {
     vi.spyOn(rpc, 'request').mockReturnValue(new Promise<never>(() => {}));
     const starling = launch();
 

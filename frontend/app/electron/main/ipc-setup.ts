@@ -237,14 +237,14 @@ export class IpcManager {
     this.walletImportHandlers.cleanup();
   }
 
+  /** Tells the renderer the wallet bridge has dropped, so it can show the disconnected state. */
   private readonly handleBridgeDisconnected = (): void => {
-    // Notify the main window that the bridge has been disconnected
     this.logger.info('Bridge disconnected, sending notification to main window');
     this.requireCallbacks.sendIpcMessage(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, 'disconnected');
   };
 
+  /** Tells the renderer the wallet bridge is back, so it can clear the disconnected state. */
   private readonly handleBridgeReconnected = (): void => {
-    // Notify the main window that the bridge has been reconnected
     this.logger.info('Bridge reconnected, sending notification to main window');
     this.requireCallbacks.sendIpcMessage(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, 'reconnected');
   };

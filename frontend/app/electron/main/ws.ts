@@ -190,7 +190,6 @@ export class WalletBridgeWebSocketServer {
 
   /** Send a notification to the wallet bridge */
   public sendNotification(message: WalletBridgeNotification): void {
-    // Get the active connection
     const connection = this.connectionManager.getActiveConnection();
 
     if (!connection) {
@@ -221,10 +220,8 @@ export class WalletBridgeWebSocketServer {
 
   /** Tear down connection state, leaving the server itself alone */
   private teardown(): void {
-    // Clear idle timer
     this.clearIdleTimer();
 
-    // Close active connection if it exists
     const activeConnection = this.connectionManager.getActiveConnection();
     if (activeConnection) {
       activeConnection.close();

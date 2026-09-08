@@ -33,8 +33,15 @@ export class AppServer {
     }
   }
 
+  /**
+   * Serves the renderer by proxying to the vite dev server.
+   *
+   * @remarks
+   * `httpxy` is imported dynamically because it is a development-only dependency. A static import
+   * would put it in the production main bundle, where it is dead weight and its absence at install
+   * time would be a build failure rather than a path never taken.
+   */
   private async startDevelopmentProxy(port: number, devServerUrl: string, initialRoute?: string): Promise<void> {
-    // Dynamic so httpxy, a dev-only dependency, stays out of the production main bundle.
     const { createProxyServer } = await import('httpxy');
 
     return new Promise((resolve, reject) => {

@@ -89,8 +89,11 @@ export class WindowManager {
     this.forceQuit = true;
   };
 
+  /**
+   * Shows the window, rebuilding it when none exists. Reachable only on macOS, where closing the
+   * window leaves the app running and a dock click then arrives with nothing to show.
+   */
   readonly activate = async (): Promise<void> => {
-    // On macOS a dock click re-creates the window when none is open.
     if (this.window === null)
       await this.create();
     else
@@ -118,11 +121,17 @@ export class WindowManager {
     await window.loadURL('app://localhost/index.html');
   }
 
+  /**
+   * Loads the task-tracker devtools extension, when it is checked out.
+   *
+   * @remarks
+   * In development `import.meta.dirname` is the `dist/` the main process was built into, three
+   * levels below the root the extension sits in. A missing directory is not an error: the
+   * extension is a convenience, not a dependency.
+   */
   private async loadDevExtensions(window: BrowserWindow): Promise<void> {
-    // In dev `import.meta.dirname` is dist/, from which the extension is three levels up.
     const extensionPath = path.resolve(import.meta.dirname, '..', '..', '..', 'tools', 'chrome-task-tracker');
 
-    // Check if the extension directory exists
     if (!fs.existsSync(extensionPath)) {
       this.logger.debug(`Task tracker extension not found at: ${extensionPath}`);
       return;
@@ -211,13 +220,11 @@ export class WindowManager {
   }
 
   cleanup() {
-    // Remove startup error IPC handlers
     ipcMain.removeAllListeners(IpcCommands.SYNC_GET_STARTUP_ERROR);
     ipcMain.removeAllListeners(IpcCommands.RENDERER_READY);
-    // Reset startup error state
+
     this.startupError = null;
     this.rendererReady = false;
-    // Clean up window listeners
     this.window?.removeAllListeners('show');
     this.window?.removeAllListeners('hide');
     this.window?.removeAllListeners('close');
@@ -249,12 +256,10 @@ export class WindowManager {
    * - RENDERER_READY: Signal from renderer that it's ready to receive async messages
    */
   private setupStartupErrorHandlers(): void {
-    // Sync handler - renderer fetches on init to get any error that occurred before ready
     ipcMain.on(IpcCommands.SYNC_GET_STARTUP_ERROR, (event) => {
       event.returnValue = this.startupError;
     });
 
-    // Ready signal handler - renderer is now listening for async messages
     ipcMain.on(IpcCommands.RENDERER_READY, () => {
       this.onRendererReady();
     });
