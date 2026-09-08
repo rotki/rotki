@@ -9,6 +9,21 @@ import { registerShutdownHook } from './process-pool';
 
 const logger = createDevLogger('dev:starling');
 
+/**
+ * Reports a starling event, raising only a crash to an error.
+ *
+ * @remarks
+ * Startup problems surface through the `start` request instead, which does not resolve until the
+ * whole tree is up. What reaches here arrives afterwards, so a crash is the only event that says
+ * something has gone wrong.
+ */
+function logStarlingEvent(method: string): void {
+  if (method === 'event.crashed')
+    logger.error('a backend service crashed, see the starling output above');
+  else
+    logger.info(`starling event: ${method}`);
+}
+
 const API_HOST = '127.0.0.1';
 
 /** How long `stop` may take: starling only answers once the tree is down. */
@@ -58,11 +73,13 @@ export interface StarlingDevPorts {
  *
  * The `start` request is the readiness gate — it resolves only once the whole
  * tree is up, so there is nothing here to poll.
+ *
+ * Under `strictPorts` a slot has reserved every port already, so each is bound exactly and the
+ * start fails if something else holds it, rather than drifting onto a neighbouring instance's.
  */
 export async function startStarlingSupervisor(
   options: StarlingDevOptions,
 ): Promise<{ env: StarlingDevEnv; ports: StarlingDevPorts }> {
-  // A slot reserves every port, so instance mode binds exactly and fails if something holds it.
   const taken = new Set<number>();
   const resolve = async (port: number): Promise<number> => {
     if (options.strictPorts) {
@@ -110,13 +127,7 @@ export async function startStarlingSupervisor(
     `Starting starling supervisor (proxy on ${proxyPort}, core ${corePort}, colibri ${colibriPort}${upstreamNote})`,
   );
 
-  const rpc = new StarlingRpc({ warn: message => logger.warn(message) }, (method) => {
-    // The `start` reply is the readiness gate, so only a crash, which arrives later, matters.
-    if (method === 'event.crashed')
-      logger.error('a backend service crashed, see the starling output above');
-    else
-      logger.info(`starling event: ${method}`);
-  });
+  const rpc = new StarlingRpc({ warn: message => logger.warn(message) }, logStarlingEvent);
 
   const { child, exited } = spawnStarling({
     invocation,

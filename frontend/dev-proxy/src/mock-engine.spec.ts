@@ -41,8 +41,7 @@ describe('mock engine', () => {
       expect(engine.transformResponse(request('POST', UPDATES), { result: 'backend' })).toBeUndefined();
     });
 
-    it('should not let a mock answer for a path it merely starts with', () => {
-      // Regression: `mockKey.includes(requestPath)` let a mock for /api/1/assets/updates answer /api/1/assets.
+    it('should not let a mock for /api/1/assets/updates answer /api/1/assets, a path it merely starts with', () => {
       const engine = createMockEngine({ [UPDATES]: { GET: { result: 'wrong' } } });
 
       expect(engine.transformResponse(request('GET', '/api/1/assets'), { result: 'backend' })).toBeUndefined();
@@ -74,8 +73,7 @@ describe('mock engine', () => {
       expect(engine.transformResponse(request('GET', UPDATES), {})).toStrictEqual({ result: 2 });
     });
 
-    it('should advance the same cursor whatever query string the url carries', () => {
-      // Regression: the cursor was keyed on the full url in one branch and on the path in another.
+    it('should advance the same cursor whatever query string the url carries, keying it on the path in every branch', () => {
       const engine = createMockEngine(mocks);
 
       expect(engine.transformResponse(request('GET', UPDATES), {})).toStrictEqual({ result: 1 });
@@ -179,8 +177,7 @@ describe('mock engine', () => {
         .toStrictEqual({ message: '', result: { completed: [taskId], pending: [] } });
     });
 
-    it('should merge into the path the app actually polls, without a trailing slash', () => {
-      // Regression: matching only `/api/1/tasks/` meant the merge never fired for the app's `/tasks`.
+    it('should merge into the app\'s /api/1/tasks, not only the trailing-slash form it never polls', () => {
       const engine = createMockEngine(mocks);
       const taskId = taskIdOf(engine.transformResponse(request('POST', UPDATES, { async_query: true }), {}));
 

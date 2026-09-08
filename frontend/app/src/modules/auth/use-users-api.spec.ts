@@ -468,8 +468,7 @@ describe('composables/api/session/users', () => {
       expect(coreCalled).toBe(false);
     });
 
-    it('should return true when logout returns 409 conflict', async () => {
-      // Note: colibri logout uses baseURL override, so no /api/1 prefix
+    it('should return true when colibri logout, whose baseURL override drops the /api/1 prefix, returns 409 conflict', async () => {
       server.use(
         http.post(`${colibriUrl}/user/logout`, () =>
           HttpResponse.json({

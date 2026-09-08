@@ -48,8 +48,14 @@ function envKeysDiverge(
   return diverging;
 }
 
+/**
+ * The environment variables that pin this instance to its own ports and data directory.
+ *
+ * @remarks
+ * One origin covers the whole backend chain, because starling fronts core and serves colibri under
+ * `/colibri`. Only the dev-proxy case needs a second origin, and it is the exception.
+ */
 function computeDesiredManagedEnv(name: string, slot: number, ports: PortSet, useProxy: boolean): Record<string, string> {
-  // starling fronts core and colibri (under `/colibri`), so one origin covers the whole chain.
   const starlingOrigin = `http://127.0.0.1:${ports.starlingProxy}`;
   return {
     INSTANCE_NAME: name,

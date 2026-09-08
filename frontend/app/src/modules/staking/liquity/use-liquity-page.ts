@@ -24,8 +24,14 @@ export function useLiquityPage(): UseLiquityPageReturn {
   const currencySymbol = useSetting('currencySymbol');
   const premium = usePremium();
 
+  /**
+   * Loads everything the Liquity page shows, optionally forcing a refresh.
+   *
+   * @remarks
+   * The price query status is cleared first. It is keyed by asset rather than by run, so whatever
+   * the previous fetch left behind would be read as progress belonging to this one.
+   */
   async function fetch(refresh = false): Promise<void> {
-    // The previous run's per-asset progress would otherwise be read as this run's.
     resetProtocolStatsPriceQueryStatus('liquity');
 
     await Promise.all([

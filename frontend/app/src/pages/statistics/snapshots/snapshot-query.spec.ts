@@ -25,8 +25,7 @@ describe('pages/statistics/snapshots/parseSnapshotFilters', () => {
     });
   });
 
-  it('should reject a bound that is not a number rather than passing NaN on', () => {
-    // NaN would compare false against every timestamp and read as an empty account.
+  it('should reject a bound that is not a number rather than passing on a NaN, which compares false against every timestamp and reads as an empty account', () => {
     expect(parseSnapshotFilters({ from: 'yesterday' })).toEqual({
       fromTimestamp: undefined,
       toTimestamp: undefined,

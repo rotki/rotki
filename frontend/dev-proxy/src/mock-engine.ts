@@ -120,9 +120,14 @@ export function createMockEngine(
     };
   }
 
-  /** Answers a poll for one mocked task; a real backend task falls through. */
+  /**
+   * Answers a poll for one mocked task; a real backend task falls through.
+   *
+   * @remarks
+   * The path segment after `/tasks/` is not always an id. Siblings such as `/tasks/trigger` and
+   * `/tasks/scheduler` share the prefix, and parsing to `NaN` is what routes them onward.
+   */
   function taskOutcome(req: MockRequest): unknown {
-    // Non-numeric siblings (/tasks/trigger, /tasks/scheduler) fall through.
     const taskId = Number.parseInt(req.path.replace(`${TASKS_PATH}/`, ''), 10);
     if (Number.isNaN(taskId))
       return undefined;

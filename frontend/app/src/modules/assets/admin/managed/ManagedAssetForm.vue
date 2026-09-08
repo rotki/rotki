@@ -102,11 +102,20 @@ watchImmediate(modelValue, (asset: SupportedAsset) => {
   }
 });
 
-onMounted(() => {
-  // An opened edit dialog seeds the address it already has, which must not read as a fresh one.
+/**
+ * Stops the address the form opens with from triggering a lookup.
+ *
+ * @remarks
+ * Only in edit mode, where the field is seeded from the asset being edited. That write looks the
+ * same to the watcher as one the user made, and acting on it would overwrite the very fields the
+ * dialog was opened to show.
+ */
+function suppressLookupForSeededAddress(): void {
   if (editMode)
     suppressNextLookup();
-});
+}
+
+onMounted(suppressLookupForSeededAddress);
 
 defineExpose({
   saveAsset,

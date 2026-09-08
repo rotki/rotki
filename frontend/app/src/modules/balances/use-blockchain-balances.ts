@@ -148,7 +148,6 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         priority: mode === RefreshMode.USER ? Priority.USER : DEFAULT_PRIORITY,
         rerunnable: true,
         run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
-          // A dropped refresh settles SKIPPED, never `ok`.
           if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 

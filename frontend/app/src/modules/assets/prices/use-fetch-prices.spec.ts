@@ -193,8 +193,7 @@ describe('assetSetDigest', () => {
     expect(assetSetDigest(['DAI'])).not.toBe(assetSetDigest(['DAI', 'ETH']));
   });
 
-  it('should not collide on a shifted separator', () => {
-    // Without folding the separator, ['ab','c'] and ['a','bc'] hash the same byte stream.
+  it('should not collide on a shifted separator, an unfolded one making [ab, c] and [a, bc] the same byte stream', () => {
     expect(assetSetDigest(['ab', 'c'])).not.toBe(assetSetDigest(['a', 'bc']));
   });
 });

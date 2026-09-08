@@ -3,8 +3,7 @@ import { ActivityKind } from '../types';
 import { EditKind, invalidatedKinds } from './policy';
 
 describe('invalidatedKinds', () => {
-  it('should map every event mutation to the computed downstream work', () => {
-    // PNL_REPORT is deliberately deferred (runs native but kept out of smart re-run for now).
+  it('should map every event mutation to historical balances alone, PNL_REPORT being deliberately held out of smart re-run', () => {
     for (const kind of Object.values(EditKind)) {
       expect(invalidatedKinds(kind)).toEqual([
         ActivityKind.HISTORICAL_BALANCES,

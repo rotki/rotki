@@ -149,9 +149,14 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     return breakdown;
   }
 
-  /** Detection with retries, since an extension can announce itself after the page has loaded. */
+  /**
+   * Detection with retries, since an extension can announce itself after the page has loaded.
+   *
+   * @remarks
+   * Defaults are applied by spreading a single object rather than per field, which keeps the
+   * complexity rule from counting each defaulted field as a branch of this function.
+   */
   async function detectProviders(options: UnifiedDetectionOptions = {}): Promise<EnhancedProviderDetail[]> {
-    // Spread rather than per-field defaults: the rule counts each defaulted field as a branch.
     const settings = { ...DETECTION_DEFAULTS, ...options };
 
     set(isDetecting, true);

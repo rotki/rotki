@@ -208,20 +208,29 @@ async function assertDevProxyPortFree(port: number): Promise<void> {
   );
 }
 
+/**
+ * Starts the premium dev-proxy between starling and core.
+ *
+ * @remarks
+ * The chain is frontend to starling's proxy to dev-proxy to core, and only `/api/1/*` is routed
+ * through it. starling stays the single renderer origin, so `VITE_BACKEND_URL` is untouched.
+ */
 function spawnProxyForBackend(instance: InstanceRuntime | null, corePort: number): void {
-  /* The premium dev-proxy sits between starling and core: frontend -> starling proxy ->
-     dev-proxy -> core. starling stays the single renderer origin, so `VITE_BACKEND_URL` is
-     untouched, and only `/api/1/*` is routed through the proxy. */
   startDevProxy({
     PORT: String(devProxyPort(instance)),
     BACKEND: `http://127.0.0.1:${corePort}`,
   });
 }
 
+/**
+ * Starts the premium dev-proxy for the starling that Electron spawns itself.
+ *
+ * @remarks
+ * That starling routes `/api/1/*` through this proxy once it is told the port below. The renderer
+ * is handed starling's origin over IPC and has to keep it, so nothing here touches
+ * `VITE_BACKEND_URL`.
+ */
 function spawnProxyForElectron(instance: InstanceRuntime | null): void {
-  /* Electron spawns its own starling, which routes `/api/1/*` through this proxy once told the
-     port below. The renderer is handed starling's origin over IPC and must keep it, so nothing
-     here touches VITE_BACKEND_URL. */
   const backendPort = instance?.ports.restApi ?? DEFAULT_PORTS.restApi;
   startDevProxy({
     PORT: String(devProxyPort(instance)),
