@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import { isEqual } from 'es-toolkit';
 import { type AccountManageState, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
+import { hasAccountChanged, isAddingValidator } from '@/modules/accounts/management/account-dialog-state';
 import AccountForm from '@/modules/accounts/management/AccountForm.vue';
 import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
@@ -40,13 +40,9 @@ const { loading } = useAccountLoading();
 const { validatorsLimitInfo } = useEthStaking();
 const { currentTier, ethStakedLimit, premium } = usePremiumHelper();
 
-const isValidatorLimitReached = computed<boolean>(() => {
-  const state = get(model);
-  if (!state || state.mode === 'edit')
-    return false;
-
-  return state.type === 'validator' && get(validatorsLimitInfo).showWarning;
-});
+const isValidatorLimitReached = computed<boolean>(() =>
+  isAddingValidator(get(model)) && get(validatorsLimitInfo).showWarning,
+);
 
 const upgradeLinkText = computed<string>(() =>
   get(premium)
@@ -57,14 +53,6 @@ const upgradeLinkText = computed<string>(() =>
 const upgradeLinkUrl = computed<string | undefined>(() =>
   get(premium) ? externalLinks.manageSubscriptions : undefined,
 );
-
-const isSaveDisabled = computed<boolean>(() => {
-  const state = get(model);
-  if (!state || state.mode === 'edit')
-    return false;
-
-  return get(isValidatorLimitReached);
-});
 
 function dismiss(): void {
   resetSaveError();
@@ -94,14 +82,10 @@ async function confirm(): Promise<void> {
   }
 }
 watch(model, (model, oldModel) => {
-  if (!model || !oldModel) {
-    set(stateUpdated, false);
-    return;
-  }
-
-  if (model.chain === oldModel.chain && !isEqual(model.data, oldModel.data)) {
+  if (hasAccountChanged(model, oldModel))
     set(stateUpdated, true);
-  }
+  else if (!model || !oldModel)
+    set(stateUpdated, false);
 }, { deep: true });
 </script>
 
@@ -110,7 +94,7 @@ watch(model, (model, oldModel) => {
     :display="!!model"
     :title="title"
     :subtitle="subtitle"
-    :action="{ disabled: isSaveDisabled, primary: t('common.actions.save') }"
+    :action="{ disabled: isValidatorLimitReached, primary: t('common.actions.save') }"
     :loading="loading || pending"
     :prompt-on-close="stateUpdated"
     @confirm="confirm()"
