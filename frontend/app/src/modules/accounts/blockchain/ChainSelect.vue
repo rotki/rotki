@@ -48,12 +48,15 @@ const filteredItems = computed<string[]>(() => {
 
 const mappedOptions = computed<ChainInfo[]>(() => {
   const filtered = get(filteredItems);
-  const chains = get(supportedChains).filter(item => filtered.includes(item.id));
+  const chains = get(supportedChains)
+    .filter(item => filtered.includes(item.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   if (items.includes('all')) {
     chains.unshift({
       id: 'all',
       image: '',
-      name: '',
+      name: t('account_form.labels.all_supported_chains'),
       type: 'all',
     });
   }
