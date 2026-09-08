@@ -5,6 +5,7 @@ import { useManagedAssetForm } from '@/modules/assets/admin/managed/use-managed-
 import { useManagedAssetsTable } from '@/modules/assets/admin/managed/use-managed-assets-table';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { identifier = null, mainPage = false } = defineProps<{
@@ -18,7 +19,6 @@ const mergeTool = ref<boolean>(false);
 const openAction = ref<boolean>(false);
 
 const router = useRouter();
-const route = useRoute();
 
 const { add, assetTypes, edit, editAsset, editMode, modelValue } = useManagedAssetForm(() => identifier);
 
@@ -38,17 +38,18 @@ const {
   sort,
 } = useManagedAssetsTable(() => mainPage, assetTypes);
 
+const { consumeAddQuery } = useAddQuery(add);
+
 onMounted(async () => {
   await refetch();
-  const query = get(route).query;
 
-  if (identifier || query.add) {
-    if (identifier)
-      await editAsset(identifier);
-    else add();
-
+  if (identifier) {
+    await editAsset(identifier);
     await router.replace({ query: {} });
+    return;
   }
+
+  await consumeAddQuery();
 });
 </script>
 

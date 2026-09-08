@@ -9,6 +9,7 @@ import { useAccountCategoryHelper } from '@/modules/accounts/use-account-categor
 import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { category, title } = defineProps<{
@@ -24,9 +25,6 @@ const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(() => category);
 
 const { chainIds } = useAccountCategoryHelper(() => category);
-
-const route = useRoute();
-const router = useRouter();
 
 function createNewBlockchainAccount(): void {
   set(account, {
@@ -47,12 +45,10 @@ function refresh() {
     get(table).refresh();
 }
 
+const { consumeAddQuery } = useAddQuery(createNewBlockchainAccount);
+
 onMounted(async () => {
-  const { query } = get(route);
-  if (query.add) {
-    createNewBlockchainAccount();
-    await router.replace({ query: {} });
-  }
+  await consumeAddQuery();
 });
 </script>
 

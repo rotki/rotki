@@ -8,6 +8,7 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoricPriceFormDialog from '@/modules/assets/prices/historic/HistoricPriceFormDialog.vue';
 import { HistoricPriceFilterKeys, useHistoricPriceFields } from '@/modules/assets/prices/use-historic-price-fields';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -103,9 +104,6 @@ const filter = computed<{ fromAsset?: string; toAsset?: string }>(() => {
   };
 });
 
-const router = useRouter();
-const route = useRoute();
-
 const { deletePrice, items, loading, refresh } = useHistoricPrices(t, filter);
 
 function add() {
@@ -138,13 +136,10 @@ function showDeleteConfirmation(item: HistoricalPrice) {
   );
 }
 
-onMounted(async () => {
-  const query = get(route).query;
+const { consumeAddQuery } = useAddQuery(add);
 
-  if (query.add) {
-    add();
-    await router.replace({ query: {} });
-  }
+onMounted(async () => {
+  await consumeAddQuery();
 });
 </script>
 

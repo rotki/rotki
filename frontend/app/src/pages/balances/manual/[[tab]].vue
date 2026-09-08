@@ -10,6 +10,7 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { BalanceType } from '@/modules/balances/types/balances';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import { NoteLocation } from '@/modules/core/common/notes';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
@@ -65,12 +66,12 @@ watchImmediate(route, (route) => {
     router.replace('/balances/manual/assets');
 }, { deep: true });
 
+const { consumeAddQuery } = useAddQuery(() => {
+  startPromise(nextTick(() => add()));
+});
+
 onBeforeMount(async () => {
-  const { query } = get(route);
-  if (query.add) {
-    await router.replace({ query: {} });
-    startPromise(nextTick(() => add()));
-  }
+  await consumeAddQuery();
   await fetchManualBalances();
   await fetchAssociatedLocations();
 });

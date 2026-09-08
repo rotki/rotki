@@ -15,6 +15,7 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { NoteLocation } from '@/modules/core/common/notes';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
@@ -37,8 +38,6 @@ const chainsFilter = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const route = useRoute('/balances/blockchain/');
-
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
 const { useBlockchainBalances } = useAggregatedBalances();
@@ -49,16 +48,14 @@ const { handleBlockchainRefresh } = useBalanceRefresh();
 
 const aggregatedBalances = useBlockchainBalances(chainsFilter);
 
-onMounted(() => {
-  const { query } = get(route);
-
-  if (!query.add) {
-    return;
-  }
-
+const { consumeAddQuery } = useAddQuery(() => {
   startPromise(nextTick(() => {
     set(account, createNewBlockchainAccount());
   }));
+});
+
+onMounted(async () => {
+  await consumeAddQuery();
 });
 </script>
 

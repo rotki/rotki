@@ -13,6 +13,7 @@ import { useAccountCategoryHelper } from '@/modules/accounts/use-account-categor
 import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
+import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-access';
@@ -88,13 +89,13 @@ function getTabLink(category: string): RouteLocationRaw {
   };
 }
 
+const { consumeAddQuery } = useAddQuery((query) => {
+  const addressToAdd = typeof query.addressToAdd === 'string' ? query.addressToAdd : undefined;
+  createNewBlockchainAccount(addressToAdd);
+});
+
 onMounted(async () => {
-  const { query } = get(route);
-  if (query.add) {
-    const addressToAdd = typeof query.addressToAdd === 'string' ? query.addressToAdd : undefined;
-    createNewBlockchainAccount(addressToAdd);
-    await router.replace({ query: {} });
-  }
+  await consumeAddQuery();
 });
 
 watchImmediate(route, (route) => {
