@@ -3,6 +3,33 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 
+export const DecodingComparisonEvent = z.object({
+  address: z.string().nullable().optional(),
+  amount: NumericString,
+  asset: z.string(),
+  balanceEffect: NumericString,
+  counterparty: z.string().nullable().optional(),
+  customized: z.boolean(),
+  eventSubtype: z.string().nullable(),
+  eventType: z.string(),
+  location: z.string(),
+  locationLabel: z.string().nullable(),
+  sequenceIndex: z.number(),
+  timestamp: z.number(),
+  userNotes: z.string().optional(),
+});
+
+export type DecodingComparisonEvent = z.infer<typeof DecodingComparisonEvent>;
+
+export const TransactionDecodingComparison = z.object({
+  decodedEvents: z.array(DecodingComparisonEvent),
+  groupIdentifier: z.string(),
+  savedEvents: z.array(DecodingComparisonEvent),
+  txHash: z.string(),
+});
+
+export type TransactionDecodingComparison = z.infer<typeof TransactionDecodingComparison>;
+
 /**
  * A single auto-remediation attempt. The backend currently records at least the
  * strategy and its outcome; timestamps/attributions may be added later, so the
@@ -21,6 +48,7 @@ export const AutoRemediationAttempt = z.looseObject({
   strategy: z.string(),
   success: z.boolean().optional(),
   timestamp: z.number().optional(),
+  transactions: z.array(TransactionDecodingComparison).optional(),
 });
 
 export type AutoRemediationAttempt = z.infer<typeof AutoRemediationAttempt>;
