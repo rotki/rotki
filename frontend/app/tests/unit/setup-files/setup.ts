@@ -181,9 +181,29 @@ vi.mock('@rotki/ui-library', async () => {
   };
 });
 
+/**
+ * Fails a request to the backend that no handler covers, instead of letting it reach the network.
+ *
+ * @remarks
+ * Under `warn` the message went to a console vitest silences for a passing test, so a component
+ * querying from `onMounted` opened a real socket on every run and the suite still exited 0. The
+ * error has to be thrown: `print.error` only reports, and the request proceeds regardless.
+ *
+ * Only the backend is guarded. A spec may start a server of its own and talk to it, which the
+ * address import server spec does on an ephemeral port.
+ */
+function failUnhandledBackendRequest(request: Request, print: { error: () => void }): void {
+  const backendUrl = process.env.VITE_BACKEND_URL;
+  if (!backendUrl || !request.url.startsWith(backendUrl))
+    return;
+
+  print.error();
+  throw new Error(`No msw handler for ${request.method} ${request.url}`);
+}
+
 beforeAll(() => {
   server.listen({
-    onUnhandledRequest: 'warn',
+    onUnhandledRequest: failUnhandledBackendRequest,
   });
 
   class ResizeObserverMock {
