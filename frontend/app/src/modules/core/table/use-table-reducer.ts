@@ -178,12 +178,14 @@ function reduceParamChanged<TFilter, TItem extends NonNullable<unknown>>(
  * @remarks
  * A navigation is authoritative: it *sets* the intent to `route` or `restore` rather than raising
  * it, which is the one path that can lower a stale `user` intent left behind by an earlier change.
+ *
+ * A `self` event is the echo of a write this reducer already made, so it is dropped rather than
+ * re-applied.
  */
 function reduceRouteApplied<TFilter, TItem extends NonNullable<unknown>>(
   state: TableState<TFilter, TItem>,
   event: Extract<TableEvent<TFilter, TItem>, { type: 'route-applied' }>,
 ): ReduceResult<TFilter, TItem> {
-  // The echo of our own write: skip re-applying state we already hold.
   if (event.source === 'self')
     return { effects: [], state };
 

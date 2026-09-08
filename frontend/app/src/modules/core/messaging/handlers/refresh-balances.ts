@@ -3,7 +3,6 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { createStateHandler } from '@/modules/core/messaging/utils';
 
 export function createRefreshBalancesHandler(): StateHandler {
-  // Capture functions at handler creation time (in setup context)
   const { refreshBlockchainBalances } = useBlockchainBalances();
 
   return createStateHandler(async (data) => {

@@ -252,8 +252,7 @@ describe('useTaskHandler', () => {
       expect(mockCancelAsyncTask).not.toHaveBeenCalled();
     });
 
-    it('should ignore a task the store knows but nothing is awaiting', async () => {
-      // Only `runTask` registers a handler, so a store entry on its own is not cancellable.
+    it('should refuse to cancel a store entry added without runTask, which registers no handler', async () => {
       store.addTask(60, 'Test task');
 
       const deleted = await handler.cancelTaskById(60);

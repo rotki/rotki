@@ -4,7 +4,6 @@ import { createStateHandler } from '@/modules/core/messaging/utils';
 import { useSync } from '@/modules/session/use-session-sync';
 
 export function createDbUploadResultHandler(): StateHandler<DbUploadResult> {
-  // Capture refs at handler creation time (in setup context)
   const { uploadProgress, uploadStatus, uploadStatusAlreadyHandled } = useSync();
 
   return createStateHandler<DbUploadResult>((data) => {
@@ -25,7 +24,6 @@ export function createDbUploadResultHandler(): StateHandler<DbUploadResult> {
 }
 
 export function createDbUploadProgressHandler(): StateHandler<DatabaseUploadProgress> {
-  // Capture ref at handler creation time (in setup context)
   const { uploadProgress } = useSync();
 
   return createStateHandler<DatabaseUploadProgress>((data) => {

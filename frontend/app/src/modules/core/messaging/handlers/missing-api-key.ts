@@ -17,7 +17,6 @@ function isSuppressibleService(service: string): service is SuppressibleMissingK
 }
 
 export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
-  // Capture interop functions at handler creation time (in setup context)
   const { openUrl } = useInterop();
   const { update } = useSettingsOperations();
   const suppressMissingKeyMsgServices = useSetting('suppressMissingKeyMsgServices');

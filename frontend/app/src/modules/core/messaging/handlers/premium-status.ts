@@ -5,7 +5,6 @@ import { createStateWithNotificationHandler } from '@/modules/core/messaging/uti
 import { usePremium } from '@/modules/premium/use-premium';
 
 export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<PremiumStatusUpdateData> {
-  // Capture premium ref at handler creation time (in setup context)
   const premium = usePremium();
 
   return createStateWithNotificationHandler<PremiumStatusUpdateData, boolean>(

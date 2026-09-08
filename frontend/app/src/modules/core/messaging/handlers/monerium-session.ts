@@ -4,6 +4,14 @@ import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 
+/**
+ * Notifies the user that the Monerium session expired and offers to reauthenticate.
+ *
+ * @remarks
+ * The status is set to unauthenticated before the refresh rather than left to it. The backend may
+ * already have dropped the credentials (`invalid_grant`), and the refresh is a round trip, so
+ * without the local write the UI would keep claiming a live session for its duration.
+ */
 export function createMoneriumSessionHandler(
   t: ReturnType<typeof useI18n>['t'],
   router: ReturnType<typeof useRouter>,
@@ -11,7 +19,6 @@ export function createMoneriumSessionHandler(
   const { refreshStatus, setStatus } = useMoneriumOAuth();
 
   return createNotificationHandler<MoneriumSessionKeyExpiredData>(async (data) => {
-    // Backend may have cleared credentials (invalid_grant); update UI state immediately.
     setStatus({ authenticated: false });
     await refreshStatus();
 

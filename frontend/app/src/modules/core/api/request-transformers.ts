@@ -26,12 +26,16 @@ export interface TransformOptions {
 
 /**
  * Transforms request body: filters empty properties and converts to snake_case.
+ *
+ * @remarks
+ * Only a plain payload object is transformed. Every other `BodyInit`, a `FormData` or a `Blob`
+ * among them, is passed through untouched, since neither filtering nor key renaming means
+ * anything for it.
  */
 export function transformRequestBody(
   body: BodyInit | Record<string, unknown> | null | undefined,
   options: TransformOptions,
 ): BodyInit | Record<string, unknown> | null | undefined {
-  // Only a plain payload object is transformed; every other BodyInit is sent through untouched.
   if (!isPlainBody(body))
     return body;
 
