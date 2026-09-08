@@ -41,9 +41,12 @@ let childProcesses: ChildProcessWithoutNullStreams[] = [];
 
 /**
  * Start or restart App when source files are changed
+ *
+ * @remarks
+ * The dev server's url is assembled here and exported as `VITE_DEV_SERVER_URL`, which is how the
+ * spawned main process learns where to load the renderer from.
  */
 async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mode: string, remoteDebuggingPort?: number): Promise<BuildOutput> {
-  // Create VITE_DEV_SERVER_URL environment variable to pass it to the main process.
   const protocol = server.https ? 'https:' : 'http:';
   const host = server.host ?? 'localhost';
   const port = server.port; // Vite searches for and occupies the first free port: 3000, 3001, 3002, and so on

@@ -78,6 +78,10 @@ export class LogManager {
 
   /**
    * Compress a file using gzip
+   *
+   * @remarks
+   * The input is removed only once the write stream has finished, so a compression that fails
+   * partway leaves the original log in place rather than losing it to a truncated archive.
    */
   private async compressFile(inputPath: string, outputPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -89,7 +93,6 @@ export class LogManager {
         .pipe(gzipStream)
         .pipe(writeStream)
         .on('finish', () => {
-          // Remove the original file after a successful compression
           try {
             fs.unlinkSync(inputPath);
             resolve();

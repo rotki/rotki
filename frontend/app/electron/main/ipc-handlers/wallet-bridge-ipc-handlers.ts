@@ -33,8 +33,16 @@ export class WalletBridgeIpcHandlers {
     });
   }
 
+  /**
+   * Opens the wallet bridge page in the user's browser, starting the servers if they are down.
+   *
+   * @remarks
+   * Both servers are checked before anything is started, because the bridge is reopened as often
+   * as it is opened and restarting a live pair would drop a connected wallet. When they are up but
+   * the client has gone, reopening the url is enough to bring it back; the provider selection is
+   * only reset when a connected client is being handed a fresh page.
+   */
   openWalletConnectBridge = async (): Promise<void> => {
-    // Check if servers are already running
     const httpRunning = this.appServer.isListening();
     const wsRunning = this.walletBridgeWebSocketServer.isListening();
     const wsConnected = this.walletBridgeWebSocketServer.isConnected();

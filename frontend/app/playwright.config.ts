@@ -129,9 +129,12 @@ ensureDirectories();
 /**
  * Detect system Chromium installation for Arch Linux and other systems.
  * Returns the path to chromium if found, undefined otherwise (uses bundled Chromium).
+ *
+ * @remarks
+ * `which chromium` is tried first, since it finds the binary on most Linux distributions without
+ * assuming where the package put it, and the known paths below are only the fallback.
  */
 function detectSystemChromium(): string | undefined {
-  // Try 'which chromium' first (works on most Linux distros including Arch)
   try {
     const chromiumPath = execSync('which chromium', { encoding: 'utf-8' }).trim();
     if (chromiumPath && fs.existsSync(chromiumPath)) {

@@ -133,9 +133,15 @@ function nextCode(lines: string[], from: number): string {
   return '';
 }
 
-/** Classes a `//` line can fall into once the content rules have all missed. */
+/**
+ * Classes a `//` line can fall into once the content rules have all missed.
+ *
+ * @remarks
+ * A line following another `//` yields no class of its own. It is a continuation, so the run it
+ * belongs to is what gets judged, and classing it separately would count one comment several
+ * times.
+ */
 function classifyLineComment(lines: string[], index: number, text: string): string | undefined {
-  // A continuation line is judged by the run it belongs to, not on its own.
   if (lines[index - 1]?.trim().startsWith('//'))
     return undefined;
 

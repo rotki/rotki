@@ -90,9 +90,14 @@ function collectBundle(result: unknown): Bundle {
   return { chunks, html };
 }
 
-/** A package lands in a chunk other than the one the shared rules assign it. */
+/**
+ * A package lands in a chunk other than the one the shared rules assign it.
+ *
+ * @remarks
+ * Violations are keyed by `"<package> -> <actual>"`, so a package split across chunks is reported
+ * once per chunk it wrongly reached rather than once per module inside it.
+ */
 function checkOwnership(chunks: Chunk[]): string[] {
-  // Keyed by "<package> -> <actual>", so a split package reports per chunk, not per module.
   const violations = new Set<string>();
 
   for (const chunk of chunks) {
