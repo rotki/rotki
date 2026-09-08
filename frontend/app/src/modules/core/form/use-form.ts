@@ -170,7 +170,16 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     return Boolean(get(touched).get(target.owner)?.has(target.key));
   }
 
-  const parsed = computed(() => toValue(options.schema).safeParse(state));
+  /**
+   * @remarks
+   * `toRaw` is load-bearing. Since zod 4.5 a schema carries `_zod` as a non-configurable,
+   * non-writable data property, and a Proxy must hand back that exact object. Vue's deep
+   * reactive proxy hands back a wrapped one, so `safeParse` throws a `TypeError` the moment a
+   * schema reaches here through anything reactive: a `ref`, a `reactive`, or the `reactive`
+   * props bag Vue Test Utils mounts with. A schema is never reactive data, so unwrapping it
+   * costs nothing.
+   */
+  const parsed = computed(() => toRaw(toValue(options.schema)).safeParse(state));
 
   const valid = computed<boolean>(() => get(parsed).success);
 
