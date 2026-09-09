@@ -63,6 +63,7 @@ async function doImport() {
       </template>
       <RuiButton
         variant="list"
+        data-testid="address-book-import"
         @click="importDialogOpen = true;"
       >
         <template #prepend>
@@ -105,6 +106,7 @@ async function doImport() {
           <RuiButton
             variant="text"
             color="primary"
+            data-testid="address-book-import-cancel"
             @click="importDialogOpen = false"
           >
             {{ t('common.actions.cancel') }}
@@ -113,6 +115,7 @@ async function doImport() {
             color="primary"
             :disabled="!importFile"
             :loading="loading"
+            data-testid="address-book-import-confirm"
             @click="doImport()"
           >
             {{ t('common.actions.import') }}
