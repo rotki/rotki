@@ -2,6 +2,7 @@
 import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
+import { canWidenSearch, type SearchCriteria, widenedSearch } from '@/modules/history/events/matching/search-widening';
 import PotentialMatchesCards from '@/modules/history/events/PotentialMatchesCards.vue';
 import PotentialMatchesEmpty from '@/modules/history/events/PotentialMatchesEmpty.vue';
 import PotentialMatchesTable from '@/modules/history/events/PotentialMatchesTable.vue';
@@ -61,25 +62,17 @@ const tableMaxHeight = computed<string>(() =>
     : 'calc(100vh - 33rem)',
 );
 
-/** Seven days, matching the time field's own max. */
-const MAX_SEARCH_HOURS = 168;
+const searchCriteria = computed<SearchCriteria>(() => ({
+  hours: get(searchTimeRange),
+  tolerance: get(tolerancePercentage),
+}));
 
-/** Raising this past 100 changes nothing: a full 100% either side already excludes no candidate. */
-const MAX_TOLERANCE_PERCENTAGE = 100;
+const canWiden = computed<boolean>(() => canWidenSearch(get(searchCriteria)));
 
-const canWiden = computed<boolean>(() =>
-  Number(get(searchTimeRange)) < MAX_SEARCH_HOURS || Number(get(tolerancePercentage)) < MAX_TOLERANCE_PERCENTAGE);
-
-/** Doubles both criteria, capped at each field's max. */
 function widenSearch(): void {
-  const hours = Number(get(searchTimeRange));
-  if (!Number.isNaN(hours))
-    set(searchTimeRange, Math.min(hours * 2, MAX_SEARCH_HOURS).toString());
-
-  const tolerance = Number(get(tolerancePercentage));
-  if (!Number.isNaN(tolerance))
-    set(tolerancePercentage, Math.min(tolerance * 2, MAX_TOLERANCE_PERCENTAGE).toString());
-
+  const { hours, tolerance } = widenedSearch(get(searchCriteria));
+  set(searchTimeRange, hours);
+  set(tolerancePercentage, tolerance);
   emit('search');
 }
 
