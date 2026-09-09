@@ -1,4 +1,5 @@
 import { z, type ZodType } from 'zod';
+import { type MessageKey, msg } from '@/message-key';
 
 export const ReminderUnit = {
   DAYS: 'days',
@@ -16,6 +17,21 @@ export const REMINDER_UNITS: readonly ReminderUnit[] = [
   ReminderUnit.DAYS,
   ReminderUnit.WEEKS,
 ];
+
+/**
+ * The label of each unit, written out one key per member rather than assembled from the unit name.
+ *
+ * @remarks
+ * Adding a unit fails to typecheck until its key is added here, and branding with `msg.$t` is what
+ * lets the i18n lint rules see these as real usages: they are resolved through `t(UNIT_LABELS[unit])`,
+ * an index expression the unused-key rule cannot read.
+ */
+export const UNIT_LABELS: Record<ReminderUnit, MessageKey> = {
+  [ReminderUnit.DAYS]: msg.$t('calendar.reminder.units.days'),
+  [ReminderUnit.HOURS]: msg.$t('calendar.reminder.units.hours'),
+  [ReminderUnit.MINUTES]: msg.$t('calendar.reminder.units.minutes'),
+  [ReminderUnit.WEEKS]: msg.$t('calendar.reminder.units.weeks'),
+};
 
 const SECONDS: Record<ReminderUnit, number> = {
   [ReminderUnit.MINUTES]: 60,
