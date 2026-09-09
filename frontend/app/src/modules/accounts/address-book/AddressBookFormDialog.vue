@@ -13,12 +13,20 @@ const open = defineModel<boolean>('open', { required: true });
 
 const {
   editableItem = null,
-  editMode,
+  editMode = false,
   location,
   root = false,
   selectedChain,
 } = defineProps<{
+  /** The entry the form starts from, which an addition may also have: see `editMode`. */
   editableItem?: AddressBookPayload | null;
+  /**
+   * Whether the entry is being updated rather than added.
+   *
+   * @remarks
+   * Not derived from `editableItem`: the messages dialog seeds the form with the address the
+   * backend asked the user to name, and that is still an addition.
+   */
   editMode?: boolean;
   selectedChain?: string;
   location?: 'global' | 'private';
@@ -98,7 +106,6 @@ async function save(): Promise<boolean> {
 
   const formValue = get(modelValue);
   const { address, blockchain, location, name } = formValue;
-  const isEdit = editMode ?? !!editableItem;
   const payload = {
     address: address.trim(),
     blockchain: blockchain === 'all' ? null : blockchain,
@@ -108,13 +115,13 @@ async function save(): Promise<boolean> {
   set(loading, true);
   let success;
   try {
-    success = isEdit
+    success = editMode
       ? await updateAddressBook(location, [payload])
       : await addAddressBook(location, [payload], root);
   }
   catch (error: unknown) {
     success = false;
-    handleSaveError(error, isEdit, formValue);
+    handleSaveError(error, editMode, formValue);
   }
 
   set(loading, false);
@@ -128,7 +135,7 @@ async function save(): Promise<boolean> {
 }
 
 const dialogTitle = computed<string>(() =>
-  editableItem
+  editMode
     ? t('address_book.dialog.edit_title')
     : t('address_book.dialog.add_title'),
 );
@@ -172,7 +179,7 @@ watchImmediate([open, () => editableItem], ([open, editableItem]) => {
       v-model="modelValue"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
-      :edit-mode="editMode ?? !!editableItem"
+      :edit-mode="editMode"
     />
   </BigDialog>
 </template>
