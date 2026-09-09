@@ -2,8 +2,8 @@
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import { HistoryEventEntryType } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { initialIndexerOrder } from '@/modules/history/events/components/redecode-indexer-order';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import {
   BLOCKSCOUT_PRIO_LIST_ITEM,
@@ -61,33 +61,13 @@ const evmChainName = computed<string | undefined>(() => {
   return undefined;
 });
 
-/**
- * The indexer order this dialog opens with: the chain's own order, else the default one, else
- * every indexer.
- *
- * @remarks
- * The final fallback is listed here rather than read from a setting, so the dialog still offers a
- * choice on an account that has never configured one.
- */
-function getInitialIndexerOrder(): PrioritizedListId[] {
-  const chainName = get(evmChainName);
-  const chainOrders = get(evmIndexersOrder);
-
-  if (chainName && chainOrders && chainOrders[chainName]) {
-    return [...chainOrders[chainName]];
-  }
-
-  const defaultOrder = get(defaultEvmIndexerOrder);
-  if (defaultOrder && defaultOrder.length > 0) {
-    return [...defaultOrder];
-  }
-
-  return [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN];
-}
-
 function resetState(): void {
   set(deleteCustom, get(forceDeleteCustom));
-  set(localIndexerOrder, getInitialIndexerOrder());
+  set(localIndexerOrder, initialIndexerOrder(
+    get(evmChainName),
+    get(evmIndexersOrder),
+    get(defaultEvmIndexerOrder),
+  ));
 }
 
 function confirmRedecode(): void {
@@ -103,7 +83,7 @@ function confirmRedecode(): void {
   resetState();
 }
 
-watch(show, (value) => {
+watchImmediate(show, (value) => {
   if (value) {
     resetState();
   }
