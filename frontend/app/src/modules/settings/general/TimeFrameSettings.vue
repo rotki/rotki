@@ -21,6 +21,8 @@ const emit = defineEmits<{
 const timeframes = Object.values(TimeFramePeriod);
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
+const { updateFrontendSetting } = useSettingsOperations();
+const { updateSession } = useSettingsRepo();
 
 const appendedVisibleTimeframes = computed(() => [TimeFramePersist.REMEMBER, ...visibleTimeframes]);
 
@@ -63,8 +65,6 @@ async function updateVisibleTimeframes(newTimeFrames: TimeFramePeriod[], replace
   newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => timeframes.indexOf(a) - timeframes.indexOf(b));
 
   if (replaceCurrentSessionTimeframe) {
-    const { updateFrontendSetting } = useSettingsOperations();
-    const { updateSession } = useSettingsRepo();
     const value = newTimeFrames[0];
     updateSession({ timeframe: value });
     await updateFrontendSetting({ lastKnownTimeframe: value });
