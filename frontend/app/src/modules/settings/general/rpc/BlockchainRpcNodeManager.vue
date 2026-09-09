@@ -7,8 +7,14 @@ import { useBlockchainRpcNodeManager } from '@/modules/settings/general/rpc/use-
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
 
-const { chain } = defineProps<{
+const { chain, chains } = defineProps<{
   chain: Blockchain;
+  /** Every chain that holds a node list, which the add dialog offers a provider key across. */
+  chains: string[];
+}>();
+
+const emit = defineEmits<{
+  complete: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -32,8 +38,15 @@ onMounted(async () => {
   await loadNodes();
 });
 
+/** A save may have been a provider fan-out, which changes more than this chain's list. */
+async function onDialogComplete(): Promise<void> {
+  await loadNodes();
+  emit('complete');
+}
+
 defineExpose({
   addNewRpcNode,
+  loadNodes,
 });
 </script>
 
@@ -163,6 +176,7 @@ defineExpose({
   </SimpleTable>
   <BlockchainRpcNodeFormDialog
     v-model="modelState"
-    @complete="loadNodes()"
+    :chains="chains"
+    @complete="onDialogComplete()"
   />
 </template>

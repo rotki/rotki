@@ -2,6 +2,7 @@
 import type BlockchainRpcNodeManager from '@/modules/settings/general/rpc/BlockchainRpcNodeManager.vue';
 import type SimpleRpcNodeManager from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
 import { startPromise } from '@shared/utils';
+import RpcProviderKeys from '@/modules/settings/general/rpc/providers/RpcProviderKeys.vue';
 import RpcSettingOption from '@/modules/settings/general/rpc/RpcSettingOption.vue';
 import { isChainTab, tabKey, useRpcSettingsTabs } from '@/modules/settings/general/rpc/use-rpc-settings-tabs';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
@@ -21,6 +22,7 @@ const {
   allRailOptions,
   firstOtherKey,
   canAddNode,
+  nodeChains,
   selectTab,
 } = useRpcSettingsTabs();
 
@@ -32,6 +34,20 @@ function addNodeClick(): void {
   if (refElement?.[0]) {
     refElement[0].addNewRpcNode();
   }
+}
+
+const providerKeysRef = useTemplateRef<InstanceType<typeof RpcProviderKeys>>('providerKeysRef');
+
+/** Removing a provider's nodes may have emptied the chain on screen, so its list is re-read. */
+function reloadActiveManager(): void {
+  const refElement = get(evmRpcNodeManagerRef)?.[0];
+  if (refElement && 'loadNodes' in refElement)
+    startPromise(refElement.loadNodes());
+}
+
+/** A fan-out adds nodes to chains the chips count, so they are re-read once the dialog is done. */
+function reloadProviderKeys(): void {
+  startPromise(get(providerKeysRef)?.reload() ?? Promise.resolve());
 }
 
 function scrollActiveIntoView(): void {
@@ -60,21 +76,29 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
           {{ t('general_settings.rpc_node_setting.subtitle') }}
         </template>
       </SettingCategoryHeader>
-      <RuiButton
-        v-if="canAddNode"
-        color="primary"
-        data-testid="add-node"
-        @click="addNodeClick()"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-plus"
-            size="16"
-          />
-        </template>
-        {{ t('evm_rpc_node_manager.add_button') }}
-      </RuiButton>
+      <div class="flex flex-wrap gap-2">
+        <RuiButton
+          v-if="canAddNode"
+          color="primary"
+          data-testid="add-node"
+          @click="addNodeClick()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-plus"
+              size="16"
+            />
+          </template>
+          {{ t('evm_rpc_node_manager.add_button') }}
+        </RuiButton>
+      </div>
     </div>
+    <RpcProviderKeys
+      ref="providerKeysRef"
+      class="pt-4"
+      :chains="nodeChains"
+      @removed="reloadActiveManager()"
+    />
     <div class="pt-6 md:flex md:items-stretch md:gap-6 md:flex-1 md:min-h-0">
       <template v-if="isMdAndUp">
         <div
@@ -168,6 +192,8 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
               v-if="isChainTab(tab) && !tab.setting"
               ref="evmRpcNodeManagerRef"
               :chain="tab.chain"
+              :chains="nodeChains"
+              @complete="reloadProviderKeys()"
             />
             <SimpleRpcNodeManagerAsync
               v-else-if="tab.setting"

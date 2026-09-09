@@ -20,7 +20,7 @@ interface BigDialogErrors {
 }
 
 /** Visual knobs a couple of callers tweak; dismissal behaviour is `persistent`/`promptOnClose`. */
-interface BigDialogLayout {
+export interface BigDialogLayout {
   maxWidth?: string;
   divide?: boolean;
   /** Drop the 50vh minimum on the content area. */
