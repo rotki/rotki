@@ -20,9 +20,12 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
+from rotkehlchen.types import ApiKey, ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import get_chunks, set_user_agent, ts_now
-from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+from rotkehlchen.utils.mixins.penalizable_oracle import (
+    ORACLE_PROBE_TIMEOUT,
+    PenalizablePriceOracleMixin,
+)
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
@@ -63,7 +66,7 @@ class Defillama(
         )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = create_session()
+        self.session = create_session(retry_reads=False)
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
         self._rate_limiter = TokenBucket(
@@ -90,6 +93,23 @@ class Defillama(
         )
         self._probed = False
 
+    @staticmethod
+    def _base_url(api_key: ApiKey | None) -> str:
+        if api_key is not None:
+            return f'https://pro-api.llama.fi/{api_key}/coins/'
+        return 'https://coins.llama.fi/'
+
+    def probe_availability(self) -> bool:
+        try:
+            response = self.session.get(
+                url=f'{self._base_url(self._get_api_key())}prices/current/coingecko:bitcoin',
+                timeout=(ORACLE_PROBE_TIMEOUT, ORACLE_PROBE_TIMEOUT),
+            )
+        except requests.RequestException as e:
+            log.debug(f'Defillama availability probe failed due to {e!s}')
+            return False
+        return response.status_code == HTTPStatus.OK
+
     def _query(
             self,
             module: str,
@@ -101,14 +121,9 @@ class Defillama(
         May raise:
         - RemoteError if there is a problem querying defillama
         """
-        if (api_key := self._get_api_key()) is not None:
-            base_url = f'https://pro-api.llama.fi/{api_key}/coins/'
-        else:
-            base_url = 'https://coins.llama.fi/'
-
         if options is None:
             options = {}
-        url = base_url + f'{module}/{subpath or ""}'
+        url = self._base_url(self._get_api_key()) + f'{module}/{subpath or ""}'
         log.debug(f'Querying defillama: {url=} with {options=}')
         self._maybe_probe()
         self._rate_limiter.acquire()
@@ -119,7 +134,7 @@ class Defillama(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            self.penalty_info.note_failure_or_penalize()
+            self.penalty_info.note_request_failure(e)
             raise RemoteError(f'Defillama API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -276,6 +291,9 @@ class Defillama(
                 ))
             except RemoteError as e:
                 log.debug(f'Defillama failed to query price chunk {chunk_coin_ids}: {e}. Skipping chunk.')  # noqa: E501
+                if self.is_penalized():  # the remaining chunks would only stall the same way
+                    log.debug('Defillama got penalized. Skipping the remaining price chunks')
+                    break
                 continue
 
         # Prices from defillama are usd prices, so get rate from usd to to_asset

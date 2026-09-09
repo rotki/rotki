@@ -63,7 +63,7 @@ class Moralis(
         )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='moralis')
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = create_session()
+        self.session = create_session(retry_reads=False)
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
@@ -268,7 +268,7 @@ class Moralis(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.RequestException as e:
-            self.penalty_info.note_failure_or_penalize()
+            self.penalty_info.note_request_failure(e)
             raise RemoteError(f'Moralis API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:

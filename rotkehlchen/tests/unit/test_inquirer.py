@@ -1080,12 +1080,40 @@ def test_punishing_of_oracles_works(inquirer):
         )):
             assert inquirer._coingecko.is_penalized() is True
 
-        # move the current time forward and check that coingecko is no longer penalized
+        # move the current time forward. The penalty expired but the probe still fails,
+        # so coingecko stays penalized without any real query reaching it
         with freeze_time(datetime.datetime.fromtimestamp(
                 ts_now() + penalty_duration + 1,
                 tz=datetime.UTC,
         )):
-            assert inquirer._coingecko.is_penalized() is False
+            assert inquirer._coingecko.is_penalized() is True
+            assert coingecko_mock.call_count == 6  # only the probe
+
+    # with the probe answering again the penalty is lifted once it expires
+    with (
+        freeze_time(datetime.datetime.fromtimestamp(ts_now() + 2 * penalty_duration + 2, tz=datetime.UTC)),  # noqa: E501
+        patch.object(inquirer._coingecko.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"gecko_says":"(V3) To the Moon!"}')) as coingecko_mock,  # noqa: E501
+    ):
+        assert inquirer._coingecko.is_penalized() is False
+        assert coingecko_mock.call_count == 1
+        assert inquirer._coingecko.is_penalized() is False
+        assert coingecko_mock.call_count == 1  # probed once, not on every check
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_oracle_timeout_penalizes_immediately(inquirer):
+    """A host that accepts the connection and then goes silent is set aside after a single
+    timeout instead of stalling threshold-many price queries for the full read timeout each"""
+    defillama_patch = patch.object(inquirer._defillama.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"coins":{"coingecko:bitcoin":{"price":100.14,"symbol":"BTC","timestamp":1668592376,"confidence":0.99}}}'))  # noqa: E501
+    coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.ReadTimeout('Read timed out.'))  # noqa: E501
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
+
+    with defillama_patch, coingecko_patch as coingecko_mock:
+        for _ in range(3):
+            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > ZERO_PRICE
+
+        assert coingecko_mock.call_count == 1
+        assert inquirer._coingecko.is_penalized() is True
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
