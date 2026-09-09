@@ -151,6 +151,9 @@ def test_querying_settings(rotkehlchen_api_server: APIServer, username: str) -> 
     assert json_data['message'] == ''
     assert result['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in dataclasses.fields(DBSettings):
+        if setting.name == 'frontend_settings':
+            assert setting.name not in result
+            continue
         assert setting.name in result
 
     # Logout of the active user
@@ -206,8 +209,6 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
             value = raw_value + 1
         elif setting == 'active_modules':
             value = ['makerdao_vaults']
-        elif setting == 'frontend_settings':
-            value = ''
         elif setting == 'ksm_rpc_endpoint':
             value = 'http://kusama.node.com:9933'
         elif setting == 'dot_rpc_endpoint':
@@ -926,32 +927,25 @@ def test_suppress_missing_key_msg_services_not_overwritten(
 
 
 def test_patch_frontend_settings(rotkehlchen_api_server: APIServer) -> None:
-    """Test the partial update of the frontend settings blob.
+    """Test the partial update of the frontend settings blob"""
+    def read_frontend() -> dict[str, Any]:
+        return assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
+        ))
 
-    The bug this endpoint exists for is the last section: a key the running client does not know
-    about has to survive a write, which it cannot if the client rebuilds the blob from its own
-    parsed view of it.
-    """
     def patch_frontend(**kwargs: Any) -> dict[str, Any]:
-        """Patch, then read the blob back through GET /settings.
-
-        The endpoint answers `true` rather than echoing the merge, so every assertion below is
-        made against what was actually persisted and re-read, not against the write's own claim.
-        """
+        """Patch, then read the persisted blob back"""
         assert assert_proper_sync_response_with_result(requests.patch(
             api_url_for(rotkehlchen_api_server, 'frontendsettingsresource'),
             json=kwargs,
         )) is True
-        return json.loads(assert_proper_sync_response_with_result(requests.get(
-            api_url_for(rotkehlchen_api_server, 'settingsresource'),
-        ))['frontend_settings'])
+        return read_frontend()
 
-    # the blob starts out as the empty string rather than as an object, and there may be no row
+    # the blob starts out as the empty string, or with no row at all
     assert patch_frontend(patch={'items_per_page': 10}) == {'items_per_page': 10}
     assert patch_frontend() == {'items_per_page': 10}  # sending neither member is a no-op
 
-    # a record valued key is replaced wholesale, not merged into. This pins json_set over
-    # json_patch: the latter would keep the address entry below and change today's semantics.
+    # a record valued key is replaced wholesale, not merged into
     assert patch_frontend(patch={'explorers': {
         'eth': {'address': 'https://etherscan.io/address/', 'transaction': 'https://etherscan.io/tx/'},
     }})['explorers']['eth']['address'] == 'https://etherscan.io/address/'
@@ -962,21 +956,30 @@ def test_patch_frontend_settings(rotkehlchen_api_server: APIServer) -> None:
     assert 'items_per_page' not in patch_frontend(remove=['items_per_page'])
     assert patch_frontend(remove=['never_was_there']) == patch_frontend()  # removing an absent key
 
-    # the actual bug: a key written by a newer version, which this client's schema does not
-    # declare, must survive a write of a key it does declare.
+    # a key the writing client does not know survives a write of another key
     assert patch_frontend(patch={'a_key_from_the_future': {'nested': [1, 2]}, 'scramble_data': True})['a_key_from_the_future'] == {'nested': [1, 2]}  # noqa: E501
     merged = patch_frontend(patch={'scramble_data': False})
     assert merged['a_key_from_the_future'] == {'nested': [1, 2]}
     assert merged['scramble_data'] is False
 
-    # the cache holds the merged blob too, not the pre-patch one, the same way a whole-blob PUT
-    # leaves it. GET reads from the DB, so nothing else here would catch the cache going stale.
+    # GET reads from the DB, so check the cache separately
     assert json.loads(CachedSettings().get_entry('frontend_settings')) == merged  # type: ignore[arg-type]  # it's a str
+
+    # a blob that is not a JSON object is reset by the patch. No endpoint writes one, so use the DB
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    for blob in ('null', '[1, 2]', 'not json at all', ''):
+        with db.user_write() as write_cursor:
+            write_cursor.execute(
+                "INSERT INTO settings(name, value) VALUES('frontend_settings', ?) "
+                'ON CONFLICT(name) DO UPDATE SET value=?', (blob, blob),
+            )
+
+        assert read_frontend() == {}
+        assert patch_frontend(patch={'items_per_page': 25}) == {'items_per_page': 25}
 
 
 def test_patch_frontend_settings_key_validation(rotkehlchen_api_server: APIServer) -> None:
-    """Keys reaching a json_set path are held to a plain identifier, so one carrying a '.' or a
-    quote cannot select a different node than the caller named."""
+    """Keys with characters that would change a json path are rejected"""
     for payload in (
         {'patch': {'has.a.dot': 1}},
         {'patch': {'has"a"quote': 1}},

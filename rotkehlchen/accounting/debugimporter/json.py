@@ -80,6 +80,9 @@ class DebugHistoryImporter:
         log.debug('Trying to add settings')
         try:
             settings = ModifiableSettingsSchema().load(debug_data['settings'], unknown=EXCLUDE)
+            # The API schema does not accept frontend_settings, but a debug import restores it
+            if isinstance(frontend_settings := debug_data['settings'].get('frontend_settings'), str) and frontend_settings != '':  # noqa: E501
+                settings = settings._replace(frontend_settings=frontend_settings)
         except (ValidationError, KeyError) as e:
             error_msg = f'Error while adding settings due to: {e!s}'
             log.error(error_msg)

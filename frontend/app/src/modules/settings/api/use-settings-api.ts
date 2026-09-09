@@ -1,4 +1,5 @@
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import { transformCase } from '@rotki/common';
 import { CHAIN_KEYED_SETTINGS, RequestTarget } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
@@ -7,7 +8,8 @@ import { BackendConfiguration, ColibriConfiguration } from '@/modules/shell/app/
 
 interface UseSettingsApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
-  patchFrontendSettings: (patch: FrontendSettingsPayload) => Promise<void>;
+  patchFrontendSettings: (patch: FrontendSettingsPayload, remove?: string[]) => Promise<void>;
+  getFrontendSettings: () => Promise<Record<string, unknown>>;
   getSettings: () => Promise<UserSettingsModel>;
   getRawSettings: () => Promise<SettingsUpdate>;
   backendSettings: () => Promise<BackendConfiguration>;
@@ -29,23 +31,35 @@ export function useSettingsApi(): UseSettingsApiReturn {
   /**
    * Merges a partial update into the stored frontend settings blob, server-side.
    *
-   * The whole point of merging on the server is that a key the running client's schema does not
-   * declare cannot be preserved by the client: it has already been parsed away. Sending only the
-   * changed keys leaves such a key untouched instead of overwriting it with a reduced view.
+   * @remarks
+   * `remove` is snake_cased here because the request transformer only converts object keys, not
+   * array values.
    *
-   * @param patch - the changed keys only, in camelCase; the api layer snake_cases them on the way out
+   * @param patch - the changed keys only
+   * @param remove - keys to delete, camelCase
    */
-  const patchFrontendSettings = async (patch: FrontendSettingsPayload): Promise<void> => {
-    await api.patch<boolean>('/settings/frontend', { patch });
+  const patchFrontendSettings = async (patch: FrontendSettingsPayload, remove: string[] = []): Promise<void> => {
+    await api.patch<boolean>('/settings/frontend', remove.length > 0
+      ? { patch, remove: remove.map(key => transformCase(key, false)) }
+      : { patch });
   };
 
-  const getSettings = async (): Promise<UserSettingsModel> => {
-    const response = await api.get<UserSettingsModel>('/settings', {
-      skipCamelCaseKeys: CHAIN_KEYED_SETTINGS,
+  /** Reads the frontend settings, camelCased by the response transformer. */
+  const getFrontendSettings = async (): Promise<Record<string, unknown>> =>
+    api.get<Record<string, unknown>>('/settings/frontend', {
       validStatuses: VALID_WITH_SESSION_STATUS,
     });
 
-    return UserSettingsModel.parse(response);
+  const getSettings = async (): Promise<UserSettingsModel> => {
+    const [response, frontendSettings] = await Promise.all([
+      api.get<UserSettingsModel>('/settings', {
+        skipCamelCaseKeys: CHAIN_KEYED_SETTINGS,
+        validStatuses: VALID_WITH_SESSION_STATUS,
+      }),
+      getFrontendSettings(),
+    ]);
+
+    return UserSettingsModel.parse({ ...response, frontendSettings });
   };
 
   const getRawSettings = async (): Promise<SettingsUpdate> => api.get<SettingsUpdate>('/settings', {
@@ -86,6 +100,7 @@ export function useSettingsApi(): UseSettingsApiReturn {
   return {
     backendSettings,
     colibriSettings,
+    getFrontendSettings,
     getRawSettings,
     getSettings,
     patchFrontendSettings,
