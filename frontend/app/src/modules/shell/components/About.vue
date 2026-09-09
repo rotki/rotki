@@ -108,7 +108,7 @@ const { copy } = useClipboard({ source: versionText });
             </td>
           </tr>
           <template v-if="webVersion">
-            <tr>
+            <tr data-testid="about-web-platform">
               <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.platform') }}
               </td>
@@ -116,7 +116,7 @@ const { copy } = useClipboard({ source: versionText });
                 {{ webVersion.platform }}
               </td>
             </tr>
-            <tr>
+            <tr data-testid="about-user-agent">
               <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.user_agent') }}
               </td>
@@ -126,7 +126,7 @@ const { copy } = useClipboard({ source: versionText });
             </tr>
           </template>
           <template v-if="electronVersion">
-            <tr>
+            <tr data-testid="about-electron-platform">
               <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.platform') }}
               </td>
@@ -135,7 +135,7 @@ const { copy } = useClipboard({ source: versionText });
                 {{ electronVersion.osVersion }}
               </td>
             </tr>
-            <tr>
+            <tr data-testid="about-electron-version">
               <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.electron') }}
               </td>
@@ -152,7 +152,10 @@ const { copy } = useClipboard({ source: versionText });
                 </div>
               </td>
             </tr>
-            <tr v-if="componentsVersion.version">
+            <tr
+              v-if="componentsVersion.version"
+              data-testid="about-components-version"
+            >
               <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.components.version') }}
               </td>
@@ -160,7 +163,10 @@ const { copy } = useClipboard({ source: versionText });
                 {{ componentsVersion.version }}
               </td>
             </tr>
-            <tr v-if="componentsVersion.build">
+            <tr
+              v-if="componentsVersion.build"
+              data-testid="about-components-build"
+            >
               <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.components.build') }}
               </td>
@@ -176,6 +182,7 @@ const { copy } = useClipboard({ source: versionText });
       <div class="flex justify-end w-full">
         <RuiButton
           color="primary"
+          data-testid="about-copy"
           @click="copy()"
         >
           <template #prepend>
