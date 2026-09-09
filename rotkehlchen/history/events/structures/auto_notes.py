@@ -129,137 +129,189 @@ def is_plain_transfer(
 
 # -- SQL reconstruction. Column expressions valid wherever a history events filter is applied,
 # which always exposes the history_events columns and the history_events_identifier alias.
-_COUNTERPARTY_SQL: Final = '(SELECT counterparty FROM chain_events_info WHERE identifier=history_events_identifier)'  # noqa: E501
-_ADDRESS_SQL: Final = '(SELECT address FROM chain_events_info WHERE identifier=history_events_identifier)'  # noqa: E501
-_COUNTERPARTY_OR_ADDRESS_SQL: Final = f'COALESCE({_COUNTERPARTY_SQL}, {_ADDRESS_SQL})'
-_VALIDATOR_INDEX_SQL: Final = '(SELECT validator_index FROM eth_staking_events_info WHERE identifier=history_events_identifier)'  # noqa: E501
-_IS_EXIT_OR_BLOCK_SQL: Final = '(SELECT is_exit_or_blocknumber FROM eth_staking_events_info WHERE identifier=history_events_identifier)'  # noqa: E501
+# The expression is evaluated for every candidate row of a notes search, so it is shaped to do
+# as little work as possible per row: every branch is a CASE on a single column that stops at
+# the first match, and the columns of the chain and staking info tables are read through one
+# scalar subquery per entry type kind instead of one per placeholder.
 _LOCATION_NAME_SQL: Final = 'CASE location ' + ' '.join(
     f'WHEN {sql_string_literal(location.serialize_for_db())} THEN {sql_string_literal(get_formatted_location_name(location))}'  # noqa: E501
     for location in Location
 ) + ' END'
-_TRANSFER_VERB_SQL: Final = 'CASE type ' + ' '.join(
-    f'WHEN {sql_string_literal(event_type.serialize())} THEN {sql_string_literal(verb)}'
-    for event_type, verb in TRANSFER_VERBS.items()
-) + ' END'
-_OUTGOING_TRANSFER_SQL: Final = 'type IN (' + ', '.join(
-    sql_string_literal(x.serialize()) for x in OUTGOING_TRANSFER_TYPES
-) + ')'
-_TRANSFER_PREPOSITION_SQL: Final = f"CASE WHEN {_OUTGOING_TRANSFER_SQL} THEN 'to' ELSE 'from' END"
-_EXCHANGE_COUNTERPARTIES_SQL: Final = f'{_COUNTERPARTY_SQL} IN (' + ', '.join(
+_EXCHANGE_COUNTERPARTIES_SQL: Final = 'counterparty IN (' + ', '.join(
     sql_string_literal(x) for x in sorted(EXCHANGE_COUNTERPARTIES)
 ) + ')'
-_PLAIN_TRANSFER_SQL: Final = '(' + ' OR '.join(
-    f'(type={sql_string_literal(event_type.serialize())} AND subtype={sql_string_literal(subtype.serialize())} AND '  # noqa: E501
-    f'{_EXCHANGE_COUNTERPARTIES_SQL if event_type in EXCHANGE_TRANSFER_TYPES else f"{_COUNTERPARTY_SQL} IS NULL"})'  # noqa: E501
-    for event_type, subtype in PLAIN_TRANSFER_SUBTYPES.items()
-) + ')'
-_NATIVE_ASSET_SQL: Final = '(' + ' OR '.join(
-    f'(location={sql_string_literal(location.serialize_for_db())} AND asset={sql_string_literal(asset_id)})'  # noqa: E501
+_NATIVE_ASSET_SQL: Final = 'CASE location ' + ' '.join(
+    f'WHEN {sql_string_literal(location.serialize_for_db())} THEN asset={sql_string_literal(asset_id)}'  # noqa: E501
     for location, asset_id in NATIVE_ASSET_BY_LOCATION.items()
-) + ')'
+) + ' END'
 _COMMON_FIELDS: Final[dict[str, str | None]] = {'amount': 'amount', 'symbol': None, 'location': _LOCATION_NAME_SQL}  # noqa: E501
+_TRADE_TYPES_SQL: Final = 'type IN (' + ', '.join(
+    sql_string_literal(x.serialize()) for x in (HistoryEventType.TRADE, HistoryEventType.MULTI_TRADE)  # noqa: E501
+) + ')'
 
 
-def _when(condition: str, result: str) -> str:
-    return f'WHEN {condition} THEN {result}'
+def _case(column: str, cases: dict[str | int, str]) -> str:
+    """CASE on a column with a branch per value, NULL when none matches"""
+    return f'CASE {column} ' + ' '.join(
+        f'WHEN {sql_string_literal(value) if isinstance(value, str) else value} THEN {result}'
+        for value, result in cases.items()
+    ) + ' END'
+
+
+def _if(condition: str, result: str) -> str:
+    """The result when the condition holds, NULL otherwise"""
+    return f'CASE WHEN {condition} THEN {result} END'
+
+
+def _info_lookup(table: str, expression: str) -> str:
+    """Evaluate the expression with the columns of the event's row in an info table in scope"""
+    return f'(SELECT {expression} FROM {table} WHERE identifier=history_events_identifier)'
+
+
+def _plain_transfer_sql(event_type: HistoryEventType, text: str) -> str:
+    """The text for a row of the given type and its plain transfer subtype when the
+    counterparty makes it a plain transfer, per is_plain_transfer. Valid in a
+    chain_events_info lookup."""
+    counterparty_check = _EXCHANGE_COUNTERPARTIES_SQL if event_type in EXCHANGE_TRANSFER_TYPES else 'counterparty IS NULL'  # noqa: E501
+    return _if(counterparty_check, text)
+
+
+def _transfer_type_sql(event_type: HistoryEventType, text: str) -> str:
+    """Branch of a CASE on type for a type whose only generated text is the plain transfer"""
+    return _case('subtype', {PLAIN_TRANSFER_SUBTYPES[event_type].serialize(): text})
 
 
 def _kraken_staking_sql() -> str:
-    common = f"location={sql_string_literal(Location.KRAKEN.serialize_for_db())} AND type='{HistoryEventType.STAKING.serialize()}'"  # noqa: E501
-    return 'CASE ' + ' '.join((
-        _when(f"{common} AND subtype='{HistoryEventSubType.REWARD.serialize()}'", KRAKEN_STAKING_REWARD_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(f"{common} AND subtype='{HistoryEventSubType.FEE.serialize()}'", KRAKEN_STAKING_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-    )) + ' END'
+    return _if(
+        f'location={sql_string_literal(Location.KRAKEN.serialize_for_db())} AND type={sql_string_literal(HistoryEventType.STAKING.serialize())}',  # noqa: E501
+        _case('subtype', {
+            HistoryEventSubType.REWARD.serialize(): KRAKEN_STAKING_REWARD_TEMPLATE.to_sql(**_COMMON_FIELDS),  # noqa: E501
+            HistoryEventSubType.FEE.serialize(): KRAKEN_STAKING_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS),  # noqa: E501
+        }),
+    )
+
+
+def _evm_transfer_sql(event_type: HistoryEventType) -> str:
+    """Plain transfer text of the given type. Native assets name only the other side, tokens
+    both and ERC721 transfers have no generated text. Valid in a chain_events_info lookup."""
+    outgoing = event_type in OUTGOING_TRANSFER_TYPES
+    fields = _COMMON_FIELDS | {
+        'verb': sql_string_literal(TRANSFER_VERBS[event_type]),
+        'counterparty_or_address': 'COALESCE(counterparty, address)',
+        'location_label': 'location_label',
+    }
+    token_template = TOKEN_TRANSFER_OUT_TEMPLATE if outgoing else TOKEN_TRANSFER_IN_TEMPLATE
+    return _plain_transfer_sql(event_type, (
+        f'CASE WHEN {_NATIVE_ASSET_SQL} THEN {NATIVE_TRANSFER_TEMPLATE.to_sql(preposition=sql_string_literal("to" if outgoing else "from"), **fields)} '  # noqa: E501
+        f"WHEN asset NOT LIKE '%/erc721:%' THEN {token_template.to_sql(**fields)} END"
+    ))
 
 
 def _evm_sql() -> str:
-    transfer_fields = _COMMON_FIELDS | {
-        'verb': _TRANSFER_VERB_SQL,
-        'preposition': _TRANSFER_PREPOSITION_SQL,
-        'counterparty_or_address': _COUNTERPARTY_OR_ADDRESS_SQL,
-        'location_label': 'location_label',
-    }
-    approval_fields = _COMMON_FIELDS | {'owner': 'location_label', 'spender': _ADDRESS_SQL}
-    gas_common = f"subtype='{HistoryEventSubType.FEE.serialize()}' AND {_COUNTERPARTY_SQL}='gas'"
-    approval_common = f"type='{HistoryEventType.INFORMATIONAL.serialize()}' AND subtype='{HistoryEventSubType.APPROVE.serialize()}' AND {_COUNTERPARTY_SQL} IS NULL"  # noqa: E501
-    self_tx_common = f"type='{HistoryEventType.TRANSACTION_TO_SELF.serialize()}' AND subtype='{HistoryEventSubType.NONE.serialize()}'"  # noqa: E501
-    return 'CASE ' + ' '.join((
-        _when(f"type='{HistoryEventType.SPEND.serialize()}' AND {gas_common}", GAS_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(f"type='{HistoryEventType.FAIL.serialize()}' AND {gas_common}", FAILED_GAS_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(f"{approval_common} AND amount='0'", REVOKE_APPROVAL_TEMPLATE.to_sql(**approval_fields)),  # noqa: E501
-        _when(approval_common, APPROVE_TEMPLATE.to_sql(**approval_fields)),
-        _when(f"type='{HistoryEventType.DEPLOY.serialize()}'", DEPLOY_TEMPLATE.to_sql(address=_ADDRESS_SQL)),  # noqa: E501
-        _when(f"{self_tx_common} AND amount='0'", NO_VALUE_SELF_TX_TEMPLATE.to_sql()),
-        _when(self_tx_common, SELF_TX_TEMPLATE.to_sql(**_COMMON_FIELDS)),
-        _when(f'{_PLAIN_TRANSFER_SQL} AND {_NATIVE_ASSET_SQL}', NATIVE_TRANSFER_TEMPLATE.to_sql(**transfer_fields)),  # noqa: E501
-        _when(f"{_PLAIN_TRANSFER_SQL} AND asset NOT LIKE '%/erc721:%' AND {_OUTGOING_TRANSFER_SQL}", TOKEN_TRANSFER_OUT_TEMPLATE.to_sql(**transfer_fields)),  # noqa: E501
-        _when(f"{_PLAIN_TRANSFER_SQL} AND asset NOT LIKE '%/erc721:%'", TOKEN_TRANSFER_IN_TEMPLATE.to_sql(**transfer_fields)),  # noqa: E501
-    )) + ' END'
+    approval_fields = _COMMON_FIELDS | {'owner': 'location_label', 'spender': 'address'}
+    gas = "counterparty='gas'"
+    fee, none = HistoryEventSubType.FEE.serialize(), HistoryEventSubType.NONE.serialize()
+    return _info_lookup('chain_events_info', _case('type', {
+        HistoryEventType.SPEND.serialize(): _case('subtype', {
+            fee: _if(gas, GAS_TEMPLATE.to_sql(**_COMMON_FIELDS)),
+            none: _evm_transfer_sql(HistoryEventType.SPEND),
+        }),
+        HistoryEventType.RECEIVE.serialize(): _transfer_type_sql(HistoryEventType.RECEIVE, _evm_transfer_sql(HistoryEventType.RECEIVE)),  # noqa: E501
+        HistoryEventType.TRANSFER.serialize(): _transfer_type_sql(HistoryEventType.TRANSFER, _evm_transfer_sql(HistoryEventType.TRANSFER)),  # noqa: E501
+        HistoryEventType.DEPOSIT.serialize(): _transfer_type_sql(HistoryEventType.DEPOSIT, _evm_transfer_sql(HistoryEventType.DEPOSIT)),  # noqa: E501
+        HistoryEventType.WITHDRAWAL.serialize(): _transfer_type_sql(HistoryEventType.WITHDRAWAL, _evm_transfer_sql(HistoryEventType.WITHDRAWAL)),  # noqa: E501
+        HistoryEventType.FAIL.serialize(): _case('subtype', {
+            fee: _if(gas, FAILED_GAS_TEMPLATE.to_sql(**_COMMON_FIELDS)),
+        }),
+        HistoryEventType.INFORMATIONAL.serialize(): _case('subtype', {
+            HistoryEventSubType.APPROVE.serialize(): _if('counterparty IS NULL', (
+                f"CASE WHEN amount='0' THEN {REVOKE_APPROVAL_TEMPLATE.to_sql(**approval_fields)} "
+                f'ELSE {APPROVE_TEMPLATE.to_sql(**approval_fields)} END'
+            )),
+        }),
+        HistoryEventType.DEPLOY.serialize(): DEPLOY_TEMPLATE.to_sql(address='address'),
+        HistoryEventType.TRANSACTION_TO_SELF.serialize(): _case('subtype', {
+            none: (
+                f"CASE WHEN amount='0' THEN {NO_VALUE_SELF_TX_TEMPLATE.to_sql()} "
+                f'ELSE {SELF_TX_TEMPLATE.to_sql(**_COMMON_FIELDS)} END'
+            ),
+        }),
+    }))
+
+
+def _solana_transfer_sql(event_type: HistoryEventType) -> str:
+    """Plain transfer text of the given type, naming the other side when there is one. Valid
+    in a chain_events_info lookup."""
+    preposition = sql_string_literal(' to ' if event_type in OUTGOING_TRANSFER_TYPES else ' from ')
+    return _plain_transfer_sql(event_type, SOLANA_TRANSFER_TEMPLATE.to_sql(
+        verb=sql_string_literal(TRANSFER_VERBS[event_type]),
+        suffix=f"COALESCE({preposition} || COALESCE(counterparty, address), '')",
+        **_COMMON_FIELDS,
+    ))
 
 
 def _solana_sql() -> str:
-    transfer_fields = _COMMON_FIELDS | {
-        'verb': _TRANSFER_VERB_SQL,
-        'suffix': f"CASE WHEN {_COUNTERPARTY_OR_ADDRESS_SQL} IS NULL THEN '' ELSE ' ' || {_TRANSFER_PREPOSITION_SQL} || ' ' || {_COUNTERPARTY_OR_ADDRESS_SQL} END",  # noqa: E501
-    }
-    return 'CASE ' + ' '.join((
-        _when(f"type='{HistoryEventType.SPEND.serialize()}' AND subtype='{HistoryEventSubType.FEE.serialize()}' AND {_COUNTERPARTY_SQL}='gas'", SOLANA_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(_PLAIN_TRANSFER_SQL, SOLANA_TRANSFER_TEMPLATE.to_sql(**transfer_fields)),
-    )) + ' END'
+    return _info_lookup('chain_events_info', _case('type', {
+        HistoryEventType.SPEND.serialize(): _case('subtype', {
+            HistoryEventSubType.FEE.serialize(): _if("counterparty='gas'", SOLANA_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
+            HistoryEventSubType.NONE.serialize(): _solana_transfer_sql(HistoryEventType.SPEND),
+        }),
+        HistoryEventType.RECEIVE.serialize(): _transfer_type_sql(HistoryEventType.RECEIVE, _solana_transfer_sql(HistoryEventType.RECEIVE)),  # noqa: E501
+        HistoryEventType.TRANSFER.serialize(): _transfer_type_sql(HistoryEventType.TRANSFER, _solana_transfer_sql(HistoryEventType.TRANSFER)),  # noqa: E501
+        HistoryEventType.DEPOSIT.serialize(): _transfer_type_sql(HistoryEventType.DEPOSIT, _solana_transfer_sql(HistoryEventType.DEPOSIT)),  # noqa: E501
+        HistoryEventType.WITHDRAWAL.serialize(): _transfer_type_sql(HistoryEventType.WITHDRAWAL, _solana_transfer_sql(HistoryEventType.WITHDRAWAL)),  # noqa: E501
+    }))
 
 
 def _swap_sql() -> str:
-    common = f"type='{HistoryEventType.TRADE.serialize()}'"
-    return 'CASE ' + ' '.join((
-        _when(f"{common} AND subtype='{HistoryEventSubType.SPEND.serialize()}'", SWAP_SPEND_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(f"{common} AND subtype='{HistoryEventSubType.RECEIVE.serialize()}'", SWAP_RECEIVE_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(f"{common} AND subtype='{HistoryEventSubType.FEE.serialize()}'", SWAP_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-    )) + ' END'
+    return _if(_TRADE_TYPES_SQL, _case('subtype', {
+        HistoryEventSubType.SPEND.serialize(): SWAP_SPEND_TEMPLATE.to_sql(**_COMMON_FIELDS),
+        HistoryEventSubType.RECEIVE.serialize(): SWAP_RECEIVE_TEMPLATE.to_sql(**_COMMON_FIELDS),
+        HistoryEventSubType.FEE.serialize(): SWAP_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS),
+    }))
 
 
 def _asset_movement_sql() -> str:
-    common = f"type='{HistoryEventType.EXCHANGE_TRANSFER.serialize()}'"
-    return 'CASE ' + ' '.join((
-        _when(f"{common} AND subtype='{HistoryEventSubType.FEE.serialize()}'", MOVEMENT_FEE_TEMPLATE.to_sql(event_type='type', **_COMMON_FIELDS)),  # noqa: E501
-        _when(f"{common} AND subtype='{HistoryEventSubType.RECEIVE.serialize()}'", MOVEMENT_DEPOSIT_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-        _when(f"{common} AND subtype='{HistoryEventSubType.SPEND.serialize()}'", MOVEMENT_WITHDRAWAL_TEMPLATE.to_sql(**_COMMON_FIELDS)),  # noqa: E501
-    )) + ' END'
+    return _if(f'type={sql_string_literal(HistoryEventType.EXCHANGE_TRANSFER.serialize())}', _case('subtype', {  # noqa: E501
+        HistoryEventSubType.FEE.serialize(): MOVEMENT_FEE_TEMPLATE.to_sql(event_type='type', **_COMMON_FIELDS),  # noqa: E501
+        HistoryEventSubType.RECEIVE.serialize(): MOVEMENT_DEPOSIT_TEMPLATE.to_sql(**_COMMON_FIELDS),  # noqa: E501
+        HistoryEventSubType.SPEND.serialize(): MOVEMENT_WITHDRAWAL_TEMPLATE.to_sql(**_COMMON_FIELDS),  # noqa: E501
+    }))
 
 
 _STAKING_FIELDS: Final = {
     'amount': 'amount',
-    'validator_index': _VALIDATOR_INDEX_SQL,
-    'block_number': _IS_EXIT_OR_BLOCK_SQL,
+    'validator_index': 'validator_index',
+    'block_number': 'is_exit_or_blocknumber',
     'fee_recipient': 'location_label',
 }
 
 
 def _eth_withdrawal_sql() -> str:
-    return f'CASE WHEN {_IS_EXIT_OR_BLOCK_SQL}=1 THEN {ETH_EXIT_TEMPLATE.to_sql(**_STAKING_FIELDS)} ELSE {ETH_WITHDRAWAL_TEMPLATE.to_sql(**_STAKING_FIELDS)} END'  # noqa: E501
+    return _info_lookup('eth_staking_events_info', f'CASE WHEN is_exit_or_blocknumber=1 THEN {ETH_EXIT_TEMPLATE.to_sql(**_STAKING_FIELDS)} ELSE {ETH_WITHDRAWAL_TEMPLATE.to_sql(**_STAKING_FIELDS)} END')  # noqa: E501
 
 
 def _eth_block_sql() -> str:
-    return f"CASE WHEN subtype='{HistoryEventSubType.MEV_REWARD.serialize()}' THEN {ETH_MEV_TEMPLATE.to_sql(**_STAKING_FIELDS)} ELSE {ETH_BLOCK_TEMPLATE.to_sql(**_STAKING_FIELDS)} END"  # noqa: E501
+    return _info_lookup('eth_staking_events_info', f"CASE WHEN subtype='{HistoryEventSubType.MEV_REWARD.serialize()}' THEN {ETH_MEV_TEMPLATE.to_sql(**_STAKING_FIELDS)} ELSE {ETH_BLOCK_TEMPLATE.to_sql(**_STAKING_FIELDS)} END")  # noqa: E501
 
 
 def _eth_deposit_sql() -> str:
-    return f'CASE WHEN {_VALIDATOR_INDEX_SQL}=-1 THEN {ETH_DEPOSIT_UNKNOWN_VALIDATOR_TEMPLATE.to_sql(**_STAKING_FIELDS)} ELSE {ETH_DEPOSIT_TEMPLATE.to_sql(**_STAKING_FIELDS)} END'  # noqa: E501
+    return _info_lookup('eth_staking_events_info', f'CASE WHEN validator_index=-1 THEN {ETH_DEPOSIT_UNKNOWN_VALIDATOR_TEMPLATE.to_sql(**_STAKING_FIELDS)} ELSE {ETH_DEPOSIT_TEMPLATE.to_sql(**_STAKING_FIELDS)} END')  # noqa: E501
 
 
 # The notes rotki would generate for a history_events row whose notes column is NULL, as an
 # SQL expression. Branches are keyed on entry_type first so the per-row cost is a couple of
 # integer comparisons for the kinds that have no auto notes. Entry type values are those of
 # HistoryBaseEntryType, spelled out since importing it here would be circular.
-AUTO_NOTES_SQL: Final = 'CASE entry_type ' + ' '.join((
-    _when('1', _kraken_staking_sql()),
-    _when('2', _evm_sql()),
-    _when('3', _eth_withdrawal_sql()),
-    _when('4', _eth_block_sql()),
-    _when('5', _eth_deposit_sql()),
-    _when('6', _asset_movement_sql()),
-    _when('7', _swap_sql()),
-    _when('8', _swap_sql()),
-    _when('9', _solana_sql()),
-    _when('10', _swap_sql()),
-)) + ' END'
+AUTO_NOTES_SQL: Final = _case('entry_type', {
+    1: _kraken_staking_sql(),
+    2: _evm_sql(),
+    3: _eth_withdrawal_sql(),
+    4: _eth_block_sql(),
+    5: _eth_deposit_sql(),
+    6: _asset_movement_sql(),
+    7: _swap_sql(),
+    8: _swap_sql(),
+    9: _solana_sql(),
+    10: _swap_sql(),
+})

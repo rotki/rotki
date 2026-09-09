@@ -4914,6 +4914,7 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
             ((2, 'f', user, 'ETH', '0.001', 'Burn 0.001 ETH for gas', 'spend', 'fee'), ('gas', None), None),  # noqa: E501
             ((2, 'f', user, 'ETH', '0.002', 'Burn 0.002 ETH for gas of a failed transaction', 'fail', 'fee'), ('gas', None), None),  # noqa: E501
             ((2, 'f', user, 'ETH', '0.003', 'Expensive gas', 'spend', 'fee'), ('gas', None), 'Expensive gas'),  # noqa: E501
+            ((2, 'f', user, 'ETH', '0.004', 'Burn 0.004 ETH manually adjusted for gas', 'spend', 'fee'), ('gas', None), 'Burn 0.004 ETH manually adjusted for gas'),  # noqa: E501
             ((2, 'f', user, usdc, '115', f'Set USDC spending approval of {user} by {other} to 115', 'informational', 'approve'), (None, other), None),  # noqa: E501
             ((2, 'f', user, usdc, '0', f'Revoke USDC spending approval of {user} by {other}', 'informational', 'approve'), (None, other), None),  # noqa: E501
             ((2, 'f', user, 'ETH', '0', f'Deploy a new contract at {other}', 'deploy', 'none'), (None, other), None),  # noqa: E501
@@ -4921,6 +4922,7 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
             ((2, 'f', user, 'ETH', '0.5', f'Send 0.5 ETH to {other}', 'spend', 'none'), (None, other), None),  # noqa: E501
             ((2, 'f', user, usdc, '5', f'Receive 5 USDC from {other} to {user}', 'receive', 'none'), (None, other), None),  # noqa: E501
             ((2, 'f', user, usdc, '5', f'Receive 5 USDC from {other} to {user} for {user}', 'receive', 'none'), (None, other), f'Receive 5 USDC from {other} to {user} for {user}'),  # noqa: E501
+            ((2, 'f', user, usdc, '5', f'Receive 5 WETH from {other} to {user}', 'receive', 'none'), (None, other), f'Receive 5 WETH from {other} to {user}'),  # noqa: E501
             ((2, 'f', user, 'ETH', '1', 'Deposit 1 ETH to kraken', 'deposit', 'deposit asset'), ('kraken', other), None),  # noqa: E501
             ((2, 'f', user, nft, '1', f'Send BAYC with id 1 from {user} to {other}', 'spend', 'none'), (None, other), f'Send BAYC with id 1 from {user} to {other}'),  # noqa: E501
             ((2, 'f', user, 'ETH', '1', 'Deposit 1 ETH into Aave v3', 'deposit', 'deposit asset'), ('aave-v3', other), 'Deposit 1 ETH into Aave v3'),  # noqa: E501

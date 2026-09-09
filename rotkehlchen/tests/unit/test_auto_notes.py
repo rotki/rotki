@@ -1,5 +1,5 @@
 """Tests for the notes rotki generates from event data instead of storing them"""
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import pytest
 
@@ -90,6 +90,14 @@ def _solana(
     )
 
 
+def _multi_trade(**kwargs: Any) -> SwapEvent:
+    """A swap leg of a trade with several entries on one side, which the API stores as a
+    multi trade"""
+    event = SwapEvent(**kwargs)
+    event.event_type = HistoryEventType.MULTI_TRADE
+    return event
+
+
 def _events_with_auto_notes() -> list[tuple[HistoryBaseEntry, str]]:
     """One event per auto notes template, paired with the text expected of it. The events
     carry no notes so that the DB write stores NULL and the SQL side has to rebuild them."""
@@ -122,6 +130,7 @@ def _events_with_auto_notes() -> list[tuple[HistoryBaseEntry, str]]:
         (SwapEvent(timestamp=TIMESTAMP, location=Location.BINANCE, event_subtype=HistoryEventSubType.RECEIVE, asset=A_USD, amount=FVal(3000), group_identifier='swap1'), 'Receive 3000 USD after a swap in Binance'),  # noqa: E501
         (SwapEvent(timestamp=TIMESTAMP, location=Location.BINANCE, event_subtype=HistoryEventSubType.FEE, asset=A_USD, amount=FVal(3), group_identifier='swap1'), 'Spend 3 USD as Binance swap fee'),  # noqa: E501
         (EvmSwapEvent(tx_ref=make_evm_tx_hash(), sequence_index=0, timestamp=TIMESTAMP, location=Location.ETHEREUM, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(1)), 'Swap 1 ETH in Ethereum'),  # noqa: E501
+        (_multi_trade(timestamp=TIMESTAMP, location=Location.KRAKEN, event_subtype=HistoryEventSubType.RECEIVE, asset=A_USD, amount=FVal(500), group_identifier='swap2'), 'Receive 500 USD after a swap in Kraken'),  # noqa: E501
         (AssetMovement(timestamp=TIMESTAMP, location=Location.BINANCEUS, event_subtype=HistoryEventSubType.RECEIVE, asset=A_ETH, amount=FVal(1), unique_id='m1'), 'Deposit 1 ETH to Binance US'),  # noqa: E501
         (AssetMovement(timestamp=TIMESTAMP, location=Location.BINANCEUS, event_subtype=HistoryEventSubType.SPEND, asset=A_ETH, amount=FVal(2), unique_id='m2'), 'Withdraw 2 ETH from Binance US'),  # noqa: E501
         (AssetMovement(timestamp=TIMESTAMP, location=Location.BINANCEUS, event_subtype=HistoryEventSubType.FEE, asset=A_ETH, amount=FVal('0.1'), unique_id='m2'), 'Pay 0.1 ETH as Binance US exchange transfer fee'),  # noqa: E501
@@ -203,6 +212,7 @@ def test_unknown_asset_keeps_notes() -> None:
     ('ETH from validator 42', {'Withdraw 0.01 ETH from validator 42'}),
     ('to validator 42', {'Deposit 32 ETH to validator 42'}),
     ('Binance US', {'Deposit 1 ETH to Binance US', 'Withdraw 2 ETH from Binance US', 'Pay 0.1 ETH as Binance US exchange transfer fee'}),  # noqa: E501
+    ('after a swap in', {'Receive 3000 USD after a swap in Binance', 'Receive 500 USD after a swap in Kraken'}),  # noqa: E501
     ('transaction fee', {'Spend 0.000005 SOL as transaction fee'}),
 ])
 def test_notes_filter_searches_auto_notes(
