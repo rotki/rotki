@@ -103,6 +103,7 @@ function close() {
             class="shrink-0"
             variant="text"
             icon
+            data-testid="queried-address-close"
             @click="close()"
           >
             <RuiIcon name="lu-x" />
@@ -120,6 +121,7 @@ function close() {
           :disabled="selectedAccounts.length === 0"
           variant="text"
           icon
+          data-testid="queried-address-add"
           @click="addAddress()"
         >
           <RuiIcon name="lu-plus" />
@@ -133,6 +135,7 @@ function close() {
           v-for="address in addresses"
           :key="address"
           class="flex items-start gap-4 py-2 border-t border-default"
+          data-testid="queried-address-row"
         >
           <div class="flex-1">
             <LabeledAddressDisplay :account="getAccount(address)" />
@@ -151,6 +154,7 @@ function close() {
                 icon
                 color="primary"
                 class="!p-2 mt-0.5"
+                data-testid="queried-address-remove"
                 @click="
                   deleteQueriedAddress({
                     module,
