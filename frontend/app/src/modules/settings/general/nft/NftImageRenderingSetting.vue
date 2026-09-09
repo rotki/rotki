@@ -107,6 +107,7 @@ watch(whitelistWriteError, (message) => {
       color="primary"
       :success-messages="renderSuccess"
       :error-messages="renderError"
+      data-testid="nft-render-mode"
       @update:model-value="updateRenderingSetting($event)"
     >
       <RuiRadio value="all">
@@ -131,6 +132,7 @@ watch(whitelistWriteError, (message) => {
         class="flex-1"
         variant="outlined"
         clearable
+        data-testid="nft-whitelist-input"
       />
       <RuiButton
         :disabled="!changed"
@@ -138,6 +140,7 @@ watch(whitelistWriteError, (message) => {
         variant="text"
         color="primary"
         icon
+        data-testid="nft-whitelist-save"
         @click="showUpdateWhitelistConfirmation = true"
       >
         <RuiIcon name="lu-save" />
