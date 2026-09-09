@@ -615,6 +615,7 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         if tx_log.address in self.pools:
             return DEFAULT_EVM_DECODING_OUTPUT  # already handled via addresses_to_decoders

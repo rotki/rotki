@@ -16,10 +16,16 @@ export type DataIssueError =
 
 /** One entry in the auto-remediation timeline shown in the detail drawer. */
 export interface RemediationTimelineItem {
+  readonly attribution?: string;
+  readonly changedTransactionCount?: number;
+  readonly customizedTransactionCount?: number;
+  readonly result?:
+    | 'redecoding_failed'
+    | 'redecoding_would_change_balance'
+    | 'redecoding_would_not_change_balance';
   readonly strategy: string;
   readonly success?: boolean;
   readonly timestamp?: number;
-  readonly attribution?: string;
 }
 
 /**

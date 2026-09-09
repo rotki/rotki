@@ -87,6 +87,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         if tx_log.topics[0] == UNISWAP_V2_SWAP_SIGNATURE:
             if transaction.to_address == self.router_address:
@@ -118,6 +119,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         if tx_log.topics[0] == MINT_TOPIC:
             return decode_uniswap_like_deposit_and_withdrawals(

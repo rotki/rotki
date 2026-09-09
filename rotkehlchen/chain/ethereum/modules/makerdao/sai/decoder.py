@@ -464,6 +464,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         """This method decodes the migration of a Sai CDP to Dai CDP."""
         if tx_log.topics[0] != SAI_CDP_MIGRATION_TOPIC:

@@ -9,10 +9,18 @@ import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-iss
  * schema stays permissive (extra keys are preserved, rendered when present).
  */
 export const AutoRemediationAttempt = z.looseObject({
+  attribution: z.string().optional(),
+  changedTransactionCount: z.number().optional(),
+  customizedTransactionCount: z.number().optional(),
+  reason: z.string().optional(),
+  result: z.enum([
+    'redecoding_failed',
+    'redecoding_would_change_balance',
+    'redecoding_would_not_change_balance',
+  ]).optional(),
   strategy: z.string(),
   success: z.boolean().optional(),
   timestamp: z.number().optional(),
-  attribution: z.string().optional(),
 });
 
 export type AutoRemediationAttempt = z.infer<typeof AutoRemediationAttempt>;

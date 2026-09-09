@@ -3872,7 +3872,21 @@ class RestAPI:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
             return self._trigger_historical_balance_processing()
-
+        elif task == TaskName.DATA_ISSUE_REMEDIATION:
+            if not __debug__ or is_accounting_update_enabled() is False:
+                return wrap_in_fail_result(
+                    message='Data issue remediation is disabled',
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+            if (
+                (task_manager := self.rotkehlchen.task_manager) is None or
+                task_manager.trigger_data_issue_remediation() is False
+            ):
+                return wrap_in_fail_result(
+                    message='Data issue remediation cannot start before historical balance '
+                    'processing completes or while history work is running.',
+                    status_code=HTTPStatus.CONFLICT,
+                )
         else:  # task in (TaskName.ASSET_MOVEMENT_MATCHING, TaskName.BRIDGE_MATCHING)
             if has_premium_capability(
                     premium=self.rotkehlchen.premium,

@@ -80,6 +80,7 @@ def decode_safely(
         func: Callable,
         tx_reference: str | None = None,
         *args: tuple[Any],
+        raise_on_error: bool = False,
         **kwargs: Any,
 ) -> tuple[Any, bool]:
     """
@@ -91,10 +92,14 @@ def decode_safely(
 
     It returns a tuple where the first argument is the output of func and the second is a boolean
     set to True if an error was raised from func.
+
+    With raise_on_error, errors propagate instead of returning incomplete results.
     """
     try:
         return func(*args, **kwargs), False
     except handled_exceptions as e:
+        if raise_on_error:
+            raise
         log.error(traceback.format_exc())
         error_prefix = (
             f'Decoding of transaction {tx_reference} in {blockchain}'

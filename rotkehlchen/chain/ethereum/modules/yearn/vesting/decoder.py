@@ -358,6 +358,7 @@ class YearnvestingDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         """Match escrow events by topic since the escrow addresses are not known
         statically, verifying the emitting address is a yearn vesting escrow.

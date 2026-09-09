@@ -127,6 +127,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         """
         Detect some basic uniswap v3 events. This method doesn't ensure the order of the events

@@ -241,7 +241,14 @@ describe('data-issues transforms', () => {
     it('should order attempts oldest-first by timestamp', () => {
       const issue = createIssue({
         autoRemediationAttempts: [
-          { strategy: 'second', success: true, timestamp: 200 },
+          {
+            changedTransactionCount: 1,
+            customizedTransactionCount: 2,
+            result: 'redecoding_would_change_balance',
+            strategy: 'second',
+            success: true,
+            timestamp: 200,
+          },
           { strategy: 'first', success: false, timestamp: 100 },
         ],
       });
@@ -249,6 +256,11 @@ describe('data-issues transforms', () => {
       const items = toTimelineItems(issue);
 
       expect(items.map(item => item.strategy)).toEqual(['first', 'second']);
+      expect(items[1]).toMatchObject({
+        changedTransactionCount: 1,
+        customizedTransactionCount: 2,
+        result: 'redecoding_would_change_balance',
+      });
     });
 
     it('should return an empty array when there are no attempts', () => {
