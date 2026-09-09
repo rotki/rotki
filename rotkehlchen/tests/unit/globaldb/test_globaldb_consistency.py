@@ -515,6 +515,7 @@ def test_oracle_ids_in_asset_collections(globaldb: GlobalDBHandler):
         155,  # wLUNA and LUNA
         348,  # BNB and WBNB
         240,  # eure since the new coins use a different coingecko id.
+        36,  # USDC and bridged variants may have different oracle ids
         37,  # USDT and bridged variants may have different oracle ids
         601,  # USDT0 and chain-specific variants may have different oracle ids
     }
