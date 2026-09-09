@@ -582,6 +582,10 @@ class FrontendSettingsResource(BaseMethodView):
     patch_schema = PatchFrontendSettingsSchema()
 
     @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_frontend_settings()
+
+    @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
     def patch(self, patch: dict[str, Any], remove: list[str]) -> Response:
         return self.rest_api.patch_frontend_settings(patch=patch, remove=remove)

@@ -794,13 +794,16 @@ class DBHandler:
         """
         # An UPDATE finds nothing if the row was never written, and the column defaults to the
         # empty string rather than to '{}', which json_set turns into NULL. A blob that is not
-        # valid JSON would do the same. All three are settled here so the two statements below can
-        # assume a row holding a JSON object. Resetting an unparsable blob loses it, but the
-        # client already falls back to defaults when it cannot parse one, and the alternative is
-        # json_set writing NULL over it.
+        # valid JSON would do the same, and one that is valid JSON but not an object (a bare
+        # 'null', an array) is worse: json_set and json_remove return it unchanged, so the patch
+        # would be reported as persisted while nothing was written. All of them are settled here
+        # so the two statements below can assume a row holding a JSON object. Resetting a blob
+        # loses it, but the client already falls back to defaults when it cannot parse one.
+        # json_type raises on malformed input, so it is reached only once json_valid has passed.
         write_cursor.execute(
             "INSERT INTO settings(name, value) VALUES('frontend_settings', '{}') "
-            "ON CONFLICT(name) DO UPDATE SET value='{}' WHERE value IS NULL OR json_valid(value)=0",  # noqa: E501
+            "ON CONFLICT(name) DO UPDATE SET value='{}' WHERE value IS NULL "
+            "OR json_valid(value)=0 OR json_type(value)<>'object'",
         )
         if len(patch) > 0:
             # json_set takes repeated path/value pairs, so one statement carries the whole patch.

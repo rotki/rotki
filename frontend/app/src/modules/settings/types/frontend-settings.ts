@@ -11,7 +11,6 @@ import {
 import { isEmpty } from 'es-toolkit/compat';
 import { z } from 'zod';
 import { CurrencyLocationEnum } from '@/modules/assets/amount-display/currency-location';
-import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/modules/core/common/constraints';
 import { DateFormatEnum } from '@/modules/core/common/date-format';
 import { Defaults } from '@/modules/core/common/defaults';
@@ -22,9 +21,11 @@ import { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import { TableColumnEnum } from '@/modules/core/table/table-column';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { PrivacyMode } from '@/modules/session/types';
+import {
+  FRONTEND_SETTINGS_SCHEMA_VERSION,
+  normalizeLegacyShapes,
+} from '@/modules/settings/types/frontend-settings-migrations';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-
-export const FRONTEND_SETTINGS_SCHEMA_VERSION = 2;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -129,14 +130,6 @@ export enum BalanceSource {
   EXCHANGES = 'EXCHANGES',
   MANUAL = 'MANUAL',
 }
-
-export const BalanceValueThresholdV0 = z
-  .object({
-    [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
-    [BalanceSource.EXCHANGES]: z.string().default('0'),
-    [BalanceSource.MANUAL]: z.string().default('0'),
-  })
-  .optional();
 
 export const BalanceValueThreshold = z.partialRecord(z.enum(BalanceSource), z.string().optional());
 
@@ -304,7 +297,8 @@ export const FrontendSettings = z.object({
     .partialRecord(SavedFilterLocationEnum, z.array(SavedView))
     .default({})
     .catch({}),
-  schemaVersion: z.literal(2),
+  // Recorded, never trusted: migrations key off shape, so an absent or newer value is not an error
+  schemaVersion: z.number().default(FRONTEND_SETTINGS_SCHEMA_VERSION),
   scrambleData: z.boolean().default(false),
   scrambleMultiplier: z.number().optional().default(generateRandomScrambleMultiplier()),
   selectedTheme: ThemeEnum.default(Theme.AUTO),
@@ -333,12 +327,19 @@ export type FrontendSettings = z.infer<typeof FrontendSettings>;
 
 export type FrontendSettingsPayload = Partial<FrontendSettings>;
 
-export function deserializeFrontendSettings(settings: string): Record<string, unknown> {
-  return settings ? camelCaseTransformer(JSON.parse(settings)) : {};
-}
-
-export function parseFrontendSettings(settings: string): FrontendSettings {
-  const data = deserializeFrontendSettings(settings);
+/**
+ * Reads the stored blob into the current shape.
+ *
+ * @remarks
+ * Old shapes are brought forward in memory by `normalizeLegacyShapes`, so a blob parses correctly
+ * whether or not the migration has been written back yet. Nothing here depends on a prior write, and
+ * the recovery pass below is for a genuinely invalid value, not for an out-of-date one.
+ *
+ * Takes an object, not a string: `GET /settings/frontend` serves the blob as JSON, so it arrives
+ * already parsed and camelCased by the shared response transformer.
+ */
+export function parseFrontendSettings(blob: Record<string, unknown>): FrontendSettings {
+  const data = normalizeLegacyShapes(blob);
   if (isEmpty(data)) {
     return getDefaultFrontendSettings();
   }

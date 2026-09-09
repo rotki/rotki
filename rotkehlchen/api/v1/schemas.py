@@ -1732,7 +1732,9 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     date_display_format = EmptyAsNoneStringField(load_default=None)
     active_modules = fields.List(NonEmptyStringField(), load_default=None)
-    frontend_settings = EmptyAsNoneStringField(load_default=None)
+    # frontend_settings is not settable here. It is an opaque blob this endpoint could only replace
+    # in full, which deletes every key the writing client's schema does not declare. PATCH
+    # /settings/frontend merges instead, and GET /settings/frontend reads it back.
     btc_derivation_gap_limit = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1908,7 +1910,6 @@ class ModifiableSettingsSchema(Schema):
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],
             active_modules=data['active_modules'],
-            frontend_settings=data['frontend_settings'],
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],

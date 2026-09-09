@@ -1157,16 +1157,57 @@ Getting or modifying settings
    :statuscode 409: Tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
+Getting the frontend settings
+============================================
+
+.. http:get:: /api/(version)/settings/frontend
+
+   Returns the frontend settings as JSON.
+
+   ``frontend_settings`` is a free-form bag of client preferences. It is **not** part of the
+   ``GET /settings`` response and cannot be set through ``PUT /settings``: that endpoint can only
+   replace the whole blob, which deletes every key the writing client's schema does not declare, and
+   that is exactly what happens when an older rotki is opened after a newer one. It lives on its own
+   resource instead, read here and written with the PATCH below.
+
+   A stored blob that is absent, empty, or not a JSON object reads as ``{}``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/settings/frontend HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "date_display_format": "%d/%m/%Y",
+              "explorers": {"eth": {"transaction": "https://myexplorer.eth/"}}
+          },
+          "message": ""
+      }
+
+   :resjson object result: The stored frontend settings. Keys are whatever the clients have written.
+
+   :statuscode 200: Reading the frontend settings was successful
+   :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
+
 Partially modifying the frontend settings
 ============================================
 
 .. http:patch:: /api/(version)/settings/frontend
 
-   ``frontend_settings`` is an opaque JSON blob that the ``PUT /settings`` endpoint can only replace
-   in full, so changing one key means the client reads the blob, edits it and writes all of it back.
-   That deletes any key the writing client's schema does not declare, which is what happens whenever
-   an older rotki is opened after a newer one. Doing a PATCH here merges the given keys into the
-   stored blob server-side instead, leaving every other key untouched.
+   Merges the given keys into the stored blob server-side, leaving every other key untouched. This
+   is the only way to write the frontend settings; see the GET above for why replacing them wholesale
+   is not offered.
 
    A key is replaced wholesale, never merged into recursively, which matches what a whole-blob write
    does today: patching ``explorers`` with one chain replaces the whole ``explorers`` object.
