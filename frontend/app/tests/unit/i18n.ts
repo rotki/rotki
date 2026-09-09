@@ -1,8 +1,13 @@
 import type { useI18n } from 'vue-i18n';
 
+/**
+ * @remarks
+ * `String` rather than `value.toString()`: an optional interpolation value is legitimately absent,
+ * and vue-i18n renders that as empty rather than throwing, so echoing it must not throw either.
+ */
 function stringify(value: Record<string, any>): string {
   return Object.values(value)
-    .map(value => value.toString())
+    .map(value => String(value))
     .join(', ');
 }
 
