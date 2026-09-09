@@ -27,17 +27,18 @@ function update() {
   else openLink();
 }
 
-const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
+/** The configured hours as milliseconds; zero means the user turned the check off. */
+const period = computed<number>(() => get(versionUpdateCheckFrequency) * 60 * 60 * 1000);
 
 const { isActive, pause, resume } = useIntervalFn(() => {
   startPromise(getVersion());
 }, period, { immediate: false });
 
-function setVersionUpdateCheckInterval() {
-  if (isActive)
+function setVersionUpdateCheckInterval(): void {
+  if (get(isActive))
     pause();
 
-  if (period > 0)
+  if (get(period) > 0)
     resume();
 }
 
@@ -59,6 +60,7 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiButton
         color="info"
         icon
+        data-testid="app-update-indicator"
         @click="update()"
       >
         <RuiIcon name="lu-circle-arrow-up" />
