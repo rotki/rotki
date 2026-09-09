@@ -1,5 +1,5 @@
 import type { ComputedRef, CSSProperties, MaybeRefOrGetter, Ref } from 'vue';
-import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationAction, type NotificationData, Priority, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
 import dayjs from 'dayjs';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -21,10 +21,20 @@ interface UseNotificationCardReturn {
   buttonClicked: () => void;
   /** Background of the severity circle. */
   circleBgClass: ComputedRef<string>;
-  /** Semantic colour of the card, which an action overrides to a warning. */
+  /** Semantic colour of the card, which is its severity and nothing else. */
   color: ComputedRef<string>;
   /** Tinted card background matching {@link UseNotificationCardReturn.color}. */
   colorBgClass: ComputedRef<string>;
+  /**
+   * Left rail marking a notification only the user can resolve, or empty for the rest.
+   *
+   * @remarks
+   * Actionability is its own axis, so it gets its own channel rather than repainting the card:
+   * colour stays severity. Keyed on `Priority.ACTION` rather than on carrying a button, so the
+   * rail, the bell's count and the "Needs action" tab all mean the same thing; a button is
+   * already visible on its own.
+   */
+  actionRailClass: ComputedRef<string>;
   /** Puts the message on the clipboard, resolving the i18n parameters first. */
   copy: () => Promise<void>;
   /** The notification's date in the locale's long format. */
@@ -94,11 +104,7 @@ export function useNotificationCard(
   });
 
   const color = computed<string>(() => {
-    const data = toValue(notification);
-    if (data.action)
-      return 'warning';
-
-    switch (data.severity) {
+    switch (toValue(notification).severity) {
       case Severity.ERROR:
         return 'error';
       case Severity.INFO:
@@ -111,6 +117,10 @@ export function useNotificationCard(
         return '';
     }
   });
+
+  const actionRailClass = computed<string>(() =>
+    toValue(notification).priority === Priority.ACTION ? 'border-l-4 !border-l-rui-primary' : '',
+  );
 
   const colorBgClass = computed<string>(() => {
     switch (get(color)) {
@@ -204,6 +214,7 @@ export function useNotificationCard(
   }
 
   return {
+    actionRailClass,
     actions,
     buttonClicked,
     circleBgClass,

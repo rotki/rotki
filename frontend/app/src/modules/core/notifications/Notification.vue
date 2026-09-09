@@ -22,6 +22,7 @@ function dismiss(id: number): void {
 }
 
 const {
+  actionRailClass,
   actions,
   buttonClicked,
   circleBgClass,
@@ -44,6 +45,7 @@ const {
   <RuiCard
     :class="[
       colorBgClass,
+      actionRailClass,
       {
         '!rounded-none': popup,
       },
