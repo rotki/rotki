@@ -50,6 +50,10 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
    * would run the registry's post-persist effects (BigNumber format, mirror syncs) over every key
    * instead of over the ones that actually changed.
    *
+   * Nothing is added to the payload, the schema version included. Migrations key off the shape of
+   * the data rather than off a declared version, so a blob that never records one is not a problem,
+   * and stamping it here would write a version this client believes over one a newer rotki wrote.
+   *
    * @param payload - the keys to change, which the backend merges into the stored blob
    * @returns whether the write reached the backend, carrying its message when it did not
    */

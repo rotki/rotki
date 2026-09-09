@@ -11,9 +11,7 @@ vi.mock('@/modules/settings/api/use-settings-api', () => ({
   useSettingsApi: vi.fn(() => ({ patchFrontendSettings: mockPatchFrontendSettings })),
 }));
 
-// The seam: this composable turns a payload of changed settings into one backend write and, once
-// that resolves, into a repo update. It is mocked at the api boundary, so the snake_casing of the
-// wire keys is not covered here - that belongs to the shared request transformer.
+// Mocked at the api boundary, so wire-key snake_casing belongs to the request transformer, not here.
 describe('useFrontendSettingsWriter', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -29,9 +27,7 @@ describe('useFrontendSettingsWriter', () => {
     expect(status.success).toBe(true);
   });
 
-  // The whole reason the backend merges: a key this version's schema does not declare has already
-  // been parsed away by the time the repo holds it, so anything the client sends beyond the changed
-  // keys is a reduced view that would delete it. Sending only the patch is what keeps it alive.
+  // The repo holds an already-parsed view, so anything sent beyond the changed keys deletes a key
   it('should send only the changed keys, not the whole blob', async () => {
     const schedule = { 'NO_AVAILABLE_INDEXERS:optimism': { lastShown: 1, shownCount: 1 } };
     const { updateFrontendSetting } = useFrontendSettingsWriter();
@@ -39,6 +35,15 @@ describe('useFrontendSettingsWriter', () => {
     await updateFrontendSetting({ notificationSchedule: schedule });
 
     expect(mockPatchFrontendSettings).toHaveBeenCalledWith({ notificationSchedule: schedule });
+  });
+
+  // Stamping one would write the version this client believes over the one a newer rotki wrote
+  it('should add nothing to the payload, the schema version included', async () => {
+    const { updateFrontendSetting } = useFrontendSettingsWriter();
+
+    await updateFrontendSetting({ decimalSeparator: '#' });
+
+    expect(Object.keys(mockPatchFrontendSettings.mock.calls[0][0])).toStrictEqual(['decimalSeparator']);
   });
 
   it('should apply the patch to the repo once it is persisted', async () => {
@@ -86,9 +91,7 @@ describe('useFrontendSettingsWriter', () => {
     return { patches, release };
   }
 
-  // Two settings changed within one round trip. Under the old whole-blob format each write rebuilt
-  // the object from the pre-update repo, so each carried the other's stale value and the later
-  // response won. A patch cannot carry a stale value for a key it does not mention.
+  // A patch cannot carry a stale value for a key it does not mention, as a whole-blob rebuild did
   it('should not drop a concurrent write of another setting', async () => {
     const { patches, release } = captureConcurrentWrites();
 
