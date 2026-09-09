@@ -4879,7 +4879,9 @@
   },
   "notification_indicator": {
     "tooltip": "Notifications",
-    "tooltip_silent": "Notifications (silent)"
+    "tooltip_action": "{count} notification needs your attention | {count} notifications need your attention",
+    "tooltip_silent": "Notifications (silent)",
+    "tooltip_unread": "Notifications, something new arrived"
   },
   "notification_messages": {
     "accounting_rule_conflict": {

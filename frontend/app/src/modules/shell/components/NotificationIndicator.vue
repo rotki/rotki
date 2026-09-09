@@ -11,7 +11,7 @@ defineProps<{
 const emit = defineEmits<{
   click: [];
 }>();
-const { color: badgeColor, text: badgeText, visible: badgeVisible } = useNotificationBadge();
+const { actionCount, color: badgeColor, hasUnread, text: badgeText, visible: badgeVisible } = useNotificationBadge();
 
 function click() {
   emit('click');
@@ -22,9 +22,26 @@ const { silent } = useSilentNotifications();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const tooltip = computed<string>(() => get(silent)
-  ? t('notification_indicator.tooltip_silent')
-  : t('notification_indicator.tooltip'));
+/**
+ * Says what the badge means, since a dot says nothing on its own.
+ *
+ * @remarks
+ * Doubles as the button's accessible name: the count reaches a screen reader as a bare number and
+ * the dot does not reach it at all, so without this the badge is a purely visual signal.
+ */
+const tooltip = computed<string>(() => {
+  if (get(silent))
+    return t('notification_indicator.tooltip_silent');
+
+  const count = get(actionCount);
+  if (count > 0)
+    return t('notification_indicator.tooltip_action', { count }, count);
+
+  if (get(hasUnread))
+    return t('notification_indicator.tooltip_unread');
+
+  return t('notification_indicator.tooltip');
+});
 </script>
 
 <template>
@@ -41,6 +58,7 @@ const tooltip = computed<string>(() => get(silent)
   >
     <MenuTooltipButton
       :tooltip="tooltip"
+      :aria-label="tooltip"
       @click="click()"
     >
       <RuiIcon

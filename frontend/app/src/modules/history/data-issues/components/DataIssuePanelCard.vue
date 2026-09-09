@@ -5,13 +5,13 @@ import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { toHumanReadable } from '@rotki/common';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
-import DataIssueDetectedTime from '@/modules/history/data-issues/components/DataIssueDetectedTime.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 const { issue, eventRoute, active = false } = defineProps<{
   issue: DataIssue;
@@ -62,7 +62,7 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
         <div class="flex items-center gap-2">
           <DataIssueKindChip :kind="issue.kind" />
           <DataIssueStateChip :state="issue.state" />
-          <DataIssueDetectedTime
+          <TimeAgoDisplay
             class="ml-auto shrink-0 text-caption text-rui-text-secondary"
             :timestamp="issue.createdAt"
           />

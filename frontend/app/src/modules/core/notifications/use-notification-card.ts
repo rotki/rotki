@@ -1,7 +1,6 @@
 import type { ComputedRef, CSSProperties, MaybeRefOrGetter, Ref } from 'vue';
 import { type NotificationAction, type NotificationData, Priority, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
-import dayjs from 'dayjs';
 import { arrayify } from '@/modules/core/common/data/array';
 
 /** Height in pixels beyond which the message is collapsed behind an expand arrow. */
@@ -37,8 +36,6 @@ interface UseNotificationCardReturn {
   actionRailClass: ComputedRef<string>;
   /** Puts the message on the clipboard, resolving the i18n parameters first. */
   copy: () => Promise<void>;
-  /** The notification's date in the locale's long format. */
-  date: ComputedRef<string>;
   /**
    * Runs an action and dismisses the notification unless the action persists.
    *
@@ -61,11 +58,20 @@ interface UseNotificationCardReturn {
   messageWrapperStyle: ComputedRef<CSSProperties>;
   /** Whether the message overflows and so offers the expand arrow. */
   showExpandArrow: ComputedRef<boolean>;
+  /**
+   * When the notification arrived, in milliseconds.
+   *
+   * @remarks
+   * Rebuilt through `new Date` rather than read off the field, so a notification that has been
+   * through a serialization boundary and come back with a string date still renders. Phase 3 of
+   * rotki#12942 persists the needs-you ones across sessions, which is exactly that boundary.
+   */
+  timestamp: ComputedRef<number>;
 }
 
 /**
- * Drives a single notification card: its severity styling, its date, and the expand and action
- * behaviour behind it.
+ * Drives a single notification card: its severity styling, and the expand and action behaviour
+ * behind it.
  *
  * @returns the derived presentation and the three things a user can do to the card
  */
@@ -167,7 +173,7 @@ export function useNotificationCard(
     }
   });
 
-  const date = computed<string>(() => dayjs(toValue(notification).date).format('LLL'));
+  const timestamp = computed<number>(() => new Date(toValue(notification).date).getTime());
 
   const showExpandArrow = computed<boolean>(() => toValue(height) > NOTIFICATION_MAX_HEIGHT);
 
@@ -221,7 +227,6 @@ export function useNotificationCard(
     color,
     colorBgClass,
     copy,
-    date,
     doAction,
     expandButtonClass,
     expanded: readonly(expanded),
@@ -230,5 +235,6 @@ export function useNotificationCard(
     messageClicked,
     messageWrapperStyle,
     showExpandArrow,
+    timestamp,
   };
 }

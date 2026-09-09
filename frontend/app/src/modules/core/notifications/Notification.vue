@@ -2,6 +2,7 @@
 import { type NotificationData, Severity } from '@rotki/common';
 import MissingKeyNotification from '@/modules/core/notifications/MissingKeyNotification.vue';
 import { useNotificationCard } from '@/modules/core/notifications/use-notification-card';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 const { notification, popup = false } = defineProps<{
   notification: NotificationData;
@@ -29,7 +30,6 @@ const {
   color,
   colorBgClass,
   copy,
-  date,
   doAction,
   expandButtonClass,
   expanded,
@@ -38,6 +38,7 @@ const {
   messageClicked,
   messageWrapperStyle,
   showExpandArrow,
+  timestamp,
 } = useNotificationCard(() => notification, { dismiss, height });
 </script>
 
@@ -73,9 +74,11 @@ const {
         >
           {{ notification.title }}
         </div>
-        <div class="text-caption text-rui-text-secondary -mt-0.5">
-          {{ date }}
-        </div>
+        <TimeAgoDisplay
+          class="text-caption text-rui-text-secondary -mt-0.5 block"
+          :timestamp="timestamp"
+          milliseconds
+        />
       </div>
       <RuiButton
         data-id="notification_dismiss"

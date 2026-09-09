@@ -7,6 +7,8 @@ type BadgeColor = 'error' | 'warning' | 'primary';
 export interface UseNotificationBadgeReturn {
   /** How many notifications only the user can resolve, or 0 when the badge is a dot or absent. */
   actionCount: ComputedRef<number>;
+  /** Whether anything has arrived since the drawer was last opened, which is what the dot means. */
+  hasUnread: ComputedRef<boolean>;
   /** Whether to show the badge at all. */
   visible: ComputedRef<boolean>;
   /** The badge's text: the count, or empty for the dot. */
@@ -54,5 +56,5 @@ export function useNotificationBadge(): UseNotificationBadgeReturn {
     get(actionCount) > 0 ? worstSeverity(get(actionRequired)) : 'primary',
   );
 
-  return { actionCount, color, text, visible };
+  return { actionCount, color, hasUnread, text, visible };
 }
