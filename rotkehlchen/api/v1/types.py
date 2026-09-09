@@ -35,5 +35,4 @@ class TaskName(SerializableEnumNameMixin):
     HISTORICAL_BALANCE_PROCESSING = auto()
     ASSET_MOVEMENT_MATCHING = auto()
     BRIDGE_MATCHING = auto()
-    if __debug__:
-        DATA_ISSUE_REMEDIATION = auto()
+    DATA_ISSUE_REMEDIATION = auto()

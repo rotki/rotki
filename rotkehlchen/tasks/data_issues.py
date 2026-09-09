@@ -2,14 +2,15 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, cast
 
-from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.constants import HistoryMappingState
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import (
@@ -27,7 +28,6 @@ from rotkehlchen.types import (
     ChainID,
     EVMTxHash,
     Location,
-    Timestamp,
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
@@ -44,7 +44,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
 
-type BucketEffect = tuple[TimestampMS, int, EventDirection, str]
+type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
 
 
@@ -60,12 +60,7 @@ def _get_bucket_effects(
             treat_eth2_as_eth=treat_eth2_as_eth,
         ):
             if event_bucket == bucket:
-                effects.append((
-                    event.timestamp,
-                    event.sequence_index,
-                    direction,
-                    str(event.amount),
-                ))
+                effects.append((event.timestamp, direction, event.amount))
 
     return effects
 
@@ -77,38 +72,24 @@ def _get_customized_transactions_for_issue(
         location: Location,
 ) -> dict[EVMTxHash, list[EvmEvent]]:
     """Return customized transactions associated with the issue account."""
-    dbevents, dbtx = DBHistoryEvents(database), DBEvmTx(database)
+    dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
-        customized_events = dbevents.get_history_events_internal(
-            cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(
-                location=location,
-                state_markers=[HistoryMappingState.CUSTOMIZED],
+        customized_group_identifiers = [row[0] for row in cursor.execute(
+            'SELECT DISTINCT H.group_identifier FROM history_events_mappings M '
+            'JOIN history_events H ON H.identifier = M.parent_identifier '
+            'JOIN chain_events_info C ON C.identifier = H.identifier '
+            'JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = ? '
+            'JOIN evmtx_address_mappings A ON A.tx_id = T.identifier AND A.address = ? '
+            'WHERE M.name = ? AND M.value = ? AND H.location = ? AND T.timestamp <= ?',
+            (
+                chain_id.serialize_for_db(),
+                issue.location_label,
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                location.serialize_for_db(),
+                ts_ms_to_sec(TimestampMS(issue.ts_end)),
             ),
-        )
-        if len(customized_events) == 0:
-            return {}
-
-        account_transactions = dbtx.get_transactions(
-            cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(
-                accounts=[EvmAccount(
-                    address=string_to_evm_address(issue.location_label),
-                    chain_id=chain_id,
-                )],
-                to_ts=Timestamp(ts_ms_to_sec(TimestampMS(issue.ts_end))),
-                chain_id=chain_id,
-            ),
-        )
-        if len(account_transactions) == 0:
-            return {}
-
-        account_tx_hashes = {transaction.tx_hash for transaction in account_transactions}
-        customized_group_identifiers = {
-            event.group_identifier
-            for event in customized_events
-            if event.tx_ref in account_tx_hashes
-        }
+        )]
         if len(customized_group_identifiers) == 0:
             return {}
 
@@ -132,6 +113,7 @@ def _preview_transaction(
         chains_aggregator: ChainsAggregator,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
         tx_hash: EVMTxHash,
+        reload: bool,
 ) -> list[EvmEvent]:
     dbtx = DBEvmTx(database)
     with database.conn.read_ctx() as cursor:
@@ -150,6 +132,7 @@ def _preview_transaction(
     return decoder.decode_transaction_without_persistence(
         transaction=transactions[0],
         tx_receipt=receipt,
+        reload=reload,
     )
 
 
@@ -179,6 +162,7 @@ def _check_issue(
         issue: DataIssue,
         treat_eth2_as_eth: bool,
         preview_cache: PreviewCache,
+        reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
 ) -> None:
     location = Location.deserialize_from_db(issue.location)
     if location not in EVM_LOCATIONS or issue.location_label == '':
@@ -199,30 +183,47 @@ def _check_issue(
     )) == 0:
         return
 
-    issues_manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
+    try:
+        issues_manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
+    except InputError:
+        return
+
+    decoder = chains_aggregator.get_evm_manager(chain_id).transactions_decoder
+    preview_exceptions: tuple[type[Exception], ...] = (
+        RuntimeError,
+        *decoder.possible_decoding_exceptions,
+    )
     changed_transaction_count = 0
+    customized_transaction_count = 0
     try:
         for tx_hash, saved_events in transactions.items():
+            saved_effects = _get_bucket_effects(saved_events, bucket, treat_eth2_as_eth)
+            if len(saved_effects) != 0:
+                customized_transaction_count += 1
             if (preview_events := preview_cache.get((chain_id, tx_hash))) is None:
                 preview_events = _preview_transaction(
                     database=database,
                     chains_aggregator=chains_aggregator,
                     chain_id=chain_id,
                     tx_hash=tx_hash,
+                    reload=chain_id not in reloaded_chains,
                 )
+                reloaded_chains.add(chain_id)
                 preview_cache[chain_id, tx_hash] = preview_events
-            if _get_bucket_effects(saved_events, bucket, treat_eth2_as_eth) != _get_bucket_effects(
-                    preview_events,
-                    bucket,
-                    treat_eth2_as_eth,
-            ):
+            preview_effects = _get_bucket_effects(preview_events, bucket, treat_eth2_as_eth)
+            if len(saved_effects) == 0 and len(preview_effects) == 0:
+                continue
+
+            if len(saved_effects) == 0:
+                customized_transaction_count += 1
+            if saved_effects != preview_effects:
                 changed_transaction_count += 1
             checkpoint()
-    except Exception as e:
+    except preview_exceptions as e:
         log.exception('Failed to preview customized transactions for data issue %s', issue.id)
         attempt = _make_comparison_attempt(
             result='redecoding_failed',
-            customized_transaction_count=len(transactions),
+            customized_transaction_count=customized_transaction_count,
             changed_transaction_count=changed_transaction_count,
             reason=str(e),
         )
@@ -232,7 +233,7 @@ def _check_issue(
                 'redecoding_would_change_balance' if changed_transaction_count != 0 else
                 'redecoding_would_not_change_balance'
             ),
-            customized_transaction_count=len(transactions),
+            customized_transaction_count=customized_transaction_count,
             changed_transaction_count=changed_transaction_count,
         )
 
@@ -255,10 +256,11 @@ def run_data_issue_remediation(
     issues_manager = DataIssuesManager(database)
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
     preview_cache: PreviewCache = {}
-    for issue in issues_manager.list_issues(DataIssueFilters(
-        kind=IssueKind.NEGATIVE_BALANCE,
-        state=IssueState.OPEN,
-    )):
+    reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+    for issue in issues_manager.list_issues(DataIssueFilters(kind=IssueKind.NEGATIVE_BALANCE)):
+        if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
+            continue
+
         _check_issue(
             database=database,
             chains_aggregator=chains_aggregator,
@@ -266,6 +268,7 @@ def run_data_issue_remediation(
             issue=issue,
             treat_eth2_as_eth=treat_eth2_as_eth,
             preview_cache=preview_cache,
+            reloaded_chains=reloaded_chains,
         )
         checkpoint()
 
@@ -275,3 +278,13 @@ def run_data_issue_remediation(
             name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
             value=ts_now(),
         )
+
+
+def _last_attempt_failed(issue: DataIssue) -> bool:
+    """Return whether a failed comparison should be retried on the next scheduled run."""
+    return (
+        issue.state == IssueState.UNRESOLVED and
+        len(issue.auto_remediation_attempts) != 0 and
+        issue.auto_remediation_attempts[-1].get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
+        issue.auto_remediation_attempts[-1].get('result') == 'redecoding_failed'
+    )

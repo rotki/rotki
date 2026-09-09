@@ -696,13 +696,6 @@ class TaskManager:
         ):
             return None
 
-        with self.database.conn.read_ctx() as cursor:
-            if self.database.get_static_cache(
-                cursor=cursor,
-                name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
-            ) is None:
-                return None
-
         if not force and should_run_periodic_task(
             database=self.database,
             key_name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
@@ -710,6 +703,13 @@ class TaskManager:
             cached_timestamps=self._scheduler_task_timestamps,
         ) is False:
             return None
+
+        with self.database.conn.read_ctx() as cursor:
+            if self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            ) is None:
+                return None
 
         return [self.task_supervisor.spawn_and_track(
             after_seconds=None,

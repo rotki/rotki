@@ -838,6 +838,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
+            reload: bool = True,
     ) -> list[EvmEvent]:
         """Generate the events for a transaction without replacing its saved events.
 
@@ -848,8 +849,9 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         Rule failures propagate instead of returning partially decoded events.
         """
         with self.undecoded_tx_query_lock:
-            with self.database.conn.read_ctx() as cursor:
-                self.reload_data(cursor)
+            if reload:
+                with self.database.conn.read_ctx() as cursor:
+                    self.reload_data(cursor)
 
             events, _refresh_balances, _reload_decoders = self._decode_transaction(
                 transaction=transaction,

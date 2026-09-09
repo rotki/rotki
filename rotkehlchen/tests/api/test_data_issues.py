@@ -1,5 +1,3 @@
-import subprocess  # noqa: S404
-import sys
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
@@ -52,27 +50,6 @@ def test_trigger_data_issue_remediation(
             contained_in_msg='Data issue remediation cannot start',
             status_code=HTTPStatus.CONFLICT,
         )
-
-
-@pytest.mark.parametrize('optimized', [False, True])
-def test_remediation_task_api_validation_requires_debug(optimized: bool) -> None:
-    """The actual request schema rejects the debug-only task under python -O."""
-    result = subprocess.run([  # noqa: S603
-        sys.executable,
-        *(['-O'] if optimized else []),
-        '-c',
-        ('from marshmallow import ValidationError\n'
-        'from rotkehlchen.api.v1.schemas import TriggerTaskSchema\n'
-        'schema = TriggerTaskSchema()\n'
-        'schema.load({"task": "historical_balance_processing"})\n'
-        'try:\n'
-        '    schema.load({"task": "data_issue_remediation"})\n'
-        'except ValidationError:\n'
-        '    print("rejected")\n'
-        'else:\n'
-        '    print("accepted")\n'),
-    ], capture_output=True, text=True, check=True, timeout=30)
-    assert result.stdout.strip() == ('rejected' if optimized else 'accepted')
 
 
 def _write_issue(

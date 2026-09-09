@@ -3872,8 +3872,8 @@ class RestAPI:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
             return self._trigger_historical_balance_processing()
-        elif __debug__ and task == TaskName.DATA_ISSUE_REMEDIATION:
-            if is_accounting_update_enabled() is False:
+        elif task == TaskName.DATA_ISSUE_REMEDIATION:
+            if not __debug__ or is_accounting_update_enabled() is False:
                 return wrap_in_fail_result(
                     message='Data issue remediation is disabled',
                     status_code=HTTPStatus.NOT_FOUND,

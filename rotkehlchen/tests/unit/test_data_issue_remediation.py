@@ -140,7 +140,6 @@ def _wait_for_background_task(tasks: list[Task] | None) -> None:
 def test_negative_balance_customized_spend_is_compared_with_real_decoder(
         database: DBHandler,
         task_manager: TaskManager,
-        request: pytest.FixtureRequest,
         decoded_spend: int,
         missing_receipt: bool,
         expected_result: str,
@@ -264,10 +263,6 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
             ) == ts_now()
 
         if missing_receipt:
-            request.applymarker(pytest.mark.xfail(
-                strict=True,
-                reason='Step 5: unresolved failed comparisons are not retried yet',
-            ))
             assert len(issue.auto_remediation_attempts) == 2
             assert issue.auto_remediation_attempts[0] == attempt
             assert issue.auto_remediation_attempts[1] == {
@@ -313,6 +308,22 @@ def test_customized_transaction_redecode_comparison_preserves_saved_events(
         'changed_transaction_count': expected_changed,
     }]
     assert _get_saved_event_rows(database) == saved_rows
+
+
+def test_redecode_comparison_ignores_sequence_index_changes(database: DBHandler) -> None:
+    issue_id, tx_hash = _add_negative_balance_issue(database=database, customized=True)
+    preview_event = _make_event(tx_hash=tx_hash, amount='2')
+    preview_event.sequence_index = 7
+
+    with patch(
+        'rotkehlchen.tasks.data_issues._preview_transaction',
+        return_value=[preview_event],
+    ):
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    attempt = DataIssuesManager(database).get_issue(issue_id).auto_remediation_attempts[0]
+    assert attempt['result'] == 'redecoding_would_not_change_balance'
+    assert attempt['changed_transaction_count'] == 0
 
 
 def test_normal_transaction_is_not_redecoded_for_negative_balance(database: DBHandler) -> None:

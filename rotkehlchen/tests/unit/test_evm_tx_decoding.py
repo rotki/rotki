@@ -927,14 +927,21 @@ def test_decode_transaction_without_persistence_discards_write_buffer(
             transaction=transaction,
             tx_receipt=receipt,
         ) == expected_events
+        reload_data.assert_called_once()
+        decode_transaction.assert_called_once_with(
+            transaction=transaction,
+            tx_receipt=receipt,
+            write_buffer=[],
+            strict=True,
+        )
 
-    reload_data.assert_called_once()
-    decode_transaction.assert_called_once_with(
-        transaction=transaction,
-        tx_receipt=receipt,
-        write_buffer=[],
-        strict=True,
-    )
+        reload_data.reset_mock()
+        assert ethereum_transaction_decoder.decode_transaction_without_persistence(
+            transaction=transaction,
+            tx_receipt=receipt,
+            reload=False,
+        ) == expected_events
+        reload_data.assert_not_called()
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
