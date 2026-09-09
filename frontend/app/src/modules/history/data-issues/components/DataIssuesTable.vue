@@ -4,13 +4,13 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
-import DataIssueDetectedTime from '@/modules/history/data-issues/components/DataIssueDetectedTime.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import { describeIssue, relatedEventRoute } from '@/modules/history/data-issues/transforms';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 const pagination = defineModel<TablePaginationData>('pagination');
 
@@ -103,7 +103,7 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
       <DataIssueStateChip :state="row.state" />
     </template>
     <template #item.createdAt="{ row }">
-      <DataIssueDetectedTime :timestamp="row.createdAt" />
+      <TimeAgoDisplay :timestamp="row.createdAt" />
     </template>
     <template #item.actions="{ row }">
       <div class="flex items-center justify-end gap-0.5">

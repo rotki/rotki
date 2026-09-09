@@ -3,7 +3,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
-import DataIssueDetectedTime from '@/modules/history/data-issues/components/DataIssueDetectedTime.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
@@ -12,6 +11,7 @@ import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/his
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 /**
  * One issue's detail body, shared by both of its containers: the drawer on the data-issues page and
@@ -171,7 +171,7 @@ const resolutionNote = computed<string | undefined>(() => {
             {{ t('data_issues.detail.detected') }}
           </div>
           <div class="flex items-center grow min-h-8">
-            <DataIssueDetectedTime :timestamp="issue.createdAt" />
+            <TimeAgoDisplay :timestamp="issue.createdAt" />
           </div>
         </div>
       </section>

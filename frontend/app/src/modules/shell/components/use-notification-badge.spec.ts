@@ -93,6 +93,18 @@ describe('useNotificationBadge', () => {
     expect(useNotificationBadge().color.value).toBe('error');
   });
 
+  it('should report unread separately from the count, so the dot can be named', () => {
+    const store = useNotificationsStore();
+    store.add([notification({ priority: Priority.BULK })]);
+
+    const { actionCount, hasUnread } = useNotificationBadge();
+    expect(hasUnread.value).toBe(true);
+    expect(actionCount.value).toBe(0);
+
+    store.markAllRead();
+    expect(hasUnread.value).toBe(false);
+  });
+
   it('should stop counting an outstanding item once its row is removed', () => {
     const store = useNotificationsStore();
     store.add([notification({ id: 7, priority: Priority.ACTION })]);

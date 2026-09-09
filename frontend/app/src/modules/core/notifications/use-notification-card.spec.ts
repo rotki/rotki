@@ -1,5 +1,4 @@
 import { type NotificationAction, NotificationCategory, type NotificationData, Priority, Severity } from '@rotki/common';
-import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { NOTIFICATION_MAX_HEIGHT, useNotificationCard } from './use-notification-card';
@@ -148,13 +147,23 @@ describe('modules/core/notifications/useNotificationCard', () => {
     });
   });
 
-  describe('the date', () => {
-    it('should render it in the locale long format', () => {
+  describe('when the notification arrived', () => {
+    it('should report the date in milliseconds', () => {
       const date = new Date('2026-03-04T05:06:07Z');
 
-      const { date: formatted } = card(notification({ date }));
+      const { timestamp } = card(notification({ date }));
 
-      expect(get(formatted)).toBe(dayjs(date).format('LLL'));
+      expect(get(timestamp)).toBe(date.getTime());
+    });
+
+    it('should still report it when the date came back from serialization as a string', () => {
+      const date = new Date('2026-03-04T05:06:07Z');
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a persisted notification rehydrates with a string date
+      const serialized = date.toISOString() as unknown as Date;
+
+      const { timestamp } = card(notification({ date: serialized }));
+
+      expect(get(timestamp)).toBe(date.getTime());
     });
   });
 
