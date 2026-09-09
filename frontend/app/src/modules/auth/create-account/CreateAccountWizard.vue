@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
-import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/modules/auth/login';
+import type { CreateAccountPayload } from '@/modules/auth/login';
 import CreateAccountSubmitStep
   from '@/modules/auth/create-account/analytics/CreateAccountSubmitStep.vue';
 import CreateAccountCredentials
@@ -8,6 +8,7 @@ import CreateAccountCredentials
 import CreateAccountIntroduction
   from '@/modules/auth/create-account/introduction/CreateAccountIntroduction.vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
+import { useCreateAccountWizard } from '@/modules/auth/create-account/use-create-account-wizard';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 
@@ -30,24 +31,21 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const premiumEnabled = ref<boolean>(false);
-const premiumSetupForm = ref<PremiumSetup>({
-  apiKey: '',
-  apiSecret: '',
-  syncDatabase: false,
-});
-
-const credentialsForm = ref<LoginCredentials>({
-  password: '',
-  username: '',
-});
-const passwordConfirm = ref<string>('');
-const userPrompted = ref<boolean>(false);
-const submitUsageAnalytics = ref<boolean>(true);
+const {
+  buildPayload,
+  isRestoreMode,
+  modelCredentialsForm,
+  modelPasswordConfirm,
+  modelPremiumEnabled,
+  modelPremiumSetupForm,
+  modelSubmitUsageAnalytics,
+  modelUserPrompted,
+  nextStep,
+  prevStep: rewind,
+  selectMode,
+} = useCreateAccountWizard(step, mode);
 
 const { hasProfiles, loadProfiles } = useSavedProfiles();
-
-const isRestoreMode = computed<boolean>(() => get(mode) === 'restore');
 
 const wizardTitle = computed<string>(() =>
   get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title'),
@@ -56,47 +54,15 @@ const wizardTitle = computed<string>(() =>
 const cancel = (): void => emit('cancel');
 const errorClear = (): void => emit('clear-error');
 
-function resetPremiumState(): void {
-  set(premiumEnabled, false);
-  set(premiumSetupForm, { apiKey: '', apiSecret: '', syncDatabase: false });
-}
-
+/** The error belongs to the submit the user is stepping away from, so going back clears it. */
 function prevStep(): void {
-  const next = get(step) - 1;
-  set(step, next);
-  if (next === 1) {
-    set(mode, undefined);
-    resetPremiumState();
-  }
+  rewind();
   if (error)
     errorClear();
 }
 
-function nextStep(): void {
-  set(step, get(step) + 1);
-}
-
-function selectMode(selected: CreateAccountMode): void {
-  set(mode, selected);
-  if (selected === 'restore') {
-    set(premiumEnabled, true);
-    set(premiumSetupForm, { ...get(premiumSetupForm), syncDatabase: true });
-  }
-  nextStep();
-}
-
-function confirm() {
-  const payload: CreateAccountPayload = {
-    credentials: get(credentialsForm),
-    initialSettings: {
-      submitUsageAnalytics: get(submitUsageAnalytics),
-    },
-  };
-
-  if (get(premiumEnabled))
-    payload.premiumSetup = get(premiumSetupForm);
-
-  emit('confirm', payload);
+function confirm(): void {
+  emit('confirm', buildPayload());
 }
 
 onBeforeMount(loadProfiles);
@@ -129,8 +95,8 @@ onBeforeMount(loadProfiles);
               </RuiTabItem>
               <RuiTabItem>
                 <CreateAccountPremium
-                  v-model:premium-enabled="premiumEnabled"
-                  v-model:form="premiumSetupForm"
+                  v-model:premium-enabled="modelPremiumEnabled"
+                  v-model:form="modelPremiumSetupForm"
                   :loading="loading"
                   :mode="mode ?? 'create'"
                   @back="prevStep()"
@@ -139,9 +105,9 @@ onBeforeMount(loadProfiles);
               </RuiTabItem>
               <RuiTabItem>
                 <CreateAccountCredentials
-                  v-model:form="credentialsForm"
-                  v-model:password-confirm="passwordConfirm"
-                  v-model:user-prompted="userPrompted"
+                  v-model:form="modelCredentialsForm"
+                  v-model:password-confirm="modelPasswordConfirm"
+                  v-model:user-prompted="modelUserPrompted"
                   :loading="loading"
                   :mode="mode ?? 'create'"
                   @back="prevStep()"
@@ -150,7 +116,7 @@ onBeforeMount(loadProfiles);
               </RuiTabItem>
               <RuiTabItem>
                 <CreateAccountSubmitStep
-                  v-model:submit-usage-analytics="submitUsageAnalytics"
+                  v-model:submit-usage-analytics="modelSubmitUsageAnalytics"
                   :loading="loading"
                   :mode="mode ?? 'create'"
                   :error="error"
