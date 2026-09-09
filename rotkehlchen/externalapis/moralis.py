@@ -268,7 +268,7 @@ class Moralis(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.RequestException as e:
-            self.penalty_info.note_request_failure(e)
+            self.note_request_failure(e)
             raise RemoteError(f'Moralis API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:

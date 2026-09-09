@@ -214,6 +214,8 @@ class Rotkehlchen:
         self.kraken = Kraken()
         self.alchemy = Alchemy(database=None)
         self.moralis = Moralis(database=None)
+        for oracle in (self.coingecko, self.defillama, self.alchemy, self.moralis):
+            oracle.set_msg_aggregator(self.msg_aggregator)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,

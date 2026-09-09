@@ -32,6 +32,7 @@ export const SocketMessageType = {
   NEGATIVE_BALANCE_DETECTED: 'negative_balance_detected',
   NEW_TOKEN_DETECTED: 'new_token_detected',
   NO_AVAILABLE_INDEXERS: 'no_available_indexers',
+  ORACLE_PENALIZED: 'oracle_penalized',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   PROGRESS_UPDATES: 'progress_updates',
   REFRESH_BALANCES: 'refresh_balances',

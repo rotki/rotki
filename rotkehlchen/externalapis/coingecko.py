@@ -613,7 +613,7 @@ class Coingecko(
                 timeout=(ORACLE_PROBE_TIMEOUT, ORACLE_PROBE_TIMEOUT),
             )
         except requests.RequestException as e:
-            log.debug(f'Coingecko availability probe failed due to {e!s}')
+            log.debug('Coingecko availability probe failed due to %s', e)
             return False
         return response.status_code == HTTPStatus.OK
 
@@ -665,7 +665,7 @@ class Coingecko(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            self.penalty_info.note_request_failure(e)
+            self.note_request_failure(e)
             raise RemoteError(f'Coingecko API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
