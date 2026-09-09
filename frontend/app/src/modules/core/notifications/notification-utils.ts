@@ -51,6 +51,7 @@ export function createNotification(
     id,
     message,
     priority,
+    read: false,
     severity,
     title,
   };

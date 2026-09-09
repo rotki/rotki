@@ -26,6 +26,22 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   const count = computed<number>(() => get(data).length);
 
+  /**
+   * The notifications only the user can resolve, which is what the badge counts.
+   *
+   * @remarks
+   * Deliberately not "everything unread". Since the legacy lane stopped interrupting, the drawer
+   * carries the ~190 backend strings silently, and counting those would rebuild the uninformative
+   * number the badge used to show. This stays outstanding until the row goes away, because opening
+   * the drawer does not resolve the condition behind it.
+   */
+  const actionRequired = computed<NotificationData[]>(
+    () => get(data).filter(notification => notification.priority === Priority.ACTION),
+  );
+
+  /** Whether anything has arrived since the drawer was last opened, which drives the dot. */
+  const hasUnread = computed<boolean>(() => get(data).some(notification => !notification.read));
+
   const queue = computed<NotificationData[]>(() => get(prioritized).filter(notification => notification.display));
 
   function add(payload: NotificationData[]): void {
@@ -72,6 +88,20 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   /**
+   * Marks everything currently stored as seen, which the drawer does when it opens.
+   *
+   * @remarks
+   * Everything, not the rows scrolled past: the dot answers "is there anything new", so partial
+   * precision would buy nothing and leave the dot lit after the user has looked.
+   */
+  function markAllRead(): void {
+    if (!get(hasUnread))
+      return;
+
+    replace(get(data).map(notification => notification.read ? notification : { ...notification, read: true }));
+  }
+
+  /**
    * Return a mutable copy of the current notifications, trimmed to leave room for one new entry.
    * Used by the dispatcher to provide a working copy to strategies.
    */
@@ -83,11 +113,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   return {
+    actionRequired,
     add,
     count,
     data,
     displayed,
     getNextId,
+    hasUnread,
+    markAllRead,
     messageOverflow,
     prioritized,
     queue,

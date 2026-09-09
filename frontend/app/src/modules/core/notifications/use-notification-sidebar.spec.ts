@@ -48,6 +48,7 @@ function notification(overrides: Partial<NotificationData> = {}): NotificationDa
     duration: 5000,
     id: 1,
     message: 'the message',
+    read: false,
     severity: Severity.INFO,
     title: 'the title',
     ...overrides,
@@ -170,6 +171,42 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
 
       expect(get(allNotifications)).toHaveLength(2);
       expect(get(display)).toBe(true);
+    });
+  });
+
+  describe('consuming the new-notification dot', () => {
+    it('should leave notifications unread while the drawer stays closed', async () => {
+      set(display, false);
+      seed([notification({ id: 1 })]);
+      sidebar();
+      await nextTick();
+
+      expect(get(storeToRefs(useNotificationsStore()).data)[0].read).toBe(false);
+    });
+
+    it('should mark everything read once the drawer opens', async () => {
+      set(display, false);
+      seed([notification({ id: 1 }), notification({ id: 2 })]);
+      sidebar();
+      await nextTick();
+
+      expect(get(storeToRefs(useNotificationsStore()).data).some(({ read }) => read)).toBe(false);
+
+      set(display, true);
+      await nextTick();
+
+      expect(get(storeToRefs(useNotificationsStore()).data).every(({ read }) => read)).toBe(true);
+    });
+
+    it('should mark a notification arriving while the drawer is open', async () => {
+      seed([notification({ id: 1 })]);
+      sidebar();
+      await nextTick();
+
+      seed([notification({ id: 1, read: true }), notification({ id: 2 })]);
+      await nextTick();
+
+      expect(get(storeToRefs(useNotificationsStore()).data).every(({ read }) => read)).toBe(true);
     });
   });
 

@@ -116,6 +116,15 @@ export interface NotificationData extends NotificationBase {
   readonly display: boolean;
   readonly duration: number;
   readonly date: Date;
+  /**
+   * Whether the user has opened the drawer since this arrived.
+   *
+   * @remarks
+   * Novelty, not state. It drives the "something new is here" dot and nothing else, so an item
+   * that still needs the user stays on the badge after being read: opening a drawer does not
+   * resolve a missing API key.
+   */
+  readonly read: boolean;
 }
 
 export type Notification = SemiPartial<NotificationPayload, 'title' | 'message'>;

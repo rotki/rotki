@@ -97,7 +97,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
 
   const notificationStore = useNotificationsStore();
   const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
-  const { remove } = notificationStore;
+  const { markAllRead, remove } = notificationStore;
   const { show } = useConfirmStore();
   const { isActive: hasRunningTasks } = useTaskCenter();
   const { silent, toggle: toggleSilent } = useSilentNotifications();
@@ -122,6 +122,19 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   function close(): void {
     set(display, false);
   }
+
+  /**
+   * Clears the "something new" dot as soon as the drawer is open.
+   *
+   * @remarks
+   * Notifications arriving while it stays open are marked too, so the dot cannot light up behind
+   * a drawer the user is already looking at. Items that need the user keep their place on the
+   * badge; only the novelty signal is consumed here.
+   */
+  watchImmediate([display, allNotifications], ([open]) => {
+    if (open)
+      markAllRead();
+  });
 
   function toggleSilentMode(): void {
     startPromise(toggleSilent());
