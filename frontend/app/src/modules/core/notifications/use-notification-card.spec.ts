@@ -1,4 +1,4 @@
-import { type NotificationAction, NotificationCategory, type NotificationData, Severity } from '@rotki/common';
+import { type NotificationAction, NotificationCategory, type NotificationData, Priority, Severity } from '@rotki/common';
 import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
@@ -114,14 +114,37 @@ describe('modules/core/notifications/useNotificationCard', () => {
       expect(get(expandButtonClass)).toBe('');
     });
 
-    it('should colour a notification with an action as a warning whatever its severity', () => {
-      const { color, colorBgClass } = card(notification({
+    it('should keep colour on severity when the notification carries an action', () => {
+      const { circleBgClass, color, colorBgClass } = card(notification({
         action: { action: vi.fn(), label: 'Retry' },
         severity: Severity.ERROR,
       }));
 
-      expect(get(color)).toBe('warning');
-      expect(get(colorBgClass)).toBe('!bg-rui-warning/10');
+      expect(get(color)).toBe('error');
+      expect(get(colorBgClass)).toBe('!bg-rui-error/10');
+      expect(get(circleBgClass)).toBe('bg-rui-error');
+    });
+  });
+
+  describe('marking what needs the user', () => {
+    it('should rail a notification that only the user can resolve', () => {
+      const { actionRailClass } = card(notification({ priority: Priority.ACTION }));
+
+      expect(get(actionRailClass)).toBe('border-l-4 !border-l-rui-primary');
+    });
+
+    it.each([Priority.HIGH, Priority.NORMAL, Priority.BULK])('should leave a %s notification unrailed', (priority) => {
+      const { actionRailClass } = card(notification({ priority }));
+
+      expect(get(actionRailClass)).toBe('');
+    });
+
+    it('should rail on priority rather than on carrying a button', () => {
+      const withButton = card(notification({ action: { action: vi.fn(), label: 'Retry' }, priority: Priority.HIGH }));
+      const withoutButton = card(notification({ priority: Priority.ACTION }));
+
+      expect(get(withButton.actionRailClass)).toBe('');
+      expect(get(withoutButton.actionRailClass)).not.toBe('');
     });
   });
 
