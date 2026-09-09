@@ -3880,7 +3880,7 @@ class RestAPI:
                 )
             if (
                 (task_manager := self.rotkehlchen.task_manager) is None or
-                task_manager._maybe_run_data_issue_remediation(force=True) is None
+                task_manager.trigger_data_issue_remediation() is False
             ):
                 return wrap_in_fail_result(
                     message='Data issue remediation cannot start before historical balance '

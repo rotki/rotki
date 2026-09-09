@@ -720,6 +720,9 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
+    def trigger_data_issue_remediation(self) -> bool:
+        return self._maybe_run_data_issue_remediation(force=True) is not None
+
     def _maybe_update_snapshot_balances(self) -> list[Task] | None:
         """
         Update the balances of a user if the difference between last time they were updated

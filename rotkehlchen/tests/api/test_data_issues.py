@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -34,14 +34,14 @@ def test_trigger_data_issue_remediation(
     assert task_manager is not None
     with patch.object(
         task_manager,
-        '_maybe_run_data_issue_remediation',
-        return_value=[Mock()] if can_schedule else None,
+        'trigger_data_issue_remediation',
+        return_value=can_schedule,
     ) as schedule:
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'triggertaskresource'),
             json={'task': 'data_issue_remediation', 'async_query': False},
         )
-    schedule.assert_called_once_with(force=True)
+    schedule.assert_called_once_with()
     if can_schedule:
         assert assert_proper_sync_response_with_result(response) is True
     else:

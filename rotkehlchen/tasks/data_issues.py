@@ -2,11 +2,15 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, cast
 
-from rotkehlchen.concurrency import checkpoint
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import (
+    DataIssuesFilterQuery,
+    EvmEventFilterQuery,
+    EvmTransactionsFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import InputError
@@ -16,7 +20,6 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
-    DataIssueFilters,
     RedecodeComparisonResult,
 )
 from rotkehlchen.history.events.structures.types import EventDirection
@@ -97,7 +100,7 @@ def _get_customized_transactions_for_issue(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 location=location,
-                group_identifiers=list(customized_group_identifiers),
+                group_identifiers=customized_group_identifiers,
             ),
         )
 
@@ -197,6 +200,7 @@ def _check_issue(
     customized_transaction_count = 0
     try:
         for tx_hash, saved_events in transactions.items():
+            checkpoint()
             saved_effects = _get_bucket_effects(saved_events, bucket, treat_eth2_as_eth)
             if len(saved_effects) != 0:
                 customized_transaction_count += 1
@@ -218,7 +222,6 @@ def _check_issue(
                 customized_transaction_count += 1
             if saved_effects != preview_effects:
                 changed_transaction_count += 1
-            checkpoint()
     except preview_exceptions as e:
         log.exception('Failed to preview customized transactions for data issue %s', issue.id)
         attempt = _make_comparison_attempt(
@@ -227,6 +230,19 @@ def _check_issue(
             changed_transaction_count=changed_transaction_count,
             reason=str(e),
         )
+    except TaskCancelledError:
+        attempt = _make_comparison_attempt(
+            result='redecoding_failed',
+            customized_transaction_count=customized_transaction_count,
+            changed_transaction_count=changed_transaction_count,
+            reason='Remediation was cancelled before the comparison finished',
+        )
+        issues_manager.update_state(
+            issue_id=issue.id,
+            state=IssueState.UNRESOLVED,
+            attempt=None if _is_repeated_failure(issue, attempt) else attempt,
+        )
+        raise
     else:
         attempt = _make_comparison_attempt(
             result=(
@@ -240,7 +256,7 @@ def _check_issue(
     issues_manager.update_state(
         issue_id=issue.id,
         state=IssueState.UNRESOLVED,
-        attempt=attempt,
+        attempt=None if _is_repeated_failure(issue, attempt) else attempt,
     )
 
 
@@ -257,7 +273,10 @@ def run_data_issue_remediation(
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
     preview_cache: PreviewCache = {}
     reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
-    for issue in issues_manager.list_issues(DataIssueFilters(kind=IssueKind.NEGATIVE_BALANCE)):
+    for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
+        kinds=[IssueKind.NEGATIVE_BALANCE],
+        states=[IssueState.OPEN, IssueState.UNRESOLVED],
+    )):
         if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
             continue
 
@@ -287,4 +306,15 @@ def _last_attempt_failed(issue: DataIssue) -> bool:
         len(issue.auto_remediation_attempts) != 0 and
         issue.auto_remediation_attempts[-1].get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
         issue.auto_remediation_attempts[-1].get('result') == 'redecoding_failed'
+    )
+
+
+def _is_repeated_failure(issue: DataIssue, attempt: AutoRemediationAttempt) -> bool:
+    """Return whether the previous timeline entry records the same failure."""
+    return (
+        attempt.get('result') == 'redecoding_failed' and
+        len(issue.auto_remediation_attempts) != 0 and
+        {key: value for key, value in issue.auto_remediation_attempts[-1].items()
+         if key != 'timestamp'} ==
+        {key: value for key, value in attempt.items() if key != 'timestamp'}
     )

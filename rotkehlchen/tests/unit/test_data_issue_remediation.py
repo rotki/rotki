@@ -7,6 +7,7 @@ from freezegun import freeze_time
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -496,6 +497,52 @@ def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) 
         'reason': 'receipt unavailable',
     }
     assert _get_saved_event_rows(database) == saved_rows
+
+
+def test_repeated_failed_comparison_keeps_one_attempt(database: DBHandler) -> None:
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
+    with patch(
+        'rotkehlchen.tasks.data_issues._preview_transaction',
+        side_effect=RuntimeError('receipt unavailable'),
+    ) as preview:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    assert preview.call_count == 2
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert len(issue.auto_remediation_attempts) == 1
+
+
+def test_cancelled_comparison_is_retried(database: DBHandler) -> None:
+    issue_id, tx_hash = _add_negative_balance_issue(database=database, customized=True)
+    with patch(
+        'rotkehlchen.tasks.data_issues._preview_transaction',
+        side_effect=(
+            TaskCancelledError(),
+            [_make_event(tx_hash=tx_hash, amount='2')],
+        ),
+    ) as preview:
+        with pytest.raises(TaskCancelledError):
+            run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+        issue = DataIssuesManager(database).get_issue(issue_id)
+        assert issue.state == IssueState.UNRESOLVED
+        assert len(issue.auto_remediation_attempts) == 1
+        assert issue.auto_remediation_attempts[0]['result'] == 'redecoding_failed'
+        assert issue.auto_remediation_attempts[0]['reason'] == (
+            'Remediation was cancelled before the comparison finished'
+        )
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    assert preview.call_count == 2
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert len(issue.auto_remediation_attempts) == 2
+    assert issue.auto_remediation_attempts[1]['result'] == (
+        'redecoding_would_not_change_balance'
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
