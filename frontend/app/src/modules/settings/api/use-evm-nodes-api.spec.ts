@@ -272,7 +272,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
         http.post(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
           requestBody = await request.json();
           return HttpResponse.json({
-            result: true,
+            result: { errors: [] },
             message: '',
           });
         }),
@@ -281,7 +281,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       const { reConnectNode } = useEvmNodesApi();
       const result = await reConnectNode(5);
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ errors: [] });
       expect(requestBody).toEqual({
         identifier: 5,
       });
@@ -294,7 +294,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
         http.post(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
           requestBody = await request.json();
           return HttpResponse.json({
-            result: true,
+            result: { errors: [] },
             message: '',
           });
         }),
@@ -303,8 +303,22 @@ describe('composables/api/settings/evm-nodes-api', () => {
       const { reConnectNode } = useEvmNodesApi();
       const result = await reConnectNode();
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ errors: [] });
       expect(requestBody).toEqual({});
+    });
+
+    it('should return the nodes the backend could not connect', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/blockchains/ETH/nodes`, () =>
+          HttpResponse.json({
+            result: { errors: [{ name: 'my node', error: 'Failed to connect' }] },
+            message: '',
+          })),
+      );
+
+      const { reConnectNode } = useEvmNodesApi();
+
+      expect(await reConnectNode(5)).toEqual({ errors: [{ name: 'my node', error: 'Failed to connect' }] });
     });
   });
 

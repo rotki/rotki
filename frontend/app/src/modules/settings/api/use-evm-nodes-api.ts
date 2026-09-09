@@ -6,6 +6,7 @@ import {
   BlockchainRpcNodeAddPayload,
   BlockchainRpcNodeEditPayload,
   BlockchainRpcNodeList,
+  RpcNodeConnectResult,
 } from '@/modules/settings/types/rpc';
 
 interface UseEvmNodesApiReturn {
@@ -13,7 +14,7 @@ interface UseEvmNodesApiReturn {
   addEvmNode: (node: Omit<BlockchainRpcNode, 'identifier'>) => Promise<boolean>;
   editEvmNode: (node: BlockchainRpcNode) => Promise<boolean>;
   deleteEvmNode: (identifier: number) => Promise<boolean>;
-  reConnectNode: (identifier?: number) => Promise<boolean>;
+  reConnectNode: (identifier?: number) => Promise<RpcNodeConnectResult>;
 }
 
 export function useEvmNodesApi(chain: MaybeRefOrGetter<string> = Blockchain.ETH): UseEvmNodesApiReturn {
@@ -32,7 +33,10 @@ export function useEvmNodesApi(chain: MaybeRefOrGetter<string> = Blockchain.ETH)
     body: { identifier },
   });
 
-  const reConnectNode = async (identifier?: number): Promise<boolean> => api.post<boolean>(get(url), { identifier });
+  const reConnectNode = async (identifier?: number): Promise<RpcNodeConnectResult> => {
+    const response = await api.post<RpcNodeConnectResult>(get(url), { identifier });
+    return RpcNodeConnectResult.parse(response);
+  };
 
   return {
     addEvmNode,

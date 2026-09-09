@@ -38,6 +38,22 @@ export const BlockchainRpcNodeEditPayload = BlockchainRpcNode.pick({
 
 export const BlockchainRpcNodeAddPayload = BlockchainRpcNodeEditPayload.omit({ identifier: true });
 
+/**
+ * What a connect attempt reports back.
+ *
+ * @remarks
+ * The backend connects synchronously and answers with the nodes it could not reach, so an empty
+ * `errors` is the only success. A node that answers on the wrong chain is reported here too.
+ */
+export const RpcNodeConnectResult = z.object({
+  errors: z.array(z.object({
+    error: z.string(),
+    name: z.string(),
+  })),
+});
+
+export type RpcNodeConnectResult = z.infer<typeof RpcNodeConnectResult>;
+
 export function getPlaceholderNode(chain: Blockchain): BlockchainRpcNode {
   return {
     active: true,
