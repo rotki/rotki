@@ -5718,9 +5718,61 @@
     "endpoint": "Endpoint",
     "owned": "Owned",
     "owned_hint": "Enable if this node is a private node owned by the user",
+    "owned_hint_provider": "Every chain this key is added to gets it as an owned node with a weight of 0, so they are tried first and your existing nodes keep their weights relative to each other.",
     "weight": "Weight",
     "weight_hint": "Node weight {weight}/100 (when adjusting a public node's weight other nodes will be adjusted accordingly)",
     "weight_per_hundred": "/100"
+  },
+  "rpc_provider_setup": {
+    "actions": {
+      "close": "Close",
+      "retry": "Retry failed"
+    },
+    "apply": {
+      "archive": "Archive",
+      "count": {
+        "added": "{count} added",
+        "failed": "{count} failed",
+        "untried": "{count} not tried"
+      },
+      "details": "Per chain",
+      "expand_failed": "Expand to see why | Expand to see why {count} chain failed | Expand to see why {count} chains failed",
+      "progress": "Connecting…",
+      "progress_chain": "Connecting to {chain}…",
+      "progress_count": "{done} of {total}",
+      "reason": {
+        "rejected": "Key rejected",
+        "unknown": "Not added",
+        "unreachable": "No answer",
+        "wrong_network": "Wrong network"
+      },
+      "summary_archive": "{archive} of them serve archive data.",
+      "unknown_error": "The node could not be verified, so it was not kept."
+    },
+    "enablement": {
+      "multichain_endpoint": "{provider} serves other networks from one endpoint only once Multichain is enabled on it, which their newer plans offer. A network that is not served will be reported below and left out.",
+      "per_network": "{provider} enables networks per key, and they are on by default. A network that is switched off for this key will be reported below and left out."
+    },
+    "offer": {
+      "enable": "Also add this key to the other chains {provider} serves | Also add this key to the {count} other chain {provider} serves | Also add this key to the {count} other chains {provider} serves",
+      "hint": "This looks like an {provider} endpoint."
+    },
+    "remove": {
+      "chip": "{provider} · {count}",
+      "confirm": "Remove",
+      "label": "Provider keys in use:",
+      "message": "Remove the {provider} node on {chains}? Your other nodes are left alone, and this may be a node rotki ships by default rather than one you added. | Remove the {count} {provider} nodes on {chains}? Your other nodes are left alone, and some may be nodes rotki ships by default rather than ones you added.",
+      "partial": "Removed {removed} {provider} nodes, {failed} could not be removed.",
+      "title": "Remove {provider} nodes"
+    },
+    "select": {
+      "already_added": "Already added",
+      "none": "Every other chain {provider} serves already has one of its nodes.",
+      "picker": "Choose chains · {count} of {total}",
+      "replaces_key": "Updates {node}",
+      "unreadable": "The existing nodes of {chains} could not be read, so they are left out.",
+      "unsupported": "{provider} does not serve {chains}."
+    }
   },
   "settings": {
     "go_to_section": "Go to section",

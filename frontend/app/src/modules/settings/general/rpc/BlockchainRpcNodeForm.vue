@@ -20,6 +20,11 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const modelValue = defineModel<BlockchainRpcNodeManageState>({ required: true });
 
+/** Whether the node is one of a provider fan-out, which owns how it is weighted and flagged. */
+const { restricted = false } = defineProps<{
+  restricted?: boolean;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const schema = computed<ZodType>(() => blockchainRpcNodeSchema({
@@ -48,6 +53,32 @@ const numericWeight = computed<number>({
     form.state.weight = value.toString();
   },
 });
+
+/** What the fields held before the fan-out took them over, so unticking it costs nothing. */
+const released = shallowRef<Pick<BlockchainRpcNodeFormState, 'active' | 'owned' | 'weight'>>();
+
+/**
+ * Holds ownership, activity and weight while the node is part of a provider fan-out.
+ *
+ * @remarks
+ * Every chain in a fan-out is added on the same terms, so the chain on screen cannot be an
+ * exception. Weight follows ownership on its own: the slider is already disabled for an owned node.
+ */
+function lockProviderFields(locked: boolean): void {
+  if (locked) {
+    set(released, { active: form.state.active, owned: form.state.owned, weight: form.state.weight });
+    Object.assign(form.state, { active: true, owned: true, weight: '0' });
+    return;
+  }
+
+  const previous = get(released);
+  if (previous) {
+    Object.assign(form.state, previous);
+    set(released, undefined);
+  }
+}
+
+watch(() => restricted, lockProviderFields);
 
 // The dialog reads the node it saves straight off the model, so every edit is written back to it.
 watch(() => form.state, (state) => {
@@ -131,16 +162,18 @@ defineExpose({
       v-model="form.state.owned"
       color="primary"
       class="mt-4"
+      data-testid="node-owned"
       :label="t('rpc_node_form.owned')"
-      :disabled="isEtherscan"
-      :hint="t('rpc_node_form.owned_hint')"
+      :disabled="isEtherscan || restricted"
+      :hint="restricted ? t('rpc_node_form.owned_hint_provider') : t('rpc_node_form.owned_hint')"
     />
     <RuiSwitch
       v-model="form.state.active"
       color="primary"
       class="mt-4"
+      data-testid="node-active"
       :label="t('rpc_node_form.active')"
-      :disabled="isEtherscan"
+      :disabled="isEtherscan || restricted"
       :hint="t('rpc_node_form.active_hint')"
     />
   </div>

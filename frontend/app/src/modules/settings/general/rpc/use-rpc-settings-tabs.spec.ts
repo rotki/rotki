@@ -199,6 +199,14 @@ describe('useRpcSettingsTabs', () => {
     });
   });
 
+  describe('nodeChains', () => {
+    it('should list the chains that hold a node list, and no single-value endpoint', () => {
+      const { result } = mountWithComposable();
+
+      expect(result.nodeChains.value).toEqual(['eth', 'optimism', 'base', Blockchain.SOLANA]);
+    });
+  });
+
   describe('tabKey helper', () => {
     it('should return chain id for chain tabs', () => {
       expect(tabKey({ chain: Blockchain.ETH })).toBe(Blockchain.ETH);

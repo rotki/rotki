@@ -110,6 +110,30 @@ describe('settings/general/rpc/BlockchainRpcNodeForm.vue', () => {
     expect(wrapper.props('modelValue').node.name).toBe('renamed node');
   });
 
+  it('should hold ownership, activity and weight while the node is part of a fan-out', async () => {
+    wrapper = createWrapper(stateFor({ active: false, owned: false, weight: 30 }));
+
+    await wrapper.setProps({ restricted: true });
+    await nextTick();
+
+    const node = wrapper.props('modelValue').node;
+    expect(node).toMatchObject({ active: true, owned: true, weight: 0 });
+    expect(wrapper.find('[data-testid=node-owned] input').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=node-active] input').attributes('disabled')).toBeDefined();
+  });
+
+  it('should give the held fields back when the fan-out is turned off', async () => {
+    wrapper = createWrapper(stateFor({ active: false, owned: false, weight: 30 }));
+
+    await wrapper.setProps({ restricted: true });
+    await nextTick();
+    await wrapper.setProps({ restricted: false });
+    await nextTick();
+
+    expect(wrapper.props('modelValue').node).toMatchObject({ active: false, owned: false, weight: 30 });
+    expect(wrapper.find('[data-testid=node-owned] input').attributes('disabled')).toBeUndefined();
+  });
+
   it('should report the state as updated once a field is edited', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersByTimeAsync(600);

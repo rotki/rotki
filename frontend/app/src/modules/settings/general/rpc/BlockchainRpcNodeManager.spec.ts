@@ -66,7 +66,7 @@ async function createWrapper(nodes: BlockchainRpcNode[]): Promise<VueWrapper> {
       plugins: [createCustomPinia()],
       stubs: { BlockchainRpcNodeFormDialog: true, RpcNodeStatusCell: true, RpcReconnectButton: true },
     },
-    props: { chain: Blockchain.ETH },
+    props: { chain: Blockchain.ETH, chains: [Blockchain.ETH, Blockchain.OPTIMISM] },
   });
   await flushPromises();
   return wrapper;

@@ -52,6 +52,8 @@ export interface UseRpcSettingsTabsReturn {
   firstOtherKey: ComputedRef<string | undefined>;
   activeTab: ComputedRef<RpcSettingTab | undefined>;
   canAddNode: ComputedRef<boolean>;
+  /** The chains that hold a list of nodes, which is what a provider key can be fanned out over. */
+  nodeChains: ComputedRef<string[]>;
   selectTab: (key: string | null | undefined) => void;
 }
 
@@ -129,6 +131,10 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
     return !!tab && !tab.setting;
   });
 
+  const nodeChains = computed<string[]>(() => get(rpcSettingTabs)
+    .filter(tab => isChainTab(tab) && !tab.setting)
+    .map(tab => tabKey(tab)));
+
   function selectTab(key: string | null | undefined): void {
     if (key)
       set(selectedKey, key);
@@ -162,6 +168,7 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
     firstOtherKey,
     activeTab,
     canAddNode,
+    nodeChains,
     selectTab,
   };
 }
