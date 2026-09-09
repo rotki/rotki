@@ -101,11 +101,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('database_backups.load_error.message', { message: getErrorMessage(error) }),
-        title: t('database_backups.load_error.title'),
-      });
+      notify({ message: t('database_backups.load_error.message', { message: getErrorMessage(error) }), title: t('database_backups.load_error.title') });
     }
     finally {
       set(loading, false);
@@ -122,11 +118,7 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('database_backups.delete_error.mass_message', { message: getErrorMessage(error) }),
-        title: t('database_backups.delete_error.title'),
-      });
+      notify({ message: t('database_backups.delete_error.mass_message', { message: getErrorMessage(error) }), title: t('database_backups.delete_error.title') });
     }
   }
 
@@ -140,7 +132,6 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     catch (error: unknown) {
       logger.error(error);
       notify({
-        display: true,
         message: t('database_backups.delete_error.message', {
           file: filepath,
           message: getErrorMessage(error),
@@ -154,22 +145,13 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     try {
       set(saving, true);
       const filepath = await createBackup();
-      notify({
-        display: true,
-        message: t('database_backups.backup.message', { filepath }),
-        severity: Severity.INFO,
-        title: t('database_backups.backup.title'),
-      });
+      notify({ message: t('database_backups.backup.message', { filepath }), severity: Severity.INFO, title: t('database_backups.backup.title') });
 
       await loadInfo();
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('database_backups.backup_error.message', { message: getErrorMessage(error) }),
-        title: t('database_backups.backup_error.title'),
-      });
+      notify({ message: t('database_backups.backup_error.message', { message: getErrorMessage(error) }), title: t('database_backups.backup_error.title') });
     }
     finally {
       set(saving, false);

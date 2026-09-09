@@ -18,7 +18,6 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
       if (isPremiumActive && !wasPremium) {
         return {
           category: NotificationCategory.DEFAULT,
-          display: true,
           message: t('notification_messages.premium.active.message'),
           severity: Severity.INFO,
           title: t('notification_messages.premium.active.title'),
@@ -27,7 +26,6 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
       else if (!isPremiumActive && wasPremium) {
         return {
           category: NotificationCategory.DEFAULT,
-          display: true,
           message: reason ?? (expired
             ? t('notification_messages.premium.inactive.expired_message')
             : t('notification_messages.premium.inactive.network_problem_message')),

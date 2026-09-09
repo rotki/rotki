@@ -33,24 +33,13 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    notify({
-      display: true,
-      group: NotificationGroup.NEW_DETECTED_TOKENS,
-      message: 'message-1',
-      title: 'title-1',
-    });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'message-1', title: 'title-1' });
 
     expect(get(data)[0]).toMatchObject({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS });
     const originalDate = get(data)[0].date;
 
     // Second notification within cooldown should suppress display
-    notify({
-      display: true,
-      group: NotificationGroup.NEW_DETECTED_TOKENS,
-      groupCount: 2,
-      message: 'message-2',
-      title: 'title-1',
-    });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'message-2', title: 'title-1' });
 
     expect(get(data)).toHaveLength(1);
     expect(get(data)[0]).toMatchObject({
@@ -62,13 +51,7 @@ describe('useNotificationDispatcher', () => {
 
     vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
 
-    notify({
-      display: true,
-      group: NotificationGroup.NEW_DETECTED_TOKENS,
-      groupCount: 3,
-      message: 'message-3',
-      title: 'title-1',
-    });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 3, message: 'message-3', title: 'title-1' });
 
     expect(get(data)[0]).toMatchObject({ display: true, groupCount: 3, message: 'message-3' });
   });
@@ -205,8 +188,8 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    notify({ display: true, message: 'msg-1', title: 'title-1' });
-    notify({ display: true, message: 'msg-2', title: 'title-2' });
+    notify({ message: 'msg-1', title: 'title-1' });
+    notify({ message: 'msg-2', title: 'title-2' });
 
     expect(get(data)).toHaveLength(2);
 
@@ -228,7 +211,7 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { data, queue } = storeToRefs(useNotificationsStore());
 
-      notify({ display: true, message: 'msg', title: 'title' });
+      notify({ message: 'msg', title: 'title' });
 
       expect(get(queue)).toHaveLength(0);
       expect(get(data)[0]).toMatchObject({ display: false, message: 'msg' });
@@ -241,7 +224,6 @@ describe('useNotificationDispatcher', () => {
 
       notify({
         action: { action: vi.fn(), label: 'Configure' },
-        display: true,
         message: 'msg',
         priority: Priority.ACTION,
         title: 'title',
@@ -258,8 +240,8 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { data } = storeToRefs(useNotificationsStore());
 
-      notify({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'title' });
-      notify({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'title' });
+      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'first', title: 'title' });
+      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'second', title: 'title' });
 
       expect(get(data)).toHaveLength(1);
       expect(get(data)[0]).toMatchObject({ display: false, groupCount: 2, message: 'second' });
@@ -270,9 +252,9 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { queue } = storeToRefs(useNotificationsStore());
 
-      notify({ display: true, message: 'quiet', title: 'title' });
+      notify({ message: 'quiet', title: 'title' });
       unsilence();
-      notify({ display: true, message: 'loud', title: 'title' });
+      notify({ message: 'loud', title: 'title' });
 
       expect(get(queue)).toHaveLength(1);
       expect(get(queue)[0]).toMatchObject({ message: 'loud' });

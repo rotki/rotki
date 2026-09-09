@@ -96,12 +96,7 @@ async function loadCaches(): Promise<void> {
     set(cacheEntries, await getPriceCache(get(cacheSource)));
   }
   catch (error: unknown) {
-    notify({
-      display: true,
-      message: getErrorMessage(error),
-      severity: Severity.ERROR,
-      title: t('oracle_prices.cache.notification.title'),
-    });
+    notify({ message: getErrorMessage(error), severity: Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
     set(cacheEntries, []);
   }
   finally {
@@ -144,12 +139,7 @@ async function populateCache(): Promise<void> {
         toAsset: to,
       });
 
-  notify({
-    display: true,
-    message: message.toString(),
-    severity: status.success ? Severity.INFO : Severity.ERROR,
-    title: t('oracle_prices.cache.notification.title'),
-  });
+  notify({ message: message.toString(), severity: status.success ? Severity.INFO : Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
 }
 
 async function clearCache(entry: OracleCacheMeta): Promise<void> {
@@ -160,7 +150,6 @@ async function clearCache(entry: OracleCacheMeta): Promise<void> {
   }
   catch (error: unknown) {
     notify({
-      display: true,
       message: t('oracle_prices.cache.delete.error', {
         error: getErrorMessage(error),
         fromAsset: getAssetField(entry.fromAsset, 'symbol'),

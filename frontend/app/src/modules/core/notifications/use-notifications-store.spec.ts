@@ -124,8 +124,8 @@ describe('useNotificationsStore', () => {
     const { queue } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ display: true, message: 'shown', title: 'shown' })),
-      createNotification(store.getNextId(), testPayload({ message: 'hidden', title: 'hidden' })),
+      createNotification(store.getNextId(), testPayload({ message: 'shown', title: 'shown' })),
+      createNotification(store.getNextId(), testPayload({ message: 'hidden', priority: Priority.NORMAL, title: 'hidden' })),
     ]);
 
     expect(get(queue)).toHaveLength(1);
@@ -137,7 +137,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ display: true, message: 'msg', title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ message: 'msg', title: 'title' })),
     ]);
 
     const id = get(data)[0].id;
@@ -152,7 +152,7 @@ describe('useNotificationsStore', () => {
     const group = `${NotificationGroup.NO_AVAILABLE_INDEXERS}:optimism`;
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ display: true, group, message: 'msg', title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ group, message: 'msg', title: 'title' })),
     ]);
     store.displayed([get(data)[0].id]);
 
@@ -165,7 +165,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ display: true, message: 'msg', title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ message: 'msg', title: 'title' })),
     ]);
     store.displayed([get(data)[0].id]);
 
@@ -177,12 +177,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({
-        display: true,
-        group: NotificationGroup.NEW_DETECTED_TOKENS,
-        message: 'msg',
-        title: 'title',
-      })),
+      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', title: 'title' })),
     ]);
     store.displayed([9999]);
 
@@ -195,12 +190,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({
-        display: true,
-        group: NotificationGroup.NEW_DETECTED_TOKENS,
-        message: 'msg',
-        title: 'title',
-      })),
+      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', title: 'title' })),
     ]);
     store.displayed([]);
 

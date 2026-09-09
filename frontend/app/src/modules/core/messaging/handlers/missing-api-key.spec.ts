@@ -6,6 +6,7 @@ import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { createMissingApiKeyHandler } from '@/modules/core/messaging/handlers/missing-api-key';
+import { createNotification } from '@/modules/core/notifications/notification-utils';
 
 const { mockOpenUrl, mockUpdate } = vi.hoisted(() => ({ mockOpenUrl: vi.fn(), mockUpdate: vi.fn() }));
 const mockSuppressList = ref<string[]>([]);
@@ -55,7 +56,7 @@ describe('createMissingApiKeyHandler', () => {
     assert(result);
     expect(result.category).toBe(NotificationCategory.ETHERSCAN);
     expect(result.severity).toBe(Severity.WARNING);
-    expect(result.display).toBe(true);
+    expect(createNotification(1, result).display).toBe(true);
   });
 
   it('should group per service so repeats collapse but different services stay separate', async () => {
@@ -120,7 +121,7 @@ describe('createMissingApiKeyHandler', () => {
     assert(result);
     expect(result.category).toBe(NotificationCategory.BEACONCHAIN);
     expect(result.severity).toBe(Severity.INFO);
-    expect(result.display).toBe(false);
+    expect(createNotification(1, result).display).toBe(false);
   });
 
   it('should include the docs url for thegraph', async () => {

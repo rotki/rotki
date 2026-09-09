@@ -270,7 +270,6 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
         return [];
 
       notify({
-        display: true,
         group: NotificationGroup.ASSET_SEARCH_ERROR,
         message: t('asset_search.error.message', {
           message: getErrorMessage(error),

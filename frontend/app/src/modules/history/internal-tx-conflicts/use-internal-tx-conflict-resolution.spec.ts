@@ -1,3 +1,4 @@
+import { type Notification, Priority } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { type InternalTxConflict, InternalTxConflictActions } from './types';
@@ -6,6 +7,7 @@ import { type ResolutionCallbacks, useInternalTxConflictResolution } from './use
 const { spies } = vi.hoisted(() => ({
   spies: {
     cancelDecoding: vi.fn<() => Promise<void>>(),
+    notify: vi.fn<(payload: Notification) => void>(),
     pullAndDecodeTransactionsRaw: vi.fn<() => Promise<void>>(),
     removeKeys: vi.fn(),
   },
@@ -40,7 +42,7 @@ vi.mock('./use-internal-tx-conflict-selection', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({
-    notify: vi.fn(),
+    notify: spies.notify,
     removeMatching: vi.fn(),
   }),
 }));
@@ -69,6 +71,7 @@ describe('use-internal-tx-conflict-resolution', () => {
     spies.pullAndDecodeTransactionsRaw.mockReset();
     spies.cancelDecoding.mockReset();
     spies.removeKeys.mockReset();
+    spies.notify.mockReset();
     spies.pullAndDecodeTransactionsRaw.mockResolvedValue(undefined);
     spies.cancelDecoding.mockResolvedValue(undefined);
     scope = effectScope();
@@ -144,6 +147,14 @@ describe('use-internal-tx-conflict-resolution', () => {
   });
 
   describe('resolveMany', () => {
+    it('should keep every progress notification below the popup threshold', async () => {
+      await composable.resolveMany([createMockConflict(), createMockConflict({ txHash: '0xdef' })], callbacks);
+
+      expect(spies.notify).toHaveBeenCalled();
+      for (const [payload] of spies.notify.mock.calls)
+        expect(payload.priority).toBe(Priority.NORMAL);
+    });
+
     it('processes each conflict individually', async () => {
       const conflicts = [
         createMockConflict({ chain: 'ethereum', txHash: '0x111' }),

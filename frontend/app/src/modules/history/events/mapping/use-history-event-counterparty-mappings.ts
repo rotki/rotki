@@ -32,7 +32,6 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
             label: t('actions.fetch_counterparties.actions.fetch_again'),
           },
         ],
-        display: true,
         message: t('actions.fetch_counterparties.error.description', {
           message: getErrorMessage(error),
         }),

@@ -168,7 +168,6 @@ describe('useHistoryEventsActions', () => {
 
       expect(mockNotify).toHaveBeenCalledWith({
         action: undefined,
-        display: true,
         message: 'actions.repulling_transaction.success.no_tx_description',
         severity: Severity.INFO,
         title: 'actions.repulling_transaction.task.title',
@@ -182,7 +181,6 @@ describe('useHistoryEventsActions', () => {
       await dialogHandlers.onRepullTransactions?.(createResult(5, { eth: ['0xhash1', '0xhash2'] }));
 
       expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({
-        display: true,
         severity: Severity.INFO,
         title: 'actions.repulling_transaction.task.title',
       }));

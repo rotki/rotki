@@ -1,3 +1,4 @@
+import { Priority } from '@rotki/common';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -25,7 +26,7 @@ export function useStatisticsDataFetching(): UseStatisticsDataFetchingReturn {
 
       notifyError(t('actions.statistics.net_value.error.title'), t('actions.statistics.net_value.error.message', {
         message: getErrorMessage(error),
-      }), { display: false });
+      }), { priority: Priority.NORMAL });
     }
   }
 

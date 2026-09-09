@@ -87,7 +87,6 @@ describe('moneriumAuth', () => {
 
     expect(mockOpenUrl).toHaveBeenCalledWith('https://rotki.com/oauth/monerium?mode=app');
     expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({
-      display: true,
       group: NotificationGroup.MONERIUM_AUTH,
       severity: Severity.INFO,
     }));

@@ -70,11 +70,7 @@ async function downloadBrowserLog(): Promise<void> {
 
   await loggerDb.getAll((data: any) => {
     if (data?.length === 0) {
-      notify({
-        display: true,
-        message: t('help_sidebar.browser_log.error.empty.message'),
-        title: t('help_sidebar.browser_log.error.empty.title'),
-      });
+      notify({ message: t('help_sidebar.browser_log.error.empty.message'), title: t('help_sidebar.browser_log.error.empty.title') });
       return;
     }
     const messages = data.map((item: any) => item.message).join('\n');

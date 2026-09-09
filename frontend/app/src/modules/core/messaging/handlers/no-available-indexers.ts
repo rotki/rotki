@@ -49,7 +49,6 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
     return {
       action: actions,
       category: NotificationCategory.DEFAULT,
-      display: true,
       group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
       message: t('notification_messages.no_available_indexers.message', { chain: chainName }),
       priority: Priority.ACTION,

@@ -27,7 +27,9 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   ];
 
   function notify(payload: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
-    const incoming = get(silent) ? { ...payload, display: false } : payload;
+    const incoming: SemiPartial<NotificationPayload, 'title' | 'message'> = get(silent)
+      ? { ...payload, display: false }
+      : payload;
 
     const context: NotificationStrategyContext = {
       getNextId: store.getNextId,

@@ -71,7 +71,6 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
           action: () => onNavigateToReport(reportId),
           label: t('profit_loss_reports.notification.action'),
         },
-        display: true,
         message: t('profit_loss_reports.notification.message', {
           end: formatDate(period.end),
           start: formatDate(period.start),

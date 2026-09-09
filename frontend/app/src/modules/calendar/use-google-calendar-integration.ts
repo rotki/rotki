@@ -54,12 +54,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
   const modelManualRefreshToken = shallowRef<string>('');
 
   function notifyMessage(message: string): void {
-    notify({
-      display: true,
-      message,
-      severity: Severity.ERROR,
-      title: t('external_services.google_calendar.error'),
-    });
+    notify({ message, severity: Severity.ERROR, title: t('external_services.google_calendar.error') });
   }
 
   function notifyError(error: unknown, fallback: string): void {
@@ -92,12 +87,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
         set(showTokenInput, true);
       }
 
-      notify({
-        display: true,
-        message: t('external_services.google_calendar.opening_browser'),
-        severity: Severity.INFO,
-        title: t('external_services.google_calendar.authorizing'),
-      });
+      notify({ message: t('external_services.google_calendar.opening_browser'), severity: Severity.INFO, title: t('external_services.google_calendar.authorizing') });
     }
     catch (error: unknown) {
       notifyError(error, t('external_services.google_calendar.auth_failed'));
@@ -184,7 +174,6 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
       const result = await syncCalendar();
 
       notify({
-        display: true,
         message: result.eventsProcessed === 0
           ? t('external_services.google_calendar.no_events_to_sync')
           : t('external_services.google_calendar.sync_complete', {

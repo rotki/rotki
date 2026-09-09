@@ -76,11 +76,7 @@ const length = computed<number>(() => form.state.rows.length);
 
 function notifyFailure(key: 'add' | 'delete' | 'edit' | 'fetch', error: unknown): void {
   logger.error(error);
-  notify({
-    display: true,
-    message: t(`calendar.reminder.${key}_error.message`, { message: getErrorMessage(error) }),
-    title: t(`calendar.reminder.${key}_error.title`),
-  });
+  notify({ message: t(`calendar.reminder.${key}_error.message`, { message: getErrorMessage(error) }), title: t(`calendar.reminder.${key}_error.title`) });
 }
 
 async function loadStored(): Promise<void> {
@@ -148,11 +144,7 @@ async function addReminders(eventId: number, secsBefore: number[]): Promise<void
   try {
     const result = await addCalendarReminder(secsBefore.map(seconds => ({ eventId, secsBefore: seconds })));
     if (result.failed && result.failed.length > 0) {
-      notify({
-        display: true,
-        message: t('calendar.reminder.add_error.some_failed', { ids: result.failed.join(', ') }),
-        title: t('calendar.reminder.add_error.title'),
-      });
+      notify({ message: t('calendar.reminder.add_error.some_failed', { ids: result.failed.join(', ') }), title: t('calendar.reminder.add_error.title') });
     }
   }
   catch (error: unknown) {

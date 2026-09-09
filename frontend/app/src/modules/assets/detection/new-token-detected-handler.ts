@@ -31,7 +31,6 @@ export function createNewTokenDetectedHandler(
           label: t('notification_messages.new_detected_token.action'),
         },
         category: NotificationCategory.DEFAULT,
-        display: true,
         group: NotificationGroup.NEW_DETECTED_TOKENS,
         groupCount: count,
         message: t(

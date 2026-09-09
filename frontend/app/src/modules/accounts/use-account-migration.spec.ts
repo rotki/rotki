@@ -1,15 +1,17 @@
+import type { Notification } from '@rotki/common';
 import type { MigratedAddresses } from '@/modules/core/messaging/types';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { createNotification } from '@/modules/core/notifications/notification-utils';
 import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   fetchAccounts: vi.fn(),
   isEvm: vi.fn((chain: string): boolean => chain === 'eth' || chain === 'optimism'),
-  notify: vi.fn(),
+  notify: vi.fn<(payload: Notification) => void>(),
   refreshBlockchainBalances: vi.fn(),
 }));
 
@@ -67,6 +69,7 @@ describe('useAccountMigration', () => {
 
     expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: 'eth' });
     expect(h.notify).toHaveBeenCalledOnce();
+    expect(createNotification(1, h.notify.mock.calls[0][0])).toMatchObject({ display: true, duration: -1 });
     await flushPromises();
     expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
       { blockchain: 'eth' },

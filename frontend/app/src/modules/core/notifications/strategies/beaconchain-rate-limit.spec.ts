@@ -62,6 +62,27 @@ describe('createBeaconchainRateLimitStrategy', () => {
     });
   });
 
+  it('should pop again for a new endpoint after the row was already shown', () => {
+    const shown = createNotification(1, {
+      extras: { endpoints: ['Endpoint 1'], until: '2025-01-15T12:00:00Z' },
+      group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
+      groupCount: 1,
+      message: 'old message',
+      title: 'grouped',
+    });
+
+    const result = strategy.process(
+      {
+        message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
+        severity: Severity.WARNING,
+        title: 'Endpoint 2',
+      },
+      { getNextId: vi.fn(), notifications: [{ ...shown, display: false }] },
+    );
+
+    expect(result!.notifications[0].display).toBe(true);
+  });
+
   it('should not add duplicate endpoints', () => {
     const existing = [
       createNotification(1, {

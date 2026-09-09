@@ -43,12 +43,7 @@ export function useBackendReload(): UseBackendReloadReturn {
     const result = await restartBackend();
 
     if (result.status === BackendRestartStatus.failed) {
-      notify({
-        display: true,
-        message: t('backend_reload.failed.message', { message: result.message ?? '' }),
-        severity: Severity.ERROR,
-        title: t('backend_reload.failed.title'),
-      });
+      notify({ message: t('backend_reload.failed.message', { message: result.message ?? '' }), severity: Severity.ERROR, title: t('backend_reload.failed.title') });
       connect();
       return result;
     }

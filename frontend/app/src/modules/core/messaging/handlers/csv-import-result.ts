@@ -30,7 +30,6 @@ export function createCsvImportResultHandler(t: ReturnType<typeof useI18n>['t'])
       severity = Severity.INFO;
     return {
       category: NotificationCategory.DEFAULT,
-      display: true,
       message: messageBody,
       priority: Priority.HIGH,
       severity,

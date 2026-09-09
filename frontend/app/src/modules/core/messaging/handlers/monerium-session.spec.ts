@@ -4,6 +4,7 @@ import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMoneriumSessionHandler } from '@/modules/core/messaging/handlers/monerium-session';
+import { createNotification } from '@/modules/core/notifications/notification-utils';
 
 const mockRefreshStatus = vi.fn();
 const mockSetStatus = vi.fn();
@@ -32,7 +33,7 @@ describe('createMoneriumSessionHandler', () => {
     expect(result.category).toBe(NotificationCategory.DEFAULT);
     expect(result.severity).toBe(Severity.WARNING);
     expect(result.message).toBe('session expired');
-    expect(result.display).toBe(true);
+    expect(createNotification(1, result).display).toBe(true);
   });
 
   it('should share the group of the authentication flow, so a re-authentication replaces it', async () => {

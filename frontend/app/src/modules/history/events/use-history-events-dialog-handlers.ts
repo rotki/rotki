@@ -66,7 +66,6 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
 
       notify({
         action,
-        display: true,
         message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
         severity: Severity.INFO,
         title: t('actions.repulling_transaction.task.title'),

@@ -3,6 +3,7 @@ import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { describe, expect, it } from 'vitest';
 import { createCsvImportResultHandler } from '@/modules/core/messaging/handlers/csv-import-result';
+import { createNotification } from '@/modules/core/notifications/notification-utils';
 
 function result(overrides: Partial<CsvImportResult> = {}): CsvImportResult {
   return {
@@ -22,7 +23,7 @@ describe('createCsvImportResultHandler', () => {
     expect(notification.severity).toBe(Severity.INFO);
     expect(notification.category).toBe(NotificationCategory.DEFAULT);
     expect(notification.priority).toBe(Priority.HIGH);
-    expect(notification.display).toBe(true);
+    expect(createNotification(1, notification).display).toBe(true);
   });
 
   it('should warn when only part of the rows were processed', async () => {

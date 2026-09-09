@@ -1,3 +1,4 @@
+import { Priority } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStatisticsDataFetching } from './use-statistics-data-fetching';
 import '@test/i18n';
@@ -36,7 +37,7 @@ describe('useStatisticsDataFetching', () => {
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should notify on error without displaying', async () => {
+    it('should classify the error below the popup threshold', async () => {
       mockQueryNetValueData.mockRejectedValue(new Error('Network error'));
 
       const { fetchNetValue } = useStatisticsDataFetching();
@@ -46,7 +47,7 @@ describe('useStatisticsDataFetching', () => {
       expect(mockNotifyError).toHaveBeenCalledWith(
         expect.any(String),
         expect.stringContaining('Network error'),
-        { display: false },
+        { priority: Priority.NORMAL },
       );
     });
   });

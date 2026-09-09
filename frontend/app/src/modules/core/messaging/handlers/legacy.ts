@@ -12,7 +12,7 @@ import { createNotificationHandler } from '../utils/handler-factories';
  * better. The bulk of the corpus is self-describing as ignorable ("Ignoring it", "Skipping
  * balance result", "Check logs for details and open a bug report"), and a condition that does
  * warrant an interrupt earns it by getting a structured `WSMessageType`, not by being a longer
- * string. Omitting `display` leaves `createNotification` to store it silently.
+ * string. `Priority.BULK` is what keeps the lane silent: raise it and all ~190 strings toast again.
  */
 export function createLegacyHandler(t: ReturnType<typeof useI18n>['t']): NotificationHandler<LegacyMessageData> {
   return createNotificationHandler<LegacyMessageData>(({ value, verbosity }) => ({

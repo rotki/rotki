@@ -86,7 +86,6 @@ export function useHistoryEventsExport(
 
   function exportOutcomeMessage(succeeded: boolean, taskMessage?: string): ExportMessage {
     return {
-      display: true,
       message: succeeded
         ? t('actions.history_events_export.message.success')
         : t('actions.history_events_export.message.failure', { description: taskMessage }),
@@ -130,7 +129,6 @@ export function useHistoryEventsExport(
     }
     catch (error: unknown) {
       message = {
-        display: true,
         message: t('actions.history_events_export.message.failure', {
           description: getErrorMessage(error),
         }),

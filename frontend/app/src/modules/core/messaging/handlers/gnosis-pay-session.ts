@@ -18,7 +18,6 @@ export function createGnosisPaySessionHandler(
       persist: true,
     },
     category: NotificationCategory.DEFAULT,
-    display: true,
     group: NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED,
     message: data.error,
     severity: Severity.WARNING,
