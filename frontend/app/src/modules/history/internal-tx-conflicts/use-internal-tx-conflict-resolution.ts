@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
-import { NotificationGroup, Severity } from '@rotki/common';
+import { NotificationGroup, Priority, Severity } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createPersistentSharedComposable } from '@/modules/core/common/use-persistent-shared-composable';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -114,6 +114,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
 
       notify({
         group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+        priority: Priority.NORMAL,
         message: t('internal_tx_conflicts.notifications.started', { total }),
         severity: Severity.INFO,
         title: t('internal_tx_conflicts.notifications.title'),
@@ -134,6 +135,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
           set(progress, { ...get(progress), completed });
           notify({
             group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+            priority: Priority.NORMAL,
             message: t('internal_tx_conflicts.notifications.progress', { completed, total }),
             severity: Severity.INFO,
             title: t('internal_tx_conflicts.notifications.title'),
@@ -163,6 +165,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       if (cancelled) {
         notify({
           message: t('internal_tx_conflicts.notifications.cancelled', { completed, total }),
+          priority: Priority.NORMAL,
           severity: Severity.WARNING,
           title: t('internal_tx_conflicts.notifications.title'),
         });
@@ -170,6 +173,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       else if (failed > 0) {
         notify({
           message: t('internal_tx_conflicts.notifications.completed_with_errors', { completed, failed, total }),
+          priority: Priority.NORMAL,
           severity: Severity.WARNING,
           title: t('internal_tx_conflicts.notifications.title'),
         });
@@ -177,6 +181,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       else {
         notify({
           message: t('internal_tx_conflicts.notifications.completed', { total }),
+          priority: Priority.NORMAL,
           severity: Severity.INFO,
           title: t('internal_tx_conflicts.notifications.title'),
         });

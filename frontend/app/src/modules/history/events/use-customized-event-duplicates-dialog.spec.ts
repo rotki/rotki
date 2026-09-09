@@ -119,7 +119,6 @@ describe('useCustomizedEventDuplicatesDialog', () => {
 
       expect(notify).toHaveBeenCalledTimes(3);
       expect(notify).toHaveBeenCalledWith(expect.objectContaining({
-        display: true,
         severity: Severity.ERROR,
         title: 'actions.customized_event_duplicates.fetch_events_error.title',
       }));

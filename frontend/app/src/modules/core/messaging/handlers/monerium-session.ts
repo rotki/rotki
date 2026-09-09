@@ -33,7 +33,6 @@ export function createMoneriumSessionHandler(
         persist: true,
       },
       category: NotificationCategory.DEFAULT,
-      display: true,
       group: NotificationGroup.MONERIUM_AUTH,
       message: data.error,
       severity: Severity.WARNING,

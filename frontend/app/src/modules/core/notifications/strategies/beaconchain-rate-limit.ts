@@ -1,5 +1,6 @@
 import type { NotificationStrategy } from './types';
 import { assert, NotificationGroup } from '@rotki/common';
+import { displaysFor } from '@/modules/core/notifications/notification-display-policy';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
 const BEACONCHAIN_RATE_LIMITED_PREFIX = 'Beaconcha.in is rate limited';
@@ -58,7 +59,7 @@ export function createBeaconchainRateLimitStrategy(
         notifications[index] = {
           ...existing,
           date: new Date(),
-          display: true,
+          display: payload.display ?? displaysFor(payload.priority),
           extras: { endpoints, until },
           groupCount,
           message: t('notification_messages.beaconchain_rate_limited.message', {
@@ -74,7 +75,6 @@ export function createBeaconchainRateLimitStrategy(
 
         notifications.push(createNotification(context.getNextId(), {
           ...payload,
-          display: true,
           extras,
           group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
           groupCount: 1,

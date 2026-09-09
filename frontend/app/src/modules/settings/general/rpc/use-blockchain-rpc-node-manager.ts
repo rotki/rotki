@@ -1,5 +1,5 @@
-import type { Blockchain } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import { type Blockchain, Priority } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -111,6 +111,7 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     catch (error: unknown) {
       notify({
         message: getErrorMessage(error),
+        priority: Priority.NORMAL,
         title: t('evm_rpc_node_manager.loading_error.title', {
           chain: toValue(chain),
         }),

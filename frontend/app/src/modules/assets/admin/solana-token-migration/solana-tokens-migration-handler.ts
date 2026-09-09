@@ -22,7 +22,6 @@ export function createSolanaTokensHandler(
         persist: true,
       },
       category: NotificationCategory.DEFAULT,
-      display: true,
       message: t('notification_messages.solana_tokens_migration.message', {
         tokens: data.identifiers.map(item => `- ${item}`).join('\n'),
       }),

@@ -48,21 +48,11 @@ function exportNotification(result: Awaited<ReturnType<typeof exportCustomAssets
   const title = t('manage_user_assets.export.title');
 
   if ('success' in result && !result.success) {
-    return {
-      display: true,
-      message: t('manage_user_assets.export.error', { message: result.message }),
-      severity: Severity.ERROR,
-      title,
-    };
+    return { message: t('manage_user_assets.export.error', { message: result.message }), severity: Severity.ERROR, title };
   }
 
   if ('filePath' in result && result.directory) {
-    return {
-      display: true,
-      message: t('manage_user_assets.export.success', { filePath: result.filePath }),
-      severity: Severity.INFO,
-      title,
-    };
+    return { message: t('manage_user_assets.export.success', { filePath: result.filePath }), severity: Severity.INFO, title };
   }
 
   return undefined;

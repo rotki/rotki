@@ -90,13 +90,9 @@ async function loadInfo() {
   }
   catch (error: unknown) {
     logger.error(error);
-    notify({
-      display: true,
-      message: t('database_backups.load_error.message', {
-        message: getErrorMessage(error),
-      }),
-      title: t('database_backups.load_error.title'),
-    });
+    notify({ message: t('database_backups.load_error.message', {
+      message: getErrorMessage(error),
+    }), title: t('database_backups.load_error.title') });
   }
   finally {
     set(loading, false);

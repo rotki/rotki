@@ -1,4 +1,4 @@
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
@@ -34,7 +34,6 @@ describe('useNotifications', () => {
     notifyError('Error Title', 'Error message');
 
     expect(mockNotify).toHaveBeenCalledWith({
-      display: true,
       message: 'Error message',
       severity: Severity.ERROR,
       title: 'Error Title',
@@ -46,7 +45,6 @@ describe('useNotifications', () => {
     notifyWarning('Warn Title', 'Warn message');
 
     expect(mockNotify).toHaveBeenCalledWith({
-      display: true,
       message: 'Warn message',
       severity: Severity.WARNING,
       title: 'Warn Title',
@@ -58,28 +56,27 @@ describe('useNotifications', () => {
     notifyInfo('Info Title', 'Info message');
 
     expect(mockNotify).toHaveBeenCalledWith({
-      display: true,
       message: 'Info message',
       severity: Severity.INFO,
       title: 'Info Title',
     });
   });
 
-  it('should default display to true', () => {
+  it('should never decide display itself, leaving it to the dispatcher', () => {
     const { notifyError } = useNotifications();
     notifyError('Title', 'Message');
 
     expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ display: true }),
+      expect.not.objectContaining({ display: expect.anything() }),
     );
   });
 
-  it('should allow overriding display to false', () => {
+  it('should forward a classifying priority so the caller can opt out of a popup', () => {
     const { notifyError } = useNotifications();
-    notifyError('Title', 'Message', { display: false });
+    notifyError('Title', 'Message', { priority: Priority.NORMAL });
 
     expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ display: false }),
+      expect.objectContaining({ priority: Priority.NORMAL }),
     );
   });
 

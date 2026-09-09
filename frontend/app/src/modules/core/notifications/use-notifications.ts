@@ -1,4 +1,4 @@
-import { type Notification, type NotificationData, Severity } from '@rotki/common';
+import { type Notification, type NotificationData, type Priority, Severity } from '@rotki/common';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
@@ -6,7 +6,15 @@ import { useNotificationDispatcher } from './use-notification-dispatcher';
 export { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 
 interface ToastOptions {
-  readonly display?: boolean;
+  /**
+   * Classifies the notification, which is what decides whether it interrupts.
+   *
+   * @remarks
+   * `NORMAL` or `BULK` records it in the drawer without a popup; the default pops. Callers say
+   * what the notification *is* and the dispatcher decides what to do with it, so there is no way
+   * to ask for a popup directly.
+   */
+  readonly priority?: Priority;
 }
 
 interface UseNotificationsReturn {
@@ -15,11 +23,11 @@ interface UseNotificationsReturn {
    * Use this for advanced patterns that the convenience methods don't cover.
    */
   notify: (notification: Notification) => void;
-  /** Show an error toast notification (displayed by default). */
+  /** Report an error, popped unless `options.priority` classifies it lower. */
   notifyError: (title: string, message: string, options?: ToastOptions) => void;
-  /** Show a warning toast notification (displayed by default). */
+  /** Report a warning, popped unless `options.priority` classifies it lower. */
   notifyWarning: (title: string, message: string, options?: ToastOptions) => void;
-  /** Show an info toast notification (displayed by default). */
+  /** Report an informational outcome, popped unless `options.priority` classifies it lower. */
   notifyInfo: (title: string, message: string, options?: ToastOptions) => void;
   /** Remove the first notification matching the predicate. */
   removeMatching: (predicate: (n: NotificationData) => boolean) => void;
@@ -44,8 +52,8 @@ export function useNotifications(): UseNotificationsReturn {
 
   function toast(severity: Severity, title: string, message: string, options?: ToastOptions): void {
     dispatchNotify({
-      display: options?.display ?? true,
       message,
+      priority: options?.priority,
       severity,
       title,
     });

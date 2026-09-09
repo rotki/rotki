@@ -27,7 +27,6 @@ export function createExchangeUnknownAssetHandler(
         label: t('asset_management.cex_mapping.add_mapping'),
       },
       category: NotificationCategory.DEFAULT,
-      display: true,
       group: NotificationGroup.MISSING_EXCHANGE_MAPPING,
       groupCount,
       message: t('notification_messages.unknown_asset_mapping.message', { groupCount }),

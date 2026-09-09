@@ -109,11 +109,7 @@ export function useMessageHandling(): UseMessageHandling {
     }
     catch (error: unknown) {
       const message = handleMessageError(error, 'Message consumption failed');
-      notify({
-        display: true,
-        message,
-        title,
-      });
+      notify({ message, title });
     }
     finally {
       isRunning = false;

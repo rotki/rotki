@@ -1,5 +1,6 @@
 import type { UseNotificationCooldownReturn } from '../use-notification-cooldown';
 import type { NotificationStrategy } from './types';
+import { DEFAULT_PRIORITY, displaysFor } from '@/modules/core/notifications/notification-display-policy';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 
 /**
@@ -24,7 +25,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
       if (existingIndex === -1) {
         const notification = createNotification(context.getNextId(), {
           ...payload,
-          display: (payload.display ?? false) && !suppressed,
+          ...(suppressed && { display: false }),
         });
 
         if (notification.display)
@@ -36,7 +37,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
 
       const existing = notifications[existingIndex];
       let date = new Date();
-      let display = payload.display ?? false;
+      let display = payload.display ?? displaysFor(payload.priority);
 
       if (suppressed) {
         date = existing.date;
@@ -50,7 +51,7 @@ export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownRetur
         display,
         groupCount: payload.groupCount,
         message: payload.message,
-        priority: payload.priority,
+        priority: payload.priority ?? DEFAULT_PRIORITY,
         severity: payload.severity ?? existing.severity,
         title: payload.title,
       };

@@ -33,7 +33,6 @@ async function doImport() {
   set(loading, false);
   if (successEntries > 0) {
     notify({
-      display: true,
       message: t('address_book.import.import_success.message', {
         length: successEntries,
       }),

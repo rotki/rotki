@@ -157,7 +157,6 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
         },
       ],
       category: NotificationCategory.DEFAULT,
-      display: true,
       message: safe.type === 'new'
         ? t('notification_messages.gnosis_pay_safe_migration.message_new', { address: safe.address })
         : t('notification_messages.gnosis_pay_safe_migration.message_old', { address: safe.address }),

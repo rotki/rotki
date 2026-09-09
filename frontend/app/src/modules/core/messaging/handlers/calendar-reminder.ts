@@ -63,7 +63,6 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
         label: t('notification_messages.reminder.open_calendar'),
       },
       category: NotificationCategory.CALENDAR_REMINDER,
-      display: true,
       extras: {
         eventId: identifier,
       },

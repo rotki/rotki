@@ -56,7 +56,6 @@ const cardAction = computed<ServiceKeyAction>(() => ({
 function notifyAuthStep(payload: Notification): void {
   notify({
     ...payload,
-    display: true,
     group: NotificationGroup.MONERIUM_AUTH,
   });
 }

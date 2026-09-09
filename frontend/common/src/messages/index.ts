@@ -98,7 +98,16 @@ interface NotificationBase {
 }
 
 export interface NotificationPayload extends NotificationBase {
-  readonly display?: boolean;
+  /**
+   * Silences a notification whose priority would otherwise pop it.
+   *
+   * @remarks
+   * Suppression only, which is why the type is `false` rather than `boolean`. Whether a
+   * notification interrupts is the dispatcher's decision, derived from `priority`, so a caller
+   * cannot promote itself into a popup by asking. It can still opt out, because a condition that
+   * already has a home elsewhere in the UI should not also interrupt.
+   */
+  readonly display?: false;
   readonly duration?: number;
 }
 

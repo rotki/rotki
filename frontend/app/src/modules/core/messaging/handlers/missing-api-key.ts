@@ -151,7 +151,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     return {
       action: actions,
       category,
-      display: !isBeaconchain,
+      display: isBeaconchain ? false : undefined,
       group: `${NotificationGroup.MISSING_API_KEY}:${service}`,
       i18nParam: {
         choice: 0,

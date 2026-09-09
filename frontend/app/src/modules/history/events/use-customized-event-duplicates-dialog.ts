@@ -120,12 +120,7 @@ export function useCustomizedEventDuplicatesDialog(
     }
     catch (error: unknown) {
       logger.error('Failed to load duplicate event rows:', error);
-      notify({
-        display: true,
-        message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }),
-        severity: Severity.ERROR,
-        title: t('actions.customized_event_duplicates.fetch_events_error.title'),
-      });
+      notify({ message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }), severity: Severity.ERROR, title: t('actions.customized_event_duplicates.fetch_events_error.title') });
     }
     finally {
       set(group.loading, false);

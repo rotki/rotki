@@ -110,12 +110,7 @@ async function queryAllMarkets() {
     const description = t('binance_market_selector.query_all.error', {
       message: getErrorMessage(error),
     });
-    notify({
-      display: true,
-      message: description,
-      severity: Severity.ERROR,
-      title,
-    });
+    notify({ message: description, severity: Severity.ERROR, title });
   }
 }
 
@@ -131,12 +126,7 @@ async function loadUserMarkets() {
       const description = t('binance_market_selector.query_user.error', {
         message: getErrorMessage(error),
       });
-      notify({
-        display: true,
-        message: description,
-        severity: Severity.ERROR,
-        title,
-      });
+      notify({ message: description, severity: Severity.ERROR, title });
     }
   }
 }

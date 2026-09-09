@@ -6,7 +6,6 @@ import { createNotificationHandler } from '@/modules/core/messaging/utils';
 export function createSnapshotErrorHandler(t: ReturnType<typeof useI18n>['t']): NotificationHandler<BalanceSnapshotError> {
   return createNotificationHandler<BalanceSnapshotError>(data => ({
     category: NotificationCategory.DEFAULT,
-    display: true,
     message: t('notification_messages.snapshot_failed.message', data),
     severity: Severity.ERROR,
     title: t('notification_messages.snapshot_failed.title'),

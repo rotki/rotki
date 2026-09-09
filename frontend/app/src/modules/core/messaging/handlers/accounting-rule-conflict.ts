@@ -18,7 +18,6 @@ export function createAccountingRuleConflictHandler(t: ReturnType<typeof useI18n
         label: t('notification_messages.accounting_rule_conflict.action'),
       },
       category: NotificationCategory.DEFAULT,
-      display: true,
       message: t('notification_messages.accounting_rule_conflict.message', { conflicts: numOfConflicts }),
       priority: Priority.ACTION,
       severity: Severity.WARNING,

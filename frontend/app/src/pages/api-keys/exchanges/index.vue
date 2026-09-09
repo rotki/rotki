@@ -123,7 +123,6 @@ async function toggleSync(exchange: Exchange) {
 
   if (!status.success) {
     notify({
-      display: true,
       message: t('exchange_settings.sync.messages.description', {
         action: enable ? t('exchange_settings.sync.messages.enable') : t('exchange_settings.sync.messages.disable'),
         location: exchange.location,

@@ -76,7 +76,6 @@ export function useAccountMigration(): UseAccountMigrationReturn {
 
       notifications.push({
         category: NotificationCategory.ADDRESS_MIGRATION,
-        display: true,
         duration: -1,
         message: t(
           'notification_messages.address_migration.message',

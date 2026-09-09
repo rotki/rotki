@@ -84,12 +84,7 @@ export function useRestoreAssetDb(): UseRestoreAssetDbReturn {
     if (message.includes(UNDELETABLE_ASSETS))
       showDoubleConfirmation(resetType);
 
-    notify({
-      display: true,
-      message,
-      severity: Severity.ERROR,
-      title: t('asset_update.restore.title'),
-    });
+    notify({ message, severity: Severity.ERROR, title: t('asset_update.restore.title') });
   }
 
   function showRestoreConfirmation(type: ResetType): void {
