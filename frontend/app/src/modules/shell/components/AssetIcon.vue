@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Blockchain, getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
+import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
-import { HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
@@ -12,6 +11,14 @@ import { useCopy } from '@/modules/core/common/use-clipboard';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
+import {
+  assetChain,
+  assetTooltip,
+  type AssetTooltip,
+  badgeSize,
+  displayAssetText,
+  visibleProtocol,
+} from '@/modules/shell/components/asset-icon-display';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 import GeneratedIcon from '@/modules/shell/components/GeneratedIcon.vue';
@@ -80,46 +87,14 @@ const url = reactify(getAssetIconUrl)(mappedIdentifier);
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 
-const chain = computed(() => {
-  if (forceChain) {
-    return forceChain;
-  }
-
-  const info = get(asset);
-  if (!info) {
-    return undefined;
-  }
-  if (info.evmChain) {
-    return info.evmChain;
-  }
-
-  if (info.assetType === SOLANA_TOKEN) {
-    return SOLANA_CHAIN;
-  }
-
-  if (info.assetType === HYPERLIQUID_TOKEN) {
-    return Blockchain.HYPERLIQUID;
-  }
-
-  return undefined;
-});
+const chain = computed<string | undefined>(() => assetChain(forceChain, get(asset)));
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
-const protocol = computed<string | undefined>(() => {
-  const protocol = get(asset)?.protocol;
-  if (!protocol || protocol === 'spam') {
-    return undefined;
-  }
-  return protocol;
-});
+const protocol = computed<string | undefined>(() => visibleProtocol(get(asset)?.protocol));
 
-const displayAsset = computed<string>(() => {
-  const currencySymbol = get(currency);
-  if (currencySymbol)
-    return currencySymbol;
-
-  return get(symbol) ?? get(name) ?? get(mappedIdentifier) ?? '';
-});
+const displayAsset = computed<string>(() =>
+  displayAssetText(get(currency), get(symbol), get(name), get(mappedIdentifier)),
+);
 
 /**
  * Whether the asset has anything to call itself by.
@@ -154,30 +129,7 @@ const blockie = computed<string | undefined>(() => {
  */
 const hasTooltipText = hasAssetText;
 
-const tooltip = computed(() => {
-  const assetName = get(name) ?? '';
-  const assetSymbol = get(symbol) ?? '';
-  const isCustom = get(isCustomAsset);
-
-  const emptyNameAsset = (symbol: string) => ({
-    name: '',
-    symbol,
-  });
-
-  if (isCustom) {
-    return emptyNameAsset(assetName);
-  }
-
-  const areSymbolAndNameEqual = assetName.toLowerCase() === assetSymbol.toLowerCase();
-  if (areSymbolAndNameEqual) {
-    return emptyNameAsset(assetSymbol);
-  }
-
-  return {
-    name: assetName,
-    symbol: assetSymbol,
-  };
-});
+const tooltip = computed<AssetTooltip>(() => assetTooltip(get(name), get(symbol), get(isCustomAsset)));
 
 const tooltipOptions = computed(() => ({
   autoUpdate: {
@@ -187,8 +139,8 @@ const tooltipOptions = computed(() => ({
   placement: 'top' as const,
 }));
 
-const usedChainIconSize = computed(() => chainIconSize || `${(Number.parseInt(size) * 50) / 100}px`);
-const usedProtocolIconSize = computed(() => chainIconSize || `${(Number.parseInt(size) * 40) / 100}px`);
+const usedChainIconSize = computed<string>(() => badgeSize(chainIconSize, size, 50));
+const usedProtocolIconSize = computed<string>(() => badgeSize(chainIconSize, size, 40));
 
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
 
@@ -320,7 +272,7 @@ const { copied, copy } = useCopy(() => identifier);
     </template>
 
     <div v-if="hasTooltipText">
-      {{ t('asset_icon.tooltip', tooltip) }}
+      {{ t('asset_icon.tooltip', { ...tooltip }) }}
     </div>
 
     <!-- Chain and protocol otherwise live only in the corner badges, a few pixels across. For an
