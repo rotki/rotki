@@ -1,4 +1,4 @@
-import type { AccountManage, StakingValidatorManage } from './use-account-manage';
+import type { AccountAgnosticManage, AccountManage, StakingValidatorManage, XpubManage } from './use-account-manage';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { Blockchain, Zero } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
@@ -10,12 +10,17 @@ import { TaskFailed } from '@/modules/core/tasks/task-result';
 const mockAddAccounts = vi.fn();
 const mockAddEvmAccounts = vi.fn();
 const mockShowErrorMessage = vi.fn();
+const mockFetchAccounts = vi.fn().mockResolvedValue(undefined);
+const mockEditAccount = vi.fn();
+const mockEditAgnosticAccount = vi.fn();
+const mockUpdateAccountData = vi.fn();
+const mockUpdateAccounts = vi.fn();
 
 vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   useBlockchainAccountManagement: vi.fn(() => ({
     addAccounts: mockAddAccounts,
     addEvmAccounts: mockAddEvmAccounts,
-    fetchAccounts: vi.fn().mockResolvedValue(undefined),
+    fetchAccounts: mockFetchAccounts,
     refreshAccounts: vi.fn().mockResolvedValue(undefined),
   })),
 }));
@@ -33,15 +38,15 @@ vi.mock('@/modules/core/notifications/use-notifications', async () => ({
 
 vi.mock('@/modules/accounts/use-account-edits', () => ({
   useAccountEdits: vi.fn(() => ({
-    editAccount: vi.fn(),
-    editAgnosticAccount: vi.fn(),
+    editAccount: mockEditAccount,
+    editAgnosticAccount: mockEditAgnosticAccount,
   })),
 }));
 
 vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
   useBlockchainAccountsStore: vi.fn(() => ({
-    updateAccountData: vi.fn(),
-    updateAccounts: vi.fn(),
+    updateAccountData: mockUpdateAccountData,
+    updateAccounts: mockUpdateAccounts,
   })),
 }));
 
@@ -349,6 +354,105 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({ address: ['already typed'] });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('saveXpub', () => {
+    function xpubState(mode: 'add' | 'edit'): XpubManage {
+      return {
+        chain: Blockchain.BTC,
+        data: {
+          tags: null,
+          xpub: { derivationPath: 'm/0', xpub: 'zpub6r', xpubType: XpubKeyType.ZPUB },
+        },
+        mode,
+        type: 'xpub',
+      };
+    }
+
+    it('should add the xpub and report it saved', async () => {
+      mockAddAccounts.mockResolvedValue({ added: [{ address: 'zpub6r' }], failed: [], noActivity: [] });
+
+      const { save } = useAccountManage();
+
+      expect(await save(xpubState('add'))).toBe(true);
+      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.BTC, xpubState('add').data, { wait: true });
+    });
+
+    /** An edit does not go through the addition summary, so the list is re-read instead. */
+    it('should edit the xpub and re-read the chain', async () => {
+      const { save } = useAccountManage();
+
+      expect(await save(xpubState('edit'))).toBe(true);
+      expect(mockEditAccount).toHaveBeenCalledWith(xpubState('edit').data, Blockchain.BTC);
+      expect(mockFetchAccounts).toHaveBeenCalledWith({ blockchain: Blockchain.BTC });
+    });
+
+    /**
+     * The xpub errors are reported against the two fields of the xpub form rather than an address,
+     * which is what the empty props name.
+     */
+    it('should report a failed addition against the xpub fields', async () => {
+      mockAddAccounts.mockResolvedValue({
+        added: [],
+        failed: [{ address: 'zpub6r', error: new Error('{"xpub":["not a valid xpub"]}') }],
+        noActivity: [],
+      });
+
+      const { modelErrorMessages, save } = useAccountManage();
+
+      expect(await save(xpubState('add'))).toBe(false);
+      expect(get(modelErrorMessages)).toEqual({ xpub: ['not a valid xpub'] });
+    });
+
+    it('should report a rejected edit rather than closing the dialog', async () => {
+      mockEditAccount.mockRejectedValue(new Error('the backend said no'));
+
+      const { save } = useAccountManage();
+
+      expect(await save(xpubState('edit'))).toBe(false);
+      expect(mockShowErrorMessage).toHaveBeenCalled();
+    });
+
+    /** Cancelling the addition is not a failure, but nothing was added, so the dialog stays open. */
+    it('should not report a fully cancelled addition as saved', async () => {
+      mockAddAccounts.mockResolvedValue({ added: [], cancelled: true, failed: [] });
+
+      const { modelErrorMessages, save } = useAccountManage();
+
+      expect(await save(xpubState('add'))).toBe(false);
+      expect(get(modelErrorMessages)).toEqual({});
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('saveAgnosticAccount', () => {
+    function groupState(): AccountAgnosticManage {
+      return {
+        category: 'evm',
+        chain: undefined,
+        data: { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', tags: null },
+        mode: 'edit',
+        type: 'group',
+      };
+    }
+
+    /** A group spans chains, so the edit is written once and mirrored into every account. */
+    it('should edit the group and carry the change into the accounts', async () => {
+      const { save } = useAccountManage();
+
+      expect(await save(groupState())).toBe(true);
+      expect(mockEditAgnosticAccount).toHaveBeenCalledWith('evm', groupState().data);
+      expect(mockUpdateAccountData).toHaveBeenCalledWith(groupState().data);
+    });
+
+    it('should not touch the accounts when the edit is rejected', async () => {
+      mockEditAgnosticAccount.mockRejectedValue(new Error('the backend said no'));
+
+      const { save } = useAccountManage();
+
+      expect(await save(groupState())).toBe(false);
+      expect(mockUpdateAccountData).not.toHaveBeenCalled();
     });
   });
 
