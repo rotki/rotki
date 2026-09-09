@@ -101,10 +101,12 @@ watch(frequencyWriteError, (message) => {
           :min="1"
           :success-messages="batchSuccess"
           :error-messages="batchError"
+          data-testid="internal-tx-batch-size"
           @update:model-value="updateBatchSize($event)"
         />
         <SettingResetConfirmButton
           :compact="compact"
+          data-testid="internal-tx-batch-size-reset"
           @confirm="resetBatchSize()"
         />
       </div>
@@ -135,10 +137,12 @@ watch(frequencyWriteError, (message) => {
           :step="0.5"
           :success-messages="frequencySuccess"
           :error-messages="frequencyError"
+          data-testid="internal-tx-frequency"
           @update:model-value="updateFrequency($event)"
         />
         <SettingResetConfirmButton
           :compact="compact"
+          data-testid="internal-tx-frequency-reset"
           @confirm="resetFrequency()"
         />
       </div>
