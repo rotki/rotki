@@ -93,6 +93,7 @@ async function downloadBrowserLog(): Promise<void> {
       <RuiButton
         variant="text"
         icon
+        data-testid="help-close"
         @click="display = false"
       >
         <RuiIcon name="lu-x" />
@@ -101,6 +102,7 @@ async function downloadBrowserLog(): Promise<void> {
     <div class="py-0">
       <div
         class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-y border-default cursor-pointer"
+        data-testid="help-report-issue"
         @click="showReportIssue()"
       >
         <RuiIcon
@@ -124,6 +126,7 @@ async function downloadBrowserLog(): Promise<void> {
         target="_blank"
         class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 cursor-pointer"
         :class="{ 'border-t border-default': index > 0 }"
+        data-testid="help-link"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
         <RuiIcon
@@ -143,6 +146,7 @@ async function downloadBrowserLog(): Promise<void> {
       <template v-if="!interop.isPackaged">
         <div
           class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-t border-default cursor-pointer"
+          data-testid="help-about"
           @click="openAbout()"
         >
           <RuiIcon
@@ -162,6 +166,7 @@ async function downloadBrowserLog(): Promise<void> {
 
         <div
           class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-t border-default cursor-pointer"
+          data-testid="help-download-log"
           @click="downloadBrowserLog()"
         >
           <RuiIcon
