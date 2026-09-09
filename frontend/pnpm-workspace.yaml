@@ -59,8 +59,8 @@ catalog:
   '@intlify/unplugin-vue-i18n': 11.2.5
   '@pinia/testing': 2.0.1
   '@playwright/test': 1.62.1
-  '@rotki/eslint-config': 8.2.0
-  '@rotki/eslint-plugin': 1.7.0
+  '@rotki/eslint-config': 8.3.0
+  '@rotki/eslint-plugin': 1.8.0
   '@rotki/ui-library': 2.24.0
   '@tsconfig/node24': 24.0.5
   '@types/node': 24.13.3
