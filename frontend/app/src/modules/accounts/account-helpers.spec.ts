@@ -156,6 +156,157 @@ describe('sortAndFilterAccounts', () => {
   });
 });
 
+/**
+ * A group stands for its member accounts, so a filter that can match on different members, or an
+ * exclusion that drops some of them, has to be resolved against the members rather than the group.
+ */
+describe('sortAndFilterAccounts, over groups', () => {
+  function group(overrides: Partial<BlockchainAccountGroupWithBalance> = {}): BlockchainAccountGroupWithBalance {
+    return {
+      amount: bigNumberify(3),
+      chains: ['eth', 'optimism'],
+      data: { address: '0xaaa', type: 'address' },
+      tags: ['hot'],
+      type: 'group',
+      value: bigNumberify(300),
+      ...overrides,
+    };
+  }
+
+  function member(chain: string, value: number, tags: string[]): BlockchainAccountWithBalance {
+    return account({ chain, data: { address: '0xaaa', type: 'address' }, tags, value: bigNumberify(value) });
+  }
+
+  const members = (): BlockchainAccountWithBalance[] => [
+    member('eth', 200, ['hot']),
+    member('optimism', 100, ['cold']),
+  ];
+
+  /** The excluded chains are still part of the group, they just stop counting towards its value. */
+  describe('an excluded chain', () => {
+    it('should leave the group holding only what is still included', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ excluded: { '0xaaa': ['optimism'] } }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].includedValue?.toNumber()).toBe(200);
+    });
+
+    it('should leave a group with nothing excluded alone', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ excluded: { '0xbbb': ['optimism'] } }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].includedValue).toBeUndefined();
+    });
+
+    /** A group on one chain cannot have that chain excluded and still be a group worth showing. */
+    it('should leave a single-chain group alone', () => {
+      const result = sortAndFilterAccounts(
+        [group({ chains: ['eth'] })],
+        payload({ excluded: { '0xaaa': ['eth'] } }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].includedValue).toBeUndefined();
+    });
+  });
+
+  /**
+   * A tag or chain filter matching different members would otherwise show the whole group, which
+   * says the group matched when no single account in it did.
+   */
+  describe('a filter that can match different members', () => {
+    it('should narrow the group to the members that match the chain', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].chains).toEqual(['eth']);
+      expect(result.data[0].value.toNumber()).toBe(200);
+    });
+
+    it('should keep the chains the group spans, so what was narrowed away is still known', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].allChains).toEqual(['eth', 'optimism']);
+    });
+
+    it('should carry only the tags of the members that survived', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['optimism'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].tags).toEqual(['cold']);
+    });
+
+    /** One surviving member is no longer a group of alternatives, so it expands as that account. */
+    it('should expand a single survivor as itself', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].expansion).toBeUndefined();
+    });
+
+    it('should expand several survivors as accounts', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth', 'optimism'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data[0].expansion).toBe('accounts');
+    });
+
+    /** Tag and chain have to hold on the same member, not on two different ones. */
+    it('should drop a group whose members match the tag and the chain separately', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['optimism'], tags: ['hot'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data).toHaveLength(0);
+    });
+
+    it('should keep a group whose member matches both', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth'], tags: ['hot'] }),
+        { getAccounts: () => members(), getLabel: noLabel },
+      );
+
+      expect(result.data).toHaveLength(1);
+    });
+
+    /** Without a resolver there are no members to refine against, so the group stands as it is. */
+    it('should leave the group alone when its members cannot be read', () => {
+      const result = sortAndFilterAccounts(
+        [group()],
+        payload({ chain: ['eth'] }),
+        { getLabel: noLabel },
+      );
+
+      expect(result.data[0].chains).toEqual(['eth', 'optimism']);
+    });
+  });
+});
+
 describe('convertBtcAccounts', () => {
   const accounts: BitcoinAccounts = {
     standalone: [{ address: 'bc1standalone', label: 'Standalone', tags: null }],
