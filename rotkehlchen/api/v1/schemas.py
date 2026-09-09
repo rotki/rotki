@@ -239,6 +239,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+# A frontend settings key ends up inside a json_set/json_remove path, where a '.', a '[' or a
+# quote would change what the path selects. Every key the frontend writes is a snake_cased
+# identifier, so requiring that is cheaper and safer than quoting the path.
+FRONTEND_SETTINGS_KEY_RE: Final = r'^[A-Za-z_][A-Za-z0-9_]*$'
 
 
 def validate_predicate(
@@ -1728,7 +1732,9 @@ class ModifiableSettingsSchema(Schema):
     # TODO: Add some validation to this field
     date_display_format = EmptyAsNoneStringField(load_default=None)
     active_modules = fields.List(NonEmptyStringField(), load_default=None)
-    frontend_settings = EmptyAsNoneStringField(load_default=None)
+    # frontend_settings is not settable here. It is an opaque blob this endpoint could only replace
+    # in full, which deletes every key the writing client's schema does not declare. PATCH
+    # /settings/frontend merges instead, and GET /settings/frontend reads it back.
     btc_derivation_gap_limit = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1904,7 +1910,6 @@ class ModifiableSettingsSchema(Schema):
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],
             active_modules=data['active_modules'],
-            frontend_settings=data['frontend_settings'],
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],
@@ -1949,6 +1954,24 @@ class ModifiableSettingsSchema(Schema):
 
 class EditSettingsSchema(Schema):
     settings = fields.Nested(ModifiableSettingsSchema, required=True)
+
+
+class PatchFrontendSettingsSchema(Schema):
+    """Partial update of the frontend_settings blob.
+
+    The keys become json_set/json_remove paths, so they are held to a plain identifier. That is
+    what every key the frontend writes already looks like, and it means the paths never need
+    $."key" quoting, which is easier to get wrong than to forbid.
+    """
+    patch = fields.Dict(
+        keys=fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        values=fields.Raw(allow_none=True),
+        load_default=dict,
+    )
+    remove = fields.List(
+        fields.String(validate=webargs.validate.Regexp(FRONTEND_SETTINGS_KEY_RE)),
+        load_default=list,
+    )
 
 
 class BaseUserSchema(Schema):

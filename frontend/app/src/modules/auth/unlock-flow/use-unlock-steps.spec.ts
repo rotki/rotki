@@ -17,16 +17,16 @@ const {
   checkUpdate,
   colibriLogin,
   getExchanges,
+  getFrontendSettings,
   getRawSettings,
   initialize,
   lastLoginRef,
-  migrateSettingsIfNeeded,
   monitorStart,
   monitorStop,
+  patchFrontendSettings,
   requestRestart,
   resolveStoredCredentials,
   runTaskResult,
-  setSettings,
   sigilEmit,
   waitReady,
 } = vi.hoisted(() => {
@@ -41,16 +41,16 @@ const {
     checkUpdate: vi.fn(),
     colibriLogin: vi.fn().mockResolvedValue(undefined),
     getExchanges: vi.fn(),
+    getFrontendSettings: vi.fn(),
     getRawSettings: vi.fn(),
     initialize: vi.fn(),
     lastLoginRef: vueRef(''),
-    migrateSettingsIfNeeded: vi.fn(),
     monitorStart: vi.fn(),
     monitorStop: vi.fn(),
+    patchFrontendSettings: vi.fn(),
     requestRestart: vi.fn(),
     resolveStoredCredentials: vi.fn(),
     runTaskResult: vi.fn(),
-    setSettings: vi.fn(),
     sigilEmit: vi.fn(),
     waitReady: vi.fn(),
   };
@@ -67,7 +67,7 @@ vi.mock('@/modules/auth/use-users-api', () => ({
 }));
 
 vi.mock('@/modules/settings/api/use-settings-api', () => ({
-  useSettingsApi: vi.fn(() => ({ getRawSettings, setSettings })),
+  useSettingsApi: vi.fn(() => ({ getFrontendSettings, getRawSettings, patchFrontendSettings })),
 }));
 
 vi.mock('@/modules/balances/api/use-exchange-api', () => ({
@@ -106,10 +106,6 @@ vi.mock('@/modules/auth/account-management', () => ({
   lastLogin: lastLoginRef,
 }));
 
-vi.mock('@/modules/settings/types/frontend-settings-migrations', () => ({
-  migrateSettingsIfNeeded,
-}));
-
 vi.mock('@/modules/settings/types/user-settings', () => ({
   UserAccount: { parse: vi.fn((value: unknown) => value) },
   UserSettingsModel: { parse: vi.fn((value: unknown) => value) },
@@ -135,7 +131,7 @@ describe('useUnlockSteps', () => {
     vi.clearAllMocks();
     set(lastLoginRef, '');
     resolveStoredCredentials.mockResolvedValue(none);
-    migrateSettingsIfNeeded.mockReturnValue(undefined);
+    getFrontendSettings.mockResolvedValue({});
   });
 
   describe('loginSteps.probeSession', () => {
@@ -187,7 +183,7 @@ describe('useUnlockSteps', () => {
   describe('loginSteps.resume', () => {
     it('should resume from settings + exchanges without running the login task', async () => {
       setupStore();
-      getRawSettings.mockResolvedValue({ frontendSettings: '{}' });
+      getRawSettings.mockResolvedValue({});
       getExchanges.mockResolvedValue([{ location: 'kraken', name: 'kraken' }]);
 
       const { loginSteps } = useUnlockSteps();
@@ -224,23 +220,52 @@ describe('useUnlockSteps', () => {
       expect(get(incompleteUpgradeConflict)).toEqual({ message: 'upgrade!' });
     });
 
-    it('should persist migrated frontend settings on resume', async () => {
+    // A patch, so the keys a newer rotki wrote survive; a whole-blob rewrite here deleted them
+    it('should write a legacy blob back as a patch on resume', async () => {
       setupStore();
-      getRawSettings.mockResolvedValue({ frontendSettings: 'OLD' });
+      getFrontendSettings.mockResolvedValue({
+        aKeyFromTheFuture: { nested: [1, 2] },
+        balanceUsdValueThreshold: { BLOCKCHAIN: '15', MANUAL: '0' },
+      });
       getExchanges.mockResolvedValue([]);
-      migrateSettingsIfNeeded.mockReturnValue('NEW');
 
       const { loginSteps } = useUnlockSteps();
       await loginSteps.resume(credentials);
 
-      expect(setSettings).toHaveBeenCalledWith({ frontendSettings: 'NEW' });
+      expect(patchFrontendSettings).toHaveBeenCalledWith(
+        { balanceValueThreshold: { BLOCKCHAIN: '15' }, schemaVersion: 2 },
+        ['balanceUsdValueThreshold'],
+      );
+    });
+
+    it('should not write anything when the blob is already current', async () => {
+      setupStore();
+      getFrontendSettings.mockResolvedValue({ decimalSeparator: '.' });
+      getExchanges.mockResolvedValue([]);
+
+      const { loginSteps } = useUnlockSteps();
+      await loginSteps.resume(credentials);
+
+      expect(patchFrontendSettings).not.toHaveBeenCalled();
+    });
+
+    // Tidying, not correctness: the session is right from the parse, so a failure cannot fail login
+    it('should still resume when the write back fails', async () => {
+      setupStore();
+      getFrontendSettings.mockResolvedValue({ balanceUsdValueThreshold: {} });
+      getExchanges.mockResolvedValue([]);
+      patchFrontendSettings.mockRejectedValue(new Error('backend is down'));
+
+      const { loginSteps } = useUnlockSteps();
+
+      expect((await loginSteps.resume(credentials)).ok).toBe(true);
     });
   });
 
   describe('loginSteps.login', () => {
     it('should run the login task path and colibri login', async () => {
       setupStore();
-      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: {} }));
 
       const { loginSteps } = useUnlockSteps();
       const result = await loginSteps.login({ password: 'p', username: 'bob' });
@@ -315,7 +340,7 @@ describe('useUnlockSteps', () => {
 
     it('should stash the new account when the create task succeeds', async () => {
       setupStore();
-      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: {} }));
 
       const { createSteps } = useUnlockSteps();
       const result = await createSteps(payload).login(payload.credentials);
@@ -326,7 +351,7 @@ describe('useUnlockSteps', () => {
 
     it('should treat a premium restore as an existing account, keeping the suggestions dialog', async () => {
       setupStore();
-      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: { frontendSettings: '{}' } }));
+      runTaskResult.mockResolvedValue(ok({ exchanges: [], settings: {} }));
 
       const restore: CreateAccountPayload = {
         ...payload,
@@ -386,7 +411,7 @@ describe('useUnlockSteps', () => {
       callCreateAccount.mockResolvedValue({ taskId: 1 });
       runTaskResult.mockImplementation(async (executor: () => Promise<unknown>) => {
         await executor();
-        return ok({ exchanges: [], settings: { frontendSettings: '{}' } });
+        return ok({ exchanges: [], settings: {} });
       });
 
       const { createSteps } = useUnlockSteps();
@@ -403,7 +428,7 @@ describe('useUnlockSteps', () => {
   describe('loadSession', () => {
     it('should hydrate the store and emit session:ready after a successful unlock', async () => {
       const store = setupStore();
-      getRawSettings.mockResolvedValue({ frontendSettings: '{}' });
+      getRawSettings.mockResolvedValue({});
       getExchanges.mockResolvedValue([]);
 
       const { loginSteps } = useUnlockSteps();
@@ -430,7 +455,7 @@ describe('useUnlockSteps', () => {
 
     it('should map an initialize failure to a typed err', async () => {
       setupStore();
-      getRawSettings.mockResolvedValue({ frontendSettings: '{}' });
+      getRawSettings.mockResolvedValue({});
       getExchanges.mockResolvedValue([]);
       initialize.mockRejectedValueOnce(new Error('init failed'));
 

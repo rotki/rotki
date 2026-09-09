@@ -40,7 +40,7 @@ from rotkehlchen.api.services.external_services import ExternalServicesService
 from rotkehlchen.api.services.history import HistoryService
 from rotkehlchen.api.services.history_events import HistoryEventsService
 from rotkehlchen.api.services.integrations import IntegrationsService
-from rotkehlchen.api.services.settings import SettingsService
+from rotkehlchen.api.services.settings import SettingsService, serialize_settings
 from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.api.services.user_data import UserDataService
 from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
@@ -695,6 +695,16 @@ class RestAPI:
 
         result_dict = _wrap_in_ok_result(new_settings)
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
+
+    def get_frontend_settings(self) -> Response:
+        return api_response(
+            result=_wrap_in_ok_result(self.settings_service.get_frontend_settings()),
+            status_code=HTTPStatus.OK,
+        )
+
+    def patch_frontend_settings(self, patch: dict[str, Any], remove: list[str]) -> Response:
+        self.settings_service.patch_frontend_settings(patch=patch, remove=remove)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def get_settings(self) -> Response:
         settings = self.settings_service.get_settings()
@@ -1387,7 +1397,7 @@ class RestAPI:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result = {
                 'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
-                'settings': process_result(self.rotkehlchen.get_settings(cursor)) |
+                'settings': serialize_settings(self.rotkehlchen.get_settings(cursor)) |
                 self.rotkehlchen.data.db.get_cache_for_api(cursor),
             }
         return {
@@ -1455,7 +1465,7 @@ class RestAPI:
         # Success!
         exchanges = self.rotkehlchen.exchange_manager.get_connected_exchanges_info()
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = process_result(self.rotkehlchen.get_settings(cursor))
+            settings = serialize_settings(self.rotkehlchen.get_settings(cursor))
             settings |= self.rotkehlchen.data.db.get_cache_for_api(cursor)
 
         return _wrap_in_ok_result({
