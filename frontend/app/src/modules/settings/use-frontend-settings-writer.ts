@@ -13,11 +13,8 @@ export interface UseFrontendSettingsWriterReturn {
 /**
  * Serialises every frontend-settings write, app-wide.
  *
- * The wire format is a patch merged by the backend, so two writes to *different* keys no longer
- * clobber each other the way rebuilding the whole blob from the repo did. What the queue still
- * buys is ordering: the repo is only updated once a request resolves, so two writes to the *same*
- * key that resolve out of order would leave the local repo holding the value the backend did not
- * keep. Serialising makes the local and the persisted order the same one.
+ * The repo is only updated once a request resolves, so two writes to the same key resolving out of
+ * order would leave it holding the value the backend did not keep.
  *
  * Module scope on purpose - the callers are separate composable instances and the queue has to be
  * shared by all of them.
@@ -41,16 +38,10 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
    * Persists a patch over the frontend settings blob.
    *
    * @remarks
-   * Only the changed keys go over the wire, and the backend merges them into the stored blob, so a
-   * key this version's schema does not declare - one a newer rotki wrote - is left alone instead of
-   * being deleted by a write rebuilt from the repo's already-parsed view.
+   * Sends only the changed keys, so keys a newer rotki wrote survive. The repo is merged from the
+   * payload rather than re-read, so post-persist effects run only for the changed keys.
    *
-   * The repo is then merged from that same payload rather than re-read from the backend. An unknown
-   * key cannot live in a parsed FrontendSettings either way, so re-reading would buy nothing, and it
-   * would run the registry's post-persist effects (BigNumber format, mirror syncs) over every key
-   * instead of over the ones that actually changed.
-   *
-   * @param payload - the keys to change, which the backend merges into the stored blob
+   * @param payload - the keys to change
    * @returns whether the write reached the backend, carrying its message when it did not
    */
   async function write(payload: FrontendSettingsPayload): Promise<ActionStatus> {
