@@ -301,7 +301,7 @@ const { total } = getCollectionData<AccountingRuleConflict>(collection);
         <template #item.countEntireAmountSpend="{ row }">
           <div
             class="w-full flex flex-col items-center justify-center p-4"
-            :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
+            :class="diffClass(row.localData.countEntireAmountSpend.value, row.remoteData.countEntireAmountSpend.value)"
           >
             <AccountingRuleWithLinkedSettingDisplay
               :item="row.localData.countEntireAmountSpend"
