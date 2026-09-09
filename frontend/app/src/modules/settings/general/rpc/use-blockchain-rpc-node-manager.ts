@@ -171,13 +171,28 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     }
   }
 
+  function notifyConnectFailures(messages: string[]): void {
+    notify({
+      message: messages.join('\n'),
+      title: t('evm_rpc_node_manager.connect_error.title', { chain: get(chainName) }),
+    });
+  }
+
   async function reConnect(identifier?: number): Promise<void> {
     set(reconnecting, true);
-    const success = await api.reConnectNode(identifier);
-    set(reconnecting, false);
+    try {
+      const { errors } = await api.reConnectNode(identifier);
+      if (errors.length > 0)
+        notifyConnectFailures(errors.map(({ error, name }) => `${name}: ${error}`));
 
-    if (success)
       await loadNodes();
+    }
+    catch (error: unknown) {
+      notifyConnectFailures([getErrorMessage(error)]);
+    }
+    finally {
+      set(reconnecting, false);
+    }
   }
 
   return {

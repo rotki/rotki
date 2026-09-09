@@ -28,7 +28,7 @@ const {
   editEvmNode: vi.fn(async () => Promise.resolve(true)),
   fetchEvmNodes: vi.fn(),
   notify: vi.fn(),
-  reConnectNode: vi.fn(async () => Promise.resolve(true)),
+  reConnectNode: vi.fn(async (): Promise<{ errors: { error: string; name: string }[] }> => ({ errors: [] })),
   setMessage: vi.fn(),
 }));
 
@@ -308,13 +308,24 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
       expect(reConnectNode).toHaveBeenCalledWith(undefined);
     });
 
-    it('should not re-read the list when the reconnect fails', async () => {
-      reConnectNode.mockResolvedValue(false);
+    it('should notify with the nodes that failed, and still re-read the list', async () => {
+      reConnectNode.mockResolvedValue({ errors: [{ error: 'refused', name: 'my node' }] });
 
       const { reConnect, reconnecting } = manager();
       await reConnect(6);
 
-      expect(fetchEvmNodes).not.toHaveBeenCalled();
+      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'my node: refused' }));
+      expect(fetchEvmNodes).toHaveBeenCalledOnce();
+      expect(get(reconnecting)).toBe(false);
+    });
+
+    it('should notify and clear the in-flight flag when the reconnect throws', async () => {
+      reConnectNode.mockRejectedValue(new Error('offline'));
+
+      const { reConnect, reconnecting } = manager();
+      await reConnect(6);
+
+      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'offline' }));
       expect(get(reconnecting)).toBe(false);
     });
   });

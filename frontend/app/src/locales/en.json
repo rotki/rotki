@@ -3046,6 +3046,9 @@
       "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint}) for {chain}?",
       "title": "Delete {chain} RPC Node"
     },
+    "connect_error": {
+      "title": "Could not connect every {chain} RPC node"
+    },
     "connected": {
       "cooling_down": "Rate limited",
       "failure": "Failed",
