@@ -140,5 +140,114 @@ describe('use-unmatched-asset-movements', () => {
 
       expect(spies.removeMatching).not.toHaveBeenCalled();
     });
+
+    /** A failed fetch leaves no movements behind, and must not leave the list loading forever. */
+    it('should report a failed fetch and stop loading', async () => {
+      spies.getUnmatchedAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
+      const { useUnmatchedAssetMovements } = await importFresh();
+      const { fetchUnmatchedAssetMovements, loading } = useUnmatchedAssetMovements();
+
+      await fetchUnmatchedAssetMovements(false);
+
+      expect(spies.showErrorMessage).toHaveBeenCalledWith(
+        'actions.asset_movement_matching.fetch_error.title',
+        expect.stringContaining('the backend said no'),
+      );
+      expect(get(loading)).toBe(false);
+    });
+  });
+
+  /** The two lists are separate queries, and the ignored one is only worth re-reading sometimes. */
+  describe('refreshUnmatchedAssetMovements', () => {
+    it('should re-read both lists', async () => {
+      spies.getUnmatchedAssetMovements.mockResolvedValue([]);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      await useUnmatchedAssetMovements().refreshUnmatchedAssetMovements();
+
+      expect(spies.getUnmatchedAssetMovements).toHaveBeenCalledTimes(2);
+      expect(spies.getUnmatchedAssetMovements).toHaveBeenNthCalledWith(2, true);
+    });
+
+    it('should re-read only the unmatched list when asked to skip the ignored one', async () => {
+      spies.getUnmatchedAssetMovements.mockResolvedValue([]);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      await useUnmatchedAssetMovements().refreshUnmatchedAssetMovements(true);
+
+      expect(spies.getUnmatchedAssetMovements).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('matchAssetMovement', () => {
+    it('should report a match and tell the rest of the app the events changed', async () => {
+      spies.matchAssetMovements.mockResolvedValueOnce(true);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2, 3]);
+
+      expect(spies.matchAssetMovements).toHaveBeenCalledWith(1, [2, 3]);
+      expect(result).toEqual({ message: '', success: true });
+      expect(spies.showSuccessMessage).toHaveBeenCalled();
+      expect(spies.signalEventsModified).toHaveBeenCalledTimes(1);
+    });
+
+    /** A refused match changed nothing, so nothing is announced and nothing is invalidated. */
+    it('should stay quiet when the match was refused', async () => {
+      spies.matchAssetMovements.mockResolvedValueOnce(false);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2]);
+
+      expect(result).toEqual({ message: '', success: false });
+      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
+      expect(spies.signalEventsModified).not.toHaveBeenCalled();
+    });
+
+    it('should report a failure and hand the message back', async () => {
+      spies.matchAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2]);
+
+      expect(result).toEqual({ message: 'the backend said no', success: false });
+      expect(spies.showErrorMessage).toHaveBeenCalled();
+      expect(spies.signalEventsModified).not.toHaveBeenCalled();
+    });
+  });
+
+  /** Resolving as external is the same call with no matches, flagged as deliberate. */
+  describe('resolveExternal', () => {
+    it('should resolve the movement without naming any matches', async () => {
+      spies.matchAssetMovements.mockResolvedValueOnce(true);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      const result = await useUnmatchedAssetMovements().resolveExternal(1);
+
+      expect(spies.matchAssetMovements).toHaveBeenCalledWith(1, undefined, true);
+      expect(result).toEqual({ message: '', success: true });
+      expect(spies.signalEventsModified).toHaveBeenCalledTimes(1);
+    });
+
+    /** The caller surfaces this one itself, with an undo, so a toast would be a second report. */
+    it('should say nothing on success, since the caller reports it with an undo', async () => {
+      spies.matchAssetMovements.mockResolvedValueOnce(true);
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      await useUnmatchedAssetMovements().resolveExternal(1);
+
+      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
+    });
+
+    it('should report a failure and hand the message back', async () => {
+      spies.matchAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
+      const { useUnmatchedAssetMovements } = await importFresh();
+
+      const result = await useUnmatchedAssetMovements().resolveExternal(1);
+
+      expect(result).toEqual({ message: 'the backend said no', success: false });
+      expect(spies.showErrorMessage).toHaveBeenCalled();
+      expect(spies.signalEventsModified).not.toHaveBeenCalled();
+    });
   });
 });
