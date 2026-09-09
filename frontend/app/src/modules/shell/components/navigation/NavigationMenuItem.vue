@@ -72,6 +72,7 @@ onMounted(() => {
         'px-0 justify-center': mini,
         'pl-3': mini && subMenu,
       }"
+      data-testid="navigation-item-body"
       @click="onBodyClick()"
     >
       <DefineImage>
@@ -120,6 +121,7 @@ onMounted(() => {
         v-if="parent && !mini"
         class="p-1 -mr-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
         :class="active ? 'text-rui-primary' : 'text-rui-grey-500'"
+        data-testid="navigation-item-chevron"
         @click.stop="toggleExpand()"
       >
         <RuiIcon
