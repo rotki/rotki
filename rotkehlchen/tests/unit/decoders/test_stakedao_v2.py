@@ -57,9 +57,8 @@ def test_vault_deposit(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.001560228422549888'),
+        amount=FVal('0.001560228422549888'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -71,7 +70,6 @@ def test_vault_deposit(
         asset=Asset(f'eip155:1/erc20:{underlying_addr}'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke crvfrxUSD spending approval of {user_address} by {vault_token.evm_address}',
         address=vault_token.evm_address,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -139,7 +137,6 @@ def test_enso_vault_deposit(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -195,9 +192,8 @@ def test_vault_withdraw(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000506625'),
+        amount=FVal('0.00000506625'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -244,9 +240,8 @@ def test_claim_from_accountant(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0000036404'),
+        amount=FVal('0.0000036404'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -282,9 +277,8 @@ def test_votemarket_claim(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00001255506'),
+        amount=FVal('0.00001255506'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -424,9 +418,8 @@ def test_votemarket_bridge_out(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000877252'),
+        amount=FVal('0.00000877252'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -438,7 +431,6 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x9243A659a67D2Edae7edEf1aDaDCCD5dAb3B0FdA'),
         amount=ZERO,
         location_label=user_address,
-        notes='Revoke pOGN spending approval of 0x0b304924fAa64b0f040dcA67bC5175Dd6078db52 by 0x67346f8b9B7dDA4639600C190DDaEcDc654359c8',  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -450,7 +442,6 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x84EC7B0923ff2d17152256aD36a33184e0079c9b'),
         amount=ZERO,
         location_label=user_address,
-        notes='Revoke popASF spending approval of 0x0b304924fAa64b0f040dcA67bC5175Dd6078db52 by 0x67346f8b9B7dDA4639600C190DDaEcDc654359c8',  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -462,7 +453,6 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x5660bdD5AD5F4ccD27ECc33f6Ef140079e7E9cb8'),
         amount=ZERO,
         location_label=user_address,
-        notes='Revoke pWFRAX spending approval of 0x0b304924fAa64b0f040dcA67bC5175Dd6078db52 by 0x67346f8b9B7dDA4639600C190DDaEcDc654359c8',  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -474,7 +464,6 @@ def test_votemarket_bridge_out(
         asset=Asset('eip155:42161/erc20:0x8D037f300C70A2194aD7dB16d54c3A14FdC7B0A2'),
         amount=ZERO,
         location_label=user_address,
-        notes='Revoke pOUSD spending approval of 0x0b304924fAa64b0f040dcA67bC5175Dd6078db52 by 0x67346f8b9B7dDA4639600C190DDaEcDc654359c8',  # noqa: E501
         address=string_to_evm_address('0x67346f8b9B7dDA4639600C190DDaEcDc654359c8'),
     ), EvmEvent(
         tx_ref=tx_hash,

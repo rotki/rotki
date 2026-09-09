@@ -73,7 +73,6 @@ def test_simple_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -85,7 +84,6 @@ def test_simple_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_SUSHI,
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set SUSHI spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY} to {approval_amount}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -133,7 +131,6 @@ def test_simple_swap_eth_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -201,7 +198,6 @@ def test_simple_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -213,7 +209,6 @@ def test_simple_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ROUTE,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke ROUTE spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -273,7 +268,6 @@ def test_simple_buy(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -320,7 +314,6 @@ def test_multi_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -367,7 +360,6 @@ def test_multi_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -426,7 +418,6 @@ def test_mega_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -438,7 +429,6 @@ def test_mega_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_USDC,
         amount=FVal(swap_amount),
         location_label=user_address,
-        notes=f'Set USDC spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY} to {swap_amount}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -486,7 +476,6 @@ def test_mega_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -545,7 +534,6 @@ def test_swap_on_uniswap_v2_fork(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -592,7 +580,6 @@ def test_swap_on_uniswap_v2_fork_with_permit(ethereum_inquirer, ethereum_account
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -604,7 +591,6 @@ def test_swap_on_uniswap_v2_fork_with_permit(ethereum_inquirer, ethereum_account
         asset=A_USDC,
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set USDC spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY} to {approval_amount}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -652,7 +638,6 @@ def test_buy_uniswap_v2_fork(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -699,7 +684,6 @@ def test_direct_uniswap_v3_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -746,7 +730,6 @@ def test_direct_curve_v1_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -758,7 +741,6 @@ def test_direct_curve_v1_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_FXS,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke FXS spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -806,7 +788,6 @@ def test_direct_curve_v2_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -853,7 +834,6 @@ def test_direct_balancer_v2_given_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -865,7 +845,6 @@ def test_direct_balancer_v2_given_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_PSP,
         amount=FVal(swap_amount),
         location_label=user_address,
-        notes=f'Set PSP spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY} to {swap_amount}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmEvent(
@@ -878,7 +857,6 @@ def test_direct_balancer_v2_given_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_PSP,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke PSP spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -928,7 +906,6 @@ def test_simple_buy_fee_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -940,7 +917,6 @@ def test_simple_buy_fee_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
         asset=A_BRIDGED_USDC,
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set USDC.e spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY} to {approval_amount}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -1003,7 +979,6 @@ def test_simple_swap_no_fee_base(base_inquirer, base_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1053,7 +1028,6 @@ def test_direct_curve_v1_swap_optimism(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1065,7 +1039,6 @@ def test_direct_curve_v1_swap_optimism(optimism_inquirer, optimism_accounts):
         asset=A_OPTIMISM_USDT,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke USDT spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',  # noqa: E501
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
     ), EvmSwapEvent(
@@ -1127,7 +1100,6 @@ def test_direct_uniswap_v3_swap_polygon(polygon_pos_inquirer, polygon_pos_accoun
         asset=A_POL,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1187,7 +1159,6 @@ def test_paraswap_fork_with_factory(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1199,7 +1170,6 @@ def test_paraswap_fork_with_factory(ethereum_inquirer, ethereum_accounts):
         asset=A_PSP,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke PSP spending approval of {user_address} by 0x216B4B4Ba9F3e719726886d34a177484278Bfcae',  # noqa: E501
         address='0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1250,7 +1220,6 @@ def test_multi_swap_token_fee_binance_sc(
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1262,7 +1231,6 @@ def test_multi_swap_token_fee_binance_sc(
         asset=a_bsc_avax,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set AVAX spending approval of {user_address} by 0x216B4B4Ba9F3e719726886d34a177484278Bfcae to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x216B4B4Ba9F3e719726886d34a177484278Bfcae'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,

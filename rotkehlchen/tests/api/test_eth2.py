@@ -1544,11 +1544,11 @@ def test_redecode_block_production_events(rotkehlchen_api_server: APIServer) -> 
         # Check raw data from the db since deserializing EthBlockEvents performs the same check
         # for if the address is tracked that we are trying to test here.
         assert cursor.execute('SELECT * FROM history_events').fetchall() == [
-            (1, 4, f'BP1_{block_number}', 0, timestamp, 'f', mev_builder_address, 'ETH', reward1, f'Validator {v_index} produced block {block_number} with {reward1} ETH going to {mev_builder_address} as the block reward', 'informational', 'block production', None, 0),  # noqa: E501
-            (2, 4, f'BP1_{block_number}', 1, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Validator {v_index} produced block {block_number}. Relayer reported {reward2} ETH as the MEV reward going to {fee_recipient_address}', 'informational', 'mev reward', None, 0),  # noqa: E501
+            (1, 4, f'BP1_{block_number}', 0, timestamp, 'f', mev_builder_address, 'ETH', reward1, None, 'informational', 'block production', None, 0),  # noqa: E501
+            (2, 4, f'BP1_{block_number}', 1, timestamp, 'f', fee_recipient_address, 'ETH', reward2, None, 'informational', 'mev reward', None, 0),  # noqa: E501
             (3, 2, f'BP1_{block_number}', 2, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Received {reward2} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash_str}', 'staking', 'mev reward', f'{{"validator_index": {v_index}}}', 0),  # noqa: E501
-            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'f', fee_recipient_address, 'ETH', reward3, f'Validator {v_index} produced block {block_number + 1} with {reward3} ETH going to {fee_recipient_address} as the block reward', 'staking', 'block production', None, 0),  # noqa: E501
-            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, f'Validator {v_index} produced block {block_number + 2} with {reward4} ETH going to {fee_recipient_address} as the block reward', 'informational', 'block production', None, 0),  # noqa: E501
+            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'f', fee_recipient_address, 'ETH', reward3, None, 'staking', 'block production', None, 0),  # noqa: E501
+            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, None, 'informational', 'block production', None, 0),  # noqa: E501
         ]
         # Confirm combine_block_with_tx_events marked the EthBlockEvent as hidden
         assert dbevents.get_hidden_event_ids(cursor) == {2}

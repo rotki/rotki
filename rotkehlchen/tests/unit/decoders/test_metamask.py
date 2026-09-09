@@ -70,7 +70,6 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -82,7 +81,6 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         asset=A_LUX,
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set LUX spending approval of {user_address} by {METAMASK_ROUTER_ETH} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -143,7 +141,6 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -204,7 +201,6 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -265,7 +261,6 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -326,7 +321,6 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -338,7 +332,6 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_AAVE,
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set AAVE spending approval of {user_address} by {METAMASK_ROUTER_ETH} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -402,7 +395,6 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -464,7 +456,6 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -528,7 +519,6 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POL,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -540,7 +530,6 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_USDC,
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set USDC spending approval of {user_address} by {METAMASK_ROUTER_MATIC} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_MATIC,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -603,7 +592,6 @@ def test_metamask_swap_binance_sc(
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -615,7 +603,6 @@ def test_metamask_swap_binance_sc(
         asset=a_bsc_usd,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set BSC-USD spending approval of {user_address} by {METAMASK_ROUTER_BSC} to {approve_amount}',  # noqa: E501
         address=METAMASK_ROUTER_BSC,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

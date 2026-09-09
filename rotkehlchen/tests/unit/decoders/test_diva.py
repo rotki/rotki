@@ -32,7 +32,6 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.001694706319628652'),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.001694706319628652 ETH for gas',
             counterparty=CPT_GAS,
         ),
         EvmEvent(
@@ -67,7 +66,6 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.002211737193518538'),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.002211737193518538 ETH for gas',
             counterparty=CPT_GAS,
         ),
         EvmEvent(
@@ -117,9 +115,8 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00074796777559248'),
+            amount=FVal('0.00074796777559248'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

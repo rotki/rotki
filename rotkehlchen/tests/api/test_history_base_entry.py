@@ -327,9 +327,13 @@ def test_add_edit_delete_entries(
     # Test that editing works for the various event types
     assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=False, delete_custom=True)  # evm event. We set also_redecode=False because with True the related events get deleted since the event is customized  # noqa: E501
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
-    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'group_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
-    assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501
-    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'notes': 'Validator 1001 produced block 5. Relayer reported 1500.1 ETH as the MEV reward going to 0x9531C059098e3d194fF87FebB587aB07B30B1306', 'group_identifier': 'BP1_5'})  # eth block event  # noqa: E501
+    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'group_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
+    assert_editing_works(entries[7], rotkehlchen_api_server, db, 7)  # eth deposit event
+    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'group_identifier': 'BP1_5'})  # eth block event  # noqa: E501
+    # staking events have no stored notes. The generated ones follow the edited fields
+    assert entries[6].auto_notes() == 'Exit validator 1001 with 1500.1 ETH'
+    assert entries[7].auto_notes() == 'Deposit 1500.1 ETH to validator 1001'
+    assert entries[8].auto_notes() == 'Validator 1001 produced block 5. Relayer reported 1500.1 ETH as the MEV reward going to 0x9531C059098e3d194fF87FebB587aB07B30B1306'  # noqa: E501
     # Editing of AssetMovements and Swaps is tested in test_add_edit_asset_movements and test_add_edit_swap_events  # noqa: E501
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
@@ -772,6 +776,7 @@ def test_get_events(rotkehlchen_api_server: APIServer) -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 2
+    # transfer events whose notes differ from the generated ones keep them stored
     assert result['entries'][0]['entry']['user_notes'] == f'Send 2.5 ETH to {address}'
     assert result['entries'][1]['entry']['user_notes'] == 'Receive 2.5 ETH from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # noqa: E501
 
@@ -1524,6 +1529,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: APIServer) -> None:
         'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         'counterparty': 'some counterparty',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
+        'auto_notes': 'Swap 50 USDT in Ethereum',
     }
 
 

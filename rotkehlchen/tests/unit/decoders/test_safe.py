@@ -61,9 +61,8 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.004625442'),
+            amount=FVal('0.004625442'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -104,9 +103,8 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.00130834'),
+            amount=FVal('0.00130834'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -146,9 +144,8 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.005093127'),
+            amount=FVal('0.005093127'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -186,9 +183,8 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.006953999441541852'),
+            amount=FVal('0.006953999441541852'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -226,9 +222,8 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.020435096'),
+            amount=FVal('0.020435096'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -282,9 +277,8 @@ def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=(gas_amount := FVal('0.000000145868417642')),
+            amount=(FVal('0.000000145868417642')),
             location_label=(user := base_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -319,9 +313,8 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.004928138478008416'),
+            amount=FVal('0.004928138478008416'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -387,7 +380,6 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -439,7 +431,6 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -451,7 +442,6 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
             amount=FVal(amount),
             location_label=multisig_address,
-            notes=f'Set SAFE spending approval of {multisig_address} by {SAFE_LOCKING} to {amount}',  # noqa: E501
             address=SAFE_LOCKING,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -463,7 +453,6 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
             amount=ZERO,
             location_label=multisig_address,
-            notes=f'Revoke SAFE spending approval of {multisig_address} by {SAFE_LOCKING}',
             address=SAFE_LOCKING,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -515,7 +504,6 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -567,7 +555,6 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -616,7 +603,6 @@ def test_safenet_stake(ethereum_inquirer, ethereum_accounts):
             asset=(safe_token := EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe')),  # noqa: E501
             amount=FVal(amount := '27778.122229510079122865'),
             location_label=(safe_address := ethereum_accounts[0]),
-            notes=f'Set SAFE spending approval of {safe_address} by {SAFENET_STAKING} to {amount}',
             address=SAFENET_STAKING,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -628,7 +614,6 @@ def test_safenet_stake(ethereum_inquirer, ethereum_accounts):
             asset=safe_token,
             amount=ZERO,
             location_label=safe_address,
-            notes=f'Revoke SAFE spending approval of {safe_address} by {SAFENET_STAKING}',
             address=SAFENET_STAKING,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -675,9 +660,8 @@ def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00001910993018928'),
+            amount=FVal('0.00001910993018928'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -716,7 +700,6 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -768,7 +751,6 @@ def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -820,7 +802,6 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts, allow_gnosis
             asset=A_XDAI,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -869,9 +850,8 @@ def test_safe_execute_tx_with_hash_in_topics(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000100222361747948'),
+        amount=FVal('0.000100222361747948'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -901,9 +881,8 @@ def test_safe_gnosisdao_distribution_claim(gnosis_inquirer, gnosis_accounts: lis
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas_amount := '0.000150849000905094'),
+        amount=FVal('0.000150849000905094'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

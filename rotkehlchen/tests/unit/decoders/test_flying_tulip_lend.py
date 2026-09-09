@@ -50,9 +50,8 @@ def test_lend_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000244695742006959'),
+            amount=FVal('0.000244695742006959'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -102,9 +101,8 @@ def test_lend_deposit_via_session(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_WSTETH,
-            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039451.192356186392853834'),  # noqa: E501
+            amount=FVal('115792089237316195423570985008687907853269984665640564039451.192356186392853834'),
             location_label=user_address,
-            notes=f'Set wstETH spending approval of {user_address} by 0x4f83aC5c8A79986D0916a8849730d9CEF63a3497 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x4f83aC5c8A79986D0916a8849730d9CEF63a3497'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -217,9 +215,8 @@ def test_lend_repay(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000055191083688456'),
+            amount=FVal('0.000055191083688456'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -400,7 +397,6 @@ def test_lend_deposit_for_beneficiary(ethereum_inquirer, ethereum_accounts):
             asset=A_WETH,
             amount=FVal(amount),
             location_label=user_address,
-            notes=f'Set WETH spending approval of {user_address} by {POSITIONS_MANAGER} to {amount}',  # noqa: E501
             address=POSITIONS_MANAGER,
         ), EvmEvent(
             tx_ref=tx_hash,

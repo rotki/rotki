@@ -30,7 +30,6 @@ def test_subscribe(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -69,7 +68,6 @@ def test_deactivate_sub(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

@@ -56,7 +56,6 @@ def test_compound_ether_deposit(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.014122318'),
             location_label=ADDY,
-            notes='Burn 0.014122318 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -106,7 +105,6 @@ def test_compound_ether_withdraw(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.02858544'),
             location_label=ADDY,
-            notes='Burn 0.02858544 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -159,7 +157,6 @@ def test_compound_deposit_with_comp_claim(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.00945248'),
             location_label=ADDY2,
-            notes='Burn 0.00945248 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -223,7 +220,6 @@ def test_compound_multiple_comp_claim(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.074799254'),
             location_label=ADDY3,
-            notes='Burn 0.074799254 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -311,9 +307,8 @@ def test_compound_comp_claim_last_transfer(ethereum_inquirer, ethereum_accounts)
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0041468661739364'),
+        amount=FVal('0.0041468661739364'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -351,7 +346,6 @@ def test_compound_borrow(ethereum_inquirer: EthereumInquirer) -> None:
             asset=A_ETH,
             amount=FVal('0.002977007'),
             location_label=ADDR_BORROWS,
-            notes='Burn 0.002977007 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -389,7 +383,6 @@ def test_compound_payback(ethereum_inquirer: EthereumInquirer) -> None:
             asset=A_ETH,
             amount=FVal('0.0037086'),
             location_label=ADDR_REPAYS,
-            notes='Burn 0.0037086 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -440,7 +433,6 @@ def test_compound_borrow_eth(ethereum_inquirer: EthereumInquirer) -> None:
             asset=A_ETH,
             amount=FVal('0.001882176'),
             location_label=ADDR_BORROWS_ETH,
-            notes='Burn 0.001882176 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -478,7 +470,6 @@ def test_compound_repays_eth(ethereum_inquirer: EthereumInquirer) -> None:
             asset=A_ETH,
             amount=FVal('0.003931524'),
             location_label=ADDR_REPAYS_ETH,
-            notes='Burn 0.003931524 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

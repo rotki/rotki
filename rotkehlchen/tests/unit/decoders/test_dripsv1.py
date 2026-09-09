@@ -29,7 +29,6 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -94,7 +93,6 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -129,7 +127,6 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     )
 
@@ -222,7 +219,6 @@ def test_give(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -258,7 +254,6 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

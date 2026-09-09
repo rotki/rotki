@@ -32,9 +32,8 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.002846110430778206'),
+            amount=FVal('0.002846110430778206'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -83,9 +82,8 @@ def test_lido_wsteth_wrapping(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00117399752663733'),
+        amount=FVal('0.00117399752663733'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -97,7 +95,6 @@ def test_lido_wsteth_wrapping(
         asset=A_STETH,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke stETH spending approval of {user_address} by 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',  # noqa: E501
         address=A_WSTETH.resolve_to_evm_token().evm_address,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -144,9 +141,8 @@ def test_lido_wsteth_unwrapping(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000030746884486906'),
+        amount=FVal('0.000030746884486906'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

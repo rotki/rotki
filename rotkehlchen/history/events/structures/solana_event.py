@@ -1,11 +1,20 @@
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.solana.rpc import Signature
+from rotkehlchen.history.events.structures.auto_notes import (
+    OUTGOING_TRANSFER_TYPES,
+    SOLANA_FEE_TEMPLATE,
+    SOLANA_TRANSFER_TEMPLATE,
+    TRANSFER_VERBS,
+    is_plain_transfer,
+)
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
 )
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.types import (
@@ -17,10 +26,6 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
-    from rotkehlchen.history.events.structures.types import (
-        HistoryEventSubType,
-        HistoryEventType,
-    )
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -84,3 +89,28 @@ class SolanaEvent(OnchainEvent[Signature, SolanaAddress]):  # hash in superclass
     @property
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.SOLANA_EVENT
+
+    def auto_notes(self) -> str | None:
+        """Notes of the events every Solana transaction produces before protocol specific
+        decoding: the transaction fee and plain transfers."""
+        if (
+            self.counterparty == CPT_GAS and
+            self.event_type == HistoryEventType.SPEND and
+            self.event_subtype == HistoryEventSubType.FEE
+        ):
+            return SOLANA_FEE_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())  # noqa: E501
+
+        if is_plain_transfer(self.event_type, self.event_subtype, self.counterparty):
+            if (counterparty_or_address := self.counterparty or self.address) is not None:
+                suffix = f" {'to' if self.event_type in OUTGOING_TRANSFER_TYPES else 'from'} {counterparty_or_address}"  # noqa: E501
+            else:
+                suffix = ''
+
+            return SOLANA_TRANSFER_TEMPLATE.format(
+                verb=TRANSFER_VERBS[self.event_type],
+                amount=self.amount,
+                symbol=self.asset.symbol_or_name(),
+                suffix=suffix,
+            )
+
+        return super().auto_notes()

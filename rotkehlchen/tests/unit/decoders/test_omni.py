@@ -32,9 +32,8 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000567969103578996'),
+            amount=FVal('0.000567969103578996'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -81,9 +80,8 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00061736344563685'),
+            amount=FVal('0.00061736344563685'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -95,7 +93,6 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
             asset=Asset(OMNI_TOKEN_ID),
             amount=ZERO,
             location_label=ethereum_accounts[0],
-            notes=f'Revoke OMNI spending approval of {ethereum_accounts[0]} by {OMNI_STAKING_CONTRACT}',  # noqa: E501
             address=OMNI_STAKING_CONTRACT,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -128,9 +125,8 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000645708531342875'),
+            amount=FVal('0.000645708531342875'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

@@ -84,11 +84,11 @@ VALID_PRIVACY_MODES: Final = frozenset({'balanced', 'strict', 'raw'})
 # decoder output with addresses in it ("Burn 0.0001 XDAI for gas") *and* is user-editable,
 # so its provenance is mixed and it stays redacted.
 USER_TEXT_COLUMN_NAMES: Final = frozenset({'notes', 'user_notes'})
-# Text rotki generates at serialization time from a fixed set of templates over amount,
-# asset symbol and location name -- no identifier is ever interpolated into one. Redacting
-# these threw away readable descriptions for no privacy gain, so in ``balanced`` they pass
-# through scrubbed (an asset *name* is attacker-controlled on a scam token, so the scrub is
-# what keeps the no-identifier property true rather than merely likely). ``strict`` still
+# Text rotki generates at serialization time from a fixed set of templates over the event's
+# own fields (see history/events/structures/auto_notes.py). Redacting these threw away
+# readable descriptions for no privacy gain, so in ``balanced`` they pass through scrubbed.
+# The scrub is what makes them safe, not the templates: transfer and approval notes name
+# addresses, and an asset *name* is attacker-controlled on a scam token. ``strict`` still
 # redacts them outright.
 GENERATED_TEXT_COLUMN_NAMES: Final = frozenset({'auto_notes'})
 TEXT_COLUMN_NAMES: Final = USER_TEXT_COLUMN_NAMES | GENERATED_TEXT_COLUMN_NAMES

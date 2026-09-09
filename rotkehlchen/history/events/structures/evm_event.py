@@ -1,11 +1,30 @@
 import logging
 from typing import Any, Final, TypedDict
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
+from rotkehlchen.history.events.structures.auto_notes import (
+    APPROVE_TEMPLATE,
+    DEPLOY_TEMPLATE,
+    FAILED_GAS_TEMPLATE,
+    GAS_TEMPLATE,
+    NATIVE_ASSET_BY_LOCATION,
+    NATIVE_TRANSFER_TEMPLATE,
+    NO_VALUE_SELF_TX_TEMPLATE,
+    OUTGOING_TRANSFER_TYPES,
+    REVOKE_APPROVAL_TEMPLATE,
+    SELF_TX_TEMPLATE,
+    TOKEN_TRANSFER_IN_TEMPLATE,
+    TOKEN_TRANSFER_OUT_TEMPLATE,
+    TRANSFER_VERBS,
+    is_plain_transfer,
+)
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
 )
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ChecksumEvmAddress,
@@ -70,6 +89,65 @@ class EvmEvent(OnchainEvent[EVMTxHash, ChecksumEvmAddress]):  # hash in supercla
     @property
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.EVM_EVENT
+
+    def auto_notes(self) -> str | None:
+        """Notes of the events every EVM decoder produces before protocol specific decoding:
+        gas, approvals, deploys, transactions to self and plain transfers. A protocol decoder
+        that rewrites or extends one of those notes leaves them different from these, so they
+        stay stored. ERC721 transfers name the token and stay stored too.
+        """
+        if self.counterparty == CPT_GAS:
+            if self.event_subtype == HistoryEventSubType.FEE:
+                if self.event_type == HistoryEventType.SPEND:
+                    return GAS_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())  # noqa: E501
+                if self.event_type == HistoryEventType.FAIL:
+                    return FAILED_GAS_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())  # noqa: E501
+
+        elif (
+            self.event_type == HistoryEventType.INFORMATIONAL and
+            self.event_subtype == HistoryEventSubType.APPROVE and
+            self.counterparty is None
+        ):
+            template = REVOKE_APPROVAL_TEMPLATE if self.amount == ZERO else APPROVE_TEMPLATE
+            return template.format(
+                amount=self.amount,
+                symbol=self.asset.symbol_or_name(),
+                owner=self.location_label,
+                spender=self.address,
+            )
+
+        elif self.event_type == HistoryEventType.DEPLOY:
+            if self.address is not None:
+                return DEPLOY_TEMPLATE.format(address=self.address)
+
+        elif (
+            self.event_type == HistoryEventType.TRANSACTION_TO_SELF and
+            self.event_subtype == HistoryEventSubType.NONE
+        ):
+            if self.amount == ZERO:
+                return NO_VALUE_SELF_TX_TEMPLATE.format()
+            return SELF_TX_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())
+
+        elif (
+            is_plain_transfer(self.event_type, self.event_subtype, self.counterparty) and
+            (counterparty_or_address := self.counterparty or self.address) is not None
+        ):
+            fields = {
+                'verb': TRANSFER_VERBS[self.event_type],
+                'amount': self.amount,
+                'symbol': self.asset.symbol_or_name(),
+                'counterparty_or_address': counterparty_or_address,
+            }
+            if self.asset.identifier == NATIVE_ASSET_BY_LOCATION.get(self.location):
+                return NATIVE_TRANSFER_TEMPLATE.format(
+                    preposition='to' if self.event_type in OUTGOING_TRANSFER_TYPES else 'from',
+                    **fields,
+                )
+            if '/erc721:' not in self.asset.identifier:
+                template = TOKEN_TRANSFER_OUT_TEMPLATE if self.event_type in OUTGOING_TRANSFER_TYPES else TOKEN_TRANSFER_IN_TEMPLATE  # noqa: E501
+                return template.format(location_label=self.location_label, **fields)
+
+        return super().auto_notes()
 
     def has_details(self) -> bool:
         if self.extra_data is None:

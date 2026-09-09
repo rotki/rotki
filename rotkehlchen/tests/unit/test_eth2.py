@@ -925,12 +925,10 @@ def test_refresh_activated_validators_deposits(eth2, database):
     edited_event_2 = starting_events[1]
     edited_event_2.extra_data = None
     edited_event_2.validator_index = validator2.validator_index
-    edited_event_2.notes = f'Deposit 32 ETH to validator {validator2.validator_index}'
     assert edited_event_2 == new_events[1]
     edited_event_3 = starting_events[2]
     edited_event_3.extra_data = None
     edited_event_3.validator_index = validator3.validator_index
-    edited_event_3.notes = f'Deposit 32 ETH to validator {validator3.validator_index}'
     assert edited_event_3 == new_events[2]
 
     # finally make sure validators are also added

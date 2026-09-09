@@ -32,7 +32,6 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount_str),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -66,9 +65,8 @@ def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.00549203889835413'),
+            amount=FVal('0.00549203889835413'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

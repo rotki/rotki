@@ -112,7 +112,6 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             asset=a_pendle,
             amount=FVal('21255'),
             location_label=user_address,
-            notes=f'Set PENDLE spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 21255',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -222,9 +221,8 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
-            amount=FVal(approval := '115792089237316195423570985008687907853269984665640564039457.584007913129639935'),  # noqa: E501
+            amount=FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935'),
             location_label=user_address,
-            notes=f'Set FLT spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to {approval}',  # noqa: E501
             address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -352,7 +350,6 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             asset=asset_fund,
             amount=FVal('115792089237316195423570985008687907853269984665640564039457583991913.129639935'),
             location_label=user_address_1,
-            notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457583991913.129639935',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
 
         ), EvmSwapEvent(  # 1st swap with FUND
@@ -448,7 +445,6 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.001768460133875456'),
             location_label=user_address,
-            notes='Burn 0.001768460133875456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -484,7 +480,6 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethersc
             asset=A_XDAI,
             amount=FVal('0.0000901568'),
             location_label=user_address,
-            notes='Burn 0.0000901568 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -571,9 +566,8 @@ def test_bnb_create_order(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BSC_BNB,
-            amount=FVal(gas_amount := '0.000056252'),
+            amount=FVal('0.000056252'),
             location_label=binance_sc_accounts[0],
-            notes=f'Burn {gas_amount} BNB for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -609,7 +603,6 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.001171136978414093'),
             location_label=user_address,
-            notes='Burn 0.001171136978414093 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -645,7 +638,6 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_
             asset=A_XDAI,
             amount=FVal('0.000369223819835234'),
             location_label=user_address,
-            notes='Burn 0.000369223819835234 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -814,7 +806,6 @@ def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(0.006544511735317699),
             location_label=user_address,
-            notes='Burn 0.006544511735317699 ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -852,7 +843,6 @@ def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
             asset=A_XDAI,
             amount=FVal(0.000121524),
             location_label=user_address,
-            notes='Burn 0.000121524 XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -890,7 +880,6 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -940,7 +929,6 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
             asset=A_XDAI,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -991,9 +979,8 @@ def test_gnosis_claim_airdrop_with_xdai_payment(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas_amount := '0.00012231000065232'),
+            amount=FVal('0.00012231000065232'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
@@ -1043,9 +1030,8 @@ def test_gnosis_claim_airdrop_with_gno_payment(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas_amount := '0.000259548002076384'),
+            amount=FVal('0.000259548002076384'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1111,7 +1097,6 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ARB,
             amount=FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935'),
             location_label=user_address,
-            notes='Set ARB spending approval of 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457.584007913129639935',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -1219,9 +1204,8 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(cvx_asset := Asset('eip155:1/erc20:0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B')),
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564038889.796956635951924877'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564038889.796956635951924877'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Set CVX spending approval of {user_address} by {gpv2_vault_relayer_address} to {approval_amount}',  # noqa: E501
         address=gpv2_vault_relayer_address,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1373,9 +1357,8 @@ def test_cowswap_polygon_swap(polygon_pos_inquirer, polygon_pos_accounts):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(giv_token := Asset('eip155:137/erc20:0xc7B1807822160a8C5b6c9EaF5C584aAD0972deeC')),
-        amount=(approval_amount := FVal('57896044618658097711785492504343953926634992332820281964256.700836956564819967')),  # noqa: E501
+        amount=(FVal('57896044618658097711785492504343953926634992332820281964256.700836956564819967')),
         location_label=(user := polygon_pos_accounts[0]),
-        notes=f'Set GIV spending approval of {user} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to {approval_amount}',  # noqa: E501
         counterparty=None,
         address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
     ), EvmSwapEvent(

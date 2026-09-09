@@ -26,9 +26,8 @@ def test_wmon_wrap(monad_inquirer, monad_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_MON,
-        amount=FVal(gas_amount := '0.002255650000045113'),
+        amount=FVal('0.002255650000045113'),
         location_label=(user := monad_accounts[0]),
-        notes=f'Burn {gas_amount} MON for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -75,9 +74,8 @@ def test_wmon_unwrap(monad_inquirer, monad_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_MON,
-        amount=FVal(gas_amount := '0.0020595365'),
+        amount=FVal('0.0020595365'),
         location_label=(user := monad_accounts[0]),
-        notes=f'Burn {gas_amount} MON for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

@@ -430,7 +430,6 @@ def test_simple_erc20_transfer(
             asset=A_ETH,
             amount=FVal('0.00045') if chain is ChainID.ETHEREUM else FVal('0.00055'),
             location_label=from_address,
-            notes='Burn 0.00045 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.00055 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -650,7 +649,6 @@ def test_eth_transfer(
             asset=A_ETH,
             amount=FVal('0.001') if chain is ChainID.ETHEREUM else FVal('0.0011'),
             location_label=from_address,
-            notes='Burn 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -733,7 +731,6 @@ def test_eth_spend(
             asset=A_ETH,
             amount=FVal('0.001') if chain is ChainID.ETHEREUM else FVal('0.0011'),
             location_label=from_address,
-            notes='Burn 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -808,7 +805,6 @@ def test_eth_deposit(
             asset=A_ETH,
             amount=FVal(0.001),
             location_label=from_address,
-            notes='Burn 0.001 ETH for gas',
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -1155,9 +1151,8 @@ def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.FAIL,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.00056954114283532'),
+        amount=FVal('0.00056954114283532'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas} ETH for gas of a failed transaction',
         counterparty=CPT_GAS,
     )]
 
@@ -1177,9 +1172,8 @@ def test_transaction_to_self_event(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.0003423')),
+        amount=(FVal('0.0003423')),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1191,7 +1185,6 @@ def test_transaction_to_self_event(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=ZERO,
         location_label=ethereum_accounts[0],
-        notes='No value transaction to self',
         address=transaction.to_address,
     ),
     ]
@@ -1241,9 +1234,8 @@ def test_onchain_message_failed_call(
         event_type=HistoryEventType.FAIL,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas := '0.006802987722724792'),
+        amount=FVal('0.006802987722724792'),
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas} ETH for gas of a failed transaction',
         counterparty=CPT_GAS,
     )]
 

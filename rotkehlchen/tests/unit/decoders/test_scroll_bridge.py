@@ -46,7 +46,6 @@ def test_deposit_eth_from_ethereum_to_scroll(ethereum_inquirer, ethereum_account
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -134,7 +133,6 @@ def test_withdraw_eth_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts, 
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -178,7 +176,6 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -222,7 +219,6 @@ def test_deposit_erc20_from_ethereum_to_scroll(ethereum_inquirer, ethereum_accou
             asset=Asset('ETH'),
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -311,7 +307,6 @@ def test_withdraw_erc20_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -362,7 +357,6 @@ def test_withdraw_usdc_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts,
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -406,7 +400,6 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -450,7 +443,6 @@ def test_deposit_send_message_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

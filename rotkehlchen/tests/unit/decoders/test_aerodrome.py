@@ -106,7 +106,6 @@ def test_add_liquidity(
             amount=FVal(gas_amount),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=14,
@@ -118,7 +117,6 @@ def test_add_liquidity(
             amount=ZERO,
             location_label=user_address,
             address=ROUTER,
-            notes=f'Revoke wstETH spending approval of {user_address} by {ROUTER}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=15,
@@ -200,7 +198,6 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             amount=FVal(gas_amount),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -212,7 +209,6 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             amount=ZERO,
             location_label=user_address,
             address=WSTETH_GAUGE_ADDRESS,
-            notes=f'Revoke vAMM-WETH/wstETH spending approval of {user_address} by {WSTETH_GAUGE_ADDRESS}',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -273,7 +269,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             amount=FVal(gas_amount),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -285,7 +280,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             amount=ZERO,
             location_label=user_address,
             address=ROUTER,
-            notes=f'Revoke vAMM-AERO/USDbC spending approval of {user_address} by {ROUTER}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -348,10 +342,9 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000002416100602324'),
+            amount=FVal('0.000002416100602324'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=140,
@@ -400,10 +393,9 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000002595608432929'),
+            amount=FVal('0.000002595608432929'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=309,
@@ -415,7 +407,6 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
             amount=ZERO,
             location_label=user_address,
             address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
-            notes=f'Revoke AERO spending approval of {user_address} by 0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=310,
@@ -465,10 +456,9 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000001849342754159'),
+            amount=FVal('0.000001849342754159'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=271,
@@ -477,10 +467,9 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631'),
-            amount=FVal(approval_amount := '49071.435306527359498584'),
+            amount=FVal('49071.435306527359498584'),
             location_label=user_address,
             address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
-            notes=f'Set AERO spending approval of {user_address} by 0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4 to {approval_amount}',  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=272,
@@ -517,10 +506,9 @@ def test_increase_unlock_time(base_accounts, base_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000008164704817624'),
+            amount=FVal('0.000008164704817624'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2854,
@@ -557,10 +545,9 @@ def test_vote(base_accounts, base_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000005544830737074'),
+            amount=FVal('0.000005544830737074'),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=278,
@@ -601,10 +588,9 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000002909074528395'),
+        amount=FVal('0.000002909074528395'),
         location_label=(user_address := base_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=425,
@@ -628,7 +614,6 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         amount=ZERO,
         location_label=user_address,
         address=string_to_evm_address('0x6Cb442acF35158D5eDa88fe602221b67B400Be3E'),
-        notes=f'Revoke fBOMB spending approval of {user_address} by 0x6Cb442acF35158D5eDa88fe602221b67B400Be3E',  # noqa: E501
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=427,
@@ -677,9 +662,8 @@ def test_swap_via_settler_router_on_base(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000002425034605404')),
+        amount=(FVal('0.000002425034605404')),
         location_label=(user_address := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

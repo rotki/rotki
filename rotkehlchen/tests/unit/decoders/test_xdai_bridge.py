@@ -47,7 +47,6 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(0.000639911080514288),
             location_label=user_address,
-            notes='Burn 0.000639911080514288 ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -88,9 +87,8 @@ def test_bridge_dai_from_ethereum_pre_usds_upgrade(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000401361155268309'),
+        amount=FVal('0.000401361155268309'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         tx_ref=tx_hash,
         counterparty=CPT_GAS,
     ), EvmEvent(
@@ -133,9 +131,8 @@ def test_bridge_dai_from_ethereum_post_usds_upgrade(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000095327360060304'),
+        amount=FVal('0.000095327360060304'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         tx_ref=tx_hash,
         counterparty=CPT_GAS,
     ), EvmEvent(
@@ -179,7 +176,6 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=user_address,
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -222,7 +218,6 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(0.004855251),
             location_label=user_address,
-            notes='Burn 0.004855251 ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -265,7 +260,6 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis
             asset=A_XDAI,
             amount=FVal(0.0003624774),
             location_label=user_address,
-            notes='Burn 0.0003624774 XDAI for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -341,9 +335,8 @@ def test_bridge_dai_from_ethereum_with_nonce(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00025714752024969'),
+        amount=FVal('0.00025714752024969'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         tx_ref=tx_hash,
         counterparty=CPT_GAS,
     ), EvmEvent(

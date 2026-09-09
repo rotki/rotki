@@ -50,9 +50,8 @@ def test_swap_token_to_token(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000466714548'),
+        amount=FVal('0.00000466714548'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -99,9 +98,8 @@ def test_swap_token_to_native(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000018437422976'),
+        amount=FVal('0.000000018437422976'),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -113,7 +111,6 @@ def test_swap_token_to_native(
         asset=Asset('eip155:10/erc20:0x9Bcef72be871e61ED4fBbc7630889beE758eb81D'),
         amount=FVal('0'),
         location_label=user_address,
-        notes=f'Revoke rETH spending approval of {user_address} by 0x4c4AF8DBc524681930a27b2F1Af5bcC8062E6fB7',  # noqa: E501
         address=string_to_evm_address('0x4c4AF8DBc524681930a27b2F1Af5bcC8062E6fB7'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -160,9 +157,8 @@ def test_bridge_deposit(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.001209661472600064'),
+        amount=FVal('0.001209661472600064'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -218,9 +214,8 @@ def test_bridge_deposit_and_swap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00128340456296965'),
+        amount=FVal('0.00128340456296965'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -386,9 +381,8 @@ def test_supercharger_deposit(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000010574845488'),
+        amount=FVal('0.000010574845488'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -438,9 +432,8 @@ def test_supercharger_request_withdraw(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000384914292'),
+        amount=FVal('0.00000384914292'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -450,9 +443,8 @@ def test_supercharger_request_withdraw(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset(f'eip155:42161/erc20:{wbtc_supercharger}'),
-        amount=FVal(approve_amount := '0.000000000000108295'),
+        amount=FVal('0.000000000000108295'),
         location_label=user_address,
-        notes=f'Set weWBTC spending approval of {user_address} by {wbtc_supercharger} to {approve_amount}',  # noqa: E501
         address=wbtc_supercharger,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -501,9 +493,8 @@ def test_supercharger_withdrawal(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000000595603254'),
+        amount=FVal('0.00000000595603254'),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -539,9 +530,8 @@ def test_supercharger_instant_withdraw(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.081035426074038696'),
+        amount=FVal('0.081035426074038696'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -603,9 +593,8 @@ def test_stake_supercharger_vault_tokens(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.010126173793487654'),
+        amount=FVal('0.010126173793487654'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -655,9 +644,8 @@ def test_unstake_supercharger_vault_tokens(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000207072278381'),
+        amount=FVal('0.000000207072278381'),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -720,9 +708,8 @@ def test_harvest_staked_vault_xwoo_rewards(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0000893587'),
+        amount=FVal('0.0000893587'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -758,9 +745,8 @@ def test_harvest_staked_vault_woo_and_op_rewards(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000087937914961'),
+        amount=FVal('0.000000087937914961'),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -810,9 +796,8 @@ def test_staking_v1_stake_woo(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.017775896'),
+        amount=FVal('0.017775896'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -822,9 +807,8 @@ def test_staking_v1_stake_woo(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:137/erc20:0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603'),
-        amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564037761.136699335095676969'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564037761.136699335095676969'),
         location_label=user_address,
-        notes=f'Set WOO spending approval of {user_address} by {xwoo_contract} to {approve_amount}',  # noqa: E501
         address=xwoo_contract,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -873,9 +857,8 @@ def test_staking_v1_request_unstake_woo(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000119338'),
+        amount=FVal('0.00000119338'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -924,9 +907,8 @@ def test_staking_v1_unstake_woo(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000094931'),
+        amount=FVal('0.00000094931'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -962,9 +944,8 @@ def test_staking_v1_instant_unstake_woo(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.007224854533987272'),
+        amount=FVal('0.007224854533987272'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1014,9 +995,8 @@ def test_staking_v2_stake_woo_on_proxy(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000002199218752'),
+        amount=FVal('0.000000002199218752'),
         location_label=(user_address := optimism_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1028,7 +1008,6 @@ def test_staking_v2_stake_woo_on_proxy(
         asset=Asset('eip155:10/erc20:0x871f2F2ff935FD1eD867842FF2a7bfD051A5E527'),
         amount=FVal('0'),
         location_label=user_address,
-        notes=f'Revoke WOO spending approval of {user_address} by {woo_staking_proxy}',
         address=woo_staking_proxy,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1077,9 +1056,8 @@ def test_staking_v2_unstake_woo_on_proxy(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=FVal(gas_amount := '0.190772571752512304'),
+        amount=FVal('0.190772571752512304'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1128,9 +1106,8 @@ def test_staking_v2_stake_woo_on_local(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000006916013478'),
+        amount=FVal('0.000006916013478'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1155,7 +1132,6 @@ def test_staking_v2_stake_woo_on_local(
         asset=Asset('eip155:42161/erc20:0xcAFcD85D8ca7Ad1e1C6F82F651fA15E33AEfD07b'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke WOO spending approval of {user_address} by {stake_v2}',
         address=stake_v2,
     )]
 
@@ -1178,9 +1154,8 @@ def test_staking_v2_unstake_woo_on_local(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000810537936'),
+        amount=FVal('0.00000810537936'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

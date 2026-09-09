@@ -64,9 +64,8 @@ def test_create_loan(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.000893214862428306'),
+            amount=FVal('0.000893214862428306'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -76,9 +75,8 @@ def test_create_loan(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'),
-            amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039441.584007913129639935'),  # noqa: E501
+            amount=FVal('115792089237316195423570985008687907853269984665640564039441.584007913129639935'),
             location_label=user_address,
-            notes=f'Set wstETH spending approval of {user_address} by {crvusd_controller} to {approve_amount}',  # noqa: E501
             address=crvusd_controller,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -131,9 +129,8 @@ def test_borrow_more(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.001382156244932288'),
+            amount=FVal('0.001382156244932288'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -173,9 +170,8 @@ def test_repay(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.00256845168196309'),
+            amount=FVal('0.00256845168196309'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -187,7 +183,6 @@ def test_repay(
             asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
             amount=ZERO,
             location_label=user_address,
-            notes=f'Revoke crvUSD spending approval of {user_address} by {crvusd_controller}',
             address=crvusd_controller,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -226,9 +221,8 @@ def test_remove_collateral(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.0018137064'),
+            amount=FVal('0.0018137064'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -266,9 +260,8 @@ def test_borrow_extended(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00154011'),
+        amount=FVal('0.00154011'),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -304,9 +297,8 @@ def test_peg_keeper_update_provide(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00040529528116216'),
+        amount=FVal('0.00040529528116216'),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -341,9 +333,8 @@ def test_peg_keeper_update_withdraw(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0002972191728'),
+        amount=FVal('0.0002972191728'),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

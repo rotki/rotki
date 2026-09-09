@@ -818,7 +818,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'user_notes': 'Burn 0.00863351371344 ETH for gas',
+            'auto_notes': 'Burn 0.00863351371344 ETH for gas',
             'sequence_index': 0,
             'timestamp': 1642802807000,
             'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
@@ -838,7 +838,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'user_notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+            'auto_notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
             'sequence_index': 1,
             'timestamp': 1642802807000,
             'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
@@ -860,7 +860,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'user_notes': 'Burn 0.017690836625228792 ETH for gas',
+            'auto_notes': 'Burn 0.017690836625228792 ETH for gas',
             'sequence_index': 0,
             'timestamp': 1642802735000,
             'tx_ref': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
@@ -880,7 +880,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'user_notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
+            'auto_notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
             'sequence_index': 308,
             'timestamp': 1642802735000,
             'tx_ref': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
@@ -902,7 +902,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'receive',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'user_notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
+            'auto_notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'sequence_index': 0,
             'timestamp': 1642802651000,
             'tx_ref': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
@@ -924,7 +924,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'receive',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'user_notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+            'auto_notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
             'sequence_index': 385,
             'timestamp': 1642802286000,
             'tx_ref': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
@@ -941,6 +941,7 @@ def test_query_transactions_check_decoded_events(
     event['event_type'] = 'spend'
     event['event_subtype'] = 'payback debt'
     event['user_notes'] = 'Edited event'
+    event.pop('auto_notes')  # no longer a plain transfer, so nothing is generated for it
     tx2_events[1]['states'] = [HistoryMappingState.CUSTOMIZED.serialize()]
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),

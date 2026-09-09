@@ -34,9 +34,8 @@ def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gn
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas := '0.0000085954752'),
+            amount=FVal('0.0000085954752'),
             location_label=(user_address := gnosis_accounts[0]),
-            notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -61,7 +60,6 @@ def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gn
             asset=A_GNO,
             amount=ZERO,
             location_label=user_address,
-            notes=f'Revoke GNO spending approval of {user_address} by {REDEMPTION_DEPOSIT_ADDRESS}',  # noqa: E501
             address=REDEMPTION_DEPOSIT_ADDRESS,
         ),
     ]
@@ -82,9 +80,8 @@ def test_gnosisdao_redemption_claim(gnosis_inquirer, gnosis_accounts, allow_gnos
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas := '0.000375774'),
+        amount=FVal('0.000375774'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas} XDAI for gas',
         counterparty=CPT_GAS,
     )]
     expected_events.extend(EvmEvent(

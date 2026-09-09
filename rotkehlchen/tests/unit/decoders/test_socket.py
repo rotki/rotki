@@ -31,7 +31,6 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -76,7 +75,6 @@ def test_scroll_to_arbitrum_across_bridge(scroll_inquirer, scroll_accounts):
             asset=A_ETH,
             amount=FVal('0.00000785918'),
             location_label=user_address,
-            notes='Burn 0.00000785918 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -122,7 +120,6 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -170,7 +167,6 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POL,
             amount=FVal('0.087685584'),
             location_label=user_address,
-            notes='Burn 0.087685584 POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -202,7 +198,6 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
             asset=source_asset,
             amount=FVal('0'),
             location_label=user_address,
-            notes=f'Revoke USDC spending approval of {user_address} by {GATEWAY_ADDRESS}',
             address=GATEWAY_ADDRESS,
         ),
     ]
@@ -228,7 +223,6 @@ def test_base_to_gnosis_hop_bridge(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal('0.000411690516301503'),
             location_label=user_address,
-            notes='Burn 0.000411690516301503 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

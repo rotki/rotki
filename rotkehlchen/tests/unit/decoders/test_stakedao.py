@@ -71,7 +71,6 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.003543266133945936'),
             location_label=user_address,
-            notes='Burn 0.003543266133945936 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -107,9 +106,8 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.002265930693617121'),
+            amount=FVal('0.002265930693617121'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -147,7 +145,6 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.002833214770290904'),
             location_label=user_address,
-            notes='Burn 0.002833214770290904 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -197,7 +194,6 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
@@ -246,7 +242,6 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
@@ -321,7 +316,6 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -380,7 +374,6 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
@@ -438,9 +431,8 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000393857'),
+        amount=FVal('0.00000393857'),
         location_label=(user_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
@@ -501,7 +493,6 @@ def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
@@ -543,9 +534,8 @@ def test_withdraw_ethereum(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0031003225'),
+        amount=FVal('0.0031003225'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(

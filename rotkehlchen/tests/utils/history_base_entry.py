@@ -138,7 +138,6 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         asset=A_DAI,
         amount=FVal('1.542'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes=f'Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
         address=GITCOIN_GRANTS_OLD1,
     ), EvmEvent(
@@ -150,7 +149,6 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         asset=A_USDT,
         amount=FVal('1.542'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes=f'Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
         address=GITCOIN_GRANTS_OLD1,
     ), EvmEvent(
@@ -162,7 +160,6 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         asset=A_ETH,
         amount=FVal('0.0001'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Burn 0.0001 ETH for gas',
         event_subtype=HistoryEventSubType.FEE,
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},
@@ -187,7 +184,6 @@ def predefined_events_to_insert() -> list[HistoryBaseEntry]:
         asset=A_ETH,
         amount=ONE,
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
         event_subtype=HistoryEventSubType.NONE,
         address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     ), HistoryEvent(

@@ -49,9 +49,8 @@ def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000045219580173'),
+            amount=FVal('0.00000045219580173'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -63,7 +62,6 @@ def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
             asset=EvmToken(decoder.decoders['Giveth'].giv_token_id),
             amount=FVal(ZERO),
             location_label=user,
-            notes=f'Revoke GIV spending approval of {user} by {decoder.decoders["Giveth"].givpower_staking_address}',  # noqa: E501
             address=decoder.decoders['Giveth'].givpower_staking_address,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -111,9 +109,8 @@ def test_optimism_lock(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000000453377609571'),
+            amount=FVal('0.000000453377609571'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -162,9 +159,8 @@ def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000000258591448555'),
+            amount=FVal('0.000000258591448555'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -213,9 +209,8 @@ def test_optimism_claim(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000001950934408636'),
+            amount=FVal('0.000001950934408636'),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -250,9 +245,8 @@ def test_gnosis_claim(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas := '0.000142777694803742'),
+            amount=FVal('0.000142777694803742'),
             location_label=user,
-            notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -286,9 +280,8 @@ def test_gnosis_lock(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas := '0.00026284575126455'),
+            amount=FVal('0.00026284575126455'),
             location_label=user,
-            notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -336,9 +329,8 @@ def test_gnosis_stake_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas := '0.000391221856613286'),
+            amount=FVal('0.000391221856613286'),
             location_label=user,
-            notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -350,7 +342,6 @@ def test_gnosis_stake_deposit(gnosis_inquirer, gnosis_accounts, allow_gnosis_eth
             asset=EvmToken(decoder.decoders['Giveth'].giv_token_id),
             amount=FVal(ZERO),
             location_label=user,
-            notes=f'Revoke GIV spending approval of {user} by {GNOSIS_GIVPOWERSTAKING_WRAPPER}',
             address=GNOSIS_GIVPOWERSTAKING_WRAPPER,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -399,9 +390,8 @@ def test_gnosis_withdraw(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethersca
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas := '0.00046583297133306'),
+            amount=FVal('0.00046583297133306'),
             location_label=user,
-            notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -488,9 +478,8 @@ def test_giveth_donation_sender(polygon_pos_inquirer, polygon_pos_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
-        amount=(gas_amount := FVal('0.002843750017390625')),
+        amount=(FVal('0.002843750017390625')),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -659,9 +648,8 @@ def test_giveth_donation_eth_multi_sender(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00023611906081848'),
+        amount=FVal('0.00023611906081848'),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

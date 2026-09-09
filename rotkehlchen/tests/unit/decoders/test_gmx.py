@@ -42,7 +42,6 @@ def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -55,7 +54,6 @@ def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=FVal('18446744073709551614999995512857.612984'),
             location_label=user_address,
             address=GMX_ROUTER_ADDRESS,
-            notes='Set USDC.e spending approval of 0x22E798f9440F563B92AAE24E94C75DfA499e3d3E by 0xaBBc5F99639c9B6bCb58544ddf04EFA6802F4064 to 18446744073709551614999995512857.612984',  # noqa: E501
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=3,
@@ -104,7 +102,6 @@ def test_long_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -201,7 +198,6 @@ def test_stake_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -213,7 +209,6 @@ def test_stake_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_GMX,
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set GMX spending approval of {user_address} by {sgmx_address} to {approve_amount}',  # noqa: E501
             address=sgmx_address,
         ), EvmEvent(
             tx_ref=tx_hash,

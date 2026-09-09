@@ -44,7 +44,6 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(0.01212979988),
             location_label=ethereum_accounts[0],
-            notes='Burn 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -94,7 +93,6 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(0.066614401),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
-            notes='Burn 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -143,7 +141,6 @@ def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -155,7 +152,6 @@ def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=a_sweth,
             amount=FVal(approval_amount),
             location_label=ethereum_accounts[0],
-            notes=f'Set swETH spending approval of {ethereum_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT} to {approval_amount}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -201,9 +197,8 @@ def test_kyber_aggregator_swap_ethereum_with_refund(ethereum_inquirer, ethereum_
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000256338161229945'),
+            amount=FVal('0.000256338161229945'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -215,7 +210,6 @@ def test_kyber_aggregator_swap_ethereum_with_refund(ethereum_inquirer, ethereum_
             asset=(a_eeth := Asset('eip155:1/erc20:0x35fA164735182de50811E8e2E824cFb9B6118ac2')),
             amount=ZERO,
             location_label=ethereum_accounts[0],
-            notes=f'Revoke eETH spending approval of {ethereum_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -269,7 +263,6 @@ def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_
             asset=A_ETH,
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -319,9 +312,8 @@ def test_kyber_aggregator_swap_hyperliquid_enso(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.0000922903756'),
+            amount=FVal('0.0000922903756'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -371,7 +363,6 @@ def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=base_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -383,7 +374,6 @@ def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
             asset=a_dog,
             amount=ZERO,
             location_label=base_accounts[0],
-            notes=f'Revoke DOG spending approval of {base_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -432,7 +422,6 @@ def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=optimism_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -444,7 +433,6 @@ def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
             asset=a_wsteth_op,
             amount=ZERO,
             location_label=optimism_accounts[0],
-            notes=f'Revoke wstETH spending approval of {optimism_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -495,7 +483,6 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
             asset=A_POL,
             amount=FVal(gas),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burn {gas} POL for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -543,7 +530,6 @@ def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts, allow_sc
             asset=A_ETH,
             amount=FVal(gas),
             location_label=scroll_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,

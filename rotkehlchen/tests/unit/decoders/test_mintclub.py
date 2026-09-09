@@ -55,9 +55,8 @@ def test_mintclub_claim(base_inquirer, base_accounts, allow_base_routescan) -> N
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000000466992770498')),
+        amount=(FVal('0.000000466992770498')),
         location_label=(user := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

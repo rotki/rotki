@@ -32,9 +32,8 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000003052725765774')),
+        amount=(FVal('0.000003052725765774')),
         location_label=(user := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -79,9 +78,8 @@ def test_stake(base_inquirer, base_accounts) -> None:
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000000503994279338')),
+        amount=(FVal('0.000000503994279338')),
         location_label=(user := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -113,9 +111,8 @@ def test_unstake(base_inquirer, base_accounts) -> None:
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000000442649593384')),
+        amount=(FVal('0.000000442649593384')),
         location_label=(user := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -147,9 +144,8 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000005462780797336')),
+        amount=(FVal('0.000005462780797336')),
         location_label=(user := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

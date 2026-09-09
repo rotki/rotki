@@ -69,7 +69,6 @@ def test_lock_pendle(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -108,7 +107,6 @@ def test_lock_pendle(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827'),
             amount=FVal(approval_amount),
             location_label=user_address,
-            notes=f'Set PENDLE spending approval of {user_address} by 0x4f30A9D41B80ecC5B94306AB4364951AE3170210 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x4f30A9D41B80ecC5B94306AB4364951AE3170210'),
         ),
     ]
@@ -131,7 +129,6 @@ def test_stake_pendle_all_events(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.00012854388021585'),
             location_label=user_address,
-            notes='Burn 0.00012854388021585 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -143,7 +140,6 @@ def test_stake_pendle_all_events(ethereum_inquirer, ethereum_accounts):
             asset=PENDLE_TOKEN,
             amount=ZERO,
             location_label=user_address,
-            notes=f'Revoke PENDLE spending approval of {user_address} by {STAKED_PENDLE_CONTRACT_ADDRESS}',  # noqa: E501
             address=STAKED_PENDLE_CONTRACT_ADDRESS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -192,7 +188,6 @@ def test_cooldown_staked_pendle_all_events(ethereum_inquirer, ethereum_accounts)
             asset=A_ETH,
             amount=FVal('0.00000969085196709'),
             location_label=user_address,
-            notes='Burn 0.00000969085196709 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -242,7 +237,6 @@ def test_instant_unstake_staked_pendle_all_events(ethereum_inquirer, ethereum_ac
             asset=A_ETH,
             amount=FVal('0.000016000293148507'),
             location_label=user_address,
-            notes='Burn 0.000016000293148507 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -291,7 +285,6 @@ def test_finalize_cooldown_staked_pendle_all_events(ethereum_inquirer, ethereum_
             asset=A_ETH,
             amount=FVal('0.00005298942987213'),
             location_label=user_address,
-            notes='Burn 0.00005298942987213 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -327,7 +320,6 @@ def test_unlock_pendle(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -371,7 +363,6 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -383,7 +374,6 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
             amount=FVal(approval_amount),
             location_label=user_address,
-            notes=f'Set aEthUSDC spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -446,9 +436,8 @@ def test_buy_pt_router_v3(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=(gas_amount := FVal('0.014646623224749372')),
+            amount=(FVal('0.014646623224749372')),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -497,9 +486,8 @@ def test_add_liquidity_keep_yt_router_v3(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=(gas_amount := FVal('0.032913334591141556')),
+            amount=(FVal('0.032913334591141556')),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -557,9 +545,8 @@ def test_return_pt(ethereum_inquirer, ethereum_accounts, pendle_cache):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.001992209924447032')),
+        amount=(FVal('0.001992209924447032')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -569,10 +556,9 @@ def test_return_pt(ethereum_inquirer, ethereum_accounts, pendle_cache):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:1/erc20:0xd4e75971eAF78a8d93D96df530f1FFf5f9F53288'),
-        amount=(approve_amount := FVal('0.015')),
+        amount=(FVal('0.015')),
         location_label=user_address,
         address=(pendle_router := string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946')),  # noqa: E501
-        notes=f'Set PT-pufETH-26SEP2024 spending approval of {user_address} by {pendle_router} to {approve_amount}',  # noqa: E501
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=216,
@@ -621,7 +607,6 @@ def test_buy_yt(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -673,7 +658,6 @@ def test_sell_yt(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -685,7 +669,6 @@ def test_sell_yt(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x1e30afeB27C0544F335f8aa21e0A9599c273823A'),
             amount=FVal(revoke_amount),
             location_label=user_address,
-            notes=f'Revoke YT-LBTC-27MAR2025 spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946',  # noqa: E501
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -743,7 +726,6 @@ def test_add_liquidity(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -795,7 +777,6 @@ def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -807,7 +788,6 @@ def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83'),
             amount=FVal(revoke_amount),
             location_label=user_address,
-            notes=f'Revoke EIGEN spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946',  # noqa: E501
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -857,7 +837,6 @@ def test_swap_using_kyber_2(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -906,7 +885,6 @@ def test_swap_using_odos(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -952,7 +930,6 @@ def test_mint_pt_yt(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1013,7 +990,6 @@ def test_mint_sy(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1025,7 +1001,6 @@ def test_mint_sy(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x4c9EDD5852cd905f086C759E8383e09bff1E68B3'),
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set USDe spending approval of 0xf7Ae4ec5f1f5813fBA503Dd98fc42633fAff6c2e by 0x888888888889758F76e7103c6CbF23ABbF58F946 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1073,7 +1048,6 @@ def test_redeem_sy(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1085,7 +1059,6 @@ def test_redeem_sy(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x253008ba4aE2f3E6488DC998a5321D4EB1a0c905'),
         amount=FVal(approval_amount),
         location_label=user_address,
-        notes=f'Set SY pufETH spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1133,7 +1106,6 @@ def test_redeem_pt_yt(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1145,7 +1117,6 @@ def test_redeem_pt_yt(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0xae4bE3acD95B6a4Ac5A0524ab95dA90c721f6C83'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke PT-USR-29MAY2025 spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946',  # noqa: E501
         address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1157,7 +1128,6 @@ def test_redeem_pt_yt(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x77DE4Be22Ecc633416D79371eF8e861Fb1d2cC39'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke YT-USR-29MAY2025 spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946',  # noqa: E501
         address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1218,7 +1188,6 @@ def test_exit_post_exp_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1230,7 +1199,6 @@ def test_exit_post_exp_to_token(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x00b321D89A8C36B3929f20B7955080baeD706D1B'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke PENDLE-LPT spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946',  # noqa: E501
         address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1288,7 +1256,6 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1300,7 +1267,6 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
             asset=lp_token,
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set PENDLE-LPT spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1364,7 +1330,6 @@ def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, 
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1376,7 +1341,6 @@ def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, 
             asset=Asset('eip155:1/erc20:0x7786729eEe8b9d30fE7d91fDFf23A0f1D0C615D9'),
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set SY-rswETH spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1427,7 +1391,6 @@ def test_redeem_due_rewards_multiple_tokens(ethereum_inquirer, ethereum_accounts
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

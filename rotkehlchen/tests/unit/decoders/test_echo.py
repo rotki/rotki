@@ -34,7 +34,6 @@ def test_echo_fund(base_inquirer, base_accounts):
             asset=USDC_TOKEN,
             amount=FVal(5887),
             location_label=base_accounts[0],
-            notes=f'Set USDC spending approval of {base_accounts[0]} by {FUNDING_CONDUIT} to {fund_amount}',  # noqa:E501
             address=FUNDING_CONDUIT,
         ),
         EvmEvent(

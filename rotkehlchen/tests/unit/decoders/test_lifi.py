@@ -43,7 +43,6 @@ def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer, arbitrum_one_account
         asset=A_ETH,
         amount=FVal('0.00000564139'),
         location_label=arbitrum_one_accounts[0],
-        notes='Burn 0.00000564139 ETH for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -67,10 +66,6 @@ def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer, arbitrum_one_account
         asset=USDC_ARBITRUM,
         amount=FVal('57.000421'),
         location_label=arbitrum_one_accounts[0],
-        notes=(
-            'Set USDC spending approval of 0x58ea4953f07A23232Ff6FdFcE008BBfE010f801c '
-            'by 0x89c6340B1a1f4b25D36cd8B063D49045caF3f818 to 57.000421'
-        ),
         address=router,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -116,7 +111,6 @@ def test_lifi_bridge_out(monad_inquirer, monad_accounts):
         asset=A_MON,
         amount=FVal('0.214768446'),
         location_label=monad_accounts[0],
-        notes='Burn 0.214768446 MON for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -162,10 +156,6 @@ def test_lifi_bridge_out(monad_inquirer, monad_accounts):
         asset=USDT0_MONAD,
         amount=FVal('0'),
         location_label=monad_accounts[0],
-        notes=(
-            'Revoke USDT0 spending approval of 0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF '
-            'by 0x000000000022D473030F116dDEE9F6B43aC78BA3'
-        ),
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     )]
 
@@ -293,7 +283,6 @@ def test_lifi_arbitrum_native_value_is_not_a_fee(arbitrum_one_inquirer, arbitrum
         asset=A_ETH,
         amount=FVal('0.000022322323572'),
         location_label=arbitrum_one_accounts[0],
-        notes='Burn 0.000022322323572 ETH for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -331,7 +320,6 @@ def test_lifi_bridge_arbitrum_to_ethereum(arbitrum_one_inquirer, arbitrum_one_ac
         asset=A_ETH,
         amount=FVal('0.000016014181258'),
         location_label=arbitrum_one_accounts[0],
-        notes='Burn 0.000016014181258 ETH for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -377,7 +365,6 @@ def test_lifi_swap(gnosis_inquirer, gnosis_accounts):
         asset=A_XDAI,
         amount=FVal('0.000894472'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes='Burn 0.000894472 XDAI for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -389,10 +376,6 @@ def test_lifi_swap(gnosis_inquirer, gnosis_accounts):
         asset=COW_GNOSIS,
         amount=FVal(0),
         location_label=user_address,
-        notes=(
-            'Revoke COW spending approval of 0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF '
-            'by 0x000000000022D473030F116dDEE9F6B43aC78BA3'
-        ),
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -442,7 +425,6 @@ def test_lifi_squid_bridge_native_asset(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal('0.000000008857686724'),
         location_label=(user_address := optimism_accounts[0]),
-        notes='Burn 0.000000008857686724 ETH for gas',
         counterparty='gas',
     ), EvmEvent(
         tx_ref=tx_hash,

@@ -131,8 +131,7 @@ def test_zap_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache)
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00032154758985688'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.00032154758985688'),
         counterparty=CPT_GAS,
         location_label=(user_address := ethereum_accounts[0]),
     ), EvmEvent(
@@ -179,8 +178,7 @@ def test_zap_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_c
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0009786576'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.0009786576'),
         counterparty=CPT_GAS,
         location_label=(user_address := ethereum_accounts[0]),
     ), EvmEvent(
@@ -191,9 +189,8 @@ def test_zap_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_c
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=(vault_token := Asset('eip155:1/erc20:0x81F040E82aae01f3921A1c1225C86ce5C57C218b')),
-        amount=FVal(approval_amount := '7999998797.708849523052076792'),
+        amount=FVal('7999998797.708849523052076792'),
         location_label=user_address,
-        notes=f'Set mooFxConvexGHO-fxUSD spending approval of {user_address} by 0xEdFEc19ee32f5130084C0aCab91FeA604C137912 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0xEdFEc19ee32f5130084C0aCab91FeA604C137912'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -239,8 +236,7 @@ def test_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0006633802'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.0006633802'),
         counterparty=CPT_GAS,
         location_label=(user_address := ethereum_accounts[0]),
     ), EvmEvent(
@@ -251,9 +247,8 @@ def test_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:1/erc20:0x5018BE882DccE5E3F2f3B0913AE2096B9b3fB61f'),
-        amount=FVal(approve_amount := '7999900560.118661539430036479'),
+        amount=FVal('7999900560.118661539430036479'),
         location_label=user_address,
-        notes=f'Set USDCfxUSD spending approval of {user_address} by 0xD81eaAE8E6195e67695bE9aC447c9D6214CB717A to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0xD81eaAE8E6195e67695bE9aC447c9D6214CB717A'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -299,8 +294,7 @@ def test_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0009627226326753'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.0009627226326753'),
         counterparty=CPT_GAS,
         location_label=(user_address := ethereum_accounts[0]),
     ), EvmEvent(
@@ -382,8 +376,7 @@ def test_deposit_to_beefy_morpho_vault(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000003805651040272'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.000003805651040272'),
         counterparty=CPT_GAS,
         location_label=(user_address := base_accounts[0]),
     ), EvmEvent(
@@ -456,9 +449,8 @@ def test_beefy_base_deposit_no_rogue_aerodrome_receive(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000138113516888167'),
+        amount=FVal('0.000138113516888167'),
         location_label=(user_address := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -468,9 +460,8 @@ def test_beefy_base_deposit_no_rogue_aerodrome_receive(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:8453/erc20:0x6cDcb1C4A4D1C3C6d054b27AC5B77e89eAFb971d'),
-        amount=FVal(approval_amount := '7999999999.999986806502451894'),
+        amount=FVal('7999999999.999986806502451894'),
         location_label=user_address,
-        notes=f'Set vAMM-USDC/AERO spending approval of {user_address} by 0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -561,8 +552,7 @@ def test_withdrawal_from_beefy_clm_vault(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.0000104133'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.0000104133'),
         counterparty=CPT_GAS,
         location_label=(user_address := arbitrum_one_accounts[0]),
     ), EvmEvent(
@@ -573,9 +563,8 @@ def test_withdrawal_from_beefy_clm_vault(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=rcow_token,
-        amount=FVal(approval_amount := '7999999992.60870368519187435'),
+        amount=FVal('7999999992.60870368519187435'),
         location_label=user_address,
-        notes=f'Set rcowUniswapArbETH-GMX spending approval of {user_address} by 0x3395BDAE49853Bc7Ab9377d2A93f42BC3A18680e to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x3395BDAE49853Bc7Ab9377d2A93f42BC3A18680e'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -637,8 +626,7 @@ def test_deposit_eth_to_beefy_vault_with_harvest_call_reward(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00001589032'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.00001589032'),
         counterparty=CPT_GAS,
         location_label=(user_address := arbitrum_one_accounts[0]),
     ), EvmEvent(
@@ -704,8 +692,7 @@ def test_deposit_usdc_to_beefy_vault_with_harvest_call_reward(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00010518138396'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.00010518138396'),
         counterparty=CPT_GAS,
         location_label=(user_address := arbitrum_one_accounts[0]),
     ), EvmEvent(
@@ -716,9 +703,8 @@ def test_deposit_usdc_to_beefy_vault_with_harvest_call_reward(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
-        amount=FVal(approval_amount := '7999999999999999999899.789207'),
+        amount=FVal('7999999999999999999899.789207'),
         location_label=user_address,
-        notes=f'Set USDC.e spending approval of {user_address} by 0x3395BDAE49853Bc7Ab9377d2A93f42BC3A18680e to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x3395BDAE49853Bc7Ab9377d2A93f42BC3A18680e'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -798,8 +784,7 @@ def test_withdrawal_from_beefy_receiving_eth(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000338654907628'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.000000338654907628'),
         counterparty=CPT_GAS,
         location_label=(user_address := optimism_accounts[0]),
     ), EvmEvent(
@@ -810,9 +795,8 @@ def test_withdrawal_from_beefy_receiving_eth(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=cow_token,
-        amount=FVal(approval_amount := '7999999997.477672183234260184'),
+        amount=FVal('7999999997.477672183234260184'),
         location_label=user_address,
-        notes=f'Set mooStargateV2WETH spending approval of {user_address} by 0x5a32F67C5eD74dc1b2e031b1bc2c3E965073424F to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0x5a32F67C5eD74dc1b2e031b1bc2c3E965073424F'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -900,8 +884,7 @@ def test_stake_beefy_vault_token_in_reward_pool(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000001109593380434'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.000001109593380434'),
         counterparty=CPT_GAS,
         location_label=(user_address := optimism_accounts[0]),
     ), EvmEvent(
@@ -914,7 +897,6 @@ def test_stake_beefy_vault_token_in_reward_pool(
         asset=moo_token,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke mooCompoundOptimismWETH spending approval of {user_address} by {rmoo_token.evm_address}',  # noqa: E501
         address=rmoo_token.evm_address,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -1002,8 +984,7 @@ def test_claim_beefy_reward_pool_reward(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000357031815625'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.000000357031815625'),
         counterparty=CPT_GAS,
         location_label=(user_address := optimism_accounts[0]),
     ), EvmEvent(
@@ -1089,8 +1070,7 @@ def test_unstake_beefy_reward_pool(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000243403'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.00000243403'),
         counterparty=CPT_GAS,
         location_label=(user_address := arbitrum_one_accounts[0]),
     ), EvmEvent(
@@ -1179,8 +1159,7 @@ def test_unstake_beefy_reward_pool_with_reward(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000335894'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.00000335894'),
         counterparty=CPT_GAS,
         location_label=(user_address := arbitrum_one_accounts[0]),
     ), EvmEvent(
@@ -1249,8 +1228,7 @@ def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000160735603245864'),
-        notes=f'Burn {gas_amount} ETH for gas',
+        amount=FVal('0.000160735603245864'),
         counterparty=CPT_GAS,
         location_label=user_address,
     ), EvmEvent(

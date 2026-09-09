@@ -9,8 +9,13 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.history.events.structures.auto_notes import (
+    KRAKEN_STAKING_FEE_TEMPLATE,
+    KRAKEN_STAKING_REWARD_TEMPLATE,
+)
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -289,7 +294,7 @@ class HistoryBaseEntry[
                 self.location_label,
                 self.asset.identifier,
                 str(self.amount),
-                self.notes,
+                self._notes_for_db(),
                 self.event_type.serialize(),
                 self.event_subtype.serialize(),
                 json.dumps(self.extra_data) if self.extra_data else None,
@@ -365,15 +370,50 @@ class HistoryBaseEntry[
             'sequence_index': self.sequence_index,
             'extra_data': self.extra_data,
         }
-        if self.notes is not None:
-            serialized_data['user_notes'] = self.notes
-
-        if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
-            if self.event_subtype == HistoryEventSubType.REWARD:
-                serialized_data['auto_notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
-            elif self.event_subtype == HistoryEventSubType.FEE:
-                serialized_data['auto_notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
+        if (auto_notes := self.auto_notes()) is not None:
+            serialized_data['auto_notes'] = auto_notes
+        if (user_notes := self._user_notes(auto_notes)) is not None:
+            serialized_data['user_notes'] = user_notes
         return serialized_data
+
+    def auto_notes(self) -> str | None:
+        """The notes rotki can regenerate for this event from its other fields, or None if
+        the event kind has none. Subclasses extend this with their kinds, see auto_notes.py.
+
+        Such notes are not stored. They are rebuilt at serialization, and an event whose
+        notes equal them is written to the DB with a NULL notes column. The frontend shows
+        the stored notes when present and falls back to these.
+
+        May raise UnknownAsset for an event whose asset does not exist, since the symbol is
+        part of most templates.
+        """
+        return None
+
+    def notes_or_auto(self) -> str | None:
+        """The stored notes, falling back to the auto generated ones"""
+        return self.notes if self.notes is not None else self.auto_notes()
+
+    def _user_notes(self, auto_notes: str | None) -> str | None:
+        """The notes that are not the given auto generated ones: user edited or extended by a
+        decoder. Those are the only notes stored in the DB and shown as user notes, so an
+        event serializes the same whether it was decoded in memory or read from the DB.
+        """
+        return None if self.notes == auto_notes else self.notes
+
+    def _notes_for_db(self) -> str | None:
+        """Notes as written to the DB: NULL when they equal the auto generated ones, since
+        those are rebuilt on demand. An asset that does not exist keeps the notes as is, and
+        the write itself then fails on the foreign key as it always did.
+        """
+        if self.notes is None:
+            return None
+
+        try:
+            auto_notes = self.auto_notes()
+        except UnknownAsset:
+            return self.notes
+
+        return self._user_notes(auto_notes)
 
     def serialize_for_csv(
             self,
@@ -554,6 +594,15 @@ class HistoryEvent(HistoryBaseEntry):
     @property
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.HISTORY_EVENT
+
+    def auto_notes(self) -> str | None:
+        if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
+            if self.event_subtype == HistoryEventSubType.REWARD:
+                return KRAKEN_STAKING_REWARD_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())  # noqa: E501
+            if self.event_subtype == HistoryEventSubType.FEE:
+                return KRAKEN_STAKING_FEE_TEMPLATE.format(amount=self.amount, symbol=self.asset.symbol_or_name())  # noqa: E501
+
+        return super().auto_notes()
 
     def __repr__(self) -> str:
         return f'HistoryEvent({", ".join(self._history_base_entry_repr_fields())})'

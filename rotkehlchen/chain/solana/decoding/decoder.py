@@ -11,7 +11,6 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
 from rotkehlchen.chain.decoding.types import DecodingRulesBase
 from rotkehlchen.chain.decoding.utils import decode_safely
-from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import (
     SolanaInstruction,
@@ -213,15 +212,14 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         if transaction.fee == ZERO or not self.base.is_tracked(fee_payer := transaction.account_keys[0]):  # noqa: E501
             return None
 
-        return self.base.make_event_next_index(
+        return self.base.make_event_next_index(  # notes are generated, see SolanaEvent.auto_notes
             tx_ref=transaction.signature,
             timestamp=transaction.block_time,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_SOL,
-            amount=(amount := lamports_to_sol(transaction.fee)),
+            amount=lamports_to_sol(transaction.fee),
             location_label=fee_payer,
-            notes=f'Spend {amount} SOL as transaction fee',
             counterparty=CPT_GAS,
         )
 
@@ -474,15 +472,8 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         )) is None:
             return None
 
-        event_type, event_subtype, location_label, address, counterparty, verb = direction_result
-        counterparty_or_address = counterparty or address
-        if counterparty_or_address is not None:
-            preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-            suffix = f' {preposition} {counterparty_or_address}'
-        else:
-            suffix = ''
-
-        return self.base.make_event_from_instruction(
+        event_type, event_subtype, location_label, address, counterparty, _ = direction_result
+        event = self.base.make_event_from_instruction(
             instruction=instruction,
             tx_ref=transaction.signature,
             timestamp=transaction.block_time,
@@ -491,10 +482,11 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             asset=asset,
             amount=amount,
             location_label=location_label,
-            notes=f'{verb} {amount} {asset.resolve_to_asset_with_symbol().symbol}{suffix}',
             counterparty=counterparty,
             address=address,
         )
+        event.notes = event.auto_notes()  # set so that protocol decoders can extend them
+        return event
 
     def _decode_basic_events(
             self,

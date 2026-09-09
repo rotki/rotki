@@ -67,7 +67,6 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             asset=A_ETH,
             amount=FVal('0.023654025517055036'),
             location_label=ADDY,
-            notes='Burn 0.023654025517055036 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -176,9 +175,8 @@ def test_text_changed_old_name(database, ethereum_inquirer, ethereum_accounts, a
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_str := '0.00655101156241161'),
+        amount=FVal('0.00655101156241161'),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     )]
     for seqindex, attribute in [
@@ -219,7 +217,6 @@ def test_set_resolver(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key
         asset=A_ETH,
         amount=FVal(gas_str),
         location_label=user_address,
-        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -269,7 +266,6 @@ def test_set_attribute_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api
             asset=A_ETH,
             amount=FVal('0.0013186458834505'),
             location_label=user_address,
-            notes='Burn 0.0013186458834505 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -310,7 +306,6 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
             asset=A_ETH,
             amount=FVal('0.00670203024617044'),
             location_label=user_address,
-            notes='Burn 0.00670203024617044 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -392,7 +387,6 @@ def test_register_v2_with_refund(
             asset=A_ETH,
             amount=FVal('0.001694738163794328'),
             location_label=user_address,
-            notes='Burn 0.001694738163794328 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -582,7 +576,6 @@ def test_renewal_with_refund_old_controller(ethereum_inquirer, ethereum_accounts
             asset=A_ETH,
             amount=FVal('0.001092736096479008'),
             location_label=user_address,
-            notes='Burn 0.001092736096479008 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -628,7 +621,6 @@ def test_renewal_with_refund_new_controller(ethereum_inquirer, ethereum_accounts
             asset=A_ETH,
             amount=FVal('0.0022552539'),
             location_label=user_address,
-            notes='Burn 0.0022552539 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -667,7 +659,6 @@ def test_content_hash_changed(ethereum_inquirer, ethereum_accounts, add_subgraph
             asset=A_ETH,
             amount=FVal('0.001864622767849202'),
             location_label=user_address,
-            notes='Burn 0.001864622767849202 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -733,7 +724,6 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
         asset=A_ETH,
         amount=FVal('0.000742571017054667'),
         location_label=from_address,
-        notes='Burn 0.000742571017054667 ETH for gas',
         counterparty=CPT_GAS,
         address=None,
     )
@@ -779,9 +769,8 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.003424155'),
+            amount=FVal('0.003424155'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -884,9 +873,8 @@ def test_extension_via_wrapper(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000019979395167774'),
+            amount=FVal('0.000019979395167774'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -923,9 +911,8 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000916189648966683'),
+            amount=FVal('0.000916189648966683'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -961,9 +948,8 @@ def test_vote_cast_abstain(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000255411223579504'),
+            amount=FVal('0.000255411223579504'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -1000,9 +986,8 @@ def test_set_attribute_for_non_primary_name(ethereum_inquirer, ethereum_accounts
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.00054662131669239'),
+            amount=FVal('0.00054662131669239'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1039,7 +1024,6 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts, add_subgraph_api_ke
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1090,9 +1074,8 @@ def test_new_owner(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key): 
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.0004635496'),
+            amount=FVal('0.0004635496'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -1128,9 +1111,8 @@ def test_address_changed(ethereum_inquirer, ethereum_accounts, add_subgraph_api_
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000402353718699768'),
+            amount=FVal('0.000402353718699768'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

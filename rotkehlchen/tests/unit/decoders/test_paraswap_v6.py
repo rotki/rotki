@@ -59,7 +59,6 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -71,7 +70,6 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
         asset=A_ENS,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set ENS spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {approve_amount}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -134,7 +132,6 @@ def test_gnosis_swap_amount_in(
         asset=A_XDAI,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -194,7 +191,6 @@ def test_binance_sc_swap_amount_in(
         asset=A_BSC_BNB,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -245,7 +241,6 @@ def test_swap_amount_in_on_balancer_v2(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -308,7 +303,6 @@ def test_swap_amount_in_on_curve_v1(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -320,7 +314,6 @@ def test_swap_amount_in_on_curve_v1(
         asset=a_bridged_usdc,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke USDC.e spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -382,7 +375,6 @@ def test_swap_amount_in_on_curve_v2(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -394,7 +386,6 @@ def test_swap_amount_in_on_curve_v2(
         asset=a_gmac,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set GMAC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {approve_amount}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -444,7 +435,6 @@ def test_swap_amount_in_on_uniswap_v2(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -494,7 +484,6 @@ def test_swap_amount_in_on_uniswap_v3(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -506,7 +495,6 @@ def test_swap_amount_in_on_uniswap_v3(
         asset=A_OPTIMISM_USDT,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke USDT spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -555,7 +543,6 @@ def test_swap_amount_out(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -616,7 +603,6 @@ def test_swap_amount_out_on_balancer_v2(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -677,7 +663,6 @@ def test_swap_amount_out_on_uniswap_v2(
         asset=A_POL,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -727,7 +712,6 @@ def test_swap_amount_out_on_uniswap_v3(
         asset=A_POL,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -739,7 +723,6 @@ def test_swap_amount_out_on_uniswap_v3(
         asset=a_usdc,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set USDC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {approve_amount}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -788,7 +771,6 @@ def test_swap_on_augustus_rfq(
         asset=A_ETH,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -838,7 +820,6 @@ def test_eure_receive_swap(
         asset=A_XDAI,
         amount=FVal(gas_amount),
         location_label=user_address,
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -892,9 +873,8 @@ def test_swap_with_unrelated_curve_deposit(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas_amount := '0.000211096'),
+        amount=FVal('0.000211096'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -906,7 +886,6 @@ def test_swap_with_unrelated_curve_deposit(
         asset=(a_usdc := Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83')),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke USDC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -959,9 +938,8 @@ def test_curve_deposit_interfering_with_paraswap_swap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas_amount := '0.0000438784'),
+        amount=FVal('0.0000438784'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -973,7 +951,6 @@ def test_curve_deposit_interfering_with_paraswap_swap(
         asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
         amount=ZERO,
         location_label=user_address,
-        notes=f'Revoke USDC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1027,9 +1004,8 @@ def test_native_swap_routed_through_curve_zap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas_amount := '0.00000004654072516'),
+        amount=FVal('0.00000004654072516'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1083,9 +1059,8 @@ def test_native_receive_swap_routed_through_curve_zap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas_amount := '0.000000006688898758'),
+        amount=FVal('0.000000006688898758'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

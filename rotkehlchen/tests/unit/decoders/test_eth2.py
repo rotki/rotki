@@ -44,7 +44,6 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.000788637337054068'),
             location_label=user_address,
-            notes='Burn 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
             tx_ref=tx_hash,
@@ -95,7 +94,6 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.010956672'),
             location_label=user_address,
-            notes='Burn 0.010956672 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EthDepositEvent(
@@ -154,7 +152,6 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             asset=A_ETH,
             amount=FVal('0.00071529566834925'),
             location_label=user_address,
-            notes='Burn 0.00071529566834925 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
             tx_ref=tx_hash,
@@ -180,9 +177,8 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000312710325833682')),
+        amount=(FVal('0.000312710325833682')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -227,9 +223,8 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.00041335788646901')),
+        amount=(FVal('0.00041335788646901')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -281,7 +276,6 @@ def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=gas_amount,
         location_label=ethereum_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     )
     event_pairs = [(events[1:][i], events[1:][i + 1]) for i in range(0, len(events[1:]), 2)]
@@ -331,9 +325,8 @@ def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000936280934217013')),
+        amount=(FVal('0.000936280934217013')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -378,9 +371,8 @@ def test_exit_request(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.001827476471561315')),
+        amount=(FVal('0.001827476471561315')),
         location_label=(user_address := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

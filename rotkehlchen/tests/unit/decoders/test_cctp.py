@@ -38,9 +38,8 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000649402467435812'),
+            amount=FVal('0.000649402467435812'),
             location_label=ethereum_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -85,9 +84,8 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000196702'),
+            amount=FVal('0.00000196702'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -131,9 +129,8 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas := '0.00404958204'),
+            amount=FVal('0.00404958204'),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burn {gas} POL for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -178,9 +175,8 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000345289'),
+            amount=FVal('0.00000345289'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

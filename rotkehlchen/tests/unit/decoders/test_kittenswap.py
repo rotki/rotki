@@ -44,9 +44,8 @@ def test_kittenswap_hype_for_khype(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.0000692189184'),
+            amount=FVal('0.0000692189184'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -96,9 +95,8 @@ def test_kittenswap_receive_before_spend(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.00005729206762'),
+            amount=FVal('0.00005729206762'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -110,8 +108,7 @@ def test_kittenswap_receive_before_spend(
             asset=(usdt0 := Asset('eip155:999/erc20:0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb')),
             amount=FVal(0),
             location_label=user_address,
-            notes=f'Revoke USDT0 spending approval of {user_address} by {(router := string_to_evm_address("0x0a0758d937d1059c356D4714e57F5df0239bce1A"))}',  # noqa: E501
-            address=router,
+            address=(router := string_to_evm_address('0x0a0758d937d1059c356D4714e57F5df0239bce1A')),  # noqa: E501
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=4,

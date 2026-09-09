@@ -55,7 +55,6 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label='0x20A1CF262Cd3A42a50D226fD728104119e6fD0a1',
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -106,7 +105,6 @@ def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_cach
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -159,7 +157,6 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -227,7 +224,6 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             asset=A_ETH,
             amount=FVal('0.01452447'),
             location_label=user_address,
-            notes='Burn 0.01452447 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -239,7 +235,6 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
             amount=FVal('115792089237316195423570985008687907853269984665640563907878.636639492077148372'),
             location_label=user_address,
-            notes='Set mUSD spending approval of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 by 0x9ED47950144e51925166192Bf0aE95553939030a to 115792089237316195423570985008687907853269984665640563907878.636639492077148372',  # noqa: E501
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -332,7 +327,6 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -412,7 +406,6 @@ def test_balancer_v1_non_proxy_join(
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -424,7 +417,6 @@ def test_balancer_v1_non_proxy_join(
             asset=Asset('eip155:1/erc20:0x690031313d70c2545357F4487C6a3F134C434507'),
             amount=FVal(approve_amt),
             location_label=user_address,
-            notes=f'Set QQQ spending approval of {user_address} by {balancer_qqq_weth_pool_token.evm_address} to {approve_amt}',  # noqa: E501
             address=balancer_qqq_weth_pool_token.evm_address,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -490,7 +482,6 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -556,7 +547,6 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -658,7 +648,6 @@ def test_balancer_v1_join_gnosis(
             asset=A_XDAI,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -720,7 +709,6 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -769,7 +757,6 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_
             asset=A_XDAI,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -818,7 +805,6 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_
             asset=A_XDAI,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -871,7 +857,6 @@ def test_reth_arb(
             asset=A_ETH,
             amount=FVal(gas_str),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -883,7 +868,6 @@ def test_reth_arb(
             asset=Asset('eip155:42161/erc20:0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8'),
             amount=ZERO,
             location_label=user_address,
-            notes='Revoke rETH spending approval of 0x5dCFE1fb21Fb50fA793de3bA8519e6F9Be6C0617 by 0xBA12222222228d8Ba445958a75a0704d566BF2C8',  # noqa: E501
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -953,7 +937,6 @@ def test_balancer_v2_join_with_gauge_deposit(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -965,7 +948,6 @@ def test_balancer_v2_join_with_gauge_deposit(
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             amount=FVal(approval_amount),
             location_label=user_address,
-            notes=f'Set USDC.e spending approval of {user_address} by 0xBA12222222228d8Ba445958a75a0704d566BF2C8 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1073,7 +1055,6 @@ def test_balancer_gauge_withdrawal(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1125,9 +1106,8 @@ def test_balancer_v2_swap_token_to_native(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
-        amount=FVal(gas_amount := '0.000221913136376337'),
+        amount=FVal('0.000221913136376337'),
         location_label=(user_address := gnosis_accounts[0]),
-        notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1175,9 +1155,8 @@ def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas_amount := '0.00200243768173547'),
+            amount=FVal('0.00200243768173547'),
             location_label=(user_address := gnosis_accounts[0]),
-            notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,

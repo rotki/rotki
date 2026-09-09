@@ -51,7 +51,6 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -117,7 +116,6 @@ def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -174,7 +172,6 @@ def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -186,7 +183,6 @@ def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ZIG,
         amount=FVal(approve_amount),
         location_label=user_address,
-        notes=f'Set ZIG spending approval of {user_address} by {RAINBOW_ROUTER_CONTRACT} to {approve_amount}',  # noqa: E501
         address=RAINBOW_ROUTER_CONTRACT,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -243,7 +239,6 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -301,7 +296,6 @@ def test_rainbow_swap_on_base(base_inquirer, base_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -403,7 +397,6 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         asset=A_BSC_BNB,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -461,7 +454,6 @@ def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -518,7 +510,6 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         asset=A_POL,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -576,7 +567,6 @@ def test_rainbow_swap_token_to_eth_on_base(base_inquirer, base_accounts):
         asset=A_ETH,
         amount=FVal(gas_fees),
         location_label=user_address,
-        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,

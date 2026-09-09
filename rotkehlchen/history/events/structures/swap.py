@@ -5,6 +5,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.auto_notes import (
+    SWAP_FEE_TEMPLATE,
+    SWAP_RECEIVE_TEMPLATE,
+    SWAP_SPEND_TEMPLATE,
+)
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
     HistoryBaseEntryData,
@@ -136,23 +141,19 @@ class SwapEvent(HistoryBaseEntry):
             notes=entry[8] or None,
         )
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the event for api, and generate the auto_notes.
-        May raise UnknownAsset, but this would be an edge case as the asset should already have
-        been checked for existence when it was deserialized from an API or from the database.
-        """
-        serialized_data = super().serialize()
-        location_name = get_formatted_location_name(self.location)
-        asset_symbol = self.asset.symbol_or_name()
+    def auto_notes(self) -> str | None:
         if self.event_subtype == HistoryEventSubType.SPEND:
-            auto_notes = f'Swap {self.amount} {asset_symbol} in {location_name}'
+            template = SWAP_SPEND_TEMPLATE
         elif self.event_subtype == HistoryEventSubType.RECEIVE:
-            auto_notes = f'Receive {self.amount} {asset_symbol} after a swap in {location_name}'
+            template = SWAP_RECEIVE_TEMPLATE
         else:  # Fee
-            auto_notes = f'Spend {self.amount} {asset_symbol} as {location_name} swap fee'
+            template = SWAP_FEE_TEMPLATE
 
-        serialized_data['auto_notes'] = auto_notes
-        return serialized_data
+        return template.format(
+            amount=self.amount,
+            symbol=self.asset.symbol_or_name(),
+            location=get_formatted_location_name(self.location),
+        )
 
     @classmethod
     def _deserialize_swap_data(

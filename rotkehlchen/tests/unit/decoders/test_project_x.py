@@ -50,9 +50,8 @@ def test_project_x_remove_liquidity(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.00002794716'),
+            amount=FVal('0.00002794716'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -104,9 +103,8 @@ def test_project_x_deposit(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.001936671899605165'),
+            amount=FVal('0.001936671899605165'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -171,9 +169,8 @@ def test_project_x_collect_multiple_positions(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.002159563979601392'),
+            amount=FVal('0.002159563979601392'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -238,9 +235,8 @@ def test_project_x_collect_single_position(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.000114288561200199'),
+            amount=FVal('0.000114288561200199'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -294,9 +290,8 @@ def test_project_x_swap_router(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_HYPE,
-            amount=FVal(gas_amount := '0.000226547'),
+            amount=FVal('0.000226547'),
             location_label=(user_address := hyperliquid_accounts[0]),
-            notes=f'Burn {gas_amount} HYPE for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -360,9 +355,8 @@ def test_project_x_position_operations(
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_HYPE,
-                amount=FVal(gas_amount := '0.000018733358137287'),
+                amount=FVal('0.000018733358137287'),
                 location_label=user_address,
-                notes=f'Burn {gas_amount} HYPE for gas',
                 counterparty=CPT_GAS,
             ), EvmEvent(
                 tx_ref=tx_hash,
@@ -402,9 +396,8 @@ def test_project_x_position_operations(
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_HYPE,
-                amount=FVal(gas_amount := '0.000030671853341283'),
+                amount=FVal('0.000030671853341283'),
                 location_label=user_address,
-                notes=f'Burn {gas_amount} HYPE for gas',
                 counterparty=CPT_GAS,
             ), EvmEvent(
                 tx_ref=tx_hash,
@@ -416,7 +409,6 @@ def test_project_x_position_operations(
                 asset=position_asset,
                 amount=ZERO,
                 location_label=user_address,
-                notes=f'Revoke PRJX-V3-POS spending approval of {user_address} by {ZERO_ADDRESS}',
                 address=ZERO_ADDRESS,
             ), EvmEvent(
                 tx_ref=tx_hash,
@@ -469,9 +461,8 @@ def test_project_x_position_operations(
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_HYPE,
-                amount=FVal(gas_amount := '0.000173324668414979'),
+                amount=FVal('0.000173324668414979'),
                 location_label=user_address,
-                notes=f'Burn {gas_amount} HYPE for gas',
                 counterparty=CPT_GAS,
             ), EvmEvent(
                 tx_ref=tx_hash,
@@ -483,10 +474,6 @@ def test_project_x_position_operations(
                 asset=usdt0,
                 amount=ZERO,
                 location_label=user_address,
-                notes=(
-                    f'Revoke USDT0 spending approval of {user_address} '
-                    f'by {PROJECT_X_NFT_MANAGER}'
-                ),
                 address=PROJECT_X_NFT_MANAGER,
             ), EvmEvent(
                 tx_ref=tx_hash,

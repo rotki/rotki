@@ -12,10 +12,17 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     UNKNOWN_VALIDATOR_INDEX,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
-from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.auto_notes import (
+    ETH_BLOCK_TEMPLATE,
+    ETH_DEPOSIT_TEMPLATE,
+    ETH_DEPOSIT_UNKNOWN_VALIDATOR_TEMPLATE,
+    ETH_EXIT_TEMPLATE,
+    ETH_MEV_TEMPLATE,
+    ETH_WITHDRAWAL_TEMPLATE,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
@@ -86,10 +93,11 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
             amount: FVal,
             location_label: ChecksumEvmAddress,
             is_exit_or_blocknumber: int,
-            notes: str,
             identifier: int | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> None:
+        """Staking events carry no stored notes. They are fully described by their validator
+        index, amount and block or exit flag, so auto_notes() generates them."""
         self.validator_index = validator_index
         self.is_exit_or_blocknumber = is_exit_or_blocknumber
         super().__init__(
@@ -103,7 +111,6 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
             asset=A_ETH,
             amount=amount,
             location_label=location_label,
-            notes=notes,
             extra_data=extra_data,
         )
 
@@ -159,12 +166,15 @@ class EthWithdrawalEvent(EthStakingEvent):
             amount=amount,
             location_label=withdrawal_address,
             is_exit_or_blocknumber=is_exit,
-            notes=form_withdrawal_notes(is_exit=is_exit, validator_index=validator_index, amount=amount),  # noqa: E501
         )
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT
+
+    def auto_notes(self) -> str | None:
+        template = ETH_EXIT_TEMPLATE if self.is_exit_or_blocknumber else ETH_WITHDRAWAL_TEMPLATE
+        return template.format(validator_index=self.validator_index, amount=self.amount)
 
     def __repr__(self) -> str:
         return f'EthWithdrawalEvent({self.validator_index=}, {self.timestamp=}, is_exit={self.is_exit_or_blocknumber})'  # noqa: E501
@@ -347,12 +357,10 @@ class EthBlockEvent(EthStakingEvent):
             sequence_index = 1
             event_type = HistoryEventType.INFORMATIONAL  # the Relayer reported MEV is always info
             event_subtype = HistoryEventSubType.MEV_REWARD
-            notes = f'Validator {validator_index} produced block {block_number}. Relayer reported {amount} ETH as the MEV reward going to {fee_recipient}'  # noqa: E501
         else:
             sequence_index = 0
             event_type = HistoryEventType.STAKING if fee_recipient_tracked else HistoryEventType.INFORMATIONAL  # noqa: E501
             event_subtype = HistoryEventSubType.BLOCK_PRODUCTION
-            notes = f'Validator {validator_index} produced block {block_number} with {amount} ETH going to {fee_recipient} as the block reward'  # noqa: E501
 
         super().__init__(
             identifier=identifier,
@@ -365,8 +373,16 @@ class EthBlockEvent(EthStakingEvent):
             amount=amount,
             location_label=fee_recipient,
             is_exit_or_blocknumber=block_number,
-            notes=notes,
             extra_data=extra_data,
+        )
+
+    def auto_notes(self) -> str | None:
+        template = ETH_MEV_TEMPLATE if self.event_subtype == HistoryEventSubType.MEV_REWARD else ETH_BLOCK_TEMPLATE  # noqa: E501
+        return template.format(
+            validator_index=self.validator_index,
+            block_number=self.is_exit_or_blocknumber,
+            amount=self.amount,
+            fee_recipient=self.location_label,
         )
 
     @staticmethod
@@ -483,7 +499,6 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             identifier: int | None = None,
             group_identifier: str | None = None,
     ) -> None:
-        suffix = f'{validator_index}' if validator_index != UNKNOWN_VALIDATOR_INDEX else 'with a not yet known validator index'  # noqa: E501
         super().__init__(  # super should call evm event
             tx_ref=tx_ref,
             sequence_index=sequence_index,
@@ -494,7 +509,6 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             asset=A_ETH,
             amount=amount,
             location_label=depositor,
-            notes=f'Deposit {amount} ETH to validator {suffix}',
             counterparty=CPT_ETH2,
             address=ETH2_DEPOSIT_ADDRESS,
             identifier=identifier,
@@ -507,6 +521,11 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
     @property
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.ETH_DEPOSIT_EVENT
+
+    def auto_notes(self) -> str | None:
+        if self.validator_index == UNKNOWN_VALIDATOR_INDEX:
+            return ETH_DEPOSIT_UNKNOWN_VALIDATOR_TEMPLATE.format(amount=self.amount)
+        return ETH_DEPOSIT_TEMPLATE.format(amount=self.amount, validator_index=self.validator_index)  # noqa: E501
 
     def __repr__(self) -> str:
         return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_ref=})'

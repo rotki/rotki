@@ -60,7 +60,6 @@ def test_deposit_erc20(ethereum_inquirer, ethereum_accounts):
             asset=Asset('ETH'),
             amount=FVal('0.00465973024452012'),
             location_label=user_address,
-            notes='Burn 0.00465973024452012 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -106,7 +105,6 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.006541751818933373'),
             location_label=user_address,
-            notes='Burn 0.006541751818933373 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -280,7 +278,6 @@ def test_withdraw_erc20(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal('0.000063967090470944'),
             location_label=user_address,
-            notes='Burn 0.000063967090470944 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -327,7 +324,6 @@ def test_withdraw_eth(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal('0.000062680826296456'),
             location_label=user_address,
-            notes='Burn 0.000062680826296456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -373,7 +369,6 @@ def test_claim_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.01405791999714114'),
             location_label=user_address,
-            notes='Burn 0.01405791999714114 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -419,7 +414,6 @@ def test_claim_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.012214330132870492'),
             location_label=user_address,
-            notes='Burn 0.012214330132870492 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -463,9 +457,8 @@ def test_prove_withdrawal(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.015525942536120381'),
+            amount=FVal('0.015525942536120381'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -502,7 +495,6 @@ def test_deposit_dai_on_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -575,7 +567,6 @@ def test_deposit_eth_ethereum_to_base_bridge(ethereum_inquirer, ethereum_account
             asset=A_ETH,
             amount=FVal('0.001994757244065416'),
             location_label=user_address,
-            notes='Burn 0.001994757244065416 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -617,7 +608,6 @@ def test_deposit_erc20_ethereum_to_base_bridge(ethereum_inquirer, ethereum_accou
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -782,7 +772,6 @@ def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -825,7 +814,6 @@ def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

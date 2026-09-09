@@ -6,6 +6,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.auto_notes import (
+    MOVEMENT_DEPOSIT_TEMPLATE,
+    MOVEMENT_FEE_TEMPLATE,
+    MOVEMENT_WITHDRAWAL_TEMPLATE,
+)
 from rotkehlchen.history.events.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
     HistoryBaseEntry,
@@ -164,23 +169,20 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             notes=entry[8],
         )
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the event for api, and generate the auto_notes.
-        May raise UnknownAsset, but this would be an edge case as the asset should already have
-        been checked for existence when it was deserialized from an API or from the database.
-        """
-        serialized_data = super().serialize()
-        location_name = get_formatted_location_name(self.location)
-        asset_symbol = self.asset.symbol_or_name()
+    def auto_notes(self) -> str | None:
         if self.event_subtype == HistoryEventSubType.FEE:
-            auto_notes = f'Pay {self.amount} {asset_symbol} as {location_name} {str(self.event_type).lower()} fee'  # noqa: E501
+            template = MOVEMENT_FEE_TEMPLATE
         elif self.event_subtype == HistoryEventSubType.RECEIVE:
-            auto_notes = f'Deposit {self.amount} {asset_symbol} to {location_name}'
+            template = MOVEMENT_DEPOSIT_TEMPLATE
         else:  # spend
-            auto_notes = f'Withdraw {self.amount} {asset_symbol} from {location_name}'
+            template = MOVEMENT_WITHDRAWAL_TEMPLATE
 
-        serialized_data['auto_notes'] = auto_notes
-        return serialized_data
+        return template.format(
+            amount=self.amount,
+            symbol=self.asset.symbol_or_name(),
+            location=get_formatted_location_name(self.location),
+            event_type=str(self.event_type).lower(),
+        )
 
     @classmethod
     def deserialize(cls: type[AssetMovement], data: dict[str, Any]) -> AssetMovement:
@@ -240,7 +242,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             accounting.add_out_event(
                 originating_event_id=self.identifier,
                 event_type=AccountingEventType.ASSET_MOVEMENT,
-                notes=self.notes if self.notes is not None else '',
+                notes=self.notes_or_auto() or '',
                 location=self.location,
                 timestamp=ts_ms_to_sec(self.timestamp),
                 asset=self.asset,

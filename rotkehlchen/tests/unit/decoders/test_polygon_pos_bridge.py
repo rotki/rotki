@@ -47,9 +47,8 @@ def test_polygon_pos_bridge_l2_deposit(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas_amount := '0.0016145640090944'),
+            amount=FVal('0.0016145640090944'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -92,9 +91,8 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas_amount := '0.00456586488143955'),
+            amount=FVal('0.00456586488143955'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -206,7 +204,6 @@ def test_polygon_pos_bridge_deposit_token(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -252,7 +249,6 @@ def test_polygon_pos_bridge_deposit_eth(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -298,7 +294,6 @@ def test_polygon_pos_bridge_deposit_plasma(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -310,7 +305,6 @@ def test_polygon_pos_bridge_deposit_plasma(
             asset=A_ETH_POL,
             amount=ZERO,
             location_label=user_address,
-            notes=f'Revoke POL spending approval of {user_address} by {PLASMA_BRIDGE_ADDRESS}',
             tx_ref=tx_hash,
             address=PLASMA_BRIDGE_ADDRESS,
         ), EvmEvent(
@@ -356,7 +350,6 @@ def test_polygon_pos_bridge_withdraw_token(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -401,7 +394,6 @@ def test_polygon_pos_bridge_withdraw_eth(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -446,7 +438,6 @@ def test_polygon_pos_bridge_plasma_start_exit(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -485,7 +476,6 @@ def test_polygon_pos_bridge_plasma_process_exit(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

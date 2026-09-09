@@ -56,7 +56,6 @@ def test_thegraph_delegate(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=ADDY_USER,
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -68,7 +67,6 @@ def test_thegraph_delegate(ethereum_inquirer):
             asset=A_GRT,
             amount=FVal(approval_amount),
             location_label=ADDY_USER,
-            notes=f'Set GRT spending approval of {ADDY_USER} by {CONTRACT_STAKING} to {approval_amount}',  # noqa: E501
             counterparty=None,
             address=CONTRACT_STAKING,
         ), EvmEvent(
@@ -119,7 +117,6 @@ def test_thegraph_contract_deposit_gas(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ADDY_ROTKI,
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -154,9 +151,8 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.001243940743655704'),
+            amount=FVal('0.001243940743655704'),
             location_label=ADDY_ROTKI,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -195,7 +191,6 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ADDY_ROTKI,
-            notes=f'Burn {gas} ETH for gas',
             identifier=None,
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
@@ -237,7 +232,6 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(gas),
             location_label=ADDY_USER_2,
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -288,7 +282,6 @@ def test_thegraph_undelegate(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(gas_fee),
             location_label=ADDY_USER,
-            notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -325,7 +318,6 @@ def test_thegraph_delegated_withdrawn(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=ADDY_USER,
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -364,7 +356,6 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=ADDY_USER_1_ARB,
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -376,7 +367,6 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             asset=A_GRT_ARB,
             amount=FVal(approve_amount),
             location_label=ADDY_USER_1_ARB,
-            notes=f'Set GRT spending approval of {ADDY_USER_1_ARB} by {CONTRACT_STAKING_ARB} to {approve_amount}',  # noqa: E501
             counterparty=None,
             address=CONTRACT_STAKING_ARB,
         ), EvmEvent(
@@ -432,7 +422,6 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=ADDY_USER_2_ARB,
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -484,7 +473,6 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
             asset=A_ETH,
             amount=FVal(gas_fees),
             location_label=ADDY_USER_3_ARB,
-            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -522,9 +510,8 @@ def test_delegate_horizon(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000001695601856'),
+        amount=FVal('0.000001695601856'),
         location_label=(delegator_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -551,9 +538,8 @@ def test_delegate_horizon(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_GRT_ARB,
-        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640563400795.889548978764957742'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640563400795.889548978764957742'),
         location_label=delegator_address,
-        notes=f'Set GRT spending approval of {delegator_address} by {CONTRACT_STAKING_ARB} to {approval_amount}',  # noqa: E501
         address=CONTRACT_STAKING_ARB,
     )]
 
@@ -578,9 +564,8 @@ def test_undelegate_horizon(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000006997289591'),
+        amount=FVal('0.000006997289591'),
         location_label=(delegator_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -617,9 +602,8 @@ def test_thegraph_delegated_withdrawn_horizon(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000890050078'),
+        amount=FVal('0.00000890050078'),
         location_label=(delegator_address := arbitrum_one_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

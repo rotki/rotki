@@ -50,9 +50,8 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.001815413'),
+            amount=FVal('0.001815413'),
             location_label=ADDY_1,
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -62,9 +61,8 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
-            amount=FVal(approved_amount := '115792089237316195423570985008687907853269984665640564039438.426595987301364851'),  # noqa: E501
+            amount=FVal('115792089237316195423570985008687907853269984665640564039438.426595987301364851'),
             location_label=ADDY_1,
-            notes=f'Set cvxCRV spending approval of {ADDY_1} by 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F to {approved_amount}',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         ), EvmSwapEvent(
@@ -111,9 +109,8 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.006668386'),
+            amount=FVal('0.006668386'),
             location_label=ADDY_2,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -181,9 +178,8 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount := '0.0030789891485573'),
+            amount=FVal('0.0030789891485573'),
             location_label=ADDY_3,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -249,10 +245,9 @@ def test_sushiswap_redsnwap_token_to_token(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000043563301848849')),
+        amount=(FVal('0.000043563301848849')),
         location_label=(user_address := ethereum_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,
@@ -310,10 +305,9 @@ def test_sushiswap_redsnwap_token_to_eth(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.001957758654149046')),
+        amount=(FVal('0.001957758654149046')),
         location_label=(user_address := ethereum_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=348,
@@ -325,7 +319,6 @@ def test_sushiswap_redsnwap_token_to_eth(
         location_label=user_address,
         amount=ZERO,
         address=string_to_evm_address('0xAC4c6e212A361c968F1725b4d055b47E63F80b75'),
-        notes=f'Revoke tBTC spending approval of {user_address} by 0xAC4c6e212A361c968F1725b4d055b47E63F80b75',  # noqa: E501
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=349,
@@ -385,10 +378,9 @@ def test_sushiswap_swap_eth_to_token(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.000041550789090959')),
+        amount=(FVal('0.000041550789090959')),
         location_label=(user_address := base_accounts[0]),
         counterparty=CPT_GAS,
-        notes=f'Burn {gas_amount} ETH for gas',
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         sequence_index=1,

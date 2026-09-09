@@ -30,9 +30,8 @@ def test_eth_transfer(robinhood_inquirer, robinhood_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000008487864'),
+        amount=FVal('0.000008487864'),
         location_label=(user := robinhood_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -66,9 +65,8 @@ def test_weth_wrap(robinhood_inquirer, robinhood_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000016106971374'),
+        amount=FVal('0.000016106971374'),
         location_label=(user := robinhood_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -116,9 +114,8 @@ def test_weth_unwrap(robinhood_inquirer, robinhood_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00002032907549'),
+        amount=FVal('0.00002032907549'),
         location_label=(user := robinhood_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

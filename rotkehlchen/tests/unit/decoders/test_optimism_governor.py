@@ -31,7 +31,6 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             amount=FVal('0.000656986283649328'),
             location_label=user_address,
-            notes='Burn 0.000656986283649328 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -71,7 +70,6 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             amount=FVal('0.000033338918413158'),
             location_label=user_address,
-            notes='Burn 0.000033338918413158 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -106,9 +104,8 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            amount=FVal(gas_amount := '0.000022621225472652'),
+            amount=FVal('0.000022621225472652'),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

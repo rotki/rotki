@@ -30,9 +30,8 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000721453620442015'),
+            amount=FVal('0.000721453620442015'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -42,9 +41,8 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_GLM,
-            amount=FVal(approval_str := '199999000'),
+            amount=FVal('199999000'),
             location_label=user_address,
-            notes=f'Set GLM spending approval of {user_address} by {OCTANT_DEPOSITS} to {approval_str}',  # noqa: E501
             address=OCTANT_DEPOSITS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -78,9 +76,8 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000482531053547631'),
+            amount=FVal('0.000482531053547631'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -114,9 +111,8 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000818835884130552'),
+            amount=FVal('0.000818835884130552'),
             location_label=user_address,
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -149,9 +145,8 @@ def test_lock_glm_v2(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.000025132956030882'),
+            amount=FVal('0.000025132956030882'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -163,7 +158,6 @@ def test_lock_glm_v2(ethereum_inquirer, ethereum_accounts):
             asset=A_GLM,
             amount=FVal(0),
             location_label=user_address,
-            notes=f'Revoke GLM spending approval of {user_address} by {OCTANT_DEPOSITS_V2}',
             address=OCTANT_DEPOSITS_V2,
         ), EvmEvent(
             tx_ref=tx_hash,

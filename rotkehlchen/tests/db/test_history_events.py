@@ -989,9 +989,8 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
-                    amount=FVal(gas := '1.6'),
+                    amount=FVal('1.6'),
                     location_label=account,
-                    notes=f'Burn {gas} ETH for gas',
                     counterparty=CPT_GAS,
                 ), EvmEvent(
                     tx_ref=tx_hash,
@@ -1003,7 +1002,6 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
                     asset=A_DAI,
                     amount=ZERO,
                     location_label=account,
-                    notes=f'Revoke DAI spending approval of {account} by {CPT_ONEINCH_V6}',
                 ), EvmSwapEvent(
                     tx_ref=tx_hash,
                     sequence_index=3,

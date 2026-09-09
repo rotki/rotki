@@ -32,7 +32,6 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.009134740180642554'),
             location_label=user_address,
-            notes='Burn 0.009134740180642554 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -82,7 +81,6 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.003240606189784113'),
             location_label=user_address,
-            notes='Burn 0.003240606189784113 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

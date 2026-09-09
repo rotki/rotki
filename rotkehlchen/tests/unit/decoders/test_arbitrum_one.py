@@ -35,7 +35,6 @@ def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal('0.000032717'),
             location_label=user_address,
-            notes='Burn 0.000032717 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -72,7 +71,6 @@ def test_vote_cast(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal('0.0000821946'),
             location_label=user_address,
-            notes='Burn 0.0000821946 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -105,9 +103,8 @@ def test_vote_cast_2(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000252921'),
+            amount=FVal('0.00000252921'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -142,9 +139,8 @@ def test_vote_cast_treasury(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.00000270109'),
+            amount=FVal('0.00000270109'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

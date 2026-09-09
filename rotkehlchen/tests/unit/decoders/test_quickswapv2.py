@@ -39,9 +39,8 @@ def test_swap_to_native(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.000180113'),
+        amount=FVal('0.000180113'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -51,10 +50,9 @@ def test_swap_to_native(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'),
-        amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039457.569007913129639935'),  # noqa: E501
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457.569007913129639935'),
         location_label=user_address,
-        notes=f'Set WETH spending approval of {user_address} by {(router_address := string_to_evm_address("0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"))} to {approve_amount}',  # noqa: E501
-        address=router_address,
+        address=string_to_evm_address('0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
@@ -98,9 +96,8 @@ def test_swap(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.01856947464736948'),
+        amount=FVal('0.01856947464736948'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -110,9 +107,8 @@ def test_swap(
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'),
-        amount=FVal(approve_amount := '999999888'),
+        amount=FVal('999999888'),
         location_label=user_address,
-        notes=f'Set DAI spending approval of {user_address} by 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -158,9 +154,8 @@ def test_add_liquidity(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POL,
-        amount=FVal(gas_amount := '0.090286647653894201'),
+        amount=FVal('0.090286647653894201'),
         location_label=(user_address := polygon_pos_accounts[0]),
-        notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -224,9 +219,8 @@ def test_remove_liquidity(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000000299046567323'),
+        amount=FVal('0.000000299046567323'),
         location_label=(user_address := base_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

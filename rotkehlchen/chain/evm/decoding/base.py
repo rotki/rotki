@@ -9,7 +9,6 @@ from rotkehlchen.assets.utils import (
 )
 from rotkehlchen.chain.decoding.tools import BaseDecoderTools
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
@@ -124,10 +123,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
         amount_raw_or_token_id = int.from_bytes(tx_log.data)
         if token.token_kind == TokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
-            if event_type in OUTGOING_EVENT_TYPES:
-                notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty_or_address}'  # noqa: E501
-            else:
-                notes = f'{verb} {amount} {token.symbol} from {counterparty_or_address} to {location_label}'  # noqa: E501
+            notes = None  # generated below, see EvmEvent.auto_notes
         else:  # erc721
             if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
                 log.debug(f'Failed to get token id from identifier when decoding token {token} as ERC721')  # noqa: E501
@@ -143,7 +139,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
         if amount == ZERO:
             return None  # Zero transfers are useless, so ignoring them
 
-        return self.make_event_from_transaction(
+        event = self.make_event_from_transaction(
             transaction=transaction,
             tx_log=tx_log,
             event_type=event_type,
@@ -155,6 +151,9 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             address=address,
             counterparty=counterparty,
         )
+        if notes is None:
+            event.notes = event.auto_notes()  # set so that protocol decoders can extend them
+        return event
 
     def make_event(
             self,

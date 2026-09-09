@@ -56,7 +56,6 @@ def test_magpie_eth_to_token_swap(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -118,7 +117,6 @@ def test_magpie_token_to_token_swap(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -130,10 +128,6 @@ def test_magpie_token_to_token_swap(
             asset=virtual_asset,
             amount=FVal('3.890381991070206089'),
             location_label=user_address,
-            notes=(
-                'Set VIRTUAL spending approval of 0xF9c6Fc43a385362C9C8364bF9C5236314607c0A5 '
-                'by 0xEF42f78d25f4c681dcaD2597fA04877ff802eF4B to 3.890381991070206089'
-            ),
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -145,10 +139,6 @@ def test_magpie_token_to_token_swap(
             asset=virtual_asset,
             amount=ZERO,
             location_label=user_address,
-            notes=(
-                'Revoke VIRTUAL spending approval of 0xF9c6Fc43a385362C9C8364bF9C5236314607c0A5 '
-                'by 0xEF42f78d25f4c681dcaD2597fA04877ff802eF4B'
-            ),
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -220,7 +210,6 @@ def test_magpie_arbitrum_token_to_token_swap(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -232,10 +221,6 @@ def test_magpie_arbitrum_token_to_token_swap(
             asset=trove_asset,
             amount=FVal(spend_amount),
             location_label=user_address,
-            notes=(
-                'Set TROVE spending approval of 0xa304816C9c78505714f24FC13222fE07Ce0cc711 '
-                'by 0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be to 893.955958232411928011'
-            ),
             address=string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -247,10 +232,6 @@ def test_magpie_arbitrum_token_to_token_swap(
             asset=trove_asset,
             amount=ZERO,
             location_label=user_address,
-            notes=(
-                'Revoke TROVE spending approval of 0xa304816C9c78505714f24FC13222fE07Ce0cc711 '
-                'by 0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'
-            ),
             address=string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -323,7 +304,6 @@ def test_magpie_ethereum_usds_to_usdc_swap(
             asset=A_ETH,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -395,7 +375,6 @@ def test_magpie_polygon_pol_to_usdc_swap(
             asset=pol_asset,
             amount=FVal(gas_amount),
             location_label=user_address,
-            notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_ref=tx_hash,

@@ -30,9 +30,8 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str := '0.000136427902240075'),
+            amount=FVal('0.000136427902240075'),
             location_label=user_address,
-            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -70,7 +69,6 @@ def test_attest_gitcoin_mint(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         amount=FVal(gas),
         location_label=user_address,
-        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,

@@ -41,9 +41,8 @@ def test_native_transfer(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_SOL,
-        amount=FVal(fee_amount := '0.000005'),
+        amount=FVal('0.000005'),
         location_label=spend_address,
-        notes=f'Spend {fee_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     )
     if len(solana_accounts) == 2:
