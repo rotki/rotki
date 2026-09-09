@@ -161,6 +161,7 @@ onMounted(() => {
               variant="outlined"
               color="primary"
               :disabled="!isFormValid"
+              data-testid="report-issue-github"
               @click="submitViaGithub()"
             >
               <template #prepend>
@@ -172,6 +173,7 @@ onMounted(() => {
               variant="outlined"
               color="primary"
               :disabled="!isFormValid"
+              data-testid="report-issue-google-form"
               @click="submitViaGoogleForm()"
             >
               <template #prepend>
@@ -227,6 +229,7 @@ onMounted(() => {
                 color="primary"
                 size="sm"
                 class="self-start -ml-1.5 !py-0"
+                data-testid="report-issue-enable-privacy"
                 @click="openPrivacyModeMenu()"
               >
                 {{ t('help_sidebar.report_issue.dialog.tips.screenshot.action') }}
@@ -234,6 +237,7 @@ onMounted(() => {
               <span
                 v-else
                 class="text-xs text-rui-success flex items-center gap-1 py-1"
+                data-testid="report-issue-privacy-status"
               >
                 <RuiIcon
                   name="lu-check"
@@ -251,6 +255,7 @@ onMounted(() => {
         <RuiButton
           variant="text"
           color="primary"
+          data-testid="report-issue-close"
           @click="closeDialog()"
         >
           {{ t('common.actions.close') }}
