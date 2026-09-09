@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
+import { useNotificationBadge } from '@/modules/shell/components/use-notification-badge';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 defineProps<{
@@ -11,7 +11,7 @@ defineProps<{
 const emit = defineEmits<{
   click: [];
 }>();
-const { count } = storeToRefs(useNotificationsStore());
+const { color: badgeColor, text: badgeText, visible: badgeVisible } = useNotificationBadge();
 
 function click() {
   emit('click');
@@ -29,13 +29,15 @@ const tooltip = computed<string>(() => get(silent)
 
 <template>
   <RuiBadge
-    :text="count.toString()"
-    :model-value="count > 0"
-    color="primary"
+    :text="badgeText"
+    :dot="!badgeText"
+    :model-value="badgeVisible"
+    :color="badgeColor"
     placement="top"
     size="sm"
     offset-y="14"
     offset-x="-12"
+    data-testid="notification-indicator-badge"
   >
     <MenuTooltipButton
       :tooltip="tooltip"

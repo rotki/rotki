@@ -12,6 +12,7 @@ function notification(overrides: Partial<NotificationData> = {}): NotificationDa
     duration: 0,
     id: 1,
     message: 'message',
+    read: false,
     severity: Severity.WARNING,
     title: 'title',
     ...overrides,
