@@ -6,9 +6,9 @@ import type {
 import { consistOfNumbers } from '@rotki/common';
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
-import { findAddressKnownPrefix, truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
+import { truncateToWidth } from '@/modules/shell/components/display/truncate-to-width';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { account } = defineProps<{
@@ -75,21 +75,9 @@ const labelDisplayed = computed(() => {
   return get(address);
 });
 
-const CH = 7.21;
-const truncatedLabelDisplayed = computed(() => {
-  const label = get(labelDisplayed);
-  const characterLength = label.length;
-  const displayedWidth = get(displayedLabelWidth);
-  const charDisplayLimit = Math.floor(displayedWidth / CH);
-
-  if (charDisplayLimit >= characterLength)
-    return label;
-
-  const knownPrefix = findAddressKnownPrefix(label);
-
-  const charactersWithinSpace = Math.floor((charDisplayLimit - knownPrefix.length - 3) / 2);
-  return truncateAddress(label, charactersWithinSpace);
-});
+const truncatedLabelDisplayed = computed<string>(() =>
+  truncateToWidth(get(labelDisplayed), get(displayedLabelWidth)),
+);
 </script>
 
 <template>
