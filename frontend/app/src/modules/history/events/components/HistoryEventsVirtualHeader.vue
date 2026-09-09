@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
+import {
+  leadingSortColumn,
+  pageCount,
+  sortDirection as sortDirectionOf,
+  toggledSort,
+} from '@/modules/history/events/components/history-events-table-header';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
@@ -15,41 +21,12 @@ const { t } = useI18n({ useScope: 'global' });
 const globalItemsPerPage = useItemsPerPage();
 const { isSmAndDown } = useBreakpoint();
 
-function getSortArray() {
-  const sortData = get(sort);
-  if (Array.isArray(sortData))
-    return sortData;
-  return sortData ? [sortData] : [];
-}
+const sortColumn = computed<'timestamp' | undefined>(() => leadingSortColumn(get(sort), 'timestamp'));
 
-const sortColumn = computed<'timestamp' | undefined>({
-  get() {
-    const sortArray = getSortArray();
-    if (sortArray.length === 0)
-      return undefined;
-    return sortArray[0]?.column === 'timestamp' ? 'timestamp' : undefined;
-  },
-  set(column: 'timestamp' | undefined) {
-    if (!column) {
-      set(sort, []);
-      return;
-    }
-    const sortArray = getSortArray();
-    const currentDirection = sortArray[0]?.direction ?? 'desc';
-    let newDirection: 'asc' | 'desc' = 'desc';
-    if (sortArray[0]?.column === column)
-      newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-    set(sort, [{ column, direction: newDirection }]);
-  },
-});
-
-const sortDirection = computed<'asc' | 'desc'>(() => {
-  const sortArray = getSortArray();
-  return sortArray[0]?.direction ?? 'desc';
-});
+const sortDirection = computed<'asc' | 'desc'>(() => sortDirectionOf(get(sort)));
 
 function toggleSort(): void {
-  set(sortColumn, 'timestamp');
+  set(sort, toggledSort(get(sort), 'timestamp'));
 }
 
 const currentPage = computed<number>({
@@ -68,15 +45,11 @@ const itemsPerPage = computed<number>({
   set(limit: number) {
     set(pagination, { ...get(pagination), limit, page: 1 });
 
-    if (limit !== get(globalItemsPerPage))
-      set(globalItemsPerPage, limit);
+    set(globalItemsPerPage, limit);
   },
 });
 
-const totalPages = computed<number>(() => {
-  const perPage = get(itemsPerPage);
-  return Math.ceil(get(pagination).total / perPage);
-});
+const totalPages = computed<number>(() => pageCount(get(pagination).total, get(itemsPerPage)));
 
 const limits = [10, 25, 50, 100];
 </script>
