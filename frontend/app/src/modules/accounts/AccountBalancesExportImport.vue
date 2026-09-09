@@ -46,6 +46,7 @@ async function doImport() {
       </template>
       <RuiButton
         variant="list"
+        data-testid="accounts-export"
         @click="exportAccounts()"
       >
         <template #prepend>
@@ -55,6 +56,7 @@ async function doImport() {
       </RuiButton>
       <RuiButton
         variant="list"
+        data-testid="accounts-import"
         @click="importDialogOpen = true;"
       >
         <template #prepend>
@@ -97,6 +99,7 @@ async function doImport() {
           <RuiButton
             variant="text"
             color="primary"
+            data-testid="accounts-import-cancel"
             @click="importDialogOpen = false"
           >
             {{ t('common.actions.cancel') }}
@@ -105,6 +108,7 @@ async function doImport() {
             color="primary"
             :disabled="!importFile"
             :loading="loading"
+            data-testid="accounts-import-confirm"
             @click="doImport()"
           >
             {{ t('common.actions.import') }}
