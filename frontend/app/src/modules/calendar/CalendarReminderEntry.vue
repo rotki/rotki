@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { REMINDER_UNITS, ReminderUnit } from '@/modules/calendar/reminder-forms';
+import { REMINDER_UNITS, type ReminderUnit, UNIT_LABELS } from '@/modules/calendar/reminder-forms';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const amount = defineModel<string>('amount', { required: true });
@@ -17,13 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const UNIT_LABELS: Record<ReminderUnit, string> = {
-  [ReminderUnit.DAYS]: 'calendar.reminder.units.days',
-  [ReminderUnit.HOURS]: 'calendar.reminder.units.hours',
-  [ReminderUnit.MINUTES]: 'calendar.reminder.units.minutes',
-  [ReminderUnit.WEEKS]: 'calendar.reminder.units.weeks',
-};
 
 const unitOptions = computed<{ key: ReminderUnit; label: string }[]>(() =>
   REMINDER_UNITS.map(unit => ({ key: unit, label: t(UNIT_LABELS[unit]) })),

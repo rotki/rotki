@@ -3,8 +3,9 @@ import type { ZodType } from 'zod';
 import type { CalendarReminderEntry as StoredEntry } from '@/modules/calendar/reminder';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { startPromise } from '@shared/utils';
+import { type MessageKey, msg } from '@/message-key';
 import CalendarReminderEntry from '@/modules/calendar/CalendarReminderEntry.vue';
-import { type ReminderRow, reminderRowsSchema, splitSeconds, toSeconds } from '@/modules/calendar/reminder-forms';
+import { type ReminderRow, reminderRowsSchema, splitSeconds, toSeconds, UNIT_LABELS } from '@/modules/calendar/reminder-forms';
 import { planReminderSync, type ReminderDraft } from '@/modules/calendar/reminder-sync';
 import { useCalendarReminderApi } from '@/modules/calendar/use-calendar-reminder-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -53,7 +54,7 @@ const schema = computed<ZodType>(() => reminderRowsSchema({
   amountMissing: t('calendar.reminder.validation.amount.non_empty'),
   amountTooLarge: (amount, unit) => t('calendar.reminder.validation.amount.max_value', {
     amount,
-    unit: t(`calendar.reminder.units.${unit}`),
+    unit: t(UNIT_LABELS[unit]),
   }),
   amountTooSmall: t('calendar.reminder.validation.amount.min_value'),
 }));
@@ -74,9 +75,27 @@ const form = useForm<{ rows: EditableRow[] }, { rows: EditableRow[] }>({
 
 const length = computed<number>(() => form.state.rows.length);
 
-function notifyFailure(key: 'add' | 'delete' | 'edit' | 'fetch', error: unknown): void {
+type ReminderAction = 'add' | 'delete' | 'edit' | 'fetch';
+
+/**
+ * The failure notification of each operation, written out one entry per action.
+ *
+ * @remarks
+ * Adding an action fails to typecheck until its pair of keys is added here, and branding with
+ * `msg.$t` keeps both keys visible to the i18n lint rules, which cannot read a key looked up by
+ * index.
+ */
+const NOTIFY_KEYS: Record<ReminderAction, { message: MessageKey; title: MessageKey }> = {
+  add: { message: msg.$t('calendar.reminder.add_error.message'), title: msg.$t('calendar.reminder.add_error.title') },
+  delete: { message: msg.$t('calendar.reminder.delete_error.message'), title: msg.$t('calendar.reminder.delete_error.title') },
+  edit: { message: msg.$t('calendar.reminder.edit_error.message'), title: msg.$t('calendar.reminder.edit_error.title') },
+  fetch: { message: msg.$t('calendar.reminder.fetch_error.message'), title: msg.$t('calendar.reminder.fetch_error.title') },
+};
+
+function notifyFailure(key: ReminderAction, error: unknown): void {
   logger.error(error);
-  notify({ message: t(`calendar.reminder.${key}_error.message`, { message: getErrorMessage(error) }), title: t(`calendar.reminder.${key}_error.title`) });
+  const keys = NOTIFY_KEYS[key];
+  notify({ message: t(keys.message, { message: getErrorMessage(error) }), title: t(keys.title) });
 }
 
 async function loadStored(): Promise<void> {
