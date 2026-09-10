@@ -19,7 +19,9 @@ const { copy, dataDirectory, getVersion, premium, version, versionSource } = awa
 });
 
 vi.mock('@/modules/core/common/use-main-store', () => ({
-  useMainStore: (): { dataDirectory: Ref<string>; version: Ref<{ version: string }> } => ({
+  /* The component calls `toRefs(store)`, which warns on a plain object. The real store is a
+     Pinia one, so the stand-in has to be reactive too. */
+  useMainStore: (): { dataDirectory: string; version: { version: string } } => reactive({
     dataDirectory,
     version,
   }),

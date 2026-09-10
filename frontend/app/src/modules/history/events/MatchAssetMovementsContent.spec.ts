@@ -231,7 +231,7 @@ describe('modules/history/events/MatchAssetMovementsContent', () => {
       set(actionsApi.modelSelectedIgnored, [movement(1)]);
       const wrapper = await mountContent();
 
-      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:model-value', 1);
+      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:modelValue', 1);
       await nextTick();
 
       await wrapper.find('[data-testid="restore-selected"]').trigger('click');

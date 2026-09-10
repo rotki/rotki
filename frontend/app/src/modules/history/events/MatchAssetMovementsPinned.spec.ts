@@ -1,3 +1,4 @@
+import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import type { UsePinnedMatchPanelOptions } from '@/modules/history/events/use-pinned-match-panel';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import { createMock } from '@test/utils/create-mock';
@@ -71,7 +72,14 @@ const SheetStub = defineComponent({
     : null),
 });
 
-const movement = createMock<UnmatchedAssetMovement>({ groupIdentifier: 'group-a' });
+/* A real object, not `createMock`: the proxy is function-backed, so Vue's `type: Object` prop
+   check rejects it, and an unset `isFiat` would read back as a truthy auto-stub. */
+const movement: UnmatchedAssetMovement = {
+  asset: 'ETH',
+  events: createMock<HistoryEventCollectionRow>(),
+  groupIdentifier: 'group-a',
+  isFiat: false,
+};
 
 describe('modules/history/events/MatchAssetMovementsPinned', () => {
   let wrapper: VueWrapper | undefined;
@@ -175,7 +183,7 @@ describe('modules/history/events/MatchAssetMovementsPinned', () => {
     await nextTick();
 
     const potential = view.findComponent(PotentialStub);
-    expect(potential.props('movement')).toBe(movement);
+    expect(toRaw(potential.props('movement'))).toBe(movement);
     expect(potential.props('highlightedIdentifier')).toBe(99);
     expect(potential.props('isPinned')).toBe(true);
   });

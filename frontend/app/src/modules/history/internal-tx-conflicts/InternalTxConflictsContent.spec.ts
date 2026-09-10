@@ -137,7 +137,7 @@ describe('modules/history/internal-tx-conflicts/InternalTxConflictsContent', () 
     it('should clear the selection, so rows picked on one tab cannot be resolved from another', async () => {
       const wrapper = await mountContent();
 
-      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:model-value', 1);
+      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:modelValue', 1);
       await flushPromises();
 
       expect(selectionApi.clearSelection).toHaveBeenCalledOnce();
@@ -149,7 +149,7 @@ describe('modules/history/internal-tx-conflicts/InternalTxConflictsContent', () 
     ])('should filter to the status behind tab %s', async (tab, status) => {
       const wrapper = await mountContent();
 
-      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:model-value', tab);
+      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:modelValue', tab);
       await flushPromises();
 
       expect(conflictsApi.setFilter).toHaveBeenLastCalledWith(status);
@@ -159,9 +159,9 @@ describe('modules/history/internal-tx-conflicts/InternalTxConflictsContent', () 
       const wrapper = await mountContent();
       const tabs = wrapper.findComponent({ name: 'RuiTabs' });
 
-      await tabs.vm.$emit('update:model-value', 2);
+      await tabs.vm.$emit('update:modelValue', 2);
       await flushPromises();
-      await tabs.vm.$emit('update:model-value', 0);
+      await tabs.vm.$emit('update:modelValue', 0);
       await flushPromises();
 
       expect(conflictsApi.setFilter).toHaveBeenLastCalledWith(InternalTxConflictStatuses.PENDING);

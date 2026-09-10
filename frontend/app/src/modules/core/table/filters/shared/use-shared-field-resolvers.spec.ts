@@ -1,4 +1,5 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { withSetup } from '@test/utils/with-setup';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
@@ -18,7 +19,7 @@ describe('useSharedFieldResolvers', () => {
   describe('privacy mode: a filtered address is no more revealing than the same address anywhere else', () => {
     it('should shorten an address without altering it while privacy is off', () => {
       setScramble(false);
-      const { resolveHex } = useSharedFieldResolvers();
+      const { resolveHex } = withSetup(useSharedFieldResolvers).result;
 
       const shown = resolveHex(ADDRESS);
 
@@ -28,7 +29,7 @@ describe('useSharedFieldResolvers', () => {
 
     it('should scramble an address once privacy is on', () => {
       setScramble(true);
-      const { resolveHex } = useSharedFieldResolvers();
+      const { resolveHex } = withSetup(useSharedFieldResolvers).result;
 
       const shown = resolveHex(ADDRESS);
 
@@ -41,7 +42,7 @@ describe('useSharedFieldResolvers', () => {
     it('should scramble a transaction hash too, its values being just as identifying', () => {
       const hash = `0x${'ab'.repeat(32)}`;
       setScramble(true);
-      const { resolveHex } = useSharedFieldResolvers();
+      const { resolveHex } = withSetup(useSharedFieldResolvers).result;
 
       expect(resolveHex(hash)).not.toBe('0xabab...abab');
     });
@@ -49,7 +50,7 @@ describe('useSharedFieldResolvers', () => {
 
   it('should fall back to a shortened address for an asset with no metadata', () => {
     setScramble(false);
-    const { resolveAssetSymbol } = useSharedFieldResolvers();
+    const { resolveAssetSymbol } = withSetup(useSharedFieldResolvers).result;
 
     const shown = resolveAssetSymbol('eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818');
 

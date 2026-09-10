@@ -1,3 +1,4 @@
+import { captureConsoleError } from '@test/utils/capture-console-error';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDataLoader } from '@/modules/auth/use-session-load';
@@ -115,6 +116,7 @@ describe('composables::session::load', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
   });
 
@@ -219,6 +221,7 @@ describe('composables::session::load', () => {
     });
 
     it('should release the account gate when the balance read throws before it starts', async () => {
+      const reported = captureConsoleError();
       mockFetchNetValue.mockImplementation(() => {
         throw new Error('Fetch failed');
       });
@@ -230,6 +233,7 @@ describe('composables::session::load', () => {
 
       expect(mockReleaseAccountLoad).toHaveBeenCalledTimes(1);
       expect(mockSeedFromHistoric).not.toHaveBeenCalled();
+      expect(reported).toHaveBeenCalledWith(new Error('Fetch failed'));
     });
 
     it('should call onBalancesLoaded even if some fetches fail', async () => {

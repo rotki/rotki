@@ -199,7 +199,7 @@ describe('indexerOrderSetting', () => {
     await mountWith([EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT]);
     expect(defaultList().props('modelValue')).toEqual([EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT]);
 
-    defaultList().vm.$emit('update:model-value', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    defaultList().vm.$emit('update:modelValue', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
     await nextTick();
 
     expect(defaultList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
@@ -209,7 +209,7 @@ describe('indexerOrderSetting', () => {
     await mountWith([EvmIndexer.ROUTESCAN, EvmIndexer.ETHERSCAN]);
     expect(wrapper.find('[data-testid=missing-api-key-alert]').exists()).toBe(false);
 
-    defaultList().vm.$emit('update:model-value', [EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN]);
+    defaultList().vm.$emit('update:modelValue', [EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN]);
     await nextTick();
 
     expect(wrapper.find('[data-testid=missing-api-key-alert]').exists()).toBe(true);
@@ -219,7 +219,7 @@ describe('indexerOrderSetting', () => {
     await mountWith([EvmIndexer.ETHERSCAN], { gnosis: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT] });
     await selectTab('gnosis');
 
-    chainList().vm.$emit('update:model-value', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
+    chainList().vm.$emit('update:modelValue', [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);
     await nextTick();
 
     expect(chainList().props('modelValue')).toEqual([EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]);

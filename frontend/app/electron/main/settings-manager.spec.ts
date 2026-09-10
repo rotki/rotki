@@ -2,8 +2,9 @@ import type { App } from 'electron';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { captureConsoleError } from '@test/utils/capture-console-error';
 import { createMock } from '@test/utils/create-mock';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsManager } from './settings-manager';
 
 describe('settingsManager', () => {
@@ -16,6 +17,7 @@ describe('settingsManager', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     fs.rmSync(directory, { force: true, recursive: true });
   });
 
@@ -58,15 +60,19 @@ describe('settingsManager', () => {
   });
 
   it('should fall back to the defaults when the file is corrupt', () => {
+    const reported = captureConsoleError();
     fs.writeFileSync(path.join(directory, 'app.config.json'), 'not json', { encoding: 'utf8' });
 
     expect(new SettingsManager(app).appSettings.displayTray).toBe(true);
+    expect(reported).toHaveBeenCalledWith(expect.any(SyntaxError));
   });
 
   it('should fall back to the defaults when a value has the wrong type', () => {
+    const reported = captureConsoleError();
     writeSettings({ displayTray: 'yes' });
 
     expect(new SettingsManager(app).appSettings.displayTray).toBe(true);
+    expect(reported).toHaveBeenCalledOnce();
   });
 
   it('should persist a change so a later instance reads it', () => {
