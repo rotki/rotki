@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DatabaseInfo } from '@/modules/session/backup';
+import { Priority } from '@rotki/common';
 import { size } from '@/modules/core/common/data/data';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -92,7 +93,7 @@ async function loadInfo() {
     logger.error(error);
     notify({ message: t('database_backups.load_error.message', {
       message: getErrorMessage(error),
-    }), title: t('database_backups.load_error.title') });
+    }), priority: Priority.NORMAL, title: t('database_backups.load_error.title') });
   }
   finally {
     set(loading, false);

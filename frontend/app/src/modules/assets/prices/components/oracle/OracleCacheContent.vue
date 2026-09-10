@@ -2,7 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import OracleCacheActionsCell from '@/modules/assets/prices/components/oracle/OracleCacheActionsCell.vue';
 import OracleCacheFilter from '@/modules/assets/prices/components/oracle/OracleCacheFilter.vue';
@@ -96,7 +96,7 @@ async function loadCaches(): Promise<void> {
     set(cacheEntries, await getPriceCache(get(cacheSource)));
   }
   catch (error: unknown) {
-    notify({ message: getErrorMessage(error), severity: Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
+    notify({ message: getErrorMessage(error), priority: Priority.NORMAL, severity: Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
     set(cacheEntries, []);
   }
   finally {
@@ -139,7 +139,7 @@ async function populateCache(): Promise<void> {
         toAsset: to,
       });
 
-  notify({ message: message.toString(), severity: status.success ? Severity.INFO : Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
+  notify({ message: message.toString(), priority: Priority.HIGH, severity: status.success ? Severity.INFO : Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
 }
 
 async function clearCache(entry: OracleCacheMeta): Promise<void> {
@@ -155,6 +155,7 @@ async function clearCache(entry: OracleCacheMeta): Promise<void> {
         fromAsset: getAssetField(entry.fromAsset, 'symbol'),
         toAsset: getAssetField(entry.toAsset, 'symbol'),
       }),
+      priority: Priority.HIGH,
       severity: Severity.ERROR,
       title: t('oracle_prices.cache.notification.title'),
     });

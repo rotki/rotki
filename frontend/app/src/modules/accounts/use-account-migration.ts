@@ -1,6 +1,6 @@
 import type { MaybeRef } from 'vue';
 import type { MigratedAddresses } from '@/modules/core/messaging/types';
-import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
+import { assert, type Notification, NotificationCategory, Priority, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSessionStorage } from '@vueuse/core';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
@@ -85,6 +85,7 @@ export function useAccountMigration(): UseAccountMigrationReturn {
           },
           chainAddresses.length,
         ),
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('notification_messages.address_migration.title', { chain: chainName }, chainAddresses.length),
       });

@@ -3,7 +3,7 @@ import type { DialogEventHandlers } from '@/modules/history/events/dialog-types'
 import type { LocationAndTxRef, PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { RefreshTransactionsParams } from '@/modules/history/events/tx/types';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
-import { type NotificationAction, Severity } from '@rotki/common';
+import { type NotificationAction, Priority, Severity } from '@rotki/common';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 
@@ -67,6 +67,7 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
       notify({
         action,
         message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('actions.repulling_transaction.task.title'),
       });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';
@@ -110,7 +110,7 @@ async function queryAllMarkets() {
     const description = t('binance_market_selector.query_all.error', {
       message: getErrorMessage(error),
     });
-    notify({ message: description, severity: Severity.ERROR, title });
+    notify({ message: description, priority: Priority.NORMAL, severity: Severity.ERROR, title });
   }
 }
 
@@ -126,7 +126,7 @@ async function loadUserMarkets() {
       const description = t('binance_market_selector.query_user.error', {
         message: getErrorMessage(error),
       });
-      notify({ message: description, severity: Severity.ERROR, title });
+      notify({ message: description, priority: Priority.NORMAL, severity: Severity.ERROR, title });
     }
   }
 }

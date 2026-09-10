@@ -1,4 +1,4 @@
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, type VNode } from 'vue';
@@ -120,6 +120,7 @@ describe('addressBookManagementMore', () => {
 
       expect(notify).toHaveBeenCalledWith({
         message: 'address_book.import.import_success.message::3',
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: 'address_book.import.title',
       });

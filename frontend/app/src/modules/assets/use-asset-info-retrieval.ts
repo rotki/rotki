@@ -12,6 +12,7 @@ import {
   isHyperliquidTokenIdentifier,
   isSolanaTokenIdentifier,
   NotificationGroup,
+  Priority,
   Severity,
 } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
@@ -274,6 +275,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
         message: t('asset_search.error.message', {
           message: getErrorMessage(error),
         }),
+        priority: Priority.NORMAL,
         severity: Severity.ERROR,
         title: t('asset_search.error.title'),
       });

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { Priority } from '@rotki/common';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { IndexedDb } from '@/modules/core/common/helpers/indexed-db';
@@ -70,7 +71,7 @@ async function downloadBrowserLog(): Promise<void> {
 
   await loggerDb.getAll((data: any) => {
     if (data?.length === 0) {
-      notify({ message: t('help_sidebar.browser_log.error.empty.message'), title: t('help_sidebar.browser_log.error.empty.title') });
+      notify({ message: t('help_sidebar.browser_log.error.empty.message'), priority: Priority.HIGH, title: t('help_sidebar.browser_log.error.empty.title') });
       return;
     }
     const messages = data.map((item: any) => item.message).join('\n');

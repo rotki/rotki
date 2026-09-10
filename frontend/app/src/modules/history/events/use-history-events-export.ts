@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
+import { type NotificationPayload, Priority, type SemiPartial, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -138,7 +138,7 @@ export function useHistoryEventsExport(
     }
 
     if (message)
-      notify(message);
+      notify({ ...message, priority: Priority.HIGH });
   }
 
   function showConfirmation(): void {

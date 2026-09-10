@@ -1,6 +1,6 @@
 import type { MessageHandler } from '../interfaces';
 import type { MoneriumSessionKeyExpiredData } from '@/modules/core/messaging/types';
-import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
+import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 
@@ -35,6 +35,7 @@ export function createMoneriumSessionHandler(
       category: NotificationCategory.DEFAULT,
       group: NotificationGroup.MONERIUM_AUTH,
       message: data.error,
+      priority: Priority.ACTION,
       severity: Severity.WARNING,
       title: t('notification_messages.monerium_session_key_expired.title'),
     };

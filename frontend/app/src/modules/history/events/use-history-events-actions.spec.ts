@@ -2,7 +2,7 @@ import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
-import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common';
+import { type Blockchain, HistoryEventEntryType, Priority, Severity } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -169,6 +169,7 @@ describe('useHistoryEventsActions', () => {
       expect(mockNotify).toHaveBeenCalledWith({
         action: undefined,
         message: 'actions.repulling_transaction.success.no_tx_description',
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: 'actions.repulling_transaction.task.title',
       });

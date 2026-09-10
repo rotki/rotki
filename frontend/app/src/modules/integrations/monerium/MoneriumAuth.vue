@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
-import { type Notification, NotificationGroup, Severity } from '@rotki/common';
+import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -57,6 +57,7 @@ function notifyAuthStep(payload: Notification): void {
   notify({
     ...payload,
     group: NotificationGroup.MONERIUM_AUTH,
+    priority: Priority.HIGH,
   });
 }
 
