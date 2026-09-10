@@ -4924,6 +4924,12 @@
       },
       "title": "No indexers available"
     },
+    "oracle_penalized": {
+      "action": "Configure price oracles",
+      "message_errors": "{oracle} kept failing price queries and is skipped for {minutes} minutes. Prices come from the other oracles in the meantime.",
+      "message_timeout": "{oracle} stopped answering price queries and is skipped for {minutes} minutes. Prices come from the other oracles in the meantime.",
+      "title": "Price oracle {oracle} set aside"
+    },
     "premium": {
       "active": {
         "message": "Your premium subscription is detected.",

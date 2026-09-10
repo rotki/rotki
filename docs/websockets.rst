@@ -785,3 +785,25 @@ Sent when historical balance processing detects a negative balance for an asset,
     - ``location_label``: The specific address or account label, or ``null``
 - ``balance_before``: The balance before processing the event that caused it to go negative
 - ``last_run_ts``: Unix timestamp of the last successful historical balance processing run, or ``null`` if this is the first run
+
+
+Price Oracle Penalized
+=================================
+
+Sent when a price oracle is set aside for the oracle penalty duration. Price queries skip it until the penalty expires and a short probe shows it answers again.
+
+::
+
+    {
+        "type": "oracle_penalized",
+        "data": {
+            "oracle": "coingecko",
+            "reason": "timeout",
+            "penalty_duration": 1800
+        }
+    }
+
+
+- ``oracle``: Name of the penalized oracle, e.g. ``coingecko``, ``defillama``, ``cryptocompare``, ``alchemy``, ``moralis``
+- ``reason``: ``timeout`` when the oracle stopped answering requests, ``errors`` when it failed as many times in a row as the oracle penalty threshold setting allows
+- ``penalty_duration``: Seconds the oracle is skipped for, as set by the oracle penalty duration setting

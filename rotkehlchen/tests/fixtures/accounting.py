@@ -2,11 +2,12 @@ import json
 import os
 import shutil
 import sys
+import time
 from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 LAST_ACCOUNTING_RULES_VERSION = 5
+ACCOUNTING_RULES_DOWNLOAD_ATTEMPTS: Final = 3
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -155,11 +157,21 @@ def _download_rules_file(version: int, rules_file: Path) -> None:
     We therefore validate payload shape and replace the destination atomically via
     a temporary file + `os.replace()`.
     """
-    response = requests.get(
-        f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{version}.json',
-        timeout=30,
-    )
-    response.raise_for_status()
+    url = f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{version}.json'
+    for attempt in range(1, ACCOUNTING_RULES_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            break
+        except requests.exceptions.RequestException as e:
+            # A single connection reset here aborts the whole pytest session (pytest_configure
+            # runs on the controller before any worker starts), so retry transient failures.
+            if attempt == ACCOUNTING_RULES_DOWNLOAD_ATTEMPTS:
+                raise RuntimeError(
+                    f'Failed to download {url} after {attempt} attempts: {e}',
+                ) from e
+            time.sleep(2 * attempt)
+
     payload = json.loads(response.text)
     if not isinstance(payload.get('accounting_rules'), list):
         raise TypeError(f'Invalid accounting rules payload for version {version}')

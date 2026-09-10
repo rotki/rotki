@@ -13,6 +13,7 @@ import requests
 from freezegun import freeze_time
 from web3 import HTTPProvider, Web3
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -1060,6 +1061,7 @@ def test_punishing_of_oracles_works(inquirer):
     defillama_patch = patch.object(inquirer._defillama.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"coins":{"coingecko:bitcoin":{"price":100.14,"symbol":"BTC","timestamp":1668592376,"confidence":0.99}}}'))  # noqa: E501
     coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.RequestException('An unexpected error occurred!'))  # noqa: E501
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
+    inquirer._coingecko.msg_aggregator = (msg_aggregator := MagicMock())
 
     with coingecko_patch as coingecko_mock, defillama_patch as defillama_mock:
         for counter in range(1, 7):
@@ -1068,9 +1070,18 @@ def test_punishing_of_oracles_works(inquirer):
             if counter == 6:
                 assert coingecko_mock.call_count == 5
                 assert inquirer._coingecko.is_penalized() is True
+                msg_aggregator.add_message.assert_called_once_with(
+                    message_type=WSMessageType.ORACLE_PENALIZED,
+                    data={
+                        'oracle': 'coingecko',
+                        'reason': 'errors',
+                        'penalty_duration': CachedSettings().oracle_penalty_duration,
+                    },
+                )
             else:
                 assert coingecko_mock.called is True
                 assert defillama_mock.called is True
+                assert msg_aggregator.add_message.called is False
 
         # move the current time forward and check that coingecko is still penalized
         penalty_duration = CachedSettings().oracle_penalty_duration
@@ -1080,12 +1091,53 @@ def test_punishing_of_oracles_works(inquirer):
         )):
             assert inquirer._coingecko.is_penalized() is True
 
-        # move the current time forward and check that coingecko is no longer penalized
+        # move the current time forward. The penalty expired but the probe still fails,
+        # so coingecko stays penalized without any real query reaching it
         with freeze_time(datetime.datetime.fromtimestamp(
                 ts_now() + penalty_duration + 1,
                 tz=datetime.UTC,
         )):
-            assert inquirer._coingecko.is_penalized() is False
+            assert inquirer._coingecko.is_penalized() is True
+            assert coingecko_mock.call_count == 6  # only the probe
+            assert msg_aggregator.add_message.call_count == 2  # told again it is set aside
+            assert msg_aggregator.add_message.call_args.kwargs['data']['reason'] == 'timeout'
+
+    # with the probe answering again the penalty is lifted once it expires
+    with (
+        freeze_time(datetime.datetime.fromtimestamp(ts_now() + 2 * penalty_duration + 2, tz=datetime.UTC)),  # noqa: E501
+        patch.object(inquirer._coingecko.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"gecko_says":"(V3) To the Moon!"}')) as coingecko_mock,  # noqa: E501
+    ):
+        assert inquirer._coingecko.is_penalized() is False
+        assert coingecko_mock.call_count == 1
+        assert inquirer._coingecko.is_penalized() is False
+        assert coingecko_mock.call_count == 1  # probed once, not on every check
+        assert msg_aggregator.add_message.call_count == 2  # recovery is not a penalty
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_oracle_timeout_penalizes_immediately(inquirer):
+    """A host that accepts the connection and then goes silent is set aside after a single
+    timeout instead of stalling threshold-many price queries for the full read timeout each"""
+    defillama_patch = patch.object(inquirer._defillama.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"coins":{"coingecko:bitcoin":{"price":100.14,"symbol":"BTC","timestamp":1668592376,"confidence":0.99}}}'))  # noqa: E501
+    coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.ReadTimeout('Read timed out.'))  # noqa: E501
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
+
+    inquirer._coingecko.msg_aggregator = (msg_aggregator := MagicMock())
+    with defillama_patch, coingecko_patch as coingecko_mock:
+        for _ in range(3):
+            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > ZERO_PRICE
+
+        assert coingecko_mock.call_count == 1
+        assert inquirer._coingecko.is_penalized() is True
+
+    msg_aggregator.add_message.assert_called_once_with(
+        message_type=WSMessageType.ORACLE_PENALIZED,
+        data={
+            'oracle': 'coingecko',
+            'reason': 'timeout',
+            'penalty_duration': CachedSettings().oracle_penalty_duration,
+        },
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

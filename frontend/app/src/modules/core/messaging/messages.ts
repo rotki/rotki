@@ -15,6 +15,7 @@ import {
   MissingApiKey,
   MoneriumSessionKeyExpiredData,
   NoAvailableIndexersData,
+  OraclePenalizedData,
   SolanaTokensMigrationData,
   UnmatchedAssetMovementsData,
   UnmatchedBridgeTransactionsData,
@@ -150,6 +151,11 @@ const InternalTxFixedMessage = z.object({
   type: z.literal(SocketMessageType.INTERNAL_TX_FIXED),
 });
 
+const OraclePenalizedMessage = z.object({
+  data: OraclePenalizedData,
+  type: z.literal(SocketMessageType.ORACLE_PENALIZED),
+});
+
 const UnmatchedAssetMovementsMessage = z.object({
   data: UnmatchedAssetMovementsData,
   type: z.literal(SocketMessageType.UNMATCHED_ASSET_MOVEMENTS),
@@ -184,6 +190,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   BinancePairsMissingMessage,
   DatabaseUploadProgressMessage,
   NoAvailableIndexersMessage,
+  OraclePenalizedMessage,
   InternalTxFixedMessage,
   UnmatchedAssetMovementsMessage,
   UnmatchedBridgeTransactionsMessage,

@@ -208,12 +208,12 @@ class Rotkehlchen:
             self.msg_aggregator,
             sql_vm_instructions_cb=args.sqlite_instructions,
         )
-        self.cryptocompare = Cryptocompare(database=None)
-        self.coingecko = Coingecko(database=None)
-        self.defillama = Defillama(database=None)
+        self.cryptocompare = Cryptocompare(database=None, msg_aggregator=self.msg_aggregator)
+        self.coingecko = Coingecko(database=None, msg_aggregator=self.msg_aggregator)
+        self.defillama = Defillama(database=None, msg_aggregator=self.msg_aggregator)
         self.kraken = Kraken()
-        self.alchemy = Alchemy(database=None)
-        self.moralis = Moralis(database=None)
+        self.alchemy = Alchemy(database=None, msg_aggregator=self.msg_aggregator)
+        self.moralis = Moralis(database=None, msg_aggregator=self.msg_aggregator)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,
