@@ -1,3 +1,4 @@
+import type { TransactionsQueryStatus } from '@/modules/core/messaging/types';
 import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import {
@@ -26,6 +27,23 @@ export interface AccountSyncSubject {
   readonly address: string;
 }
 
+/**
+ * What an account's sync carries beyond its status and its progress.
+ *
+ * Deliberately small. How far the query has got is `steps` on the activity, because the record
+ * already owns progress and a second copy here would be the duplication `DetailShape` bans. What is
+ * left is what steps cannot say: the absolute range being queried, which the panel renders as
+ * "from to", and which sub-query is running.
+ */
+export interface AccountSyncDetail {
+  /** The queried range, `[from, cursor]`, in seconds. Absent for a chain that sends no period. */
+  readonly period?: readonly [number, number];
+  /** The far end of the range, so the panel can render the target rather than only the cursor. */
+  readonly windowEnd?: number;
+  /** Which sub-query is running, as the backend's own step. */
+  readonly queryStep: TransactionsQueryStatus;
+}
+
 /** One connected exchange. */
 export interface ExchangeEventsSubject {
   readonly location: string;
@@ -50,7 +68,7 @@ export const chainSyncActivity = defineActivity<{ chain: string }, readonly [str
  * The lane is the chain's own family, so the family cap gives two concurrent accounts *per chain*
  * rather than two across the run.
  */
-export const accountSyncActivity = defineActivity<AccountSyncSubject, readonly [string, string]>({
+export const accountSyncActivity = defineActivity<AccountSyncSubject, readonly [string, string], AccountSyncDetail>({
   key: subject => [subject.chain, subject.address],
   kind: ActivityKind.TX_SYNC,
   lane: subject => familyLane(ACCOUNT_SYNC_LANE_PREFIX, subject.chain),

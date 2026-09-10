@@ -279,10 +279,22 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     });
   };
 
+  /**
+   * One account's merged entry, as the store holds it.
+   *
+   * For readers that need what a message *resulted in* rather than what it said: the period fields
+   * are carried across updates and the chain is canonicalised to lower case here, so projecting
+   * from the raw frame would rebuild both, and get the second one wrong wherever the backend's
+   * spelling differs from the chain id the rest of the app uses.
+   */
+  const getQueryStatus = (account: ChainAddress): TxQueryStatusData | undefined =>
+    get(queryStatus)[createKey({ address: account.address, chain: account.chain })];
+
   const isAddressCancelled = (account: ChainAddress): boolean =>
     get(queryStatus)[createKey(account)]?.status === TransactionsQueryStatus.CANCELLED;
 
   return {
+    getQueryStatus,
     initializeQueryStatus,
     isAddressCancelled,
     isAllFinished,
