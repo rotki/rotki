@@ -26,7 +26,7 @@ describe('addressImportServer', () => {
       body: JSON.stringify({ addresses: ['0xabc', '0xdef', '0x123'] }),
     });
     expect(res.status).toBe(400);
-    expect(await res.json()).toStrictEqual({ message: 'Only requests up to 0.0MB are allowed' });
+    expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Only requests up to 0.0MB are allowed' });
   });
 
   it('should reject an import with a non-json content type', async () => {
@@ -37,7 +37,7 @@ describe('addressImportServer', () => {
       body: '{}',
     });
     expect(res.status).toBe(400);
-    expect(await res.json()).toStrictEqual({ message: 'Invalid content type' });
+    expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Invalid content type' });
   });
 
   it('should invoke the callback with the parsed addresses', async () => {
@@ -61,7 +61,7 @@ describe('addressImportServer', () => {
       body: '{ not valid json',
     });
     expect(res.status).toBe(400);
-    expect(await res.json()).toStrictEqual({ message: 'Malformed JSON' });
+    expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Malformed JSON' });
   });
 
   it('should reject an import payload without an addresses array', async () => {
@@ -73,7 +73,7 @@ describe('addressImportServer', () => {
       body: JSON.stringify({ notAddresses: true }),
     });
     expect(res.status).toBe(400);
-    expect(await res.json()).toStrictEqual({ message: 'Invalid request schema' });
+    expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Invalid request schema' });
     expect(cb).not.toHaveBeenCalled();
   });
 
@@ -81,6 +81,6 @@ describe('addressImportServer', () => {
     const base = startServer();
     const res = await fetch(`${base}/etc/passwd`);
     expect(res.status).toBe(404);
-    expect(await res.json()).toStrictEqual({ message: 'Resource not found' });
+    expect(JSON.parse(await res.text())).toStrictEqual({ message: 'Resource not found' });
   });
 });

@@ -20,8 +20,11 @@ describe('modules/api/rotki-api', () => {
     api = new RotkiApi();
     vi.clearAllMocks();
 
+    /* A plain object, so the redirect assertions can read back what the code assigned to `href`.
+       It has to start as a valid absolute URL: happy-dom resolves every Request against
+       `window.location.href`, and an empty base makes the URL constructor throw. */
     Object.defineProperty(window, 'location', {
-      value: { href: '', origin: 'http://localhost:3000' },
+      value: { href: 'http://localhost:3000/', origin: 'http://localhost:3000' },
       writable: true,
     });
   });
