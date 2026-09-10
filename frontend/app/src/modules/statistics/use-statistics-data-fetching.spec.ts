@@ -1,5 +1,7 @@
 import { Priority } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import { useStatisticsDataFetching } from './use-statistics-data-fetching';
 import '@test/i18n';
 
@@ -49,6 +51,36 @@ describe('useStatisticsDataFetching', () => {
         expect.stringContaining('Network error'),
         { priority: Priority.NORMAL },
       );
+    });
+
+    it('should record the reason on the store, since the notification never pops', async () => {
+      mockQueryNetValueData.mockRejectedValue(new Error('Network error'));
+
+      const { fetchNetValue } = useStatisticsDataFetching();
+      await fetchNetValue();
+
+      expect(get(useStatisticsStore().netValueError)).toBe('Network error');
+    });
+
+    it('should clear a previous reason once a read succeeds', async () => {
+      mockQueryNetValueData.mockRejectedValue(new Error('Network error'));
+      const { fetchNetValue } = useStatisticsDataFetching();
+      await fetchNetValue();
+
+      mockQueryNetValueData.mockResolvedValue({ data: [1], times: [100] });
+      await fetchNetValue();
+
+      expect(get(useStatisticsStore().netValueError)).toBeUndefined();
+    });
+
+    it('should leave the reason alone when the request was cancelled', async () => {
+      mockQueryNetValueData.mockRejectedValue(new RequestCancelledError('cancelled'));
+
+      const { fetchNetValue } = useStatisticsDataFetching();
+      await fetchNetValue();
+
+      expect(get(useStatisticsStore().netValueError)).toBeUndefined();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 });

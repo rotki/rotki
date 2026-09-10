@@ -29,6 +29,15 @@ interface Overall {
 
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
+  /**
+   * Why the last net value read failed, or undefined when it succeeded.
+   *
+   * @remarks
+   * It lives here rather than in the composable that does the reading because the two are not the
+   * same instance: `useStatisticsDataFetching` is called from six places, and the dashboard that
+   * has to render the failure is none of them.
+   */
+  const netValueError = ref<string>();
 
   const nftsInNetValue = useSetting('nftsInNetValue');
   const timeframe = useSetting('timeframe');
@@ -171,9 +180,16 @@ export const useStatisticsStore = defineStore('statistics', () => {
     return computed<NetValueChartData>(() => getNetValue(startingDate));
   }
 
+  /** Records why a net value read failed, or clears it with no argument once one succeeds. */
+  function setNetValueError(message?: string): void {
+    set(netValueError, message);
+  }
+
   return {
     getNetValue,
     netValue,
+    netValueError,
+    setNetValueError,
     useNetValue,
     overall,
     totalNetWorth,

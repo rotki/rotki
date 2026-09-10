@@ -15,6 +15,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/modules/statistics/TimeframeSelector.vue';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -24,7 +25,7 @@ const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWor
 const settingsRepo = useSettingsRepo();
 const statisticsStore = useStatisticsStore();
 const timeframe = useSetting('timeframe');
-const { totalNetWorth } = storeToRefs(statisticsStore);
+const { netValueError, totalNetWorth } = storeToRefs(statisticsStore);
 const visibleTimeframes = useSetting('visibleTimeframes');
 const { getNetValue } = statisticsStore;
 
@@ -43,6 +44,8 @@ const loadingNetWorth = useNetWorthLoading();
  * latch is what carries them through the first frames, before any balance activity is submitted.
  */
 const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading));
+
+const { fetchNetValue } = useStatisticsDataFetching();
 
 const zoomRange = ref<NetValueZoomRange>();
 
@@ -195,6 +198,27 @@ onMounted(() => {
             thickness="2"
           />
           {{ t('overall_balances.loading') }}
+        </div>
+        <div
+          v-else-if="netValueError"
+          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center px-4 text-center bg-white/[0.8] dark:bg-dark-elevated/[0.9] z-[6]"
+          data-testid="net-value-error"
+        >
+          <div class="text-rui-text-secondary text-caption">
+            {{ t('overall_balances.net_value_error') }}
+          </div>
+          <div class="text-rui-text-secondary text-caption break-all">
+            {{ netValueError }}
+          </div>
+          <RuiButton
+            size="sm"
+            color="primary"
+            variant="outlined"
+            data-testid="net-value-retry"
+            @click="fetchNetValue()"
+          >
+            {{ t('common.actions.retry') }}
+          </RuiButton>
         </div>
       </div>
     </div>

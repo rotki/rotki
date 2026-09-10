@@ -4,8 +4,14 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 const state = vi.hoisted(() => ({ loading: false, netWorthLoading: false }));
+const { mockFetchNetValue } = vi.hoisted(() => ({ mockFetchNetValue: vi.fn() }));
+
+vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
+  useStatisticsDataFetching: vi.fn(() => ({ fetchNetValue: mockFetchNetValue })),
+}));
 
 vi.mock('@/modules/balances/use-balance-loading', async () => {
   const { computed: createComputed } = await import('vue');
@@ -30,8 +36,9 @@ vi.mock('@/modules/statistics/use-statistics-store', async () => {
   return {
     useStatisticsStore: defineStore('statistics', () => {
       const totalNetWorth = createRef(bigNumberify('1500.5'));
+      const netValueError = createRef<string | undefined>(undefined);
       const getNetValue = vi.fn(() => emptyNetValue);
-      return { getNetValue, totalNetWorth };
+      return { getNetValue, netValueError, totalNetWorth };
     }),
   };
 });
@@ -105,5 +112,45 @@ describe('overallBalances', () => {
     expect(wrapper.find(skeletonSelector).exists()).toBe(false);
     expect(wrapper.find(netWorthSelector).text()).toBe('1500.5');
     expect(wrapper.find(deltaSkeletonSelector).exists()).toBe(false);
+  });
+
+  describe('when the net value read failed', () => {
+    const errorSelector = '[data-testid=net-value-error]';
+
+    function failWith(message: string): VueWrapper<InstanceType<typeof OverallBalances>> {
+      const created = createWrapper();
+      set(storeToRefs(useStatisticsStore()).netValueError, message);
+      return created;
+    }
+
+    it('should say why the graph is empty rather than leaving a blank chart', async () => {
+      wrapper = failWith('backend is down');
+      await nextTick();
+
+      expect(wrapper.find(errorSelector).text()).toContain('backend is down');
+    });
+
+    it('should stay quiet while the load is still running', async () => {
+      state.netWorthLoading = true;
+      wrapper = failWith('backend is down');
+      await nextTick();
+
+      expect(wrapper.find(errorSelector).exists()).toBe(false);
+    });
+
+    it('should show nothing when the read succeeded', () => {
+      wrapper = createWrapper();
+
+      expect(wrapper.find(errorSelector).exists()).toBe(false);
+    });
+
+    it('should offer a retry that re-reads the net value', async () => {
+      wrapper = failWith('backend is down');
+      await nextTick();
+
+      await wrapper.find('[data-testid=net-value-retry]').trigger('click');
+
+      expect(mockFetchNetValue).toHaveBeenCalledOnce();
+    });
   });
 });
