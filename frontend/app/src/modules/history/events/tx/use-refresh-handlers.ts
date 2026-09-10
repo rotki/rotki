@@ -1,4 +1,5 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
@@ -7,7 +8,7 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { onlineEventsActivityId } from '@/modules/history/events/tx/sync-activity';
+import { onlineEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { useExchangeEventsRefresh } from '@/modules/history/events/tx/use-exchange-events-refresh';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
@@ -15,7 +16,6 @@ import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { SyncWarningSource, useSyncWarningsStore } from '@/modules/shell/sync-progress/use-sync-warnings-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseRefreshHandlersReturn {
@@ -101,8 +101,9 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     logger.debug(`querying for ${queryType} events`);
 
     const outcome = await submitTask({
-      id: onlineEventsActivityId(queryType),
-      kind: ActivityKind.ONLINE_EVENTS,
+      id: onlineEventsActivity.id({ queryType }),
+      kind: onlineEventsActivity.kind,
+      lane: onlineEventsActivity.laneOf?.({ queryType }),
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
