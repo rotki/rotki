@@ -23,7 +23,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
 from rotkehlchen.types import (
     AddressbookEntry,
     CacheType,
@@ -45,6 +45,7 @@ log = RotkehlchenLogsAdapter(logger)
 VELODROME_LP_SUGAR_CONTRACT: Final = string_to_evm_address('0x1d5E1893fCfb62CAaCE48eB2BAF7a6E134a8a27c')  # Velodrome Finance LP Sugar v3  # noqa: E501
 AERODROME_LP_SUGAR_CONTRACT: Final = string_to_evm_address('0x9DE6Eab7a910A288dE83a04b6A43B52Fd1246f1E')  # Aerodrome Finance LP Sugar v3  # noqa: E501
 POOL_DATA_CHUNK_SIZE: Final = 500
+POOL_DATA_MIN_CHUNK_SIZE: Final = 25
 
 
 class VelodromePoolData(NamedTuple):
@@ -54,6 +55,7 @@ class VelodromePoolData(NamedTuple):
     bribe_address: ChecksumEvmAddress | None
     gauge_address: ChecksumEvmAddress | None
     chain_id: Literal[ChainID.OPTIMISM, ChainID.BASE]
+    tick_spacing: int = 0  # > 0 only for concentrated liquidity (Slipstream) pools
 
 
 def save_velodrome_pool_to_cache(
@@ -200,10 +202,26 @@ def query_velodrome_data_from_chain(
                 arguments=[limit, offset, 0],  # return all.
             )
         except RemoteError as e:
+            # Sugar lists the v2 pools first and the concentrated liquidity (Slipstream)
+            # pools after them. A CL pool costs much more gas to assemble, so a chunk that
+            # is fine for v2 pools blows the eth_call gas limit once the CL region is
+            # reached. Halve the chunk and retry the same offset instead of stopping,
+            # otherwise no CL pool ever makes it into the cache.
+            if limit > POOL_DATA_MIN_CHUNK_SIZE:
+                limit //= 2
+                log.debug(
+                    'Retrying pool data query with a smaller chunk',
+                    counterparty=counterparty,
+                    offset=offset,
+                    limit=limit,
+                    error=str(e),
+                )
+                continue
+
             log.warning(f'Failed to query {counterparty} pool data chunk due to {e!s}.')
-            # If the total count of existing pools is a multiple of 100 it will try to query
-            # a chunk for which there is no data, which results in a remote error here.
-            # So break the loop since this indicates we have gotten all pools.
+            # If the total count of existing pools is a multiple of the chunk size it will try
+            # to query a chunk for which there is no data, which results in a remote error
+            # here. So break the loop since this indicates we have gotten all pools.
             break
 
         pool_data.extend(pool_data_chunk)
@@ -218,13 +236,17 @@ def query_velodrome_data_from_chain(
             gauge_address = deserialize_evm_address(raw_pool[13])
             fee_address = deserialize_evm_address(raw_pool[16])
             bribe_address = deserialize_evm_address(raw_pool[17])
+            # type is -1 for volatile, 0 for stable and the tick spacing for CL pools.
+            # CL pools have no symbol, so name them by their tick spacing instead.
+            tick_spacing = max(deserialize_int(raw_pool[4], location='sugar pool type'), 0)
             pool = VelodromePoolData(
                 pool_address=pool_address,
-                pool_name=raw_pool[1],
+                pool_name=f'CL{tick_spacing}' if raw_pool[1] == '' and tick_spacing > 0 else raw_pool[1],  # noqa: E501
                 fee_address=fee_address if fee_address != ZERO_ADDRESS else None,
                 bribe_address=bribe_address if bribe_address != ZERO_ADDRESS else None,
                 gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
                 chain_id=inquirer.chain_id,  # type: ignore
+                tick_spacing=tick_spacing,
             )
         except (DeserializationError, IndexError) as e:
             log.error(

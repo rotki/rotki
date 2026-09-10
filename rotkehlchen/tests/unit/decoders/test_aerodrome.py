@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.base.modules.aerodrome.decoder import ROUTER
+from rotkehlchen.chain.base.modules.aerodrome.decoder import ROUTER, SLIPSTREAM_NFPM
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
@@ -47,6 +47,9 @@ WSTETH_TOKEN = Asset(evm_address_to_identifier(
     chain_id=ChainID.BASE,
     token_type=TokenKind.ERC20,
 ))
+WETH_VVV_POOL_ADDRESS = string_to_evm_address('0x01784ef301D79e4B2DF3a21ad9a536d4cF09A5Ce')
+A_VVV = Asset('eip155:8453/erc20:0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf')
+A_USDC_BASE = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
 WETH_BASE = Asset(evm_address_to_identifier(
     address=WETH_BASE_ADDRESS,
     chain_id=ChainID.BASE,
@@ -229,6 +232,430 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
         ),
     ]
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0x82599463FA2ea651C1F19e36c33b74CC68e2B4b5']])
+def test_add_liquidity_eth(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test addLiquidityETH where the native asset goes to the router, which wraps it and
+    refunds the unused part. The refund is netted out of the deposit."""
+    _add_aerodrome_pool(pool := WETH_VVV_POOL_ADDRESS)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe043bc98bae987c0ff5f06d66846835f768e7451972b3ac2cfd3eeac98362939')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    gas_amount, deposited_vvv, deposited_eth, received_amount = '0.000001154313217566', '2334.952575943785024472', '22.547191100210812527', '226.898798596223864348'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1789014349000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_VVV,
+            amount=FVal(deposited_vvv),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Deposit {deposited_vvv} VVV in aerodrome pool {pool}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=FVal(deposited_eth),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Deposit {deposited_eth} ETH in aerodrome pool {pool}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset(f'eip155:8453/erc20:{pool}'),
+            amount=FVal(received_amount),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Receive {received_amount} vAMM-WETH/VVV after depositing in aerodrome pool {pool}',  # noqa: E501
+        ),
+    ]
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0xAA069d6199E0f4FCC84C6354E050D5F25f74c429']])
+def test_add_liquidity_eth_via_smart_wallet(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test addLiquidityETH from an ERC-4337 smart wallet. The transaction is sent by the
+    bundler to the EntryPoint, so the native asset only moves in internal transactions and
+    there is no gas event since a paymaster covered the gas."""
+    _add_aerodrome_pool(pool := WETH_VVV_POOL_ADDRESS)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x41ebb0a9160727b4b10f5609fab68718071c8d0bb8c6a93327fa4fd546eff189')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    deposited_vvv, deposited_eth, received_amount = '0.000444771800647726', '0.000004238948818732', '0.000042939943095562'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1788985713000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_VVV,
+            amount=FVal(deposited_vvv),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Deposit {deposited_vvv} VVV in aerodrome pool {pool}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=FVal(deposited_eth),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Deposit {deposited_eth} ETH in aerodrome pool {pool}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset(f'eip155:8453/erc20:{pool}'),
+            amount=FVal(received_amount),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Receive {received_amount} vAMM-WETH/VVV after depositing in aerodrome pool {pool}',  # noqa: E501
+        ),
+    ]
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0x14ac952E2D149ac7e0ad0E4b9E9ba939fa51A0D6']])
+def test_remove_liquidity_via_smart_wallet(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test removing liquidity from an ERC-4337 smart wallet that prefunds its own gas.
+    The prefund paid to the EntryPoint is decoded as the fee of the transaction."""
+    _add_aerodrome_pool(pool := WETH_VVV_POOL_ADDRESS)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2adaf0f6a91354dc03bff3174726b7439388055c91a4f99f3b2bd33c8b204748')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    fee_amount, returned_amount, withdrawn_weth, withdrawn_vvv = '0.000002390325488', '0.094163995310674867', '0.009543351044635924', '0.949851488856336753'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1788924533000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(fee_amount),
+            location_label=(user_address := base_accounts[0]),
+            address=(entrypoint := string_to_evm_address('0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789')),  # noqa: E501
+            notes=f'Spend {fee_amount} ETH as ERC-4337 fee via {entrypoint}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=490,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=(pool_token := Asset(f'eip155:8453/erc20:{pool}')),
+            amount=ZERO,
+            location_label=user_address,
+            address=ROUTER,
+            notes=f'Revoke vAMM-WETH/VVV spending approval of {user_address} by {ROUTER}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=491,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=pool_token,
+            amount=FVal(returned_amount),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Return {returned_amount} vAMM-WETH/VVV',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=492,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=WETH_BASE,
+            amount=FVal(withdrawn_weth),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Remove {withdrawn_weth} WETH from aerodrome pool {pool}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=493,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_VVV,
+            amount=FVal(withdrawn_vvv),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Remove {withdrawn_vvv} VVV from aerodrome pool {pool}',
+        ),
+    ]
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
+def test_slipstream_create_position(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test minting a concentrated liquidity (Slipstream) position via the position manager"""
+    _add_aerodrome_pool(pool := string_to_evm_address('0xCCd9cC53b63662088c738B8BC06E9078Fb8D9ad4'))  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfaae3656738212f80efded0ed48ea307dd73f52da9330a42e042af9d10293101')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    gas_amount, deposited_usdc, deposited_aero, position_id = '0.000002461446742837', '1104.765404', '15960.348043137794181943', '76587643'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1789052943000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_USDC_BASE,
+            amount=FVal(deposited_usdc),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Deposit {deposited_usdc} USDC to Aerodrome Slipstream LP {position_id}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_AERO,
+            amount=FVal(deposited_aero),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Deposit {deposited_aero} AERO to Aerodrome Slipstream LP {position_id}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset(f'eip155:8453/erc721:{SLIPSTREAM_NFPM}/{position_id}'),
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Create Aerodrome Slipstream LP with id {position_id}',
+        ),
+    ]
+    assert EvmToken(f'eip155:8453/erc721:{SLIPSTREAM_NFPM}/{position_id}').symbol == f'AERO-CL-POS-{position_id}'  # noqa: E501
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0xd48c780b3c48d7bB43cB69dC179D62726F798E50']])
+def test_slipstream_exit_position(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test removing all liquidity of a Slipstream position, collecting it and burning
+    the position NFT in one multicall"""
+    _add_aerodrome_pool(pool := string_to_evm_address('0xe30d5BF485F7476AC15884a28ffb3C9cEA635DCB'))  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5d1f4682f36859e8a891cef5a1def7a4d1024a9e4314e646a513c5e1ce8f3c81')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    gas_amount, withdrawn_avnt, withdrawn_usdc, position_id = '0.000001617384886138', '318.095368286092717677', '59.719805', '76587599'  # noqa: E501
+    position_token = Asset(f'eip155:8453/erc721:{SLIPSTREAM_NFPM}/{position_id}')
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1789052913000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=579,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=position_token,
+            amount=ZERO,
+            location_label=user_address,
+            address=ZERO_ADDRESS,
+            notes=f'Revoke AERO-CL-POS spending approval of {user_address} by {ZERO_ADDRESS}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=580,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=position_token,
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Exit Aerodrome Slipstream LP with id {position_id}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=581,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:8453/erc20:0x696F9436B67233384889472Cd7cD58A6fB5DF4f1'),
+            amount=FVal(withdrawn_avnt),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Remove {withdrawn_avnt} AVNT from Aerodrome Slipstream LP {position_id}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=582,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_USDC_BASE,
+            amount=FVal(withdrawn_usdc),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=pool,
+            notes=f'Remove {withdrawn_usdc} USDC from Aerodrome Slipstream LP {position_id}',
+        ),
+    ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

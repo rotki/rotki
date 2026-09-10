@@ -256,12 +256,12 @@ def make_call_object(protocol: str, chain: ChainID, processed: int, total: int) 
 def test_velodrome_cache_progress(database, chain_id, pool_case):
     """Only start progress for uncached pools, and finish despite a skipped tail."""
     existing_pools = {make_evm_address() for _ in range(67)}
-    raw_pools = [[address, 'cached pool', *([ZERO_ADDRESS] * 16)] for address in existing_pools]
+    raw_pools = [[address, 'cached pool', 18, 0, -1, *([ZERO_ADDRESS] * 13)] for address in existing_pools]  # noqa: E501
     new_address = make_evm_address()
     if pool_case == 'empty':
         raw_pools = []
     elif pool_case == 'new_with_skipped_tail':
-        raw_pools.insert(0, [new_address, 'new pool', *([ZERO_ADDRESS] * 16)])
+        raw_pools.insert(0, [new_address, 'new pool', 18, 0, -1, *([ZERO_ADDRESS] * 13)])
         raw_pools.append(['invalid address'])
 
     inquirer = MagicMock(database=database, chain_id=chain_id)
@@ -297,6 +297,78 @@ def test_velodrome_cache_progress(database, chain_id, pool_case):
             cursor=cursor,
             key_parts=(CacheType.VELODROME_POOL_ADDRESS if chain_id == ChainID.OPTIMISM else CacheType.AERODROME_POOL_ADDRESS,),  # noqa: E501
         )
+
+
+@pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.BASE])
+def test_velodrome_cache_chunk_halving(database, chain_id):
+    """A chunk that exceeds the gas limit is retried with half the size instead of ending the
+    query, so the concentrated liquidity pools listed after the v2 pools are still found."""
+    v2_pool, cl_pool = make_evm_address(), make_evm_address()
+    raw_v2 = [v2_pool, 'vAMM-A/B', 18, 0, -1, *([ZERO_ADDRESS] * 13)]
+    raw_cl = [cl_pool, '', 0, 0, 200, *([ZERO_ADDRESS] * 13)]
+    calls: list[list[int]] = []
+
+    def mock_call(contract, node_inquirer, method_name, arguments, **kwargs):  # pylint: disable=unused-argument
+        calls.append(arguments)
+        limit, offset = arguments[0], arguments[1]
+        if offset == 0 and limit == POOL_DATA_CHUNK_SIZE:
+            return [raw_v2]  # fewer than the limit, so this is the last chunk of size 500
+        if limit >= 100:
+            raise RemoteError('gas limit error')
+        return [raw_cl] if offset == 1 else []
+
+    inquirer = MagicMock(database=database, chain_id=chain_id)
+    with (
+        patch('rotkehlchen.chain.evm.contracts.EvmContract.call', new=mock_call),
+        patch.object(database.msg_aggregator, 'add_message'),
+    ):
+        pools = query_velodrome_data_from_chain(
+            inquirer=inquirer,
+            existing_pools=set(),
+            msg_aggregator=database.msg_aggregator,
+            reload_all=True,
+        )
+
+    assert calls[0] == [POOL_DATA_CHUNK_SIZE, 0, 0]
+    assert [pool.pool_address for pool in pools] == [v2_pool]
+    assert pools[0].tick_spacing == 0
+
+    # Now the same but with the CL pool at offset 1 requiring smaller chunks
+    calls.clear()
+
+    def mock_call_cl(contract, node_inquirer, method_name, arguments, **kwargs):  # pylint: disable=unused-argument
+        calls.append(arguments)
+        limit, offset = arguments[0], arguments[1]
+        if limit >= 100:
+            raise RemoteError('gas limit error')
+        if offset == 1:
+            return [raw_cl]
+        return []
+
+    with (
+        patch('rotkehlchen.chain.evm.contracts.EvmContract.call', new=mock_call_cl),
+        patch.object(database.msg_aggregator, 'add_message'),
+    ):
+        pools = query_velodrome_data_from_chain(
+            inquirer=inquirer,
+            existing_pools={v2_pool},
+            msg_aggregator=database.msg_aggregator,
+            reload_all=False,
+        )
+
+    # the chunk of 62 returns fewer than 62 pools, so it is the last one
+    assert calls == [[500, 1, 0], [250, 1, 0], [125, 1, 0], [62, 1, 0]]
+    assert [pool.pool_address for pool in pools] == [cl_pool]
+    assert pools[0].tick_spacing == 200
+    assert pools[0].pool_name == 'CL200'
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cl_pool in globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.VELODROME_POOL_ADDRESS if chain_id == ChainID.OPTIMISM else CacheType.AERODROME_POOL_ADDRESS,),  # noqa: E501
+        )
+        assert cursor.execute(
+            'SELECT name FROM address_book WHERE address=?', (cl_pool,),
+        ).fetchone()[0] == f"{'Velodrome' if chain_id == ChainID.OPTIMISM else 'Aerodrome'} pool CL200"  # noqa: E501
 
 
 def test_curve_cache_progress():
@@ -573,8 +645,8 @@ def test_velodrome_cache(optimism_inquirer):
 def test_velodrome_cache_with_no_symbol(
         optimism_transaction_decoder: OptimismTransactionDecoder,
 ) -> None:
-    """Test a case when a queried pool is not a valid ERC20 token,
-    in such case the symbol should fallback to the form `CL{tickSpacing}-{token0}/{token1}`."""
+    """Test a concentrated liquidity pool, which is not an ERC20 token. No pool token should
+    be created for it, but its underlying tokens should be created and remembered."""
     assert GlobalDBHandler.get_evm_token(
         address=(pool_address := string_to_evm_address('0xf05cEd0a8dd4e51ecC87B82efF1D6D4Eb38aa277')),  # noqa: E501
         chain_id=ChainID.OPTIMISM,
@@ -584,13 +656,12 @@ def test_velodrome_cache_with_no_symbol(
     assert isinstance(velodrome_decoder, VelodromeDecoder)
     velodrome_decoder._ensure_pool_tokens_exist(pool_address=pool_address)
 
-    assert (pool_token := GlobalDBHandler.get_evm_token(
-        address=pool_address,
-        chain_id=ChainID.OPTIMISM,
-    )) is not None
-    assert pool_token.symbol == 'CL1-WETH/superETH'
-    assert pool_token.name == 'CL1-WETH/superETH Pool'
-    assert pool_token.protocol == CPT_VELODROME
+    assert GlobalDBHandler.get_evm_token(address=pool_address, chain_id=ChainID.OPTIMISM) is None
+    assert (tokens := velodrome_decoder.cl_pool_tokens.get(pool_address)) is not None
+    assert [
+        GlobalDBHandler.get_evm_token(address=address, chain_id=ChainID.OPTIMISM).symbol  # type: ignore[union-attr]  # tokens were just created
+        for address in tokens
+    ] == ['WETH', 'superETH']
 
 
 @pytest.mark.vcr
