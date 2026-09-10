@@ -2,7 +2,7 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { isBlockchain } from '@/modules/core/common/chains';
@@ -56,7 +56,7 @@ export function useReportOperations(): UseReportOperationsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notifyError(t('actions.reports.fetch.error.title'), t('actions.reports.fetch.error.description'));
+      notifyError(t('actions.reports.fetch.error.title'), t('actions.reports.fetch.error.description'), { priority: Priority.NORMAL });
     }
   }
 
@@ -102,7 +102,7 @@ export function useReportOperations(): UseReportOperationsReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      notifyError(t('actions.report_events.fetch.error.title'), t('actions.report_events.fetch.error.description', { error }));
+      notifyError(t('actions.report_events.fetch.error.title'), t('actions.report_events.fetch.error.description', { error }), { priority: Priority.NORMAL });
       return defaultReportEvents();
     }
   }

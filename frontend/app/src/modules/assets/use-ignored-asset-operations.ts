@@ -1,4 +1,5 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import { Priority } from '@rotki/common';
 import { useAssetIgnoreApi } from '@/modules/assets/api/use-asset-ignore-api';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
@@ -32,7 +33,7 @@ export function useIgnoredAssetOperations(): UseIgnoredAssetOperationsReturn {
       const message = t('actions.session.ignored_assets.error.message', {
         error: getErrorMessage(error),
       });
-      notifyError(title, message);
+      notifyError(title, message, { priority: Priority.NORMAL });
     }
   }
 

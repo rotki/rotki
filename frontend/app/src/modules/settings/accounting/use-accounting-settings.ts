@@ -8,6 +8,7 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
+import { Priority } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { defaultCollectionState, mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
@@ -62,6 +63,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
+        { priority: Priority.NORMAL },
       );
 
       return undefined;
@@ -85,6 +87,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
+        { priority: Priority.NORMAL },
       );
 
       return defaultCollectionState();
@@ -108,6 +111,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         t('accounting_settings.rule.conflicts.fetch_error.message', {
           message,
         }),
+        { priority: Priority.NORMAL },
       );
 
       return defaultCollectionState();

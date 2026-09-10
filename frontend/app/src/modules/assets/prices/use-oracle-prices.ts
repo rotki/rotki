@@ -1,6 +1,7 @@
 import type { MaybeRef } from 'vue';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
 import type { Collection } from '@/modules/core/common/collection';
+import { Priority } from '@rotki/common';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
@@ -33,6 +34,7 @@ export function useOraclePrices(): UseOraclePricesReturn {
       notifyError(
         t('oracle_prices.fetch.failure.title'),
         t('oracle_prices.fetch.failure.message', { message: getErrorMessage(error) }),
+        { priority: Priority.NORMAL },
       );
       return defaultCollectionState<OraclePriceEntry>();
     }

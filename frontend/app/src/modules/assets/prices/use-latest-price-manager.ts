@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
 import type { TaskError } from '@/modules/core/tasks/task-result';
-import { type BigNumber, Zero } from '@rotki/common';
+import { type BigNumber, Priority, Zero } from '@rotki/common';
 import { isErr, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
@@ -84,6 +84,7 @@ export function useLatestPrices(
       notifyError(
         t('price_table.fetch.failure.title'),
         t('price_table.fetch.failure.message', { message: getErrorMessage(error) }),
+        { priority: Priority.NORMAL },
       );
     }
     finally {

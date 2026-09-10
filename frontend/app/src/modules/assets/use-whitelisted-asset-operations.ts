@@ -1,4 +1,5 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import { Priority } from '@rotki/common';
 import { useAssetWhitelistApi } from '@/modules/assets/api/use-asset-whitelist-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
@@ -29,6 +30,7 @@ export function useWhitelistedAssetOperations(): UseWhitelistedAssetOperationsRe
         t('actions.session.whitelisted_assets.error.message', {
           error: getErrorMessage(error),
         }),
+        { priority: Priority.NORMAL },
       );
     }
   }
