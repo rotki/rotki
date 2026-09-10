@@ -64,6 +64,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -214,15 +215,19 @@ class Cryptocompare(
         HistoricalPriceOracleWithCoinListInterface,
         PenalizablePriceOracleMixin,
 ):
-    def __init__(self, database: DBHandler | None) -> None:
+    def __init__(
+            self,
+            database: DBHandler | None,
+            msg_aggregator: MessagesAggregator | None = None,
+    ) -> None:
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='cryptocompare')
         ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
             database=database,
             service_name=ExternalService.CRYPTOCOMPARE,
         )
-        PenalizablePriceOracleMixin.__init__(self)
-        self.session = create_session()
+        PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
+        self.session = create_session(retry_reads=False)
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
@@ -372,7 +377,7 @@ class Cryptocompare(
             try:
                 response = self.session.get(url, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:
-                self.penalty_info.note_failure_or_penalize()
+                self.note_request_failure(e)
                 raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
 
             try:
@@ -649,6 +654,9 @@ class Cryptocompare(
             except (RemoteError, ValueError, KeyError) as e:
                 # Skip chunks that fail but continue processing other chunks
                 log.debug(f'CryptoCompare failed to query price chunk {fsyms}: {e}')
+                if self.is_penalized():  # the remaining chunks would only stall the same way
+                    log.debug('Cryptocompare got penalized. Skipping the remaining price chunks')
+                    break
                 continue
 
         return found_prices

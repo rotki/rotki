@@ -29,6 +29,7 @@ from rotkehlchen.utils.rate_limiter import TokenBucket
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -533,10 +534,14 @@ class Coingecko(
         PenalizablePriceOracleMixin,
 ):
 
-    def __init__(self, database: DBHandler | None) -> None:
+    def __init__(
+            self,
+            database: DBHandler | None,
+            msg_aggregator: MessagesAggregator | None = None,
+    ) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
-        PenalizablePriceOracleMixin.__init__(self)
+        PenalizablePriceOracleMixin.__init__(self, msg_aggregator=msg_aggregator)
         self.session = create_session(retry_reads=False)
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy

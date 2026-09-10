@@ -804,6 +804,6 @@ Sent when a price oracle is set aside for the oracle penalty duration. Price que
     }
 
 
-- ``oracle``: Name of the penalized oracle, e.g. ``coingecko``, ``defillama``, ``alchemy``, ``moralis``
+- ``oracle``: Name of the penalized oracle, e.g. ``coingecko``, ``defillama``, ``cryptocompare``, ``alchemy``, ``moralis``
 - ``reason``: ``timeout`` when the oracle stopped answering requests, ``errors`` when it failed as many times in a row as the oracle penalty threshold setting allows
 - ``penalty_duration``: Seconds the oracle is skipped for, as set by the oracle penalty duration setting

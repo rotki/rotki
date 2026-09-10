@@ -1061,7 +1061,7 @@ def test_punishing_of_oracles_works(inquirer):
     defillama_patch = patch.object(inquirer._defillama.session, 'get', return_value=MockResponse(HTTPStatus.OK, '{"coins":{"coingecko:bitcoin":{"price":100.14,"symbol":"BTC","timestamp":1668592376,"confidence":0.99}}}'))  # noqa: E501
     coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.RequestException('An unexpected error occurred!'))  # noqa: E501
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
-    inquirer._coingecko.set_msg_aggregator(msg_aggregator := MagicMock())
+    inquirer._coingecko.msg_aggregator = (msg_aggregator := MagicMock())
 
     with coingecko_patch as coingecko_mock, defillama_patch as defillama_mock:
         for counter in range(1, 7):
@@ -1122,7 +1122,7 @@ def test_oracle_timeout_penalizes_immediately(inquirer):
     coingecko_patch = patch.object(inquirer._coingecko.session, 'get', side_effect=requests.exceptions.ReadTimeout('Read timed out.'))  # noqa: E501
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])  # noqa: E501
 
-    inquirer._coingecko.set_msg_aggregator(msg_aggregator := MagicMock())
+    inquirer._coingecko.msg_aggregator = (msg_aggregator := MagicMock())
     with defillama_patch, coingecko_patch as coingecko_mock:
         for _ in range(3):
             assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > ZERO_PRICE

@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import threading
 from typing import TYPE_CHECKING, Final, Literal
 
 import requests
@@ -57,13 +58,14 @@ class PenalizablePriceOracleMixin:
     """
     name: str  # set by the oracle interface the concrete class also inherits from
 
-    def __init__(self) -> None:
+    def __init__(self, msg_aggregator: MessagesAggregator | None = None) -> None:
+        """msg_aggregator gives the oracle a way to tell the user it got penalized. Oracles
+        created before the app is fully set up (tests, tools) can leave it out."""
         self.penalty_info = PenaltyInfo(last_penalized_ts=Timestamp(0), query_failures_count=0)
-        self.msg_aggregator: MessagesAggregator | None = None
-
-    def set_msg_aggregator(self, msg_aggregator: MessagesAggregator) -> None:
-        """Give the oracle a way to tell the user it got penalized"""
         self.msg_aggregator = msg_aggregator
+        # Price queries run concurrently. Without this, every query that finds an expired
+        # penalty would run its own probe and re-penalize (and notify) on its own.
+        self._probe_lock = threading.Lock()
 
     def _notify_penalized(self, reason: Literal['timeout', 'errors']) -> None:
         """Tell the frontend the oracle is set aside, so a slow price load is explained
@@ -122,12 +124,21 @@ class PenalizablePriceOracleMixin:
         if ts_now() - self.penalty_info.last_penalized_ts <= penalty_duration:
             return True
 
-        if self.penalty_info.probe_pending:
+        if self.penalty_info.probe_pending is False:
+            return False
+
+        with self._probe_lock:
+            # Re-check under the lock: another query may have probed in the meantime,
+            # or its probe failed and restarted the penalty.
+            if (penalty_info := self.penalty_info).probe_pending is False:
+                return False
+            if ts_now() - penalty_info.last_penalized_ts <= penalty_duration:
+                return True
             if self.probe_availability() is False:
                 log.debug('%s still does not answer after its penalty expired. Penalizing it again', self.name)  # noqa: E501
-                self.penalty_info.penalize()
+                penalty_info.penalize()
                 self._notify_penalized(reason='timeout')
                 return True
-            self.penalty_info.probe_pending = False
+            penalty_info.probe_pending = False
 
         return False
