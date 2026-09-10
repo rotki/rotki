@@ -1,5 +1,5 @@
 import type { LogService } from '@electron/main/log-service';
-import type { BackendCode, OAuthResult, StartupError } from '@shared/ipc';
+import type { BackendCode, OAuthResult } from '@shared/ipc';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -8,10 +8,11 @@ import { ContextMenuHandler } from '@electron/main/context-menu-handler';
 import { createProtocol } from '@electron/main/create-protocol';
 import { NavigationHandler } from '@electron/main/navigation-handler';
 import { parseToken } from '@electron/main/oauth-utils';
+import { StartupErrorChannel } from '@electron/main/startup-error';
 import { WindowConfig } from '@electron/main/window-config';
 import { assert } from '@rotki/common';
 import { startPromise, wait } from '@shared/utils';
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 
 interface WindowManagerListener {
@@ -24,13 +25,10 @@ export class WindowManager {
   private readonly navigation: NavigationHandler;
   private readonly contextMenuHandler: ContextMenuHandler;
   private readonly windowConfig: WindowConfig;
+  private readonly startupError: StartupErrorChannel;
 
   private readonly isMac = process.platform === 'darwin';
   private forceQuit: boolean = false;
-
-  // Startup error state management
-  private startupError: StartupError | null = null;
-  private rendererReady: boolean = false;
 
   private listener: WindowManagerListener | null = null;
 
@@ -50,6 +48,7 @@ export class WindowManager {
     this.navigation = new NavigationHandler();
     this.contextMenuHandler = new ContextMenuHandler();
     this.windowConfig = new WindowConfig();
+    this.startupError = new StartupErrorChannel(logger, () => this.window);
   }
 
   async create(): Promise<BrowserWindow> {
@@ -63,7 +62,7 @@ export class WindowManager {
     this.setupEventListeners(this.window);
     this.navigation.setupNavigationEvents(this.window.webContents);
     this.contextMenuHandler.setupContextMenu(this.window);
-    this.setupStartupErrorHandlers();
+    this.startupError.listen();
 
     return this.window;
   }
@@ -220,11 +219,7 @@ export class WindowManager {
   }
 
   cleanup() {
-    ipcMain.removeAllListeners(IpcCommands.SYNC_GET_STARTUP_ERROR);
-    ipcMain.removeAllListeners(IpcCommands.RENDERER_READY);
-
-    this.startupError = null;
-    this.rendererReady = false;
+    this.startupError.reset();
     this.window?.removeAllListeners('show');
     this.window?.removeAllListeners('hide');
     this.window?.removeAllListeners('close');
@@ -250,63 +245,8 @@ export class WindowManager {
     window.on('closed', () => this.handleClosed());
   }
 
-  /**
-   * Sets up IPC handlers for startup error management.
-   * - SYNC_GET_STARTUP_ERROR: Synchronous handler for renderer to fetch current error state
-   * - RENDERER_READY: Signal from renderer that it's ready to receive async messages
-   */
-  private setupStartupErrorHandlers(): void {
-    ipcMain.on(IpcCommands.SYNC_GET_STARTUP_ERROR, (event) => {
-      event.returnValue = this.startupError;
-    });
-
-    ipcMain.on(IpcCommands.RENDERER_READY, () => {
-      this.onRendererReady();
-    });
-  }
-
-  /**
-   * Called when renderer signals it's ready to receive async messages.
-   * If an error occurred before ready, push it now.
-   */
-  private onRendererReady(): void {
-    this.rendererReady = true;
-    // Push any error that occurred before renderer was ready
-    if (this.startupError) {
-      this.pushStartupError();
-    }
-  }
-
-  /**
-   * Push the current startup error to the renderer via async IPC.
-   */
-  private pushStartupError(): void {
-    if (this.startupError && this.window?.webContents) {
-      try {
-        this.window.webContents.send(IpcCommands.STARTUP_ERROR, this.startupError);
-      }
-      catch (error) {
-        this.logger.error('Failed to push startup error to renderer:', error);
-      }
-    }
-  }
-
-  /**
-   * Store a startup error and notify the renderer.
-   * If the renderer is already ready, push immediately via async IPC.
-   * If not ready, the error will be fetched synchronously when the renderer initializes.
-   */
-  setStartupError(
-    backendOutput: string | Error,
-    code: BackendCode,
-  ): void {
-    const message = typeof backendOutput === 'string' ? backendOutput : backendOutput.message;
-    this.startupError = { message, code };
-
-    // If renderer is already ready, push immediately
-    if (this.rendererReady) {
-      this.pushStartupError();
-    }
+  setStartupError(backendOutput: string | Error, code: BackendCode): void {
+    this.startupError.set(backendOutput, code);
   }
 
   sendOAuthCallback(oAuthResult: OAuthResult): void {
