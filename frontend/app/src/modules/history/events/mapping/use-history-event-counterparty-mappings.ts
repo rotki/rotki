@@ -35,7 +35,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
         message: t('actions.fetch_counterparties.error.description', {
           message: getErrorMessage(error),
         }),
-        priority: Priority.NORMAL,
+        priority: Priority.HIGH,
         title: t('actions.fetch_counterparties.error.title'),
       });
     }
