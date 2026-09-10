@@ -31,6 +31,7 @@ vi.mock('@/modules/settings/accounting/rule/use-accounting-rule-conflict-resolut
     onResolved.call = options.onResolved;
     return {
       collection,
+      error: ref(undefined),
       isLoading: ref(false),
       loading: ref(false),
       modelResolution,

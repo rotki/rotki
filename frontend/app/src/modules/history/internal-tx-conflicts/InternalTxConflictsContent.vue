@@ -4,6 +4,7 @@ import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import InternalTxConflictRowActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictRowActions.vue';
 import { useInternalTxConflictFields } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflict-fields';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
@@ -37,6 +38,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   conflicts,
+  error,
   failedCount,
   fetchConflicts,
   fetchCounts,
@@ -47,6 +49,8 @@ const {
   setFilter,
   sort,
 } = useInternalTxConflicts();
+
+const emptyState = useTableEmptyState({ error });
 
 const fields = useInternalTxConflictFields();
 const pillLabels = usePillBarLabels();
@@ -258,6 +262,7 @@ defineExpose({
         v-model:sort.external="sort"
         v-model:pagination.external="pagination"
         :cols="headers"
+        :empty="emptyState"
         :rows="conflicts"
         :loading="loading"
         row-attr="txHash"

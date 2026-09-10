@@ -26,6 +26,8 @@ function getStatusFilter(status: InternalTxConflictStatus): { failed?: boolean; 
 interface UseInternalTxConflictsReturn {
   activeFilter: Ref<InternalTxConflictStatus>;
   conflicts: ComputedRef<InternalTxConflict[]>;
+  /** The last fetch failure, so the table can name it in place of its empty text. */
+  error: Ref<unknown>;
   failedCount: Ref<number>;
   fetchConflicts: () => Promise<void>;
   fetchCounts: () => Promise<void>;
@@ -57,6 +59,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
 
   const {
     collection: state,
+    error,
     filter: filters,
     isLoading: loading,
     pagination,
@@ -126,6 +129,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   return {
     activeFilter,
     conflicts,
+    error,
     failedCount,
     fetchConflicts,
     fetchCounts,

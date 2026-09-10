@@ -5,6 +5,7 @@ import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -24,6 +25,7 @@ const {
   currencySymbol,
   data,
   dataLoading,
+  error,
   fetchData,
   modelIgnoredAssetsHandling,
   pagination,
@@ -32,6 +34,8 @@ const {
   sort,
   totalValue,
 } = useNftData();
+
+const emptyState = useTableEmptyState({ error });
 
 const {
   customPrice,
@@ -84,6 +88,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
         outlined
         dense
         :cols="cols"
+        :empty="emptyState"
         :rows="data"
         :loading="dataLoading"
       >

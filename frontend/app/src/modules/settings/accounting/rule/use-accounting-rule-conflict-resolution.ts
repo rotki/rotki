@@ -21,6 +21,8 @@ interface UseAccountingRuleConflictResolutionOptions {
 interface UseAccountingRuleConflictResolutionReturn {
   /** The conflicts on the current page. */
   collection: Ref<Collection<AccountingRuleConflict>>;
+  /** The last fetch failure, so the table can name it in place of its empty text. */
+  error: Ref<unknown>;
   /** Whether the page is being read. */
   isLoading: Ref<boolean>;
   /** Whether a resolution is being submitted. */
@@ -69,7 +71,7 @@ export function useAccountingRuleConflictResolution(
   const { setMessage } = useMessageStore();
   const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccountingSettings();
 
-  const { collection, isLoading, pagination, refetch } = useServerTable<
+  const { collection, error, isLoading, pagination, refetch } = useServerTable<
     AccountingRuleConflict,
     AccountingRuleConflictRequestPayload
   >({
@@ -122,6 +124,7 @@ export function useAccountingRuleConflictResolution(
 
   return {
     collection,
+    error,
     isLoading,
     loading: readonly(loading),
     modelResolution,

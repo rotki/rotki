@@ -8,6 +8,7 @@ import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
@@ -33,6 +34,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const emptyState = useTableEmptyState();
 
 const pillLabels = usePillBarLabels();
 
@@ -63,6 +66,7 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
       v-model:pagination.external="paginationModel"
       v-model:sort.external="sortModel"
       :rows="assets"
+      :empty="emptyState"
       :loading="loading"
       :cols="cols"
       :expanded="expanded"

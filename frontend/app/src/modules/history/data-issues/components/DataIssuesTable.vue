@@ -3,6 +3,7 @@ import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
@@ -32,6 +33,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const emptyState = useTableEmptyState({ fallback: () => ({ description: emptyDescription }) });
+
 /** Deep-link to the offending history event for a row's quick "go to event" action. */
 function eventRouteFor(issue: DataIssue): RouteLocationRaw | undefined {
   return relatedEventRoute(issue.kind, describeIssue(issue).eventIdentifier, issue.groupIdentifier, issue.asset);
@@ -57,7 +60,7 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
     :loading="loading"
     :rows="rows"
     row-attr="id"
-    :empty="{ description: emptyDescription }"
+    :empty="emptyState"
     data-testid="data-issues-table"
     @click:row="emit('open', $event)"
   >
@@ -142,7 +145,7 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
       #empty-description
     >
       <div class="flex flex-col items-center gap-2 py-2">
-        <span>{{ emptyDescription }}</span>
+        <span>{{ emptyState.description }}</span>
         <RuiButton
           size="sm"
           variant="text"

@@ -9,6 +9,7 @@ import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/c
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
@@ -47,6 +48,7 @@ const { fetchReportEvents } = useReportOperations();
 
 const {
   collection: state,
+  error,
   isLoading,
   pagination,
   refetch: fetchData,
@@ -70,6 +72,8 @@ const {
   },
   urlState: { mode: 'route' },
 });
+
+const emptyState = useTableEmptyState({ error });
 
 const { getChain } = useSupportedChains();
 
@@ -198,6 +202,7 @@ onMounted(async () => {
       v-model:sort.external="sort"
       v-model:pagination.external="pagination"
       :cols="tableHeaders"
+      :empty="emptyState"
       :rows="items"
       :loading="isLoading || refreshing"
       row-attr="id"

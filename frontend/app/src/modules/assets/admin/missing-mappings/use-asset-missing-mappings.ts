@@ -14,6 +14,8 @@ import { useServerTable } from '@/modules/core/table/use-server-table';
 interface UseAssetMissingMappingsReturn {
   /** The table's columns. */
   cols: ComputedRef<DataTableColumn<MissingMapping>[]>;
+  /** The last fetch failure, so the table can name it in place of its empty text. */
+  error: Ref<unknown>;
   /** The declared filter fields the pill bar reads. */
   fields: ReturnType<typeof useMissingMappingsFields>;
   /** The active filters; bound with `v-model:filters`. */
@@ -84,6 +86,7 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
 
   const {
     collection: mappings,
+    error,
     filter,
     pagination,
     refetch,
@@ -117,6 +120,7 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
 
   return {
     cols,
+    error,
     fields,
     mappings,
     modelFilter: filter,

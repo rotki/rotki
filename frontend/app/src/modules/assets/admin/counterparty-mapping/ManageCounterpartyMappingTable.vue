@@ -7,6 +7,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -30,6 +31,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
+const emptyState = useTableEmptyState();
 const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
   align: 'center',
   cellClass: 'py-3',
@@ -71,6 +73,7 @@ const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
       striped
       :loading="loading"
       :cols="cols"
+      :empty="emptyState"
       :sticky-offset="64"
       row-attr="counterparty"
       outlined

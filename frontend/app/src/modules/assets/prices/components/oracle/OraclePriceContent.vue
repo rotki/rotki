@@ -12,6 +12,7 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -25,6 +26,7 @@ const pillLabels = usePillBarLabels();
 
 const {
   collection,
+  error,
   filter,
   isLoading: loading,
   pagination,
@@ -43,6 +45,8 @@ const {
     },
   },
 });
+
+const emptyState = useTableEmptyState({ error });
 
 const headers = computed<DataTableColumn<OraclePriceEntry>[]>(() => [
   {
@@ -161,6 +165,7 @@ onMounted(async () => {
         outlined
         dense
         :cols="headers"
+        :empty="emptyState"
         :loading="loading"
         :rows="collection.data"
         row-attr="fromAsset"

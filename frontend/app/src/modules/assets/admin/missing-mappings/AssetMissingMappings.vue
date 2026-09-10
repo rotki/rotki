@@ -4,6 +4,7 @@ import { useAssetMissingMappings } from '@/modules/assets/admin/missing-mappings
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -11,6 +12,7 @@ const pillLabels = usePillBarLabels();
 
 const {
   cols,
+  error,
   fields,
   mappings,
   modelFilter,
@@ -21,6 +23,8 @@ const {
   refetch,
   sort,
 } = useAssetMissingMappings();
+
+const emptyState = useTableEmptyState({ error });
 
 useRememberTableSorting(TableId.ASSET_MISSING_MAPPINGS, sort, cols);
 
@@ -52,6 +56,7 @@ onMounted(async () => {
         dense
         stripped
         :cols="cols"
+        :empty="emptyState"
         row-attr="id"
         :rows="mappings.data"
       >

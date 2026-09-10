@@ -4,11 +4,14 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import { some } from 'es-toolkit/compat';
 import { EVM_TOKEN, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { type TableEmptyState, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseManagedAssetTableReturn {
   cols: ComputedRef<DataTableColumn<SupportedAsset>[]>;
   data: ComputedRef<SupportedAsset[]>;
+  /** The table's empty text, which names the reason when the last fetch failed. */
+  emptyState: ComputedRef<TableEmptyState>;
   expand: (item: SupportedAsset) => void;
   /**
    * The chain whose explorer can show this asset, when one can.
@@ -38,6 +41,7 @@ export function useManagedAssetTable(
 ): UseManagedAssetTableReturn {
   const { t } = useI18n({ useScope: 'global' });
   const itemsPerPage = useSetting('itemsPerPage');
+  const emptyState = useTableEmptyState();
 
   const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [{
     cellClass: 'py-0',
@@ -119,6 +123,7 @@ export function useManagedAssetTable(
   return {
     cols,
     data,
+    emptyState,
     expand,
     getAssetLocation,
     isExpanded,

@@ -2,6 +2,7 @@
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
@@ -28,6 +29,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const emptyState = useTableEmptyState();
 
 const selectedEventIds = ref<number[]>([]);
 const eventsDialogOpen = ref<boolean>(false);
@@ -130,6 +133,7 @@ function openEventsDialog(eventIds: number[]) {
     outlined
     :rows="state.data"
     :cols="cols"
+    :empty="emptyState"
     :loading="isLoading"
     row-attr="identifier"
     data-testid="accounting-rule-table"
