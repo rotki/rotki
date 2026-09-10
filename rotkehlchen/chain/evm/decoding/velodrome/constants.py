@@ -22,3 +22,9 @@ DROME_ROTKI_ABI: Final[ABI] = [{'stateMutability': 'view', 'type': 'function', '
 CL_POOL_MINT: Final = b'zS\x08\x0b\xa4\x14\x15\x8b\xe7\xeci\xb9\x87\xb5\xfb}\x07\xde\xe1\x01\xfe\x85H\x8f\x08S\xae\x16#\x9d\x0b\xde'  # noqa: E501
 # 0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0
 CL_POOL_COLLECT: Final = b'p\x93S8\xe6\x97uEj\x85\xdd\xef"l9_\xb6h\xb6?\xa0\x11__ a\x0b8\x8el\xa9\xc0'  # noqa: E501
+# 0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c
+CL_POOL_BURN: Final = b'\x0c9l\xd9\x89\xa3\x9fDY\xb5\xfa\x1a\xedj\x9a\x8d\xcd\xbcE\x90\x8a\xcf\xd6~\x02\x8c\xd5h\xda\x98\x98,'  # noqa: E501
+# 0xbdbdb71d7860376ba52b25a5028beea23581364a40522f6bcfb86bb1f2dca633
+CL_POOL_FLASH: Final = b'\xbd\xbd\xb7\x1dx`7k\xa5+%\xa5\x02\x8b\xee\xa25\x816J@R/k\xcf\xb8k\xb1\xf2\xdc\xa63'  # noqa: E501
+# 0x4598143b76ade0e13381c8bcb15beee8da31f1f2074be2156b16ed3b45794198
+CL_POOL_COLLECT_FEES: Final = b'E\x98\x14;v\xad\xe0\xe13\x81\xc8\xbc\xb1[\xee\xe8\xda1\xf1\xf2\x07K\xe2\x15k\x16\xed;EyA\x98'  # noqa: E501

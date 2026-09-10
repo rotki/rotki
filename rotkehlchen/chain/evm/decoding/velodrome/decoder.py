@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
@@ -39,7 +39,10 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
     decode_uniswap_v3_like_deposit_or_withdrawal,
 )
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CL_POOL_BURN,
     CL_POOL_COLLECT,
+    CL_POOL_COLLECT_FEES,
+    CL_POOL_FLASH,
     CL_POOL_MINT,
     CLAIM_REWARDS_V2,
     DROME_ROTKI_ABI,
@@ -80,6 +83,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Log signatures emitted by concentrated liquidity (Slipstream) pools
+CL_POOL_TOPICS: Final = frozenset({
+    SWAP_CL,
+    CL_POOL_MINT,
+    CL_POOL_BURN,
+    CL_POOL_COLLECT,
+    CL_POOL_FLASH,
+    CL_POOL_COLLECT_FEES,
+})
 
 
 class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
@@ -363,7 +376,13 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
         Slipstream pools emit the Uniswap V3 log signatures. Their liquidity changes are
         decoded from the position manager logs instead, so only their swaps are handled here.
+        They are also not ERC20 tokens, so the pool token creation is skipped for them.
         """
+        if context.tx_log.topics[0] in CL_POOL_TOPICS:
+            if context.tx_log.topics[0] == SWAP_CL:
+                return self._decode_swap(context=context)
+            return DEFAULT_EVM_DECODING_OUTPUT
+
         self._ensure_pool_tokens_exist(context.tx_log.address)
         if context.tx_log.topics[0] in (REMOVE_LIQUIDITY_EVENT_V2, BURN_TOPIC):
             return self._decode_remove_liquidity_events(
@@ -375,7 +394,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 tx_log=context.tx_log,
                 decoded_events=context.decoded_events,
             )
-        if context.tx_log.topics[0] in (SWAP_V2, SWAP_V1, SWAP_CL):
+        if context.tx_log.topics[0] in (SWAP_V2, SWAP_V1):
             return self._decode_swap(context=context)
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -384,12 +403,38 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             self,
             pool_address: ChecksumEvmAddress,
     ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress] | None:
-        """Get the token0 and token1 of a concentrated liquidity pool.
-        Returns None if the pool info could not be queried."""
-        if (tokens := self.cl_pool_tokens.get(pool_address)) is None:
-            self._ensure_pool_tokens_exist(pool_address)
-            tokens = self.cl_pool_tokens.get(pool_address)
+        """Get the token0 and token1 of a concentrated liquidity pool, caching the result.
 
+        Queries the pool directly. The drome rotki helper contract is not used since its
+        get_pool_info needs more gas than indexer eth_call proxies allow, so it only works
+        through an RPC node. Returns None if the pool could not be queried.
+        """
+        if (tokens := self.cl_pool_tokens.get(pool_address)) is not None:
+            return tokens
+
+        pool_contract = EvmContract(
+            address=pool_address,
+            abi=self.node_inquirer.contracts.abi('UNISWAP_V3_POOL'),
+        )
+        try:
+            result = self.node_inquirer.multicall(calls=[
+                (pool_address, pool_contract.encode(method_name='token0')),
+                (pool_address, pool_contract.encode(method_name='token1')),
+            ])
+            tokens = (
+                deserialize_evm_address(pool_contract.decode(result[0], 'token0')[0]),
+                deserialize_evm_address(pool_contract.decode(result[1], 'token1')[0]),
+            )
+        except (RemoteError, DeserializationError) as e:
+            log.error(
+                'Failed to query the tokens of a concentrated liquidity pool',
+                counterparty=self.counterparty,
+                pool=pool_address,
+                error=str(e),
+            )
+            return None
+
+        self.cl_pool_tokens[pool_address] = tokens
         return tokens
 
     def _decode_slipstream_position_events(self, context: DecoderContext) -> EvmDecodingOutput:
