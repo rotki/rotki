@@ -4,7 +4,11 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    ProgressUpdateSubType,
+    TransactionStatusStep,
+    WSMessageType,
+)
 from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
     BLOCKCYPHER_BASE_URL,
@@ -44,6 +48,29 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+
+
+@pytest.mark.parametrize('btc_accounts', [['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']])
+def test_transaction_query_failure_sends_finished_status(
+        bitcoin_manager: BitcoinManager,
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """A failed explorer query must not leave the frontend progress row running forever."""
+    with (
+        patch.object(bitcoin_manager, '_query', side_effect=RemoteError('explorers unavailable')),
+        patch.object(bitcoin_manager.database.msg_aggregator, 'add_message') as add_message,
+        pytest.raises(RemoteError, match='explorers unavailable'),
+    ):
+        bitcoin_manager.query_transactions(
+            addresses=btc_accounts,
+            from_timestamp=Timestamp(0),
+            to_timestamp=Timestamp(1),
+        )
+
+    assert [message.kwargs['data']['status'] for message in add_message.call_args_list] == [
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+    ]
 
 
 @pytest.mark.vcr

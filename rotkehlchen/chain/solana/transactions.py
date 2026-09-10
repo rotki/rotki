@@ -146,34 +146,40 @@ class SolanaTransactions:
             f'Starting solana transaction query for {address}. '
             f'Will query signatures for {len(last_existing_sigs)} addresses/ATAs.',
         )
-        for ata_or_account, last_existing_sig in last_existing_sigs.items():
-            # Get the list of signatures from the RPCs and query the corresponding txs
-            log.debug(
-                f'Querying solana signatures for {ata_or_account} belonging to {address} '
-                f'with until={last_existing_sig}',
+        try:
+            for ata_or_account, last_existing_sig in last_existing_sigs.items():
+                # Get the list of signatures from the RPCs and query the corresponding txs
+                log.debug(
+                    'Querying solana signatures for %s belonging to %s with until=%s',
+                    ata_or_account,
+                    address,
+                    last_existing_sig,
+                )
+                signatures = self.node_inquirer.query_tx_signatures_for_address(
+                    address=ata_or_account,
+                    until=last_existing_sig,
+                )
+                log.debug(
+                    'Finished querying solana signatures for %s belonging to %s. Got %s signatures.',  # noqa: E501
+                    ata_or_account,
+                    address,
+                    len(signatures),
+                )
+                self.query_transactions_for_signatures(
+                    signatures=signatures,
+                    relevant_address=ata_or_account,
+                )
+                log.debug(
+                    'Finished querying solana transactions for %s belonging to %s.',
+                    ata_or_account,
+                    address,
+                )
+        finally:
+            self._send_tx_status_message(
+                address=address,
+                period=(min_start_ts, end_ts),
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
             )
-            signatures = self.node_inquirer.query_tx_signatures_for_address(
-                address=ata_or_account,
-                until=last_existing_sig,
-            )
-            log.debug(
-                f'Finished querying solana signatures for {ata_or_account} belonging to '
-                f'{address}. Got {len(signatures)} signatures.',
-            )
-            self.query_transactions_for_signatures(
-                signatures=signatures,
-                relevant_address=ata_or_account,
-            )
-            log.debug(
-                f'Finished querying solana transactions for {ata_or_account} belonging to '
-                f'{address}.',
-            )
-
-        self._send_tx_status_message(
-            address=address,
-            period=(min_start_ts, end_ts),
-            status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
-        )
 
     @overload
     def query_transactions_for_signatures(
@@ -342,49 +348,60 @@ class SolanaTransactions:
             f'Starting solana transaction range query for {address} from {start_ts} to {end_ts}. '
             f'Will query signatures for {len(txs_by_address)} addresses/ATAs.',
         )
-        for ata_or_account, existing_txs in txs_by_address.items():
-            until_sig, before_sig = None, None
-            if len(existing_txs) > 0:
-                first_sig, first_block_time = existing_txs[0]
-                if first_block_time <= start_ts:
-                    until_sig = Signature(first_sig)
+        try:
+            for ata_or_account, existing_txs in txs_by_address.items():
+                until_sig, before_sig = None, None
+                if len(existing_txs) > 0:
+                    first_sig, first_block_time = existing_txs[0]
+                    if first_block_time <= start_ts:
+                        until_sig = Signature(first_sig)
 
-                last_sig, last_block_time = existing_txs[-1]
-                if last_block_time >= end_ts:
-                    before_sig = Signature(last_sig)
+                    last_sig, last_block_time = existing_txs[-1]
+                    if last_block_time >= end_ts:
+                        before_sig = Signature(last_sig)
 
-            existing_signatures = [deserialize_tx_signature(x) for x, _ in existing_txs]
-            log.debug(
-                f'Querying solana signatures for {ata_or_account} belonging to {address} '
-                f'in range {start_ts}-{end_ts} with before={before_sig}, until={until_sig}, '
-                f'and {len(existing_signatures)} existing signatures.',
+                existing_signatures = [deserialize_tx_signature(x) for x, _ in existing_txs]
+                log.debug(
+                    'Querying solana signatures for %s belonging to %s in range %s-%s with '
+                    'before=%s, until=%s, and %s existing signatures.',
+                    ata_or_account,
+                    address,
+                    start_ts,
+                    end_ts,
+                    before_sig,
+                    until_sig,
+                    len(existing_signatures),
+                )
+                if (
+                    len(sigs_to_query := [x for x in self.node_inquirer.query_tx_signatures_for_address(  # noqa: E501
+                        address=ata_or_account,
+                        until=until_sig,
+                        before=before_sig,
+                    ) if x not in existing_signatures]) != 0 and
+                    (queried_signatures := self.query_transactions_for_signatures(
+                        signatures=sigs_to_query,
+                        relevant_address=ata_or_account,
+                        return_queried_hashes=return_queried_hashes,
+                    )) is not None
+                ):
+                    new_signatures.extend(queried_signatures)
+                    log.debug(
+                        'Finished querying solana transactions for %s belonging to %s. Queried %s '
+                        'new signatures.',
+                        ata_or_account,
+                        address,
+                        len(queried_signatures),
+                    )
+                else:
+                    log.debug(
+                        'No new solana transactions found for %s belonging to %s.',
+                        ata_or_account,
+                        address,
+                    )
+        finally:
+            self._send_tx_status_message(
+                address=address,
+                period=(start_ts, end_ts),
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
             )
-            if (
-                len(sigs_to_query := [x for x in self.node_inquirer.query_tx_signatures_for_address(  # noqa: E501
-                    address=ata_or_account,
-                    until=until_sig,
-                    before=before_sig,
-                ) if x not in existing_signatures]) != 0 and
-                (queried_signatures := self.query_transactions_for_signatures(
-                    signatures=sigs_to_query,
-                    relevant_address=ata_or_account,
-                    return_queried_hashes=return_queried_hashes,
-                )) is not None
-            ):
-                new_signatures.extend(queried_signatures)
-                log.debug(
-                    f'Finished querying solana transactions for {ata_or_account} belonging to '
-                    f'{address}. Queried {len(queried_signatures)} new signatures.',
-                )
-            else:
-                log.debug(
-                    f'No new solana transactions found for {ata_or_account} belonging to '
-                    f'{address}.',
-                )
-
-        self._send_tx_status_message(
-            address=address,
-            period=(start_ts, end_ts),
-            status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
-        )
         return new_signatures if return_queried_hashes else None

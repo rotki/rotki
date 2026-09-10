@@ -190,7 +190,9 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
     ) -> None:
         """Query the transactions for the given addresses and save them to the DB.
         Only queries new transactions if there are already transactions in the DB.
-        May raise RemoteError if there is a problem with querying the external service.
         """
         for address in addresses:
-            self.transactions.query_transactions_for_address(address=address)
+            try:
+                self.transactions.query_transactions_for_address(address=address)
+            except RemoteError as e:
+                log.error('Failed to query solana transactions for %s due to %s', address, e)

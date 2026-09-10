@@ -262,56 +262,57 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             period=(from_timestamp, to_timestamp),
             status=TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
         )
-        self.refresh_tracked_accounts()
+        try:
+            self.refresh_tracked_accounts()
 
-        accounts_str = ', '.join(addresses)
-        log.debug(f'Querying transactions for {self.blockchain!s} accounts {accounts_str}')
+            accounts_str = ', '.join(addresses)
+            log.debug('Querying transactions for %s accounts %s', self.blockchain, accounts_str)
 
-        accounts_by_latest_query = defaultdict(list)
-        with self.database.conn.read_ctx() as cursor:
-            for address in addresses:
-                block_height = self.database.get_dynamic_cache(
-                    cursor=cursor,
-                    name=self.cache_key,
-                    address=address,
-                ) or 0
-                accounts_by_latest_query[block_height].append(address)
+            accounts_by_latest_query = defaultdict(list)
+            with self.database.conn.read_ctx() as cursor:
+                for address in addresses:
+                    block_height = self.database.get_dynamic_cache(
+                        cursor=cursor,
+                        name=self.cache_key,
+                        address=address,
+                    ) or 0
+                    accounts_by_latest_query[block_height].append(address)
 
-        # An address queried for the first time may already appear in transactions saved for
-        # another address. Those were decoded while it was untracked, so their events are
-        # outdated. Mark them now and they get decoded again along with the new ones.
-        if len(new_addresses := accounts_by_latest_query.get(0, [])) != 0:
-            self.mark_addresses_transactions_for_redecode(new_addresses)
+            # An address queried for the first time may already appear in transactions saved for
+            # another address. Those were decoded while it was untracked, so their events are
+            # outdated. Mark them now and they get decoded again along with the new ones.
+            if len(new_addresses := accounts_by_latest_query.get(0, [])) != 0:
+                self.mark_addresses_transactions_for_redecode(new_addresses)
 
-        tx_list: list[BitcoinTx] = []
-        new_block_height = 0
-        for last_queried_block, accounts in accounts_by_latest_query.items():
-            block_height, accounts_txs = self._query(
-                action=BtcQueryAction.TRANSACTIONS,
-                accounts=accounts,
-                options={
-                    'to_timestamp': to_timestamp,
-                    'last_queried_block': last_queried_block,
-                    'progress_callback': partial(
-                        self._send_tx_query_progress,
-                        accounts,
-                        from_timestamp,
-                        to_timestamp,
-                    ),
-                },
+            tx_list: list[BitcoinTx] = []
+            new_block_height = 0
+            for last_queried_block, accounts in accounts_by_latest_query.items():
+                block_height, accounts_txs = self._query(
+                    action=BtcQueryAction.TRANSACTIONS,
+                    accounts=accounts,
+                    options={
+                        'to_timestamp': to_timestamp,
+                        'last_queried_block': last_queried_block,
+                        'progress_callback': partial(
+                            self._send_tx_query_progress,
+                            accounts,
+                            from_timestamp,
+                            to_timestamp,
+                        ),
+                    },
+                )
+                if len(accounts_txs) == 0:
+                    new_block_height = max(new_block_height, last_queried_block)
+                    continue
+
+                new_block_height = max(new_block_height, block_height)
+                tx_list.extend(accounts_txs)
+        finally:
+            self._send_tx_ws_status(
+                addresses=addresses,
+                period=(from_timestamp, to_timestamp),
+                status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
             )
-            if len(accounts_txs) == 0:
-                new_block_height = max(new_block_height, last_queried_block)
-                continue
-
-            new_block_height = max(new_block_height, block_height)
-            tx_list.extend(accounts_txs)
-
-        self._send_tx_ws_status(
-            addresses=addresses,
-            period=(from_timestamp, to_timestamp),
-            status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
-        )
         if len(tx_list) == 0:
             log.debug(f'No new transactions found for {self.blockchain!s} accounts {accounts_str}')
             if len(new_addresses) != 0:
