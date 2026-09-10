@@ -1,3 +1,4 @@
+import { Priority } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -58,6 +59,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
         t('actions.session.periodic_query.error.message', {
           message: getErrorMessage(error),
         }),
+        { priority: Priority.NORMAL },
       );
     }
     finally {

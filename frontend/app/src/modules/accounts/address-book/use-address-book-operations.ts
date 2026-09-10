@@ -6,6 +6,7 @@ import type {
   AddressBookSimplePayload,
 } from '@/modules/accounts/address-book/eth-names';
 import type { Collection } from '@/modules/core/common/collection';
+import { Priority } from '@rotki/common';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
@@ -46,6 +47,7 @@ export function useAddressBookOperations(): UseAddressBookOperationsReturn {
         t('address_book.actions.fetch.error.message', {
           message: getErrorMessage(error),
         }),
+        { priority: Priority.NORMAL },
       );
 
       return defaultCollectionState();

@@ -1,6 +1,6 @@
 import type { ShallowRef } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
-import { type AssetCollection, type AssetInfo, transformCase } from '@rotki/common';
+import { type AssetCollection, type AssetInfo, Priority, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { useAssetInfoCacheStore } from '@/modules/assets/use-asset-info-cache-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -40,6 +40,7 @@ export const useAssetInfoCache = createSharedComposable((): UseAssetInfoCacheRet
           identifiers: identifiers.join(', '),
           message: getErrorMessage(error),
         }),
+        { priority: Priority.NORMAL },
       );
       return undefined;
     }

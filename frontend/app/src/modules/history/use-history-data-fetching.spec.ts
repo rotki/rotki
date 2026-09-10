@@ -1,5 +1,6 @@
 import type { LocationLabel } from '@/modules/core/common/location';
 import type { TransactionStatus, useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { Priority } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryStore } from '@/modules/history/use-history-store';
@@ -77,6 +78,7 @@ describe('useHistoryDataFetching', () => {
       expect(mockNotifyError).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
+        { priority: Priority.NORMAL },
       );
     });
   });
@@ -112,6 +114,7 @@ describe('useHistoryDataFetching', () => {
       expect(mockNotifyError).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
+        { priority: Priority.NORMAL },
       );
     });
   });
