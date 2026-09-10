@@ -33,13 +33,13 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'message-1', title: 'title-1' });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'message-1', priority: Priority.ACTION, title: 'title-1' });
 
     expect(get(data)[0]).toMatchObject({ display: true, group: NotificationGroup.NEW_DETECTED_TOKENS });
     const originalDate = get(data)[0].date;
 
     // Second notification within cooldown should suppress display
-    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'message-2', title: 'title-1' });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 2, message: 'message-2', priority: Priority.ACTION, title: 'title-1' });
 
     expect(get(data)).toHaveLength(1);
     expect(get(data)[0]).toMatchObject({
@@ -51,7 +51,7 @@ describe('useNotificationDispatcher', () => {
 
     vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
 
-    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 3, message: 'message-3', title: 'title-1' });
+    notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, groupCount: 3, message: 'message-3', priority: Priority.ACTION, title: 'title-1' });
 
     expect(get(data)[0]).toMatchObject({ display: true, groupCount: 3, message: 'message-3' });
   });
@@ -252,9 +252,9 @@ describe('useNotificationDispatcher', () => {
       const { notify } = useNotificationDispatcher();
       const { queue } = storeToRefs(useNotificationsStore());
 
-      notify({ message: 'quiet', title: 'title' });
+      notify({ message: 'quiet', priority: Priority.HIGH, title: 'title' });
       unsilence();
-      notify({ message: 'loud', title: 'title' });
+      notify({ message: 'loud', priority: Priority.HIGH, title: 'title' });
 
       expect(get(queue)).toHaveLength(1);
       expect(get(queue)[0]).toMatchObject({ message: 'loud' });

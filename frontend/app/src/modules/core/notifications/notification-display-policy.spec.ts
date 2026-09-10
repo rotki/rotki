@@ -16,7 +16,7 @@ describe('displaysFor', () => {
     expect(displaysFor()).toBe(displaysFor(DEFAULT_PRIORITY));
   });
 
-  it('should keep popping the unclassified, so deriving display changes no existing behaviour', () => {
-    expect(displaysFor(undefined)).toBe(true);
+  it('should record the unclassified without popping it, so forgetting to classify cannot interrupt', () => {
+    expect(displaysFor(undefined)).toBe(false);
   });
 });

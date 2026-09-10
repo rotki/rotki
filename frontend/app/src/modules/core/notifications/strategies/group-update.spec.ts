@@ -32,7 +32,7 @@ describe('createGroupUpdateStrategy', () => {
   });
 
   it('should show a new group notification that is not suppressed', () => {
-    const result = strategy.process({ group, message: 'no indexers', title: 'test' }, context());
+    const result = strategy.process({ group, message: 'no indexers', priority: Priority.ACTION, title: 'test' }, context());
 
     expect(result!.notifications).toHaveLength(1);
     expect(result!.notifications[0].display).toBe(true);
@@ -70,9 +70,9 @@ describe('createGroupUpdateStrategy', () => {
   });
 
   it('should store the same priority on update as it decided display from', () => {
-    const existing = [createNotification(2, { group, message: 'stale', title: 'test' })];
+    const existing = [createNotification(2, { group, message: 'stale', priority: Priority.ACTION, title: 'test' })];
 
-    const result = strategy.process({ group, message: 'fresh', title: 'test' }, context(existing));
+    const result = strategy.process({ group, message: 'fresh', priority: Priority.ACTION, title: 'test' }, context(existing));
 
     expect(result!.notifications[0].priority).toBe(existing[0].priority);
     expect(result!.notifications[0].display).toBe(true);
@@ -95,7 +95,7 @@ describe('createGroupUpdateStrategy', () => {
     ];
 
     const result = strategy.process(
-      { group, groupCount: 3, message: 'fresh', severity: Severity.WARNING, title: 'test' },
+      { group, groupCount: 3, message: 'fresh', priority: Priority.ACTION, severity: Severity.WARNING, title: 'test' },
       context(existing),
     );
 

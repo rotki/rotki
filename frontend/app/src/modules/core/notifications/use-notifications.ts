@@ -1,4 +1,4 @@
-import { type Notification, type NotificationData, type Priority, Severity } from '@rotki/common';
+import { type Notification, type NotificationData, Priority, Severity } from '@rotki/common';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
@@ -50,10 +50,18 @@ export function useNotifications(): UseNotificationsReturn {
   const { notify: dispatchNotify } = useNotificationDispatcher();
   const { setMessage } = useMessageStore();
 
+  /**
+   * @remarks
+   * The fallback is `HIGH` rather than `DEFAULT_PRIORITY` because the two doors into the dispatcher
+   * carry opposite assumptions. A caller reaching for `notifyError` and friends is reporting the
+   * outcome of something the user just did, so it interrupts unless it says otherwise; a raw
+   * `notify()` payload is assembled field by field, so an absent priority there means unclassified
+   * and lands on the quiet default instead.
+   */
   function toast(severity: Severity, title: string, message: string, options?: ToastOptions): void {
     dispatchNotify({
       message,
-      priority: options?.priority,
+      priority: options?.priority ?? Priority.HIGH,
       severity,
       title,
     });

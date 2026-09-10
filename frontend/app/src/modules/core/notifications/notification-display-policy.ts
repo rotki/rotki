@@ -4,13 +4,12 @@ import { Priority } from '@rotki/common';
  * The priority a notification lands on when its caller does not classify itself.
  *
  * @remarks
- * `HIGH` preserves the behaviour the app shipped with, where anything reaching the dispatcher
- * interrupted unless it opted out. The target model in rotki#12942 is `NORMAL`, so that an
- * unclassified notification is stored rather than popped, but flipping this constant is a sweep
- * of every call site's intent rather than a policy change, and it belongs with the classification
- * work. It is a constant so that sweep is one edit.
+ * `NORMAL` is the target model of rotki#12942: an unclassified notification is recorded in the
+ * drawer rather than popped, so forgetting to classify costs a missed toast rather than an
+ * unwanted interruption. Every producer in the tree was classified before this was flipped from
+ * `HIGH`, so nothing relies on the default to interrupt.
  */
-export const DEFAULT_PRIORITY = Priority.HIGH;
+export const DEFAULT_PRIORITY = Priority.NORMAL;
 
 /**
  * Whether a notification of this priority interrupts the user with a popup.

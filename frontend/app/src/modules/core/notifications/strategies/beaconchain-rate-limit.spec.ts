@@ -1,4 +1,4 @@
-import { NotificationGroup, Severity } from '@rotki/common';
+import { NotificationGroup, Priority, Severity } from '@rotki/common';
 import { mockTranslate } from '@test/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
@@ -62,25 +62,28 @@ describe('createBeaconchainRateLimitStrategy', () => {
     });
   });
 
-  it('should pop again for a new endpoint after the row was already shown', () => {
+  it('should refresh the row for a new endpoint without popping, since BULK never interrupts', () => {
     const shown = createNotification(1, {
       extras: { endpoints: ['Endpoint 1'], until: '2025-01-15T12:00:00Z' },
       group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
       groupCount: 1,
       message: 'old message',
+      priority: Priority.BULK,
       title: 'grouped',
     });
 
     const result = strategy.process(
       {
         message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs',
+        priority: Priority.BULK,
         severity: Severity.WARNING,
         title: 'Endpoint 2',
       },
       { getNextId: vi.fn(), notifications: [{ ...shown, display: false }] },
     );
 
-    expect(result!.notifications[0].display).toBe(true);
+    expect(result!.notifications[0].display).toBe(false);
+    expect(result!.notifications[0].extras).toMatchObject({ endpoints: ['Endpoint 1', 'Endpoint 2'] });
   });
 
   it('should not add duplicate endpoints', () => {
