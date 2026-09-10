@@ -1,3 +1,4 @@
+import { Priority } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { uniqueStrings } from '@/modules/core/common/data/data';
@@ -109,7 +110,7 @@ export function useMessageHandling(): UseMessageHandling {
     }
     catch (error: unknown) {
       const message = handleMessageError(error, 'Message consumption failed');
-      notify({ message, title });
+      notify({ message, priority: Priority.NORMAL, title });
     }
     finally {
       isRunning = false;

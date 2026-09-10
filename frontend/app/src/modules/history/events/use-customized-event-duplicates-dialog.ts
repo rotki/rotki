@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -120,7 +120,7 @@ export function useCustomizedEventDuplicatesDialog(
     }
     catch (error: unknown) {
       logger.error('Failed to load duplicate event rows:', error);
-      notify({ message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }), severity: Severity.ERROR, title: t('actions.customized_event_duplicates.fetch_events_error.title') });
+      notify({ message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }), priority: Priority.HIGH, severity: Severity.ERROR, title: t('actions.customized_event_duplicates.fetch_events_error.title') });
     }
     finally {
       set(group.loading, false);

@@ -1,6 +1,6 @@
 import type { MessageHandler } from '@/modules/core/messaging/interfaces';
 import type { ExchangeUnknownAssetData } from '@/modules/core/messaging/types/business-types';
-import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
+import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { pick } from 'es-toolkit';
 import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
@@ -30,6 +30,7 @@ export function createExchangeUnknownAssetHandler(
       group: NotificationGroup.MISSING_EXCHANGE_MAPPING,
       groupCount,
       message: t('notification_messages.unknown_asset_mapping.message', { groupCount }),
+      priority: Priority.ACTION,
       severity: Severity.WARNING,
       title: t('notification_messages.unknown_asset_mapping.title'),
     }),

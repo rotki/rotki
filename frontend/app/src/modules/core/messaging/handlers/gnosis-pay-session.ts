@@ -1,6 +1,6 @@
 import type { NotificationHandler } from '../interfaces';
 import type { GnosisPaySessionKeyExpiredData } from '@/modules/core/messaging/types';
-import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
+import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 
 export function createGnosisPaySessionHandler(
@@ -20,6 +20,7 @@ export function createGnosisPaySessionHandler(
     category: NotificationCategory.DEFAULT,
     group: NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED,
     message: data.error,
+    priority: Priority.ACTION,
     severity: Severity.WARNING,
     title: t('notification_messages.gnosis_pay_session_key_expired.title'),
   }));

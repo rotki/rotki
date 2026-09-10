@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { assert, Severity } from '@rotki/common';
+import { assert, Priority, Severity } from '@rotki/common';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
@@ -64,7 +64,7 @@ async function exportZip(): Promise<void> {
 
   const notification = exportNotification(await exportCustomAssets());
   if (notification)
-    notify(notification);
+    notify({ ...notification, priority: Priority.HIGH });
 }
 </script>
 

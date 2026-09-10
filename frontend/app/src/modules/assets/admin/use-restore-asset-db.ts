@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { useAssets } from '@/modules/assets/use-assets';
 import { DialogType } from '@/modules/core/common/dialogs';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -84,7 +84,7 @@ export function useRestoreAssetDb(): UseRestoreAssetDbReturn {
     if (message.includes(UNDELETABLE_ASSETS))
       showDoubleConfirmation(resetType);
 
-    notify({ message, severity: Severity.ERROR, title: t('asset_update.restore.title') });
+    notify({ message, priority: Priority.HIGH, severity: Severity.ERROR, title: t('asset_update.restore.title') });
   }
 
   function showRestoreConfirmation(type: ResetType): void {

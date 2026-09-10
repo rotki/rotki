@@ -1,6 +1,6 @@
 import type { MessageHandler } from '@/modules/core/messaging/interfaces';
 import type { SolanaTokensMigrationData } from '@/modules/core/messaging/types';
-import { NotificationCategory, Severity } from '@rotki/common';
+import { NotificationCategory, Priority, Severity } from '@rotki/common';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 
@@ -25,6 +25,7 @@ export function createSolanaTokensHandler(
       message: t('notification_messages.solana_tokens_migration.message', {
         tokens: data.identifiers.map(item => `- ${item}`).join('\n'),
       }),
+      priority: Priority.ACTION,
       severity: Severity.WARNING,
       title: t('notification_messages.solana_tokens_migration.title'),
     }),

@@ -1,6 +1,6 @@
 import type { OAuthResult } from '@shared/ipc';
 import type { Ref } from 'vue';
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -54,7 +54,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
   const modelManualRefreshToken = shallowRef<string>('');
 
   function notifyMessage(message: string): void {
-    notify({ message, severity: Severity.ERROR, title: t('external_services.google_calendar.error') });
+    notify({ message, priority: Priority.HIGH, severity: Severity.ERROR, title: t('external_services.google_calendar.error') });
   }
 
   function notifyError(error: unknown, fallback: string): void {
@@ -87,7 +87,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
         set(showTokenInput, true);
       }
 
-      notify({ message: t('external_services.google_calendar.opening_browser'), severity: Severity.INFO, title: t('external_services.google_calendar.authorizing') });
+      notify({ message: t('external_services.google_calendar.opening_browser'), priority: Priority.HIGH, severity: Severity.INFO, title: t('external_services.google_calendar.authorizing') });
     }
     catch (error: unknown) {
       notifyError(error, t('external_services.google_calendar.auth_failed'));
@@ -181,6 +181,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
               total: result.eventsProcessed || 0,
               updated: result.eventsUpdated || 0,
             }),
+        priority: Priority.HIGH,
         severity: Severity.INFO,
         title: t('external_services.google_calendar.success'),
       });

@@ -8,7 +8,7 @@ import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -44,7 +44,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/api-keys/exchanges/');
 const { getExchangeName } = useLocations();
-const { notify } = useNotificationDispatcher();
+const { notifyInfo } = useNotifications();
 
 const cols = computed<DataTableColumn<Exchange>[]>(() => [{
   align: 'center',
@@ -122,15 +122,15 @@ async function toggleSync(exchange: Exchange) {
   });
 
   if (!status.success) {
-    notify({
-      message: t('exchange_settings.sync.messages.description', {
+    notifyInfo(
+      t('exchange_settings.sync.messages.title'),
+      t('exchange_settings.sync.messages.description', {
         action: enable ? t('exchange_settings.sync.messages.enable') : t('exchange_settings.sync.messages.disable'),
         location: exchange.location,
         message: status.message,
         name: exchange.name,
       }),
-      title: t('exchange_settings.sync.messages.title'),
-    });
+    );
   }
 
   resetNonSyncingExchanges();

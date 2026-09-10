@@ -1,4 +1,4 @@
-import { Severity } from '@rotki/common';
+import { Priority, Severity } from '@rotki/common';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
@@ -43,7 +43,7 @@ export function useBackendReload(): UseBackendReloadReturn {
     const result = await restartBackend();
 
     if (result.status === BackendRestartStatus.failed) {
-      notify({ message: t('backend_reload.failed.message', { message: result.message ?? '' }), severity: Severity.ERROR, title: t('backend_reload.failed.title') });
+      notify({ message: t('backend_reload.failed.message', { message: result.message ?? '' }), priority: Priority.HIGH, severity: Severity.ERROR, title: t('backend_reload.failed.title') });
       connect();
       return result;
     }

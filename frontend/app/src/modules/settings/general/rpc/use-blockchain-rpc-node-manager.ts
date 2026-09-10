@@ -175,6 +175,7 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   function notifyConnectFailures(messages: string[]): void {
     notify({
       message: messages.join('\n'),
+      priority: Priority.HIGH,
       title: t('evm_rpc_node_manager.connect_error.title', { chain: get(chainName) }),
     });
   }

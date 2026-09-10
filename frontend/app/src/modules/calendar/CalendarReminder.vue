@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { CalendarReminderEntry as StoredEntry } from '@/modules/calendar/reminder';
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { type MessageKey, msg } from '@/message-key';
 import CalendarReminderEntry from '@/modules/calendar/CalendarReminderEntry.vue';
@@ -95,7 +96,7 @@ const NOTIFY_KEYS: Record<ReminderAction, { message: MessageKey; title: MessageK
 function notifyFailure(key: ReminderAction, error: unknown): void {
   logger.error(error);
   const keys = NOTIFY_KEYS[key];
-  notify({ message: t(keys.message, { message: getErrorMessage(error) }), title: t(keys.title) });
+  notify({ message: t(keys.message, { message: getErrorMessage(error) }), priority: Priority.HIGH, title: t(keys.title) });
 }
 
 async function loadStored(): Promise<void> {
@@ -163,7 +164,7 @@ async function addReminders(eventId: number, secsBefore: number[]): Promise<void
   try {
     const result = await addCalendarReminder(secsBefore.map(seconds => ({ eventId, secsBefore: seconds })));
     if (result.failed && result.failed.length > 0) {
-      notify({ message: t('calendar.reminder.add_error.some_failed', { ids: result.failed.join(', ') }), title: t('calendar.reminder.add_error.title') });
+      notify({ message: t('calendar.reminder.add_error.some_failed', { ids: result.failed.join(', ') }), priority: Priority.HIGH, title: t('calendar.reminder.add_error.title') });
     }
   }
   catch (error: unknown) {
