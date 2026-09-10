@@ -4,6 +4,7 @@ import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/a
 import type { Collection } from '@/modules/core/common/collection';
 import { useAddressBookDeletion } from '@/modules/accounts/address-book/use-address-book-deletion';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -23,6 +24,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const emptyState = useTableEmptyState();
 
 const cols = computed<DataTableColumn<AddressBookEntry>[]>(() => [
   {
@@ -60,6 +63,7 @@ const { showDeleteConfirmation } = useAddressBookDeletion(location, refresh);
     v-model:sort.external="sortModel"
     :rows="collection.data"
     :cols="cols"
+    :empty="emptyState"
     :loading="loading"
     row-attr="address"
     outlined

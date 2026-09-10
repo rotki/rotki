@@ -13,7 +13,7 @@ import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-ma
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
@@ -45,6 +45,7 @@ const pillLabels = usePillBarLabels();
 
 const {
   collection: state,
+  error,
   filter: filters,
   isLoading: loading,
   pagination,
@@ -69,6 +70,8 @@ const {
   },
   urlState: { mode: 'route' },
 });
+
+const emptyState = useTableEmptyState({ error });
 
 function edit(balance: ManualBalanceWithPrice): void {
   emit('edit', prepareForEdit(balance));
@@ -164,6 +167,7 @@ watchDebounced(
       dense
       :loading="loading"
       :cols="cols"
+      :empty="emptyState"
       row-attr="label"
       :rows="state.data"
       data-testid="manual-balances"

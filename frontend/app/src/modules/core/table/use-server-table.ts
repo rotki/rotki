@@ -11,6 +11,7 @@ import { collectSources, mergeParams, type ParamSource, transformFilters } from 
 import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
 import { type ChangeSource, useChangeIntent } from '@/modules/core/table/use-change-intent';
 import { useTableData } from '@/modules/core/table/use-table-data';
+import { provideTableFetchError, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useTablePagination } from '@/modules/core/table/use-table-pagination';
 import { type PersistFilterSetting, useTablePersistence } from '@/modules/core/table/use-table-persistence';
 import { reduce, type TableEvent, type TableState } from '@/modules/core/table/use-table-reducer';
@@ -20,7 +21,7 @@ import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
 export type { ChangeSource };
 
-export { routeWhen };
+export { routeWhen, useTableEmptyState };
 
 interface TableSortOptions<TItem extends NonNullable<unknown>> {
   /** The sorting a table starts at, and returns to when the URL carries none. */
@@ -149,6 +150,8 @@ export function useServerTable<
     (): ComputedRef<TPayload> => requestPayload,
     cancelTag,
   );
+
+  provideTableFetchError(error);
 
   const { internalPagination, pagination, setPage } = useTablePagination<TItem>(
     itemsPerPage,

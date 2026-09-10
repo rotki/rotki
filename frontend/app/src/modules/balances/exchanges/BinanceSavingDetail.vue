@@ -7,6 +7,7 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -33,6 +34,7 @@ const defaultParams = computed<Record<string, unknown>>(() => ({
 
 const {
   collection,
+  error,
   isLoading,
   pagination,
   refetch: fetchData,
@@ -55,6 +57,8 @@ const {
   },
   urlState: { mode: 'route' },
 });
+
+const emptyState = useTableEmptyState({ error });
 
 const receivedTableSort = ref<DataTableSortData<AssetBalance>>({
   column: 'value',
@@ -167,6 +171,7 @@ watchImmediate(currencySymbol, async () => {
         outlined
         dense
         :cols="tableHeaders"
+        :empty="emptyState"
         :rows="collection.data"
         row-attr="asset"
         :loading="isLoading"

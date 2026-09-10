@@ -3,6 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { useNftData } from '@/modules/balances/non-fungible/use-nft-data';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
@@ -26,6 +27,7 @@ const {
   currencySymbol,
   data,
   dataLoading,
+  error,
   fetchData,
   found,
   percentageOfCurrentGroup,
@@ -36,6 +38,8 @@ const {
   pagination,
   totalValue,
 } = useNftData({ dashboard: true });
+
+const emptyState = useTableEmptyState({ error });
 
 onMounted(async () => {
   await fetchData();
@@ -93,7 +97,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
       :cols="cols"
       :rows="data"
       :loading="dataLoading"
-      :empty="{ description: t('data_table.no_data') }"
+      :empty="emptyState"
       row-attr="id"
       sticky-header
       outlined

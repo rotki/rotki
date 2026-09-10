@@ -62,7 +62,7 @@ const {
   toggleWhitelistAsset,
 } = useManagedAssetOperations(() => emit('refresh'), () => ignoredHandling, selected);
 
-const { cols, data, expand, getAssetLocation, isExpanded, spamDisabled } = useManagedAssetTable(
+const { cols, data, emptyState, expand, getAssetLocation, isExpanded, spamDisabled } = useManagedAssetTable(
   paginationModel,
   expanded,
   () => collection,
@@ -100,6 +100,7 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
       dense
       :value="selected"
       :rows="data"
+      :empty="emptyState"
       :loading="loading"
       :cols="cols"
       :expanded="expanded"

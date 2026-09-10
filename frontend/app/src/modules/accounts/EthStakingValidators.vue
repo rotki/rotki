@@ -9,6 +9,7 @@ import { SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -26,6 +27,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   cols,
+  error,
   ethStakingValidators,
   fields,
   filters,
@@ -34,6 +36,8 @@ const {
   modelSelected,
   sort,
 } = useEthValidatorData();
+
+const emptyState = useTableEmptyState({ error, fallback: () => ({ label: t('data_table.no_data') }) });
 
 const pillLabels = usePillBarLabels();
 
@@ -148,13 +152,11 @@ defineExpose({
       sticky-header
       show-select
       return-object
-      :empty="{
-        label: t('data_table.no_data'),
-      }"
+      :empty="emptyState"
     >
       <template #empty-description>
         <p class="max-w-prose mx-auto">
-          {{ t('blockchain_balances.validators.auto_detection_info') }}
+          {{ emptyState.description ?? t('blockchain_balances.validators.auto_detection_info') }}
         </p>
       </template>
       <template #item.index="{ row }">

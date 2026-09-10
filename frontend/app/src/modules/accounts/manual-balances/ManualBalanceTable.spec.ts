@@ -67,15 +67,18 @@ vi.mock('@/modules/core/table/use-remember-table-sorting', async importOriginal 
 
 vi.mock('@/modules/core/table/use-server-table', async () => {
   const { computed, ref } = await import('vue');
+  const { useTableEmptyState } = await import('@/modules/core/table/use-table-empty-state');
   return {
     useServerTable: (): Record<string, unknown> => ({
       collection: computed(() => ({ data: rows.value, found: rows.value.length, limit: 10, total: rows.value.length })),
+      error: ref(undefined),
       filter: ref({}),
       isLoading: ref(false),
       pagination: ref({ limit: 10, page: 1, total: 0 }),
       refetch,
       sort: ref([]),
     }),
+    useTableEmptyState,
   };
 });
 

@@ -7,6 +7,7 @@ import { getAccountAddress } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
@@ -46,6 +47,8 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const emptyState = useTableEmptyState();
 
 const { createColumns, initializeTableSorting } = useAccountTableConfig<T>();
 const {
@@ -88,7 +91,7 @@ defineExpose({
     :rows="rows"
     :loading="group && isInitialLoading"
     row-attr="id"
-    :empty="{ description: t('data_table.no_data') }"
+    :empty="emptyState"
     :loading-text="t('account_balances.data_table.loading')"
     data-testid="account-table"
     single-expand

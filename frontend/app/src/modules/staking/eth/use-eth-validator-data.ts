@@ -15,6 +15,8 @@ import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-v
 
 interface UseEthValidatorDataReturn {
   cols: ComputedRef<DataTableColumn<EthereumValidator>[]>;
+  /** The last fetch failure, so the table can name it in place of its empty text. */
+  error: Ref<unknown>;
   ethStakingValidators: ComputedRef<EthereumValidator[]>;
   /** The pill-bar fields, built here because the table's url shape is read off them. */
   fields: FieldDef[];
@@ -39,6 +41,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
 
   const {
     collection: rows,
+    error,
     filter: filters,
     pagination,
     refetch: fetchData,
@@ -118,6 +121,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
 
   return {
     cols,
+    error,
     ethStakingValidators,
     fields,
     fetchData,

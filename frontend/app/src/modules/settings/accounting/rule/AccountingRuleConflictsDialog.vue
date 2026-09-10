@@ -5,6 +5,7 @@ import type {
   AccountingTreatment,
 } from '@/modules/settings/types/accounting';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
@@ -25,6 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   collection,
+  error,
   isLoading,
   loading,
   modelResolution,
@@ -41,6 +43,8 @@ const {
     close();
   },
 });
+
+const emptyState = useTableEmptyState({ error });
 
 onMounted(async () => {
   await refetch();
@@ -198,6 +202,7 @@ const { total } = getCollectionData<AccountingRuleConflict>(collection);
         v-model:pagination.external="pagination"
         class="pb-4"
         :cols="tableHeaders"
+        :empty="emptyState"
         :loading="isLoading"
         :rows="collection.data"
         disable-floating-header

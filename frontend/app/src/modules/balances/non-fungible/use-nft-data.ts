@@ -31,6 +31,8 @@ interface UseNftDataReturn {
   currencySymbol: Readonly<Ref<string>>;
   data: ComputedRef<NonFungibleBalance[]>;
   dataLoading: Ref<boolean>;
+  /** The last fetch failure, so the table can name it in place of its empty text. */
+  error: Ref<unknown>;
   fetchData: () => Promise<void>;
   /** Entries matching the current filter, across all pages. Zero means there is nothing to show. */
   found: ComputedRef<number>;
@@ -58,6 +60,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
 
   const {
     collection: balances,
+    error,
     isLoading: dataLoading,
     pagination,
     refetch: fetchData,
@@ -197,6 +200,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     currencySymbol,
     data,
     dataLoading,
+    error,
     fetchData,
     found,
     modelIgnoredAssetsHandling,

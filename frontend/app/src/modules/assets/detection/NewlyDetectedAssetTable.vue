@@ -10,6 +10,7 @@ import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -48,6 +49,7 @@ const fields = useNewlyDetectedFields();
 
 const {
   collection,
+  error,
   filter,
   isLoading,
   pagination,
@@ -63,6 +65,8 @@ const {
     },
   },
 });
+
+const emptyState = useTableEmptyState({ error });
 
 const cols = computed<DataTableColumn<Token>[]>(() => [
   {
@@ -167,6 +171,7 @@ onMounted(async () => {
         v-model:sort.external="sort"
         v-model:pagination.external="pagination"
         :cols="cols"
+        :empty="emptyState"
         :rows="rows"
         :loading="isLoading"
         outlined
