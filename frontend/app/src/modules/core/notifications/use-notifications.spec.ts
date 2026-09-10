@@ -35,6 +35,7 @@ describe('useNotifications', () => {
 
     expect(mockNotify).toHaveBeenCalledWith({
       message: 'Error message',
+      priority: Priority.HIGH,
       severity: Severity.ERROR,
       title: 'Error Title',
     });
@@ -46,6 +47,7 @@ describe('useNotifications', () => {
 
     expect(mockNotify).toHaveBeenCalledWith({
       message: 'Warn message',
+      priority: Priority.HIGH,
       severity: Severity.WARNING,
       title: 'Warn Title',
     });
@@ -57,6 +59,7 @@ describe('useNotifications', () => {
 
     expect(mockNotify).toHaveBeenCalledWith({
       message: 'Info message',
+      priority: Priority.HIGH,
       severity: Severity.INFO,
       title: 'Info Title',
     });
@@ -77,6 +80,15 @@ describe('useNotifications', () => {
 
     expect(mockNotify).toHaveBeenCalledWith(
       expect.objectContaining({ priority: Priority.NORMAL }),
+    );
+  });
+
+  it('should leave a raw notify unclassified rather than lending it the toast door default', () => {
+    const { notify } = useNotifications();
+    notify({ message: 'Message', title: 'Title' });
+
+    expect(mockNotify).toHaveBeenCalledWith(
+      expect.not.objectContaining({ priority: expect.anything() }),
     );
   });
 

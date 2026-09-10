@@ -124,7 +124,7 @@ describe('useNotificationsStore', () => {
     const { queue } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ message: 'shown', title: 'shown' })),
+      createNotification(store.getNextId(), testPayload({ message: 'shown', priority: Priority.HIGH, title: 'shown' })),
       createNotification(store.getNextId(), testPayload({ message: 'hidden', priority: Priority.NORMAL, title: 'hidden' })),
     ]);
 
@@ -177,7 +177,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', priority: Priority.ACTION, title: 'title' })),
     ]);
     store.displayed([9999]);
 
@@ -190,7 +190,7 @@ describe('useNotificationsStore', () => {
     const { data } = storeToRefs(store);
 
     store.add([
-      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', title: 'title' })),
+      createNotification(store.getNextId(), testPayload({ group: NotificationGroup.NEW_DETECTED_TOKENS, message: 'msg', priority: Priority.ACTION, title: 'title' })),
     ]);
     store.displayed([]);
 
