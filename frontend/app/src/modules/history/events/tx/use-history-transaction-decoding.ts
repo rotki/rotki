@@ -9,12 +9,12 @@ import {
   TransactionChainType,
   TransactionChainTypeNeedDecoding,
 } from '@/modules/history/events/event-payloads';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
 import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { DECODE_LANE, UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -61,9 +61,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   ): Promise<void> => {
     const outcome = await submitTask({
       deps: placement.deps,
-      id: decodeActivityId(chain, ignoreCache),
-      kind: ActivityKind.TX_DECODING,
-      lane: DECODE_LANE,
+      id: decodeActivity.id({ chain, ignoreCache }),
+      kind: decodeActivity.kind,
+      lane: decodeActivity.laneOf?.({ chain, ignoreCache }),
       parent: placement.parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => {
