@@ -5137,6 +5137,7 @@
   },
   "overall_balances": {
     "loading": "LOADING",
+    "net_value_error": "The net worth graph could not be loaded",
     "premium_hint": "Get the full experience by upgrading to rotki premium",
     "total_balance": "Total Balance"
   },

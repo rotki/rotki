@@ -10,7 +10,9 @@ interface UseStatisticsDataFetchingReturn {
 }
 
 export function useStatisticsDataFetching(): UseStatisticsDataFetchingReturn {
-  const { netValue } = storeToRefs(useStatisticsStore());
+  const statisticsStore = useStatisticsStore();
+  const { netValue } = storeToRefs(statisticsStore);
+  const { setNetValueError } = statisticsStore;
   const api = useStatisticsApi();
   const { notifyError } = useNotifications();
   const nftsInNetValue = useSetting('nftsInNetValue');
@@ -19,13 +21,17 @@ export function useStatisticsDataFetching(): UseStatisticsDataFetchingReturn {
   async function fetchNetValue(): Promise<void> {
     try {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
+      setNetValueError(undefined);
     }
     catch (error: unknown) {
+      // A cancelled request is the queue dropping work, not a failure the chart should report.
       if (isRequestCancellation(error))
         return;
 
+      const message = getErrorMessage(error);
+      setNetValueError(message);
       notifyError(t('actions.statistics.net_value.error.title'), t('actions.statistics.net_value.error.message', {
-        message: getErrorMessage(error),
+        message,
       }), { priority: Priority.NORMAL });
     }
   }
