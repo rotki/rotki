@@ -129,6 +129,61 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
       expect(setMessage).not.toHaveBeenCalled();
       expect(get(nodes)).toHaveLength(0);
     });
+
+    it('should keep the reason for the table to render, since the notification never pops', async () => {
+      fetchEvmNodes.mockRejectedValue(new Error('backend is down'));
+
+      const { loadError, loadNodes } = manager();
+      await loadNodes();
+
+      expect(get(loadError)).toBe('backend is down');
+    });
+
+    it('should clear a previous failure once a read succeeds', async () => {
+      fetchEvmNodes.mockRejectedValue(new Error('backend is down'));
+      const { loadError, loadNodes } = manager();
+      await loadNodes();
+
+      fetchEvmNodes.mockResolvedValue([node({ name: 'first' })]);
+      await loadNodes();
+
+      expect(get(loadError)).toBeUndefined();
+    });
+
+    it('should drop stale nodes on failure, so the table cannot show a list next to its error', async () => {
+      fetchEvmNodes.mockResolvedValue([node({ name: 'first' })]);
+      const { loadNodes, nodes } = manager();
+      await loadNodes();
+
+      fetchEvmNodes.mockRejectedValue(new Error('backend is down'));
+      await loadNodes();
+
+      expect(get(nodes)).toHaveLength(0);
+    });
+
+    it('should flag the read as in flight only while it runs', async () => {
+      let release: (value: BlockchainRpcNode[]) => void = () => {};
+      fetchEvmNodes.mockReturnValue(new Promise<BlockchainRpcNode[]>((resolve) => {
+        release = resolve;
+      }));
+
+      const { loading, loadNodes } = manager();
+      const pending = loadNodes();
+      expect(get(loading)).toBe(true);
+
+      release([]);
+      await pending;
+      expect(get(loading)).toBe(false);
+    });
+
+    it('should stop flagging the read as in flight when it fails', async () => {
+      fetchEvmNodes.mockRejectedValue(new Error('backend is down'));
+
+      const { loading, loadNodes } = manager();
+      await loadNodes();
+
+      expect(get(loading)).toBe(false);
+    });
   });
 
   describe('the etherscan entry', () => {

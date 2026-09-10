@@ -25,6 +25,8 @@ const {
   editRpcNode,
   getNodeStatus,
   isEtherscan,
+  loadError,
+  loading,
   loadNodes,
   modelState,
   nodes,
@@ -74,6 +76,51 @@ defineExpose({
       </tr>
     </thead>
     <tbody>
+      <tr v-if="loading">
+        <td
+          colspan="4"
+          class="py-6"
+          data-testid="rpc-nodes-loading"
+        >
+          <RuiProgress
+            color="primary"
+            variant="indeterminate"
+            circular
+            size="24"
+          />
+        </td>
+      </tr>
+      <tr v-else-if="loadError">
+        <td colspan="4">
+          <RuiAlert
+            type="error"
+            :title="t('evm_rpc_node_manager.loading_error.title', { chain })"
+            data-testid="rpc-nodes-error"
+          >
+            <div class="flex flex-col items-start gap-2">
+              <span>{{ loadError }}</span>
+              <RuiButton
+                size="sm"
+                color="error"
+                variant="outlined"
+                data-testid="rpc-nodes-retry"
+                @click="loadNodes()"
+              >
+                {{ t('common.actions.retry') }}
+              </RuiButton>
+            </div>
+          </RuiAlert>
+        </td>
+      </tr>
+      <tr v-else-if="nodes.length === 0">
+        <td
+          colspan="4"
+          class="py-6 text-center text-rui-text-secondary"
+          data-testid="rpc-nodes-empty"
+        >
+          {{ t('evm_rpc_node_manager.no_nodes') }}
+        </td>
+      </tr>
       <tr
         v-for="(item, index) in nodes"
         :key="index + item.name"
