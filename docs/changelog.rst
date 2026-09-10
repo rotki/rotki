@@ -4,7 +4,7 @@ Changelog
 
 * :bug:`-` Undelegating, withdrawing and bridging GRT back to Ethereum through a The Graph vesting contract on Arbitrum One are now decoded for the tracked beneficiary instead of showing up as gas-only transactions.
 * :feature:`-` rotki now tells you when a chain's transactions can not be queried because a paid Etherscan API key is required, and queries Etherscan first on such chains when a paid key is configured.
-* :bug:`13090` Aerodrome and Velodrome liquidity additions and removals made with ETH are now properly decoded, and Aerodrome/Velodrome Slipstream concentrated liquidity swaps and positions are now supported.
+* :bug:`13090` Aerodrome and Velodrome liquidity additions and removals made with ETH are now properly decoded, and Aerodrome/Velodrome Slipstream concentrated liquidity swaps and positions are now supported and gauge and staking and CL position balances are recognized
 * :bug:`-` The chain picker now lists the chains alphabetically instead of in the order the backend happens to return them, so a chain can be found by scrolling to where its name belongs. "All Supported Chains" stays at the top, and it can now be found by typing part of its name, which matched nothing before.
 * :bug:`-` A price source that stops answering is now set aside after its first timeout and checked with a quick probe before it is used again.
 * :bug:`-` Hovering the last-queried time in the dashboard sync bar no longer turns the cursor into a question mark.

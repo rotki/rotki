@@ -454,17 +454,20 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        amount0_raw = int.from_bytes(context.tx_log.data[32:64])
-        amount1_raw = int.from_bytes(context.tx_log.data[64:96])
-        if amount0_raw == 0 and amount1_raw == 0:
-            return DEFAULT_EVM_DECODING_OUTPUT  # nothing moved, e.g. a collect on gauge withdrawal
-
+        # The position manager's Collect log carries the amounts it asked the pool for, while
+        # the pool's log has what it actually paid, which can be a few wei less. So take the
+        # nearest preceding pool log owned by the position manager whose amounts fit, and
+        # use the pool's amounts since those are what the user received.
+        nfpm_amount0 = int.from_bytes(context.tx_log.data[32:64])
+        nfpm_amount1 = int.from_bytes(context.tx_log.data[64:96])
         for tx_log in reversed(context.all_logs):
             if (
                 tx_log.log_index < context.tx_log.log_index and
                 tx_log.topics[0] == pool_topic and
-                int.from_bytes(tx_log.data[-64:-32]) == amount0_raw and
-                int.from_bytes(tx_log.data[-32:]) == amount1_raw
+                bytes_to_address(tx_log.topics[1]) == self.slipstream_nfpm and
+                (amount0_raw := int.from_bytes(tx_log.data[-64:-32])) <= nfpm_amount0 and
+                (amount1_raw := int.from_bytes(tx_log.data[-32:])) <= nfpm_amount1 and
+                (is_deposit or tx_log.data[:32] == context.tx_log.data[:32])  # same recipient
             ):
                 pool_address = tx_log.address
                 break
@@ -476,6 +479,9 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 tx_hash=context.transaction.tx_hash,
             )
             return DEFAULT_EVM_DECODING_OUTPUT
+
+        if amount0_raw == 0 and amount1_raw == 0:
+            return DEFAULT_EVM_DECODING_OUTPUT  # nothing moved, e.g. a collect on gauge withdrawal
 
         if (tokens := self._get_cl_pool_tokens(pool_address)) is None:
             return DEFAULT_EVM_DECODING_OUTPUT

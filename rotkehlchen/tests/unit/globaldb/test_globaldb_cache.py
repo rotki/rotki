@@ -302,20 +302,22 @@ def test_velodrome_cache_progress(database, chain_id, pool_case):
 @pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.BASE])
 def test_velodrome_cache_chunk_halving(database, chain_id):
     """A chunk that exceeds the gas limit is retried with half the size instead of ending the
-    query, so the concentrated liquidity pools listed after the v2 pools are still found."""
-    v2_pool, cl_pool = make_evm_address(), make_evm_address()
-    raw_v2 = [v2_pool, 'vAMM-A/B', 18, 0, -1, *([ZERO_ADDRESS] * 13)]
+    query, so the concentrated liquidity pools listed after the v2 pools are still found.
+    The failure happens after a full page of v2 pools, as it does on chain."""
+    v2_pools = [make_evm_address() for _ in range(POOL_DATA_CHUNK_SIZE)]
+    cl_pool = make_evm_address()
+    raw_v2 = [[address, 'vAMM-A/B', 18, 0, -1, *([ZERO_ADDRESS] * 13)] for address in v2_pools]
     raw_cl = [cl_pool, '', 0, 0, 200, *([ZERO_ADDRESS] * 13)]
     calls: list[list[int]] = []
 
     def mock_call(contract, node_inquirer, method_name, arguments, **kwargs):  # pylint: disable=unused-argument
         calls.append(arguments)
         limit, offset = arguments[0], arguments[1]
-        if offset == 0 and limit == POOL_DATA_CHUNK_SIZE:
-            return [raw_v2]  # fewer than the limit, so this is the last chunk of size 500
+        if offset == 0:
+            return raw_v2  # a full first page of v2 pools
         if limit >= 100:
-            raise RemoteError('gas limit error')
-        return [raw_cl] if offset == 1 else []
+            raise RemoteError('gas limit error')  # the CL region needs smaller chunks
+        return [raw_cl] if offset == POOL_DATA_CHUNK_SIZE else []
 
     inquirer = MagicMock(database=database, chain_id=chain_id)
     with (
@@ -329,38 +331,12 @@ def test_velodrome_cache_chunk_halving(database, chain_id):
             reload_all=True,
         )
 
-    assert calls[0] == [POOL_DATA_CHUNK_SIZE, 0, 0]
-    assert [pool.pool_address for pool in pools] == [v2_pool]
-    assert pools[0].tick_spacing == 0
-
-    # Now the same but with the CL pool at offset 1 requiring smaller chunks
-    calls.clear()
-
-    def mock_call_cl(contract, node_inquirer, method_name, arguments, **kwargs):  # pylint: disable=unused-argument
-        calls.append(arguments)
-        limit, offset = arguments[0], arguments[1]
-        if limit >= 100:
-            raise RemoteError('gas limit error')
-        if offset == 1:
-            return [raw_cl]
-        return []
-
-    with (
-        patch('rotkehlchen.chain.evm.contracts.EvmContract.call', new=mock_call_cl),
-        patch.object(database.msg_aggregator, 'add_message'),
-    ):
-        pools = query_velodrome_data_from_chain(
-            inquirer=inquirer,
-            existing_pools={v2_pool},
-            msg_aggregator=database.msg_aggregator,
-            reload_all=False,
-        )
-
     # the chunk of 62 returns fewer than 62 pools, so it is the last one
-    assert calls == [[500, 1, 0], [250, 1, 0], [125, 1, 0], [62, 1, 0]]
-    assert [pool.pool_address for pool in pools] == [cl_pool]
-    assert pools[0].tick_spacing == 200
-    assert pools[0].pool_name == 'CL200'
+    assert calls == [[500, 0, 0], [500, 500, 0], [250, 500, 0], [125, 500, 0], [62, 500, 0]]
+    assert [pool.pool_address for pool in pools] == [*v2_pools, cl_pool]
+    assert pools[0].tick_spacing == 0
+    assert pools[-1].tick_spacing == 200
+    assert pools[-1].pool_name == 'CL200'
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cl_pool in globaldb_get_general_cache_values(
             cursor=cursor,

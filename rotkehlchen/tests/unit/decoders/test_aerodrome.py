@@ -1,13 +1,21 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.base.modules.aerodrome.decoder import ROUTER, SLIPSTREAM_NFPM
+from rotkehlchen.chain.base.modules.aerodrome.decoder import (
+    ROUTER,
+    SLIPSTREAM_NFPM,
+    AerodromeDecoder,
+)
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import COLLECT_LIQUIDITY_SIGNATURE
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CL_POOL_COLLECT, CPT_AERODROME
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import (
     NodeName,
     WeightedNode,
@@ -24,6 +32,7 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -624,16 +633,7 @@ def test_slipstream_exit_position(
     ]
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
 def test_slipstream_gauge_deposit(
@@ -692,16 +692,7 @@ def test_slipstream_gauge_deposit(
     ]
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
 def test_slipstream_gauge_withdraw(
@@ -749,16 +740,7 @@ def test_slipstream_gauge_withdraw(
     ]
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x01623a0f766e15ad10677ECFA573c3B73BCf79bF']])
 def test_slipstream_gauge_claim_rewards(
@@ -801,6 +783,54 @@ def test_slipstream_gauge_claim_rewards(
             address=gauge,
             notes=f'Receive {reward_amount} AERO rewards from {gauge} aerodrome gauge',
         ),
+    ]
+
+
+def test_slipstream_collect_uses_the_pool_amounts(
+        base_transaction_decoder: BaseTransactionDecoder,
+) -> None:
+    """The position manager's Collect log reports the amounts it requested, while the pool
+    can pay a few wei less. The pool log must still be matched and its amounts used."""
+    assert isinstance(decoder := base_transaction_decoder.decoders['Aerodrome'], AerodromeDecoder)
+    user_address = make_evm_address()
+    recipient_word = bytes.fromhex(user_address[2:]).rjust(32, b'\x00')
+    nfpm_amount0, nfpm_amount1 = 1104765404, 15960348043137794181943
+    pool_amount0, pool_amount1 = nfpm_amount0 - 1, nfpm_amount1 - 2
+    pool_log = EvmTxReceiptLog(
+        log_index=10,
+        address=(pool := make_evm_address()),
+        topics=[
+            CL_POOL_COLLECT,
+            bytes.fromhex(SLIPSTREAM_NFPM[2:]).rjust(32, b'\x00'),
+            (100).to_bytes(32, 'big'),
+            (200).to_bytes(32, 'big'),
+        ],
+        data=recipient_word + pool_amount0.to_bytes(32, 'big') + pool_amount1.to_bytes(32, 'big'),
+    )
+    nfpm_log = EvmTxReceiptLog(
+        log_index=11,
+        address=SLIPSTREAM_NFPM,
+        topics=[COLLECT_LIQUIDITY_SIGNATURE, (76587599).to_bytes(32, 'big')],
+        data=recipient_word + nfpm_amount0.to_bytes(32, 'big') + nfpm_amount1.to_bytes(32, 'big'),
+    )
+    with patch.object(
+        decoder,
+        '_get_cl_pool_tokens',
+        return_value=(A_USDC_BASE.resolve_to_evm_token().evm_address, A_AERO.resolve_to_evm_token().evm_address),  # noqa: E501
+    ) as get_tokens:
+        output = decoder._decode_slipstream_position_events(context=DecoderContext(
+            tx_log=nfpm_log,
+            transaction=make_ethereum_transaction(),
+            action_items=[],
+            all_logs=[pool_log, nfpm_log],
+            decoded_events=[],
+        ))
+
+    get_tokens.assert_called_once_with(pool)
+    assert output.matched_counterparty == CPT_AERODROME
+    assert [(item.asset, item.amount) for item in output.action_items] == [
+        (A_USDC_BASE, FVal('1104.765403')),
+        (A_AERO, FVal('15960.348043137794181941')),
     ]
 
 

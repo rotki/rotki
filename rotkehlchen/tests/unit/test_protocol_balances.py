@@ -81,7 +81,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CP
 from rotkehlchen.chain.evm.decoding.velodrome.utils import get_slipstream_position_price
 from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
 from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.balances import KinetiqBalances
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.constants import CPT_KINETIQ
@@ -1548,9 +1548,10 @@ def test_aerodrome_locked_balances(
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
-@pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
+@pytest.mark.parametrize('base_accounts', [['0x14821442B7581632Ee23FF31aBa8e461A7a81022']])
 def test_aerodrome_slipstream_staked_balances(
         base_inquirer: BaseInquirer,
         base_accounts: list[ChecksumEvmAddress],
@@ -1567,34 +1568,21 @@ def test_aerodrome_slipstream_staked_balances(
         )
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0xe09feff8afe0c03d8bb4cb66c1eb6c2829a998ff114f64cb45dc1d4b79336476'),
+        tx_hash=deserialize_evm_tx_hash('0x983751a5102c5fcb228e855fbc21c7058240611b3cb89c6077ff8596072b242a'),
         load_global_caches=load_global_caches,
     )
     protocol_balances = AerodromeBalances(
         evm_inquirer=base_inquirer,
         tx_decoder=tx_decoder,
     ).query_balances(addresses=base_accounts)
-    position_balances = {
-        asset: balance[CPT_AERODROME]
-        for asset, balance in protocol_balances[base_accounts[0]].assets.items()
-        if asset.identifier.startswith('eip155:8453/erc721:0x827922686190790b37229fd06084350E74485b72/')  # noqa: E501
-    }
-    assert len(position_balances) != 0
-    for asset, balance in position_balances.items():
-        assert balance.amount == ONE, f'{asset} should be a single position NFT'
-        assert balance.value > ZERO, f'{asset} should be valued from its underlying assets'
+    position_balance = protocol_balances[base_accounts[0]].assets[Asset(
+        'eip155:8453/erc721:0x827922686190790b37229fd06084350E74485b72/72523094',
+    )][CPT_AERODROME]
+    assert position_balance.amount == ONE
+    assert position_balance.value > ZERO  # valued from the USDC and AERO it holds
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_slipstream_position_price(base_inquirer: BaseInquirer) -> None:
     """A Slipstream position is priced from the liquidity it holds in its pool"""
     price = get_slipstream_position_price(
@@ -1603,7 +1591,7 @@ def test_slipstream_position_price(base_inquirer: BaseInquirer) -> None:
             evm_address=string_to_evm_address('0x827922686190790b37229fd06084350E74485b72'),
             chain_id=ChainID.BASE,
             token_kind=TokenKind.ERC721,
-            collectible_id='76588090',
+            collectible_id='72523094',
             protocol=CPT_AERODROME,
         ),
         evm_inquirer=base_inquirer,

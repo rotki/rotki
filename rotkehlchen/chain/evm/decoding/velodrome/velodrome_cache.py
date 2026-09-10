@@ -191,10 +191,9 @@ def query_velodrome_data_from_chain(
         counterparty = CPT_AERODROME
 
     pool_data: list[dict] = []
-    pool_data_chunk: list[dict] = []
-    offset = initial_offset = 0 if reload_all else len(existing_pools)
+    offset = 0 if reload_all else len(existing_pools)
     limit = POOL_DATA_CHUNK_SIZE
-    while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == initial_offset):  # noqa: E501
+    while True:
         try:
             pool_data_chunk = data_contract.call(
                 node_inquirer=inquirer,
@@ -226,6 +225,8 @@ def query_velodrome_data_from_chain(
 
         pool_data.extend(pool_data_chunk)
         offset += limit
+        if len(pool_data_chunk) < limit:
+            break  # a short chunk is the last one
 
     deserialized_pools: list[VelodromePoolData] = []
     for raw_pool in pool_data:
