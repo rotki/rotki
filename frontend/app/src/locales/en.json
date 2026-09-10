@@ -2082,6 +2082,7 @@
       "proceed": "Proceed",
       "pull": "Pull",
       "push": "Push",
+      "retry": "Retry",
       "save": "Save",
       "search": "Search",
       "select_all": "Select All",
@@ -3075,6 +3076,7 @@
     "loading_error": {
       "title": "Loading {chain} RPC Nodes"
     },
+    "no_nodes": "No RPC nodes configured for this chain",
     "node": "Node",
     "node_weight": "Node Weight",
     "private_node": "This is a private node added by the user. It takes priority over public nodes",

@@ -33,6 +33,17 @@ interface UseBlockchainRpcNodeManagerReturn {
    * disable those controls.
    */
   isEtherscan: (item: BlockchainRpcNode) => boolean;
+  /**
+   * Why the last read failed, or undefined when it succeeded.
+   *
+   * @remarks
+   * The table renders this itself. A failed read leaves the list empty, which on its own is
+   * indistinguishable from a chain that genuinely has no nodes, and the notification it also
+   * raises is classified `NORMAL` so it never interrupts to explain the difference.
+   */
+  loadError: Readonly<Ref<string | undefined>>;
+  /** Whether a read is in flight, which the table shows instead of an empty body. */
+  loading: Readonly<Ref<boolean>>;
   /** Reads the chain's nodes, reporting a failure as a notification rather than a message. */
   loadNodes: () => Promise<void>;
   /** The form's node, or undefined while the form is closed. */
@@ -65,6 +76,8 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   const nodes = ref<BlockchainRpcNodeList>([]);
   const modelState = ref<BlockchainRpcNodeManageState>();
   const reconnecting = shallowRef<boolean>(false);
+  const loading = shallowRef<boolean>(false);
+  const loadError = shallowRef<string>();
 
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationDispatcher();
@@ -105,17 +118,25 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   const anyDisconnected = computed<boolean>(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
 
   async function loadNodes(): Promise<void> {
+    set(loading, true);
     try {
       set(nodes, await api.fetchEvmNodes());
+      set(loadError, undefined);
     }
     catch (error: unknown) {
+      const message = getErrorMessage(error);
+      set(nodes, []);
+      set(loadError, message);
       notify({
-        message: getErrorMessage(error),
+        message,
         priority: Priority.NORMAL,
         title: t('evm_rpc_node_manager.loading_error.title', {
           chain: toValue(chain),
         }),
       });
+    }
+    finally {
+      set(loading, false);
     }
   }
 
@@ -203,6 +224,8 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     editRpcNode,
     getNodeStatus,
     isEtherscan,
+    loadError: readonly(loadError),
+    loading: readonly(loading),
     loadNodes,
     modelState,
     nodes: shallowReadonly(nodes),
