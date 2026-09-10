@@ -7,6 +7,12 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+No Available Indexers Websocket Message
+---------------------------------------
+
+* **Changed Message**: ``no_available_indexers``
+* **Change**: The ``data`` object gained an optional ``reason`` key. When it is ``etherscan_paid_key_required`` the chain was refused by etherscan for the configured key and a paid etherscan API key is needed to query it.
+
 Asset Search NFT Handling
 -------------------------
 

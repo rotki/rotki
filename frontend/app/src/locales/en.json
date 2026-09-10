@@ -4917,7 +4917,12 @@
     "no_available_indexers": {
       "action": "Configure indexers",
       "do_not_show_again": "Do not show again for this chain",
+      "enter_key": "Enter Etherscan key",
       "message": "No indexers are available for {chain}. Transaction queries for this chain were skipped. You can configure indexer settings to resolve this.",
+      "paid_key_required": {
+        "message": "rotki could not query {chain} transactions from any indexer. Etherscan's free tier does not cover {chain} and the free alternatives no longer do either, so a paid Etherscan API key is needed to query {chain} transactions. The queries will resume once a key is added.",
+        "title": "{chain} transactions need a paid Etherscan key"
+      },
       "suppress_confirm": {
         "message": "Future \"No indexers available\" notifications for {chain} will be suppressed. You can re-enable them later from the EVM settings page.",
         "title": "Suppress notifications for {chain}?"

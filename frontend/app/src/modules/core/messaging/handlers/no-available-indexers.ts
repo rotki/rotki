@@ -2,11 +2,18 @@ import type { Router } from 'vue-router';
 import type { MessageHandler } from '../interfaces';
 import type { NoAvailableIndexersData } from '@/modules/core/messaging/types';
 import { type NotificationAction, NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
+import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+
+/**
+ * Sent by the backend when etherscan refused the chain for the configured key, which happens on
+ * the chains its free tier does not cover, and no other indexer could serve it either.
+ */
+const ETHERSCAN_PAID_KEY_REQUIRED = 'etherscan_paid_key_required';
 
 export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['t'], router: Pick<Router, 'push'>): MessageHandler<NoAvailableIndexersData> {
   const { updateFrontendSetting } = useSettingsOperations();
@@ -14,13 +21,23 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
   const { getChainName } = useSupportedChains();
   const { show } = useConfirmStore();
 
-  return createConditionalHandler<NoAvailableIndexersData>(({ chain }) => {
+  return createConditionalHandler<NoAvailableIndexersData>(({ chain, reason }) => {
     if (get(suppressNoIndexerChains).includes(chain))
       return null;
 
     const chainName = getChainName(chain);
+    const paidKeyRequired = reason === ETHERSCAN_PAID_KEY_REQUIRED;
+    const etherscanRoute = getServiceRegisterUrl('etherscan')?.route;
 
-    const actions: NotificationAction[] = [
+    const actions: NotificationAction[] = [];
+    if (paidKeyRequired && etherscanRoute) {
+      actions.push({
+        action: async () => router.push(etherscanRoute),
+        label: t('notification_messages.no_available_indexers.enter_key'),
+        persist: true,
+      });
+    }
+    actions.push(
       {
         action: async () => router.push({ name: '/settings/chains/', hash: '#indexer' }),
         label: t('notification_messages.no_available_indexers.action'),
@@ -44,7 +61,7 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
         icon: 'lu-bell-off',
         label: t('notification_messages.no_available_indexers.do_not_show_again'),
       },
-    ];
+    );
 
     return {
       action: actions,
@@ -53,10 +70,14 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
       // Per chain: each chain has its own missing indexers and its own suppression entry, so they
       // must not collapse into one notification that only ever shows the chain that arrived last.
       group: `${NotificationGroup.NO_AVAILABLE_INDEXERS}:${chain}`,
-      message: t('notification_messages.no_available_indexers.message', { chain: chainName }),
+      message: paidKeyRequired
+        ? t('notification_messages.no_available_indexers.paid_key_required.message', { chain: chainName })
+        : t('notification_messages.no_available_indexers.message', { chain: chainName }),
       priority: Priority.ACTION,
       severity: Severity.WARNING,
-      title: t('notification_messages.no_available_indexers.title'),
+      title: paidKeyRequired
+        ? t('notification_messages.no_available_indexers.paid_key_required.title', { chain: chainName })
+        : t('notification_messages.no_available_indexers.title'),
     };
   });
 }

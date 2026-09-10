@@ -38,7 +38,14 @@ from rotkehlchen.chain.evm.contracts import (
 )
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
+from rotkehlchen.chain.evm.types import (
+    DEFAULT_EVM_INDEXER_ORDER,
+    DEFAULT_INDEXERS_ORDER,
+    ETHERSCAN_PAID_TIER_ONLY_CHAINS,
+    EvmIndexer,
+    RemoteDataQueryStatus,
+    WeightedNode,
+)
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
@@ -283,6 +290,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # tracks the request length that failed to proactively use smaller chunks per node type
         self._multicall_failed_length: dict[Literal['nodes', 'indexers'], int] = {}
         self._no_indexer_notified: bool = False
+        # Set once etherscan refuses this chain for the configured key, which happens on the
+        # chains its free tier does not cover. Used to tell the user a paid key is needed.
+        self._etherscan_refused_chain: bool = False
         LockableQueryMixIn.__init__(self)
         EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
@@ -1977,9 +1987,18 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _get_indexers_in_order(self) -> list[tuple[EvmIndexer, EtherscanLikeApi]]:
         """Return available indexers respecting user-defined order and optional subset."""
+        configured_order = CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
+        if (
+            self.chain_id in ETHERSCAN_PAID_TIER_ONLY_CHAINS and
+            configured_order == tuple(DEFAULT_INDEXERS_ORDER.get(self.chain_id, DEFAULT_EVM_INDEXER_ORDER)) and  # noqa: E501
+            EvmIndexer.ETHERSCAN in configured_order and
+            self.etherscan.has_paid_api_key
+        ):  # the default order only avoids etherscan because free keys are refused there
+            configured_order = (EvmIndexer.ETHERSCAN, *(x for x in configured_order if x != EvmIndexer.ETHERSCAN))  # noqa: E501
+
         ordered: list[tuple[EvmIndexer, EtherscanLikeApi]] = [
             (indexer_name, indexer)
-            for indexer_name in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
+            for indexer_name in configured_order
             if (indexer := self.available_indexers.get(indexer_name)) is not None
         ]
         if len(degraded := DEGRADED_INDEXERS.get()) == 0:
@@ -2018,12 +2037,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         just shown they cannot serve.
         """
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
-            if not self._no_indexer_notified:
-                self._no_indexer_notified = True
-                self.database.msg_aggregator.add_message(
-                    message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
-                    data={'chain': self.blockchain.value},
-                )
+            self._maybe_notify_no_indexers()
             raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
 
         errors: list[tuple[str, Exception]] = []
@@ -2035,6 +2049,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             try:
                 result = func(indexer)
             except ChainNotSupported as e:
+                if indexer_name == EvmIndexer.ETHERSCAN:
+                    self._etherscan_refused_chain = True
                 if self.available_indexers.pop(indexer_name, None) is not None:
                     log.warning(  # removed the indexer
                         f'Indexer {indexer.name} doesnt support {self.chain_name} with the given '
@@ -2051,9 +2067,27 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             else:
                 return result, indexer_name, frozenset(failed)
 
+        if self._etherscan_refused_chain:  # what is left cannot serve the chain either
+            self._maybe_notify_no_indexers()
+
         raise RemoteError(
             f'Failed to query any indexer. '
             f"Errors: {', '.join(f'{name}: {e!s}' for name, e in errors)}",
+        )
+
+    def _maybe_notify_no_indexers(self) -> None:
+        """Tell the user once that no indexer can serve this chain. If etherscan refused the
+        chain for the configured key, say so, since a paid etherscan key is then the fix."""
+        if self._no_indexer_notified:
+            return
+
+        self._no_indexer_notified = True
+        data: dict[str, str] = {'chain': self.blockchain.value}
+        if self._etherscan_refused_chain:
+            data['reason'] = 'etherscan_paid_key_required'
+        self.database.msg_aggregator.add_message(
+            message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
+            data=data,
         )
 
     def _try_indexers_iterable(
