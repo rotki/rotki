@@ -234,16 +234,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x82599463FA2ea651C1F19e36c33b74CC68e2B4b5']])
 def test_add_liquidity_eth(
@@ -316,16 +307,7 @@ def test_add_liquidity_eth(
     ]
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0xAA069d6199E0f4FCC84C6354E050D5F25f74c429']])
 def test_add_liquidity_eth_via_smart_wallet(
@@ -387,16 +369,7 @@ def test_add_liquidity_eth_via_smart_wallet(
     ]
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x14ac952E2D149ac7e0ad0E4b9E9ba939fa51A0D6']])
 def test_remove_liquidity_via_smart_wallet(
@@ -481,16 +454,7 @@ def test_remove_liquidity_via_smart_wallet(
     ]
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
 def test_slipstream_create_position(
@@ -563,16 +527,7 @@ def test_slipstream_create_position(
     assert EvmToken(f'eip155:8453/erc721:{SLIPSTREAM_NFPM}/{position_id}').symbol == f'AERO-CL-POS-{position_id}'  # noqa: E501
 
 
-@pytest.mark.parametrize('base_manager_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='base mainnet',
-            endpoint='https://mainnet.base.org',
-            owned=False,
-            blockchain=SupportedBlockchain.BASE,
-        ), active=True, weight=ONE,
-    ),
-)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0xd48c780b3c48d7bB43cB69dC179D62726F798E50']])
 def test_slipstream_exit_position(
