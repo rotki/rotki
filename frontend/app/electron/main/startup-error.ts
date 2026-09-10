@@ -1,6 +1,7 @@
 import type { LogService } from '@electron/main/log-service';
-import type { BackendCode, StartupError } from '@shared/ipc';
+import type { UnusableBinary } from '@shared/starling/binary-types';
 import { IpcCommands } from '@electron/ipc-commands';
+import { BackendCode, type StartupError } from '@shared/ipc';
 import { type BrowserWindow, ipcMain } from 'electron';
 
 /**
@@ -32,12 +33,27 @@ export class StartupErrorChannel {
     });
   }
 
-  set(backendOutput: string | Error, code: BackendCode): void {
+  /**
+   * @remarks
+   * A missing binary is never replaced by another error. One incident can report both, a crash
+   * while the killed file is still on disk and then the file found gone, and a renderer that pulls
+   * the error after a reload must still get the report that explains it. {@link StartupErrorChannel.clear}
+   * lifts this when the backend is started again.
+   */
+  set(backendOutput: string | Error, code: BackendCode, unusableBinary?: UnusableBinary): void {
+    if (this.error?.code === BackendCode.MISSING_BINARY && code !== BackendCode.MISSING_BINARY)
+      return;
+
     const message = typeof backendOutput === 'string' ? backendOutput : backendOutput.message;
-    this.error = { message, code };
+    this.error = { code, message, unusableBinary };
 
     if (this.rendererReady)
       this.push();
+  }
+
+  /** Forgets the held error, for a backend being started again. */
+  clear(): void {
+    this.error = null;
   }
 
   reset(): void {

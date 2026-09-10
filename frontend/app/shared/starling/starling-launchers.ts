@@ -204,19 +204,31 @@ export function devColibriLauncherArgs(root: string): { args: string[]; usesCarg
   };
 }
 
+/**
+ * The packaged colibri binary and the directory it runs from.
+ *
+ * @remarks
+ * Single-sourced so the health check inspects the same path the supervisor is
+ * told to spawn; two ways of spelling it would eventually disagree.
+ */
+export function resolvePackagedColibri(): { binary: string; dir: string } {
+  const dir = path.join(resourcesDir(), COLIBRI_DIRECTORY);
+  const binary = process.platform === 'win32' ? 'colibri.exe' : 'colibri';
+  return { binary: path.join(dir, binary), dir };
+}
+
 /** Packaged launchers: direct binaries, each run from its own directory. */
 export function packagedLauncherArgs(): string[] {
   const core = resolveCoreBinary();
-  const colibriDir = path.join(resourcesDir(), COLIBRI_DIRECTORY);
-  const colibriBinary = process.platform === 'win32' ? 'colibri.exe' : 'colibri';
+  const colibri = resolvePackagedColibri();
   return [
     '--core-binary',
     core.binary,
     '--core-cwd',
     core.dir,
     '--colibri-binary',
-    path.join(colibriDir, colibriBinary),
+    colibri.binary,
     '--colibri-cwd',
-    colibriDir,
+    colibri.dir,
   ];
 }

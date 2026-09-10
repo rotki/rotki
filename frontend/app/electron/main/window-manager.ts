@@ -1,5 +1,6 @@
 import type { LogService } from '@electron/main/log-service';
 import type { BackendCode, OAuthResult } from '@shared/ipc';
+import type { UnusableBinary } from '@shared/starling/binary-types';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -245,8 +246,12 @@ export class WindowManager {
     window.on('closed', () => this.handleClosed());
   }
 
-  setStartupError(backendOutput: string | Error, code: BackendCode): void {
-    this.startupError.set(backendOutput, code);
+  setStartupError(backendOutput: string | Error, code: BackendCode, unusableBinary?: UnusableBinary): void {
+    this.startupError.set(backendOutput, code, unusableBinary);
+  }
+
+  clearStartupError(): void {
+    this.startupError.clear();
   }
 
   sendOAuthCallback(oAuthResult: OAuthResult): void {

@@ -31,9 +31,14 @@ export function findCoreBinary(backendDirectory: string): { binary: string; dir:
   return { binary: path.join(dir, binaries[0]), dir };
 }
 
+/** Where a packaged build keeps its core, shared by the launcher and the health check so they cannot disagree. */
+export function packagedBackendDirectory(): string {
+  return path.join(resourcesDir(), BACKEND_DIRECTORY);
+}
+
 /** The packaged core binary; a packaged build without one cannot start. */
 export function resolveCoreBinary(): { binary: string; dir: string } {
-  const backendDirectory = path.join(resourcesDir(), BACKEND_DIRECTORY);
+  const backendDirectory = packagedBackendDirectory();
   const resolved = findCoreBinary(backendDirectory);
   if (!resolved)
     throw new Error(`No rotki-core binary found under ${backendDirectory}`);

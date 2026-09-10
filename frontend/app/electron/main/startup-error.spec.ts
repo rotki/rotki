@@ -2,6 +2,7 @@ import type { LogService } from '@electron/main/log-service';
 import type { BrowserWindow } from 'electron';
 import { IpcCommands } from '@electron/ipc-commands';
 import { BackendCode, type StartupError } from '@shared/ipc';
+import { QUARANTINED_COLIBRI } from '@test/fixtures/unusable-binary';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { StartupErrorChannel } from './startup-error';
@@ -47,7 +48,7 @@ describe('startupErrorChannel', () => {
     channel.set('backend is gone', BackendCode.TERMINATED);
 
     expect(send).not.toHaveBeenCalled();
-    expect(pull()).toStrictEqual({ code: BackendCode.TERMINATED, message: 'backend is gone' });
+    expect(pull()).toEqual({ code: BackendCode.TERMINATED, message: 'backend is gone' });
   });
 
   it('should push the held error once the renderer announces itself', () => {
@@ -86,12 +87,44 @@ describe('startupErrorChannel', () => {
     });
   });
 
+  it('should carry the unusable binary alongside the message', () => {
+    signalRendererReady();
+    channel.set('colibri is gone', BackendCode.MISSING_BINARY, QUARANTINED_COLIBRI);
+
+    expect(send).toHaveBeenCalledWith(IpcCommands.STARTUP_ERROR, {
+      code: BackendCode.MISSING_BINARY,
+      message: 'colibri is gone',
+      unusableBinary: QUARANTINED_COLIBRI,
+    });
+  });
+
+  it('should keep a missing binary report when a generic error follows it, for a renderer that pulls later', () => {
+    signalRendererReady();
+    channel.set('colibri is gone', BackendCode.MISSING_BINARY, QUARANTINED_COLIBRI);
+    send.mockClear();
+
+    channel.set('The rotki backend stopped unexpectedly.', BackendCode.TERMINATED);
+
+    expect(send).not.toHaveBeenCalled();
+    expect(pull()).toEqual({ code: BackendCode.MISSING_BINARY, message: 'colibri is gone', unusableBinary: QUARANTINED_COLIBRI });
+  });
+
+  it('should take a generic error again once cleared for a restart', () => {
+    channel.set('colibri is gone', BackendCode.MISSING_BINARY, QUARANTINED_COLIBRI);
+
+    channel.clear();
+    expect(pull()).toBeNull();
+
+    channel.set('backend is gone', BackendCode.TERMINATED);
+    expect(pull()).toEqual({ code: BackendCode.TERMINATED, message: 'backend is gone' });
+  });
+
   it('should survive a window that is already gone', () => {
     signalRendererReady();
     window = null;
 
     expect(() => channel.set('backend is gone', BackendCode.TERMINATED)).not.toThrow();
-    expect(pull()).toStrictEqual({ code: BackendCode.TERMINATED, message: 'backend is gone' });
+    expect(pull()).toEqual({ code: BackendCode.TERMINATED, message: 'backend is gone' });
   });
 
   it('should drop the error and the readiness on reset', () => {
