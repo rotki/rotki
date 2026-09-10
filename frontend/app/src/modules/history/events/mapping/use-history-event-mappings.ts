@@ -245,7 +245,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         message: t('actions.history_events.fetch_mapping.error.description', {
           message: getErrorMessage(error),
         }),
-        priority: Priority.NORMAL,
+        priority: Priority.HIGH,
         title: t('actions.history_events.fetch_mapping.error.title'),
       });
     }
