@@ -14,21 +14,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.thegraph.decoder import ThegraphCommonDecoder
 from rotkehlchen.constants.assets import A_GRT
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import (
-    APPROVE_PROTOCOL,
-    DELEGATION_TRANSFERRED_TO_L2,
-    GRAPH_L1_LOCK_TRANSFER_TOOL,
-    TOKEN_DESTINATIONS_APPROVED,
-)
+from .constants import DELEGATION_TRANSFERRED_TO_L2, GRAPH_L1_LOCK_TRANSFER_TOOL
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.types import ChecksumEvmAddress
@@ -83,27 +75,6 @@ class ThegraphDecoder(ThegraphCommonDecoder):
         )
         return EvmDecodingOutput(events=[event])
 
-    def _decode_token_destination_approved(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode a TokenDestinationsApproved event from the L1 bridge. This event is emitted
-        when a user approves a token destination to be used for delegation in L2. We use this
-        to query the logs to find the delegation address."""
-        if context.tx_log.topics[0] != TOKEN_DESTINATIONS_APPROVED:
-            return DEFAULT_EVM_DECODING_OUTPUT
-
-        event = self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=self.token,
-            amount=ZERO,
-            location_label=context.transaction.from_address,
-            notes='Approve contract transfer',
-            counterparty=CPT_THEGRAPH,
-            address=context.tx_log.address,
-        )
-        return EvmDecodingOutput(events=[event])
-
     def _decode_contract_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a deposit of ETH to cover the arbitrum fees of delegating GRT"""
         user_address = self.get_user_address(bytes_to_address(context.tx_log.topics[1]))
@@ -133,6 +104,3 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             self.staking_contract: (self._decode_delegation_transferred_to_l2,),
             GRAPH_L1_LOCK_TRANSFER_TOOL: (self._decode_contract_deposit,),
         }
-
-    def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
-        return {APPROVE_PROTOCOL: {TOKEN_DESTINATIONS_APPROVED: self._decode_token_destination_approved}}  # noqa: E501

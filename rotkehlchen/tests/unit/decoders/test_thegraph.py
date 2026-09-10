@@ -2,8 +2,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.constants import (
     CONTRACT_STAKING as CONTRACT_STAKING_ARB,
+    L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL,
 )
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import (
@@ -35,6 +37,9 @@ ADDY_ROTKI = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')
 ADDY_USER_1_ARB = string_to_evm_address('0xA9728D95567410555557a54EcA320e5E8bEa36a5')
 ADDY_USER_2_ARB = string_to_evm_address('0xec9342111098f8b4A293cD8033746d6f8E9e9e7F')
 ADDY_USER_3_ARB = string_to_evm_address('0xBe79986821637afD1406BF9278DA55cf9085cF8f')
+ROTKI_VESTING_L1 = string_to_evm_address('0x7D91717579885BfCFec3Cb4B4C4fe71c1EedD4dE')
+ROTKI_VESTING_L2 = string_to_evm_address('0x9F219c3D048967990f675F49C1117B0598331408')
+ROTKI_INDEXER_L2 = string_to_evm_address('0x2f09092aacd80196FC984908c5A9a7aB3ee4f1CE')
 
 
 @pytest.mark.vcr
@@ -168,9 +173,9 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
             asset=A_GRT,
             amount=ZERO,
             location_label=ADDY_ROTKI,
-            notes='Approve contract transfer',
+            notes=f'Approve The Graph protocol contracts to spend GRT of vesting contract {ROTKI_VESTING_L1}',  # noqa: E501
             counterparty=CPT_THEGRAPH,
-            address=string_to_evm_address('0x7D91717579885BfCFec3Cb4B4C4fe71c1EedD4dE'),
+            address=ROTKI_VESTING_L1,
         ),
     ]
 
@@ -634,4 +639,209 @@ def test_thegraph_delegated_withdrawn_horizon(
         notes=f'Withdraw {withdraw_amount} GRT from indexer 0x920FDEB00EE04dd72f62d8A8f80F13c82ef76C1e',  # noqa: E501
         counterparty=CPT_THEGRAPH,
         address=CONTRACT_STAKING_ARB,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_ROTKI]])
+def test_thegraph_undelegate_vesting_arbitrum_one(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Undelegation done through an (untracked) vesting contract by its tracked beneficiary"""
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa59786af3f2d8ca1e50855167e8c545ed374300dcf5f0f7945f3b8070851458d')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1786538383000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000004849081406'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_GRT_ARB,
+        amount=ZERO,
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Undelegate 266596.860507359918405274 GRT of vesting contract {ROTKI_VESTING_L2} from indexer {ROTKI_INDEXER_L2}. Lock expires at {decoder.decoders["Thegraph"].timestamp_to_date(Timestamp(1788957583))}',  # type: ignore  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=CONTRACT_STAKING_ARB,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_ROTKI]])
+def test_thegraph_delegated_withdrawn_vesting_arbitrum_one(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Withdrawal of undelegated GRT back into an (untracked) vesting contract
+    by its tracked beneficiary"""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x59554c4b53e42bd52a8e8284676cbfb4d9d07de4f401d4bf96244be58daed435')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1789069330000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000234985951'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_GRT_ARB,
+        amount=ZERO,
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Withdraw 266596.860507359918405274 GRT from indexer {ROTKI_INDEXER_L2} to vesting contract {ROTKI_VESTING_L2}',  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=CONTRACT_STAKING_ARB,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_ROTKI]])
+def test_thegraph_approve_protocol_arbitrum_one(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """approveProtocol() on an L2 vesting contract, approving the protocol token destinations"""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc514f8915f1d1ada021707ac630deb6f5306ae727a4aeb5f6f31ab9e8a5f67bf')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1789069447000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000002967461876'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=14,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_GRT_ARB,
+        amount=ZERO,
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Approve The Graph protocol contracts to spend GRT of vesting contract {ROTKI_VESTING_L2}',  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=ROTKI_VESTING_L2,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_ROTKI]])
+def test_thegraph_vesting_bridge_to_l1_arbitrum_one(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """withdrawToL1Locked() sending the GRT of an (untracked) L2 vesting contract back to
+    its L1 counterpart, seen from the tracked beneficiary"""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x63415a5309604754513afbfd41d999c8762fb6919b5adafcdb8b989983c8869d')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1789069473000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000423804744'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=23,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_GRT_ARB,
+        amount=ZERO,
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Bridge 266597.860507359918405274 GRT from vesting contract {ROTKI_VESTING_L2} on Arbitrum One to vesting contract {ROTKI_VESTING_L1} on Ethereum',  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[ROTKI_VESTING_L2]])
+def test_thegraph_vesting_bridge_to_l1_tracked_vesting(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Same as above but with the L2 vesting contract itself tracked, so the GRT
+    transfer out of it becomes a bridge deposit"""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x63415a5309604754513afbfd41d999c8762fb6919b5adafcdb8b989983c8869d')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=11,
+        timestamp=(timestamp := TimestampMS(1789069473000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_GRT_ARB,
+        amount=FVal(amount := '266597.860507359918405274'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Bridge {amount} GRT from Arbitrum One to Ethereum vesting contract {ROTKI_VESTING_L1} via Arbitrum One bridge',  # noqa: E501
+        counterparty=CPT_ARBITRUM_ONE,
+        address=L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL,
+        extra_data={'bridge': {
+            'from_chain': 42161,
+            'to_chain': 1,
+            'from_address': ROTKI_VESTING_L2,
+            'to_address': ROTKI_VESTING_L1,
+            'transfer_id': '165835',
+        }},
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=12,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_GRT_ARB,
+        amount=FVal('115792089237316195423570985008687907853269984665640563772859.723500553211234661'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Set GRT spending approval of {ROTKI_VESTING_L2} by {L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL} to 115792089237316195423570985008687907853269984665640563772859.723500553211234661',  # noqa: E501
+        address=L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL,
     )]

@@ -76,8 +76,11 @@ class ThegraphBalances(ProtocolWithBalance):
         delegations_unique = set()
         queried_addresses = set(addresses)
         for event in events:
-            if event.location_label is None or event.extra_data is None:
-                log.error(f'Skipping TheGraph deposit event {event} due to one or both of location_label and extra_data missing')  # noqa: E501
+            if event.extra_data is None:  # undelegate/withdraw/bridge informational events carry no delegation  # noqa: E501
+                continue
+
+            if event.location_label is None:
+                log.error('Skipping TheGraph deposit event due to missing location_label', event=event)  # noqa: E501
                 continue
 
             verifier = event.extra_data.get('verifier', SUBGRAPH_DATA_SERVICE_ADDRESS)
