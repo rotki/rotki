@@ -1,9 +1,11 @@
 import type { ProgressUpdateResultData } from '../types/status-types';
+import { Blockchain } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
+import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 const mockSetUndecodedTransactionsStatus = vi.fn();
@@ -13,7 +15,18 @@ const mockSetHistoricalDailyPriceStatus = vi.fn();
 const mockSetHistoricalPriceStatus = vi.fn();
 const mockSetStatsPriceQueryStatus = vi.fn();
 const mockReportProgress = vi.fn();
+const mockReportProgressByPrefix = vi.fn();
 const mockNotifyHistoricalBalanceProcessingCompleted = vi.fn();
+
+type SupportedChains = typeof import('@/modules/core/common/use-supported-chains');
+
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: vi.fn<SupportedChains['useSupportedChains']>(() =>
+    createMock<ReturnType<SupportedChains['useSupportedChains']>>({
+      // The decoder's spelling, so a route that forgets to canonicalise composes the wrong id.
+      matchChain: (chain: string) => (chain === 'ethereum' ? Blockchain.ETH : undefined),
+    })),
+} satisfies Partial<SupportedChains>));
 
 vi.mock('@/modules/history/data-issues/use-data-issues-inbox-store', () => ({
   useDataIssuesInboxStore: vi.fn(() => ({
@@ -45,6 +58,7 @@ vi.mock('@/modules/assets/prices/use-historic-cache-price-store', () => ({
 vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
   useTaskOrchestrator: vi.fn(() => ({
     reportProgress: mockReportProgress,
+    reportProgressByPrefix: mockReportProgressByPrefix,
   })),
 }));
 
@@ -64,6 +78,39 @@ describe('createProgressUpdateHandler', () => {
     expect(mockSetReceivingProtocolCacheStatus).toHaveBeenCalledWith(false);
     expect(mockSetUndecodedTransactionsStatus).toHaveBeenCalledOnce();
     expect(result).toBeNull();
+  });
+
+  it('should report decode progress onto the chain activity under its canonical chain id', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      chain: 'ethereum',
+      processed: 3,
+      subtype: SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS,
+      total: 10,
+    }));
+
+    // Both variants of the chain-wide decode, never a targeted one.
+    expect(mockReportProgress).toHaveBeenCalledWith(decodeActivityId('eth', false), { current: 3, total: 10 });
+    expect(mockReportProgress).toHaveBeenCalledWith(decodeActivityId('eth', true), { current: 3, total: 10 });
+    expect(mockReportProgress).not.toHaveBeenCalledWith(
+      expect.stringContaining('ethereum'),
+      expect.anything(),
+    );
+  });
+
+  it('should fall back to the lowercased chain when it matches no known chain', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      chain: 'Hyperliquid',
+      processed: 1,
+      subtype: SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS,
+      total: 2,
+    }));
+
+    expect(mockReportProgress).toHaveBeenCalledWith(
+      decodeActivityId('hyperliquid', false),
+      { current: 1, total: 2 },
+    );
   });
 
   it('should route protocol cache updates', async () => {
@@ -106,6 +153,23 @@ describe('createProgressUpdateHandler', () => {
     await handler.handle(data(SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS));
 
     expect(mockSetHistoricalPriceStatus).toHaveBeenCalledOnce();
+  });
+
+  it('should report multiple prices progress onto the batch activities only', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      processed: 4,
+      subtype: SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS,
+      total: 9,
+    }));
+
+    // BATCH is part of the prefix, so single-pair price activities are left alone.
+    expect(mockReportProgressByPrefix).toHaveBeenCalledWith(
+      { current: 4, total: 9 },
+      ActivityKind.PRICES,
+      ActivityPart.HISTORIC,
+      ActivityPart.BATCH,
+    );
   });
 
   it('should route historical balance processing updates', async () => {
