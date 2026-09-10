@@ -1,5 +1,6 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/modules/assets/prices/price-types';
+import { Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
@@ -35,6 +36,7 @@ export function useHistoricPrices(
       notifyError(
         t('price_table.fetch.failure.title'),
         t('price_table.fetch.failure.message', { message: getErrorMessage(error) }),
+        { priority: Priority.NORMAL },
       );
     }
     finally {
