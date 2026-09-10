@@ -16,10 +16,10 @@ import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import AutomaticSyncSetting from '@/modules/shell/cloud-sync/AutomaticSyncSetting.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import AutomaticSyncSetting from '@/modules/shell/sync-progress/AutomaticSyncSetting.vue';
 
 definePage({
   meta: {

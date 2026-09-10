@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';
-import AutomaticSyncSetting from '@/modules/shell/sync-progress/AutomaticSyncSetting.vue';
+import AutomaticSyncSetting from '@/modules/shell/cloud-sync/AutomaticSyncSetting.vue';
 
 const model = defineModel<boolean>({ required: true });
 

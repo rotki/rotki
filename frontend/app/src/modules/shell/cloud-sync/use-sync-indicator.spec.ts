@@ -82,7 +82,7 @@ function indicator(): ReturnType<typeof useSyncIndicator> {
   return scope.run(() => useSyncIndicator())!;
 }
 
-describe('modules/shell/sync-progress/useSyncIndicator', () => {
+describe('modules/shell/cloud-sync/useSyncIndicator', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();

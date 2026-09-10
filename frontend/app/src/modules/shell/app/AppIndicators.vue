@@ -5,13 +5,13 @@ import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibilit
 import UserNotesIndicator from '@/modules/notes/UserNotesIndicator.vue';
 import GetPremiumButton from '@/modules/premium/GetPremiumButton.vue';
 import PrivacyModeDropdown from '@/modules/settings/PrivacyModeDropdown.vue';
+import SyncIndicator from '@/modules/shell/cloud-sync/SyncIndicator.vue';
 import AppUpdateIndicator from '@/modules/shell/components/AppUpdateIndicator.vue';
 import BackButton from '@/modules/shell/components/BackButton.vue';
 import HelpIndicator from '@/modules/shell/components/HelpIndicator.vue';
 import PinnedIndicator from '@/modules/shell/components/navigation/PinnedIndicator.vue';
 import NotificationIndicator from '@/modules/shell/components/NotificationIndicator.vue';
 import UserDropdown from '@/modules/shell/components/UserDropdown.vue';
-import SyncIndicator from '@/modules/shell/sync-progress/SyncIndicator.vue';
 import ThemeControl from '@/modules/shell/theme/ThemeControl.vue';
 
 const isDevelopment = checkIfDevelopment();
