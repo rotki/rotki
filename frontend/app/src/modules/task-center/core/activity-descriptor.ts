@@ -1,3 +1,4 @@
+import type { DetailShape } from '@/modules/task-center/core/activity-detail';
 import type { Lane } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, type ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
@@ -27,8 +28,18 @@ type KeyParts = readonly (string | number)[];
  * promise and report it done; a key that *grows* one leaves every exact reader matching nothing, so
  * the spinner never fires.
  */
-export interface ActivityDescriptor<TSubject, TKey extends KeyParts> {
+export interface ActivityDescriptor<TSubject, TKey extends KeyParts, TDetail = never> {
   readonly kind: ActivityKind;
+  /**
+   * Phantom: the detail this activity streams, carried in the type only.
+   *
+   * It is what binds a publish and a read to the same shape without either naming it, and it
+   * defaults to `never`, which makes {@link publishActivityDetail} uncallable for an activity that
+   * declares no detail: no value inhabits `never`, so there is no argument to pass.
+   *
+   * Never read at runtime; `defineActivity` does not set it.
+   */
+  readonly detail?: TDetail;
   /**
    * The fixed part that follows the kind, before the subject's own key parts.
    *
@@ -69,9 +80,9 @@ interface ActivityDescriptorInput<TSubject, TKey extends KeyParts> {
  * Declare an activity. See {@link ActivityDescriptor} for why the id and the readers must come from
  * one place.
  */
-export function defineActivity<TSubject, const TKey extends KeyParts>(
+export function defineActivity<TSubject, const TKey extends KeyParts, TDetail = never>(
   input: ActivityDescriptorInput<TSubject, TKey>,
-): ActivityDescriptor<TSubject, TKey> {
+): ActivityDescriptor<TSubject, TKey, DetailShape<TDetail>> {
   /** The fixed part as key parts, so an absent one contributes no segment rather than `undefined`. */
   const lead: KeyParts = input.part === undefined ? [] : [input.part];
   const partsOf = (subject: TSubject): KeyParts => [...lead, ...input.key(subject)];
