@@ -1,31 +1,94 @@
 import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { type ActivityId, ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
+import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
+import {
+  ACCOUNT_SYNC_LANE_PREFIX,
+  CHAIN_SYNC_LANE,
+  EXCHANGE_EVENTS_LANE_PREFIX,
+  familyLane,
+} from '@/modules/task-center/core/orchestrator/spec';
+import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 
 /**
  * The identities of everything a history refresh is made of.
  *
  * Shared between the flow declaration, which names these before any of them exists, and the
  * producers that submit them. Composing the same id in both places would not fail loudly if the
- * two drifted — the children would simply stop being gated by, and counted toward, the umbrella
+ * two drifted: the children would simply stop being gated by, and counted toward, the umbrella
  * that claims them.
+ *
+ * Declared as descriptors so the lane travels with the id. A chain and its accounts are the same
+ * kind and share a key prefix, which is what lets a per-chain reader cover both.
  */
 
-/** One chain's sync: the group its accounts and its decode hang from. */
-export function chainSyncActivityId(chain: string): ActivityId {
-  return makeActivityId(ActivityKind.TX_SYNC, chain);
+/** One account's sync, within its chain. */
+export interface AccountSyncSubject {
+  readonly chain: string;
+  readonly address: string;
 }
 
-/** One account's sync within its chain. */
-export function accountSyncActivityId(chain: string, address: string): ActivityId {
-  return makeActivityId(ActivityKind.TX_SYNC, chain, address);
+/** One connected exchange. */
+export interface ExchangeEventsSubject {
+  readonly location: string;
+  readonly name: string;
 }
+
+/**
+ * One chain's sync: the group its accounts and its decode hang from.
+ *
+ * Its key is the leading slice of {@link accountSyncActivity}'s, so the chain row's id is also the
+ * prefix its accounts sit under, and a reader asking about a chain covers the whole group.
+ */
+export const chainSyncActivity = defineActivity<{ chain: string }, readonly [string]>({
+  key: subject => [subject.chain],
+  kind: ActivityKind.TX_SYNC,
+  lane: () => CHAIN_SYNC_LANE,
+});
+
+/**
+ * One account's sync within its chain.
+ *
+ * The lane is the chain's own family, so the family cap gives two concurrent accounts *per chain*
+ * rather than two across the run.
+ */
+export const accountSyncActivity = defineActivity<AccountSyncSubject, readonly [string, string]>({
+  key: subject => [subject.chain, subject.address],
+  kind: ActivityKind.TX_SYNC,
+  lane: subject => familyLane(ACCOUNT_SYNC_LANE_PREFIX, subject.chain),
+});
 
 /** One connected exchange's event query. */
-export function exchangeEventsActivityId(location: string, name: string): ActivityId {
-  return makeActivityId(ActivityKind.EXCHANGE_EVENTS, location, name);
+export const exchangeEventsActivity = defineActivity<ExchangeEventsSubject, readonly [string, string]>({
+  key: subject => [subject.location, subject.name],
+  kind: ActivityKind.EXCHANGE_EVENTS,
+  lane: subject => familyLane(EXCHANGE_EVENTS_LANE_PREFIX, subject.location),
+});
+
+/**
+ * One online-event query (withdrawals, block productions).
+ *
+ * No lane: these are few and independent, and run unthrottled today.
+ */
+export const onlineEventsActivity = defineActivity<{ queryType: OnlineHistoryEventsQueryType }, readonly [string]>({
+  key: subject => [subject.queryType],
+  kind: ActivityKind.ONLINE_EVENTS,
+});
+
+/** One chain's sync. See {@link chainSyncActivity}. */
+export function chainSyncActivityId(chain: string): ActivityId {
+  return chainSyncActivity.id({ chain });
 }
 
-/** One online-event query (withdrawals, block productions). */
+/** One account's sync within its chain. See {@link accountSyncActivity}. */
+export function accountSyncActivityId(chain: string, address: string): ActivityId {
+  return accountSyncActivity.id({ address, chain });
+}
+
+/** One connected exchange's event query. See {@link exchangeEventsActivity}. */
+export function exchangeEventsActivityId(location: string, name: string): ActivityId {
+  return exchangeEventsActivity.id({ location, name });
+}
+
+/** One online-event query. See {@link onlineEventsActivity}. */
 export function onlineEventsActivityId(queryType: OnlineHistoryEventsQueryType): ActivityId {
-  return makeActivityId(ActivityKind.ONLINE_EVENTS, queryType);
+  return onlineEventsActivity.id({ queryType });
 }

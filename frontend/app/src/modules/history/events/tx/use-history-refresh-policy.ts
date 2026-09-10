@@ -3,6 +3,7 @@ import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import type { StaleAfterEdge } from '@/modules/task-center/core/orchestrator/spec';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { accountSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { Purgeable } from '@/modules/session/purge';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
@@ -78,7 +79,7 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
    * Keying this on `everCompleted` instead would leave a failed or cancelled sync novel forever,
    * and `resolveForFullRefresh` escalates any novelty into a full re-sync of every account.
    */
-  function neverAttempted(kind: ActivityKind, ...parts: string[]): boolean {
+  function neverAttempted(kind: ActivityKind, ...parts: (string | number)[]): boolean {
     return statusOf(kind, ...parts).lastOutcome === undefined;
   }
 
@@ -102,8 +103,10 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
 
   function detectNovelty(allAccounts: ChainAddress[], usedExchanges: Exchange[]): NoveltyDetection {
     return {
-      newAccounts: allAccounts.filter(account => neverAttempted(ActivityKind.TX_SYNC, account.chain, account.address)),
-      newExchanges: usedExchanges.filter(exchange => neverAttempted(ActivityKind.EXCHANGE_EVENTS, exchange.location, exchange.name)),
+      newAccounts: allAccounts.filter(account =>
+        neverAttempted(accountSyncActivity.kind, ...accountSyncActivity.partsOf(account))),
+      newExchanges: usedExchanges.filter(exchange =>
+        neverAttempted(exchangeEventsActivity.kind, ...exchangeEventsActivity.partsOf(exchange))),
     };
   }
 

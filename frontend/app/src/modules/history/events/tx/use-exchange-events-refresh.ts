@@ -1,3 +1,4 @@
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { toSentenceCase } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
@@ -7,11 +8,9 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { exchangeEventsActivityId } from '@/modules/history/events/tx/sync-activity';
+import { exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { EXCHANGE_EVENTS_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseExchangeEventsRefreshReturn {
@@ -39,9 +38,9 @@ export function useExchangeEventsRefresh(): UseExchangeEventsRefreshReturn {
     const exchange = omit(payload, ['gateLocation', 'krakenAccountType', 'okxLocation']);
     const parsedPayload = QueryExchangeEventsPayload.parse(exchange);
     const outcome = await submitTask({
-      id: exchangeEventsActivityId(exchange.location, exchange.name),
-      kind: ActivityKind.EXCHANGE_EVENTS,
-      lane: familyLane(EXCHANGE_EVENTS_LANE_PREFIX, exchange.location),
+      id: exchangeEventsActivity.id(exchange),
+      kind: exchangeEventsActivity.kind,
+      lane: exchangeEventsActivity.laneOf?.(exchange),
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(

@@ -1,3 +1,4 @@
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
@@ -8,13 +9,11 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { combineOutcomes, isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
-import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
+import { accountSyncActivity, accountSyncActivityId, chainSyncActivity, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ACCOUNT_SYNC_LANE_PREFIX, CHAIN_SYNC_LANE, familyLane } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface TransactionSyncParams {
@@ -121,9 +120,9 @@ export function useTransactionSync(): UseTransactionSyncReturn {
 
     const chainName = getChainName(chain);
     const outcome = await submitTask({
-      id: accountSyncActivityId(chain, address),
-      kind: ActivityKind.TX_SYNC,
-      lane: familyLane(ACCOUNT_SYNC_LANE_PREFIX, chain),
+      id: accountSyncActivity.id(account),
+      kind: accountSyncActivity.kind,
+      lane: accountSyncActivity.laneOf?.(account),
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
@@ -194,8 +193,8 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     const chainWork = submitTask({
       container: true,
       id: chainId,
-      kind: ActivityKind.TX_SYNC,
-      lane: CHAIN_SYNC_LANE,
+      kind: chainSyncActivity.kind,
+      lane: chainSyncActivity.laneOf?.({ chain }),
       parent,
       rerunnable: false,
       run: async (): Promise<Result<void, TaskError>> => {
