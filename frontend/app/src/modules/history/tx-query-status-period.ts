@@ -82,6 +82,33 @@ export function periodWithCursorAtStart(
 }
 
 /**
+ * The queried range as step progress: how much of the window the backend has read, over the whole
+ * window.
+ *
+ * @remarks
+ * The unit is seconds of the queried range, not transactions. That is the only quantity these
+ * messages carry, and it is what the sync panel has always drawn; naming it as steps puts it on the
+ * activity itself instead of a projection beside it.
+ *
+ * `undefined` where the range cannot be measured, which is a real state rather than an edge case:
+ * a query with no period at all (bitcoin sends none), one that has not yet established its target,
+ * and one whose window is empty because there is nothing to catch up on. Each leaves the activity
+ * indeterminate, which is honest, rather than claiming 0% or 100%.
+ */
+export function periodSteps(tracking: Partial<PeriodTracking>): { current: number; total: number } | undefined {
+  const { originalPeriodEnd, originalPeriodStart, period } = tracking;
+  if (period === undefined || originalPeriodEnd === undefined)
+    return undefined;
+
+  const start = originalPeriodStart ?? period[0];
+  const total = originalPeriodEnd - start;
+  if (total <= 0)
+    return undefined;
+
+  return { current: Math.min(Math.max(period[1] - start, 0), total), total };
+}
+
+/**
  * Period tracking for a bitcoin message, which is the one subtype whose `period` is optional.
  *
  * Carries `existing`'s values when the message has none: the entry is rebuilt from scratch per
