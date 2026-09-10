@@ -4,6 +4,7 @@ import type {
   PullLocationTransactionPayload,
   PullTransactionPayload,
 } from '@/modules/history/events/event-payloads';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -13,12 +14,11 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { blockDecodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
 import { targetedRedecodeFlow, type TargetedRedecodeScope } from '@/modules/history/events/tx/targeted-redecode.flow';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { DECODE_LANE, UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
+import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** What a targeted re-decode is asked for: transactions, block events, or both. */
@@ -60,9 +60,9 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       : activityLabelFor(msg.$t('task_center.activity.tx_decoding.batch'), { chain, count }, count);
 
     const outcome = await submitTask<boolean>({
-      id: targetedDecodeActivityId(payload.chain, payload.txRefs),
-      kind: ActivityKind.TX_DECODING,
-      lane: DECODE_LANE,
+      id: targetedDecodeActivity.id(payload),
+      kind: targetedDecodeActivity.kind,
+      lane: targetedDecodeActivity.laneOf?.(payload),
       parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
@@ -111,9 +111,9 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
       : activityLabelFor(msg.$t('task_center.activity.eth_block_decoding.batch'), { count }, count);
 
     const outcome = await submitTask({
-      id: blockDecodeActivityId(blockNumbers),
-      kind: ActivityKind.ETH_BLOCK_DECODING,
-      lane: DECODE_LANE,
+      id: blockDecodeActivity.id({ blockNumbers }),
+      kind: blockDecodeActivity.kind,
+      lane: blockDecodeActivity.laneOf?.({ blockNumbers }),
       parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
