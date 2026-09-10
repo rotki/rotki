@@ -39,6 +39,8 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
     decode_uniswap_v3_like_deposit_or_withdrawal,
 )
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CL_GAUGE_DEPOSIT,
+    CL_GAUGE_WITHDRAW,
     CL_POOL_BURN,
     CL_POOL_COLLECT,
     CL_POOL_COLLECT_FEES,
@@ -454,6 +456,9 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
         amount0_raw = int.from_bytes(context.tx_log.data[32:64])
         amount1_raw = int.from_bytes(context.tx_log.data[64:96])
+        if amount0_raw == 0 and amount1_raw == 0:
+            return DEFAULT_EVM_DECODING_OUTPUT  # nothing moved, e.g. a collect on gauge withdrawal
+
         for tx_log in reversed(context.all_logs):
             if (
                 tx_log.log_index < context.tx_log.log_index and
@@ -510,9 +515,12 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
     def _decode_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """
-        Decodes transactions that interact with a (velo/aero)drome v2 gauge.
-        Velodrome v1 had no gauges.
+        Decodes transactions that interact with a (velo/aero)drome v2 or concentrated
+        liquidity (Slipstream) gauge. Velodrome v1 had no gauges.
         """
+        if context.tx_log.topics[0] in (CL_GAUGE_DEPOSIT, CL_GAUGE_WITHDRAW):
+            return self._decode_cl_gauge_events(context=context)
+
         if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_V2, WITHDRAW_TOPIC_V2, CLAIM_REWARDS_V2):
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -547,6 +555,43 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                     event.notes = f'Receive {event.amount} {crypto_asset.symbol} rewards from {gauge_address} {self.counterparty} gauge'  # noqa: E501
 
         return EvmDecodingOutput(refresh_balances=found_event_modifying_balances)
+
+    def _decode_cl_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decodes staking and unstaking of a Slipstream position NFT in a CL gauge.
+        Reward claims share the v2 gauge ClaimRewards signature and are handled with them."""
+        user_address = bytes_to_address(context.tx_log.topics[1])
+        position_id = int.from_bytes(context.tx_log.topics[2])
+        gauge_address = context.tx_log.address
+        position_token = get_or_create_evm_token(
+            userdb=self.base.database,
+            evm_address=self.slipstream_nfpm,
+            chain_id=self.node_inquirer.chain_id,
+            token_kind=TokenKind.ERC721,
+            collectible_id=str(position_id),
+            protocol=self.counterparty,
+        )
+        for event in context.decoded_events:
+            if (
+                event.location_label == user_address and
+                event.address == gauge_address and
+                event.asset == position_token and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.counterparty = self.counterparty
+                if context.tx_log.topics[0] == CL_GAUGE_DEPOSIT and event.event_type == HistoryEventType.SPEND:  # noqa: E501
+                    event.event_type = HistoryEventType.DEPOSIT
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+                    event.notes = f'Deposit {self.slipstream_display_name} LP {position_id} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
+                elif context.tx_log.topics[0] == CL_GAUGE_WITHDRAW and event.event_type == HistoryEventType.RECEIVE:  # noqa: E501
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+                    event.notes = f'Withdraw {self.slipstream_display_name} LP {position_id} from {gauge_address} {self.counterparty} gauge'  # noqa: E501
+                else:
+                    continue
+
+                return EvmDecodingOutput(refresh_balances=True)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_voting_escrow_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == VOTING_ESCROW_WITHDRAW:

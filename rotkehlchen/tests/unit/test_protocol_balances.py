@@ -78,9 +78,10 @@ from rotkehlchen.chain.evm.decoding.morpho_blue.constants import CPT_MORPHO_BLUE
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.velodrome.utils import get_slipstream_position_price
 from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
 from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.balances import KinetiqBalances
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.constants import CPT_KINETIQ
@@ -118,6 +119,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
+    globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -1544,6 +1546,70 @@ def test_aerodrome_locked_balances(
         amount=FVal('927'),
         value=FVal('520.361253'),
     )
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
+def test_aerodrome_slipstream_staked_balances(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+        inquirer_defi: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Positions staked in concentrated liquidity gauges are found via the gauge's staked
+    values and valued from their underlying assets."""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.AERODROME_GAUGE_ADDRESS,),
+            values=(string_to_evm_address('0x491300eC768Cf28B13A8d3BbFd87713dD728b0AD'),),
+        )
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xe09feff8afe0c03d8bb4cb66c1eb6c2829a998ff114f64cb45dc1d4b79336476'),
+        load_global_caches=load_global_caches,
+    )
+    protocol_balances = AerodromeBalances(
+        evm_inquirer=base_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances(addresses=base_accounts)
+    position_balances = {
+        asset: balance[CPT_AERODROME]
+        for asset, balance in protocol_balances[base_accounts[0]].assets.items()
+        if asset.identifier.startswith('eip155:8453/erc721:0x827922686190790b37229fd06084350E74485b72/')  # noqa: E501
+    }
+    assert len(position_balances) != 0
+    for asset, balance in position_balances.items():
+        assert balance.amount == ONE, f'{asset} should be a single position NFT'
+        assert balance.value > ZERO, f'{asset} should be valued from its underlying assets'
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+def test_slipstream_position_price(base_inquirer: BaseInquirer) -> None:
+    """A Slipstream position is priced from the liquidity it holds in its pool"""
+    price = get_slipstream_position_price(
+        token=get_or_create_evm_token(
+            userdb=base_inquirer.database,
+            evm_address=string_to_evm_address('0x827922686190790b37229fd06084350E74485b72'),
+            chain_id=ChainID.BASE,
+            token_kind=TokenKind.ERC721,
+            collectible_id='76588090',
+            protocol=CPT_AERODROME,
+        ),
+        evm_inquirer=base_inquirer,
+        price_func=lambda asset: Price(ONE),  # so the price is the sum of the underlying amounts
+    )
+    assert price > ZERO
 
 
 def test_all_balance_classes_used():

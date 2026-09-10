@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.types import ChainID
+
 if TYPE_CHECKING:
     from eth_typing import ABI
 
@@ -28,3 +31,22 @@ CL_POOL_BURN: Final = b'\x0c9l\xd9\x89\xa3\x9fDY\xb5\xfa\x1a\xedj\x9a\x8d\xcd\xb
 CL_POOL_FLASH: Final = b'\xbd\xbd\xb7\x1dx`7k\xa5+%\xa5\x02\x8b\xee\xa25\x816J@R/k\xcf\xb8k\xb1\xf2\xdc\xa63'  # noqa: E501
 # 0x4598143b76ade0e13381c8bcb15beee8da31f1f2074be2156b16ed3b45794198
 CL_POOL_COLLECT_FEES: Final = b'E\x98\x14;v\xad\xe0\xe13\x81\xc8\xbc\xb1[\xee\xe8\xda1\xf1\xf2\x07K\xe2\x15k\x16\xed;EyA\x98'  # noqa: E501
+# CL gauge deposit topic, 0x1c8ab8c7f45390d58f58f1d655213a82cca5d12179761a87c16f098813b8f211
+CL_GAUGE_DEPOSIT: Final = b'\x1c\x8a\xb8\xc7\xf4S\x90\xd5\x8fX\xf1\xd6U!:\x82\xcc\xa5\xd1!yv\x1a\x87\xc1o\t\x88\x13\xb8\xf2\x11'  # noqa: E501
+# CL gauge withdraw topic, 0x8903a5b5d08a841e7f68438387f1da20c84dea756379ed37e633ff3854b99b84
+CL_GAUGE_WITHDRAW: Final = b'\x89\x03\xa5\xb5\xd0\x8a\x84\x1e\x7fhC\x83\x87\xf1\xda \xc8M\xeaucy\xed7\xe63\xff8T\xb9\x9b\x84'  # noqa: E501
+# The concentrated liquidity (Slipstream) position managers and pool factories
+SLIPSTREAM_NFPM_ADDRESSES: Final = {
+    ChainID.OPTIMISM: string_to_evm_address('0x416b433906b1B72FA758e166e239c43d68dC6F29'),
+    ChainID.BASE: string_to_evm_address('0x827922686190790b37229fd06084350E74485b72'),
+}
+SLIPSTREAM_CL_FACTORIES: Final = {
+    ChainID.OPTIMISM: string_to_evm_address('0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F'),
+    ChainID.BASE: string_to_evm_address('0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'),
+}
+# Same layout as uniswap v3 positions() except that index 4 is the tick spacing, not the fee
+SLIPSTREAM_NFPM_ABI: Final[ABI] = [{'inputs': [{'name': 'tokenId', 'type': 'uint256'}], 'name': 'positions', 'outputs': [{'name': 'nonce', 'type': 'uint96'}, {'name': 'operator', 'type': 'address'}, {'name': 'token0', 'type': 'address'}, {'name': 'token1', 'type': 'address'}, {'name': 'tickSpacing', 'type': 'int24'}, {'name': 'tickLower', 'type': 'int24'}, {'name': 'tickUpper', 'type': 'int24'}, {'name': 'liquidity', 'type': 'uint128'}, {'name': 'feeGrowthInside0LastX128', 'type': 'uint256'}, {'name': 'feeGrowthInside1LastX128', 'type': 'uint256'}, {'name': 'tokensOwed0', 'type': 'uint128'}, {'name': 'tokensOwed1', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+CL_FACTORY_ABI: Final[ABI] = [{'inputs': [{'name': 'tokenA', 'type': 'address'}, {'name': 'tokenB', 'type': 'address'}, {'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+# Slipstream slot0 has no feeProtocol field, unlike uniswap v3
+CL_POOL_ABI: Final[ABI] = [{'inputs': [], 'name': 'slot0', 'outputs': [{'name': 'sqrtPriceX96', 'type': 'uint160'}, {'name': 'tick', 'type': 'int24'}, {'name': 'observationIndex', 'type': 'uint16'}, {'name': 'observationCardinality', 'type': 'uint16'}, {'name': 'observationCardinalityNext', 'type': 'uint16'}, {'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+CL_GAUGE_ABI: Final[ABI] = [{'inputs': [{'name': 'depositor', 'type': 'address'}], 'name': 'stakedValues', 'outputs': [{'name': 'staked', 'type': 'uint256[]'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

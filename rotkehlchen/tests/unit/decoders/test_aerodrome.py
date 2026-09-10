@@ -50,11 +50,22 @@ WSTETH_TOKEN = Asset(evm_address_to_identifier(
 WETH_VVV_POOL_ADDRESS = string_to_evm_address('0x01784ef301D79e4B2DF3a21ad9a536d4cF09A5Ce')
 A_VVV = Asset('eip155:8453/erc20:0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf')
 A_USDC_BASE = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
+USDC_AERO_CL_GAUGE_ADDRESS = string_to_evm_address('0x491300eC768Cf28B13A8d3BbFd87713dD728b0AD')
 WETH_BASE = Asset(evm_address_to_identifier(
     address=WETH_BASE_ADDRESS,
     chain_id=ChainID.BASE,
     token_type=TokenKind.ERC20,
 ))
+
+
+def _add_aerodrome_gauge(gauge: ChecksumEvmAddress) -> None:
+    """Add an aerodrome gauge to the cache so decoding is properly triggered for its events."""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.AERODROME_GAUGE_ADDRESS,),
+            values=(gauge,),
+        )
 
 
 def _add_aerodrome_pool(pool: ChecksumEvmAddress) -> None:
@@ -609,6 +620,186 @@ def test_slipstream_exit_position(
             counterparty=CPT_AERODROME,
             address=pool,
             notes=f'Remove {withdrawn_usdc} USDC from Aerodrome Slipstream LP {position_id}',
+        ),
+    ]
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
+def test_slipstream_gauge_deposit(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test staking a Slipstream position NFT in a concentrated liquidity gauge"""
+    _add_aerodrome_gauge(gauge := USDC_AERO_CL_GAUGE_ADDRESS)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe09feff8afe0c03d8bb4cb66c1eb6c2829a998ff114f64cb45dc1d4b79336476')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    gas_amount, position_id = '0.000002445350867981', '76588090'
+    position_token = Asset(f'eip155:8453/erc721:{SLIPSTREAM_NFPM}/{position_id}')
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1789054855000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=142,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=position_token,
+            amount=ZERO,
+            location_label=user_address,
+            address=ZERO_ADDRESS,
+            notes=f'Revoke AERO-CL-POS spending approval of {user_address} by {ZERO_ADDRESS}',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=143,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=position_token,
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=gauge,
+            notes=f'Deposit Aerodrome Slipstream LP {position_id} into {gauge} aerodrome gauge',
+        ),
+    ]
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0xC216BfA5dA000965E820845c32e6FD88DB275743']])
+def test_slipstream_gauge_withdraw(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test unstaking a Slipstream position NFT from a concentrated liquidity gauge. The
+    gauge collects the (zero) fees of the position on the way out, which must not produce
+    any withdrawal event."""
+    _add_aerodrome_gauge(gauge := USDC_AERO_CL_GAUGE_ADDRESS)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9edc4ff4721ab3b36fa1638fd3cf074dadb0ffdaacaa5b071cd97d7c79f74cad')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    gas_amount, position_id = '0.000001742787151647', '76587914'
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1789054417000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=218,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=Asset(f'eip155:8453/erc721:{SLIPSTREAM_NFPM}/{position_id}'),
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=gauge,
+            notes=f'Withdraw Aerodrome Slipstream LP {position_id} from {gauge} aerodrome gauge',
+        ),
+    ]
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0x01623a0f766e15ad10677ECFA573c3B73BCf79bF']])
+def test_slipstream_gauge_claim_rewards(
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test claiming the AERO rewards of a position staked in a concentrated liquidity gauge"""
+    _add_aerodrome_gauge(gauge := USDC_AERO_CL_GAUGE_ADDRESS)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x085c26cf4bccee36eaaf4bb550c23c6a825dfe1cd7b537ed99ff9459a1bdc26d')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    gas_amount, reward_amount = '0.000001365906718667', '2.787347278649840542'
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1789044645000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=153,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_AERO,
+            amount=FVal(reward_amount),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=gauge,
+            notes=f'Receive {reward_amount} AERO rewards from {gauge} aerodrome gauge',
         ),
     ]
 

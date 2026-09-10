@@ -68,6 +68,8 @@ from rotkehlchen.chain.evm.decoding.quickswap.v4.utils import get_quickswap_v4_p
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3, CPT_UNISWAP_V4
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.decoding.uniswap.v4.price import get_uniswap_v4_position_price
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.velodrome.utils import get_slipstream_position_price
 from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
 from rotkehlchen.chain.evm.decoding.woo_fi.utils import query_woo_fi_token_price
 from rotkehlchen.chain.evm.protocol_constants import (
@@ -230,7 +232,13 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     need to be updated, to contain proper protocol, and underlying assets.
     """
     price, oracle = None, CurrentPriceOracle.BLOCKCHAIN
-    if token.protocol in LP_TOKEN_AS_POOL_PROTOCOLS:
+    if token.protocol in (CPT_AERODROME, CPT_VELODROME) and token.token_kind == TokenKind.ERC721:
+        price = get_slipstream_position_price(  # concentrated liquidity position NFT
+            token=token,
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+            price_func=Inquirer.find_usd_price,
+        )
+    elif token.protocol in LP_TOKEN_AS_POOL_PROTOCOLS:
         price = Inquirer().find_lp_price_from_uniswaplike_pool(token)
     elif token.protocol == CPT_ACROSS:
         price = Inquirer().find_across_lp_price(token)
