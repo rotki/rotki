@@ -3,12 +3,13 @@ from contextlib import suppress
 from functools import partial
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import requests
 from base58 import b58decode
 
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -51,6 +52,66 @@ if TYPE_CHECKING:
 def identifier_to_address(identifier: str) -> SolanaAddress:
     """Extract the address from a solana token identifier."""
     return SolanaAddress(identifier.split(':')[1])
+
+
+@pytest.mark.parametrize('query_range', [False, True])
+@pytest.mark.parametrize('solana_accounts', [[SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM')]])  # noqa: E501
+def test_transaction_query_failure_sends_finished_status(
+        solana_manager: SolanaManager,
+        solana_accounts: list[SolanaAddress],
+        query_range: bool,
+) -> None:
+    """A failed RPC query must not leave the frontend progress row running forever."""
+    address = solana_accounts[0]
+    transactions = solana_manager.transactions
+    with (
+        patch.object(transactions.node_inquirer, 'query_token_accounts_by_owner', return_value=[]),
+        patch.object(
+            transactions.node_inquirer,
+            'query_tx_signatures_for_address',
+            side_effect=RemoteError('RPC unavailable'),
+        ),
+        patch.object(transactions.database.msg_aggregator, 'add_message') as add_message,
+    ):
+        if query_range:
+            with pytest.raises(RemoteError, match='RPC unavailable'):
+                transactions.query_transactions_in_range(
+                    address=address,
+                    start_ts=Timestamp(0),
+                    end_ts=Timestamp(1),
+                )
+        else:
+            with pytest.raises(RemoteError, match='RPC unavailable'):
+                transactions.query_transactions_for_address(address=address)
+
+    assert [message.kwargs['data']['status'] for message in add_message.call_args_list] == [
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+        str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+    ]
+
+
+@pytest.mark.parametrize('solana_accounts', [[
+    SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'),
+    SolanaAddress('FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa'),
+]])
+def test_transaction_query_continues_after_address_failure(
+        solana_manager: SolanaManager,
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """One failed address must not prevent the remaining addresses from being queried."""
+    addresses = solana_accounts[:2]
+    with patch.object(
+        solana_manager.transactions,
+        'query_transactions_for_address',
+        side_effect=[RemoteError('RPC unavailable'), None],
+    ) as query_address:
+        solana_manager.query_transactions(
+            addresses=addresses,
+            from_timestamp=Timestamp(0),
+            to_timestamp=Timestamp(1),
+        )
+
+    assert query_address.call_args_list == [call(address=address) for address in addresses]
 
 
 def mock_solana_rpc_response(payload: Any) -> MagicMock:

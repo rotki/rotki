@@ -57,6 +57,9 @@ class WeightedNode:
     weight: FVal
     identifier: int = 0
 
+    def __str__(self) -> str:
+        return self.node_info.name
+
     def serialize(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
