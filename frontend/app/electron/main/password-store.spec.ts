@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { captureConsoleError } from '@test/utils/capture-console-error';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PasswordStore } from './password-store';
 
 describe('passwordStore', () => {
@@ -14,6 +15,7 @@ describe('passwordStore', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     fs.rmSync(directory, { force: true, recursive: true });
   });
 
@@ -144,10 +146,12 @@ describe('passwordStore', () => {
   });
 
   it('should treat a corrupt file as empty rather than throwing', () => {
+    const reported = captureConsoleError();
     fs.writeFileSync(filePath, 'not json', { encoding: 'utf8' });
 
     expect(new PasswordStore(filePath).get('alice')).toBeUndefined();
     expect(new PasswordStore(filePath).isEmpty()).toBe(true);
+    expect(reported).toHaveBeenCalledWith(expect.any(SyntaxError), 'Could not read the password store');
   });
 
   it('should clear every entry', () => {

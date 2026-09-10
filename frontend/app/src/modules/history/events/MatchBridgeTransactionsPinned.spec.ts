@@ -1,4 +1,5 @@
 import type { MatchingFlow } from '@/modules/history/events/matching/types';
+import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import type { UsePinnedMatchPanelOptions } from '@/modules/history/events/use-pinned-match-panel';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { createMock } from '@test/utils/create-mock';
@@ -33,7 +34,13 @@ vi.mock('@/modules/history/events/use-pinned-match-panel', () => ({
 
 const unmatchedTransactions = ref<UnmatchedBridgeTransaction[]>([]);
 const ignoredTransactions = ref<UnmatchedBridgeTransaction[]>([]);
-const bridgeFlow = createMock<MatchingFlow>();
+/* Real objects, not `createMock`: the proxy is function-backed, so Vue's `type: Object` prop
+   check rejects it on both `flow` and `movement`. */
+const bridgeFlow: MatchingFlow = {
+  getSuggestions: vi.fn().mockResolvedValue({ closeMatches: [], otherEvents: [] }),
+  match: vi.fn().mockResolvedValue({ success: true }),
+  refresh: vi.fn().mockResolvedValue(undefined),
+};
 const entryLabels = ref({ locationHeader: 'Chain', type: 'Bridge transaction' });
 const unmatchableExplanation = ref<string | undefined>('No counterpart is tracked.');
 
@@ -92,7 +99,13 @@ const SheetStub = defineComponent({
     : null),
 });
 
-const transaction = createMock<UnmatchedBridgeTransaction>({ groupIdentifier: 'group-a', identifier: 11 });
+const transaction: UnmatchedBridgeTransaction = {
+  asset: 'ETH',
+  direction: 'deposit',
+  events: createMock<HistoryEventCollectionRow>(),
+  groupIdentifier: 'group-a',
+  identifier: 11,
+};
 
 describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
   let wrapper: VueWrapper | undefined;
@@ -199,7 +212,7 @@ describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
     await nextTick();
 
     const potential = view.findComponent(PotentialStub);
-    expect(potential.props('movement')).toBe(transaction);
+    expect(toRaw(potential.props('movement'))).toBe(transaction);
     expect(potential.props('flow')).toBe(bridgeFlow);
     expect(potential.props('entryLabels')).toStrictEqual(get(entryLabels));
     expect(potential.props('emptyExplanation')).toBe('No counterpart is tracked.');

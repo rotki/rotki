@@ -31,6 +31,9 @@ function createRow(identifier: number, isCloseMatch = false): PotentialMatchRow 
       groupIdentifier: `group-${identifier}`,
       identifier,
       location: 'kraken',
+      /* Unset, this reads back as a truthy auto-stub, so the row always renders the account
+         branch and passes a function to a String prop. */
+      locationLabel: 'kraken-main',
       timestamp: 1700000000000,
     }),
     identifier,

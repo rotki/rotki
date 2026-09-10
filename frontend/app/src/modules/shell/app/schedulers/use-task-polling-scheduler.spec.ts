@@ -1,4 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EffectScope } from 'vue';
+import { captureConsoleError } from '@test/utils/capture-console-error';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useTaskPollingScheduler } from './use-task-polling-scheduler';
@@ -15,6 +17,8 @@ vi.mock('@/modules/core/tasks/use-task-monitor', () => ({
 }));
 
 describe('useTaskPollingScheduler', () => {
+  let scope: EffectScope | undefined;
+
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -24,15 +28,33 @@ describe('useTaskPollingScheduler', () => {
   });
 
   afterEach(() => {
+    scope?.stop();
+    scope = undefined;
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
+
+  /**
+   * Builds the scheduler inside an effect scope.
+   *
+   * @remarks
+   * The composable registers its own `onScopeDispose(stop)`, which needs an active scope to
+   * attach to. Stopping the scope in `afterEach` also runs that teardown, so a scheduler cannot
+   * outlive its test and keep polling into the next one.
+   */
+  function createScheduler(): ReturnType<typeof useTaskPollingScheduler> {
+    scope = effectScope();
+    const scheduler = scope.run(() => useTaskPollingScheduler());
+    assert(scheduler);
+    return scheduler;
+  }
 
   const runTask = (): void => {
     useTaskStore().add({ id: 1, label: 'test' });
   };
 
   it('should not poll while the backend is deliberately down', async () => {
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     runTask();
     start(false);
 
@@ -43,7 +65,7 @@ describe('useTaskPollingScheduler', () => {
   });
 
   it('should resume polling on its own once the backend is back, without being restarted', async () => {
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     runTask();
     start(false);
 
@@ -57,7 +79,7 @@ describe('useTaskPollingScheduler', () => {
   });
 
   it('should poll slowly while nothing is outstanding', async () => {
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(false);
 
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + 100);
@@ -69,7 +91,7 @@ describe('useTaskPollingScheduler', () => {
 
   it('should poll quickly as soon as a task is outstanding', async () => {
     runTask();
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(false);
 
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + 50);
@@ -78,7 +100,7 @@ describe('useTaskPollingScheduler', () => {
 
   it('should back off while the outstanding work does not change', async () => {
     runTask();
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(false);
 
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + 50);
@@ -93,7 +115,7 @@ describe('useTaskPollingScheduler', () => {
 
   it('should return to the fast cadence when a task appears, not the next step of the backoff', async () => {
     runTask();
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(false);
 
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + SECOND_GAP_MS + 100);
@@ -109,7 +131,7 @@ describe('useTaskPollingScheduler', () => {
 
   it('should slow down again once the work is done, from the poll after the one already scheduled', async () => {
     runTask();
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(false);
 
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + 50);
@@ -133,7 +155,7 @@ describe('useTaskPollingScheduler', () => {
       release = resolve;
     }));
 
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(true);
     await vi.advanceTimersByTimeAsync(0);
     expect(monitor).toHaveBeenCalledOnce();
@@ -147,21 +169,23 @@ describe('useTaskPollingScheduler', () => {
   });
 
   it('should keep polling after a failed pass', async () => {
+    const reported = captureConsoleError();
     runTask();
     monitor.mockRejectedValueOnce(new Error('boom'));
 
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(false);
 
     await vi.advanceTimersByTimeAsync(ACTIVE_POLLING_MS + 50);
     expect(monitor).toHaveBeenCalledOnce();
+    expect(reported).toHaveBeenCalledWith(new Error('boom'));
 
     await vi.advanceTimersByTimeAsync(SECOND_GAP_MS + 50);
     expect(monitor).toHaveBeenCalledTimes(2);
   });
 
   it('should poll immediately when asked to', async () => {
-    const { start } = useTaskPollingScheduler();
+    const { start } = createScheduler();
     start(true);
 
     await vi.advanceTimersByTimeAsync(0);
@@ -170,7 +194,7 @@ describe('useTaskPollingScheduler', () => {
 
   it('should stop polling', async () => {
     runTask();
-    const { start, stop } = useTaskPollingScheduler();
+    const { start, stop } = createScheduler();
     start(false);
     stop();
 

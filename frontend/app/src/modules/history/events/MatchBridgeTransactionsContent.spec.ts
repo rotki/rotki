@@ -183,7 +183,7 @@ describe('modules/history/events/MatchBridgeTransactionsContent', () => {
     it('should hide the restore button entirely when nothing is selected', async () => {
       set(transactionsApi.ignoredTransactions, [transaction(1)]);
       const wrapper = await mountContent();
-      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:model-value', 1);
+      await wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:modelValue', 1);
       await nextTick();
       expect(wrapper.find('[data-testid="restore-selected"]').exists()).toBe(false);
 

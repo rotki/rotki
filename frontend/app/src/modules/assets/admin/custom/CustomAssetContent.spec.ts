@@ -25,7 +25,8 @@ vi.mock('@/modules/assets/api/use-asset-management-api', () => ({
 }));
 
 vi.mock('@/modules/assets/admin/custom/use-custom-asset-fields', () => ({
-  useCustomAssetFields: (): Record<string, unknown> => ({}),
+  // The real composable returns `FieldDef[]`; an object here reaches the table's Array prop.
+  useCustomAssetFields: (): unknown[] => [],
 }));
 
 vi.mock('@/modules/core/table/use-server-table', () => ({

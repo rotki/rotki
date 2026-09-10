@@ -5,7 +5,7 @@ import { RuiAlertStub } from '@test/stubs/RuiAlert';
 import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';
 import { RuiIconStub } from '@test/stubs/RuiIcon';
 import { RuiTooltipStub } from '@test/stubs/RuiTooltip';
-import { config, enableAutoUnmount } from '@vue/test-utils';
+import { config, enableAutoUnmount, RouterLinkStub } from '@vue/test-utils';
 import consola, { type ConsolaReporter } from 'consola';
 import { afterAll, afterEach, beforeAll, beforeEach, onTestFailed, vi } from 'vitest';
 import { server } from './server';
@@ -241,6 +241,10 @@ config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
 config.global.stubs.I18nT = true;
+/* The `vue-router` mock above replaces the plugin, so nothing registers RouterLink and RouterView
+   as global components and every component rendering one warns instead. */
+config.global.stubs.RouterLink = RouterLinkStub;
+config.global.stubs.RouterView = true;
 // JsonInput lazy-loads `vanilla-jsoneditor` on mount, and no spec asserts its DOM.
 config.global.stubs.JsonInput = true;
 

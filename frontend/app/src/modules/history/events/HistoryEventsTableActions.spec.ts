@@ -1,7 +1,6 @@
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { UseHistoryEventsPillBarOptions } from '@/modules/history/events/use-history-events-pill-bar';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
-import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
@@ -52,16 +51,17 @@ const HistoryRedecodeButtonStub = defineComponent({
 });
 
 function selectionState(overrides: Partial<SelectionState> = {}): SelectionState {
-  return createMock<SelectionState>({
+  return {
     hasAvailableEvents: true,
     isActive: true,
     isAllSelected: false,
     isPartiallySelected: false,
     selectAllMatching: false,
     selectedCount: 2,
+    selectedIds: new Set<number>(),
     totalMatchingCount: 40,
     ...overrides,
-  });
+  };
 }
 
 describe('modules/history/events/HistoryEventsTableActions', () => {
@@ -80,7 +80,7 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
       },
       props: {
         action: undefined,
-        exportParams: createMock<HistoryEventRequestPayload>({}),
+        exportParams: { aggregateByGroupIds: true, limit: 10, offset: 0 } satisfies HistoryEventRequestPayload,
         fields: [],
         filters: {},
         locationLabels: [],

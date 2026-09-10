@@ -1,5 +1,5 @@
 import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
-import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,7 +29,13 @@ const EmptyStub = {
   template: '<button data-testid="stub-widen" @click="$emit(\'widen\')" />',
 };
 
-const movement = createMock<UnmatchedEventGroup>({ asset: 'ETH', groupIdentifier: '0xabc' });
+/* A real object, not `createMock`: the proxy is function-backed, so Vue's `type: Object` prop
+   check rejects it and every mount warns. Only the nested collection stays mocked. */
+const movement: UnmatchedEventGroup = {
+  asset: 'ETH',
+  events: createMock<HistoryEventCollectionRow>(),
+  groupIdentifier: '0xabc',
+};
 
 const noMatches: PotentialMatchRow[] = [];
 
