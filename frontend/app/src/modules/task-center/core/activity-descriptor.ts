@@ -29,8 +29,14 @@ type KeyParts = readonly (string | number)[];
  */
 export interface ActivityDescriptor<TSubject, TKey extends KeyParts> {
   readonly kind: ActivityKind;
-  /** The fixed part that follows the kind, before the subject's own key parts. */
-  readonly part: ActivityPart;
+  /**
+   * The fixed part that follows the kind, before the subject's own key parts.
+   *
+   * Optional, because it discriminates *operations within a kind*: `ACCOUNTS` hosts add, remove and
+   * import, so its ids must say which. A kind that hosts one operation (`TX_SYNC`) has nothing to
+   * discriminate, and a synthetic part there is a segment every reader has to remember for no gain.
+   */
+  readonly part?: ActivityPart;
   /** The subject's identity, broadest component first. */
   readonly keyOf: (subject: TSubject) => TKey;
   /** The full activity id for one subject. */
@@ -54,7 +60,7 @@ export interface ActivityDescriptor<TSubject, TKey extends KeyParts> {
 
 interface ActivityDescriptorInput<TSubject, TKey extends KeyParts> {
   readonly kind: ActivityKind;
-  readonly part: ActivityPart;
+  readonly part?: ActivityPart;
   readonly key: (subject: TSubject) => TKey;
   readonly lane?: (subject: TSubject) => Lane;
 }
@@ -66,17 +72,19 @@ interface ActivityDescriptorInput<TSubject, TKey extends KeyParts> {
 export function defineActivity<TSubject, const TKey extends KeyParts>(
   input: ActivityDescriptorInput<TSubject, TKey>,
 ): ActivityDescriptor<TSubject, TKey> {
-  const partsOf = (subject: TSubject): KeyParts => [input.part, ...input.key(subject)];
+  /** The fixed part as key parts, so an absent one contributes no segment rather than `undefined`. */
+  const lead: KeyParts = input.part === undefined ? [] : [input.part];
+  const partsOf = (subject: TSubject): KeyParts => [...lead, ...input.key(subject)];
 
   return {
     batchId: (prefix: Prefixes<TKey>): ActivityId =>
-      makeActivityId(input.kind, input.part, ...prefix, ActivityPart.BATCH),
+      makeActivityId(input.kind, ...lead, ...prefix, ActivityPart.BATCH),
     id: (subject: TSubject): ActivityId => makeActivityId(input.kind, ...partsOf(subject)),
     keyOf: input.key,
     kind: input.kind,
     laneOf: input.lane,
     part: input.part,
     partsOf,
-    partsWithin: (prefix: Prefixes<TKey>): KeyParts => [input.part, ...prefix],
+    partsWithin: (prefix: Prefixes<TKey>): KeyParts => [...lead, ...prefix],
   };
 }
