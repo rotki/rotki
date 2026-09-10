@@ -12,6 +12,7 @@ import pytest
 import requests
 from freezegun import freeze_time
 from web3 import HTTPProvider, Web3
+from web3.exceptions import Web3Exception
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -49,9 +50,11 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     NodeName,
     SerializableChainIndexerOrder,
+    WeightedNode,
     string_to_evm_address,
 )
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -1283,6 +1286,91 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     ):
         price = inquirer.find_usd_price(token)
         assert price != ZERO
+
+
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('stored_archive_status', [None, True])
+def test_connect_rpc_reuses_persisted_archive_status(
+        ethereum_inquirer: EthereumInquirer,
+        database,
+        stored_archive_status: bool | None,
+):
+    node = WeightedNode(
+        node_info=NodeName(
+            name='persisted archive status',
+            endpoint='https://persisted-archive-status.example.com',
+            owned=True,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        active=True,
+        weight=ONE,
+    )
+    database.add_rpc_node(node)
+    if stored_archive_status is not None:
+        database.set_rpc_node_archive_status(node.node_info, stored_archive_status)
+
+    web3 = MagicMock()
+    web3.is_connected.return_value = True
+    web3.net.version = '1'
+    web3.eth.block_number = 1
+    with (
+        patch.object(
+            ethereum_inquirer,
+            '_init_web3',
+            return_value=(web3, node.node_info.endpoint),
+        ),
+        patch.object(
+            ethereum_inquirer,
+            'determine_capabilities',
+            return_value=(True, False),
+        ) as probe,
+        patch.object(ethereum_inquirer, '_is_pruned', return_value=False),
+    ):
+        success, message = ethereum_inquirer.attempt_connect(node=node.node_info)
+
+    assert success is True
+    assert message == ''
+    assert database.get_rpc_node_archive_status(node.node_info) is True
+    if stored_archive_status is None:
+        probe.assert_called_once_with(web3)
+    else:
+        probe.assert_not_called()
+
+
+@pytest.mark.parametrize('network_mocking', [False])
+def test_failed_archive_query_marks_node_as_non_archive(
+        ethereum_inquirer: EthereumInquirer,
+        database,
+):
+    node = WeightedNode(
+        node_info=NodeName(
+            name='failing archive node',
+            endpoint='https://failing-archive-node.example.com',
+            owned=True,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        active=True,
+        weight=ONE,
+    )
+    database.add_rpc_node(node)
+    database.set_rpc_node_archive_status(node.node_info, True)
+    ethereum_inquirer.rpc_mapping[node.node_info] = RPCNode(
+        rpc_client=MagicMock(),
+        is_pruned=False,
+        is_archive=True,
+    )
+    archive_query = MagicMock(side_effect=Web3Exception('missing trie node'))
+    archive_query.__name__ = 'archive_query'
+
+    with pytest.raises(RemoteError):
+        ethereum_inquirer._query(
+            method=archive_query,
+            call_order=[node],
+            block_identifier=123,
+        )
+
+    assert database.get_rpc_node_archive_status(node.node_info) is False
+    assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is False
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -4541,6 +4541,23 @@ class DBHandler:
                 for entry in cursor
             ]
 
+    def get_rpc_node_archive_status(self, node: NodeName) -> bool | None:
+        """Return the persisted archive status for an EVM node, if it was checked."""
+        with self.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT is_archive FROM rpc_nodes WHERE endpoint=? AND blockchain=?',
+                (node.endpoint, node.blockchain.value),
+            ).fetchone()
+        return None if result is None or result[0] is None else bool(result[0])
+
+    def set_rpc_node_archive_status(self, node: NodeName, is_archive: bool) -> None:
+        """Persist the archive status for an EVM node."""
+        with self.user_write() as cursor:
+            cursor.execute(
+                'UPDATE rpc_nodes SET is_archive=? WHERE endpoint=? AND blockchain=?',
+                (is_archive, node.endpoint, node.blockchain.value),
+            )
+
     def rebalance_rpc_nodes_weights(
             self,
             write_cursor: DBCursor,
@@ -4610,13 +4627,16 @@ class DBHandler:
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
+                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=?, '
+                    'is_archive=CASE WHEN endpoint=? THEN is_archive ELSE NULL END '
+                    'WHERE identifier=? AND blockchain=?',
                     (
                         node.node_info.name,
                         node.node_info.endpoint,
                         node.node_info.owned,
                         node.active,
                         str(node.weight),
+                        node.node_info.endpoint,
                         node.identifier,
                         node.node_info.blockchain.value,
                     ),
