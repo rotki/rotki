@@ -10,7 +10,27 @@ const testActivity = defineActivity<Subject, readonly [string, string]>({
   part: ActivityPart.ADD,
 });
 
+const partlessActivity = defineActivity<Subject, readonly [string, string]>({
+  key: subject => [subject.chain, subject.address],
+  kind: ActivityKind.TX_SYNC,
+});
+
 describe('defineActivity', () => {
+  describe('without a fixed part', () => {
+    it('should build the id from the kind and the key alone', () => {
+      expect(partlessActivity.id({ address: '0xabc', chain: 'eth' })).toBe('tx-sync:eth:0xabc');
+    });
+
+    it('should contribute no segment for the absent part', () => {
+      expect(partlessActivity.partsWithin(['eth'])).toStrictEqual(['eth']);
+      expect(partlessActivity.partsWithin([])).toStrictEqual([]);
+    });
+
+    it('should keep the batch umbrella under the key prefix', () => {
+      expect(partlessActivity.batchId(['eth'])).toBe('tx-sync:eth:batch');
+    });
+  });
+
   it('should build the id from the kind, the part and the key', () => {
     expect(testActivity.id({ address: '0xabc', chain: 'eth' })).toBe('accounts:add:eth:0xabc');
   });
