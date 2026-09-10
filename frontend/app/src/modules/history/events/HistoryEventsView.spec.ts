@@ -34,6 +34,16 @@ const handleUpdateEventIds = vi.fn();
 const handleMovementChanged = vi.fn();
 const handleBridgeChanged = vi.fn();
 
+/*
+ * The view holds the panel as a `defineAsyncComponent`, so naming it in `stubs` does not reach it:
+ * the SFC resolves the local const itself and the dynamic import runs regardless. Left real, that
+ * import settles after the test file is torn down and lands as an unhandled rejection. Mocking the
+ * module makes it resolve from the registry, inside the test.
+ */
+vi.mock('@/modules/shell/sync-progress/components/SyncProgressPanel.vue', () => ({
+  default: defineComponent({ name: 'SyncProgressPanel', setup: () => (): unknown => h('div') }),
+}));
+
 vi.mock('@/modules/history/events/use-history-events-view-actions', () => ({
   useHistoryEventsViewActions: (): unknown => ({
     groupedEventsByTxRef: ref({}),

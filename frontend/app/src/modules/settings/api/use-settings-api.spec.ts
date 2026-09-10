@@ -162,7 +162,7 @@ describe('composables/api/settings/settings-api', () => {
 
       server.use(
         http.put(`${backendUrl}/api/1/settings`, async ({ request }) => {
-          capturedBody = await request.json();
+          capturedBody = JSON.parse(await request.text());
           capturedRequest = {
             body: capturedBody,
             headers: request.headers,
@@ -305,7 +305,7 @@ describe('composables/api/settings/settings-api', () => {
 
       server.use(
         http.put(`${backendUrl}/api/1/settings`, async ({ request }) => {
-          capturedBody = await request.json();
+          capturedBody = JSON.parse(await request.text());
           return HttpResponse.json(createSettingsResponse({
             disabled_chain_queries: { binance_sc: [], [MULTI_WORD_CHAIN_ID]: [ETH_ADDRESS] },
           }));
@@ -372,7 +372,7 @@ describe('composables/api/settings/settings-api', () => {
 
       server.use(
         http.put(`${backendUrl}/api/1/settings/configuration`, async ({ request }) => {
-          capturedBody = await request.json();
+          capturedBody = JSON.parse(await request.text());
           return HttpResponse.json(createBackendConfigResponse());
         }),
       );

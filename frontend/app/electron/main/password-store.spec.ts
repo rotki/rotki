@@ -166,6 +166,6 @@ describe('passwordStore', () => {
   it('should leave no temporary file behind', () => {
     new PasswordStore(filePath).set('alice', 'ciphertext');
 
-    expect(fs.readdirSync(directory)).toStrictEqual(['config.json']);
+    expect([...fs.readdirSync(directory)]).toStrictEqual(['config.json']);
   });
 });
