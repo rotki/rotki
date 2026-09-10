@@ -1,5 +1,6 @@
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { BackendCode, type DebugStateGroup, type Listeners, type OAuthResult, type StartupError } from '@shared/ipc';
+import { QUARANTINED_COLIBRI } from '@test/fixtures/unusable-binary';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -163,15 +164,37 @@ describe('modules/shell/app/useBackendMessages', () => {
       expect(get(startupErrorMessage)).toBe('');
     });
 
-    it('should still halt the backend for a code it does not recognise, showing nothing', async () => {
+    it('should fall back to the generic message for a code it does not recognise, rather than show nothing', async () => {
       getStartupError.mockReturnValue({ code: 99, message: 'something new' });
 
       const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage } = await mountHost();
 
       expect(stopConnectionAttempts).toHaveBeenCalledOnce();
-      expect(get(startupErrorMessage)).toBe('');
+      expect(get(startupErrorMessage)).toBe('something new');
       expect(get(isMacOsVersionUnsupported)).toBe(false);
       expect(get(isWinVersionUnsupported)).toBe(false);
+    });
+
+    it('should surface a quarantined binary as the report, not as the raw message', async () => {
+      getStartupError.mockReturnValue({
+        code: BackendCode.MISSING_BINARY,
+        message: 'The rotki component \'colibri\' is missing: /opt/rotki/resources/colibri/colibri',
+        unusableBinary: QUARANTINED_COLIBRI,
+      });
+
+      const { startupErrorMessage, unusableBinary } = await mountHost();
+
+      expect(get(unusableBinary)).toStrictEqual(QUARANTINED_COLIBRI);
+      expect(get(startupErrorMessage)).toBe('');
+    });
+
+    it('should fall back to the message when a missing-binary code arrives without its report', async () => {
+      getStartupError.mockReturnValue({ code: BackendCode.MISSING_BINARY, message: 'colibri is gone' });
+
+      const { startupErrorMessage, unusableBinary } = await mountHost();
+
+      expect(get(unusableBinary)).toBeUndefined();
+      expect(get(startupErrorMessage)).toBe('colibri is gone');
     });
 
     it('should halt every outbound channel, not just the one that failed', async () => {
@@ -213,6 +236,16 @@ describe('modules/shell/app/useBackendMessages', () => {
       expect(stopConnectionAttempts).toHaveBeenCalledOnce();
       expect(stopMonitoring).toHaveBeenCalledOnce();
       expect(setWsConnectionEnabled).toHaveBeenCalledWith(false);
+    });
+
+    it('should replace a generic message with the missing-binary screen when the file turns out gone', async () => {
+      const { startupErrorMessage, unusableBinary } = await mountHost();
+
+      listeners().onError('colibri exited with code 0', BackendCode.TERMINATED);
+      listeners().onError('colibri is missing', BackendCode.MISSING_BINARY, QUARANTINED_COLIBRI);
+
+      expect(get(unusableBinary)).toStrictEqual(QUARANTINED_COLIBRI);
+      expect(get(startupErrorMessage)).toBe('');
     });
   });
 
@@ -272,6 +305,19 @@ describe('modules/shell/app/useBackendMessages', () => {
       expect(get(connectionEnabled)).toBe(true);
       expect(setWsConnectionEnabled).toHaveBeenLastCalledWith(true);
       expect(restartBackend).toHaveBeenCalledOnce();
+    });
+
+    it('should take the missing-binary screen down too, not just the message', async () => {
+      getStartupError.mockReturnValue({
+        code: BackendCode.MISSING_BINARY,
+        message: 'colibri is gone',
+        unusableBinary: QUARANTINED_COLIBRI,
+      });
+      const { unusableBinary } = await mountHost();
+
+      listeners().onRestart();
+
+      expect(get(unusableBinary)).toBeUndefined();
     });
   });
 

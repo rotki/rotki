@@ -10,6 +10,7 @@ import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/modules/shell/components/dialogs/MessageDialog.vue';
 import MacOsVersionUnsupported from '@/modules/shell/components/error/MacOsVersionUnsupported.vue';
+import MissingBinaryScreen from '@/modules/shell/components/error/MissingBinaryScreen.vue';
 import StartupErrorScreen from '@/modules/shell/components/error/StartupErrorScreen.vue';
 import WinVersionUnsupported from '@/modules/shell/components/error/WinVersionUnsupported.vue';
 import ReportIssueDialog from '@/modules/shell/components/ReportIssueDialog.vue';
@@ -18,7 +19,7 @@ defineSlots<{
   default: () => any;
 }>();
 
-const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage }
+const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage, unusableBinary }
   = useBackendMessages();
 const store = useMessageStore();
 const { message } = storeToRefs(store);
@@ -85,6 +86,10 @@ async function handlePasswordConfirmation(password: string): Promise<void> {
   <StartupErrorScreen
     v-if="startupErrorMessage.length > 0"
     :message="startupErrorMessage"
+  />
+  <MissingBinaryScreen
+    v-if="unusableBinary"
+    :binary="unusableBinary"
   />
   <MacOsVersionUnsupported v-if="isMacOsVersionUnsupported" />
   <WinVersionUnsupported v-if="isWinVersionUnsupported" />

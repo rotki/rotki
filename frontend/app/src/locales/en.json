@@ -4883,6 +4883,22 @@
       "title": "Success"
     }
   },
+  "missing_binary": {
+    "cause": "This usually means security software removed it. Security software sometimes flags rotki's bundled programs by mistake. It does not mean your machine is infected, and your rotki data is untouched.",
+    "header": "A rotki component is missing",
+    "header_not_executable": "A rotki component cannot be run",
+    "missing": "{component} is missing",
+    "not_executable": "{component} cannot be run",
+    "recovery": "To get it back:",
+    "steps": {
+      "exclude": "If it is removed again, add the rotki installation folder to your antivirus exclusions. Only do this once you are confident the detection is a false positive, for example after checking that you downloaded rotki from the official source.",
+      "reinstall": "If the file cannot be restored, reinstall rotki. Antivirus software deletes quarantined files after a while, so an older detection may leave nothing to restore.",
+      "restore": "Restore the file from your antivirus quarantine.",
+      "restore_windows": "In Windows Security this is under Virus & threat protection, Protection history.",
+      "update_definitions": "Update your antivirus definitions first. Restoring the file while the definitions that flagged it are still in use gets it removed again."
+    },
+    "subtitle": "rotki cannot start without this file. It was expected here:"
+  },
   "missing_exchange_rate": {
     "message": "This session of rotki may have errors if you use this currency.",
     "title": "Missing exchange rate"
