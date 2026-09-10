@@ -14,7 +14,7 @@ const mockAutoRefresh = vi.fn();
 const mockFetchTransactionStatusSummary = vi.fn();
 const mockCheckIfPasswordConfirmationNeeded = vi.fn();
 
-vi.mock('@/modules/shell/sync-progress/use-monitor-watchers', () => ({
+vi.mock('@/modules/shell/app/use-monitor-watchers', () => ({
   useMonitorWatchers: vi.fn(),
 }));
 

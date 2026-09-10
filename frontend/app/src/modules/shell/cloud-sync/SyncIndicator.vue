@@ -2,14 +2,14 @@
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';
+import SyncButtons from '@/modules/shell/cloud-sync/SyncButtons.vue';
+import SyncSettings from '@/modules/shell/cloud-sync/SyncSettings.vue';
+import SyncUploadStatusAlert from '@/modules/shell/cloud-sync/SyncUploadStatusAlert.vue';
+import { useSyncIndicator } from '@/modules/shell/cloud-sync/use-sync-indicator';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';
-import SyncButtons from '@/modules/shell/sync-progress/SyncButtons.vue';
-import SyncSettings from '@/modules/shell/sync-progress/SyncSettings.vue';
-import SyncUploadStatusAlert from '@/modules/shell/sync-progress/SyncUploadStatusAlert.vue';
-import { useSyncIndicator } from '@/modules/shell/sync-progress/use-sync-indicator';
 
 const { t } = useI18n({ useScope: 'global' });
 

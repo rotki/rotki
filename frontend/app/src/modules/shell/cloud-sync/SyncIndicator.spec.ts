@@ -4,9 +4,9 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref, shallowRef } from 'vue';
 import { SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
+import SyncIndicator from '@/modules/shell/cloud-sync/SyncIndicator.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
-import SyncIndicator from '@/modules/shell/sync-progress/SyncIndicator.vue';
 
 let cloudBackupAllowed: Ref<boolean>;
 let syncAction: Ref<SyncAction | undefined>;
@@ -93,7 +93,7 @@ function createWrapper(): VueWrapper {
   });
 }
 
-describe('modules/shell/sync-progress/SyncIndicator.vue', () => {
+describe('modules/shell/cloud-sync/SyncIndicator.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     cloudBackupAllowed = ref<boolean>(true);
