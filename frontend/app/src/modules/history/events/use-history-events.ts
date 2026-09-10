@@ -10,6 +10,7 @@ import type {
   HistoryEventsCollectionResponse,
   ModifyHistoryEventPayload,
 } from '@/modules/history/events/schemas';
+import { Priority } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
@@ -17,10 +18,9 @@ import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/ty
 import { arrayify } from '@/modules/core/common/data/array';
 import { defaultCollectionState, mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEthAddressesFromText } from '@/modules/history/history-utils';
 import { useHistoryStore } from '@/modules/history/use-history-store';
@@ -127,6 +127,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       notifyError(
         t('actions.history_events.error.title'),
         t('actions.history_events.error.description', { error }).toString(),
+        { priority: Priority.NORMAL },
       );
       return defaultCollectionState();
     }

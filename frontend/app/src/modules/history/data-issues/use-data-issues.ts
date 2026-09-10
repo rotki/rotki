@@ -1,6 +1,7 @@
 import type { MaybeRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
+import { Priority } from '@rotki/common';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -29,6 +30,7 @@ export function useDataIssues(): UseDataIssuesReturn {
     notifyError(
       t('data_issues.fetch.error.title'),
       t('data_issues.fetch.error.message', { message: result.error.message }),
+      { priority: Priority.NORMAL },
     );
     return defaultCollectionState<DataIssue>();
   };

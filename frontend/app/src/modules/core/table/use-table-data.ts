@@ -1,5 +1,6 @@
 import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
+import { Priority } from '@rotki/common';
 import { FetchError } from 'ofetch';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { api } from '@/modules/core/api/rotki-api';
@@ -70,7 +71,7 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
 
         logger.error(e);
         if (Number(code) >= 400) {
-          notifyError(t('error.generic.title'), t('error.generic.message', { code, message, path }));
+          notifyError(t('error.generic.title'), t('error.generic.message', { code, message, path }), { priority: Priority.NORMAL });
         }
       },
       resetOnExecute: false,

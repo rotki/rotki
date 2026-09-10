@@ -1,3 +1,4 @@
+import { Priority } from '@rotki/common';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -59,6 +60,7 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
       notifyError(
         t('actions.history.fetch_associated_locations.error.title'),
         t('actions.history.fetch_associated_locations.error.message', { message: getErrorMessage(error) }),
+        { priority: Priority.NORMAL },
       );
     }
   }
@@ -75,6 +77,7 @@ export function useHistoryDataFetching(): UseHistoryDataFetchingReturn {
       notifyError(
         t('actions.history.fetch_location_labels.error.title'),
         t('actions.history.fetch_location_labels.error.message', { message: getErrorMessage(error) }),
+        { priority: Priority.NORMAL },
       );
     }
   }

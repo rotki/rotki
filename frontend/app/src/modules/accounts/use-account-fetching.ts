@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common';
+import { Blockchain, Priority } from '@rotki/common';
 import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { createAccount } from '@/modules/accounts/create-account';
@@ -29,7 +29,9 @@ export function useAccountFetching(): UseAccountFetchingReturn {
    * @remarks
    * This fans out over every supported chain, so a logout mid-flight would otherwise raise one
    * "no user is currently logged in" per chain. A cancelled request is likewise the queue dropping
-   * work the user moved away from. Everything else is surfaced.
+   * work the user moved away from. Everything else is recorded in the drawer rather than popped,
+   * for the same reason: one outage is one notification per chain, and the user asked for none of
+   * them.
    */
   const notifyFetchFailure = (chain: string, error: unknown): void => {
     if (isRequestCancellation(error) || isSessionExpired(error))
@@ -42,6 +44,7 @@ export function useAccountFetching(): UseAccountFetchingReturn {
         blockchain: chain.toUpperCase(),
         message: getErrorMessage(error),
       }),
+      { priority: Priority.NORMAL },
     );
   };
 
