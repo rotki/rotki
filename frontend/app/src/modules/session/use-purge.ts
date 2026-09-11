@@ -4,6 +4,7 @@ import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, isCancellation, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { protocolCacheActivityId } from '@/modules/history/protocol-cache-activity';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -50,7 +51,7 @@ export function useSessionPurge(): UseSessionPurge {
   const refreshGeneralCache = async (source: string): Promise<void> => {
     resetProtocolCacheUpdatesStatus();
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.PROTOCOL_CACHE),
+      id: protocolCacheActivityId(),
       kind: ActivityKind.PROTOCOL_CACHE,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
