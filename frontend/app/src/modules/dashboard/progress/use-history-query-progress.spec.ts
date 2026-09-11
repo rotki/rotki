@@ -1,8 +1,10 @@
+import { submitRefresh } from '@test/utils/history-refresh';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus, TransactionsQueryStatus } from '@/modules/core/messaging/types';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { type TxQueryStatusData, useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { useHistoryQueryProgress } from './use-history-query-progress';
 
 function setTxStatuses(statuses: Record<string, TxQueryStatusData>): void {
@@ -47,6 +49,8 @@ function eventStatus(status: HistoryEventsQueryStatus, name = 'kraken', location
 describe('useHistoryQueryProgress', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    // The orchestrator is a shared singleton, so its records outlive a test without this.
+    useTaskOrchestrator().reset();
   });
 
   it('should return undefined when there are no statuses', () => {
@@ -54,149 +58,161 @@ describe('useHistoryQueryProgress', () => {
     expect(get(progress)).toBeUndefined();
   });
 
-  it('should report an active transaction with chain and address details', () => {
-    setTxStatuses({
-      a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0xabc', 'eth'),
+  /**
+   * Which item is being worked on, and its caption.
+   *
+   * Still read from the websocket stores: they are the only source that knows *which* address or
+   * exchange a message was about. The counts beside it come from the ledger; see the next block.
+   */
+  describe('the active item', () => {
+    it('should report an active transaction with chain and address details', () => {
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0xabc', 'eth'),
+      });
+
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value?.currentOperationData?.type).toBe('transaction');
+      expect(value?.currentOperationData?.address).toBe('0xabc');
+      expect(value?.currentOperationData?.chain).toBe('eth');
     });
 
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
+    it('should treat bitcoin as active while it is decoding', () => {
+      setTxStatuses({
+        a: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED),
+        b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
+      });
 
-    expect(value).toBeDefined();
-    expect(value?.currentOperationData?.type).toBe('transaction');
-    expect(value?.currentOperationData?.address).toBe('0xabc');
-    expect(value?.currentOperationData?.chain).toBe('eth');
-    expect(value?.currentStep).toBe(0);
-    expect(value?.totalSteps).toBe(1);
-    expect(value?.percentage).toBe(0);
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value?.currentOperationData?.type).toBe('transaction');
+      expect(value?.currentOperationData?.address).toBe('bc1');
+    });
+
+    it('should treat bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED, since an empty query skips the decode messages', () => {
+      setTxStatuses({
+        a: bitcoinTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
+      });
+
+      expect(get(useHistoryQueryProgress().progress)?.currentOperation).toBeNull();
+    });
+
+    it('should treat non-bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED', () => {
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x1'),
+        b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0x2'),
+      });
+
+      expect(get(useHistoryQueryProgress().progress)?.currentOperationData?.address).toBe('0x2');
+    });
+
+    it('should skip a cancelled transaction when picking the active one', () => {
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.CANCELLED, '0x1'),
+        b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x2'),
+      });
+
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value?.currentOperation).toBeNull();
+      expect(value?.currentOperationData).toBeNull();
+    });
+
+    it('should skip a failed transaction when picking the active one', () => {
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.FAILED, '0x1'),
+        b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x2'),
+      });
+
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value?.currentOperation).toBeNull();
+      expect(value?.currentOperationData).toBeNull();
+    });
+
+    it('should fall back to an active event when no transactions are active', () => {
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x1'),
+      });
+      setEventStatuses({
+        k: eventStatus(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED, 'kraken', 'kraken'),
+      });
+
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value?.currentOperationData?.type).toBe('event');
+      expect(value?.currentOperationData?.name).toBe('kraken');
+      expect(value?.currentOperationData?.location).toBe('kraken');
+      expect(value?.currentOperation).toContain('kraken');
+    });
+
+    it('should treat a cancelled event as finished when picking the active one', () => {
+      setEventStatuses({
+        k: eventStatus(HistoryEventsQueryStatus.CANCELLED, 'kraken'),
+        b: eventStatus(HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED, 'binance', 'binance'),
+      });
+
+      expect(get(useHistoryQueryProgress().progress)?.currentOperation).toBeNull();
+    });
+
+    it('should prefer transactions over events when both are active', () => {
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0xabc'),
+      });
+      setEventStatuses({
+        k: eventStatus(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED, 'kraken'),
+      });
+
+      expect(get(useHistoryQueryProgress().progress)?.currentOperationData?.type).toBe('transaction');
+    });
   });
 
-  it('should treat bitcoin as active while it is decoding', () => {
-    setTxStatuses({
-      a: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED),
-      b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
+  /**
+   * How far along the refresh is.
+   *
+   * Read from the ledger, so the dashboard and the sync panel cannot disagree. Counting the stores
+   * instead made the denominator grow as addresses and exchanges were reported, so the bar fell
+   * whenever new work appeared.
+   */
+  describe('progress counts', () => {
+    it('should count settled leaves over the leaves the flow declared', async () => {
+      setTxStatuses({ a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0x123') });
+      await submitRefresh({ eth: { '0x123': 'complete', '0x456': 'running' } });
+
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value?.currentStep).toBe(1);
+      expect(value?.totalSteps).toBe(2);
+      expect(value?.percentage).toBe(50);
     });
 
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
+    it('should reach 100% only once every declared leaf has settled', async () => {
+      setTxStatuses({ a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x123') });
+      await submitRefresh({ eth: { '0x123': 'complete', '0x456': 'cancelled' } });
 
-    expect(value?.currentOperationData?.type).toBe('transaction');
-    expect(value?.currentStep).toBe(1);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(50);
-  });
+      const value = get(useHistoryQueryProgress().progress);
 
-  it('should treat bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED, since an empty query skips the decode messages', () => {
-    setTxStatuses({
-      a: bitcoinTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      b: bitcoinTx(TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED, 'bc2'),
+      expect(value?.currentStep).toBe(2);
+      expect(value?.totalSteps).toBe(2);
+      expect(value?.percentage).toBe(100);
     });
 
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
+    /**
+     * The denominator is fixed at submit time, so reporting a *new* address mid-run cannot make the
+     * bar fall. Under the old store-derived count this case dropped from 100% to 50%.
+     */
+    it('should not fall when the stores learn of an address the flow did not declare', async () => {
+      setTxStatuses({ a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x123') });
+      await submitRefresh({ eth: { '0x123': 'complete' } });
+      expect(get(useHistoryQueryProgress().progress)?.percentage).toBe(100);
 
-    expect(value?.currentOperation).toBeNull();
-    expect(value?.currentStep).toBe(2);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(100);
-  });
+      setTxStatuses({
+        a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x123'),
+        b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0xlate'),
+      });
 
-  it('should treat non-bitcoin as finished at QUERYING_TRANSACTIONS_FINISHED', () => {
-    setTxStatuses({
-      a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x1'),
-      b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0x2'),
+      expect(get(useHistoryQueryProgress().progress)?.percentage).toBe(100);
     });
-
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
-
-    expect(value?.currentOperationData?.address).toBe('0x2');
-    expect(value?.currentStep).toBe(1);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(50);
-  });
-
-  it('should count cancelled transactions as finished and skip them as active', () => {
-    setTxStatuses({
-      a: evmTx(TransactionsQueryStatus.CANCELLED, '0x1'),
-      b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x2'),
-    });
-
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
-
-    expect(value?.currentOperation).toBeNull();
-    expect(value?.currentOperationData).toBeNull();
-    expect(value?.currentStep).toBe(2);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(100);
-  });
-
-  it('should count failed transactions as finished and skip them as active', () => {
-    setTxStatuses({
-      a: evmTx(TransactionsQueryStatus.FAILED, '0x1'),
-      b: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x2'),
-    });
-
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
-
-    expect(value?.currentOperation).toBeNull();
-    expect(value?.currentOperationData).toBeNull();
-    expect(value?.currentStep).toBe(2);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(100);
-  });
-
-  // eslint-disable-next-line complexity -- the case walks every fallback branch in turn; splitting it would hide which one is being exercised
-  it('should fall back to an active event when no transactions are active', () => {
-    setTxStatuses({
-      a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED, '0x1'),
-    });
-    setEventStatuses({
-      k: eventStatus(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED, 'kraken', 'kraken'),
-    });
-
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
-
-    expect(value?.currentOperationData?.type).toBe('event');
-    expect(value?.currentOperationData?.name).toBe('kraken');
-    expect(value?.currentOperationData?.location).toBe('kraken');
-    expect(value?.currentOperation).toContain('kraken');
-    expect(value?.currentStep).toBe(1);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(50);
-  });
-
-  it('should count cancelled events as finished', () => {
-    setEventStatuses({
-      k: eventStatus(HistoryEventsQueryStatus.CANCELLED, 'kraken'),
-      b: eventStatus(HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED, 'binance', 'binance'),
-    });
-
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
-
-    expect(value?.currentOperation).toBeNull();
-    expect(value?.currentStep).toBe(2);
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.percentage).toBe(100);
-  });
-
-  it('should prefer transactions over events when both are active', () => {
-    setTxStatuses({
-      a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0xabc'),
-    });
-    setEventStatuses({
-      k: eventStatus(HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED, 'kraken'),
-    });
-
-    const { progress } = useHistoryQueryProgress();
-    const value = get(progress);
-
-    expect(value?.currentOperationData?.type).toBe('transaction');
-    expect(value?.totalSteps).toBe(2);
-    expect(value?.currentStep).toBe(0);
   });
 });

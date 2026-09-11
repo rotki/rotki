@@ -6,6 +6,7 @@ import {
   HistoryEventsQueryStatus,
   TransactionsQueryStatus,
 } from '@/modules/core/messaging/types';
+import { useSyncRollup } from '@/modules/history/events/tx/use-sync-rollup';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { isTxQueryStatusFinished, type TxQueryStatusData, useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 
@@ -116,24 +117,28 @@ function isEventFinished(status: HistoryEventsQueryData): boolean {
     || status.status === HistoryEventsQueryStatus.CANCELLED;
 }
 
-function calculateProgressMetrics(
-  txStatuses: TxQueryStatusData[],
-  eventStatuses: HistoryEventsQueryData[],
-): { completedSteps: number; totalItems: number; percentage: number } {
-  const finishedTxItems = txStatuses.filter(isTxQueryStatusFinished).length;
-  const finishedEventItems = eventStatuses.filter(isEventFinished).length;
-
-  const completedSteps = finishedTxItems + finishedEventItems;
-  const totalItems = txStatuses.length + eventStatuses.length;
-  const percentage = totalItems > 0 ? Math.round((completedSteps / totalItems) * 100) : 0;
-
-  return { completedSteps, percentage, totalItems };
-}
-
 export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
   const { queryStatus: txQueryStatus } = storeToRefs(useTxQueryStatusStore());
   const { queryStatus: eventsQueryStatus } = storeToRefs(useEventsQueryStatusStore());
   const { t } = useI18n({ useScope: 'global' });
+  const rollup = useSyncRollup();
+
+  /**
+   * How far the refresh has got, from the ledger rather than from the two websocket stores.
+   *
+   * @remarks
+   * The stores hold only what has been *reported*, so counting them made the denominator grow as
+   * addresses and exchanges were discovered — the bar fell whenever new work appeared. The flow
+   * declares its whole subtree before any of it runs, so the total is known from the start.
+   *
+   * Counted in leaves, so this agrees with the sync panel's bar by construction rather than by two
+   * implementations happening to round the same way.
+   */
+  const metrics = computed<{ completedSteps: number; totalItems: number; percentage: number }>(() => ({
+    completedSteps: get(rollup.settledLeaves),
+    percentage: get(rollup.progress),
+    totalItems: get(rollup.declaredLeaves),
+  }));
 
   const progress = computed<HistoryQueryProgress | undefined>(() => {
     const txStatuses = Object.values(get(txQueryStatus));
@@ -146,14 +151,14 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
     const activeTxStatus = txStatuses.find(isTransactionActive);
     if (activeTxStatus) {
       const { currentOperation, currentOperationData } = createTransactionProgress(activeTxStatus, t);
-      const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
+      const { completedSteps, percentage, totalItems } = get(metrics);
 
       return {
         currentOperation,
         currentOperationData,
-        currentStep: metrics.completedSteps,
-        percentage: metrics.percentage,
-        totalSteps: metrics.totalItems,
+        currentStep: completedSteps,
+        percentage,
+        totalSteps: totalItems,
       };
     }
 
@@ -161,24 +166,24 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
 
     if (activeEventStatus) {
       const { currentOperation, currentOperationData } = createEventProgress(activeEventStatus, t);
-      const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
+      const { completedSteps, percentage, totalItems } = get(metrics);
 
       return {
         currentOperation,
         currentOperationData,
-        currentStep: metrics.completedSteps,
-        percentage: metrics.percentage,
-        totalSteps: metrics.totalItems,
+        currentStep: completedSteps,
+        percentage,
+        totalSteps: totalItems,
       };
     }
 
-    const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
+    const { completedSteps, percentage, totalItems } = get(metrics);
     return {
       currentOperation: null,
       currentOperationData: null,
-      currentStep: metrics.completedSteps,
-      percentage: metrics.percentage,
-      totalSteps: metrics.totalItems,
+      currentStep: completedSteps,
+      percentage,
+      totalSteps: totalItems,
     };
   });
 
