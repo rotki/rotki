@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ComparisonField } from '@/modules/history/data-issues/decoding-comparison';
 import type { DecodingComparisonEvent } from '@/modules/history/data-issues/schemas';
 import ValueDisplay from '@/modules/assets/amount-display/components/ValueDisplay.vue';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { type ComparisonField, comparisonNotes } from '@/modules/history/data-issues/decoding-comparison';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
@@ -31,6 +31,8 @@ const label = computed<string>(() => ({
 })[field]);
 
 function textValue(event: DecodingComparisonEvent): string {
+  if (field === 'userNotes')
+    return comparisonNotes(event) ?? t('data_issues.detail.comparison.empty');
   if (field === 'eventType')
     return getHistoryEventTypeName(event.eventType);
   if (field === 'eventSubtype')

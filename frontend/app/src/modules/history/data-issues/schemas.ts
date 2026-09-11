@@ -7,6 +7,7 @@ export const DecodingComparisonEvent = z.object({
   address: z.string().nullable().optional(),
   amount: NumericString,
   asset: z.string(),
+  autoNotes: z.string().optional(),
   balanceEffect: NumericString,
   counterparty: z.string().nullable().optional(),
   customized: z.boolean(),

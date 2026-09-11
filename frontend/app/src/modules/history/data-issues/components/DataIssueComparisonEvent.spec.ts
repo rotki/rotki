@@ -37,4 +37,13 @@ describe('dataIssueComparisonEvent', () => {
     expect(wrapper.findComponent({ name: 'DateDisplay' }).exists()).toBe(false);
     expect(wrapper.findAllComponents({ name: 'DataIssueComparisonValue' })).toHaveLength(0);
   });
+
+  it('should retain the account of a modified event when it is not shared', async () => {
+    const diff = diffDecodingEvents(createDecodingComparison())[0];
+    assert(diff?.saved);
+    const wrapper = shallowMount(DataIssueComparisonEvent, { props: { asset: 'ETH', diff } });
+    expect(wrapper.findComponent({ name: 'HistoryEventAccount' }).props('locationLabel')).toBe(diff.saved.locationLabel);
+    await wrapper.setProps({ sharedAccount: diff.saved.locationLabel ?? undefined });
+    expect(wrapper.findComponent({ name: 'HistoryEventAccount' }).exists()).toBe(false);
+  });
 });

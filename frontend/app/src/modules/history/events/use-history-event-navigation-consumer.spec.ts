@@ -584,10 +584,12 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockGetHistoryEventGroupPosition).not.toHaveBeenCalled();
     });
 
-    it('should not trigger navigation when highlightedNegativeBalanceEvent is missing', async () => {
+    it('should navigate to the transaction page without a highlight', async () => {
       setupMockRoute('/history/events/', {
         targetGroupIdentifier: 'group-1',
       });
+
+      mockGetHistoryEventGroupPosition.mockResolvedValue(20);
 
       const { useHistoryEventNavigationConsumer } = await importFresh();
       const pagination = createPagination(10);
@@ -598,7 +600,12 @@ describe('use-history-event-navigation-consumer', () => {
 
       await flushPromises();
 
-      expect(mockGetHistoryEventGroupPosition).not.toHaveBeenCalled();
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-1', undefined);
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        name: '/history/events/',
+        query: { limit: '10', page: '3' },
+      });
     });
 
     it('should react to route changes with new navigation params', async () => {
