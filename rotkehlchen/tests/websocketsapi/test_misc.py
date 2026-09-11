@@ -1,6 +1,7 @@
 import asyncio
 import json
 import platform
+from contextlib import suppress
 from unittest.mock import Mock
 
 import pytest
@@ -24,7 +25,7 @@ def _send_stuff(msg_aggregator, websocket_connection, string_len):
         #  <bound method WebsocketReader.read_forever of <rotkehlchen.tests.fixtures.websockets.WebsocketReader object at 0x7ff6f3136f70>>> failed with WebSocketPayloadException  # noqa: E501
         msg_aggregator.add_error('x' * string_len)
         msg_aggregator.add_warning('y' * string_len)
-        if websocket_connection.messages_num() != 0:
+        with suppress(IndexError):
             websocket_connection.pop_message()
 
 
