@@ -113,6 +113,30 @@ describe('calendarReminder', () => {
     expect(mockAdd).toHaveBeenCalledWith([{ eventId: 7, secsBefore: 900 }]);
   });
 
+  it('should open a collapsed list when validation rejects a row, so its message can be seen', async () => {
+    wrapper = await createWrapper();
+    const toggle = wrapper.find('[data-testid=reminder-toggle]');
+    expect(toggle.attributes('data-expanded')).toBe('false');
+
+    rows()[0].vm.$emit('update:amount', '99999');
+    await flushPromises();
+    const valid = wrapper.vm.validate();
+    await flushPromises();
+
+    expect(valid).toBe(false);
+    expect(toggle.attributes('data-expanded')).toBe('true');
+  });
+
+  it('should leave a collapsed list closed when every row is valid', async () => {
+    wrapper = await createWrapper();
+
+    const valid = wrapper.vm.validate();
+    await flushPromises();
+
+    expect(valid).toBe(true);
+    expect(wrapper.find('[data-testid=reminder-toggle]').attributes('data-expanded')).toBe('false');
+  });
+
   it('should not write anything when nothing was edited', async () => {
     wrapper = await createWrapper();
 
