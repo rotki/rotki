@@ -3815,6 +3815,29 @@ class RestAPI:
 
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
 
+    @async_api_call()
+    @accounting_update_required('Historical balances at events is disabled')
+    def get_historical_balances_at_events(self, event_identifiers: list[int]) -> dict[str, Any]:
+        try:
+            processing, balances = HistoricalBalancesManager(
+                self.rotkehlchen.data.db,
+            ).get_balances_at_events(event_identifiers)
+        except NotFoundError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
+
+        return _wrap_in_ok_result(result={
+            'entries': {
+                str(identifier): {
+                    'processing_required': identifier in processing,
+                    'buckets': [{
+                        'location': bucket.location.serialize(),
+                        'protocol': bucket.protocol,
+                        'balance': str(bucket.amount),
+                    } for bucket in buckets],
+                } for identifier, buckets in balances.items()
+            },
+        }, status_code=HTTPStatus.OK)
+
     def get_historical_asset_amounts(
             self,
             asset: Asset | None,
