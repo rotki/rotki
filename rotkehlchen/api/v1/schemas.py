@@ -4915,6 +4915,14 @@ class CurrentHistoricalBalanceSchema(
         }
 
 
+class HistoricalBalancesAtEventsSchema(AsyncQueryArgumentSchema):
+    event_identifiers = fields.List(
+        fields.Integer(strict=True, validate=validate.Range(min=1)),
+        required=True,
+        validate=validate.Length(min=1, max=500),
+    )
+
+
 class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSchema):
     asset = AssetField(expected_type=Asset, required=True)
     location_label = EmptyAsNoneStringField(required=True)

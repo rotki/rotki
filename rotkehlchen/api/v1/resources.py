@@ -115,6 +115,7 @@ from rotkehlchen.api.v1.schemas import (
     GetUnmatchedAssetMovementsSchema,
     GnosisPaySiweChallengeSchema,
     HistoricalAssetsPriceSchema,
+    HistoricalBalancesAtEventsSchema,
     HistoricalBalanceSeriesSchema,
     HistoricalPerAssetBalanceSchema,
     HistoricalPriceDeleteSchema,
@@ -3762,6 +3763,18 @@ class CurrentHistoricalBalanceResource(BaseMethodView):
         return self.rest_api.get_historical_balance(
             filter_query=filter_query,
             group_by_account=group_by_account,
+            async_query=async_query,
+        )
+
+
+class HistoricalBalancesAtEventsResource(BaseMethodView):
+    post_schema = HistoricalBalancesAtEventsSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(self, async_query: bool, event_identifiers: list[int]) -> Response:
+        return self.rest_api.get_historical_balances_at_events(
+            event_identifiers=event_identifiers,
             async_query=async_query,
         )
 

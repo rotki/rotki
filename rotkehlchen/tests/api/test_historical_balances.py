@@ -227,6 +227,66 @@ def test_get_historical_asset_balance(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
+def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> None:
+    """A page batch returns ordered, account-wide snapshots, including closed buckets."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    account, other_account = make_evm_address(), make_evm_address()
+    identifiers = []
+    with db.user_write() as cursor:
+        for location, label, offset, sequence, event_type, subtype, amount, counterparty in (
+            (Location.BASE, account, 0, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '2', None),  # noqa: E501
+            (Location.ETHEREUM, account, 0, 1, HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, '3', 'aave'),  # noqa: E501
+            (Location.ETHEREUM, other_account, 0, 2, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '99', None),  # noqa: E501
+            (Location.ETHEREUM, account, 10, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '5', None),  # noqa: E501
+            (Location.ETHEREUM, account, 10, 1, HistoryEventType.SPEND, HistoryEventSubType.NONE, '5', None),  # noqa: E501
+            (Location.ETHEREUM, account, 20, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '7', None),  # noqa: E501
+        ):
+            identifier = DBHistoryEvents(db).add_history_event(
+                write_cursor=cursor,
+                event=EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=sequence,
+                    timestamp=ts_sec_to_ms(Timestamp(START_TS + offset)),
+                    location=location,
+                    event_type=event_type,
+                    event_subtype=subtype,
+                    asset=A_ETH,
+                    amount=FVal(amount),
+                    location_label=label,
+                    counterparty=counterparty,
+                    address=label,
+                ),
+            )
+            assert identifier is not None
+            identifiers.append(identifier)
+
+    url = api_url_for(rotkehlchen_api_server, 'historicalbalancesateventsresource')
+    requested = [identifiers[3], identifiers[4], identifiers[3]]
+    result = assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': requested},
+    ))
+    assert result == {'entries': {
+        str(identifier): {'processing_required': True, 'buckets': []}
+        for identifier in requested
+    }}
+
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    result = assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': requested},
+    ))
+    assert set(result['entries']) == {str(identifier) for identifier in requested}
+    for identifier, wallet_balance in ((identifiers[3], '5'), (identifiers[4], '0')):
+        entry = result['entries'][str(identifier)]
+        assert entry['processing_required'] is False
+        assert sorted(entry['buckets'], key=lambda bucket: (bucket['location'], bucket['protocol'] or '')) == [  # noqa: E501
+            {'location': 'base', 'protocol': None, 'balance': '2'},
+            {'location': 'ethereum', 'protocol': None, 'balance': wallet_balance},
+            {'location': 'ethereum', 'protocol': 'aave', 'balance': '3'},
+        ]
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_with_filters(
         rotkehlchen_api_server: APIServer,
 ) -> None:
