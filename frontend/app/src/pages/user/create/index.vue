@@ -19,7 +19,7 @@ definePage({
 
 const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { navigateToUserLogin } = useAppNavigation();
-const { createNewAccount, error, loading } = useAccountManagement();
+const { clearErrors, createNewAccount, error, loading } = useAccountManagement();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -52,6 +52,13 @@ const steps = computed<{ title: string; description?: string }[]>(() => {
     },
   ];
 });
+
+onMounted(() => {
+  // The unlock flow is a shared singleton and the auth layout keeps it alive across the
+  // login -> create navigation, so a failed login would otherwise still be parked in its
+  // terminal error phase and surface that message on the submit step of a fresh creation.
+  clearErrors();
+});
 </script>
 
 <template>
@@ -70,7 +77,7 @@ const steps = computed<{ title: string; description?: string }[]>(() => {
               v-model:mode="mode"
               :loading="loading"
               :error="error"
-              @clear-error="error = ''"
+              @clear-error="clearErrors()"
               @cancel="navigateToUserLogin()"
               @confirm="createNewAccount($event)"
             />
