@@ -11,7 +11,7 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { diff, asset, sharedAccount, sharedTimestamp } = defineProps<{
   diff: DecodingEventDiff;
-  asset: string;
+  asset?: string | null;
   sharedAccount?: string;
   sharedTimestamp?: number;
 }>();
@@ -88,6 +88,14 @@ const statusLabel = computed<string>(() => ({
         :text="event.address"
       />
     </div>
+    <div
+      v-if="diff.status === 'modified'"
+      class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,2fr)] gap-2 mt-2 text-caption text-rui-text-secondary"
+    >
+      <span />
+      <span class="px-2">{{ t('data_issues.detail.comparison.before') }}</span>
+      <span class="px-2">{{ t('data_issues.detail.comparison.after') }}</span>
+    </div>
     <dl
       v-if="diff.status === 'modified' && diff.saved && diff.decoded"
       class="mt-2 flex flex-col gap-1"
@@ -101,16 +109,16 @@ const statusLabel = computed<string>(() => ({
         :asset="asset"
       />
     </dl>
-    <template v-else-if="diff.status !== 'unchanged'">
+    <template v-if="diff.status !== 'unchanged'">
       <p
-        v-if="comparisonNotes(event)"
+        v-if="diff.status !== 'modified' && comparisonNotes(event)"
         class="mt-1 break-words"
         data-testid="data-issue-diff-notes"
       >
         {{ comparisonNotes(event) }}
       </p>
       <div
-        v-if="!event.balanceEffect.isZero()"
+        v-if="!event.balanceEffect.isZero() && !diff.fields.includes('balanceEffect')"
         class="mt-1 flex flex-wrap items-center gap-2"
         data-testid="data-issue-diff-effect"
       >
@@ -120,6 +128,7 @@ const statusLabel = computed<string>(() => ({
           :format="{ decimals: event.balanceEffect.decimalPlaces() ?? undefined }"
         />
         <AssetDetails
+          v-if="asset"
           :asset="asset"
           :display="{ dense: true }"
         />

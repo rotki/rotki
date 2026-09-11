@@ -1,7 +1,10 @@
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
+
+const push = vi.fn();
+vi.mock('vue-router', () => ({ useRouter: (): { push: typeof push } => ({ push }) }));
 
 function createWrapper(empty = false): VueWrapper<InstanceType<typeof DataIssueDecodingReview>> {
   const transaction = createDecodingComparison();
@@ -21,8 +24,7 @@ function createWrapper(empty = false): VueWrapper<InstanceType<typeof DataIssueD
     },
     props: {
       asset: 'ETH',
-      timestamp: 1710000100,
-      transactions: [{ ...transaction, decodedEvents: empty ? [] : transaction.decodedEvents }],
+      modelValue: { strategy: 'redecode_customized_transactions', timestamp: 1710000100, transactions: [{ ...transaction, decodedEvents: empty ? [] : transaction.decodedEvents }] },
     },
   });
 }
@@ -30,8 +32,7 @@ function createWrapper(empty = false): VueWrapper<InstanceType<typeof DataIssueD
 describe('dataIssueDecodingReview', () => {
   it('should open a snapshot with distinct saved and decoded events and explain replacement scope', async () => {
     const wrapper = createWrapper();
-    expect(wrapper.find('[data-testid="data-issue-review-content"]').exists()).toBe(false);
-    await wrapper.get('[data-testid="data-issue-review-open"]').trigger('click');
+    expect(wrapper.find('[data-testid="data-issue-review-content"]').exists()).toBe(true);
 
     const diff = wrapper.findComponent({ name: 'DataIssueTransactionDiff' });
     expect(diff.props('transaction')).toEqual(createDecodingComparison());
@@ -41,16 +42,15 @@ describe('dataIssueDecodingReview', () => {
 
   it('should navigate to the compared transaction and close the review', async () => {
     const wrapper = createWrapper();
-    await wrapper.get('[data-testid="data-issue-review-open"]').trigger('click');
     await wrapper.get('[data-testid="data-issue-review-transaction-open"]').trigger('click');
 
     expect(wrapper.emitted('navigate')).toEqual([['different-transaction']]);
-    expect(wrapper.find('[data-testid="data-issue-review-content"]').exists()).toBe(false);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+    expect(push).toHaveBeenCalledWith({ name: '/history/events/', query: { targetGroupIdentifier: 'different-transaction' } });
   });
 
-  it('should explain when the decoder would produce no events', async () => {
+  it('should pass an empty decoded snapshot to the transaction diff', async () => {
     const wrapper = createWrapper(true);
-    await wrapper.get('[data-testid="data-issue-review-open"]').trigger('click');
     expect(wrapper.findComponent({ name: 'DataIssueTransactionDiff' }).props('transaction').decodedEvents).toEqual([]);
   });
 });

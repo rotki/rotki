@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import type { TransactionDecodingComparison } from '@/modules/history/data-issues/schemas';
+import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import DataIssueTransactionDiff from '@/modules/history/data-issues/components/DataIssueTransactionDiff.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
-const { transactions, asset, timestamp } = defineProps<{
-  transactions: TransactionDecodingComparison[];
-  asset: string;
-  timestamp?: number;
+const review = defineModel<RemediationTimelineItem>();
+const { asset } = defineProps<{
+  asset?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -15,24 +14,23 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const show = ref<boolean>(false);
+const router = useRouter();
+const show = computed<boolean>({
+  get: () => !!get(review),
+  set: (value) => {
+    if (!value)
+      set(review, undefined);
+  },
+});
 
-function openTransaction(groupIdentifier: string): void {
+async function openTransaction(groupIdentifier: string): Promise<void> {
   set(show, false);
   emit('navigate', groupIdentifier);
+  await router.push({ name: '/history/events/', query: { targetGroupIdentifier: groupIdentifier } });
 }
 </script>
 
 <template>
-  <RuiButton
-    variant="text"
-    color="primary"
-    class="self-start mt-2"
-    data-testid="data-issue-review-open"
-    @click="show = true"
-  >
-    {{ t('data_issues.detail.comparison.review', { count: transactions.length }) }}
-  </RuiButton>
   <RuiDialog
     v-model="show"
     :max-width="1100"
@@ -47,17 +45,17 @@ function openTransaction(groupIdentifier: string): void {
       >
         <p>{{ t('data_issues.detail.comparison.snapshot') }}</p>
         <div
-          v-if="timestamp"
+          v-if="review?.timestamp"
           class="text-body-2 text-rui-text-secondary"
         >
           {{ t('data_issues.detail.comparison.checked_at') }}
-          <DateDisplay :timestamp="timestamp" />
+          <DateDisplay :timestamp="review.timestamp" />
         </div>
         <RuiAlert type="warning">
           {{ t('data_issues.detail.comparison.replacement_warning') }}
         </RuiAlert>
         <section
-          v-for="transaction in transactions"
+          v-for="transaction in review?.transactions"
           :key="transaction.txHash"
           class="border border-default rounded p-4"
           data-testid="data-issue-review-transaction"
@@ -86,6 +84,7 @@ function openTransaction(groupIdentifier: string): void {
         </section>
       </div>
       <template #footer>
+        <div class="grow" />
         <RuiButton
           variant="text"
           data-testid="data-issue-review-close"

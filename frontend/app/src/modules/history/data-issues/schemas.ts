@@ -49,7 +49,7 @@ export const AutoRemediationAttempt = z.looseObject({
   strategy: z.string(),
   success: z.boolean().optional(),
   timestamp: z.number().optional(),
-  transactions: z.array(TransactionDecodingComparison).optional(),
+  transactions: z.array(TransactionDecodingComparison).optional().catch(undefined),
 });
 
 export type AutoRemediationAttempt = z.infer<typeof AutoRemediationAttempt>;

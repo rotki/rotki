@@ -218,6 +218,19 @@ def _check_issue(
     changed_transaction_count = 0
     customized_transaction_count = 0
     comparisons: list[TransactionDecodingComparison] = []
+    with database.conn.read_ctx() as cursor:
+        mapping_states = DBHistoryEvents.get_event_mapping_states(
+            cursor=cursor,
+            location=location,
+            entry_identifiers=[
+                event.identifier for events in transactions.values() for event in events
+                if event.identifier is not None
+            ],
+        )
+    customized_ids = {
+        identifier for identifier, states in mapping_states.items()
+        if HistoryMappingState.CUSTOMIZED in states
+    }
     try:
         for tx_hash, saved_events in transactions.items():
             checkpoint()
@@ -242,15 +255,6 @@ def _check_issue(
                 customized_transaction_count += 1
             if saved_effects != preview_effects:
                 changed_transaction_count += 1
-                with database.conn.read_ctx() as cursor:
-                    mapping_states = DBHistoryEvents.get_event_mapping_states(
-                        cursor=cursor,
-                        location=location,
-                        entry_identifiers=[
-                            event.identifier for event in saved_events
-                            if event.identifier is not None
-                        ],
-                    )
                 comparisons.append(TransactionDecodingComparison(
                     tx_hash=str(tx_hash),
                     group_identifier=saved_events[0].group_identifier,
@@ -258,10 +262,7 @@ def _check_issue(
                         events=saved_events,
                         bucket=bucket,
                         treat_eth2_as_eth=treat_eth2_as_eth,
-                        customized_ids={
-                            identifier for identifier, states in mapping_states.items()
-                            if HistoryMappingState.CUSTOMIZED in states
-                        },
+                        customized_ids=customized_ids,
                     ),
                     decoded_events=_serialize_comparison_events(
                         events=preview_events,

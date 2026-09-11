@@ -20,7 +20,7 @@ const historyEventsName = '/history/events/';
  *
  * Supports two input channels:
  * 1. Composable-based: internal components call requestNavigation() directly
- * 2. Route-based: external packages push route with targetGroupIdentifier + highlight query params (e.g., highlightedNegativeBalanceEvent)
+ * 2. Route-based: components and external packages push routes with targetGroupIdentifier + highlight query params (e.g., highlightedNegativeBalanceEvent)
  */
 export function useHistoryEventNavigationConsumer(
   pagination: ComputedRef<TablePaginationData>,
@@ -50,30 +50,19 @@ export function useHistoryEventNavigationConsumer(
         groupIdentifier: targetGroupIdentifier.toString(),
         identifier: Number(highlightedAccountingEvent),
       });
-      requestNavigation({
-        assetFilter: typeof asset === 'string' ? asset : undefined,
-        highlightedAccountingEvent: Number(highlightedAccountingEvent),
-        targetGroupIdentifier: targetGroupIdentifier.toString(),
-      });
     }
-
-    else if (highlightedNegativeBalanceEvent) {
+    if (highlightedNegativeBalanceEvent) {
       setHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE, {
         groupIdentifier: targetGroupIdentifier.toString(),
         identifier: Number(highlightedNegativeBalanceEvent),
       });
-      requestNavigation({
-        assetFilter: typeof asset === 'string' ? asset : undefined,
-        highlightedNegativeBalanceEvent: Number(highlightedNegativeBalanceEvent),
-        targetGroupIdentifier: targetGroupIdentifier.toString(),
-      });
     }
-    else {
-      requestNavigation({
-        assetFilter: typeof asset === 'string' ? asset : undefined,
-        targetGroupIdentifier: targetGroupIdentifier.toString(),
-      });
-    }
+    requestNavigation({
+      assetFilter: typeof asset === 'string' ? asset : undefined,
+      ...(highlightedAccountingEvent ? { highlightedAccountingEvent: Number(highlightedAccountingEvent) } : {}),
+      ...(highlightedNegativeBalanceEvent ? { highlightedNegativeBalanceEvent: Number(highlightedNegativeBalanceEvent) } : {}),
+      targetGroupIdentifier: targetGroupIdentifier.toString(),
+    });
   });
 
   /**
@@ -84,16 +73,20 @@ export function useHistoryEventNavigationConsumer(
       highlightedAccountingEvent,
       highlightedAssetMovement,
       highlightedInternalTxConflict,
+      highlightedGroupIdentifier,
       highlightedNegativeBalanceEvent,
       highlightedPotentialMatch,
+      targetGroupIdentifier,
       ...remainingQuery
     } = get(route).query;
     if (
       highlightedAccountingEvent ||
       highlightedAssetMovement ||
       highlightedInternalTxConflict ||
+      highlightedGroupIdentifier ||
       highlightedPotentialMatch ||
-      highlightedNegativeBalanceEvent
+      highlightedNegativeBalanceEvent ||
+      targetGroupIdentifier
     ) {
       await router.replace({ query: remainingQuery });
     }
@@ -122,6 +115,9 @@ export function useHistoryEventNavigationConsumer(
 
     if (request.highlightedInternalTxConflict)
       query.highlightedInternalTxConflict = request.highlightedInternalTxConflict;
+
+    if (Object.keys(query).length === 1)
+      query.highlightedGroupIdentifier = request.targetGroupIdentifier;
 
     if (request.assetFilter)
       query.asset = request.assetFilter;
@@ -189,11 +185,11 @@ export function useHistoryEventNavigationConsumer(
       if (get(pendingNavigation) !== activeRequest)
         return false;
 
-      // Route now has the correct filter/limit values from the pagination system
+      const { targetGroupIdentifier, ...query } = get(route).query;
       await router.push({
         force: true,
         name: historyEventsName,
-        query: { ...get(route).query, ...highlightQuery },
+        query: { ...query, ...highlightQuery },
       });
       return true;
     }

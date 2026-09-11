@@ -211,7 +211,7 @@ describe('use-history-event-navigation-consumer', () => {
       });
     });
 
-    it('should navigate with only targetGroupIdentifier (no highlights)', async () => {
+    it('should highlight the group when no event highlight is requested', async () => {
       mockGetHistoryEventGroupPosition.mockResolvedValue(0);
 
       const { useHistoryEventNavigation, useHistoryEventNavigationConsumer } = await importFresh();
@@ -230,6 +230,7 @@ describe('use-history-event-navigation-consumer', () => {
         force: true,
         name: '/history/events/',
         query: {
+          highlightedGroupIdentifier: 'group-5',
           limit: '10',
           page: '1',
         },
@@ -474,6 +475,29 @@ describe('use-history-event-navigation-consumer', () => {
   });
 
   describe('route-based navigation', () => {
+    it('should consume a missing route target without looking it up twice', async () => {
+      setupMockRoute('/history/events/', { targetGroupIdentifier: 'missing', highlightedNegativeBalanceEvent: '500', asset: 'ETH' });
+      mockRouterReplace.mockImplementationOnce(async ({ query }: { query: Record<string, unknown> }) => {
+        set(mockRoute, { name: '/history/events/', query });
+      });
+      mockGetHistoryEventGroupPosition.mockResolvedValue(-1);
+      const { useHistoryEventNavigationConsumer } = await importFresh();
+      scope.run(() => useHistoryEventNavigationConsumer(createPagination()));
+      await flushPromises();
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(1);
+      expect(get(mockRoute).query).toEqual({ asset: 'ETH' });
+    });
+
+    it('should preserve both route highlights with one position lookup', async () => {
+      setupMockRoute('/history/events/', { targetGroupIdentifier: 'group-1', highlightedAccountingEvent: '100', highlightedNegativeBalanceEvent: '500' });
+      mockGetHistoryEventGroupPosition.mockResolvedValue(0);
+      const { useHistoryEventNavigationConsumer } = await importFresh();
+      scope.run(() => useHistoryEventNavigationConsumer(createPagination()));
+      await flushPromises();
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(1);
+      expect(mockRouterPush).toHaveBeenCalledWith(expect.objectContaining({ query: expect.objectContaining({ highlightedAccountingEvent: '100', highlightedNegativeBalanceEvent: '500' }) }));
+    });
+
     it('should trigger navigation from route query params', async () => {
       setupMockRoute('/history/events/', {
         targetGroupIdentifier: 'group-route',
@@ -539,6 +563,9 @@ describe('use-history-event-navigation-consumer', () => {
         targetGroupIdentifier: 'group-route',
       });
       mockGetHistoryEventGroupPosition.mockResolvedValue(10);
+      mockRouterPush.mockImplementationOnce(async ({ query }: { query: Record<string, unknown> }) => {
+        set(mockRoute, { name: '/history/events/', query });
+      });
 
       const { useHistoryEventNavigationConsumer } = await importFresh();
       const pagination = createPagination(10);
@@ -555,6 +582,8 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockRouterPush).not.toHaveBeenCalled();
 
       await runPaginationLoadCycle(loading);
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(1);
+      expect(get(mockRoute).query).not.toHaveProperty('targetGroupIdentifier');
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
@@ -584,7 +613,7 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockGetHistoryEventGroupPosition).not.toHaveBeenCalled();
     });
 
-    it('should navigate to the transaction page without a highlight', async () => {
+    it('should navigate to the transaction page with a group highlight', async () => {
       setupMockRoute('/history/events/', {
         targetGroupIdentifier: 'group-1',
       });
@@ -604,7 +633,7 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
         name: '/history/events/',
-        query: { limit: '10', page: '3' },
+        query: { highlightedGroupIdentifier: 'group-1', limit: '10', page: '3' },
       });
     });
 

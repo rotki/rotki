@@ -29,6 +29,7 @@ const emit = defineEmits<{
   dismiss: [id: number];
   retry: [id: number];
   resolve: [id: number];
+  review: [item: RemediationTimelineItem];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -46,11 +47,6 @@ async function goToRelatedEvent(): Promise<void> {
     return;
   emit('close');
   await router.push(link);
-}
-
-async function goToTransaction(groupIdentifier: string): Promise<void> {
-  emit('close');
-  await router.push({ name: '/history/events/', query: { targetGroupIdentifier: groupIdentifier } });
 }
 
 const timeline = computed<RemediationTimelineItem[]>(() => (issue ? toTimelineItems(issue) : []));
@@ -200,8 +196,7 @@ const resolutionNote = computed<string | undefined>(() => {
         </div>
         <DataIssueRemediationTimeline
           :items="timeline"
-          :asset="issue.asset"
-          @navigate="goToTransaction($event)"
+          @review="emit('review', $event)"
         />
       </section>
 

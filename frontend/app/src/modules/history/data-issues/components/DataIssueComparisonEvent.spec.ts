@@ -38,6 +38,16 @@ describe('dataIssueComparisonEvent', () => {
     expect(wrapper.findAllComponents({ name: 'DataIssueComparisonValue' })).toHaveLength(0);
   });
 
+  it('should retain an unchanged nonzero balance effect on a notes-only change', () => {
+    const transaction = createDecodingComparison();
+    const saved = transaction.savedEvents[0];
+    assert(saved);
+    const diff = diffDecodingEvents({ ...transaction, decodedEvents: [{ ...saved, userNotes: 'New notes' }] })[0];
+    assert(diff);
+    const wrapper = shallowMount(DataIssueComparisonEvent, { props: { asset: 'ETH', diff } });
+    expect(wrapper.get('[data-testid="data-issue-diff-effect"]').text()).toContain('data_issues.detail.comparison.balance_effect');
+  });
+
   it('should retain the account of a modified event when it is not shared', async () => {
     const diff = diffDecodingEvents(createDecodingComparison())[0];
     assert(diff?.saved);

@@ -165,6 +165,7 @@ export function buildHistoryEventSources({
           highlightedAccountingEvent,
           highlightedAssetMovement,
           highlightedInternalTxConflict,
+          highlightedGroupIdentifier,
           highlightedNegativeBalanceEvent,
           highlightedPotentialMatch,
         } = get(route).query;
@@ -179,6 +180,7 @@ export function buildHistoryEventSources({
                 highlightedAssetMovement,
                 highlightedAccountingEvent,
                 highlightedInternalTxConflict,
+                highlightedGroupIdentifier,
                 highlightedNegativeBalanceEvent,
                 highlightedPotentialMatch,
               }
