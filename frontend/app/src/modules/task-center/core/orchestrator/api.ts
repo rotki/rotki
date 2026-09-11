@@ -73,8 +73,27 @@ export interface TaskOrchestrator {
   readonly reset: () => void;
 }
 
+/**
+ * The lifecycle half of the detail side-channel: what the spine calls, never how it stores.
+ *
+ * @remarks
+ * Detail is the one piece of per-activity state the orchestrator does not own, and nothing outside
+ * the spine observes a record being replaced, re-run or pruned. A channel left to clear itself has
+ * no event to hang off, so a stale entry survives its run and captions the next one under the same
+ * id. Injected rather than imported because the orchestrator is framework-agnostic and the channel
+ * is a Pinia store.
+ */
+interface ActivityDetailSink {
+  /** Forget one activity's detail, for a record being replaced, re-run or pruned. */
+  readonly drop: (id: ActivityId) => void;
+  /** Forget every activity's detail, for a session ending. */
+  readonly clear: () => void;
+}
+
 export interface OrchestratorOptions {
   readonly caps?: LaneCaps;
+  /** Where per-activity detail lives, so the spine can forget an entry the record no longer has. */
+  readonly detail?: ActivityDetailSink;
   /** Caps for lanes minted per entity (one per chain, …) that cannot be named up front. */
   readonly laneFamilies?: LaneFamilyCaps;
   /** How many distinct lanes of a family may run at once — the nesting a pre-submitted tree loses. */
