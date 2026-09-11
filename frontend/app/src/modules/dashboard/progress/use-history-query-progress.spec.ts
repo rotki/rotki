@@ -53,9 +53,30 @@ describe('useHistoryQueryProgress', () => {
     useTaskOrchestrator().reset();
   });
 
-  it('should return undefined when there are no statuses', () => {
-    const { progress } = useHistoryQueryProgress();
-    expect(get(progress)).toBeUndefined();
+  /**
+   * Whether to render at all, and the numbers inside, now read the same source. Gating on the
+   * stores instead disagreed with the body in both directions.
+   */
+  describe('visibility', () => {
+    it('should show nothing when no refresh has been declared', () => {
+      expect(get(useHistoryQueryProgress().progress)).toBeUndefined();
+    });
+
+    it('should appear as soon as the flow declares its work, before any message arrives', async () => {
+      await submitRefresh({ eth: { '0x123': 'running' } });
+
+      const value = get(useHistoryQueryProgress().progress);
+
+      expect(value).toBeDefined();
+      expect(value?.totalSteps).toBe(1);
+      expect(value?.currentOperation).toBeNull();
+    });
+
+    it('should show nothing when the stores hold a run the ledger no longer has', () => {
+      setTxStatuses({ a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0x123') });
+
+      expect(get(useHistoryQueryProgress().progress)).toBeUndefined();
+    });
   });
 
   /**
@@ -65,6 +86,15 @@ describe('useHistoryQueryProgress', () => {
    * exchange a message was about. The counts beside it come from the ledger; see the next block.
    */
   describe('the active item', () => {
+    /**
+     * The indicator only renders while the flow has declared work, so every case here needs a
+     * refresh in the ledger. What it *is* does not matter: these cases are about which item the
+     * caption names, and the caption comes from the stores.
+     */
+    beforeEach(async () => {
+      await submitRefresh({ eth: { '0xdeclared': 'running' } });
+    });
+
     it('should report an active transaction with chain and address details', () => {
       setTxStatuses({
         a: evmTx(TransactionsQueryStatus.QUERYING_TRANSACTIONS, '0xabc', 'eth'),

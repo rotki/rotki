@@ -124,67 +124,54 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
   const rollup = useSyncRollup();
 
   /**
-   * How far the refresh has got, from the ledger rather than from the two websocket stores.
+   * Attach how far the refresh has got to whatever it is currently doing.
    *
    * @remarks
-   * The stores hold only what has been *reported*, so counting them made the denominator grow as
-   * addresses and exchanges were discovered — the bar fell whenever new work appeared. The flow
-   * declares its whole subtree before any of it runs, so the total is known from the start.
+   * The counts come from the ledger, not from the two websocket stores. The stores hold only what
+   * has been *reported*, so counting them made the denominator grow as addresses and exchanges were
+   * discovered, and the bar fell whenever new work appeared. The flow declares its whole subtree before
+   * any of it runs, so the total is known from the start.
    *
    * Counted in leaves, so this agrees with the sync panel's bar by construction rather than by two
    * implementations happening to round the same way.
    */
-  const metrics = computed<{ completedSteps: number; totalItems: number; percentage: number }>(() => ({
-    completedSteps: get(rollup.settledLeaves),
-    percentage: get(rollup.progress),
-    totalItems: get(rollup.declaredLeaves),
-  }));
+  function withProgress(
+    operation: Pick<HistoryQueryProgress, 'currentOperation' | 'currentOperationData'>,
+  ): HistoryQueryProgress {
+    return {
+      ...operation,
+      currentStep: get(rollup.settledLeaves),
+      percentage: get(rollup.progress),
+      totalSteps: get(rollup.declaredLeaves),
+    };
+  }
+
+  /**
+   * Whether there is a refresh to report on at all, read from the same source as the numbers.
+   *
+   * @remarks
+   * Gating on the stores instead disagreed with the body in both directions: it hid the indicator
+   * in the window between the flow declaring its subtree and the first websocket message, and it
+   * showed a `0 of 0` indicator when the stores still held a run the ledger had already pruned.
+   */
+  const hasDeclaredWork = computed<boolean>(() => get(rollup.declaredLeaves) > 0);
 
   const progress = computed<HistoryQueryProgress | undefined>(() => {
+    if (!get(hasDeclaredWork))
+      return undefined;
+
     const txStatuses = Object.values(get(txQueryStatus));
     const eventStatuses = Object.values(get(eventsQueryStatus));
 
-    if (txStatuses.length === 0 && eventStatuses.length === 0) {
-      return undefined;
-    }
-
     const activeTxStatus = txStatuses.find(isTransactionActive);
-    if (activeTxStatus) {
-      const { currentOperation, currentOperationData } = createTransactionProgress(activeTxStatus, t);
-      const { completedSteps, percentage, totalItems } = get(metrics);
-
-      return {
-        currentOperation,
-        currentOperationData,
-        currentStep: completedSteps,
-        percentage,
-        totalSteps: totalItems,
-      };
-    }
+    if (activeTxStatus)
+      return withProgress(createTransactionProgress(activeTxStatus, t));
 
     const activeEventStatus = eventStatuses.find(status => !isEventFinished(status));
+    if (activeEventStatus)
+      return withProgress(createEventProgress(activeEventStatus, t));
 
-    if (activeEventStatus) {
-      const { currentOperation, currentOperationData } = createEventProgress(activeEventStatus, t);
-      const { completedSteps, percentage, totalItems } = get(metrics);
-
-      return {
-        currentOperation,
-        currentOperationData,
-        currentStep: completedSteps,
-        percentage,
-        totalSteps: totalItems,
-      };
-    }
-
-    const { completedSteps, percentage, totalItems } = get(metrics);
-    return {
-      currentOperation: null,
-      currentOperationData: null,
-      currentStep: completedSteps,
-      percentage,
-      totalSteps: totalItems,
-    };
+    return withProgress({ currentOperation: null, currentOperationData: null });
   });
 
   return {
