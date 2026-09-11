@@ -1,6 +1,19 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
+export const HistoricalBalancesAtEventsResponse = z.object({
+  entries: z.record(z.string(), z.object({
+    processingRequired: z.boolean(),
+    buckets: z.array(z.object({
+      location: z.string(),
+      protocol: z.string().nullable(),
+      balance: NumericString,
+    })),
+  })),
+});
+
+export type HistoricalBalancesAtEventsResponse = z.infer<typeof HistoricalBalancesAtEventsResponse>;
+
 const HistoricalBalanceSeriesEntry = z.object({
   location: z.string(),
   locationLabel: z.string(),

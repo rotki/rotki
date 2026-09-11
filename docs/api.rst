@@ -15570,6 +15570,81 @@ Historical Balance Queries
       :statuscode 409: User is not logged in
       :statuscode 500: Internal Rotki error
 
+  .. http:post:: /api/(version)/balances/historical/events
+
+    Gets bucket balances after each requested history event in a single batch. This
+    endpoint requires premium access and the accounting-update feature flag.
+    It reads previously computed metrics; it does not run historical balance processing.
+
+    Each event selects its account (``location_label``) and asset, resolving replaced
+    assets to their current identifier. Balances include all locations and protocols
+    for that account and asset, not just the event's location. The cutoff follows
+    historical processing order: timestamp in milliseconds, sequence index, then
+    event identifier. Events sharing a timestamp can therefore have different balances.
+
+    Zero balances are retained. Empty and null protocols represent the same wallet
+    bucket and are returned as null. Events without an account, ignored assets, or
+    scopes without computed metrics return an empty bucket list. Bucket order is not
+    guaranteed. Duplicate event identifiers produce only one entry. An unknown event
+    identifier rejects the entire request with HTTP 404.
+
+    ``processing_required`` is evaluated separately at each event's cutoff. It can be
+    true even when some bucket balances are available; those balances may be incomplete.
+    No balance time series or fiat prices are included.
+
+    .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/balances/historical/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "event_identifiers": [123, 124]
+      }
+
+      :reqjson list event_identifiers: Required list of 1 to 500 positive integer history event identifiers.
+      :reqjson bool async_query: (Optional, default false) Run as an asynchronous task.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "entries": {
+            "123": {
+              "processing_required": false,
+              "buckets": [
+                {"location": "ethereum", "protocol": null, "balance": "5"}
+              ]
+            },
+            "124": {
+              "processing_required": false,
+              "buckets": [
+                {"location": "ethereum", "protocol": null, "balance": "0"}
+              ]
+            }
+          }
+        }
+      }
+
+      :resjson object entries: Results keyed by the string form of each requested event identifier. Each result contains ``processing_required`` and ``buckets``. Each bucket contains ``location``, nullable ``protocol``, and an exact decimal ``balance`` string.
+      :statuscode 200: Bucket snapshots returned, including empty results
+      :statuscode 400: Malformed query or event count outside 1 to 500
+      :statuscode 403: User does not have premium access
+      :statuscode 404: Unknown event identifier or accounting-update feature flag disabled
+      :statuscode 409: User is not logged in
+      :statuscode 500: Internal Rotki error
+
   .. http:post:: /api/(version)/balances/historical/asset/series
 
     Gets historical balance series for one account and asset, grouped by matching
