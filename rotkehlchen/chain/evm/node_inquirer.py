@@ -38,7 +38,7 @@ from rotkehlchen.chain.evm.contracts import (
 )
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, RemoteDataQueryStatus, WeightedNode
+from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
@@ -478,15 +478,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             if rpc_node.is_archive
         ]
 
-    def _mark_node_as_non_archive(self, node: NodeName) -> None:
-        if (rpc_node := self.rpc_mapping.get(node)) is None or rpc_node.is_archive is False:
-            return
-
-        self.database.set_rpc_node_capabilities(
-            node, is_archive=False, is_pruned=rpc_node.is_pruned,
-        )
-        self.rpc_mapping[node] = rpc_node._replace(is_archive=False)
-
     def _have_archive(self, web3: Web3) -> bool:
         """Returns a boolean representing if node is an archive one."""
         address_to_check, block_to_check, expected_balance = self._get_archive_check_data()
@@ -559,8 +550,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Timed out while querying {node_info.name} for '
                     f'{method.__name__}: {e!s}. Skipping this node in future queries.',
                 )
-                if kwargs.get('block_identifier', 'latest') != 'latest':
-                    self._mark_node_as_non_archive(node_info)
                 self.mark_node_failure(node_info, str(e))
                 self.failed_to_connect_nodes.add(node_info.name)
                 self.rpc_mapping.pop(node_info, None)
@@ -579,8 +568,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
                     f'for {method.__name__} due to {e!s}',
                 )
-                if kwargs.get('block_identifier', 'latest') != 'latest':
-                    self._mark_node_as_non_archive(node_info)
                 if any(x in str(e).lower() for x in ('out of gas', 'exceeds block gas limit')):
                     gas_limit_error_seen = True
                 elif _is_rate_limit_error(e):

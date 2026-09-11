@@ -498,17 +498,20 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                 # After the bedrock update blastapi.io switches from archive to non archive nodes
                 # It has never reported pruned nodes.
                 is_archive, is_pruned = False, False
-            elif stored_archive_status is None and stored_pruned_status is None:
+            elif stored_archive_status is not True and stored_pruned_status is None:
                 is_archive, is_pruned = self.determine_capabilities(web3)
             else:
                 is_archive = (
                     self._have_archive(web3)
-                    if stored_archive_status is None else stored_archive_status
+                    if stored_archive_status is not True else stored_archive_status
                 )
                 is_pruned = (
                     self._is_pruned(web3) if stored_pruned_status is None else stored_pruned_status
                 )
-            if (stored_archive_status, stored_pruned_status) != (is_archive, is_pruned):
+            if (
+                not node.endpoint.endswith(('llamarpc.com', 'blastapi.io')) and
+                (stored_archive_status, stored_pruned_status) != (is_archive, is_pruned)
+            ):
                 self.database.set_rpc_node_capabilities(node, is_archive, is_pruned)
             log.info(f'Connected {self.chain_name} node {node} at {rpc_endpoint}')
             self.rpc_mapping[node] = RPCNode(
