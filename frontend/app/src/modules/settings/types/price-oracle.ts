@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const PriceOracle = {
   ALCHEMY: 'alchemy',
+  BIRDEYE: 'birdeye',
   BLOCKCHAIN: 'blockchain',
   COINGECKO: 'coingecko',
   COINBASE: 'coinbase',

@@ -1,9 +1,11 @@
+import os
 from typing import TYPE_CHECKING
 
 import pytest
 
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.externalapis.alchemy import Alchemy
+from rotkehlchen.externalapis.birdeye import Birdeye
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -64,6 +66,20 @@ def fixture_moralis(database: DBHandler):
             )],
         )
     return Moralis(database=database)
+
+
+@pytest.fixture(name='birdeye')
+def fixture_birdeye(database: DBHandler):
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BIRDEYE,
+                # a real key is only needed when recording cassettes
+                api_key=ApiKey(os.environ.get('BIRDEYE_API_KEY', 'dummy-api-key')),
+            )],
+        )
+    return Birdeye(database=database)
 
 
 @pytest.fixture(scope='session', name='session_defillama')
@@ -128,6 +144,7 @@ def price_historian(
         coingecko,
         alchemy,
         moralis,
+        birdeye,
         defillama,
         uniswapv2_inquirer,
         uniswapv3_inquirer,
@@ -145,6 +162,7 @@ def price_historian(
         coingecko=coingecko,
         alchemy=alchemy,
         moralis=moralis,
+        birdeye=birdeye,
         defillama=defillama,
         uniswapv2=uniswapv2_inquirer,
         uniswapv3=uniswapv3_inquirer,

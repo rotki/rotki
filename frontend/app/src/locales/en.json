@@ -3268,6 +3268,11 @@
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
     },
+    "birdeye": {
+      "description": "rotki uses Birdeye to obtain price information about Solana and EVM tokens in your portfolio, including meme coins other oracles may not know. An API key is needed if you want it included in your list of oracles.",
+      "hint": "Enter your Birdeye API key",
+      "title": "Birdeye"
+    },
     "blockscout": {
       "api_key_message": "Blockscout API key is needed to query historical EVM transactions.",
       "description": "Alternative to Etherscan for querying EVM blockchain balances and transactions.",

@@ -66,6 +66,11 @@ export const MORALIS_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.MORALIS,
 };
 
+export const BIRDEYE_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
+  icon: getPublicServiceImagePath('birdeye.png'),
+  identifier: PriceOracle.BIRDEYE,
+};
+
 export const KRAKEN_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   icon: getPublicProtocolImagePath('kraken.svg'),
   identifier: PriceOracle.KRAKEN,

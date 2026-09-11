@@ -16,6 +16,7 @@ class CurrentPriceOracle(OracleSource):
     KRAKEN = auto()
     ALCHEMY = auto()
     MORALIS = auto()
+    BIRDEYE = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
@@ -35,4 +36,5 @@ SETTABLE_CURRENT_PRICE_ORACLES = {  # only these oracles should be configurable 
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.ALCHEMY,
     CurrentPriceOracle.MORALIS,
+    CurrentPriceOracle.BIRDEYE,
 }

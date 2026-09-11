@@ -79,6 +79,7 @@ const headers = computed<DataTableColumn<OraclePriceEntry>[]>(() => [
 
 const sourceBrandColors: Record<string, string> = {
   [PriceOracle.ALCHEMY]: '#363ff9',
+  [PriceOracle.BIRDEYE]: '#ff6d00',
   [PriceOracle.COINGECKO]: '#8dc63f',
   [PriceOracle.COINBASE]: '#0052ff',
   [PriceOracle.CRYPTOCOMPARE]: '#f37021',

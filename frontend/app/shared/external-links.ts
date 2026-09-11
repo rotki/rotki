@@ -71,5 +71,6 @@ export const externalLinks = {
   defillamaApiKey: 'https://defillama.com/pro-api',
   alchemyApiKey: 'https://docs.alchemy.com/reference/api-overview',
   moralisApiKey: 'https://docs.moralis.com/web3-data-api/evm/get-your-api-key',
+  birdeyeApiKey: 'https://data.birdeye.so/docs/authentication',
   beaconChainApiKey: 'https://beaconcha.in/user/settings',
 };

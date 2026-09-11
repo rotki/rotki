@@ -1913,6 +1913,38 @@ def test_upgrade_v17_v18(
         ).fetchone() == (11,)
 
 
+@pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [18])
+@pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_upgrade_v18_v19(
+        globaldb: GlobalDBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Test the global DB upgrade from v18 to v19 that adds Birdeye to the
+    historical price sources table."""
+    assert globaldb.get_setting_value('version', 0) == 18
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM price_history_source_types WHERE type='L'",
+        ).fetchone()[0] == 0
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 19)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 19
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT seq FROM price_history_source_types WHERE type='L'",
+        ).fetchone() == (12,)
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])

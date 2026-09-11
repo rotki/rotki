@@ -18,6 +18,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.externalapis.alchemy import Alchemy
+from rotkehlchen.externalapis.birdeye import Birdeye
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -374,6 +375,7 @@ def _create_inquirer(
         kraken=Kraken(),
         alchemy=Alchemy(database=None),
         moralis=Moralis(database=None),
+        birdeye=Birdeye(database=None),
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),
     )
