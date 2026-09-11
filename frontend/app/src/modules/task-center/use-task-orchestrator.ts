@@ -3,6 +3,7 @@ import type { TaskOrchestrator } from './core/orchestrator/api';
 import { createTaskOrchestrator } from './core/orchestrator/orchestrator';
 import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, DETECT_LANE_PREFIX, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
 import { type Activity, type ActivityKind, makeActivityId, type WorkStatus } from './core/types';
+import { useActivityDetail } from './use-activity-detail';
 
 /**
  * An activity-id part that may itself be reactive, so a reader whose subject changes (the chain a
@@ -55,6 +56,7 @@ export interface UseTaskOrchestratorReturn extends TaskOrchestrator {
  * reruns through it.
  */
 export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestratorReturn => {
+  const { dropDetail, resetDetails } = useActivityDetail();
   const orchestrator = createTaskOrchestrator({
     caps: {
       [BALANCES_LANE]: 2,
@@ -64,6 +66,8 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
       [SESSION_LANE]: 2,
       [UMBRELLA_LANE]: 16,
     },
+    /** The detail side-channel, so a record replaced, re-run or pruned takes its detail with it. */
+    detail: { clear: resetDetails, drop: dropDetail },
     /**
      * Caps how many jobs run at once inside one lane of a family, never across the family.
      *

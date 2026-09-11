@@ -49,6 +49,9 @@ interface ActivityRecord {
 export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskOrchestrator {
   const rules = options.rules ?? DEFAULT_RULES;
   const now = options.now ?? ((): number => Date.now());
+  const detail = options.detail;
+  /** Forget one activity's detail, where a channel is wired up at all. */
+  const dropDetail = (id: ActivityId): void => detail?.drop(id);
   const records = new Map<ActivityId, ActivityRecord>();
   /** Durable per-id completion memory — survives `clearTerminal`; the freshness backbone. */
   const ledger = new Map<ActivityId, CompletionRecord>();
@@ -230,6 +233,13 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       superseded.spec.cleanup?.();
     }
 
+    /**
+     * A record beginning a run owns no detail yet. Resubmitting an id is the common way a run is
+     * replaced — every history refresh resubmits the same `TX_SYNC:<chain>:<address>` — so without
+     * this the previous run's period and step caption the new one until its first frame lands.
+     */
+    dropDetail(spec.id);
+
     const record: ActivityRecord = { cancelRequested: false, cleanedUp: false, spec, status: Status.PENDING };
     records.set(spec.id, record);
     if (spec.staleAfter?.length)
@@ -306,6 +316,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     record.reason = undefined;
     record.cancelRequested = false;
     record.cleanedUp = false;
+    dropDetail(id);
     schedule(record);
     emit();
     return ok(undefined);
@@ -320,8 +331,10 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     cancelGroup: (group: GroupId) => cancelMatching(record => record.spec.group === group),
     clearTerminal(): void {
       for (const [id, record] of records) {
-        if (isTerminalStatus(record.status))
+        if (isTerminalStatus(record.status)) {
           records.delete(id);
+          dropDetail(id);
+        }
       }
       emit();
     },
@@ -357,6 +370,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       ledger.clear();
       staleEdges.clear();
       scheduler.clear();
+      detail?.clear();
       emit();
     },
     snapshot,

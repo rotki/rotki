@@ -1225,4 +1225,79 @@ describe('createTaskOrchestrator', () => {
       expect(cleanup).toHaveBeenCalledOnce();
     });
   });
+
+  describe('detail side-channel', () => {
+    /**
+     * Detail is keyed by activity id and lives outside the records, so only the spine can say when
+     * an entry stopped describing anything. Left to the producer, a period and a step outlive the
+     * run they came from and caption whatever takes the id next.
+     */
+    function withDetail(): { drop: ReturnType<typeof vi.fn>; clear: ReturnType<typeof vi.fn>; orchestrator: TaskOrchestrator } {
+      const drop = vi.fn<(id: ActivityId) => void>();
+      const clear = vi.fn<() => void>();
+      return { clear, drop, orchestrator: createTaskOrchestrator({ detail: { clear, drop } }) };
+    }
+
+    it('should drop the previous run\'s detail when an id is re-submitted', async () => {
+      const { drop, orchestrator } = withDetail();
+      const first = controllable('shared');
+      orchestrator.submit(first.spec);
+      await flush();
+      drop.mockClear();
+
+      orchestrator.submit(controllable('shared').spec);
+
+      expect(drop).toHaveBeenCalledWith(first.spec.id);
+    });
+
+    it('should drop detail when a terminal activity is re-run', async () => {
+      const { drop, orchestrator } = withDetail();
+      const work = controllable('rerunnable', { rerunnable: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(ok(undefined));
+      await flush();
+      drop.mockClear();
+
+      orchestrator.rerun(id);
+
+      expect(drop).toHaveBeenCalledWith(id);
+    });
+
+    it('should drop detail for every record clearTerminal prunes, and no other', async () => {
+      const { drop, orchestrator } = withDetail();
+      const settled = controllable('settled');
+      const live = controllable('live');
+      const settledId = orchestrator.submit(settled.spec);
+      const liveId = orchestrator.submit(live.spec);
+      settled.settle(ok(undefined));
+      await flush();
+      drop.mockClear();
+
+      orchestrator.clearTerminal();
+
+      expect(drop).toHaveBeenCalledWith(settledId);
+      expect(drop).not.toHaveBeenCalledWith(liveId);
+    });
+
+    it('should clear every entry on reset', async () => {
+      const { clear, orchestrator } = withDetail();
+      orchestrator.submit(controllable('live').spec);
+      await flush();
+
+      orchestrator.reset();
+
+      expect(clear).toHaveBeenCalledOnce();
+    });
+
+    it('should run without a detail sink', () => {
+      const orchestrator = createTaskOrchestrator();
+      const id = orchestrator.submit(controllable('a').spec);
+
+      expect(() => {
+        orchestrator.clearTerminal();
+        orchestrator.rerun(id);
+        orchestrator.reset();
+      }).not.toThrow();
+    });
+  });
 });
