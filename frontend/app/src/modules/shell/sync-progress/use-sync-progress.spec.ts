@@ -1,5 +1,4 @@
-import { neverSettles } from '@test/utils/never-settles';
-import { err, ok, type Result } from 'plainfp/result';
+import { submitRefresh } from '@test/utils/history-refresh';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   type EvmUnDecodedTransactionsData,
@@ -9,35 +8,15 @@ import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
 } from '@/modules/core/messaging/types';
-import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
-import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
-import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { LocationStatus, SyncPhase } from './types';
 import { useSyncProgress } from './use-sync-progress';
 import { SyncWarningSource, useSyncWarningsStore } from './use-sync-warnings-store';
-
-/** How a declared leaf ends, or that it has not. */
-type LeafOutcome = 'running' | 'complete' | 'failed' | 'cancelled';
-
-const flush = async (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
-
-function runFor(outcome: LeafOutcome): () => Promise<Result<unknown, TaskError>> {
-  if (outcome === 'running')
-    return async () => neverSettles();
-  if (outcome === 'complete')
-    return async () => ok(undefined);
-  if (outcome === 'cancelled')
-    return async () => err(Cancelled({ message: 'stopped' }));
-  return async () => err(TaskFailed({ message: 'the backend said no' }));
-}
 
 describe('useSyncProgress', () => {
   beforeEach(() => {
@@ -46,62 +25,6 @@ describe('useSyncProgress', () => {
     // The orchestrator is a shared singleton, so its records outlive a test without this.
     useTaskOrchestrator().reset();
   });
-
-  /**
-   * Submit a history refresh the way `history-sync.flow.ts` declares one: the umbrella, a chain per
-   * entry, and an account beneath each chain.
-   *
-   * The accounts are the leaves the rollup counts, so each names its own outcome. Keep fixtures to
-   * two chains: `CHAIN_SYNC_LANE` caps concurrency at two, and a third chain would sit PENDING with
-   * its accounts ineligible, which is realistic but not what these cases are about.
-   */
-  async function submitRefresh(
-    chains: Record<string, Record<string, LeafOutcome>>,
-    decodes: Record<string, LeafOutcome> = {},
-  ): Promise<void> {
-    const orchestrator = useTaskOrchestrator();
-    const umbrella = historySyncFlow.id();
-
-    orchestrator.submit({
-      container: true,
-      id: umbrella,
-      kind: ActivityKind.HISTORY_SYNC,
-      run: async () => ok(undefined),
-      title: 'refresh',
-    });
-
-    for (const [chain, accounts] of Object.entries(chains)) {
-      orchestrator.submit({
-        id: chainSyncActivityId(chain),
-        kind: ActivityKind.TX_SYNC,
-        parent: umbrella,
-        run: async () => ok(undefined),
-        title: chain,
-      });
-
-      for (const [address, outcome] of Object.entries(accounts)) {
-        orchestrator.submit({
-          id: accountSyncActivityId(chain, address),
-          kind: ActivityKind.TX_SYNC,
-          parent: chainSyncActivityId(chain),
-          run: runFor(outcome),
-          title: address,
-        });
-      }
-    }
-
-    for (const [chain, outcome] of Object.entries(decodes)) {
-      orchestrator.submit({
-        id: decodeActivityId(chain),
-        kind: ActivityKind.TX_DECODING,
-        parent: chainSyncActivityId(chain),
-        run: runFor(outcome),
-        title: `decode ${chain}`,
-      });
-    }
-
-    await flush();
-  }
 
   const createEvmTxStatus = (
     address: string,

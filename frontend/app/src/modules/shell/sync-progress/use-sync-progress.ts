@@ -1,6 +1,7 @@
 import type { ComputedRef } from 'vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
+import { useSyncRollup } from '@/modules/history/events/tx/use-sync-rollup';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
@@ -16,7 +17,6 @@ import {
   type SyncProgressState,
 } from './types';
 import { isChainSettled, settledAddresses, useChainProgress } from './use-chain-progress';
-import { useSyncRollup } from './use-sync-rollup';
 import { type SyncWarning, SyncWarningSource, useSyncWarningsStore } from './use-sync-warnings-store';
 
 interface UseSyncProgressReturn {

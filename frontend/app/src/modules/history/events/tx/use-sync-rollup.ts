@@ -11,6 +11,10 @@ interface UseSyncRollupReturn {
   readonly isSettled: ComputedRef<boolean>;
   /** Units of work done, 0-100; `0` when no refresh has been submitted. */
   readonly progress: ComputedRef<number>;
+  /** Leaves the flow declared: the denominator, known at submit time. */
+  readonly declaredLeaves: ComputedRef<number>;
+  /** Leaves that have reached a terminal status, however they ended. */
+  readonly settledLeaves: ComputedRef<number>;
 }
 
 /**
@@ -77,14 +81,16 @@ export function useSyncRollup(): UseSyncRollupReturn {
     return nodes.length > 0 && nodes.every(activity => isTerminalStatus(activity.status));
   });
 
-  const progress = computed<number>(() => {
-    const declared = get(leaves);
-    if (declared.length === 0)
-      return 0;
+  const declaredLeaves = computed<number>(() => get(leaves).length);
 
-    const settled = declared.filter(activity => isTerminalStatus(activity.status)).length;
-    return Math.round((settled / declared.length) * 100);
+  const settledLeaves = computed<number>(() =>
+    get(leaves).filter(activity => isTerminalStatus(activity.status)).length,
+  );
+
+  const progress = computed<number>(() => {
+    const declared = get(declaredLeaves);
+    return declared === 0 ? 0 : Math.round((get(settledLeaves) / declared) * 100);
   });
 
-  return { isSettled, isWorking, progress };
+  return { declaredLeaves, isSettled, isWorking, progress, settledLeaves };
 }
