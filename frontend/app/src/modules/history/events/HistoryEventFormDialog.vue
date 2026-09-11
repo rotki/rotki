@@ -69,7 +69,7 @@ watch(modelValue, (value) => {
     :display="modelValue !== undefined"
     :title="title"
     :action="{ disabled: loading, primary: t('common.actions.save') }"
-    :errors="{ autoScroll: true, count: errorCount }"
+    :errors="{ autoFocus: true, count: errorCount }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

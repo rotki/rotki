@@ -56,6 +56,13 @@ test.describe.serial('calendar', () => {
     await page.cancelDialog();
   });
 
+  test('focuses the first invalid field when save is pressed', async () => {
+    await page.openAddDialog();
+    await page.submitDialog();
+    await page.expectNameFocused();
+    await page.cancelDialog();
+  });
+
   // Reminder rows used to register themselves with the form's validator; it is an explicit call now.
   test('blocks saving while a reminder is out of range', async () => {
     await page.openAddDialog();

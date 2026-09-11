@@ -203,6 +203,10 @@ export class CalendarPage {
     await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
   }
 
+  async expectNameFocused(): Promise<void> {
+    await expect(this.page.locator('[data-testid=calendar-form-name] input')).toBeFocused();
+  }
+
   async expectDialogOpen(): Promise<void> {
     await expect(this.page.locator('[data-testid=bottom-dialog]')).toBeVisible();
   }

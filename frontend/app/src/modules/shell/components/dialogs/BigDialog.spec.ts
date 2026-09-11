@@ -1,4 +1,4 @@
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import BigDialog from './BigDialog.vue';
@@ -7,8 +7,12 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
   let wrapper: VueWrapper<InstanceType<typeof BigDialog>>;
   let pinia: Pinia;
 
-  function createWrapper(props: Record<string, unknown> = {}): VueWrapper<InstanceType<typeof BigDialog>> {
+  function createWrapper(
+    props: Record<string, unknown> = {},
+    slots: Record<string, string> = {},
+  ): VueWrapper<InstanceType<typeof BigDialog>> {
     return mount(BigDialog, {
+      attachTo: document.body,
       global: {
         plugins: [pinia],
         stubs: {
@@ -39,6 +43,7 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
         title: 'Test dialog',
         ...props,
       },
+      slots,
     });
   }
 
@@ -114,6 +119,72 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
     wrapper = createWrapper({ errors: { count: 0 } });
 
     expect(wrapper.find('[data-testid="confirm"]').text()).toBe('Save');
+  });
+
+  it('should focus the first invalid field on confirm, without being told an error count', async () => {
+    wrapper = createWrapper({}, {
+      default: '<input data-testid="valid" /><input data-testid="invalid" aria-invalid="true" />',
+    });
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.find('[data-testid="invalid"]').element);
+  });
+
+  it('should leave focus alone on confirm when every field is valid', async () => {
+    wrapper = createWrapper({}, { default: '<input data-testid="valid" aria-invalid="false" />' });
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(document.activeElement).not.toBe(wrapper.find('[data-testid="valid"]').element);
+  });
+
+  it('should not reach into the page behind it once its content is gone', async () => {
+    document.body.insertAdjacentHTML('beforeend', '<input id="behind" aria-invalid="true" />');
+    wrapper = createWrapper({ display: false }, { default: '<input aria-invalid="true" />' });
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(document.activeElement).not.toBe(document.querySelector('#behind'));
+  });
+
+  it('should focus the first invalid field when the error count rises after the save', async () => {
+    wrapper = createWrapper(
+      { errors: { autoFocus: true, count: 0 } },
+      { default: '<input data-testid="invalid" aria-invalid="true" />' },
+    );
+
+    await wrapper.setProps({ errors: { autoFocus: true, count: 1 } });
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.find('[data-testid="invalid"]').element);
+  });
+
+  it('should not focus on a rising error count unless autoFocus is set', async () => {
+    wrapper = createWrapper(
+      { errors: { count: 0 } },
+      { default: '<input data-testid="invalid" aria-invalid="true" />' },
+    );
+
+    await wrapper.setProps({ errors: { count: 1 } });
+    await flushPromises();
+
+    expect(document.activeElement).not.toBe(wrapper.find('[data-testid="invalid"]').element);
+  });
+
+  it('should not refocus when the error count changes but was already non-zero', async () => {
+    wrapper = createWrapper(
+      { errors: { autoFocus: true, count: 1 } },
+      { default: '<input data-testid="invalid" aria-invalid="true" />' },
+    );
+
+    await wrapper.setProps({ errors: { autoFocus: true, count: 2 } });
+    await flushPromises();
+
+    expect(document.activeElement).not.toBe(wrapper.find('[data-testid="invalid"]').element);
   });
 
   it('should keep the minimum content height unless the layout group opts out', () => {

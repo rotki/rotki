@@ -201,11 +201,27 @@ async function save(eventId: number): Promise<void> {
   await addReminders(eventId, plan.added);
 }
 
+/**
+ * Validates the rows, and opens the list when one of them is invalid.
+ *
+ * @remarks
+ * The list is an accordion without a header of its own, so nothing that reveals the first invalid
+ * field can expand it from outside. A row rejected while the list is collapsed would take focus and
+ * show its message where nobody can see either.
+ */
+function validate(): boolean {
+  const valid = form.validate();
+  if (!valid)
+    set(showReminders, true);
+
+  return valid;
+}
+
 onBeforeMount(() => startPromise(loadStored()));
 
 defineExpose({
   save,
-  validate: (): boolean => form.validate(),
+  validate,
 });
 </script>
 
