@@ -1,6 +1,7 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
@@ -56,6 +57,7 @@ function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIs
         DataIssueKindChip: true,
         DataIssueRemediationTimeline: true,
         DataIssueStateChip: true,
+        DateDisplay: true,
         HistoryEventAccount: true,
         LocationDisplay: true,
         RuiNavigationDrawer: DrawerStub,
@@ -72,6 +74,8 @@ describe('dataIssueDetailDrawer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it('should render a related-event link for an issue that carries an event identifier', () => {
     const wrapper = createWrapper(createIssue());
@@ -97,6 +101,67 @@ describe('dataIssueDetailDrawer', () => {
         targetGroupIdentifier: 'grp-1',
       }),
     }));
+  });
+
+  it('should keep the drawer and review open when interacting with the teleported dialog', async () => {
+    vi.useFakeTimers();
+    const transaction = createDecodingComparison();
+    const unchanged = transaction.savedEvents[0];
+    assert(unchanged);
+    const comparison = {
+      ...transaction,
+      savedEvents: [...transaction.savedEvents, { ...unchanged, sequenceIndex: 2 }],
+      decodedEvents: [...transaction.decodedEvents, { ...unchanged, sequenceIndex: 2 }],
+    };
+    const wrapper = mount(DataIssueDetailDrawer, {
+      attachTo: document.body,
+      global: {
+        plugins: [createRuiPlugin({})],
+        stubs: {
+          AssetDetails: true,
+          CounterpartyDisplay: true,
+          DataIssueDescription: true,
+          DataIssueKindChip: true,
+          DataIssueStateChip: true,
+          DateDisplay: true,
+          HistoryEventAccount: true,
+          LocationDisplay: true,
+          HashLink: true,
+          DataIssueComparisonEvent: { props: ['diff'], template: '<li data-testid="review-event">{{ diff.status }}</li>' },
+        },
+      },
+      props: {
+        issue: createIssue({ autoRemediationAttempts: [{ strategy: 'redecode_customized_transactions', transactions: [comparison] }] }),
+        modelValue: true,
+      },
+    });
+    await nextTick();
+    const openButton = document.querySelector<HTMLButtonElement>('[data-testid="data-issue-review-open"]');
+    assert(openButton);
+    openButton.click();
+    await vi.advanceTimersByTimeAsync(1);
+    const toggle = document.querySelector<HTMLButtonElement>('[data-testid="data-issue-diff-toggle-unchanged"]');
+    assert(toggle);
+    toggle.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    toggle.click();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(document.querySelectorAll('[data-testid="review-event"]')).toHaveLength(2);
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    const transactionButton = document.querySelector<HTMLButtonElement>('[data-testid="data-issue-review-transaction-open"]');
+    assert(transactionButton);
+    transactionButton.click();
+    await nextTick();
+    expect(push).toHaveBeenCalledWith({
+      name: '/history/events/',
+      query: { targetGroupIdentifier: 'different-transaction' },
+    });
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+  });
+
+  it('should show the affected event time separately from detection time', () => {
+    const wrapper = createWrapper(createIssue({ createdAt: 1710000100, tsEnd: 1710000000000 }));
+    const date = wrapper.get('[data-testid="data-issue-event-date"]').findComponent({ name: 'DateDisplay' });
+    expect(date.props()).toMatchObject({ milliseconds: true, timestamp: 1710000000000 });
   });
 
   it('should show the resolution note when the payload carries a string note', () => {

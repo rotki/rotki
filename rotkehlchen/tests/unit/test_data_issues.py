@@ -151,6 +151,32 @@ def test_state_transitions(database: DBHandler) -> None:
         manager.update_state(issue_id, IssueState.OPEN)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('use_update_state', [True, False])
+def test_only_latest_attempt_keeps_comparison(database: DBHandler, use_update_state: bool) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    old_attempt = {
+        'strategy': 'test',
+        'changed_transaction_count': 1,
+        'transactions': [{'tx_hash': 'old'}],
+    }
+    manager.update_state(issue_id, IssueState.AUTO_REMEDIATING, attempt=old_attempt)
+    new_attempt = {'strategy': 'test', 'transactions': [{'tx_hash': 'new'}]}
+    if use_update_state:
+        manager.update_state(issue_id, IssueState.UNRESOLVED, attempt=new_attempt)
+    else:
+        manager.append_auto_remediation_attempt(issue_id, attempt=new_attempt)
+    assert manager.get_issue(issue_id).auto_remediation_attempts == [
+        {'strategy': 'test', 'changed_transaction_count': 1}, new_attempt,
+    ]
+    manager.append_auto_remediation_attempt(issue_id, attempt={'strategy': 'failed'})
+    assert all(
+        'transactions' not in attempt
+        for attempt in manager.get_issue(issue_id).auto_remediation_attempts
+    )
+
+
 def test_retry_auto_remediation(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_rebasing_issue(manager)

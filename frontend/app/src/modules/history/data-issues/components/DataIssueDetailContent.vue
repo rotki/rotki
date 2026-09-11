@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
@@ -11,6 +12,7 @@ import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/his
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 /**
@@ -27,12 +29,13 @@ const emit = defineEmits<{
   dismiss: [id: number];
   retry: [id: number];
   resolve: [id: number];
+  review: [item: RemediationTimelineItem];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
-const description = computed(() => issue ? describeIssue(issue) : undefined);
+const description = computed<IssueDescription | undefined>(() => issue ? describeIssue(issue) : undefined);
 
 /** Deep-link to the offending history event (shared with the inbox panel). */
 const relatedEventLink = computed<RouteLocationRaw | undefined>(() =>
@@ -46,7 +49,7 @@ async function goToRelatedEvent(): Promise<void> {
   await router.push(link);
 }
 
-const timeline = computed(() => (issue ? toTimelineItems(issue) : []));
+const timeline = computed<RemediationTimelineItem[]>(() => (issue ? toTimelineItems(issue) : []));
 
 const resolutionNote = computed<string | undefined>(() => {
   const resolution = issue?.payload?.resolution;
@@ -94,6 +97,17 @@ const resolutionNote = computed<string | undefined>(() => {
           tag="p"
           class="text-body-1"
         />
+        <div
+          v-if="description?.eventIdentifier !== undefined"
+          class="text-body-2 mt-2"
+          data-testid="data-issue-event-date"
+        >
+          {{ t('data_issues.detail.event_date') }}
+          <DateDisplay
+            :timestamp="issue.tsEnd"
+            milliseconds
+          />
+        </div>
         <RuiButton
           v-if="description?.eventIdentifier !== undefined && relatedEventLink"
           variant="text"
@@ -180,7 +194,10 @@ const resolutionNote = computed<string | undefined>(() => {
         <div class="text-overline text-rui-text-secondary mb-2">
           {{ t('data_issues.detail.remediation_history') }}
         </div>
-        <DataIssueRemediationTimeline :items="timeline" />
+        <DataIssueRemediationTimeline
+          :items="timeline"
+          @review="emit('review', $event)"
+        />
       </section>
 
       <section v-if="resolutionNote">

@@ -104,7 +104,7 @@ vi.mock('@vueuse/core', async () => {
    unit test uses it. It is reached transitively from `@/message-key`, which every settings
    registry slice imports, so leaving it real taxes any spec that touches a setting. */
 vi.mock('@/i18n', () => ({
-  i18n: { global: { te: (): boolean => true } },
+  i18n: { global: { t: mockT, te: (): boolean => true } },
   loadLocaleMessages: vi.fn(async () => Promise.resolve()),
 }));
 

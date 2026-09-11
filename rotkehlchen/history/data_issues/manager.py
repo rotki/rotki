@@ -358,7 +358,11 @@ class DataIssuesManager:
 
         attempts = issue.auto_remediation_attempts
         if attempt is not None:
-            attempts = [*attempts, attempt]
+            attempts = [
+                *({key: value for key, value in old.items() if key != 'transactions'}
+                  for old in attempts),
+                attempt,
+            ]
 
         payload = issue.payload
         if resolution is not None:
@@ -404,7 +408,11 @@ class DataIssuesManager:
                 'WHERE id = ? '
                 f'RETURNING {DATA_ISSUE_COLUMNS}',
                 (
-                    json.dumps([*issue.auto_remediation_attempts, attempt], separators=(',', ':')),
+                    json.dumps([
+                        *({key: value for key, value in old.items() if key != 'transactions'}
+                          for old in issue.auto_remediation_attempts),
+                        attempt,
+                    ], separators=(',', ':')),
                     json.dumps(payload, separators=(',', ':')),
                     issue_id,
                 ),

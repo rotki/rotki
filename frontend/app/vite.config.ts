@@ -210,7 +210,8 @@ export default defineConfig({
     backendIconsCachePlugin(PROJECT_ROOT),
     VueRouter({
       importMode: 'async',
-      dts: './src/route-map.d.ts',
+      root: PACKAGE_ROOT,
+      dts: resolve(PACKAGE_ROOT, 'src/route-map.d.ts'),
     }),
     vue(),
     ...(enableChecker
