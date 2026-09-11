@@ -1,4 +1,5 @@
-import type { EthBlockEvent, NewEthBlockEventPayload } from '@/modules/history/events/schemas';
+import type { NewEthBlockEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { EthBlockEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';

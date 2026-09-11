@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.banks.constants import SUPPORTED_BANKS
 from rotkehlchen.chain.accounts import (
     BlockchainAccountData,
     BlockchainAccounts,
@@ -150,6 +151,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
+    ExchangeAuthCredentials,
     ExchangeLocationID,
     ExchangePurgeType,
     ExternalService,
@@ -911,6 +913,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.BANK_SESSION],
+            **kwargs: Unpack[LabeledLocationArgsType],
+    ) -> str | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
             **kwargs: Unpack[BinancePairLastTradeArgsType],
     ) -> int | None:
@@ -1085,6 +1096,16 @@ class DBHandler:
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
             value: int,
+            **kwargs: Unpack[LabeledLocationArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.BANK_SESSION],
+            value: str,
             **kwargs: Unpack[LabeledLocationArgsType],
     ) -> None:
         ...
@@ -2798,6 +2819,71 @@ class DBHandler:
             ),
         )
 
+    def add_bank_credentials(self, credentials: ExchangeApiCredentials) -> None:
+        """Persist a bank connection's credentials. Banks share the user_credentials
+        table with exchanges; the location column tells them apart."""
+        if credentials.location not in SUPPORTED_BANKS:
+            raise InputError(f'Unsupported bank {credentials.location!s}')
+        with self.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT INTO user_credentials '
+                '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
+                (
+                    credentials.name,
+                    credentials.location.serialize_for_db(),
+                    credentials.api_key,
+                    credentials.api_secret.decode() if credentials.api_secret is not None else None,  # noqa: E501
+                    credentials.passphrase,
+                ),
+            )
+
+    def edit_bank_credentials(
+            self,
+            write_cursor: DBCursor,
+            name: str,
+            location: Location,
+            new_name: str | None,
+            credentials: ExchangeAuthCredentials,
+    ) -> None:
+        """Rename and/or replace the given credential fields of a bank connection.
+
+        May raise InputError when the new name is taken.
+        """
+        assignments, bindings = [], []
+        for column, value in (
+                ('name', new_name),
+                ('api_key', credentials.api_key),
+                ('api_secret', credentials.api_secret.decode() if credentials.api_secret is not None else None),  # noqa: E501
+                ('passphrase', credentials.passphrase),
+        ):
+            if value is not None:
+                assignments.append(f'{column}=?')
+                bindings.append(value)
+        if len(assignments) == 0:
+            return
+        try:
+            write_cursor.execute(
+                f'UPDATE user_credentials SET {", ".join(assignments)} WHERE name=? AND location=?',  # noqa: E501
+                (*bindings, name, location.serialize_for_db()),
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            raise InputError(f'A {location!s} bank connection named {new_name} already exists') from e  # noqa: E501
+        if new_name is not None:
+            write_cursor.execute(  # keep the exchange-style range bookkeeping in sync
+                'UPDATE used_query_ranges SET name=? WHERE name=?',
+                (f'{location!s}_history_events_{new_name}', f'{location!s}_history_events_{name}'),
+            )
+            # and the per-connection caches (cursors, session)
+            old_prefix = f'{location!s}_{name}_'
+            escaped_prefix = (
+                old_prefix.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+            )
+            write_cursor.execute(
+                'UPDATE key_value_cache SET name=? || substr(name, ?) '
+                "WHERE name LIKE ? ESCAPE '\\'",
+                (f'{location!s}_{new_name}_', len(old_prefix) + 1, f'{escaped_prefix}%'),
+            )
+
     def get_exchange_credentials(
             self,
             cursor: DBCursor,
@@ -2831,8 +2917,8 @@ class DBHandler:
                 )
                 continue
 
-            if location not in SUPPORTED_EXCHANGES:
-                continue
+            if location not in SUPPORTED_EXCHANGES and location not in SUPPORTED_BANKS:
+                continue  # each manager keeps only its own locations
 
             credentials[location].append(ExchangeApiCredentials(
                 name=entry[0],

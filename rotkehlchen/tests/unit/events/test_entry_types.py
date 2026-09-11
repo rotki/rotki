@@ -9,5 +9,6 @@ def test_entry_types_covered():
         HistoryBaseEntryType.HISTORY_EVENT,
         HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
         HistoryBaseEntryType.SWAP_EVENT,
+        HistoryBaseEntryType.BANK_TRANSACTION_EVENT,
     }
     assert all_entry_types == (generic_types | STAKING_ENTRY_TYPES | CHAIN_ENTRY_TYPES)

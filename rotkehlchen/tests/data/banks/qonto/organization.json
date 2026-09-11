@@ -1,0 +1,45 @@
+{
+  "organization": {
+    "id": "7d1c0575-6ebe-4b37-9b12-7ce5ce723e7d",
+    "name": "Groveme Juni",
+    "slug": "quartzw-alde-5564",
+    "legal_name": "Groveme Juni",
+    "locale": "de",
+    "legal_share_capital": 24934.58,
+    "legal_country": "DE",
+    "legal_registration_date": "2025-11-14",
+    "legal_form": "GmbH",
+    "legal_address": "K/K Pebbleridgeti Xenon Cedarr Junip Bir, Lumenkestrelzeph 44, 79841 Saffro HARBORD",
+    "address": {
+      "first_line": "g/a Junipervelvet Lumen Alderf Pebbl nim,",
+      "second_line": "Xenonumbergroven 62,",
+      "third_line": null,
+      "zipcode": "85436",
+      "city": "Willow",
+      "country": "QU",
+      "state": null
+    },
+    "legal_sector": "3909",
+    "contract_signed_at": "2025-12-01T10:25:26.106Z",
+    "legal_number": "MEA126452W",
+    "bank_accounts": [
+      {
+        "id": "954bf008-c187-4e30-b067-b16f364df375",
+        "slug": "kestrel-juni-5528-yarr-deltaze-9",
+        "name": "Fjordyarro",
+        "status": "active",
+        "main": true,
+        "iban": "DE86601995651153419937",
+        "bic": "CXAFQZB21DS",
+        "updated_at": "2026-09-03T00:03:46.276Z",
+        "is_external_account": false,
+        "account_number": "",
+        "currency": "EUR",
+        "balance": 2201.82,
+        "balance_cents": 220182,
+        "authorized_balance": 2201.82,
+        "authorized_balance_cents": 220182
+      }
+    ]
+  }
+}

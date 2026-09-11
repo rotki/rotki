@@ -2271,6 +2271,165 @@ Query the historical price of assets
 
 
 
+Get the supported banks
+=======================
+
+.. http:get:: /api/(version)/banks/supported
+
+   Doing a GET on this endpoint returns the manifest of every bank connector rotki ships. The manifest is what a setup UI needs to render the connection form generically: the credential fields (``secrets``, each with the ``slot`` it is stored in, a ``label`` and a ``description``), the ``auth_flow`` as a list of auth primitives, the access tier, capabilities and user-facing ``setup_notes``. The same object is available per location under ``bank_details`` of the `Get all valid locations`_ endpoint.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "location": "qonto",
+              "display_name": "Qonto",
+              "access_tier": "official api",
+              "capabilities": ["balances", "transactions"],
+              "auth_flow": [{"primitive": "static secret"}],
+              "secrets": [
+                  {"slot": "api_key", "label": "Login", "description": "The organization login shown next to the API key in the Qonto app"},
+                  {"slot": "api_secret", "label": "Secret key", "description": "The secret key generated together with the login"}
+              ],
+              "maintainer": "rotki",
+              "version": "1.0.0",
+              "docs_url": "https://docs.qonto.com",
+              "setup_notes": ["In the Qonto web app go to Settings > Integrations & Partners > API key and generate a key. ..."]
+          }],
+          "message": ""
+      }
+
+   :statuscode 200: Manifests returned
+   :statuscode 500: Internal rotki error
+
+Get, add, edit or remove bank connections
+==========================================
+
+.. http:get:: /api/(version)/banks
+
+   Doing a GET on this endpoint returns the bank connections of the logged in user with their sync status.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "name": "Qonto main",
+              "location": "qonto",
+              "display_name": "Qonto",
+              "sync_status": {"running": false, "last_sync_ts": 1757595000, "last_error": null}
+          }],
+          "message": ""
+      }
+
+   :resjson list result: One entry per connection. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress.
+   :statuscode 200: Connections returned
+   :statuscode 401: No user is logged in
+   :statuscode 500: Internal rotki error
+
+.. http:put:: /api/(version)/banks
+
+   Doing a PUT on this endpoint with a bank location, a name for the connection and the credentials the bank's manifest declares validates the credentials against the bank and saves the connection.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/banks HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"location": "qonto", "name": "Qonto main", "credentials": {"api_key": "the-login", "api_secret": "the-secret-key"}}
+
+   :reqjson string location: The bank. One of the locations returned by ``/banks/supported``.
+   :reqjson string name: A name for this connection. Unique per bank.
+   :reqjson object credentials: One string per credential ``slot`` of the bank's manifest. Every declared slot is required. For Qonto ``api_key`` is the login and ``api_secret`` the secret key of the organization's API key.
+   :statuscode 200: The connection was added
+   :statuscode 400: Malformed JSON, or the credentials do not fit the bank's manifest
+   :statuscode 401: No user is logged in
+   :statuscode 409: The bank rejected the credentials, or a connection with this name exists
+   :statuscode 500: Internal rotki error
+
+.. http:patch:: /api/(version)/banks
+
+   Doing a PATCH on this endpoint renames a connection and/or replaces some of its credentials. New credentials are validated against the bank before they are saved.
+
+   :reqjson string location: The bank of the connection
+   :reqjson string name: The current name of the connection
+   :reqjson string new_name: Optional. The new name
+   :reqjson object credentials: Optional. The credential slots to replace, any subset of the manifest's slots
+   :statuscode 200: The connection was edited
+   :statuscode 400: Malformed JSON, or the credentials do not fit the bank's manifest
+   :statuscode 401: No user is logged in
+   :statuscode 409: The connection does not exist, the bank rejected the new credentials, or the new name is taken
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/banks
+
+   Doing a DELETE on this endpoint removes a connection: its credentials, sync cursors and query ranges. History events already pulled stay.
+
+   :reqjson string location: The bank of the connection
+   :reqjson string name: The name of the connection
+   :statuscode 200: The connection was removed
+   :statuscode 400: Malformed JSON
+   :statuscode 401: No user is logged in
+   :statuscode 409: The connection does not exist
+   :statuscode 500: Internal rotki error
+
+Sync bank transactions
+======================
+
+.. http:post:: /api/(version)/banks/sync
+
+   Doing a POST on this endpoint pulls new transactions of one connection (``location`` and ``name``), of every connection of a bank (``location`` only) or of every bank (no arguments) into the history events. Syncs are incremental from each account's cursor and re-running one never duplicates a transaction. Banks are also synced by the periodic history query, like exchanges.
+
+   :reqjson string location: Optional. The bank to sync
+   :reqjson string name: Optional. The connection to sync. Needs ``location``.
+   :reqjson bool async_query: Optional. If true the query is made asynchronously.
+   :statuscode 200: Synced
+   :statuscode 400: Malformed JSON
+   :statuscode 401: No user is logged in
+   :statuscode 409: The connection does not exist
+   :statuscode 502: The bank could not be queried. The message says which connection failed and why; ``GET /banks`` shows it under ``last_error`` too.
+   :statuscode 500: Internal rotki error
+
+Query bank balances
+===================
+
+.. http:get:: /api/(version)/banks/balances/(location)
+
+   Doing a GET on this endpoint returns the balances of every connection of a bank, combined. Omitting the location (``/banks/balances``) returns a mapping of bank location to balances for every bank.
+
+   :reqjson bool async_query: Optional. If true the query is made asynchronously.
+   :reqjson bool ignore_cache: Optional. If true the bank is queried even if a recent result is cached.
+   :reqjson string value_threshold: Optional. Only balances above this value are returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"EUR": {"amount": "2201.82", "value": "2380.11"}},
+          "message": ""
+      }
+
+   :statuscode 200: Balances returned
+   :statuscode 401: No user is logged in
+   :statuscode 409: No connection exists for the bank, or every connection failed to answer
+   :statuscode 500: Internal rotki error
+
 Get a list of setup exchanges
 ==============================
 
@@ -13931,6 +14090,25 @@ Get all valid locations
                 "is_exchange_with_key": true,
                 "is_exchange_without_api_secret": true
               }
+            },
+            "qonto": {
+              "image": "qonto.svg",
+              "is_bank": true,
+              "bank_details": {
+                "location": "qonto",
+                "display_name": "Qonto",
+                "access_tier": "official api",
+                "capabilities": ["balances", "transactions"],
+                "auth_flow": [{"primitive": "static secret"}],
+                "secrets": [
+                  {"slot": "api_key", "label": "Login", "description": "The organization login shown next to the API key in the Qonto app"},
+                  {"slot": "api_secret", "label": "Secret key", "description": "The secret key generated together with the login"}
+                ],
+                "maintainer": "rotki",
+                "version": "1.0.0",
+                "docs_url": "https://docs.qonto.com",
+                "setup_notes": ["In the Qonto web app go to Settings > Integrations & Partners > API key and generate a key. ..."]
+              }
             "cryptocom": {
               "image": "crypto_com.svg",
               "exchange_detail": {
@@ -13942,7 +14120,7 @@ Get all valid locations
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object. If the exchange implementation is experimenta then the experimental key will exist and be set to true.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object. If the exchange implementation is experimenta then the experimental key will exist and be set to true. A bank connector location has `is_bank` set to true and carries a `bank_details` object: its manifest with `display_name`, `access_tier`, `capabilities`, the `auth_flow` as a list of auth primitives, the `secrets` the setup form should ask for (each with the credential `slot` it is stored in, a `label` and a `description`), `maintainer`, `version`, `docs_url` and user-facing `setup_notes`.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error

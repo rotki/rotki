@@ -20,6 +20,7 @@ from rotkehlchen.api.rest_helpers.downloads import (
     make_download_response,
     register_post_download_cleanup,
 )
+from rotkehlchen.banks.constants import SUPPORTED_BANKS
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -273,10 +274,11 @@ class HistoryService:
             f'{blockchain.to_range_prefix("txs")}_%'
             for blockchain in EVM_CHAINS_WITH_TRANSACTIONS
         ]
-        exchanges_where_str = ' OR '.join(['name LIKE ?'] * len(SUPPORTED_EXCHANGES))
+        synced_locations = SUPPORTED_EXCHANGES + SUPPORTED_BANKS
+        exchanges_where_str = ' OR '.join(['name LIKE ?'] * len(synced_locations))
         exchanges_bindings = [
             f'{location!s}_history_events_%'
-            for location in SUPPORTED_EXCHANGES
+            for location in synced_locations
         ]
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             evm_last_queried_ts = cursor.execute(
@@ -292,10 +294,10 @@ class HistoryService:
                 [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
             ).fetchone()[0] > 0
             exchanges_bindings_with_rotkehlchen = [
-                location.serialize_for_db() for location in SUPPORTED_EXCHANGES
+                location.serialize_for_db() for location in synced_locations
             ] + ['rotkehlchen']
             has_exchanges_accounts = cursor.execute(
-                f'SELECT COUNT(*) FROM user_credentials WHERE location IN ({",".join(["?"] * len(SUPPORTED_EXCHANGES))}) AND name != ?',  # noqa: E501
+                f'SELECT COUNT(*) FROM user_credentials WHERE location IN ({",".join(["?"] * len(synced_locations))}) AND name != ?',  # noqa: E501
                 exchanges_bindings_with_rotkehlchen,
             ).fetchone()[0] > 0
 

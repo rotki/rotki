@@ -1,4 +1,5 @@
-import type { AddEvmSwapEventPayload, EvmSwapEvent } from '@/modules/history/events/schemas';
+import type { AddEvmSwapEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { EvmSwapEvent } from '@/modules/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';

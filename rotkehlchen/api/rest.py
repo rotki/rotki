@@ -35,6 +35,7 @@ from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
 from rotkehlchen.api.services.assets import AssetsService
 from rotkehlchen.api.services.balances import BalancesService
+from rotkehlchen.api.services.banks import BanksService
 from rotkehlchen.api.services.exchanges import ExchangesService
 from rotkehlchen.api.services.external_services import ExternalServicesService
 from rotkehlchen.api.services.history import HistoryService
@@ -459,6 +460,7 @@ class RestAPI:
         self.assets_service = AssetsService(rotkehlchen)
         self.balances_service = BalancesService(rotkehlchen)
         self.exchanges_service = ExchangesService(rotkehlchen)
+        self.banks_service = BanksService(rotkehlchen)
         self.external_services_service = ExternalServicesService(rotkehlchen)
         self.history_events_service = HistoryEventsService(rotkehlchen)
         self.history_service = HistoryService(rotkehlchen)
@@ -806,6 +808,59 @@ class RestAPI:
     def delete_external_services(self, services: list[ExternalService]) -> Response:
         response_dict = self.external_services_service.delete_services(services)
         return api_response(_wrap_in_ok_result(response_dict), status_code=HTTPStatus.OK)
+
+    def get_supported_banks(self) -> Response:
+        return api_response(
+            _wrap_in_ok_result(self.banks_service.get_supported_banks()),
+            status_code=HTTPStatus.OK,
+        )
+
+    def get_banks(self) -> Response:
+        return api_response(_wrap_in_ok_result(self.banks_service.get_banks()), status_code=HTTPStatus.OK)  # noqa: E501
+
+    def setup_bank(self, name: str, location: Location, credentials: dict[str, str]) -> Response:
+        result, msg, status_code = self.banks_service.setup_bank(
+            name=name,
+            location=location,
+            credentials=credentials,
+        )
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    def edit_bank(
+            self,
+            name: str,
+            location: Location,
+            new_name: str | None,
+            credentials: dict[str, str],
+    ) -> Response:
+        result, msg, status_code = self.banks_service.edit_bank(
+            name=name,
+            location=location,
+            new_name=new_name,
+            credentials=credentials,
+        )
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    def remove_bank(self, name: str, location: Location) -> Response:
+        result, msg, status_code = self.banks_service.remove_bank(name=name, location=location)
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    @async_api_call()
+    def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
+        return self.banks_service.sync_banks(location=location, name=name)
+
+    @async_api_call()
+    def query_bank_balances(
+            self,
+            location: Location | None,
+            ignore_cache: bool,
+            value_threshold: FVal | None = None,
+    ) -> dict[str, Any]:
+        return self.banks_service.query_bank_balances(
+            location=location,
+            ignore_cache=ignore_cache,
+            value_threshold=value_threshold,
+        )
 
     def get_exchanges(self) -> Response:
         exchanges = self.exchanges_service.get_exchanges()

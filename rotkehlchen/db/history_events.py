@@ -56,6 +56,7 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
     HistoryBaseEntryType,
@@ -1690,6 +1691,7 @@ class DBHistoryEvents:
                     data = entry[data_start_idx:data_end_idx]
                     deserialized_event = (
                         AssetMovement if entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else  # noqa: E501
+                        BankTransactionEvent if entry_type == HistoryBaseEntryType.BANK_TRANSACTION_EVENT else  # noqa: E501
                         SwapEvent if entry_type == HistoryBaseEntryType.SWAP_EVENT else
                         EvmSwapEvent if entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT else
                         SolanaSwapEvent if entry_type == HistoryBaseEntryType.SOLANA_SWAP_EVENT else  # noqa: E501

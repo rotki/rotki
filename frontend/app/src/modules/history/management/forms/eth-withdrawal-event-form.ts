@@ -1,4 +1,5 @@
-import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/modules/history/events/schemas';
+import type { NewEthWithdrawalEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { EthWithdrawalEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';

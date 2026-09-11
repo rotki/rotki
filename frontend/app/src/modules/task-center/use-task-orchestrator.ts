@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskOrchestrator } from './core/orchestrator/api';
 import { createTaskOrchestrator } from './core/orchestrator/orchestrator';
-import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, CHAIN_SYNC_LANE, DECODE_LANE, DETECT_LANE_PREFIX, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
+import { ACCOUNT_SYNC_LANE_PREFIX, ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, BALANCES_LANE, BANK_EVENTS_LANE_PREFIX, CHAIN_SYNC_LANE, DECODE_LANE, DETECT_LANE_PREFIX, EXCHANGE_EVENTS_LANE_PREFIX, EXCHANGE_LANE, SESSION_LANE, UMBRELLA_LANE } from './core/orchestrator/spec';
 import { type Activity, type ActivityKind, makeActivityId, type WorkStatus } from './core/types';
 import { useActivityDetail } from './use-activity-detail';
 
@@ -75,7 +75,7 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
      * Two accounts per chain, one query per exchange location, one removal per chain. Read a value
      * as "per chain" or "per location", not as a budget the whole family shares.
      */
-    laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 1 },
+    laneFamilies: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 1, [BANK_EVENTS_LANE_PREFIX]: 1 },
     /**
      * Caps how many lanes of a family are live at once, which {@link laneFamilies} does not do.
      *
@@ -84,7 +84,7 @@ export const useTaskOrchestrator = createSharedComposable((): UseTaskOrchestrato
      * progress together. Detection's entry must not exceed the balances cap: a chain only detects
      * inside its own chain job, so a further active detect lane is one nothing can fill.
      */
-    laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2 },
+    laneFamilyActive: { [ACCOUNT_SYNC_LANE_PREFIX]: 2, [ACCOUNTS_ADD_LANE_PREFIX]: 2, [ACCOUNTS_REMOVE_LANE_PREFIX]: 1, [DETECT_LANE_PREFIX]: 2, [EXCHANGE_EVENTS_LANE_PREFIX]: 2, [BANK_EVENTS_LANE_PREFIX]: 2 },
   });
   const activities = shallowRef<Activity[]>([]);
   /**

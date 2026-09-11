@@ -1,6 +1,6 @@
 import type { QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
 import type { CollectionResponse } from '@/modules/core/common/collection';
-import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { AddHistoryEventPayload, HistoryEventExportPayload, HistoryEventRequestPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
 import { omit } from 'es-toolkit';
 import { z } from 'zod';
 import { api } from '@/modules/core/api/rotki-api';
@@ -25,13 +25,7 @@ import {
   type TransactionRequestPayload,
 } from '@/modules/history/events/event-payloads';
 import { HistoryEventTypeData } from '@/modules/history/events/event-type';
-import {
-  type AddHistoryEventPayload,
-  type HistoryEventCollectionRow,
-  HistoryEventsCollectionResponse,
-  type ModifyHistoryEventPayload,
-  type OnlineHistoryEventsRequestPayload,
-} from '@/modules/history/events/schemas';
+import { type HistoryEventCollectionRow, HistoryEventsCollectionResponse, type OnlineHistoryEventsRequestPayload } from '@/modules/history/events/schemas';
 
 const TransactionStatusSchema = z.object({
   evmLastQueriedTs: z.number(),

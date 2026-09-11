@@ -124,6 +124,7 @@ describe('useHistoryRefreshSelection', () => {
 
     it.each<[HistoryRefreshTab, string]>([
       ['exchanges', 'history_refresh_selection.search_exchanges'],
+      ['banks', 'history_refresh_selection.search_banks'],
       ['events', 'history_refresh_selection.search_events'],
       ['protocols', 'history_refresh_selection.search_protocols'],
     ])('should label the search for the %s tab', async (tab, expected) => {
@@ -136,6 +137,7 @@ describe('useHistoryRefreshSelection', () => {
     it.each<[HistoryRefreshTab, string]>([
       ['chains', 'history_refresh_selection.type.accounts'],
       ['exchanges', 'history_refresh_selection.type.exchanges'],
+      ['banks', 'history_refresh_selection.type.banks'],
       ['events', 'history_refresh_selection.type.events'],
       ['protocols', 'history_refresh_selection.type.protocols'],
     ])('should name what the %s tab refreshes', async (tab, expected) => {

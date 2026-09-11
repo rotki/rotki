@@ -126,6 +126,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('\x7f', 63);
 /* Ink */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('\x80', 64);
+/* Qonto */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x81', 65);
 /* Gate */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
 /* Bit2me */

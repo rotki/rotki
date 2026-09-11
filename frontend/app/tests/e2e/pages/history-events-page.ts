@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { getValidSelectorFromEvmAddress } from '@rotki/common';
 import {
   type AssetMovementEventFixture,
@@ -19,6 +19,12 @@ import { selectAsset } from '../helpers/utils';
 import { HistoryEventRows } from './history-event-rows';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
+
+/** One scroll step through a virtualised menu, comfortably inside one rendered window. */
+const MENU_SCROLL_STEP = 150;
+
+/** Time given to the virtual list to render the options at a new scroll offset. */
+const MENU_RENDER_SETTLE_MS = 100;
 
 export class HistoryEventsPage {
   private dateSequence = 0;
@@ -44,20 +50,41 @@ export class HistoryEventsPage {
     await entryTypeSelect.locator('[data-id=activator]').click();
     const menu = this.page.locator('[role=menu]');
     await menu.waitFor({ state: 'visible' });
-    // RuiMenuSelect virtualises, so the target option renders only once scrolled to.
-    await menu.evaluate((el) => {
-      const scrollers = el.querySelectorAll('*');
-      for (const element of scrollers) {
-        if (element instanceof HTMLElement && element.scrollHeight > element.clientHeight) {
-          element.scrollTop = 0;
-          return;
-        }
-      }
-    });
     const option = menu.getByText(new RegExp(`^${type}$`, 'i'));
-    await option.waitFor({ state: 'visible' });
+    await this.scrollMenuUntilRendered(menu, option);
     await option.click();
     await menu.waitFor({ state: 'hidden' });
+  }
+
+  /**
+   * Scrolls a virtualised RuiMenuSelect menu page by page until the option is rendered.
+   *
+   * @remarks
+   * The menu renders only the options around the current scroll offset, so an option past the
+   * first window (the entry-type list is alphabetical and longer than one window) never exists
+   * in the DOM until the menu is scrolled to it.
+   */
+  private async scrollMenuUntilRendered(menu: Locator, option: Locator): Promise<void> {
+    const scrollBy = async (offset: number): Promise<boolean> => menu.evaluate((el, delta) => {
+      for (const element of el.querySelectorAll('*')) {
+        if (element instanceof HTMLElement && element.scrollHeight > element.clientHeight) {
+          const before = element.scrollTop;
+          element.scrollTop = delta < 0 ? 0 : before + delta;
+          return element.scrollTop !== before;
+        }
+      }
+      return false;
+    }, offset);
+
+    await scrollBy(-1);
+    let moved = true;
+    while (!(await option.isVisible()) && moved) {
+      moved = await scrollBy(MENU_SCROLL_STEP);
+      if (moved) {
+        await this.page.waitForTimeout(MENU_RENDER_SETTLE_MS);
+      }
+    }
+    await option.waitFor({ state: 'visible' });
   }
 
   private async fillDatetime(): Promise<void> {

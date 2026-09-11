@@ -1,4 +1,5 @@
-import type { EditHistoryEventPayload, NewSolanaEventPayload, SolanaEvent } from '@/modules/history/events/schemas';
+import type { EditHistoryEventPayload, NewSolanaEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { SolanaEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';

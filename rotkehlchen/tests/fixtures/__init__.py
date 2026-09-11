@@ -1,5 +1,6 @@
 from rotkehlchen.tests.fixtures.accounting import *  # noqa: F403
 from rotkehlchen.tests.fixtures.assets import *  # noqa: F403
+from rotkehlchen.tests.fixtures.banks import *  # noqa: F403
 from rotkehlchen.tests.fixtures.blockchain import *  # noqa: F403
 from rotkehlchen.tests.fixtures.dataupdates import *  # noqa: F403
 from rotkehlchen.tests.fixtures.db import *  # noqa: F403
