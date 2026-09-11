@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useFormErrorScroll } from '@/modules/core/common/use-form-error-scroll';
+import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
 
 /** The footer's two buttons. `primary` defaults to Confirm and `secondary` to Cancel. */
@@ -15,8 +15,14 @@ export interface BigDialogAction {
 /** Validation state the confirm button reports on. */
 interface BigDialogErrors {
   count?: number;
-  /** Scroll the first error into view when the count goes from zero to non-zero. */
-  autoScroll?: boolean;
+  /**
+   * Reveal the first error when the count goes from zero to non-zero.
+   *
+   * @remarks
+   * Confirming already reveals whatever validation rejected, so this is for the errors that arrive
+   * later than that: the ones the backend reports against a field once the save has been attempted.
+   */
+  autoFocus?: boolean;
 }
 
 /** Visual knobs a couple of callers tweak; dismissal behaviour is `persistent`/`promptOnClose`. */
@@ -70,7 +76,7 @@ const wrapper = useTemplateRef('wrapper');
 
 const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
-const { scrollToFirstError } = useFormErrorScroll();
+const { focusFirstError } = useFormErrorFocus();
 
 const errorCount = computed<number>(() => errors?.count ?? 0);
 
@@ -88,11 +94,26 @@ const autoHeight = computed<boolean>(() => layout?.autoHeight ?? false);
 
 const hasErrors = computed<boolean>(() => get(errorCount) > 0);
 
+/**
+ * Reveals the first field the content is currently marking as invalid.
+ *
+ * @remarks
+ * Scoped to the content wrapper, and silent when there is none: a dialog that has just saved and
+ * closed has no wrapper, and searching the document instead would pull focus into whatever page is
+ * behind it.
+ */
+async function revealFirstError(): Promise<void> {
+  const container = get(wrapper);
+  if (!container)
+    return;
+
+  await nextTick();
+  await focusFirstError(container);
+}
+
 watch(errorCount, async (newCount, oldCount) => {
-  if (errors?.autoScroll && newCount > 0 && oldCount === 0) {
-    await nextTick();
-    await scrollToFirstError(get(wrapper) ?? undefined);
-  }
+  if (errors?.autoFocus && newCount > 0 && oldCount === 0)
+    await revealFirstError();
 });
 
 // `||` rather than `??` on purpose: an empty label falls back to the default, as it always has.
@@ -108,11 +129,20 @@ const displayModel = computed({
   },
 });
 
-function confirm(): void {
+/**
+ * Hands the save to the owner of the dialog, then reveals whatever it rejected.
+ *
+ * @remarks
+ * The form's own validation reveals its errors while the confirm handler runs, so the first
+ * invalid field is in the DOM a tick later. Doing it here rather than behind the error count is
+ * what gives every dialog the behaviour, including the ones that report no count at all.
+ */
+async function confirm(): Promise<void> {
   if (loading)
     return;
 
   emit('confirm');
+  await revealFirstError();
 }
 
 function cancel() {
