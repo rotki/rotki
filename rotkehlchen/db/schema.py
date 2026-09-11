@@ -698,6 +698,8 @@ CREATE TABLE IF NOT EXISTS rpc_nodes(
     active INTEGER NOT NULL CHECK (active IN (0, 1)),
     weight TEXT NOT NULL,
     blockchain TEXT NOT NULL,
+    is_archive INTEGER CHECK (is_archive IN (0, 1)),
+    is_pruned INTEGER CHECK (is_pruned IN (0, 1)),
     UNIQUE(endpoint, blockchain)
 );
 """

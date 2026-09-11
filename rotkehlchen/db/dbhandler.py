@@ -4541,6 +4541,33 @@ class DBHandler:
                 for entry in cursor
             ]
 
+    def get_rpc_node_capabilities(self, node: NodeName) -> tuple[bool | None, bool | None]:
+        """Return persisted (is_archive, is_pruned), with None for unchecked capabilities."""
+        with self.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT is_archive, is_pruned FROM rpc_nodes WHERE endpoint=? AND blockchain=?',
+                (node.endpoint, node.blockchain.value),
+            ).fetchone()
+        if result is None:
+            return None, None
+        return (
+            None if result[0] is None else bool(result[0]),
+            None if result[1] is None else bool(result[1]),
+        )
+
+    def set_rpc_node_capabilities(
+            self,
+            node: NodeName,
+            is_archive: bool | None,
+            is_pruned: bool | None,
+    ) -> None:
+        """Persist both capabilities for an EVM node."""
+        with self.user_write() as cursor:
+            cursor.execute(
+                'UPDATE rpc_nodes SET is_archive=?, is_pruned=? WHERE endpoint=? AND blockchain=?',
+                (is_archive, is_pruned, node.endpoint, node.blockchain.value),
+            )
+
     def rebalance_rpc_nodes_weights(
             self,
             write_cursor: DBCursor,
@@ -4610,13 +4637,18 @@ class DBHandler:
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
+                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=?, '
+                    'is_archive=CASE WHEN endpoint=? THEN is_archive ELSE NULL END, '
+                    'is_pruned=CASE WHEN endpoint=? THEN is_pruned ELSE NULL END '
+                    'WHERE identifier=? AND blockchain=?',
                     (
                         node.node_info.name,
                         node.node_info.endpoint,
                         node.node_info.owned,
                         node.active,
                         str(node.weight),
+                        node.node_info.endpoint,
+                        node.node_info.endpoint,
                         node.identifier,
                         node.node_info.blockchain.value,
                     ),

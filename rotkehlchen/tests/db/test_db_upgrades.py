@@ -4886,6 +4886,8 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db_v53.conn.write_ctx() as write_cursor:
+        assert not column_exists(write_cursor, 'rpc_nodes', 'is_archive')
+        assert not column_exists(write_cursor, 'rpc_nodes', 'is_pruned')
         # make sure the Sonic and Robinhood locations are not in the old DB
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
@@ -4979,6 +4981,11 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
             assert cursor.execute(
                 'SELECT notes FROM history_events WHERE identifier=?', (identifier,),
             ).fetchone()[0] == expected_notes, f'event {identifier} notes should be {expected_notes}'  # noqa: E501
+        assert column_exists(cursor, 'rpc_nodes', 'is_archive')
+        assert column_exists(cursor, 'rpc_nodes', 'is_pruned')
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM rpc_nodes WHERE is_archive IS NOT NULL OR is_pruned IS NOT NULL',
+        ).fetchone()[0] == 0
         assert db.get_setting(cursor, 'version') == 54
 
     db.logout()
