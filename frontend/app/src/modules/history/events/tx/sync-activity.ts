@@ -51,6 +51,22 @@ export interface ExchangeEventsSubject {
 }
 
 /**
+ * What an exchange's event query carries beyond its status.
+ *
+ * All detail and no progress, unlike {@link AccountSyncDetail}. A status update names the sub-range
+ * it is *about to* query rather than how far through the whole query it has reached, and the
+ * backend walks those ranges without saying how many there are. Nothing in the stream is a cursor,
+ * so any percentage built from it would be invented; the range is worth rendering, a made-up bar is
+ * not.
+ */
+export interface ExchangeEventsDetail {
+  /** The sub-range being queried, `[from, to]`, in seconds. Absent until the first status update. */
+  readonly period?: readonly [number, number];
+  /** Which query this is, as the backend's own type. Empty while the panel is only seeded. */
+  readonly eventType: string;
+}
+
+/**
  * One chain's sync: the group its accounts and its decode hang from.
  *
  * Its key is the leading slice of {@link accountSyncActivity}'s, so the chain row's id is also the
@@ -75,7 +91,7 @@ export const accountSyncActivity = defineActivity<AccountSyncSubject, readonly [
 });
 
 /** One connected exchange's event query. */
-export const exchangeEventsActivity = defineActivity<ExchangeEventsSubject, readonly [string, string]>({
+export const exchangeEventsActivity = defineActivity<ExchangeEventsSubject, readonly [string, string], ExchangeEventsDetail>({
   key: subject => [subject.location, subject.name],
   kind: ActivityKind.EXCHANGE_EVENTS,
   lane: subject => familyLane(EXCHANGE_EVENTS_LANE_PREFIX, subject.location),
