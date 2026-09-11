@@ -16,6 +16,7 @@ import {
   type SyncProgressState,
 } from './types';
 import { isChainSettled, settledAddresses, useChainProgress } from './use-chain-progress';
+import { useSyncRollup } from './use-sync-rollup';
 import { type SyncWarning, SyncWarningSource, useSyncWarningsStore } from './use-sync-warnings-store';
 
 interface UseSyncProgressReturn {
@@ -88,26 +89,6 @@ function byStatusPriority(a: LocationProgress, b: LocationProgress): number {
   return STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
 }
 
-const PROGRESS_WEIGHTS = {
-  decoding: 0.2,
-  events: 0.3,
-  transactions: 0.5,
-} as const;
-
-/** Zero rather than NaN before the total is known. */
-function completionRatio(completed: number, total: number): number {
-  return total > 0 ? completed / total : 0;
-}
-
-/** A cancelled decode counts as finished, since nothing more will happen to it. */
-function decodingRatio(items: { cancelled: boolean; progress: number }[]): number {
-  if (items.length === 0)
-    return 0;
-
-  const total = items.reduce((sum, item) => sum + (item.cancelled ? 100 : item.progress), 0);
-  return total / items.length / 100;
-}
-
 export function useSyncProgress(): UseSyncProgressReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName } = useSupportedChains();
@@ -117,6 +98,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const decodingStatusStore = useDecodingStatusStore();
   const protocolCacheStatusStore = useProtocolCacheStatusStore();
   const warningsStore = useSyncWarningsStore();
+  const rollup = useSyncRollup();
 
   const { warnings: rawWarnings } = storeToRefs(warningsStore);
 
@@ -212,61 +194,23 @@ export function useSyncProgress(): UseSyncProgressReturn {
     get(chains).reduce((sum, chain) => sum + settledAddresses(chain), 0),
   );
 
-  const hasTxActivity = computed<boolean>(() => get(totalAccounts) > 0);
-  const hasEventsActivity = computed<boolean>(() => get(totalLocations) > 0);
-  const hasDecodingActivity = computed<boolean>(() => get(decoding).length > 0);
+  const overallProgress = rollup.progress;
 
-  /** Only the running phases count, so the bar reflects the work actually in flight. */
-  const overallProgress = computed<number>(() => {
-    const running = [
-      {
-        active: get(hasTxActivity),
-        progress: completionRatio(get(completedAccounts), get(totalAccounts)),
-        weight: PROGRESS_WEIGHTS.transactions,
-      },
-      {
-        active: get(hasEventsActivity),
-        progress: completionRatio(get(completedLocations), get(totalLocations)),
-        weight: PROGRESS_WEIGHTS.events,
-      },
-      {
-        active: get(hasDecodingActivity),
-        progress: decodingRatio(get(decoding)),
-        weight: PROGRESS_WEIGHTS.decoding,
-      },
-    ].filter(phase => phase.active);
-
-    const totalWeight = running.reduce((sum, phase) => sum + phase.weight, 0);
-    if (totalWeight === 0)
-      return 0;
-
-    const weighted = running.reduce((sum, phase) => sum + phase.progress * phase.weight, 0);
-    return Math.round((weighted / totalWeight) * 100);
-  });
-
-  const isActive = computed<boolean>(() =>
-    get(hasTxActivity) || get(hasEventsActivity) || get(hasDecodingActivity) || get(hasWarnings),
-  );
+  /**
+   * Warnings keep the panel up after the work stops.
+   *
+   * The ledger has no notion of them — a failed address is a terminal activity like any other — so
+   * this clause is the one part of "is something happening" that is deliberately not derived from
+   * it. Without it the panel vanishes at the moment the run ends, taking the failures it exists to
+   * report with it.
+   */
+  const isActive = computed<boolean>(() => get(rollup.isWorking) || get(hasWarnings));
 
   const phase = computed<SyncPhase>(() => {
-    if (!get(isActive))
-      return SyncPhase.IDLE;
+    if (get(rollup.isWorking))
+      return SyncPhase.SYNCING;
 
-    // Use count-based completion checks (same as header display)
-    const chainsTotal = get(totalChains);
-    const chainsCompleted = get(completedChains);
-    const locationsTotal = get(totalLocations);
-    const locationsCompleted = get(completedLocations);
-    const decodingItems = get(decoding);
-
-    const allChainsDone = chainsTotal === 0 || chainsCompleted === chainsTotal;
-    const allLocationsDone = locationsTotal === 0 || locationsCompleted === locationsTotal;
-    const allDecodingDone = decodingItems.every(d => d.processed >= d.total || d.cancelled);
-
-    if (allChainsDone && allLocationsDone && allDecodingDone)
-      return SyncPhase.COMPLETE;
-
-    return SyncPhase.SYNCING;
+    return get(rollup.isSettled) ? SyncPhase.COMPLETE : SyncPhase.IDLE;
   });
 
   const canDismiss = computed<boolean>(() => get(phase) === SyncPhase.COMPLETE);
