@@ -40,10 +40,12 @@ export function useHistoryEventNavigationConsumer(
     useHistoryEventNavigation();
   const { notifyError } = useNotifications();
 
-  // Watch for route-based navigation from external packages
   watchImmediate(route, ({ query }) => {
     const { targetGroupIdentifier, highlightedAccountingEvent, highlightedNegativeBalanceEvent, asset } = query;
-    if (targetGroupIdentifier && highlightedAccountingEvent) {
+    if (!targetGroupIdentifier)
+      return;
+
+    if (highlightedAccountingEvent) {
       setHighlightTarget(HighlightTargetTypes.ACCOUNTING_EVENT, {
         groupIdentifier: targetGroupIdentifier.toString(),
         identifier: Number(highlightedAccountingEvent),
@@ -55,7 +57,7 @@ export function useHistoryEventNavigationConsumer(
       });
     }
 
-    if (targetGroupIdentifier && highlightedNegativeBalanceEvent) {
+    else if (highlightedNegativeBalanceEvent) {
       setHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE, {
         groupIdentifier: targetGroupIdentifier.toString(),
         identifier: Number(highlightedNegativeBalanceEvent),
@@ -63,6 +65,12 @@ export function useHistoryEventNavigationConsumer(
       requestNavigation({
         assetFilter: typeof asset === 'string' ? asset : undefined,
         highlightedNegativeBalanceEvent: Number(highlightedNegativeBalanceEvent),
+        targetGroupIdentifier: targetGroupIdentifier.toString(),
+      });
+    }
+    else {
+      requestNavigation({
+        assetFilter: typeof asset === 'string' ? asset : undefined,
         targetGroupIdentifier: targetGroupIdentifier.toString(),
       });
     }

@@ -1,6 +1,7 @@
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { assert, describe, expect, it } from 'vitest';
 import { diffDecodingEvents } from '@/modules/history/data-issues/decoding-comparison';
+import { DecodingComparisonEvent } from '@/modules/history/data-issues/schemas';
 
 describe('diffDecodingEvents', () => {
   it('should list only the changed fields for the same event order', () => {
@@ -42,5 +43,19 @@ describe('diffDecodingEvents', () => {
 
   it('should mark every saved event removed when decoding produces no events', () => {
     expect(diffDecodingEvents({ ...createDecodingComparison(), decodedEvents: [] }).map(diff => diff.status)).toEqual(['removed']);
+  });
+
+  it('should compare displayed notes regardless of whether they are generated or stored', () => {
+    const transaction = createDecodingComparison();
+    const saved = transaction.savedEvents[0];
+    assert(saved);
+    const decoded = DecodingComparisonEvent.parse({
+      ...saved,
+      amount: '2',
+      balanceEffect: '-2',
+      userNotes: undefined,
+      autoNotes: saved.userNotes,
+    });
+    expect(diffDecodingEvents({ ...transaction, decodedEvents: [decoded] })[0]?.status).toBe('unchanged');
   });
 });

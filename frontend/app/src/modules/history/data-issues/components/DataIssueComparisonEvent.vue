@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { DecodingEventDiff } from '@/modules/history/data-issues/decoding-comparison';
 import type { DecodingComparisonEvent } from '@/modules/history/data-issues/schemas';
 import ValueDisplay from '@/modules/assets/amount-display/components/ValueDisplay.vue';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueComparisonValue from '@/modules/history/data-issues/components/DataIssueComparisonValue.vue';
+import { comparisonNotes, type DecodingEventDiff } from '@/modules/history/data-issues/decoding-comparison';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -71,6 +71,23 @@ const statusLabel = computed<string>(() => ({
         {{ t('data_issues.detail.comparison.customized') }}
       </RuiChip>
     </div>
+    <div class="flex flex-wrap items-center gap-2 mt-1">
+      <DateDisplay
+        v-if="event.timestamp !== sharedTimestamp && !diff.fields.includes('timestamp')"
+        :timestamp="event.timestamp"
+        milliseconds
+      />
+      <HistoryEventAccount
+        v-if="event.locationLabel && event.locationLabel !== sharedAccount && !diff.fields.includes('locationLabel') && !diff.fields.includes('location')"
+        :location="event.location"
+        :location-label="event.locationLabel"
+      />
+      <HashLink
+        v-if="event.address && !diff.fields.includes('address')"
+        :location="event.location"
+        :text="event.address"
+      />
+    </div>
     <dl
       v-if="diff.status === 'modified' && diff.saved && diff.decoded"
       class="mt-2 flex flex-col gap-1"
@@ -85,29 +102,12 @@ const statusLabel = computed<string>(() => ({
       />
     </dl>
     <template v-else-if="diff.status !== 'unchanged'">
-      <div class="flex flex-wrap items-center gap-2 mt-1">
-        <DateDisplay
-          v-if="event.timestamp !== sharedTimestamp"
-          :timestamp="event.timestamp"
-          milliseconds
-        />
-        <HistoryEventAccount
-          v-if="event.locationLabel && event.locationLabel !== sharedAccount"
-          :location="event.location"
-          :location-label="event.locationLabel"
-        />
-        <HashLink
-          v-if="event.address"
-          :location="event.location"
-          :text="event.address"
-        />
-      </div>
       <p
-        v-if="event.userNotes"
+        v-if="comparisonNotes(event)"
         class="mt-1 break-words"
         data-testid="data-issue-diff-notes"
       >
-        {{ event.userNotes }}
+        {{ comparisonNotes(event) }}
       </p>
       <div
         v-if="!event.balanceEffect.isZero()"

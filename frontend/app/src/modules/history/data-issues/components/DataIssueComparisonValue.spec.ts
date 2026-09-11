@@ -3,6 +3,7 @@ import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { shallowMount } from '@vue/test-utils';
 import { assert, describe, expect, it, vi } from 'vitest';
 import DataIssueComparisonValue from '@/modules/history/data-issues/components/DataIssueComparisonValue.vue';
+import { DecodingComparisonEvent } from '@/modules/history/data-issues/schemas';
 
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   useHistoryEventMappings: (): Pick<ReturnType<typeof useHistoryEventMappings>, 'getHistoryEventSubTypeName' | 'getHistoryEventTypeName'> => ({
@@ -23,5 +24,19 @@ describe('dataIssueComparisonValue', () => {
     await wrapper.setProps({ field: 'userNotes' });
     expect(wrapper.get('[data-testid="data-issue-diff-before"]').text()).toContain('My edited spend');
     expect(wrapper.get('[data-testid="data-issue-diff-after"]').text()).toContain('Decoded spend');
+  });
+
+  it('should show generated notes when decoder output has no user notes', () => {
+    const saved = createDecodingComparison().savedEvents[0];
+    assert(saved);
+    const decoded = DecodingComparisonEvent.parse({
+      ...saved,
+      amount: '1',
+      balanceEffect: '-1',
+      userNotes: undefined,
+      autoNotes: 'Send 1 ETH',
+    });
+    const wrapper = shallowMount(DataIssueComparisonValue, { props: { field: 'userNotes', saved, decoded, asset: 'ETH' } });
+    expect(wrapper.get('[data-testid="data-issue-diff-after"]').text()).toContain('Send 1 ETH');
   });
 });

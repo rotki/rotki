@@ -24,8 +24,13 @@ export interface DecodingEventDiff {
   readonly status: 'added' | 'removed' | 'modified' | 'unchanged';
 }
 
+/** Returns the notes displayed in history, preferring user edits over generated text. */
+export function comparisonNotes(event: DecodingComparisonEvent): string | undefined {
+  return event.userNotes ?? event.autoNotes;
+}
+
 function fieldValue(event: DecodingComparisonEvent, field: ComparisonField): string {
-  const value = event[field];
+  const value = field === 'userNotes' ? comparisonNotes(event) : event[field];
   if (field === 'eventSubtype' && (!value || value === 'none'))
     return '';
   return value?.toString() ?? '';
