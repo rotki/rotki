@@ -61,6 +61,16 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     set(queryStatus, status);
   };
 
+  /**
+   * One exchange's stored entry, as the store holds it rather than as a frame described it.
+   *
+   * Reading back is what lets a caller see the merged result: the range an earlier message
+   * established and a later one omitted, the entries a cancel froze, and the updates dropped
+   * because no sync is running.
+   */
+  const getQueryStatus = (subject: Pick<HistoryEventsQueryData, 'location' | 'name'>): HistoryEventsQueryData | undefined =>
+    get(queryStatus)[createKey(subject)];
+
   const markLocationCancelled = ({ location, name }: Pick<HistoryEventsQueryData, 'location' | 'name'>): void => {
     const key = createKey({ location, name });
     const existing = get(queryStatus)[key];
@@ -70,6 +80,7 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   };
 
   return {
+    getQueryStatus,
     initializeQueryStatus,
     isAllFinished,
     isStatusFinished,
