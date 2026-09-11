@@ -1289,10 +1289,10 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
 
 
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('endpoint', [
-    'https://persisted-archive-status.example.com',
-    'https://eth.llamarpc.com',
-    'https://eth-mainnet.public.blastapi.io',
+@pytest.mark.parametrize(('endpoint', 'provider_capabilities'), [
+    ('https://persisted-archive-status.example.com', None),
+    ('https://eth.llamarpc.com', (False, True)),
+    ('https://eth-mainnet.public.blastapi.io', (False, False)),
 ])
 @pytest.mark.parametrize('stored_archive_status', [None, True, False])
 @pytest.mark.parametrize('stored_pruned_status', [None, True, False])
@@ -1302,6 +1302,7 @@ def test_connect_rpc_reuses_persisted_capabilities(
         stored_archive_status: bool | None,
         stored_pruned_status: bool | None,
         endpoint: str,
+        provider_capabilities: tuple[bool, bool] | None,
 ):
     node = WeightedNode(
         node_info=NodeName(
@@ -1338,27 +1339,26 @@ def test_connect_rpc_reuses_persisted_capabilities(
 
     assert success is True
     assert message == ''
-    if endpoint.endswith(('llamarpc.com', 'blastapi.io')):
+    if provider_capabilities is not None:
         assert database.get_rpc_node_capabilities(node.node_info) == (
             stored_archive_status, stored_pruned_status,
         )
-        assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is False
-        assert ethereum_inquirer.rpc_mapping[node.node_info].is_pruned is endpoint.endswith('llamarpc.com')  # noqa: E501
+        assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is provider_capabilities[0]
+        assert ethereum_inquirer.rpc_mapping[node.node_info].is_pruned is provider_capabilities[1]
         probe.assert_not_called()
         archive_probe.assert_not_called()
         pruned_probe.assert_not_called()
         return
 
-    expected_pruned = False if stored_pruned_status is None else stored_pruned_status
-    assert database.get_rpc_node_capabilities(node.node_info) == (True, expected_pruned)
+    assert database.get_rpc_node_capabilities(node.node_info) == (True, False)
     assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is True
-    assert ethereum_inquirer.rpc_mapping[node.node_info].is_pruned is expected_pruned
-    if stored_archive_status is not True and stored_pruned_status is None:
+    assert ethereum_inquirer.rpc_mapping[node.node_info].is_pruned is False
+    if stored_archive_status is not True and stored_pruned_status is not False:
         probe.assert_called_once_with(web3)
     else:
         probe.assert_not_called()
         assert archive_probe.call_count == (stored_archive_status is not True)
-        assert pruned_probe.call_count == (stored_pruned_status is None)
+        assert pruned_probe.call_count == (stored_pruned_status is not False)
 
 
 @pytest.mark.parametrize('change_endpoint', [False, True])
