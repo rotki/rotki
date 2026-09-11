@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.alchemy import Alchemy
+    from rotkehlchen.externalapis.birdeye import Birdeye
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
@@ -96,6 +97,7 @@ class PriceHistorian:
     _defillama: Defillama
     _alchemy: Alchemy
     _moralis: Moralis
+    _birdeye: Birdeye
     _coinbase: CoinbaseHistoricalPriceOracle | None
     _uniswapv2: UniswapV2Oracle
     _uniswapv3: UniswapV3Oracle
@@ -109,6 +111,7 @@ class PriceHistorian:
             defillama: Defillama | None = None,
             alchemy: Alchemy | None = None,
             moralis: Moralis | None = None,
+            birdeye: Birdeye | None = None,
             coinbase: CoinbaseHistoricalPriceOracle | None = None,
             uniswapv2: UniswapV2Oracle | None = None,
             uniswapv3: UniswapV3Oracle | None = None,
@@ -123,6 +126,7 @@ class PriceHistorian:
         assert defillama, error_msg
         assert alchemy, error_msg
         assert moralis, error_msg
+        assert birdeye, error_msg
         assert uniswapv2, error_msg
         assert uniswapv3, error_msg
 
@@ -132,6 +136,7 @@ class PriceHistorian:
         PriceHistorian._defillama = defillama
         PriceHistorian._alchemy = alchemy
         PriceHistorian._moralis = moralis
+        PriceHistorian._birdeye = birdeye
         PriceHistorian._coinbase = coinbase
         PriceHistorian._uniswapv2 = uniswapv2
         PriceHistorian._uniswapv3 = uniswapv3

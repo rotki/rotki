@@ -27,6 +27,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
+from rotkehlchen.externalapis.birdeye import Birdeye
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -84,6 +85,7 @@ def fixture_fake_price_historian(historical_price_oracles_order):
         defillama=MagicMock(spec=Defillama),
         alchemy=MagicMock(spec=Alchemy),
         moralis=MagicMock(spec=Moralis),
+        birdeye=MagicMock(spec=Birdeye),
         uniswapv2=MagicMock(spec=UniswapV2Oracle),
         uniswapv3=MagicMock(spec=UniswapV3Oracle),
     )

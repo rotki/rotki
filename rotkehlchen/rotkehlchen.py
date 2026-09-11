@@ -87,6 +87,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+from rotkehlchen.externalapis.birdeye import Birdeye
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -222,6 +223,7 @@ class Rotkehlchen:
         self.kraken = Kraken()
         self.alchemy = Alchemy(database=None)
         self.moralis = Moralis(database=None)
+        self.birdeye = Birdeye(database=None)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,
@@ -241,6 +243,7 @@ class Rotkehlchen:
             kraken=self.kraken,
             alchemy=self.alchemy,
             moralis=self.moralis,
+            birdeye=self.birdeye,
             manualcurrent=ManualCurrentOracle(),
             msg_aggregator=self.msg_aggregator,
         )
@@ -315,7 +318,7 @@ class Rotkehlchen:
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
         self.monerium = None
-        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, self.moralis, Inquirer()._manualcurrent):  # noqa: E501
+        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, self.moralis, self.birdeye, Inquirer()._manualcurrent):  # noqa: E501
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
         CachedSettings().reset()
@@ -391,6 +394,7 @@ class Rotkehlchen:
         self.coingecko.set_database(self.data.db)
         self.alchemy.set_database(self.data.db)
         self.moralis.set_database(self.data.db)
+        self.birdeye.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
@@ -648,6 +652,7 @@ class Rotkehlchen:
             defillama=self.defillama,
             alchemy=self.alchemy,
             moralis=self.moralis,
+            birdeye=self.birdeye,
             coinbase=CoinbaseHistoricalPriceOracle(exchange_manager=self.exchange_manager),
             uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
             uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
@@ -761,6 +766,7 @@ class Rotkehlchen:
         self.coingecko.unset_database()
         self.alchemy.unset_database()
         self.moralis.unset_database()
+        self.birdeye.unset_database()
         Inquirer()._manualcurrent.unset_database()
         CachedSettings().reset()
 
@@ -1533,6 +1539,7 @@ class Rotkehlchen:
         for oracle_name, external_service in (
             ('Alchemy', ExternalService.ALCHEMY),
             ('Moralis', ExternalService.MORALIS),
+            ('Birdeye', ExternalService.BIRDEYE),
         ):
             if (
                 oracle_type[external_service.name] in oracles and

@@ -37,6 +37,7 @@ from .v14_v15 import migrate_to_v15
 from .v15_v16 import migrate_to_v16
 from .v16_v17 import migrate_to_v17
 from .v17_v18 import migrate_to_v18
+from .v18_v19 import migrate_to_v19
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -67,6 +68,7 @@ UPGRADES_LIST = [
     UpgradeRecord(from_version=15, function=migrate_to_v16),
     UpgradeRecord(from_version=16, function=migrate_to_v17),
     UpgradeRecord(from_version=17, function=migrate_to_v18),
+    UpgradeRecord(from_version=18, function=migrate_to_v19),
 ]
 
 

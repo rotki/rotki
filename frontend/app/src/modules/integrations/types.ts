@@ -8,6 +8,7 @@ const ApiKey = z.object({
 export const ExternalServiceKeys = z.object({
   alchemy: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
+  birdeye: ApiKey.optional(),
   blockscout: ApiKey.optional(),
   coingecko: ApiKey.optional(),
   covalent: ApiKey.optional(),

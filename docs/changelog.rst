@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`13104` Birdeye can now be used as a current and historical price oracle. It prices Solana and EVM tokens by address, which helps with meme coins the other oracles do not know, and needs a Birdeye API key set under API Keys -> External Services.
 * :feature:`12640` An Infura, Alchemy or QuickNode key can now be put on every chain the provider serves in one go. Add an RPC node as usual, and when the endpoint is one of theirs rotki offers to add the same key to the other chains: it works out each chain's address for it, connects them one by one and keeps those that answer, telling you per chain what happened. Chains the provider does not serve, and those already using the key, are named and left alone, and the nodes added this way can be removed again in one action. Where a provider needs the network switched on for the key, as Infura and QuickNode do, you are told before anything is added.
 * :bug:`-` Adding an RPC node, or reconnecting one, now tells you when the node could not be connected. The failure was dropped silently, so a node that never answered looked like it had been added and simply went unused.
 * :bug:`13071` Database backups can now be deleted immediately after downloading on Windows, and temporary export files are cleaned up after downloads finish.

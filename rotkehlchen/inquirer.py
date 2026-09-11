@@ -171,6 +171,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.externalapis.alchemy import Alchemy
+    from rotkehlchen.externalapis.birdeye import Birdeye
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
@@ -199,6 +200,7 @@ ASSETS_UNDERLYING_BTC = (
 
 CurrentPriceOracleInstance = Union[
     'Alchemy',
+    'Birdeye',
     'Coingecko',
     'Cryptocompare',
     'Defillama',
@@ -387,6 +389,7 @@ class Inquirer:
     _coingecko: Coingecko
     _alchemy: Alchemy
     _moralis: Moralis
+    _birdeye: Birdeye
     _defillama: Defillama
     _kraken: Kraken
     _manualcurrent: ManualCurrentOracle
@@ -411,6 +414,7 @@ class Inquirer:
             kraken: Kraken | None = None,
             alchemy: Alchemy | None = None,
             moralis: Moralis | None = None,
+            birdeye: Birdeye | None = None,
             manualcurrent: ManualCurrentOracle | None = None,
             msg_aggregator: MessagesAggregator | None = None,
     ) -> Inquirer:
@@ -425,6 +429,7 @@ class Inquirer:
         assert kraken, error_msg
         assert alchemy, error_msg
         assert moralis, error_msg
+        assert birdeye, error_msg
         assert manualcurrent, error_msg
         assert msg_aggregator, error_msg
 
@@ -437,6 +442,7 @@ class Inquirer:
         Inquirer._kraken = kraken
         Inquirer._alchemy = alchemy
         Inquirer._moralis = moralis
+        Inquirer._birdeye = birdeye
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = LRUCacheWithRemove(maxsize=1024)
         Inquirer._evm_managers = {}

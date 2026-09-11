@@ -255,6 +255,8 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('I', 9);
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('J', 10);
 /* COINBASE */
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('K', 11);
+/* BIRDEYE */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('L', 12);
 """
 
 DB_CREATE_PRICE_HISTORY = """

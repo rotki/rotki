@@ -13,6 +13,7 @@
  */
 const sourceLabels: Record<string, string> = {
   'alchemy': 'Alchemy',
+  'birdeye': 'Birdeye',
   'coingecko': 'CoinGecko',
   'coinbase': 'Coinbase',
   'cryptocompare': 'CryptoCompare',
