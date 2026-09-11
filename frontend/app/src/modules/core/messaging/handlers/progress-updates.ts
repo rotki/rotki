@@ -7,7 +7,7 @@ import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-
 import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { SocketMessageProgressUpdateSubType } from '../types/base';
 import { createCsvImportResultHandler } from './csv-import-result';
@@ -37,6 +37,32 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     const steps = { current: data.processed, total: data.total };
     reportProgress(decodeActivityId(chain, false), steps);
     reportProgress(decodeActivityId(chain, true), steps);
+  }
+
+  /**
+   * The activity a stats-price backfill is a phase of, by the counterparty naming it.
+   *
+   * The frames describe the historical-price lookups a staking statistics query makes on its way,
+   * and the query's own activity is the only thing running while they arrive. A counterparty with
+   * no entry reports nothing rather than guessing at an id: the backend can name one before the
+   * frontend has an activity for it, and a wrong id would caption unrelated work.
+   */
+  const statsPriceActivities = new Map<string, ActivityId>([
+    ['kraken', makeActivityId(ActivityKind.STAKING, ActivityPart.KRAKEN)],
+    ['liquity', makeActivityId(ActivityKind.LIQUITY, ActivityPart.STATISTICS)],
+  ]);
+
+  /**
+   * Report a stats-price backfill onto the staking query it is a phase of.
+   *
+   * A counterparty with no activity of its own reports nothing rather than falling back to some
+   * broader id: the frames are about that one query, and driving anything else with its counts
+   * would caption unrelated work.
+   */
+  function reportStatsPriceProgress(data: { counterparty: string; processed: number; total: number }): void {
+    const activity = statsPriceActivities.get(data.counterparty);
+    if (activity !== undefined)
+      reportProgress(activity, { current: data.processed, total: data.total });
   }
 
   /**
@@ -89,6 +115,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         break;
       case SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY:
         setStatsPriceQueryStatus(data);
+        reportStatsPriceProgress(data);
         break;
       case SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS:
         setHistoricalPriceStatus(data);

@@ -148,6 +148,34 @@ describe('createProgressUpdateHandler', () => {
     expect(mockSetStatsPriceQueryStatus).toHaveBeenCalledOnce();
   });
 
+  it('should report a stats price backfill onto the query it is a phase of', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      counterparty: 'liquity',
+      processed: 4,
+      subtype: SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY,
+      total: 8,
+    }));
+
+    expect(mockReportProgress).toHaveBeenCalledWith(
+      makeActivityId(ActivityKind.LIQUITY, ActivityPart.STATISTICS),
+      { current: 4, total: 8 },
+    );
+  });
+
+  it('should report nothing for a counterparty with no activity of its own', async () => {
+    const handler = createProgressUpdateHandler(mockT);
+    await handler.handle(createMock<ProgressUpdateResultData>({
+      counterparty: 'something-new',
+      processed: 4,
+      subtype: SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY,
+      total: 8,
+    }));
+
+    expect(mockSetStatsPriceQueryStatus).toHaveBeenCalledOnce();
+    expect(mockReportProgress).not.toHaveBeenCalled();
+  });
+
   it('should route multiple prices query updates', async () => {
     const handler = createProgressUpdateHandler(mockT);
     await handler.handle(data(SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS));
