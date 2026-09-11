@@ -488,9 +488,12 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         nodes = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
 
     assert nodes == [
-        (10, 'Optimism Official', 'https://mainnet.optimism.io', 0, 1, '0.125', 'OPTIMISM', None),
-        (default_rpc_nodes_count + 1, *custom_node_tuple, None),
-        (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH', None),  # noqa: E501
+        (
+            10, 'Optimism Official', 'https://mainnet.optimism.io',
+            0, 1, '0.125', 'OPTIMISM', None, None,
+        ),
+        (default_rpc_nodes_count + 1, *custom_node_tuple, None, None),
+        (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH', None, None),  # noqa: E501
     ]
 
 

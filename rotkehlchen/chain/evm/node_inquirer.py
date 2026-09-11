@@ -482,7 +482,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if (rpc_node := self.rpc_mapping.get(node)) is None or rpc_node.is_archive is False:
             return
 
-        self.database.set_rpc_node_archive_status(node, False)
+        self.database.set_rpc_node_capabilities(
+            node, is_archive=False, is_pruned=rpc_node.is_pruned,
+        )
         self.rpc_mapping[node] = rpc_node._replace(is_archive=False)
 
     def _have_archive(self, web3: Web3) -> bool:

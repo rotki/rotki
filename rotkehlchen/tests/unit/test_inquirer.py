@@ -2,6 +2,7 @@ import datetime
 import json
 import math
 import os
+from dataclasses import replace
 from http import HTTPStatus
 from itertools import starmap
 from typing import TYPE_CHECKING, Any
@@ -1289,11 +1290,13 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
 
 
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('stored_archive_status', [None, True])
-def test_connect_rpc_reuses_persisted_archive_status(
+@pytest.mark.parametrize('stored_archive_status', [None, True, False])
+@pytest.mark.parametrize('stored_pruned_status', [None, True, False])
+def test_connect_rpc_reuses_persisted_capabilities(
         ethereum_inquirer: EthereumInquirer,
         database,
         stored_archive_status: bool | None,
+        stored_pruned_status: bool | None,
 ):
     node = WeightedNode(
         node_info=NodeName(
@@ -1306,8 +1309,7 @@ def test_connect_rpc_reuses_persisted_archive_status(
         weight=ONE,
     )
     database.add_rpc_node(node)
-    if stored_archive_status is not None:
-        database.set_rpc_node_archive_status(node.node_info, stored_archive_status)
+    database.set_rpc_node_capabilities(node.node_info, stored_archive_status, stored_pruned_status)
 
     web3 = MagicMock()
     web3.is_connected.return_value = True
@@ -1324,17 +1326,48 @@ def test_connect_rpc_reuses_persisted_archive_status(
             'determine_capabilities',
             return_value=(True, False),
         ) as probe,
-        patch.object(ethereum_inquirer, '_is_pruned', return_value=False),
+        patch.object(ethereum_inquirer, '_have_archive', return_value=True) as archive_probe,
+        patch.object(ethereum_inquirer, '_is_pruned', return_value=False) as pruned_probe,
     ):
         success, message = ethereum_inquirer.attempt_connect(node=node.node_info)
 
     assert success is True
     assert message == ''
-    assert database.get_rpc_node_archive_status(node.node_info) is True
-    if stored_archive_status is None:
+    expected_archive = True if stored_archive_status is None else stored_archive_status
+    expected_pruned = False if stored_pruned_status is None else stored_pruned_status
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT is_archive, is_pruned FROM rpc_nodes WHERE endpoint=?',
+            (node.node_info.endpoint,),
+        ).fetchone() == (expected_archive, expected_pruned)
+    assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is expected_archive
+    assert ethereum_inquirer.rpc_mapping[node.node_info].is_pruned is expected_pruned
+    if stored_archive_status is None and stored_pruned_status is None:
         probe.assert_called_once_with(web3)
     else:
         probe.assert_not_called()
+        assert archive_probe.call_count == (stored_archive_status is None)
+        assert pruned_probe.call_count == (stored_pruned_status is None)
+
+
+@pytest.mark.parametrize('change_endpoint', [False, True])
+def test_rpc_node_edit_preserves_capabilities_only_for_same_endpoint(database, change_endpoint):
+    node = database.get_rpc_nodes(SupportedBlockchain.ETHEREUM)[0]
+    database.set_rpc_node_capabilities(node.node_info, is_archive=True, is_pruned=False)
+    edited_node = replace(
+        node,
+        node_info=node.node_info._replace(
+            name='edited node',
+            endpoint=(
+                'https://edited-node.example.com' if change_endpoint else node.node_info.endpoint
+            ),
+        ),
+    )
+    database.update_rpc_node(edited_node)
+
+    assert database.get_rpc_node_capabilities(edited_node.node_info) == (
+        (None, None) if change_endpoint else (True, False)
+    )
 
 
 @pytest.mark.parametrize('network_mocking', [False])
@@ -1353,7 +1386,7 @@ def test_failed_archive_query_marks_node_as_non_archive(
         weight=ONE,
     )
     database.add_rpc_node(node)
-    database.set_rpc_node_archive_status(node.node_info, True)
+    database.set_rpc_node_capabilities(node.node_info, is_archive=True, is_pruned=False)
     ethereum_inquirer.rpc_mapping[node.node_info] = RPCNode(
         rpc_client=MagicMock(),
         is_pruned=False,
@@ -1369,7 +1402,7 @@ def test_failed_archive_query_marks_node_as_non_archive(
             block_identifier=123,
         )
 
-    assert database.get_rpc_node_archive_status(node.node_info) is False
+    assert database.get_rpc_node_capabilities(node.node_info) == (False, False)
     assert ethereum_inquirer.rpc_mapping[node.node_info].is_archive is False
 
 
