@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
@@ -24,10 +24,28 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.uniswap.utils import (
+    decode_uniswap_v3_like_position_create_or_exit,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import (
     UNISWAP_V2_SWAP_SIGNATURE as SWAP_V1,
 )
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
+    COLLECT_LIQUIDITY_SIGNATURE,
+    INCREASE_LIQUIDITY_SIGNATURE,
+    SWAP_SIGNATURE as SWAP_CL,
+)
+from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
+    decode_uniswap_v3_like_deposit_or_withdrawal,
+)
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CL_GAUGE_DEPOSIT,
+    CL_GAUGE_WITHDRAW,
+    CL_POOL_BURN,
+    CL_POOL_COLLECT,
+    CL_POOL_COLLECT_FEES,
+    CL_POOL_FLASH,
+    CL_POOL_MINT,
     CLAIM_REWARDS_V2,
     DROME_ROTKI_ABI,
     GAUGE_DEPOSIT_V2,
@@ -62,10 +80,21 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.optimism.manager import OptimismInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Log signatures emitted by concentrated liquidity (Slipstream) pools
+CL_POOL_TOPICS: Final = frozenset({
+    SWAP_CL,
+    CL_POOL_MINT,
+    CL_POOL_BURN,
+    CL_POOL_COLLECT,
+    CL_POOL_FLASH,
+    CL_POOL_COLLECT_FEES,
+})
 
 
 class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
@@ -80,6 +109,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             voting_escrow_address: ChecksumEvmAddress,
             voter_address: ChecksumEvmAddress,
             routers: set[ChecksumEvmAddress],
+            slipstream_nfpm: ChecksumEvmAddress,
             drome_rotki_address: ChecksumEvmAddress,
             token_symbol: Literal['AERO', 'VELO'],
             gauge_bribes_cache_type: GeneralCacheType,
@@ -100,7 +130,10 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             read_data_from_cache_method=read_fn,
         )
         self.counterparty = counterparty
-        self.protocol_addresses = routers  # protocol_addresses are updated with pools in post_cache_update_callback  # noqa: E501
+        self.routers = routers
+        self.slipstream_nfpm = slipstream_nfpm
+        self.cl_pool_tokens: dict[ChecksumEvmAddress, tuple[ChecksumEvmAddress, ChecksumEvmAddress]] = {}  # noqa: E501
+        self.protocol_addresses = routers.copy()  # protocol_addresses are updated with pools in post_cache_update_callback  # noqa: E501
         self.voting_escrow_address = voting_escrow_address
         self.gauge_bribes_cache_type = gauge_bribes_cache_type
         self.gauge_fees_cache_type = gauge_fees_cache_type
@@ -127,11 +160,16 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         """
         Decodes events that add liquidity to a (velo/aero)drome v1 or v2 pool.
 
+        With addLiquidityETH the native asset goes to the router, which wraps it and forwards
+        the wrapped token to the pool, refunding any unused native asset. So the native spend
+        to the router is the pool deposit, minus any refund received from the router.
+
         It can raise
         - UnknownAsset if the asset identifier is not known
         - WrongAssetType if the asset is not of the correct type
         """
         out_events, in_events = [], []
+        native_deposit, native_refund = None, None
         for event in decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
@@ -144,6 +182,15 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.counterparty = self.counterparty
                 event.notes = f'Deposit {event.amount} {crypto_asset.symbol} in {self.counterparty} pool {event.address}'  # noqa: E501
                 out_events.append(event)
+            elif (
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == self.node_inquirer.native_token and
+                event.address in self.routers
+            ):
+                if event.event_type == HistoryEventType.SPEND and native_deposit is None:
+                    native_deposit = event
+                elif event.event_type == HistoryEventType.RECEIVE and native_refund is None:
+                    native_refund = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -158,6 +205,18 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                     new_protocol=self.counterparty,
                 )
 
+        if native_deposit is not None:
+            if native_refund is not None:
+                native_deposit.amount -= native_refund.amount
+                decoded_events.remove(native_refund)
+
+            native_deposit.event_type = HistoryEventType.DEPOSIT
+            native_deposit.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+            native_deposit.counterparty = self.counterparty
+            native_deposit.address = tx_log.address
+            native_deposit.notes = f'Deposit {native_deposit.amount} {self.node_inquirer.native_token.symbol} in {self.counterparty} pool {tx_log.address}'  # noqa: E501
+            out_events.append(native_deposit)
+
         maybe_reshuffle_events(
             ordered_events=[*out_events, *in_events],
             events_list=decoded_events,
@@ -169,7 +228,12 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             tx_log: EvmTxReceiptLog,
             decoded_events: list[EvmEvent],
     ) -> EvmDecodingOutput:
-        """Decodes events that remove liquidity from a (velo/aero)drome v1 or v2 pool"""
+        """Decodes events that remove liquidity from a (velo/aero)drome v1 or v2 pool.
+
+        With removeLiquidityETH the pool sends the wrapped token to the router, which unwraps
+        it and sends the native asset to the user, so the native receive from the router is
+        part of the withdrawal.
+        """
         out_events, in_events = [], []
         for event in decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -185,11 +249,15 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.address in self.pools
+                (
+                    event.address in self.pools or
+                    (event.address in self.routers and event.asset == self.node_inquirer.native_token)  # noqa: E501
+                )
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = self.counterparty
+                event.address = tx_log.address
                 event.notes = f'Remove {event.amount} {crypto_asset.symbol} from {self.counterparty} pool {tx_log.address}'  # noqa: E501
                 in_events.append(event)
 
@@ -253,11 +321,11 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         if it becomes available in a future deployment of the LpSugar contract. For the latest
         deployment addresses see https://github.com/velodrome-finance/sugar/tree/main/deployments
         """
-        if (
+        if pool_address in self.cl_pool_tokens or (
             (pool_token := self.base.get_evm_token(address=pool_address)) is not None and
             pool_token.protocol == self.counterparty
         ):
-            return  # Pool token already exists
+            return  # CL pool already seen or pool token already exists
 
         try:
             pool_info = EvmContract(
@@ -288,7 +356,11 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             )
             return
 
-        fallback_symbol = f'CL{tick_spacing}-{token0.symbol}/{token1.symbol}' if symbol == '' else symbol  # noqa: E501
+        if tick_spacing > 0:  # CL pool. Positions are NFTs so there is no ERC20 pool token
+            self.cl_pool_tokens[pool_address] = (token0.evm_address, token1.evm_address)
+            return
+
+        fallback_symbol = f'{token0.symbol}/{token1.symbol}' if symbol == '' else symbol
         get_or_create_evm_token(  # this will not raise NotERC20Conformant because we give fallback info  # noqa: E501
             userdb=self.base.database,
             evm_address=pool_address,
@@ -301,7 +373,18 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         )
 
     def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decodes transactions that interact with a (velo/aero)drome v1 or v2 pool"""
+        """Decodes transactions that interact with a (velo/aero)drome v1, v2 or
+        concentrated liquidity (Slipstream) pool.
+
+        Slipstream pools emit the Uniswap V3 log signatures. Their liquidity changes are
+        decoded from the position manager logs instead, so only their swaps are handled here.
+        They are also not ERC20 tokens, so the pool token creation is skipped for them.
+        """
+        if context.tx_log.topics[0] in CL_POOL_TOPICS:
+            if context.tx_log.topics[0] == SWAP_CL:
+                return self._decode_swap(context=context)
+            return DEFAULT_EVM_DECODING_OUTPUT
+
         self._ensure_pool_tokens_exist(context.tx_log.address)
         if context.tx_log.topics[0] in (REMOVE_LIQUIDITY_EVENT_V2, BURN_TOPIC):
             return self._decode_remove_liquidity_events(
@@ -318,11 +401,132 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _get_cl_pool_tokens(
+            self,
+            pool_address: ChecksumEvmAddress,
+    ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress] | None:
+        """Get the token0 and token1 of a concentrated liquidity pool, caching the result.
+
+        Queries the pool directly. The drome rotki helper contract is not used since its
+        get_pool_info needs more gas than indexer eth_call proxies allow, so it only works
+        through an RPC node. Returns None if the pool could not be queried.
+        """
+        if (tokens := self.cl_pool_tokens.get(pool_address)) is not None:
+            return tokens
+
+        pool_contract = EvmContract(
+            address=pool_address,
+            abi=self.node_inquirer.contracts.abi('UNISWAP_V3_POOL'),
+        )
+        try:
+            result = self.node_inquirer.multicall(calls=[
+                (pool_address, pool_contract.encode(method_name='token0')),
+                (pool_address, pool_contract.encode(method_name='token1')),
+            ])
+            tokens = (
+                deserialize_evm_address(pool_contract.decode(result[0], 'token0')[0]),
+                deserialize_evm_address(pool_contract.decode(result[1], 'token1')[0]),
+            )
+        except (RemoteError, DeserializationError) as e:
+            log.error(
+                'Failed to query the tokens of a concentrated liquidity pool',
+                counterparty=self.counterparty,
+                pool=pool_address,
+                error=str(e),
+            )
+            return None
+
+        self.cl_pool_tokens[pool_address] = tokens
+        return tokens
+
+    def _decode_slipstream_position_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decodes liquidity additions and removals of Slipstream (concentrated liquidity)
+        positions via the NonfungiblePositionManager, which works like Uniswap V3's.
+
+        The pool of the position is taken from the pool Mint/Collect log that precedes the
+        position manager log and carries the same amounts. This avoids querying positions()
+        on the position manager, which reverts once a position has been burned.
+        """
+        if context.tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
+            is_deposit, pool_topic = True, CL_POOL_MINT
+        elif context.tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
+            is_deposit, pool_topic = False, CL_POOL_COLLECT
+        else:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        # The position manager's Collect log carries the amounts it asked the pool for, while
+        # the pool's log has what it actually paid, which can be a few wei less. So take the
+        # nearest preceding pool log owned by the position manager whose amounts fit, and
+        # use the pool's amounts since those are what the user received.
+        nfpm_amount0 = int.from_bytes(context.tx_log.data[32:64])
+        nfpm_amount1 = int.from_bytes(context.tx_log.data[64:96])
+        for tx_log in reversed(context.all_logs):
+            if (
+                tx_log.log_index < context.tx_log.log_index and
+                tx_log.topics[0] == pool_topic and
+                bytes_to_address(tx_log.topics[1]) == self.slipstream_nfpm and
+                (amount0_raw := int.from_bytes(tx_log.data[-64:-32])) <= nfpm_amount0 and
+                (amount1_raw := int.from_bytes(tx_log.data[-32:])) <= nfpm_amount1 and
+                (is_deposit or tx_log.data[:32] == context.tx_log.data[:32])  # same recipient
+            ):
+                pool_address = tx_log.address
+                break
+        else:
+            log.error(
+                'Could not find the pool log of a Slipstream position',
+                counterparty=self.counterparty,
+                position_id=int.from_bytes(context.tx_log.topics[1]),
+                tx_hash=context.transaction.tx_hash,
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if amount0_raw == 0 and amount1_raw == 0:
+            return DEFAULT_EVM_DECODING_OUTPUT  # nothing moved, e.g. a collect on gauge withdrawal
+
+        if (tokens := self._get_cl_pool_tokens(pool_address)) is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return decode_uniswap_v3_like_deposit_or_withdrawal(
+            context=context,
+            is_deposit=is_deposit,
+            counterparty=self.counterparty,
+            token0_raw_address=tokens[0],
+            token1_raw_address=tokens[1],
+            amount0_raw=amount0_raw,
+            amount1_raw=amount1_raw,
+            position_id=int.from_bytes(context.tx_log.topics[1]),
+            evm_inquirer=self.node_inquirer,
+            display_name=self.slipstream_display_name,
+        )
+
+    def _slipstream_position_post_decoding(
+            self,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
+        return decode_uniswap_v3_like_position_create_or_exit(
+            decoded_events=decoded_events,
+            evm_inquirer=self.node_inquirer,
+            nft_manager=self.slipstream_nfpm,
+            counterparty=self.counterparty,
+            token_symbol=f'{self.token_symbol}-CL-POS',
+            token_name=f'{self.slipstream_display_name} Positions',
+            display_name=self.slipstream_display_name,
+        )
+
+    @property
+    def slipstream_display_name(self) -> str:
+        return f'{self.counterparty.capitalize()} Slipstream'
+
     def _decode_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """
-        Decodes transactions that interact with a (velo/aero)drome v2 gauge.
-        Velodrome v1 had no gauges.
+        Decodes transactions that interact with a (velo/aero)drome v2 or concentrated
+        liquidity (Slipstream) gauge. Velodrome v1 had no gauges.
         """
+        if context.tx_log.topics[0] in (CL_GAUGE_DEPOSIT, CL_GAUGE_WITHDRAW):
+            return self._decode_cl_gauge_events(context=context)
+
         if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_V2, WITHDRAW_TOPIC_V2, CLAIM_REWARDS_V2):
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -357,6 +561,43 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                     event.notes = f'Receive {event.amount} {crypto_asset.symbol} rewards from {gauge_address} {self.counterparty} gauge'  # noqa: E501
 
         return EvmDecodingOutput(refresh_balances=found_event_modifying_balances)
+
+    def _decode_cl_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decodes staking and unstaking of a Slipstream position NFT in a CL gauge.
+        Reward claims share the v2 gauge ClaimRewards signature and are handled with them."""
+        user_address = bytes_to_address(context.tx_log.topics[1])
+        position_id = int.from_bytes(context.tx_log.topics[2])
+        gauge_address = context.tx_log.address
+        position_token = get_or_create_evm_token(
+            userdb=self.base.database,
+            evm_address=self.slipstream_nfpm,
+            chain_id=self.node_inquirer.chain_id,
+            token_kind=TokenKind.ERC721,
+            collectible_id=str(position_id),
+            protocol=self.counterparty,
+        )
+        for event in context.decoded_events:
+            if (
+                event.location_label == user_address and
+                event.address == gauge_address and
+                event.asset == position_token and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.counterparty = self.counterparty
+                if context.tx_log.topics[0] == CL_GAUGE_DEPOSIT and event.event_type == HistoryEventType.SPEND:  # noqa: E501
+                    event.event_type = HistoryEventType.DEPOSIT
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+                    event.notes = f'Deposit {self.slipstream_display_name} LP {position_id} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
+                elif context.tx_log.topics[0] == CL_GAUGE_WITHDRAW and event.event_type == HistoryEventType.RECEIVE:  # noqa: E501
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+                    event.notes = f'Withdraw {self.slipstream_display_name} LP {position_id} from {gauge_address} {self.counterparty} gauge'  # noqa: E501
+                else:
+                    continue
+
+                return EvmDecodingOutput(refresh_balances=True)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_voting_escrow_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == VOTING_ESCROW_WITHDRAW:
@@ -552,10 +793,14 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
 
         return dict(parent_mappings) | decoder_mappings
 
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {self.counterparty: [(0, self._slipstream_position_post_decoding)]}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoders = {
             self.voting_escrow_address: (self._decode_voting_escrow_events,),
             self.voter_address: (self._decode_vote_events,),
+            self.slipstream_nfpm: (self._decode_slipstream_position_events,),
         }
         with GlobalDBHandler().conn.read_ctx() as cursor:
             for addy in globaldb_get_general_cache_values(

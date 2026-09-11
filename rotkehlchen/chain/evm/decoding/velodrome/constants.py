@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.types import ChainID
+
 if TYPE_CHECKING:
     from eth_typing import ABI
 
@@ -17,3 +20,33 @@ VOTER_VOTED: Final = b'E-D\x0e\xfc0\xdf\xa1J\x0e\xf8\x03\xcc\xb5Y6\xaf\x86\x0e\x
 VOTING_ESCROW_ABI: Final[ABI] = [{'inputs': [{'name': '_tokenId', 'type': 'uint256'}], 'name': 'locked', 'outputs': [{'components': [{'name': 'amount', 'type': 'int128'}, {'name': 'end', 'type': 'uint256'}, {'name': 'isPermanent', 'type': 'bool'}], 'name': '', 'type': 'tuple'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 SUGAR_V3_CONTRACT_ABI: Final[ABI] = [{'inputs': [{'name': '_limit', 'type': 'uint256'}, {'name': '_offset', 'type': 'uint256'}, {'name': '_filter', 'type': 'uint256'}], 'name': 'all', 'outputs': [{'components': [{'name': 'lp', 'type': 'address'}, {'name': 'symbol', 'type': 'string'}, {'name': 'decimals', 'type': 'uint8'}, {'name': 'liquidity', 'type': 'uint256'}, {'name': 'type', 'type': 'int24'}, {'name': 'tick', 'type': 'int24'}, {'name': 'sqrt_ratio', 'type': 'uint160'}, {'name': 'token0', 'type': 'address'}, {'name': 'reserve0', 'type': 'uint256'}, {'name': 'staked0', 'type': 'uint256'}, {'name': 'token1', 'type': 'address'}, {'name': 'reserve1', 'type': 'uint256'}, {'name': 'staked1', 'type': 'uint256'}, {'name': 'gauge', 'type': 'address'}, {'name': 'gauge_liquidity', 'type': 'uint256'}, {'name': 'gauge_alive', 'type': 'bool'}, {'name': 'fee', 'type': 'address'}, {'name': 'bribe', 'type': 'address'}, {'name': 'factory', 'type': 'address'}, {'name': 'emissions', 'type': 'uint256'}, {'name': 'emissions_token', 'type': 'address'}, {'name': 'emissions_cap', 'type': 'uint256'}, {'name': 'pool_fee', 'type': 'uint256'}, {'name': 'unstaked_fee', 'type': 'uint256'}, {'name': 'token0_fees', 'type': 'uint256'}, {'name': 'token1_fees', 'type': 'uint256'}, {'name': 'locked', 'type': 'uint256'}, {'name': 'emerging', 'type': 'uint256'}, {'name': 'created_at', 'type': 'uint32'}, {'name': 'nfpm', 'type': 'address'}, {'name': 'alm', 'type': 'address'}, {'name': 'root', 'type': 'address'}], 'name': '', 'type': 'tuple[]'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 DROME_ROTKI_ABI: Final[ABI] = [{'stateMutability': 'view', 'type': 'function', 'name': 'get_pool_info', 'inputs': [{'name': '_pool', 'type': 'address'}], 'outputs': [{'name': '', 'type': 'tuple', 'components': [{'name': 'symbol', 'type': 'string'}, {'name': 'decimals', 'type': 'uint8'}, {'name': 'token0', 'type': 'address'}, {'name': 'token1', 'type': 'address'}, {'name': 'tick_spacing', 'type': 'uint24'}]}]}]  # noqa: E501
+# Slipstream (concentrated liquidity) pools emit the Uniswap V3 pool log signatures
+# 0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde
+CL_POOL_MINT: Final = b'zS\x08\x0b\xa4\x14\x15\x8b\xe7\xeci\xb9\x87\xb5\xfb}\x07\xde\xe1\x01\xfe\x85H\x8f\x08S\xae\x16#\x9d\x0b\xde'  # noqa: E501
+# 0x70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0
+CL_POOL_COLLECT: Final = b'p\x93S8\xe6\x97uEj\x85\xdd\xef"l9_\xb6h\xb6?\xa0\x11__ a\x0b8\x8el\xa9\xc0'  # noqa: E501
+# 0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c
+CL_POOL_BURN: Final = b'\x0c9l\xd9\x89\xa3\x9fDY\xb5\xfa\x1a\xedj\x9a\x8d\xcd\xbcE\x90\x8a\xcf\xd6~\x02\x8c\xd5h\xda\x98\x98,'  # noqa: E501
+# 0xbdbdb71d7860376ba52b25a5028beea23581364a40522f6bcfb86bb1f2dca633
+CL_POOL_FLASH: Final = b'\xbd\xbd\xb7\x1dx`7k\xa5+%\xa5\x02\x8b\xee\xa25\x816J@R/k\xcf\xb8k\xb1\xf2\xdc\xa63'  # noqa: E501
+# 0x4598143b76ade0e13381c8bcb15beee8da31f1f2074be2156b16ed3b45794198
+CL_POOL_COLLECT_FEES: Final = b'E\x98\x14;v\xad\xe0\xe13\x81\xc8\xbc\xb1[\xee\xe8\xda1\xf1\xf2\x07K\xe2\x15k\x16\xed;EyA\x98'  # noqa: E501
+# CL gauge deposit topic, 0x1c8ab8c7f45390d58f58f1d655213a82cca5d12179761a87c16f098813b8f211
+CL_GAUGE_DEPOSIT: Final = b'\x1c\x8a\xb8\xc7\xf4S\x90\xd5\x8fX\xf1\xd6U!:\x82\xcc\xa5\xd1!yv\x1a\x87\xc1o\t\x88\x13\xb8\xf2\x11'  # noqa: E501
+# CL gauge withdraw topic, 0x8903a5b5d08a841e7f68438387f1da20c84dea756379ed37e633ff3854b99b84
+CL_GAUGE_WITHDRAW: Final = b'\x89\x03\xa5\xb5\xd0\x8a\x84\x1e\x7fhC\x83\x87\xf1\xda \xc8M\xeaucy\xed7\xe63\xff8T\xb9\x9b\x84'  # noqa: E501
+# The concentrated liquidity (Slipstream) position managers and pool factories
+SLIPSTREAM_NFPM_ADDRESSES: Final = {
+    ChainID.OPTIMISM: string_to_evm_address('0x416b433906b1B72FA758e166e239c43d68dC6F29'),
+    ChainID.BASE: string_to_evm_address('0x827922686190790b37229fd06084350E74485b72'),
+}
+SLIPSTREAM_CL_FACTORIES: Final = {
+    ChainID.OPTIMISM: string_to_evm_address('0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F'),
+    ChainID.BASE: string_to_evm_address('0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'),
+}
+# Same layout as uniswap v3 positions() except that index 4 is the tick spacing, not the fee
+SLIPSTREAM_NFPM_ABI: Final[ABI] = [{'inputs': [{'name': 'tokenId', 'type': 'uint256'}], 'name': 'positions', 'outputs': [{'name': 'nonce', 'type': 'uint96'}, {'name': 'operator', 'type': 'address'}, {'name': 'token0', 'type': 'address'}, {'name': 'token1', 'type': 'address'}, {'name': 'tickSpacing', 'type': 'int24'}, {'name': 'tickLower', 'type': 'int24'}, {'name': 'tickUpper', 'type': 'int24'}, {'name': 'liquidity', 'type': 'uint128'}, {'name': 'feeGrowthInside0LastX128', 'type': 'uint256'}, {'name': 'feeGrowthInside1LastX128', 'type': 'uint256'}, {'name': 'tokensOwed0', 'type': 'uint128'}, {'name': 'tokensOwed1', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+CL_FACTORY_ABI: Final[ABI] = [{'inputs': [{'name': 'tokenA', 'type': 'address'}, {'name': 'tokenB', 'type': 'address'}, {'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+# Slipstream slot0 has no feeProtocol field, unlike uniswap v3
+CL_POOL_ABI: Final[ABI] = [{'inputs': [], 'name': 'slot0', 'outputs': [{'name': 'sqrtPriceX96', 'type': 'uint160'}, {'name': 'tick', 'type': 'int24'}, {'name': 'observationIndex', 'type': 'uint16'}, {'name': 'observationCardinality', 'type': 'uint16'}, {'name': 'observationCardinalityNext', 'type': 'uint16'}, {'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+CL_GAUGE_ABI: Final[ABI] = [{'inputs': [{'name': 'depositor', 'type': 'address'}], 'name': 'stakedValues', 'outputs': [{'name': 'staked', 'type': 'uint256[]'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

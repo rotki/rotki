@@ -22,6 +22,7 @@ export type GnosisPaySessionKeyExpiredData = z.infer<typeof GnosisPaySessionKeyE
 
 export const NoAvailableIndexersData = z.object({
   chain: z.string(),
+  reason: z.string().optional(),
 });
 
 export type NoAvailableIndexersData = z.infer<typeof NoAvailableIndexersData>;

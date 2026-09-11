@@ -220,6 +220,26 @@ Having API keys for some services (such as etherscan) is crucial for rotki to wo
 - ``location``: For services like etherscan that require different API keys for different locations this is the location for which the API key is needed. If a service does not require a location then this key will be missing.
 
 
+No available indexers
+=======================
+
+Sent once per chain and session when no transaction indexer can serve a chain, so the transaction queries for it are skipped.
+
+::
+
+    {
+        "type": "no_available_indexers",
+        "data": {
+            "chain": "base",
+            "reason": "etherscan_paid_key_required"
+        }
+    }
+
+
+- ``chain``: The chain for which no indexer is available.
+- ``reason`` (Optional): Present when the cause is known. ``etherscan_paid_key_required`` means etherscan refused the chain for the configured key, which happens on the chains its free tier does not cover, and the other indexers could not serve it either. A paid etherscan API key resolves it.
+
+
 Query transactions
 =========================
 

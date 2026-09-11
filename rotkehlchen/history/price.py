@@ -9,6 +9,8 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.velodrome.utils import get_slipstream_position_price
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -27,7 +29,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp, TokenKind
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp
 
 from .types import (
@@ -268,6 +270,36 @@ class PriceHistorian:
                 except (RemoteError, NoPriceForGivenTimestamp):
                     log.error(f'Could not query uniswap position price for {from_asset.identifier} and time {timestamp}.')  # noqa: E501
                     return None
+
+        if (
+            from_asset.is_evm_token() and
+            (position_token := from_asset.resolve_to_evm_token()).protocol in (CPT_AERODROME, CPT_VELODROME) and  # noqa: E501
+            position_token.token_kind == TokenKind.ERC721
+        ):  # Slipstream concentrated liquidity position
+            if max_seconds_distance is not None:
+                cached_price_entry = GlobalDBHandler.get_historical_price(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                    max_seconds_distance=max_seconds_distance,
+                )
+                return cached_price_entry.price if cached_price_entry is not None else None
+
+            try:
+                evm_inquirer = Inquirer.get_evm_manager(chain_id=position_token.chain_id).node_inquirer  # noqa: E501
+                return get_slipstream_position_price(
+                    token=position_token,
+                    evm_inquirer=evm_inquirer,
+                    block_identifier=evm_inquirer.get_blocknumber_by_time(timestamp),
+                    price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
+                )
+            except (RemoteError, NoPriceForGivenTimestamp):
+                log.error(
+                    'Could not query Slipstream position price',
+                    asset=from_asset.identifier,
+                    timestamp=timestamp,
+                )
+                return None
 
         if from_asset.is_evm_token() and (evm_token := from_asset.resolve_to_evm_token()).underlying_tokens is not None:  # noqa: E501
             aggregated_price = ZERO
