@@ -225,6 +225,120 @@ class HistoricalBalancesManager:
             bindings=filter_query.unprocessed_bindings,
         ), entries or None
 
+    def get_balances_at_events(
+            self,
+            event_identifiers: list[int],
+    ) -> tuple[set[int], dict[int, list[HistoricalBalanceEntry]]]:
+        """Read account-wide bucket snapshots in a batch, in historical processing order.
+
+        Return the identifiers requiring processing and buckets keyed by event identifier.
+        Raise NotFoundError if any requested event does not exist.
+        """
+        balances: dict[int, list[HistoricalBalanceEntry]] = {
+            identifier: [] for identifier in event_identifiers
+        }
+        with self.db.conn.read_ctx() as cursor:
+            events = cursor.execute(
+                'SELECT identifier, location_label, asset, timestamp, sequence_index '
+                f'FROM history_events WHERE identifier IN ({",".join("?" * len(balances))})',
+                list(balances),
+            ).fetchall()
+            if missing := balances.keys() - {event[0] for event in events}:
+                raise NotFoundError(f'Unknown history event identifiers: {sorted(missing)}')
+
+            assets = {
+                asset: Asset(asset).resolve_swapped_for().identifier
+                for asset in {event[2] for event in events}
+            }
+            bindings = [
+                value for identifier, label, asset, timestamp, sequence in events
+                for value in (identifier, label, assets[asset], timestamp, sequence)
+            ]
+            requested = (
+                'WITH requested(identifier, location_label, asset, timestamp, sequence_index) AS '
+                f'(VALUES {",".join(["(?, ?, ?, ?, ?)"] * len(events))}) '
+            )
+            metric_key = EventMetricKey.BALANCE.serialize()
+            cursor.execute(
+                requested + """, scopes AS (
+                    SELECT DISTINCT em.location, em.location_label, em.protocol, em.asset
+                    FROM event_metrics em JOIN (
+                        SELECT DISTINCT location_label, asset FROM requested
+                    ) r ON em.location_label = r.location_label AND em.asset = r.asset
+                    WHERE em.metric_key = ?
+                    AND em.asset NOT IN (
+                        SELECT value FROM multisettings WHERE name='ignored_asset'
+                    )
+                ), snapshots AS (
+                    SELECT r.identifier, em.location, em.location_label,
+                        NULLIF(em.protocol, '') AS protocol, em.asset, em.metric_value,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY r.identifier, em.location, COALESCE(em.protocol, '')
+                            ORDER BY em.timestamp DESC, em.sequence_index DESC,
+                                em.event_identifier DESC, em.id DESC
+                        ) AS rank
+                    FROM requested r JOIN scopes s
+                        ON s.location_label = r.location_label AND s.asset = r.asset
+                    JOIN event_metrics em ON em.id = (
+                        SELECT m.id FROM event_metrics m
+                        WHERE m.metric_key = ? AND m.location = s.location
+                            AND m.location_label = s.location_label AND m.protocol IS s.protocol
+                            AND m.asset = s.asset AND m.timestamp <= r.timestamp
+                            AND (m.timestamp, m.sequence_index, m.event_identifier)
+                                <= (r.timestamp, r.sequence_index, r.identifier)
+                        ORDER BY m.timestamp DESC, m.sequence_index DESC,
+                            m.event_identifier DESC, m.id DESC LIMIT 1
+                    )
+                ) SELECT identifier, location, location_label, protocol, asset, metric_value
+                    FROM snapshots WHERE rank = 1
+                """,
+                [*bindings, metric_key, metric_key],
+            )
+            for identifier, location, label, protocol, asset, amount in cursor:
+                balances[identifier].append(HistoricalBalanceEntry(
+                    location=Location.deserialize_from_db(location),
+                    location_label=label,
+                    protocol=protocol,
+                    asset=Asset(asset),
+                    amount=FVal(amount),
+                ))
+
+            if (stale := self.db.get_static_cache(
+                cursor=cursor, name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            )) is None:
+                return set(), balances
+
+            processed = self.db.get_static_cache(
+                cursor=cursor, name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            ) is not None
+            exclusions = ' OR '.join(
+                ['(he.type = ? AND he.subtype = ?)'] * len(self._neutral_balance_tracking_pairs),
+            )
+            processing = {row[0] for row in cursor.execute(
+                requested + f"""SELECT r.identifier FROM requested r WHERE EXISTS (
+                    SELECT 1 FROM history_events he
+                    WHERE he.location_label = r.location_label
+                        AND he.asset = (
+                            SELECT asset FROM history_events WHERE identifier = r.identifier
+                        )
+                        AND he.timestamp >= ? AND he.timestamp <= r.timestamp
+                        AND (he.timestamp, he.sequence_index, he.identifier)
+                            <= (r.timestamp, r.sequence_index, r.identifier)
+                        AND he.ignored = 0 AND NOT ({exclusions})
+                        AND he.asset NOT IN (
+                            SELECT value FROM multisettings WHERE name='ignored_asset'
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM event_metrics em
+                            WHERE em.event_identifier = he.identifier AND em.metric_key = ?
+                        )
+                )""",
+                [*bindings, int(stale) if processed else 0,
+                 *[value for pair in self._neutral_balance_tracking_pairs for value in pair],
+                 metric_key],
+            )}
+        return processing, balances
+
     def find_onchain_balance_divergence(
             self,
             evm_manager: EvmManager,
