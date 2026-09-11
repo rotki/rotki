@@ -39,8 +39,8 @@ export function useHistoryEventHighlights(): UseHistoryEventHighlightsReturn {
   });
 
   const highlightedGroupIdentifier = computed<string | undefined>(() => {
-    const { highlightedInternalTxConflict } = get(route).query;
-    return highlightedInternalTxConflict ? highlightedInternalTxConflict.toString() : undefined;
+    const { highlightedInternalTxConflict, highlightedGroupIdentifier } = get(route).query;
+    return (highlightedInternalTxConflict ?? highlightedGroupIdentifier)?.toString();
   });
 
   const highlightTypes = computed<Record<string, HighlightType>>(() => {

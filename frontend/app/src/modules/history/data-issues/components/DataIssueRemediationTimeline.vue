@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
-import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
 import { humanizeStrategy } from '@/modules/history/data-issues/transforms';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
-const { items, asset } = defineProps<{
+const { items } = defineProps<{
   items: RemediationTimelineItem[];
-  asset?: string | null;
 }>();
 
 const emit = defineEmits<{
-  navigate: [groupIdentifier: string];
+  review: [item: RemediationTimelineItem];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -58,7 +56,7 @@ function getResultText(item: RemediationTimelineItem): string | undefined {
         />
         <div class="flex flex-col">
           <span class="text-body-2 font-medium">
-            {{ item.strategy === 'redecode_customized_transactions' ? t('data_issues.detail.checked_customizations') : humanizeStrategy(item.strategy) }}
+            {{ humanizeStrategy(item.strategy) }}
           </span>
           <span
             v-if="getResultText(item)"
@@ -73,13 +71,16 @@ function getResultText(item: RemediationTimelineItem): string | undefined {
           >
             {{ t('data_issues.detail.comparison_counts', { total: item.customizedTransactionCount, changed: item.changedTransactionCount }) }}
           </span>
-          <DataIssueDecodingReview
-            v-if="item.transactions?.length && asset"
-            :transactions="item.transactions"
-            :asset="asset"
-            :timestamp="item.timestamp"
-            @navigate="emit('navigate', $event)"
-          />
+          <RuiButton
+            v-if="item.transactions?.length"
+            variant="text"
+            color="primary"
+            class="self-start mt-2"
+            data-testid="data-issue-review-open"
+            @click="emit('review', item)"
+          >
+            {{ t('data_issues.detail.comparison.review', { count: item.transactions.length }) }}
+          </RuiButton>
           <span
             v-else-if="item.result === 'redecoding_would_change_balance'"
             class="text-body-2 text-rui-text-secondary mt-2"

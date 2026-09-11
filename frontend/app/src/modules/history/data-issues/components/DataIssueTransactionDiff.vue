@@ -7,7 +7,7 @@ import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const { transaction, asset } = defineProps<{
   transaction: TransactionDecodingComparison;
-  asset: string;
+  asset?: string | null;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -42,14 +42,6 @@ const sharedAccount = computed<string | undefined>(() => {
         :location-label="sharedAccount"
       />
     </div>
-    <div
-      v-if="visible.some(diff => diff.status === 'modified')"
-      class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,2fr)] gap-2 px-3 text-caption text-rui-text-secondary"
-    >
-      <span />
-      <span>{{ t('data_issues.detail.comparison.before') }}</span>
-      <span>{{ t('data_issues.detail.comparison.after') }}</span>
-    </div>
     <ol
       class="flex flex-col gap-2"
       data-testid="data-issue-review-diffs"
@@ -71,7 +63,7 @@ const sharedAccount = computed<string | undefined>(() => {
       data-testid="data-issue-diff-toggle-unchanged"
       @click="showUnchanged = !showUnchanged"
     >
-      {{ showUnchanged ? t('data_issues.detail.comparison.hide_unchanged', { count: unchanged }) : t('data_issues.detail.comparison.show_unchanged', { count: unchanged }) }}
+      {{ showUnchanged ? t('data_issues.detail.comparison.hide_unchanged', { count: unchanged }, unchanged) : t('data_issues.detail.comparison.show_unchanged', { count: unchanged }, unchanged) }}
     </RuiButton>
   </div>
 </template>

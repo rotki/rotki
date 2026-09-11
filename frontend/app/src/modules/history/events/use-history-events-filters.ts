@@ -115,7 +115,7 @@ export function useHistoryEventsFilters(
   const { fetchHistoryEvents } = useHistoryEvents();
   const { clearAllHighlightTargets, isNavigating } = useHistoryEventNavigation();
 
-  const highlightKeys = ['highlightedAccountingEvent', 'highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
+  const highlightKeys = ['highlightedAccountingEvent', 'highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedGroupIdentifier', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
   const shouldPreserveHighlights = ref<boolean>(highlightKeys.some(key => !!get(route).query[key]));
 
   const fetchHistoryEventsTagged = async (
@@ -220,6 +220,7 @@ export function useHistoryEventsFilters(
         highlightedAccountingEvent: 'never',
         highlightedAssetMovement: 'never',
         highlightedInternalTxConflict: 'never',
+        highlightedGroupIdentifier: 'never',
         highlightedNegativeBalanceEvent: 'never',
         highlightedPotentialMatch: 'never',
         missingAcquisitionIdentifier: 'never',

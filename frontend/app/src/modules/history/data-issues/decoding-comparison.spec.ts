@@ -41,6 +41,23 @@ describe('diffDecodingEvents', () => {
     expect(diffDecodingEvents({ ...transaction, decodedEvents: [{ ...saved, sequenceIndex: 10 }] })[0]?.fields).toEqual(['sequenceIndex']);
   });
 
+  it('should pair customized notes even when the event order shifts', () => {
+    const transaction = createDecodingComparison();
+    const saved = transaction.savedEvents[0];
+    assert(saved);
+    const result = diffDecodingEvents({ ...transaction, decodedEvents: [{ ...saved, sequenceIndex: 8, userNotes: 'Decoder notes' }] });
+    expect(result.map(diff => diff.status)).toEqual(['modified']);
+    expect(result[0]?.fields).toEqual(['sequenceIndex', 'userNotes']);
+  });
+
+  it('should not pair unrelated events at the same order', () => {
+    const transaction = createDecodingComparison();
+    const decoded = transaction.decodedEvents[0];
+    assert(decoded);
+    const result = diffDecodingEvents({ ...transaction, decodedEvents: [{ ...decoded, asset: 'USDC', eventType: 'informational', eventSubtype: 'approve' }] });
+    expect(result.map(diff => diff.status)).toEqual(['removed', 'added']);
+  });
+
   it('should mark every saved event removed when decoding produces no events', () => {
     expect(diffDecodingEvents({ ...createDecodingComparison(), decodedEvents: [] }).map(diff => diff.status)).toEqual(['removed']);
   });

@@ -41,12 +41,12 @@ function changedFields(saved: DecodingComparisonEvent, decoded: DecodingComparis
 }
 
 /**
- * Matches identical events first, then events at the same sequence index.
+ * Matches identical events first, then shifted notes edits, then same-asset events at the same order.
  *
  * @remarks
  * Customization markers are provenance, not event differences. Unmatched events stay separate
  * additions/removals; array positions are not event identities. An otherwise identical event with
- * a changed sequence index is shown as an order change.
+ * a changed sequence index and notes is shown as a modification.
  */
 export function diffDecodingEvents(transaction: TransactionDecodingComparison): DecodingEventDiff[] {
   const unmatched = new Set(transaction.decodedEvents);
@@ -62,8 +62,8 @@ export function diffDecodingEvents(transaction: TransactionDecodingComparison): 
     if (matches.has(saved))
       continue;
     const decoded = [...unmatched].find(event =>
-      changedFields(saved, event).every(field => field === 'sequenceIndex'))
-    ?? [...unmatched].find(event => event.sequenceIndex === saved.sequenceIndex);
+      changedFields(saved, event).every(field => field === 'sequenceIndex' || field === 'userNotes'))
+    ?? [...unmatched].find(event => event.sequenceIndex === saved.sequenceIndex && event.asset === saved.asset);
     if (decoded) {
       matches.set(saved, decoded);
       unmatched.delete(decoded);

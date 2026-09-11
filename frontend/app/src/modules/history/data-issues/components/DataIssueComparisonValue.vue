@@ -10,7 +10,7 @@ const { field, saved, decoded, asset } = defineProps<{
   field: ComparisonField;
   saved: DecodingComparisonEvent;
   decoded: DecodingComparisonEvent;
-  asset: string;
+  asset?: string | null;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -20,7 +20,7 @@ const label = computed<string>(() => ({
   asset: t('common.asset'),
   balanceEffect: t('data_issues.detail.comparison.balance_effect'),
   sequenceIndex: t('data_issues.detail.comparison.event_order'),
-  timestamp: t('data_issues.detail.event_date'),
+  timestamp: t('data_issues.detail.comparison.date'),
   location: t('common.location'),
   locationLabel: t('common.account'),
   counterparty: t('data_issues.detail.comparison.counterparty'),
@@ -63,7 +63,8 @@ function textValue(event: DecodingComparisonEvent): string {
           :format="{ decimals: event[field].decimalPlaces() ?? undefined }"
         />
         <AssetDetails
-          :asset="field === 'amount' ? event.asset : asset"
+          v-if="field === 'amount' || asset"
+          :asset="field === 'amount' ? event.asset : (asset ?? '')"
           :display="{ dense: true }"
         />
       </template>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
 import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 
 /**
@@ -21,6 +23,7 @@ const emit = defineEmits<{
   retry: [id: number];
   resolve: [id: number];
 }>();
+const review = ref<RemediationTimelineItem>();
 </script>
 
 <template>
@@ -28,6 +31,7 @@ const emit = defineEmits<{
     v-model="open"
     width="570px"
     temporary
+    :stateless="!!review"
     position="right"
     class="flex flex-col"
     :class-names="{ content: 'flex flex-col' }"
@@ -40,6 +44,12 @@ const emit = defineEmits<{
       @dismiss="emit('dismiss', $event)"
       @retry="emit('retry', $event)"
       @resolve="emit('resolve', $event)"
+      @review="review = $event"
     />
   </RuiNavigationDrawer>
+  <DataIssueDecodingReview
+    v-model="review"
+    :asset="issue?.asset"
+    @navigate="open = false"
+  />
 </template>
