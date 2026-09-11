@@ -1,3 +1,5 @@
+import { neverSettles } from '@test/utils/never-settles';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   type EvmUnDecodedTransactionsData,
@@ -7,19 +9,99 @@ import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
 } from '@/modules/core/messaging/types';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
+import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { ActivityKind } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { LocationStatus, SyncPhase } from './types';
 import { useSyncProgress } from './use-sync-progress';
+import { SyncWarningSource, useSyncWarningsStore } from './use-sync-warnings-store';
+
+/** How a declared leaf ends, or that it has not. */
+type LeafOutcome = 'running' | 'complete' | 'failed' | 'cancelled';
+
+const flush = async (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+
+function runFor(outcome: LeafOutcome): () => Promise<Result<unknown, TaskError>> {
+  if (outcome === 'running')
+    return async () => neverSettles();
+  if (outcome === 'complete')
+    return async () => ok(undefined);
+  if (outcome === 'cancelled')
+    return async () => err(Cancelled({ message: 'stopped' }));
+  return async () => err(TaskFailed({ message: 'the backend said no' }));
+}
 
 describe('useSyncProgress', () => {
   beforeEach(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
+    // The orchestrator is a shared singleton, so its records outlive a test without this.
+    useTaskOrchestrator().reset();
   });
+
+  /**
+   * Submit a history refresh the way `history-sync.flow.ts` declares one: the umbrella, a chain per
+   * entry, and an account beneath each chain.
+   *
+   * The accounts are the leaves the rollup counts, so each names its own outcome. Keep fixtures to
+   * two chains: `CHAIN_SYNC_LANE` caps concurrency at two, and a third chain would sit PENDING with
+   * its accounts ineligible, which is realistic but not what these cases are about.
+   */
+  async function submitRefresh(
+    chains: Record<string, Record<string, LeafOutcome>>,
+    decodes: Record<string, LeafOutcome> = {},
+  ): Promise<void> {
+    const orchestrator = useTaskOrchestrator();
+    const umbrella = historySyncFlow.id();
+
+    orchestrator.submit({
+      container: true,
+      id: umbrella,
+      kind: ActivityKind.HISTORY_SYNC,
+      run: async () => ok(undefined),
+      title: 'refresh',
+    });
+
+    for (const [chain, accounts] of Object.entries(chains)) {
+      orchestrator.submit({
+        id: chainSyncActivityId(chain),
+        kind: ActivityKind.TX_SYNC,
+        parent: umbrella,
+        run: async () => ok(undefined),
+        title: chain,
+      });
+
+      for (const [address, outcome] of Object.entries(accounts)) {
+        orchestrator.submit({
+          id: accountSyncActivityId(chain, address),
+          kind: ActivityKind.TX_SYNC,
+          parent: chainSyncActivityId(chain),
+          run: runFor(outcome),
+          title: address,
+        });
+      }
+    }
+
+    for (const [chain, outcome] of Object.entries(decodes)) {
+      orchestrator.submit({
+        id: decodeActivityId(chain),
+        kind: ActivityKind.TX_DECODING,
+        parent: chainSyncActivityId(chain),
+        run: runFor(outcome),
+        title: `decode ${chain}`,
+      });
+    }
+
+    await flush();
+  }
 
   const createEvmTxStatus = (
     address: string,
@@ -92,42 +174,26 @@ describe('useSyncProgress', () => {
       expect(get(phase)).toBe(SyncPhase.IDLE);
     });
 
-    it('should return SYNCING when there is activity', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
+    it('should return SYNCING while any part of the refresh is still in flight', async () => {
+      await submitRefresh({ eth: { '0x123': 'running' } });
 
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.SYNCING);
     });
 
-    it('should return COMPLETE when all activities are finished', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
-
-      setupEventsStore([
-        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
-      ]);
+    it('should return COMPLETE once every activity has settled', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete' } });
 
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
     });
 
-    it('should complete when a chain failed rather than sitting short of the end', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x456', 'gnosis', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
-      useTxQueryStatusStore().markAddressFailed({ address: '0x456', chain: 'gnosis' });
+    /** A failure is a settled outcome, so it must not leave the panel reading as still working. */
+    it('should complete when an account failed rather than sitting short of the end', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete', '0x456': 'failed' } });
 
-      setupEventsStore([
-        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
-      ]);
-
-      const { completedChains, overallProgress, phase } = useSyncProgress();
+      const { overallProgress, phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
-      expect(get(completedChains)).toBe(2);
       expect(get(overallProgress)).toBe(100);
     });
 
@@ -160,31 +226,34 @@ describe('useSyncProgress', () => {
       expect(get(isActive)).toBe(false);
     });
 
-    it('should be true when there are transaction queries', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
+    it('should be true while the refresh has work in flight', async () => {
+      await submitRefresh({ eth: { '0x123': 'running' } });
 
       const { isActive } = useSyncProgress();
       expect(get(isActive)).toBe(true);
     });
 
-    it('should be true when there are events queries', () => {
-      setupEventsStore([
-        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE),
-      ]);
+    /**
+     * The ledger has no notion of a warning, so this clause is deliberately not derived from it:
+     * without it the panel would vanish as the run ends, taking the failures it exists to report.
+     */
+    it('should stay true after the work stops when there are warnings to show', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete' } });
+      useSyncWarningsStore().addWarning({
+        key: 'eth:0x123',
+        message: 'the query failed',
+        source: SyncWarningSource.TRANSACTIONS,
+      });
 
       const { isActive } = useSyncProgress();
       expect(get(isActive)).toBe(true);
     });
 
-    it('should be true when there is decoding activity', () => {
-      const decodingStatusStore = useDecodingStatusStore();
-      decodingStatusStore.resetDecodingSyncProgress();
-      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+    it('should be false once the work has settled and nothing warned', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete' } });
 
       const { isActive } = useSyncProgress();
-      expect(get(isActive)).toBe(true);
+      expect(get(isActive)).toBe(false);
     });
   });
 
@@ -304,28 +373,37 @@ describe('useSyncProgress', () => {
       expect(get(overallProgress)).toBe(0);
     });
 
-    it('should calculate weighted progress with transactions only', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x456', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
+    it('should count settled leaves over declared leaves', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete', '0x456': 'running' } });
 
       const { overallProgress } = useSyncProgress();
       expect(get(overallProgress)).toBe(50);
     });
 
-    it('should calculate weighted progress with multiple activity types', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
+    /**
+     * The unit is the leaf, not the chain. Weighting whole chains equally would make one settled
+     * account worth more on a two-account chain than on a ten-account one.
+     */
+    it('should weight every account equally, whichever chain it sits on', async () => {
+      await submitRefresh({
+        eth: { '0x1': 'complete', '0x2': 'running', '0x3': 'running' },
+        gnosis: { '0xa': 'complete' },
+      });
 
-      setupEventsStore([
-        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
-      ]);
+      const { overallProgress } = useSyncProgress();
+      expect(get(overallProgress)).toBe(50);
+    });
 
-      const decodingStatusStore = useDecodingStatusStore();
-      decodingStatusStore.resetDecodingSyncProgress();
-      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
+    /** A chain settles when its accounts do, so counting it too would double-count that work. */
+    it('should not count the chain and umbrella rows as units of work', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete' } });
+
+      const { overallProgress } = useSyncProgress();
+      expect(get(overallProgress)).toBe(100);
+    });
+
+    it('should treat a cancelled leaf as settled, since nothing more will happen to it', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete', '0x456': 'cancelled' } });
 
       const { overallProgress } = useSyncProgress();
       expect(get(overallProgress)).toBe(100);
@@ -345,16 +423,19 @@ describe('useSyncProgress', () => {
       store.updateGeneral({ ...store.general, disabledChainQueries: value });
     }
 
-    it('should exclude a disabled chain from the transaction progress', () => {
-      setupTxStore([
-        createEvmTxStatus('0x111', WIRE_ETH, TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-        createEvmTxStatus('0x222', WIRE_POLYGON, TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
-
+    /**
+     * The bar counts what the flow declared, and a disabled chain is never declared:
+     * `getAccountsByChainType` filters at the source funnel every account getter reads through, so
+     * the exclusion happens while the refresh scope resolves, before anything is submitted.
+     * Re-filtering here would be a second implementation of the same rule, free to disagree.
+     */
+    it('should not re-filter disabled chains, which never reach the ledger to begin with', async () => {
+      await submitRefresh({ eth: { '0x111': 'complete', '0x222': 'running' } });
       expect(get(useSyncProgress().overallProgress)).toBe(50);
 
       disableChains({ [SETTING_POLYGON]: [] });
-      expect(get(useSyncProgress().overallProgress)).toBe(100);
+
+      expect(get(useSyncProgress().overallProgress)).toBe(50);
     });
 
     it('should exclude a disabled chain from the chain and account counts', () => {
@@ -387,18 +468,15 @@ describe('useSyncProgress', () => {
       expect(get(chains)[0].addresses.map(a => a.address)).toEqual(['0x111']);
     });
 
-    it('should exclude a disabled chain from decoding, which owns the whole bar when nothing else runs', () => {
+    it('should exclude a disabled chain from the decoding list', () => {
       const decodingStatusStore = useDecodingStatusStore();
       decodingStatusStore.resetDecodingSyncProgress();
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
       decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('polygon_pos', 100, 0));
 
-      expect(get(useSyncProgress().overallProgress)).toBe(50);
-
       disableChains({ polygon_pos: [] });
-      const { decoding, overallProgress } = useSyncProgress();
-      expect(get(decoding).map(item => item.chain)).toEqual(['eth']);
-      expect(get(overallProgress)).toBe(100);
+
+      expect(get(useSyncProgress().decoding).map(item => item.chain)).toEqual(['eth']);
     });
 
     it('should exclude a disabled chain from the protocol cache list', () => {
@@ -473,20 +551,8 @@ describe('useSyncProgress', () => {
   });
 
   describe('cancellation handling', () => {
-    it('should become COMPLETE when all items are cancelled', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
-      ]);
-
-      const txStore = useTxQueryStatusStore();
-      txStore.markAddressCancelled({ address: '0x123', chain: 'eth' });
-
-      setupEventsStore([
-        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE),
-      ]);
-
-      const eventsStore = useEventsQueryStatusStore();
-      eventsStore.markLocationCancelled({ location: 'kraken', name: 'Kraken' });
+    it('should become COMPLETE when every item was cancelled', async () => {
+      await submitRefresh({ eth: { '0x123': 'cancelled', '0x456': 'cancelled' } });
 
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
@@ -553,15 +619,8 @@ describe('useSyncProgress', () => {
       expect(decodingValue[0].cancelled).toBe(true);
     });
 
-    it('should treat cancelled decoding as done for phase calculation', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
-
-      const decodingStatusStore = useDecodingStatusStore();
-      decodingStatusStore.resetDecodingSyncProgress();
-      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
-      decodingStatusStore.markDecodingCancelled('eth');
+    it('should treat a cancelled decode as done for phase calculation', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete' } }, { eth: 'cancelled' });
 
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
@@ -578,14 +637,16 @@ describe('useSyncProgress', () => {
       expect(get(hasCancelled)).toBe(true);
     });
 
-    it('should treat cancelled decoding as 100% for overall progress', () => {
-      const decodingStatusStore = useDecodingStatusStore();
-      decodingStatusStore.resetDecodingSyncProgress();
-      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
-      decodingStatusStore.markDecodingCancelled('eth');
+    /**
+     * A decode is one leaf among the accounts, not a weighted third of the bar. Under the old
+     * split it carried 20% whatever the shape of the run, so one cancelled decode moved the bar
+     * as much as every account on a ten-account chain.
+     */
+    it('should count a decode as one leaf rather than a weighted share', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete', '0x456': 'running' } }, { eth: 'cancelled' });
 
       const { overallProgress } = useSyncProgress();
-      expect(get(overallProgress)).toBe(100);
+      expect(get(overallProgress)).toBe(67);
     });
   });
 
@@ -623,10 +684,8 @@ describe('useSyncProgress', () => {
       expect(get(canDismiss)).toBe(false);
     });
 
-    it('should be true when complete', () => {
-      setupTxStore([
-        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
-      ]);
+    it('should be true when complete', async () => {
+      await submitRefresh({ eth: { '0x123': 'complete' } });
 
       const { canDismiss } = useSyncProgress();
       expect(get(canDismiss)).toBe(true);
@@ -634,10 +693,15 @@ describe('useSyncProgress', () => {
   });
 
   describe('state object', () => {
-    it('should aggregate all computed values', () => {
+    /**
+     * The two halves still have separate sources: the lists and counts come from the websocket
+     * status stores, the rollup from the ledger. Seed both, or the object is half populated.
+     */
+    it('should aggregate all computed values', async () => {
       setupTxStore([
         createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
       ]);
+      await submitRefresh({ eth: { '0x123': 'running' } });
 
       const { state } = useSyncProgress();
       const stateValue = get(state);
