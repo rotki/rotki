@@ -1,3 +1,4 @@
+import type { ProtocolCacheDetail } from '@/modules/history/protocol-cache-activity';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import { DECODE_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
@@ -41,8 +42,12 @@ export interface TargetedDecodeSubject {
  *
  * No fixed part: `TX_DECODING` hosts one operation, and the cache flag that varies belongs after
  * the chain, so a coarse reader can ask about a chain without knowing which variant ran.
+ *
+ * Its detail is the protocol caches the decode is filling on the way: they are queried lazily, as a
+ * decoder reaches a log that needs one, so they belong to whatever decode is running rather than to
+ * an activity of their own.
  */
-export const decodeActivity = defineActivity<DecodeSubject, readonly [string, ActivityPart]>({
+export const decodeActivity = defineActivity<DecodeSubject, readonly [string, ActivityPart], ProtocolCacheDetail>({
   key: subject => [subject.chain, cachePart(subject.ignoreCache)],
   kind: ActivityKind.TX_DECODING,
   lane: () => DECODE_LANE,

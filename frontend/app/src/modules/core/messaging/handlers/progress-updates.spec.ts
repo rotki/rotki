@@ -2,11 +2,14 @@ import type { ProgressUpdateResultData } from '../types/status-types';
 import { Blockchain } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivity, decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { protocolCacheActivity } from '@/modules/history/protocol-cache-activity';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
 
 const mockSetUndecodedTransactionsStatus = vi.fn();
 const mockSetProtocolCacheStatus = vi.fn();
@@ -16,6 +19,15 @@ const mockSetHistoricalPriceStatus = vi.fn();
 const mockSetStatsPriceQueryStatus = vi.fn();
 const mockReportProgress = vi.fn();
 const mockReportProgressByPrefix = vi.fn();
+/** What the protocol-cache store has accumulated, as the handler reads it back. */
+let protocolCacheRows: { chain: string; protocol: string; processed: number; total: number }[] = [];
+/** Which activity ids count as running, so a test can put one parent or the other in flight. */
+let runningIds: string[] = [];
+const mockStatusOf = vi.fn((kind: ActivityKind, ...parts: (string | number)[]) => ({
+  active: runningIds.includes(makeActivityId(kind, ...parts)),
+  everCompleted: false,
+  running: runningIds.includes(makeActivityId(kind, ...parts)),
+}));
 const mockNotifyHistoricalBalanceProcessingCompleted = vi.fn();
 
 type SupportedChains = typeof import('@/modules/core/common/use-supported-chains');
@@ -42,6 +54,9 @@ vi.mock('@/modules/history/use-decoding-status-store', () => ({
 
 vi.mock('@/modules/history/use-protocol-cache-status-store', () => ({
   useProtocolCacheStatusStore: vi.fn(() => ({
+    get protocolCacheStatus(): typeof protocolCacheRows {
+      return protocolCacheRows;
+    },
     setProtocolCacheStatus: mockSetProtocolCacheStatus,
     setReceivingProtocolCacheStatus: mockSetReceivingProtocolCacheStatus,
   })),
@@ -59,6 +74,7 @@ vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
   useTaskOrchestrator: vi.fn(() => ({
     reportProgress: mockReportProgress,
     reportProgressByPrefix: mockReportProgressByPrefix,
+    statusOf: mockStatusOf,
   })),
 }));
 
@@ -68,7 +84,11 @@ function data(subtype: SocketMessageProgressUpdateSubType): ProgressUpdateResult
 
 describe('createProgressUpdateHandler', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
+    useActivityDetail().resetDetails();
     vi.clearAllMocks();
+    protocolCacheRows = [];
+    runningIds = [];
   });
 
   it('should route undecoded transaction updates and stop the receiving flag', async () => {
@@ -118,6 +138,59 @@ describe('createProgressUpdateHandler', () => {
     await handler.handle(data(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES));
 
     expect(mockSetProtocolCacheStatus).toHaveBeenCalledOnce();
+  });
+
+  describe('protocol cache rows', () => {
+    const curveOnEthereum = { chain: 'ethereum', processed: 2, protocol: 'curve', total: 8 };
+    const aaveOnOptimism = { chain: 'optimism', processed: 1, protocol: 'aave', total: 4 };
+
+    async function handleProtocolCacheFrame(chain = 'ethereum'): Promise<void> {
+      await createProgressUpdateHandler(mockT).handle(createMock<ProgressUpdateResultData>({
+        chain,
+        subtype: SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES,
+      }));
+    }
+
+    it('should attach every accumulated row to a running cache refresh', async () => {
+      protocolCacheRows = [curveOnEthereum, aaveOnOptimism];
+      runningIds = [protocolCacheActivity.id()];
+
+      await handleProtocolCacheFrame();
+
+      expect(get(readActivityDetail(protocolCacheActivity, undefined))?.protocols)
+        .toStrictEqual([curveOnEthereum, aaveOnOptimism]);
+    });
+
+    it('should attach only the decoding chain\'s rows to its decode, under the canonical chain id', async () => {
+      protocolCacheRows = [curveOnEthereum, aaveOnOptimism];
+      const subject = { chain: 'eth', ignoreCache: false };
+      runningIds = [decodeActivity.id(subject)];
+
+      // The frame says 'ethereum' while the activity is keyed by 'eth'.
+      await handleProtocolCacheFrame();
+
+      expect(get(readActivityDetail(decodeActivity, subject))?.protocols).toStrictEqual([curveOnEthereum]);
+    });
+
+    it('should publish nothing when neither parent is running', async () => {
+      protocolCacheRows = [curveOnEthereum];
+
+      await handleProtocolCacheFrame();
+
+      expect(get(readActivityDetail(protocolCacheActivity, undefined))).toBeUndefined();
+      expect(get(readActivityDetail(decodeActivity, { chain: 'eth', ignoreCache: false }))).toBeUndefined();
+    });
+
+    it('should publish against the forced decode when that is the live variant', async () => {
+      protocolCacheRows = [curveOnEthereum];
+      const forced = { chain: 'eth', ignoreCache: true };
+      runningIds = [decodeActivity.id(forced)];
+
+      await handleProtocolCacheFrame();
+
+      expect(get(readActivityDetail(decodeActivity, forced))?.protocols).toStrictEqual([curveOnEthereum]);
+      expect(get(readActivityDetail(decodeActivity, { chain: 'eth', ignoreCache: false }))).toBeUndefined();
+    });
   });
 
   it('should route historical price query updates', async () => {
