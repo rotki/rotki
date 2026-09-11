@@ -1,6 +1,6 @@
 import { type BigNumber, Zero } from '@rotki/common';
 
-/** Per `(account, asset)` fetch + lookup status, so each row shows its own state. */
+/** Availability of the bucket snapshot for an event. */
 export const PairOverlayStatus = {
   EMPTY: 'empty',
   ERROR: 'error',
@@ -16,17 +16,6 @@ export interface PreparedBucket {
   protocol: string | null;
   times: number[]; // unix seconds, ascending
   values: BigNumber[];
-}
-
-export function pairKey(locationLabel: string, asset: string): string {
-  return `${locationLabel} ${asset}`;
-}
-
-export function resolveStatus(bucketCount: number, processingRequired: boolean): PairOverlayStatus {
-  if (bucketCount > 0)
-    return PairOverlayStatus.READY;
-
-  return processingRequired ? PairOverlayStatus.PROCESSING : PairOverlayStatus.EMPTY;
 }
 
 /**

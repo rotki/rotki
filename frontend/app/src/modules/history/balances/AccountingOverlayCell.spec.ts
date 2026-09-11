@@ -3,10 +3,15 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, defineComponent, h, type VNode } from 'vue';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { type AccountingOverlayContext, provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
+import { useAccountingOverlaySparkline } from '@/modules/history/balances/use-accounting-overlay-sparkline';
+
+vi.mock('@/modules/history/balances/use-accounting-overlay-sparkline', () => ({
+  useAccountingOverlaySparkline: vi.fn(() => computed(() => [])),
+}));
 
 let mockDirectionArrow: 'in' | 'out' | 'neutral' = 'neutral';
 
@@ -24,7 +29,10 @@ const stubs = {
   AssetAmountDisplay: { props: ['amount', 'asset'], template: '<span class="amount">{{ amount?.toString() }}</span>' },
   RuiButton: { template: '<button class="button"><slot /></button>' },
   RuiIcon: { template: '<i class="icon" />' },
-  RuiMenu: { template: '<div class="menu"><slot name="activator" /><slot /></div>' },
+  RuiMenu: {
+    emits: ['update:modelValue'],
+    template: '<div class="menu"><button data-testid="open-breakdown" @click="$emit(\'update:modelValue\', true)" /><slot name="activator" :attrs="{}" /><slot /></div>',
+  },
   RuiSkeletonLoader: { template: '<div class="skeleton" />' },
   RuiTooltip: { template: '<div class="tooltip"><slot name="activator" /><slot /></div>' },
 };
@@ -35,6 +43,7 @@ function event(locationLabel: string | null, counterparty?: string | null): Hist
     asset: 'ETH',
     counterparty,
     entryType: HistoryEventEntryType.EVM_EVENT,
+    identifier: 123,
     location: 'ethereum',
     locationLabel,
     timestamp: 150_000,
@@ -48,23 +57,24 @@ function mountCell(opts: {
   locationLabel?: string | null;
   counterparty?: string | null;
   direction?: 'in' | 'out' | 'neutral';
+  overlay?: Partial<UseAccountingOverlayReturn>;
 }): VueWrapper {
   mockDirectionArrow = opts.direction ?? 'neutral';
   const overlay: UseAccountingOverlayReturn = {
     balanceAfter: () => opts.balance === undefined ? undefined : bigNumberify(opts.balance),
     bucketsAt: () => [],
-    ensurePair: () => {},
+    registerEvent: () => () => {},
     refresh: async () => {},
-    seriesUpTo: () => [],
     state: computed(() => 'ready'),
     statusFor: () => opts.status ?? 'ready',
+    ...opts.overlay,
   };
   const context: AccountingOverlayContext = { enabled: ref(opts.enabled), overlay };
 
   const host = defineComponent({
     setup() {
       provideAccountingOverlay(context);
-      return (): VNode => h(AccountingOverlayCell, { event: event(opts.locationLabel ?? '0xA', opts.counterparty) });
+      return (): VNode => h(AccountingOverlayCell, { event: event(opts.locationLabel === undefined ? '0xA' : opts.locationLabel, opts.counterparty) });
     },
   });
 
@@ -72,6 +82,25 @@ function mountCell(opts: {
 }
 
 describe('accountingOverlayCell.vue', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should look up and register the event ID, release it on unmount and enable charts only on opening', async () => {
+    const cleanup = vi.fn<() => void>();
+    const registerEvent = vi.fn<(id: number) => () => void>(() => cleanup);
+    const balanceAfter = vi.fn<(id: number) => ReturnType<UseAccountingOverlayReturn['balanceAfter']>>(() => bigNumberify('5'));
+    const wrapper = mountCell({ enabled: true, overlay: { balanceAfter, registerEvent } });
+    expect(registerEvent).toHaveBeenCalledExactlyOnceWith(123);
+    expect(balanceAfter).toHaveBeenCalledWith(123);
+    const call = vi.mocked(useAccountingOverlaySparkline).mock.calls.at(-1);
+    assert(call);
+    expect(toValue(call[1])).toBe(false);
+    await wrapper.get('[data-testid=open-breakdown]').trigger('click');
+    expect(toValue(call[1])).toBe(true);
+    wrapper.unmount();
+    expect(cleanup).toHaveBeenCalledOnce();
+  });
   it('should render nothing when the overlay is disabled', () => {
     const wrapper = mountCell({ enabled: false });
     expect(wrapper.find('[data-testid=accounting-overlay-cell]').exists()).toBe(false);

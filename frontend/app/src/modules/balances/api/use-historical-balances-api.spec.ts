@@ -90,4 +90,19 @@ describe('composables/api/balances/historical-balances', () => {
       });
     });
   });
+
+  it('should fetch event snapshots directly and parse decimal balances', async () => {
+    let capturedBody: DefaultBodyType = null;
+    server.use(http.post(`${backendUrl}/api/1/balances/historical/events`, async ({ request }) => {
+      capturedBody = await request.json();
+      return HttpResponse.json({ message: '', result: { entries: {
+        123: { processing_required: false, buckets: [{ location: 'ethereum', protocol: null, balance: '0.1234567890123456789' }] },
+      } } });
+    }));
+    const { fetchHistoricalBalancesAtEvents } = await getApi();
+    const result = await fetchHistoricalBalancesAtEvents([123]);
+    expect(capturedBody).toEqual({ event_identifiers: [123] });
+    expect(result.entries['123'].processingRequired).toBe(false);
+    expect(result.entries['123'].buckets[0].balance.toString()).toBe('0.1234567890123456789');
+  });
 });

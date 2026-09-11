@@ -4,14 +4,16 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AccountingOverlayBuckets from '@/modules/history/balances/AccountingOverlayBuckets.vue';
 import AccountingOverlaySparkline from '@/modules/history/balances/AccountingOverlaySparkline.vue';
-import { type AccountingOverlayBucket, PairOverlayStatus, type SparklinePoint } from '@/modules/history/balances/use-accounting-overlay';
+import { type AccountingOverlayBucket, PairOverlayStatus } from '@/modules/history/balances/use-accounting-overlay';
 import { injectAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
+import { useAccountingOverlaySparkline } from '@/modules/history/balances/use-accounting-overlay-sparkline';
 import { type EventDirection, getEventDirectionIcon, getEventDirectionTextClass } from '@/modules/history/events/event-direction';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
 const { event } = defineProps<{ event: HistoryEventEntry }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const modelBreakdownOpen = ref<boolean>(false);
 const context = injectAccountingOverlay();
 const { getEventTypeData } = useHistoryEventMappings();
 
@@ -39,36 +41,29 @@ const status = computed<PairOverlayStatus | undefined>(() => {
   const acct = get(account);
   if (!context || !acct)
     return undefined;
-  return context.overlay.statusFor(acct, event.asset);
+  return context.overlay.statusFor(event.identifier);
 });
 
 const balance = computed<BigNumber | undefined>(() => {
   const acct = get(account);
   if (!context || !acct)
     return undefined;
-  return context.overlay.balanceAfter(acct, event.asset, event.timestamp);
+  return context.overlay.balanceAfter(event.identifier);
 });
 
 const buckets = computed<AccountingOverlayBucket[]>(() => {
   const acct = get(account);
   if (!context || !acct)
     return [];
-  return context.overlay.bucketsAt(acct, event.asset, event.timestamp);
+  return context.overlay.bucketsAt(event.identifier);
 });
 
-// Balance trajectory up to this event for the breakdown sparkline (premium-gated in the component).
-const series = computed<SparklinePoint[]>(() => {
-  const acct = get(account);
-  if (!context || !acct)
-    return [];
-  return context.overlay.seriesUpTo(acct, event.asset, event.timestamp);
-});
+const series = useAccountingOverlaySparkline(() => event, () => get(enabled) && get(modelBreakdownOpen), balance);
 
-watchEffect(() => {
-  const acct = get(account);
-  if (context && get(enabled) && acct && event.asset)
-    context.overlay.ensurePair({ asset: event.asset, locationLabel: acct, location: event.location });
-});
+watch([enabled, account, () => event.identifier], ([isEnabled, acct, identifier]) => {
+  if (context && isEnabled && acct)
+    onWatcherCleanup(context.overlay.registerEvent(identifier));
+}, { immediate: true });
 
 /** Why this row shows a dash rather than a balance, or undefined once one is available. */
 const placeholder = computed<string | undefined>(() => {
@@ -171,6 +166,7 @@ const placeholder = computed<string | undefined>(() => {
       <!-- Hover to peek, click to pin: a RuiMenu (not a tooltip) so the breakdown stays open for
            reading/touch and the trigger is a focusable, keyboard-operable button. -->
       <RuiMenu
+        v-model="modelBreakdownOpen"
         open-on-hover
         :close-delay="200"
         :close-on-content-click="false"

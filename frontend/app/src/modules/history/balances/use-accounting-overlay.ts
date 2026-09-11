@@ -1,29 +1,12 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { HistoricalBalancesAtEventsResponse } from '@/modules/history/balances/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { msg } from '@/message-key';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import {
-  mergeSameScopeBuckets,
-  pairKey,
-  PairOverlayStatus,
-  type PreparedBucket,
-  resolveStatus,
-  valueAt,
-} from '@/modules/history/balances/accounting-overlay-helpers';
-import { downsample, SPARKLINE_MAX_POINTS } from '@/modules/history/balances/sparkline';
-import { type HistoricalBalanceSeriesPayload, HistoricalBalanceSeriesResponse } from '@/modules/history/balances/types';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { PairOverlayStatus } from '@/modules/history/balances/accounting-overlay-helpers';
 
-// Re-exported so existing imports of these from this module keep working.
 export { PairOverlayStatus };
 
-/** Aggregate overlay state: `disabled` (off), `loading` (all series in flight), `ready` (some resolved). */
 export const AccountingOverlayState = {
   DISABLED: 'disabled',
   LOADING: 'loading',
@@ -32,7 +15,6 @@ export const AccountingOverlayState = {
 
 export type AccountingOverlayState = typeof AccountingOverlayState[keyof typeof AccountingOverlayState];
 
-/** The overlay column toggle: `none` hides it, `balance` shows balance-after-event. */
 export const OverlayMode = {
   BALANCE: 'balance',
   NONE: 'none',
@@ -46,309 +28,145 @@ export interface AccountingOverlayBucket {
   balance: BigNumber;
 }
 
-/** A single point on the balance-over-time sparkline: unix seconds + total balance as a number. */
 export interface SparklinePoint {
   time: number;
   value: number;
 }
 
-/** The minimal identity an event contributes: its account, asset (and optional location). */
-export interface OverlayPair {
-  locationLabel: string;
-  asset: string;
-  location?: string;
+interface EventSnapshot {
+  status: PairOverlayStatus;
+  buckets: AccountingOverlayBucket[];
+}
+
+function snapshotFromEntry(entry: HistoricalBalancesAtEventsResponse['entries'][string] | undefined): EventSnapshot {
+  if (!entry)
+    return { status: PairOverlayStatus.ERROR, buckets: [] };
+  if (entry.processingRequired)
+    return { status: PairOverlayStatus.PROCESSING, buckets: entry.buckets };
+  return {
+    status: entry.buckets.length > 0 ? PairOverlayStatus.READY : PairOverlayStatus.EMPTY,
+    buckets: entry.buckets,
+  };
 }
 
 interface AccountingOverlayParams {
   enabled: MaybeRefOrGetter<boolean>;
-  /** Distinct `(account, asset)` pairs present in the loaded events; each gets a series fetch. */
-  pairs: MaybeRefOrGetter<OverlayPair[]>;
-  fromTimestamp?: MaybeRefOrGetter<number | undefined>;
-  toTimestamp?: MaybeRefOrGetter<number | undefined>;
-}
-
-interface PairSeries {
-  status: PairOverlayStatus;
-  buckets: PreparedBucket[];
-  error?: string;
+  eventIdentifiers: MaybeRefOrGetter<number[]>;
 }
 
 export interface UseAccountingOverlayReturn {
   state: ComputedRef<AccountingOverlayState>;
-  statusFor: (locationLabel: string, asset: string) => PairOverlayStatus;
-  balanceAfter: (locationLabel: string, asset: string, timestampMs: number) => BigNumber | undefined;
-  bucketsAt: (locationLabel: string, asset: string, timestampMs: number) => AccountingOverlayBucket[];
-  /** Total-balance points for the full trajectory up to `timestampMs`, for a sparkline. */
-  seriesUpTo: (locationLabel: string, asset: string, timestampMs: number) => SparklinePoint[];
-  /**
-   * Lets a rendered cell declare the `(account, asset)` it needs, so the overlay fetches it even
-   * when the pair isn't in the view-derived set — e.g. an asset movement linked into another
-   * group at render time, which never appears in the paginated `groups.data`.
-   */
-  ensurePair: (pair: OverlayPair) => void;
+  statusFor: (identifier: number) => PairOverlayStatus;
+  balanceAfter: (identifier: number) => BigNumber | undefined;
+  bucketsAt: (identifier: number) => AccountingOverlayBucket[];
+  /** Register a rendered event absent from the page groups; returns its cleanup function. */
+  registerEvent: (identifier: number) => () => void;
   refresh: () => Promise<void>;
 }
 
-/** Backend returns this message (404) when the scope has no computed metrics yet. */
-const NO_DATA_MESSAGE = 'No historical data found';
+/** Fetch exact event snapshots in page batches, including events linked into rendered groups. */
+export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOverlayParams): UseAccountingOverlayReturn {
+  const { fetchHistoricalBalancesAtEvents } = useHistoricalBalancesApi();
+  const cache = shallowRef<Map<number, EventSnapshot>>(new Map());
+  const registered = shallowRef<Map<number, number>>(new Map());
+  let generation = 0;
+  let disposed = false;
 
-/**
- * Drives the "balance at event" accounting overlay on the history events page.
- *
- * Every event already carries its account (`location_label`), asset and timestamp — exactly
- * what `/balances/historical/asset/series` needs. So the overlay needs no extra filter: it
- * derives the distinct `(account, asset)` pairs from the loaded events, fetches one series
- * per pair (cached), and exposes a local step-function lookup so each row resolves its own
- * `balance_after` with zero per-row backend calls.
- */
-export function useAccountingOverlay(params: AccountingOverlayParams): UseAccountingOverlayReturn {
-  const { enabled, fromTimestamp, pairs, toTimestamp } = params;
-
-  const { t } = useI18n({ useScope: 'global' });
-  const { fetchHistoricalBalanceSeries } = useHistoricalBalancesApi();
-  const { submitTask } = useNativeTask();
-
-  /** Series state by pair key. */
-  const cache = shallowRef<Map<string, PairSeries>>(new Map());
-
-  /**
-   * Pairs a rendered cell asked for, which the view-derived set may not cover.
-   *
-   * @remarks
-   * An asset movement linked into another group is only known at render time, so it cannot be
-   * derived from the view. These are fetched alongside the view's own pairs.
-   */
-  const requestedPairs = shallowRef<Map<string, OverlayPair>>(new Map());
-
-  /**
-   * Monotonic id of the current scope, bumped whenever the time range or the toggle changes.
-   *
-   * @remarks
-   * Results arriving under a superseded id are discarded rather than written, so a slow response
-   * from the previous range cannot land in the rebuilt cache.
-   */
-  const scopeId = shallowRef<number>(0);
-
-  /**
-   * Whether the first refresh has established a scope yet.
-   *
-   * @remarks
-   * The incremental pair watcher must not fire before it has. Pairs arriving during the initial,
-   * debounced refresh would fetch under the *old* scope, which that refresh then supersedes:
-   * every request is duplicated, and an entry whose duplicate is cancelled stays on `loading`
-   * for good.
-   */
-  const initialized = shallowRef<boolean>(false);
+  const activeIdentifiers = computed<number[]>(() => toValue(enabled)
+    ? [...new Set([...toValue(eventIdentifiers), ...get(registered).keys()])]
+    : []);
 
   const state = computed<AccountingOverlayState>(() => {
     if (!toValue(enabled))
       return AccountingOverlayState.DISABLED;
-
-    const statuses = Array.from(get(cache).values(), entry => entry.status);
-    if (statuses.length > 0 && statuses.every(status => status === PairOverlayStatus.LOADING))
-      return AccountingOverlayState.LOADING;
-    return AccountingOverlayState.READY;
+    const active = get(activeIdentifiers);
+    return active.length > 0 && active.every(id => statusFor(id) === PairOverlayStatus.LOADING)
+      ? AccountingOverlayState.LOADING
+      : AccountingOverlayState.READY;
   });
 
-  function setEntry(key: string, entry: PairSeries): void {
+  async function fetchMissing(): Promise<void> {
+    if (disposed)
+      return;
+    const currentGeneration = generation;
+    const missing = get(activeIdentifiers).filter(id => !get(cache).has(id));
     const next = new Map(get(cache));
-    next.set(key, entry);
+    for (const id of missing)
+      next.set(id, { status: PairOverlayStatus.LOADING, buckets: [] });
     set(cache, next);
-  }
 
-  /**
-   * Maps a finished task outcome to the entry to store, or `null` when the current state
-   * should be kept (the task was cancelled / skipped rather than failing for real).
-   */
-  function entryFromOutcome(outcome: Result<HistoricalBalanceSeriesResponse, TaskError>): PairSeries | null {
-    const response = isErr(outcome) ? undefined : outcome.value;
-    if (isErr(outcome)) {
-      if (!isActionable(outcome.error))
-        return null;
-      if (outcome.error.message.includes(NO_DATA_MESSAGE))
-        return { status: PairOverlayStatus.EMPTY, buckets: [] };
-
-      return {
-        status: PairOverlayStatus.ERROR,
-        buckets: [],
-        error: outcome.error.message,
-      };
+    for (let offset = 0; offset < missing.length; offset += 500) {
+      if (currentGeneration !== generation)
+        return;
+      const batch = missing.slice(offset, offset + 500);
+      try {
+        const response = await fetchHistoricalBalancesAtEvents(batch);
+        if (currentGeneration !== generation)
+          return;
+        const entries = new Map(Object.entries(response.entries));
+        const updated = new Map(get(cache));
+        for (const id of batch) {
+          updated.set(id, snapshotFromEntry(entries.get(String(id))));
+        }
+        set(cache, updated);
+      }
+      catch {
+        if (currentGeneration !== generation)
+          return;
+        const updated = new Map(get(cache));
+        for (const id of batch)
+          updated.set(id, { status: PairOverlayStatus.ERROR, buckets: [] });
+        set(cache, updated);
+      }
     }
-
-    if (!response)
-      return null;
-
-    const parsed = HistoricalBalanceSeriesResponse.parse(response);
-    const buckets = mergeSameScopeBuckets(parsed.entries.map<PreparedBucket>(entry => ({
-      location: entry.location,
-      protocol: entry.protocol ?? null,
-      times: entry.times,
-      values: entry.values,
-    })));
-    return { status: resolveStatus(buckets.length, parsed.processingRequired), buckets };
   }
 
-  async function fetchPairSeries(pair: OverlayPair, currentScope: number): Promise<void> {
-    const key = pairKey(pair.locationLabel, pair.asset);
-    setEntry(key, { status: PairOverlayStatus.LOADING, buckets: [] });
-
-    const from = toValue(fromTimestamp);
-    const to = toValue(toTimestamp);
-    const payload: HistoricalBalanceSeriesPayload = {
-      asset: pair.asset,
-      locationLabel: pair.locationLabel,
-      ...(pair.location ? { location: pair.location } : {}),
-      ...(from ? { fromTimestamp: from } : {}),
-      ...(to ? { toTimestamp: to } : {}),
+  function registerEvent(identifier: number): () => void {
+    const next = new Map(get(registered));
+    next.set(identifier, (next.get(identifier) ?? 0) + 1);
+    set(registered, next);
+    return (): void => {
+      const remaining = new Map(get(registered));
+      const count = (remaining.get(identifier) ?? 1) - 1;
+      if (count > 0)
+        remaining.set(identifier, count);
+      else
+        remaining.delete(identifier);
+      set(registered, remaining);
     };
-
-    try {
-      const outcome = await submitTask<HistoricalBalanceSeriesResponse>({
-        id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.SERIES, pair.locationLabel, pair.asset, from ?? 0, to ?? 0),
-        kind: ActivityKind.HISTORICAL_BALANCES,
-        rerunnable: false,
-        run: async ({ runTask }): Promise<Result<HistoricalBalanceSeriesResponse, TaskError>> => mapResult(
-          await runTask<HistoricalBalanceSeriesResponse>(
-            async () => fetchHistoricalBalanceSeries(payload),
-          ),
-          value => value,
-        ),
-        subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.series'), { asset: pair.asset }),
-        title: t('task_center.group.historical_balances'),
-      });
-
-      if (get(scopeId) !== currentScope)
-        return; // scope changed while awaiting; drop stale result
-
-      const entry = entryFromOutcome(outcome);
-      if (entry)
-        setEntry(key, entry);
-    }
-    catch (error_: unknown) {
-      if (get(scopeId) === currentScope)
-        setEntry(key, { status: PairOverlayStatus.ERROR, buckets: [], error: getErrorMessage(error_) });
-    }
   }
 
-  /** Fetch the known pairs (view-derived + requested) whose cache entry matches `shouldFetch`. */
-  function fetchPairsWhere(shouldFetch: (entry: PairSeries | undefined) => boolean): void {
-    if (!toValue(enabled))
-      return;
-
-    const currentScope = get(scopeId);
-    const cached = get(cache);
-    for (const pair of [...toValue(pairs), ...get(requestedPairs).values()]) {
-      if (!pair.locationLabel || !pair.asset)
-        continue;
-      if (shouldFetch(cached.get(pairKey(pair.locationLabel, pair.asset))))
-        startPromise(fetchPairSeries(pair, currentScope));
-    }
-  }
-
-  /** Fetch any pairs in the current set that aren't cached yet (for the current scope). */
-  function fetchMissing(): void {
-    fetchPairsWhere(entry => entry === undefined);
-  }
-
-  /** Register a pair a rendered cell needs, fetching it immediately when we're past init. */
-  function ensurePair(pair: OverlayPair): void {
-    if (!pair.locationLabel || !pair.asset)
-      return;
-
-    const key = pairKey(pair.locationLabel, pair.asset);
-    if (get(requestedPairs).has(key) || get(cache).has(key))
-      return;
-
-    const next = new Map(get(requestedPairs));
-    next.set(key, pair);
-    set(requestedPairs, next);
-
-    // Before the first refresh, refresh()'s fetchMissing will pick it up; after, fetch it now.
-    if (get(initialized) && toValue(enabled))
-      startPromise(fetchPairSeries(pair, get(scopeId)));
-  }
-
-  /** Drop the cache and refetch from scratch for the current scope. */
   async function refresh(): Promise<void> {
-    set(scopeId, get(scopeId) + 1);
+    generation++;
     set(cache, new Map());
-    set(initialized, true);
-    fetchMissing();
+    await fetchMissing();
   }
 
-  function statusFor(locationLabel: string, asset: string): PairOverlayStatus {
-    return get(cache).get(pairKey(locationLabel, asset))?.status ?? PairOverlayStatus.LOADING;
+  function statusFor(identifier: number): PairOverlayStatus {
+    return get(cache).get(identifier)?.status ?? PairOverlayStatus.LOADING;
   }
 
-  function balanceAfter(locationLabel: string, asset: string, timestampMs: number): BigNumber | undefined {
-    const entry = get(cache).get(pairKey(locationLabel, asset));
-    if (entry?.status !== PairOverlayStatus.READY)
-      return undefined;
-
-    const tsSec = Math.floor(timestampMs / 1000);
-    return entry.buckets.reduce<BigNumber>((sum, bucket) => sum.plus(valueAt(bucket, tsSec)), Zero);
+  function balanceAfter(identifier: number): BigNumber | undefined {
+    const entry = get(cache).get(identifier);
+    return entry?.status === PairOverlayStatus.READY
+      ? entry.buckets.reduce((sum, bucket) => sum.plus(bucket.balance), Zero)
+      : undefined;
   }
 
-  function bucketsAt(locationLabel: string, asset: string, timestampMs: number): AccountingOverlayBucket[] {
-    const entry = get(cache).get(pairKey(locationLabel, asset));
-    if (!entry)
-      return [];
-
-    const tsSec = Math.floor(timestampMs / 1000);
-    return entry.buckets.map<AccountingOverlayBucket>(bucket => ({
-      location: bucket.location,
-      protocol: bucket.protocol,
-      balance: valueAt(bucket, tsSec),
-    }));
+  function bucketsAt(identifier: number): AccountingOverlayBucket[] {
+    return get(cache).get(identifier)?.buckets ?? [];
   }
 
-  function seriesUpTo(locationLabel: string, asset: string, timestampMs: number): SparklinePoint[] {
-    const entry = get(cache).get(pairKey(locationLabel, asset));
-    if (entry?.status !== PairOverlayStatus.READY)
-      return [];
+  watch((): boolean => toValue(enabled), () => {
+    generation++;
+    set(cache, new Map());
+  }, { flush: 'sync' });
 
-    const end = Math.floor(timestampMs / 1000);
-    const totalAt = (tsSec: number): number =>
-      entry.buckets.reduce<BigNumber>((sum, bucket) => sum.plus(valueAt(bucket, tsSec)), Zero).toNumber();
+  watchDebounced(activeIdentifiers, () => startPromise(fetchMissing()), { debounce: 50, immediate: true });
+  tryOnScopeDispose(() => {
+    disposed = true;
+    generation++;
+  });
 
-    // Every change-point up to (and including) the event — the full balance trajectory.
-    const interior = entry.buckets.flatMap(bucket => bucket.times).filter(time => time < end);
-    const ordered = [...new Set([end, ...interior])].sort((a, b) => a - b);
-
-    return downsample(ordered, SPARKLINE_MAX_POINTS).map<SparklinePoint>(time => ({ time, value: totalAt(time) }));
-  }
-
-  // Scope changes (time range / toggle) reset the cache and refetch.
-  watchDebounced(
-    [
-      (): boolean => toValue(enabled),
-      (): number | undefined => toValue(fromTimestamp),
-      (): number | undefined => toValue(toTimestamp),
-    ],
-    () => startPromise(refresh()),
-    { debounce: 400, immediate: true },
-  );
-
-  /**
-   * Fetches the pairs that appear as more events load into the view.
-   *
-   * @remarks
-   * Gated on {@link initialized} so it never runs ahead of the first refresh's scope.
-   */
-  function fetchPairsAsTheyAppear(): void {
-    if (get(initialized))
-      fetchMissing();
-  }
-
-  watch((): OverlayPair[] => toValue(pairs), fetchPairsAsTheyAppear, { deep: true });
-
-  return {
-    state,
-    statusFor,
-    balanceAfter,
-    bucketsAt,
-    seriesUpTo,
-    ensurePair,
-    refresh,
-  };
+  return { state, statusFor, balanceAfter, bucketsAt, registerEvent, refresh };
 }
