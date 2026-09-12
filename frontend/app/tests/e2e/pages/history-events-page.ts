@@ -20,11 +20,11 @@ import { HistoryEventRows } from './history-event-rows';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
-/** One scroll step through a virtualised menu, comfortably inside one rendered window. */
-const MENU_SCROLL_STEP = 150;
+/** Upper bound on arrow presses while looking for a menu option, above any option count here. */
+const MAX_MENU_HIGHLIGHT_STEPS = 50;
 
-/** Time given to the virtual list to render the options at a new scroll offset. */
-const MENU_RENDER_SETTLE_MS = 100;
+/** Time given to the menu to render the newly highlighted option after a key press. */
+const MENU_HIGHLIGHT_SETTLE_MS = 250;
 
 export class HistoryEventsPage {
   private dateSequence = 0;
@@ -46,45 +46,38 @@ export class HistoryEventsPage {
   }
 
   async selectEntryType(type: string): Promise<void> {
-    const entryTypeSelect = this.page.locator('[data-testid=entry-type]');
-    await entryTypeSelect.locator('[data-id=activator]').click();
+    const activator = this.page.locator('[data-testid=entry-type] [data-id=activator]');
+    await activator.click();
     const menu = this.page.locator('[role=menu]');
     await menu.waitFor({ state: 'visible' });
-    const option = menu.getByText(new RegExp(`^${type}$`, 'i'));
-    await this.scrollMenuUntilRendered(menu, option);
-    await option.click();
+    const pattern = new RegExp(`^${type}$`, 'i');
+    await this.highlightMenuOption(activator, menu, pattern);
+    await menu.getByText(pattern).click();
     await menu.waitFor({ state: 'hidden' });
   }
 
   /**
-   * Scrolls a virtualised RuiMenuSelect menu page by page until the option is rendered.
+   * Moves the highlight of an open RuiMenuSelect with the keyboard until it sits on the option.
    *
    * @remarks
-   * The menu renders only the options around the current scroll offset, so an option past the
-   * first window (the entry-type list is alphabetical and longer than one window) never exists
-   * in the DOM until the menu is scrolled to it.
+   * The menu virtualises its options, so one past the rendered window does not exist in the DOM
+   * and cannot be clicked. Arrow keys on the activator move the highlight, and the menu scrolls
+   * the highlighted option into view through its own virtual list, so the option is rendered by
+   * the time the highlight reaches it. Scrolling the menu element directly depends on which
+   * wrapper overflows, which differs between browser builds.
    */
-  private async scrollMenuUntilRendered(menu: Locator, option: Locator): Promise<void> {
-    const scrollBy = async (offset: number): Promise<boolean> => menu.evaluate((el, delta) => {
-      for (const element of el.querySelectorAll('*')) {
-        if (element instanceof HTMLElement && element.scrollHeight > element.clientHeight) {
-          const before = element.scrollTop;
-          element.scrollTop = delta < 0 ? 0 : before + delta;
-          return element.scrollTop !== before;
-        }
+  private async highlightMenuOption(activator: Locator, menu: Locator, pattern: RegExp): Promise<void> {
+    const highlighted = menu.locator('[data-highlighted="true"]').filter({ hasText: pattern });
+    await activator.press('Home');
+    for (let step = 0; step < MAX_MENU_HIGHLIGHT_STEPS; step++) {
+      const reached = await highlighted.waitFor({ state: 'visible', timeout: MENU_HIGHLIGHT_SETTLE_MS })
+        .then(() => true, () => false);
+      if (reached) {
+        return;
       }
-      return false;
-    }, offset);
-
-    await scrollBy(-1);
-    let moved = true;
-    while (!(await option.isVisible()) && moved) {
-      moved = await scrollBy(MENU_SCROLL_STEP);
-      if (moved) {
-        await this.page.waitForTimeout(MENU_RENDER_SETTLE_MS);
-      }
+      await activator.press('ArrowDown');
     }
-    await option.waitFor({ state: 'visible' });
+    await highlighted.waitFor({ state: 'visible' });
   }
 
   private async fillDatetime(): Promise<void> {
