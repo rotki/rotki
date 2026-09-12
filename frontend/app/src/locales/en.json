@@ -529,6 +529,12 @@
         }
       }
     },
+    "bank_events": {
+      "error": {
+        "description": "Failed to sync bank transactions for {location} with name '{name}': {error}",
+        "title": "Bank sync"
+      }
+    },
     "bridge_matching": {
       "create_counterpart_success": {
         "description": "A synthetic counterpart event was created on the other chain and linked to the bridge transaction.",
@@ -1807,6 +1813,64 @@
     "tracked": "Tracked",
     "view_event": "View event"
   },
+  "bank_balances": {
+    "add_bank": "Add a bank connection",
+    "click_here": "Click here",
+    "errors": {
+      "title": "Bank balances"
+    },
+    "no_balances": "No balances were returned by your bank connections yet. Refresh to query them.",
+    "no_connections": "No bank connections have been set up yet. {0} to add one.",
+    "refresh_tooltip": "Query the current balances of every connected bank"
+  },
+  "bank_settings": {
+    "confirmation": {
+      "message": "Are you sure you want to remove the {bank} connection named {name} from rotki? Its credentials and sync progress are deleted. Transactions already pulled are kept.",
+      "title": "Confirmation Required"
+    },
+    "delete": {
+      "tooltip": "Remove the bank connection"
+    },
+    "dialog": {
+      "add": {
+        "title": "Add a bank connection"
+      },
+      "edit": {
+        "title": "Edit a bank connection"
+      }
+    },
+    "edit": {
+      "tooltip": "Edit the bank connection"
+    },
+    "empty": "No bank connections yet",
+    "errors": {
+      "list_title": "Bank connections",
+      "remove_message": "Could not remove the bank connection {name}: {error}",
+      "remove_title": "Bank connection removal",
+      "setup_message": "Could not set up the {bank} connection: {error}",
+      "setup_title": "Bank connection setup",
+      "supported_title": "Supported banks"
+    },
+    "form": {
+      "bank": "Bank",
+      "credential_keep_hint": "Leave empty to keep the stored value",
+      "docs": "Bank API documentation",
+      "name": "Connection name",
+      "name_hint": "A name to tell this connection apart, e.g. the organization",
+      "validation": {
+        "required": "This field is required"
+      }
+    },
+    "header": {
+      "last_sync": "Last sync"
+    },
+    "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
+    "sync": {
+      "failed": "Last sync failed",
+      "never": "Never synced",
+      "tooltip": "Pull new transactions now"
+    }
+  },
   "big_dialog": {
     "prompt_close": {
       "actions": {
@@ -2370,6 +2434,10 @@
     }
   },
   "dashboard": {
+    "bank_balances": {
+      "add": "Add a bank connection",
+      "title": "bank"
+    },
     "blockchain_balances": {
       "add": "Add blockchain address",
       "behaviour": {
@@ -4166,16 +4234,19 @@
   },
   "history_refresh_selection": {
     "back_to_chain": "Back to chain selection",
+    "no_banks": "No bank connections have been set up yet",
     "non_syncing_hint": "{count} exchange is excluded from syncing | {count} exchanges are excluded from syncing",
     "refresh": "Refresh {total} {type}",
     "refresh_disabled": "Refreshing {service} is disabled because the required API key is not configured",
     "search_address": "Search by address",
+    "search_banks": "Search by bank",
     "search_chain": "Search by chain",
     "search_events": "Search by type",
     "search_exchanges": "Search by exchange",
     "search_protocols": "Search by protocol",
     "selection": "Select one or more to refresh their events",
     "tabs": {
+      "banks": "Banks",
       "chains": "Chains",
       "events": "ETH Staking Events",
       "exchanges": "Exchanges",
@@ -4183,6 +4254,7 @@
     },
     "type": {
       "accounts": "Accounts | Account | Accounts",
+      "banks": "Banks | Bank connection | Bank connections",
       "events": "Events | Event | Events",
       "exchanges": "Exchanges | Exchange | Exchanges",
       "protocols": "Protocols | Protocol | Protocols"
@@ -4745,12 +4817,14 @@
     },
     "api_keys": "API Keys",
     "api_keys_sub": {
+      "banks": "Banks",
       "exchanges": "Exchanges",
       "external_services": "External Services",
       "premium": "rotki Premium"
     },
     "balances": "Balances",
     "balances_sub": {
+      "bank_balances": "Bank Balances",
       "blockchain_balances": "Blockchain Balances",
       "exchange_balances": "Exchange Balances",
       "manual_balances": "Manual Balances",
@@ -6162,6 +6236,9 @@
         "update": "Applying asset database update v{version}",
         "versions": "Checking for asset database updates"
       },
+      "bank_balances": {
+        "query": "Reading bank balances"
+      },
       "blockchain_balances": {
         "chain": "Refreshing {chain}",
         "run": "Refreshing {count} chains"
@@ -6189,6 +6266,7 @@
         "series": "Building the {asset} balance series"
       },
       "history_events": {
+        "bank": "Syncing transactions from {bank} ({account})",
         "bridge": "Matching bridge transactions",
         "exchange": "Reading events from {exchange} ({account})",
         "export": "Exporting history events to CSV",
@@ -6262,6 +6340,8 @@
       "airdrops": "Airdrops",
       "all_balances": "All balances",
       "assets": "Assets",
+      "bank_balances": "Bank balances",
+      "bank_events": "Bank transactions",
       "blockchain_balances": "Blockchain balances",
       "csv_import": "CSV import",
       "eth_block_decoding": "Block event decoding",
@@ -6714,6 +6794,7 @@
         "asset_movement_event": "{verb} {location} {txRef}",
         "asset_movement_event_deposit": "Deposit to",
         "asset_movement_event_withdraw": "Withdraw from",
+        "bank_transaction_event": "{location} bank transaction",
         "bitcoin_event": "Bitcoin event",
         "eth_block_event": "Block {blockNumber} produced",
         "eth_deposit_event": "Deposit events {txRef}",

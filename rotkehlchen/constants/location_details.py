@@ -1,3 +1,4 @@
+from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
     EXCHANGES_WITH_PASSPHRASE,
@@ -107,6 +108,7 @@ LOCATION_DETAILS: dict = {
     Location.POLKADOT: {'image': 'polkadot.svg'},
     Location.KUSAMA: {'image': 'kusama.svg'},
     Location.SOLANA: {'image': 'solana.svg'},
+    Location.QONTO: {'image': 'qonto.svg'},
 }
 for key, value in LOCATION_DETAILS.items():
     if key in ALL_SUPPORTED_EXCHANGES:
@@ -120,6 +122,9 @@ for key, value in LOCATION_DETAILS.items():
                 value['exchange_details']['experimental'] = True
             continue
         value['is_exchange'] = True
+    elif key in BANK_MANIFESTS:
+        value['is_bank'] = True
+        value['bank_details'] = BANK_MANIFESTS[key].serialize()
 
 
 def get_formatted_location_name(location: Location) -> str:

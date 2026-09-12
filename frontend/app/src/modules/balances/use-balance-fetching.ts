@@ -10,6 +10,7 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSnapshotSchedule } from '@/modules/balances/use-snapshot-schedule';
+import { useBanks } from '@/modules/banks/use-banks';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
@@ -20,6 +21,13 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 export const useBalanceFetching = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();
   const { fetchConnectedExchangeBalances } = useExchanges();
+  const { fetchBankBalances, refreshBankConnections } = useBanks();
+
+  /** Banks are listed before they are queried: the balance query is a no-op without connections. */
+  const fetchBanks = async (): Promise<void> => {
+    await refreshBankConnections();
+    await fetchBankBalances();
+  };
   const { fetchAccounts } = useBlockchainAccountManagement();
   const { queryBalancesAsync } = useBalancesApi();
   const { fetchExchangeRates } = usePriceTaskManager();
@@ -65,7 +73,7 @@ export const useBalanceFetching = createSharedComposable(() => {
    */
   const fetchCached = async (): Promise<void> => {
     await fetchExchangeRates();
-    await Promise.allSettled([fetchManualBalances(), fetchAccounts({ refreshEns: true }), fetchConnectedExchangeBalances()]);
+    await Promise.allSettled([fetchManualBalances(), fetchAccounts({ refreshEns: true }), fetchConnectedExchangeBalances(), fetchBanks()]);
   };
 
   /**
@@ -113,6 +121,7 @@ export const useBalanceFetching = createSharedComposable(() => {
       fetchManualBalances(),
       fetchAccounts({ refreshEns: true }),
       fetchConnectedExchangeBalances(),
+      fetchBanks(),
       fetchNetValue(),
     ]);
 

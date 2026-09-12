@@ -1,4 +1,5 @@
-import type { AddSolanaSwapEventPayload, SolanaSwapEvent } from '@/modules/history/events/schemas';
+import type { AddSolanaSwapEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { SolanaSwapEvent } from '@/modules/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';

@@ -13,6 +13,7 @@ import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { type ChangeSource, routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import {
+  isBankTransactionEventType,
   isEvmEventType,
   isOnlineHistoryEventType,
 } from '@/modules/history/event-utils';
@@ -255,7 +256,7 @@ export function useHistoryEventsFilters(
     const entryTypesValue = entryTypes();
     return {
       evmEvents: entryTypesValue ? entryTypesValue.some(type => isEvmEventType(type)) : true,
-      onlineEvents: entryTypesValue ? entryTypesValue.some(type => isOnlineHistoryEventType(type)) : true,
+      onlineEvents: entryTypesValue ? entryTypesValue.some(type => isOnlineHistoryEventType(type) || isBankTransactionEventType(type)) : true,
     };
   });
 

@@ -1,10 +1,12 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 
 export const HistoryRefreshTab = {
+  BANKS: 'banks',
   CHAINS: 'chains',
   EVENTS: 'events',
   EXCHANGES: 'exchanges',
@@ -27,6 +29,7 @@ interface UseHistoryRefreshSelectionReturn {
   modelSelectedChain: Ref<string | undefined>;
   modelSelectedAccounts: Ref<ChainAddress[]>;
   modelSelectedExchanges: Ref<Exchange[]>;
+  modelSelectedBanks: Ref<BankConnectionIdentity[]>;
   modelSelectedQueries: Ref<OnlineHistoryEventsQueryType[]>;
   modelSelectedProtocolQueries: Ref<OnlineHistoryEventsQueryType[]>;
   /** How a tab reports that its picks cover everything it offers. */
@@ -46,7 +49,7 @@ interface UseHistoryRefreshSelectionReturn {
 /**
  * The picks behind the history refresh menu.
  *
- * Each of the four tabs keeps its own selection and reports back whether that selection covers
+ * Each of the five tabs keeps its own selection and reports back whether that selection covers
  * everything it offers, which is what the "select all" checkbox and the refresh button read. The
  * tabs are independent on purpose: switching tabs resets, because a selection made against one
  * tab's entries says nothing about another's.
@@ -64,6 +67,9 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
   const modelSelectedExchanges = ref<Exchange[]>([]);
   const allExchangesSelected = shallowRef<boolean>(false);
 
+  const modelSelectedBanks = ref<BankConnectionIdentity[]>([]);
+  const allBanksSelected = shallowRef<boolean>(false);
+
   const modelSelectedQueries = ref<OnlineHistoryEventsQueryType[]>([]);
   const allQueriesSelected = shallowRef<boolean>(false);
 
@@ -71,6 +77,10 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
   const allProtocolQueriesSelected = shallowRef<boolean>(false);
 
   const tabStates: Record<HistoryRefreshTab, TabState> = {
+    [HistoryRefreshTab.BANKS]: {
+      allSelected: allBanksSelected,
+      count: computed<number>(() => get(modelSelectedBanks).length),
+    },
     [HistoryRefreshTab.CHAINS]: {
       allSelected: allAccountsSelected,
       count: computed<number>(() => get(modelSelectedAccounts).length),
@@ -109,6 +119,8 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
           : t('history_refresh_selection.search_chain');
       case HistoryRefreshTab.EXCHANGES:
         return t('history_refresh_selection.search_exchanges');
+      case HistoryRefreshTab.BANKS:
+        return t('history_refresh_selection.search_banks');
       case HistoryRefreshTab.EVENTS:
         return t('history_refresh_selection.search_events');
       case HistoryRefreshTab.PROTOCOLS:
@@ -123,6 +135,8 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
         return t('history_refresh_selection.type.accounts', total);
       case HistoryRefreshTab.EXCHANGES:
         return t('history_refresh_selection.type.exchanges', total);
+      case HistoryRefreshTab.BANKS:
+        return t('history_refresh_selection.type.banks', total);
       case HistoryRefreshTab.EVENTS:
         return t('history_refresh_selection.type.events', total);
       case HistoryRefreshTab.PROTOCOLS:
@@ -140,6 +154,8 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
         return { accounts: get(modelSelectedAccounts) };
       case HistoryRefreshTab.EXCHANGES:
         return { exchanges: get(modelSelectedExchanges) };
+      case HistoryRefreshTab.BANKS:
+        return { banks: get(modelSelectedBanks) };
       case HistoryRefreshTab.EVENTS:
         return { queries: get(modelSelectedQueries) };
       case HistoryRefreshTab.PROTOCOLS:
@@ -154,6 +170,8 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
     set(allAccountsSelected, false);
     set(modelSelectedExchanges, []);
     set(allExchangesSelected, false);
+    set(modelSelectedBanks, []);
+    set(allBanksSelected, false);
     set(modelSelectedQueries, []);
     set(allQueriesSelected, false);
     set(modelSelectedProtocolQueries, []);
@@ -169,6 +187,7 @@ export function useHistoryRefreshSelection(): UseHistoryRefreshSelectionReturn {
     indeterminate,
     modelSearch,
     modelSelectedAccounts,
+    modelSelectedBanks,
     modelSelectedChain,
     modelSelectedExchanges,
     modelSelectedProtocolQueries,

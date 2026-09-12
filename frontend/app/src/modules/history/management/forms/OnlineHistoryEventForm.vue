@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
@@ -11,6 +10,8 @@ import HistoryEventAssetPriceForm from '@/modules/history/management/forms/Histo
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import {
   emptyOnlineHistoryForm,
+  type OnlineFormEvent,
+  type OnlineFormPayload,
   onlineHistorySchema,
   onlineHistoryStateFromEvent,
   onlineHistoryStateFromGroup,
@@ -24,7 +25,7 @@ import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { data } = defineProps<{ data: StandaloneEventData<OnlineHistoryEvent> }>();
+const { data } = defineProps<{ data: StandaloneEventData<OnlineFormEvent> }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -44,7 +45,7 @@ const { form, save, seed } = useHistoryEventForm({
   stateUpdated,
   toEditPayload: toOnlineHistoryEditPayload,
   // A new event needs a group of its own, which a pure transform cannot produce.
-  transform: (state): NewOnlineHistoryEventPayload =>
+  transform: (state): OnlineFormPayload =>
     toOnlineHistoryPayload(state, state.groupIdentifier || generateUUID()),
 });
 

@@ -46,6 +46,11 @@ from rotkehlchen.api.v1.schemas import (
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTaskSchema,
+    BankBalanceQuerySchema,
+    BankLocationWithNameSchema,
+    BanksResourceAddSchema,
+    BanksResourceEditSchema,
+    BankSyncSchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
     BinanceMarketsUserSchema,
@@ -985,6 +990,83 @@ class AllBalancesResource(BaseMethodView):
             ignore_errors=ignore_errors,
             async_query=async_query,
             ignore_cache=ignore_cache,
+        )
+
+
+class BanksResource(BaseMethodView):
+    """The user's bank connections. Setup takes the credentials a bank's manifest
+    declares (see the bank_details of the locations endpoint), keyed by slot."""
+
+    put_schema = BanksResourceAddSchema()
+    patch_schema = BanksResourceEditSchema()
+    delete_schema = BankLocationWithNameSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_banks()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, name: str, location: Location, credentials: dict[str, str]) -> Response:
+        return self.rest_api.setup_bank(name=name, location=location, credentials=credentials)
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(
+            self,
+            name: str,
+            location: Location,
+            new_name: str | None,
+            credentials: dict[str, str],
+    ) -> Response:
+        return self.rest_api.edit_bank(
+            name=name,
+            location=location,
+            new_name=new_name,
+            credentials=credentials,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, name: str, location: Location) -> Response:
+        return self.rest_api.remove_bank(name=name, location=location)
+
+
+class SupportedBanksResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_supported_banks()
+
+
+class BankSyncResource(BaseMethodView):
+    """Pull new transactions of one connection, of a bank, or of every bank"""
+
+    post_schema = BankSyncSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, location: Location | None, name: str | None, async_query: bool) -> Response:
+        return self.rest_api.sync_banks(location=location, name=name, async_query=async_query)
+
+
+class BankBalancesResource(BaseMethodView):
+
+    get_schema = BankBalanceQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            location: Location | None,
+            async_query: bool,
+            ignore_cache: bool,
+            value_threshold: FVal | None,
+    ) -> Response:
+        return self.rest_api.query_bank_balances(
+            location=location,
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+            value_threshold=value_threshold,
         )
 
 

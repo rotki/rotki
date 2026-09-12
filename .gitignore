@@ -39,3 +39,6 @@ bench-result.json
 bench-compare.json
 bench-compare.md
 gha-benchmark.json
+
+# Raw bank API spike data (real financial data, never committed)
+.bank_spike_data/

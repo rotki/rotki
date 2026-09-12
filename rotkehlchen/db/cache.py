@@ -48,7 +48,7 @@ class DBCacheStatic(Enum):
 
 
 class LabeledLocationArgsType(TypedDict):
-    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_CRYPTOTX_OFFSET`"""
+    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_CRYPTOTX_OFFSET` and `DBCacheDynamic.BANK_SESSION`"""  # noqa: E501
     location: str
     location_name: str
 
@@ -116,6 +116,7 @@ class DBCacheDynamic(Enum):
     """It contains all the formattable keys that depend on a variable
     that can be stored in the `key_value_cache` table"""
     LAST_CRYPTOTX_OFFSET: Final = '{location}_{location_name}_last_cryptotx_offset', _deserialize_int_from_str  # noqa: E501
+    BANK_SESSION: Final = '{location}_{location_name}_bank_session', lambda x: x  # opaque connector session blob  # noqa: E501
     LAST_QUERY_TS: Final = '{location}_{location_name}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
     LAST_QUERY_ID: Final = '{location}_{location_name}_{account_id}_last_query_id', lambda x: x  # return it as is, a string  # noqa: E501
     LAST_BLOCK_ID: Final = '{location}_{location_name}_{account_id}_last_block_id', _deserialize_int_from_str  # noqa: E501

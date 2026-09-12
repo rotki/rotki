@@ -26,6 +26,7 @@ export type LaneFamily =
   | typeof ACCOUNT_SYNC_LANE_PREFIX
   | typeof DETECT_LANE_PREFIX
   | typeof EXCHANGE_EVENTS_LANE_PREFIX
+  | typeof BANK_EVENTS_LANE_PREFIX
   | typeof ACCOUNTS_ADD_LANE_PREFIX
   | typeof ACCOUNTS_REMOVE_LANE_PREFIX;
 
@@ -104,6 +105,12 @@ export const DETECT_LANE_PREFIX = 'detect:';
  * A flat lane cap could not express it: two slots would happily go to the same exchange.
  */
 export const EXCHANGE_EVENTS_LANE_PREFIX = 'exchange-events:';
+
+/**
+ * Family prefix for the per-bank event lanes (`bank-events:<location>`), shaped like
+ * {@link EXCHANGE_EVENTS_LANE_PREFIX}: one bank's connections query in sequence, two banks at once.
+ */
+export const BANK_EVENTS_LANE_PREFIX = 'bank-events:';
 
 /**
  * Family prefix for the per-chain account-addition lanes (`accounts-add:<chain>`). Capped at 2 per

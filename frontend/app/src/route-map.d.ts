@@ -101,6 +101,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/api-keys/banks/': RouteRecordInfo<
+      '/api-keys/banks/',
+      '/api-keys/banks',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/api-keys/exchanges/': RouteRecordInfo<
       '/api-keys/exchanges/',
       '/api-keys/exchanges',
@@ -199,6 +206,13 @@ declare module 'vue-router/auto-routes' {
     '/balances/': RouteRecordInfo<
       '/balances/',
       '/balances',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/balances/banks/': RouteRecordInfo<
+      '/balances/banks/',
+      '/balances/banks',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -613,6 +627,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/api-keys/banks/index.vue': {
+      routes:
+        | '/api-keys/banks/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/api-keys/exchanges/index.vue': {
       routes:
         | '/api-keys/exchanges/'
@@ -725,6 +747,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/balances/index.vue': {
       routes:
         | '/balances/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/balances/banks/index.vue': {
+      routes:
+        | '/balances/banks/'
       views:
         | never
       pathParamNames:

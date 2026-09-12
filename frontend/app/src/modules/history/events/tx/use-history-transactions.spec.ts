@@ -1,10 +1,7 @@
 import type { SubmittedSpec } from '@test/utils/mocks/native-task';
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
-import type {
-  EditEvmHistoryEventPayload,
-  EvmHistoryEvent,
-  HistoryEventRow,
-} from '@/modules/history/events/schemas';
+import type { EditEvmHistoryEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { EvmHistoryEvent, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { assert, type Blockchain } from '@rotki/common';
 import { err, ok, type Result } from 'plainfp/result';

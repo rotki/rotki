@@ -1,6 +1,7 @@
 import type { Pinia } from 'pinia';
 import type { TradeLocationData } from '@/modules/core/common/location';
-import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/modules/history/events/schemas';
+import type { AddSwapEventPayload, EditSwapEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';

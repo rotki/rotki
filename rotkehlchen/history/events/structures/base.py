@@ -155,6 +155,7 @@ class HistoryBaseEntryType(DBIntEnumMixIn):
     SOLANA_EVENT = auto()
     SOLANA_SWAP_EVENT = auto()
     BITCOIN_EVENT = auto()
+    BANK_TRANSACTION_EVENT = auto()
 
 
 T = TypeVar('T', bound='HistoryBaseEntry')

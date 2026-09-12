@@ -26,6 +26,7 @@ const EVENT_PRODUCING_KINDS: ReadonlySet<ActivityKind> = new Set([
   ActivityKind.ETH_BLOCK_DECODING,
   ActivityKind.REPULLING,
   ActivityKind.EXCHANGE_EVENTS,
+  ActivityKind.BANK_EVENTS,
   ActivityKind.ONLINE_EVENTS,
 ]);
 

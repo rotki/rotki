@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import HistoryRefreshBanks from '@/modules/history/refresh/HistoryRefreshBanks.vue';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';
 import HistoryRefreshProtocolEvents from '@/modules/history/refresh/HistoryRefreshProtocolEvents.vue';
@@ -23,6 +24,7 @@ const open = ref<boolean>(false);
 
 const chains = useTemplateRef<ComponentExposed<typeof HistoryRefreshChains>>('chains');
 const exchanges = useTemplateRef<ComponentExposed<typeof HistoryRefreshExchanges>>('exchanges');
+const banks = useTemplateRef<ComponentExposed<typeof HistoryRefreshBanks>>('banks');
 const validatorEvents = useTemplateRef<ComponentExposed<typeof HistoryRefreshStakingEvents>>('validatorEvents');
 const protocols = useTemplateRef<ComponentExposed<typeof HistoryRefreshProtocolEvents>>('protocols');
 
@@ -33,6 +35,7 @@ const {
   indeterminate,
   modelSearch,
   modelSelectedAccounts,
+  modelSelectedBanks,
   modelSelectedChain,
   modelSelectedExchanges,
   modelSelectedProtocolQueries,
@@ -54,6 +57,7 @@ function refresh(): void {
 
 function toggleSelectAll(): void {
   const tabs: Record<HistoryRefreshTab, { toggleSelectAll: () => void } | null> = {
+    [HistoryRefreshTab.BANKS]: get(banks),
     [HistoryRefreshTab.CHAINS]: get(chains),
     [HistoryRefreshTab.EVENTS]: get(validatorEvents),
     [HistoryRefreshTab.EXCHANGES]: get(exchanges),
@@ -104,6 +108,9 @@ function toggleSelectAll(): void {
         <RuiTab :value="HistoryRefreshTab.EXCHANGES">
           {{ t('history_refresh_selection.tabs.exchanges') }}
         </RuiTab>
+        <RuiTab :value="HistoryRefreshTab.BANKS">
+          {{ t('history_refresh_selection.tabs.banks') }}
+        </RuiTab>
         <RuiTab :value="HistoryRefreshTab.EVENTS">
           {{ t('history_refresh_selection.tabs.events') }}
         </RuiTab>
@@ -134,6 +141,15 @@ function toggleSelectAll(): void {
             v-model="modelSelectedExchanges"
             :processing="processing"
             @update:all-selected="setAllSelected('exchanges', $event)"
+          />
+        </RuiTabItem>
+        <RuiTabItem :value="HistoryRefreshTab.BANKS">
+          <HistoryRefreshBanks
+            ref="banks"
+            v-model:search="modelSearch"
+            v-model="modelSelectedBanks"
+            :processing="processing"
+            @update:all-selected="setAllSelected('banks', $event)"
           />
         </RuiTabItem>
         <RuiTabItem :value="HistoryRefreshTab.EVENTS">

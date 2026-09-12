@@ -4898,6 +4898,9 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         assert write_cursor.execute(
             'SELECT COUNT(*) FROM location WHERE location = char(128) AND seq = 64',
         ).fetchone()[0] == 0
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM location WHERE location = char(129) AND seq = 65',
+        ).fetchone()[0] == 0
         # v52->v53 already removed the obsolete unsupported-assets update setting
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
@@ -4971,6 +4974,9 @@ def test_upgrade_db_53_to_54(user_data_dir, messages_aggregator):
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM location WHERE location = char(128) AND seq = 64',
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM location WHERE location = char(129) AND seq = 65',
         ).fetchone()[0] == 1
         # and the obsolete setting was removed
         assert cursor.execute(

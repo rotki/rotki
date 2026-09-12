@@ -1,4 +1,5 @@
-import type { EditHistoryEventPayload, NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/modules/history/events/schemas';
+import type { EditHistoryEventPayload, NewBankTransactionEventPayload, NewOnlineHistoryEventPayload } from '@/modules/history/events/event-edit-payloads';
+import type { BankTransactionEvent, OnlineHistoryEvent } from '@/modules/history/events/schemas';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { assert, bigNumberify, HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
@@ -18,9 +19,18 @@ import {
   serverValidatedOnly,
 } from '@/modules/history/management/forms/event-field-schemas';
 
+/** The event kinds this form edits: plain history events and bank transactions, which only differ in entry type. */
+export type OnlineFormEvent = OnlineHistoryEvent | BankTransactionEvent;
+
+export type OnlineFormPayload = NewOnlineHistoryEventPayload | NewBankTransactionEventPayload;
+
 export interface OnlineHistoryFormState {
   amount: string;
   asset: string;
+  /** Kept from the edited event: saving must not turn a bank transaction into a plain event. */
+  entryType: OnlineFormEvent['entryType'];
+  /** A bank transaction's data, carried through untouched so an edit does not erase it. */
+  extraData?: BankTransactionEvent['extraData'];
   eventSubtype: string;
   eventType: string;
   groupIdentifier: string;
@@ -45,6 +55,7 @@ export function emptyOnlineHistoryForm({ location, nextSequenceId }: OnlineHisto
   return {
     amount: '0',
     asset: '',
+    entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventSubtype: 'none',
     eventType: '',
     groupIdentifier: '',
@@ -62,7 +73,9 @@ export function onlineHistorySchema(editing: boolean): ZodType {
   return z.object({
     amount: requiredAmount(),
     asset: requiredAsset(),
+    entryType: carriedThrough(),
     eventSubtype: requiredEventSubtype(),
+    extraData: carriedThrough(),
     eventType: requiredEventType(),
     groupIdentifier: groupIdentifierSchema(editing),
     hasActualGroupIdentifier: z.boolean(),
@@ -75,12 +88,14 @@ export function onlineHistorySchema(editing: boolean): ZodType {
   });
 }
 
-export function onlineHistoryStateFromEvent(entry: OnlineHistoryEvent, defaults: OnlineHistoryFormDefaults): OnlineHistoryFormState {
+export function onlineHistoryStateFromEvent(entry: OnlineFormEvent, defaults: OnlineHistoryFormDefaults): OnlineHistoryFormState {
   return {
     ...emptyOnlineHistoryForm(defaults),
     ...groupIdentifierFields(entry),
     amount: entry.amount.toFixed(),
     asset: entry.asset,
+    entryType: entry.entryType,
+    extraData: entry.entryType === HistoryEventEntryType.BANK_TRANSACTION_EVENT ? entry.extraData : undefined,
     eventSubtype: entry.eventSubtype || 'none',
     eventType: entry.eventType,
     location: entry.location,
@@ -92,7 +107,7 @@ export function onlineHistoryStateFromEvent(entry: OnlineHistoryEvent, defaults:
 }
 
 /** Prefills a new event from the group it is being added to. */
-export function onlineHistoryStateFromGroup(entry: OnlineHistoryEvent, defaults: OnlineHistoryFormDefaults): OnlineHistoryFormState {
+export function onlineHistoryStateFromGroup(entry: OnlineFormEvent, defaults: OnlineHistoryFormDefaults): OnlineHistoryFormState {
   const empty = emptyOnlineHistoryForm(defaults);
 
   return {
@@ -111,14 +126,12 @@ export function onlineHistoryStateFromGroup(entry: OnlineHistoryEvent, defaults:
  * @param groupIdentifier - supplied by the caller: a new event needs one generated, which a pure
  * transform cannot produce, while an edit keeps the one it already has
  */
-export function toOnlineHistoryPayload(state: OnlineHistoryFormState, groupIdentifier: string): NewOnlineHistoryEventPayload {
+export function toOnlineHistoryPayload(state: OnlineHistoryFormState, groupIdentifier: string): OnlineFormPayload {
   const amount = bigNumberify(state.amount, Zero);
   const userNotes = state.notes.trim();
-
-  return {
+  const common = {
     amount,
     asset: state.asset,
-    entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventSubtype: state.eventSubtype,
     eventType: state.eventType,
     groupIdentifier,
@@ -128,6 +141,19 @@ export function toOnlineHistoryPayload(state: OnlineHistoryFormState, groupIdent
     timestamp: state.timestamp,
     userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
+
+  if (state.entryType === HistoryEventEntryType.BANK_TRANSACTION_EVENT) {
+    return {
+      ...common,
+      entryType: HistoryEventEntryType.BANK_TRANSACTION_EVENT,
+      extraData: state.extraData ?? null,
+    };
+  }
+
+  return {
+    ...common,
+    entryType: HistoryEventEntryType.HISTORY_EVENT,
+  };
 }
 
 /**
@@ -135,7 +161,7 @@ export function toOnlineHistoryPayload(state: OnlineHistoryFormState, groupIdent
  * type instead of pinning it, which widens it to every event kind the API accepts.
  */
 export function toOnlineHistoryEditPayload(
-  payload: NewOnlineHistoryEventPayload,
+  payload: OnlineFormPayload,
   identifiers: number[],
 ): EditHistoryEventPayload {
   const identifier = identifiers[0];

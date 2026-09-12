@@ -97,6 +97,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.banks.manager import BankManager
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.concurrency import Task
     from rotkehlchen.db.dbhandler import DBHandler
@@ -148,6 +149,7 @@ class TaskManager:
             premium_sync_manager: PremiumSyncManager | None,
             chains_aggregator: ChainsAggregator,
             exchange_manager: ExchangeManager,
+            bank_manager: BankManager,
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
@@ -163,6 +165,7 @@ class TaskManager:
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
+        self.bank_manager = bank_manager
         self.cryptocompare_queries: set[CCHistoQuery] = set()
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
@@ -454,13 +457,13 @@ class TaskManager:
 
     def _maybe_schedule_exchange_history_query(self) -> list[Task] | None:
         """Schedules the exchange history query task if enough time has passed"""
-        if len(self.exchange_manager.connected_exchanges) == 0:
+        if len(self.exchange_manager.connected_exchanges) == 0 and len(self.bank_manager.connected_banks) == 0:  # noqa: E501
             return None
 
         now = ts_now()
         queriable_exchanges = []
         with self.database.conn.read_ctx() as cursor:
-            for exchange in self.exchange_manager.iterate_exchanges():
+            for exchange in (*self.exchange_manager.iterate_exchanges(), *self.bank_manager.iterate_banks()):  # noqa: E501
                 queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_history_events_{exchange.name}')  # noqa: E501
                 end_ts = queried_range[1] if queried_range else 0
                 if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
