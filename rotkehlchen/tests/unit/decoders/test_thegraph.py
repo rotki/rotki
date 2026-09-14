@@ -645,9 +645,8 @@ def test_thegraph_undelegate_vesting_arbitrum_one(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000004849081406'),
+        amount=FVal('0.000004849081406'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -685,9 +684,8 @@ def test_thegraph_delegated_withdrawn_vesting_arbitrum_one(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000234985951'),
+        amount=FVal('0.00000234985951'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -724,9 +722,8 @@ def test_thegraph_approve_protocol_arbitrum_one(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.000002967461876'),
+        amount=FVal('0.000002967461876'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -764,9 +761,8 @@ def test_thegraph_vesting_bridge_to_l1_arbitrum_one(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.00000423804744'),
+        amount=FVal('0.00000423804744'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -826,6 +822,5 @@ def test_thegraph_vesting_bridge_to_l1_tracked_vesting(
         asset=A_GRT_ARB,
         amount=FVal('115792089237316195423570985008687907853269984665640563772859.723500553211234661'),
         location_label=arbitrum_one_accounts[0],
-        notes=f'Set GRT spending approval of {ROTKI_VESTING_L2} by {L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL} to 115792089237316195423570985008687907853269984665640563772859.723500553211234661',  # noqa: E501
         address=L2_GRAPH_TOKEN_LOCK_TRANSFER_TOOL,
     )]

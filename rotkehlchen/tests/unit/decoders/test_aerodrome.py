@@ -279,7 +279,6 @@ def test_add_liquidity_eth(
             amount=FVal(gas_amount),
             location_label=(user_address := base_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -426,7 +425,6 @@ def test_remove_liquidity_via_smart_wallet(
             amount=ZERO,
             location_label=user_address,
             address=ROUTER,
-            notes=f'Revoke vAMM-WETH/VVV spending approval of {user_address} by {ROUTER}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=491,
@@ -498,7 +496,6 @@ def test_slipstream_create_position(
             amount=FVal(gas_amount),
             location_label=(user_address := base_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
@@ -573,7 +570,6 @@ def test_slipstream_exit_position(
             amount=FVal(gas_amount),
             location_label=(user_address := base_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=579,
@@ -585,7 +581,6 @@ def test_slipstream_exit_position(
             amount=ZERO,
             location_label=user_address,
             address=ZERO_ADDRESS,
-            notes=f'Revoke AERO-CL-POS spending approval of {user_address} by {ZERO_ADDRESS}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=580,
@@ -658,7 +653,6 @@ def test_slipstream_gauge_deposit(
             amount=FVal(gas_amount),
             location_label=(user_address := base_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=142,
@@ -670,7 +664,6 @@ def test_slipstream_gauge_deposit(
             amount=ZERO,
             location_label=user_address,
             address=ZERO_ADDRESS,
-            notes=f'Revoke AERO-CL-POS spending approval of {user_address} by {ZERO_ADDRESS}',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=143,
@@ -718,7 +711,6 @@ def test_slipstream_gauge_withdraw(
             amount=FVal(gas_amount),
             location_label=(user_address := base_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=218,
@@ -764,7 +756,6 @@ def test_slipstream_gauge_claim_rewards(
             amount=FVal(gas_amount),
             location_label=(user_address := base_accounts[0]),
             counterparty=CPT_GAS,
-            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=153,

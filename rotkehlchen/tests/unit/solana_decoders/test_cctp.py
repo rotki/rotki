@@ -34,7 +34,6 @@ def test_cctp_v2_deposit_to_base(
         asset=A_SOL,
         amount=FVal('0.00001'),
         location_label=(depositor := solana_accounts[0]),
-        notes='Spend 0.00001 SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(
         tx_ref=signature,
