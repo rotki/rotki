@@ -494,11 +494,19 @@ class DBHistoryEvents:
                     min_timestamp = event.timestamp
             elif update_existing:
                 existing = write_cursor.execute(
-                    'SELECT identifier, timestamp FROM history_events '
+                    'SELECT identifier, entry_type, group_identifier, sequence_index, timestamp, '
+                    'location, location_label, asset, amount, notes, type, subtype, extra_data, '
+                    'ignored FROM history_events '
                     'WHERE group_identifier=? AND sequence_index=?',
                     (event.group_identifier, event.sequence_index),
                 ).fetchone()
                 assert existing is not None
+                serialized = event.serialize_for_db()
+                if existing[1:] == (
+                        *serialized[0][2],
+                        int(event.asset.identifier in ignored_assets),
+                ):
+                    continue
                 if write_cursor.execute(
                     'SELECT 1 FROM history_events_mappings WHERE parent_identifier=? '
                     'AND name=? AND value=?',
@@ -508,7 +516,13 @@ class DBHistoryEvents:
                         HistoryMappingState.CUSTOMIZED.serialize_for_db(),
                     ),
                 ).fetchone() is None:
-                    for _, updatestr, bindings in event.serialize_for_db():
+                    for idx, (_, updatestr, bindings) in enumerate(serialized):
+                        if idx != 0:
+                            write_cursor.execute(
+                                f'{updatestr} WHERE identifier=?',
+                                (*bindings, existing[0]),
+                            )
+                            continue
                         write_cursor.execute(
                             f'{updatestr}, ignored=(CASE WHEN EXISTS '
                             "(SELECT 1 FROM multisettings WHERE name = 'ignored_asset' "
@@ -517,8 +531,8 @@ class DBHistoryEvents:
                             (*bindings, event.asset.identifier, existing[0]),
                         )
                     if min_timestamp is None:
-                        min_timestamp = min(existing[1], event.timestamp)
-                    elif (earliest := min(existing[1], event.timestamp)) < min_timestamp:
+                        min_timestamp = min(existing[4], event.timestamp)
+                    elif (earliest := min(existing[4], event.timestamp)) < min_timestamp:
                         min_timestamp = earliest
 
         # Call tracking ONCE for the entire batch with minimum timestamp

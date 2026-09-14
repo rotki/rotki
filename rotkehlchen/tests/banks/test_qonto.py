@@ -1,5 +1,6 @@
 """Qonto-specific behaviour on top of the contract suite"""
 import json
+from unittest.mock import patch
 
 import pytest
 
@@ -124,6 +125,14 @@ def test_unknown_currency_account_is_skipped(qonto, function_scope_messages_aggr
         assert qonto.query_accounts() == []
 
 
+def test_malformed_account_entry_is_schema_drift(qonto):
+    transport = QontoFixtureTransport()
+    transport.organization['organization']['bank_accounts'] = ['unexpected']
+    with patch_bank_transport(qonto, transport), pytest.raises(BankSchemaDrift) as drift:
+        qonto.query_accounts()
+    assert drift.value.context == {'endpoint': 'organization'}
+
+
 def test_auth_header_follows_credential_edits(qonto):
     assert qonto.session.headers['Authorization'] == 'test-login:test-secret'
     qonto.edit_exchange_credentials(ExchangeAuthCredentials(
@@ -150,3 +159,19 @@ def test_rate_limit_backoff_then_success(qonto):
         accounts = qonto.query_accounts()
     assert len(accounts) == 1
     assert calls['n'] == 2
+
+
+@pytest.mark.parametrize(('rows', 'next_page'), [
+    ([{}], 1),
+    ([{}], '2'),
+    ([], 2),
+])
+def test_invalid_pagination_is_schema_drift(qonto, rows, next_page):
+    with patch_bank_transport(qonto, QontoFixtureTransport()):
+        account = qonto.query_accounts()[0]
+    with patch.object(qonto, '_api_query', return_value={
+        'transactions': rows,
+        'meta': {'next_page': next_page},
+    }) as query, pytest.raises(BankSchemaDrift, match='pagination'):
+        qonto.query_transactions(account=account, updated_since=None)
+    query.assert_called_once()

@@ -206,7 +206,8 @@ class BankManager:
             api_secret=ApiSecret(credentials.values['api_secret'].encode()) if 'api_secret' in credentials.values else None,  # noqa: E501
             passphrase=credentials.values.get('passphrase'),
         )
-        if bank.edit_exchange_credentials(auth):
+        credentials_changed = bank.edit_exchange_credentials(auth)
+        if credentials_changed:
             try:
                 valid, message = bank.validate_api_key()
             except RemoteError as e:
@@ -215,16 +216,26 @@ class BankManager:
                 bank.reset_to_db_credentials()
                 return False, message
 
-        with self.registry_lock, self.database.user_write() as write_cursor:
-            self.database.edit_bank_credentials(
-                write_cursor=write_cursor,
-                name=name,
-                location=location,
-                new_name=new_name,
-                credentials=auth,
-            )
-        if new_name is not None:
-            bank.name = new_name
+        with self.registry_lock:
+            persisted = False
+            try:
+                with self.database.user_write() as write_cursor:
+                    self.database.edit_bank_credentials(
+                        write_cursor=write_cursor,
+                        name=name,
+                        location=location,
+                        new_name=new_name,
+                        credentials=auth,
+                    )
+                persisted = True
+            finally:
+                if not persisted and credentials_changed:
+                    bank.reset_to_db_credentials()
+            if new_name is not None:
+                old_location_id = bank.location_id()
+                bank.name = new_name
+                if (status := self.sync_status.pop(old_location_id, None)) is not None:
+                    self.sync_status[bank.location_id()] = status
         return True, ''
 
     def delete_bank(self, name: str, location: Location) -> tuple[bool, str]:
@@ -234,12 +245,6 @@ class BankManager:
             if bank is None:
                 return False, f'{location!s} bank connection {name} does not exist'
 
-            remaining = [x for x in self.connected_banks[location] if x.name != name]
-            if len(remaining) == 0:
-                self.connected_banks.pop(location)
-            else:
-                self.connected_banks[location] = remaining
-            self.sync_status.pop(bank.location_id(), None)
             with self.database.user_write() as write_cursor:
                 self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)  # noqa: E501
                 self.database.delete_used_query_range_for_exchange(
@@ -248,6 +253,12 @@ class BankManager:
                     exchange_name=name,
                 )
                 bank.purge_local_state(write_cursor)
+            remaining = [entry for entry in self.connected_banks[location] if entry.name != name]
+            if len(remaining) == 0:
+                self.connected_banks.pop(location)
+            else:
+                self.connected_banks[location] = remaining
+            self.sync_status.pop(bank.location_id(), None)
         return True, ''
 
     def delete_all_banks(self) -> None:

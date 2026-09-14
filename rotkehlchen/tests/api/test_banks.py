@@ -5,9 +5,11 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.exchange import RecoveringExchangeSession
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -209,6 +211,93 @@ def test_bank_connections_survive_relogin(rotkehlchen_api_server: APIServer) -> 
     rotki.exchange_manager.initialize_exchanges(exchange_credentials=credentials, database=rotki.data.db)  # noqa: E501
     assert rotki.bank_manager.connected_banks_num() == 1
     assert rotki.exchange_manager.connected_exchanges == {}, 'banks are not exchanges'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_renaming_bank_keeps_similarly_prefixed_connection_caches(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server, name='Business')
+        _add_qonto(rotkehlchen_api_server, name='Business_US')
+        business = rotki.bank_manager.get_bank(name='Business', location=Location.QONTO)
+        business_us = rotki.bank_manager.get_bank(name='Business_US', location=Location.QONTO)
+        assert business is not None and business_us is not None
+        rotki.bank_manager.sync_status[business.location_id()].last_sync_ts = Timestamp(3)
+        with rotki.data.db.user_write() as write_cursor:
+            business.set_cursor(write_cursor, 'account', Timestamp(1))
+            business_us.set_cursor(write_cursor, 'account', Timestamp(2))
+
+        response = requests.patch(api_url_for(rotkehlchen_api_server, 'banksresource'), json={
+            'location': 'qonto',
+            'name': 'Business',
+            'new_name': 'Renamed',
+            'credentials': {},
+        })
+        assert_simple_ok_response(response)
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert business.get_cursor(cursor, 'account') == Timestamp(1)
+            assert business_us.get_cursor(cursor, 'account') == Timestamp(2)
+        assert rotki.bank_manager.sync_status[business.location_id()].last_sync_ts == Timestamp(3)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_deleting_bank_keeps_similarly_prefixed_connection_caches(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server, name='Business')
+        _add_qonto(rotkehlchen_api_server, name='Business_US')
+        business_us = rotki.bank_manager.get_bank(name='Business_US', location=Location.QONTO)
+        assert business_us is not None
+        with rotki.data.db.user_write() as write_cursor:
+            business_us.set_cursor(write_cursor, 'account', Timestamp(2))
+            business_us.save_session(write_cursor, 'session')
+
+        assert_simple_ok_response(requests.delete(
+            api_url_for(rotkehlchen_api_server, 'banksresource'),
+            json={'location': 'qonto', 'name': 'Business'},
+        ))
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert business_us.get_cursor(cursor, 'account') == Timestamp(2)
+        assert business_us.load_session() == 'session'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_failed_bank_deletion_keeps_connection(rotkehlchen_api_server: APIServer) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server, name='Business')
+    with (
+        patch.object(rotki.data.db, 'remove_exchange', side_effect=InputError('write failed')),
+        pytest.raises(InputError, match='write failed'),
+    ):
+        rotki.bank_manager.delete_bank(name='Business', location=Location.QONTO)
+    assert rotki.bank_manager.get_bank(name='Business', location=Location.QONTO) is not None
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_failed_bank_edit_restores_credentials(rotkehlchen_api_server: APIServer) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server, name='Business')
+        bank = rotki.bank_manager.get_bank(name='Business', location=Location.QONTO)
+        assert bank is not None
+        with (
+            patch.object(
+                rotki.data.db, 'edit_bank_credentials', side_effect=InputError('write failed'),
+            ),
+            pytest.raises(InputError, match='write failed'),
+        ):
+            rotki.bank_manager.edit_bank(
+                name='Business',
+                location=Location.QONTO,
+                new_name=None,
+                credentials=BankCredentialInput(values={'api_secret': 'newsecret'}),
+            )
+    assert bank.session.headers['Authorization'] == 'login:secret'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

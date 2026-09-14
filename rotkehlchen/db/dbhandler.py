@@ -2874,14 +2874,16 @@ class DBHandler:
                 (f'{location!s}_history_events_{new_name}', f'{location!s}_history_events_{name}'),
             )
             # and the per-connection caches (cursors, session)
-            old_prefix = f'{location!s}_{name}_'
-            escaped_prefix = (
-                old_prefix.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
-            )
+            old_prefix = f'{location!s}_{name.encode().hex()}_'
             write_cursor.execute(
                 'UPDATE key_value_cache SET name=? || substr(name, ?) '
-                "WHERE name LIKE ? ESCAPE '\\'",
-                (f'{location!s}_{new_name}_', len(old_prefix) + 1, f'{escaped_prefix}%'),
+                'WHERE substr(name, 1, ?) = ?',
+                (
+                    f'{location!s}_{new_name.encode().hex()}_',
+                    len(old_prefix) + 1,
+                    len(old_prefix),
+                    old_prefix,
+                ),
             )
             DBHistoryEvents(database=self).update_events_and_track(
                 write_cursor=write_cursor,

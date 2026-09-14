@@ -148,8 +148,12 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
         transport.requests.clear()
         # a later sync: the exchange range bookkeeping only queries new time, so move the
         # clock, otherwise there is no range to query at all
-        with patch('rotkehlchen.exchanges.exchange.ts_now', return_value=Timestamp(ts_now() + 3600)):  # noqa: E501
+        with (
+            patch('rotkehlchen.exchanges.exchange.ts_now', return_value=Timestamp(ts_now() + 3600)),  # noqa: E501
+            patch.object(DBHistoryEvents, '_mark_events_modified') as mark_modified,
+        ):
             connector.query_history_events()  # second sync: incremental, nothing new
+        mark_modified.assert_not_called()
         assert any(kit.cursor_param in params for _, params in transport.requests), 'incremental sync carries the cursor'  # noqa: E501
         second = _db_events(database)
         assert len(second) == kit.expected_event_count, 'double ingestion is a no-op'

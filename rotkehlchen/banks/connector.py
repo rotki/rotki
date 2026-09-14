@@ -99,13 +99,16 @@ class BankConnector(ExchangeInterface, ABC):
     # it here so the user does not re-approve every sync. The user DB is encrypted at rest.
     # A static-secret connector never needs these.
 
+    def _cache_location_name(self) -> str:
+        return self.name.encode().hex()
+
     def load_session(self) -> str | None:
         with self.db.conn.read_ctx() as cursor:
             return self.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.BANK_SESSION,
                 location=str(self.location),
-                location_name=self.name,
+                location_name=self._cache_location_name(),
             )
 
     def save_session(self, write_cursor: DBCursor, session: str) -> None:
@@ -114,7 +117,7 @@ class BankConnector(ExchangeInterface, ABC):
             name=DBCacheDynamic.BANK_SESSION,
             value=session,
             location=str(self.location),
-            location_name=self.name,
+            location_name=self._cache_location_name(),
         )
 
     def clear_session(self, write_cursor: DBCursor) -> None:
@@ -122,7 +125,7 @@ class BankConnector(ExchangeInterface, ABC):
             write_cursor=write_cursor,
             name=DBCacheDynamic.BANK_SESSION,
             location=str(self.location),
-            location_name=self.name,
+            location_name=self._cache_location_name(),
         )
 
     # ---- cursor ----
@@ -132,7 +135,7 @@ class BankConnector(ExchangeInterface, ABC):
             cursor=cursor,
             name=DBCacheDynamic.LAST_QUERY_TS,
             location=str(self.location),
-            location_name=self.name,
+            location_name=self._cache_location_name(),
             account_id=account_id,
         )
 
@@ -142,15 +145,16 @@ class BankConnector(ExchangeInterface, ABC):
             name=DBCacheDynamic.LAST_QUERY_TS,
             value=value,
             location=str(self.location),
-            location_name=self.name,
+            location_name=self._cache_location_name(),
             account_id=account_id,
         )
 
     def purge_local_state(self, write_cursor: DBCursor) -> None:
         """Drop cursors and session when the connection is removed"""
-        self.db.delete_dynamic_caches(
-            write_cursor=write_cursor,
-            key_parts=[f'{self.location!s}_{self.name}_'],
+        prefix = f'{self.location!s}_{self._cache_location_name()}_'
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE substr(name, 1, ?) = ?',
+            (len(prefix), prefix),
         )
 
     # ---- exchange interface, generic for every bank ----

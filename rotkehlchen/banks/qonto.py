@@ -165,15 +165,14 @@ class Qonto(BankConnector):
             ) from e
 
     def _report_drift_once(self, field: str, value: str) -> None:
-        """Warn the user once per unknown enum value and keep going. Enum values carry
-        no account data so they can be shown verbatim."""
+        """Warn the user once per unknown enum value and keep going."""
         if (key := f'{field}:{value}') in self._reported_drift:
             return
         self._reported_drift.add(key)
         log.warning('Qonto %s returned unknown %s value %s', self.name, field, value)
         self.msg_aggregator.add_warning(
             f'Qonto returned an unknown transaction {field} "{value}" for {self.name}. '
-            f'Transactions with it are skipped until rotki learns about it. '
+            f'Transactions with it may be incomplete until rotki learns about it. '
             f'Please report this so the connector can be updated.',
         )
 
@@ -280,6 +279,11 @@ class Qonto(BankConnector):
                 'Qonto bank_accounts is not a list',
                 context={'endpoint': 'organization', 'type': type(entries).__name__},
             )
+        if any(not isinstance(entry, dict) for entry in entries):
+            raise BankSchemaDrift(
+                'Qonto bank_accounts contains a non-object entry',
+                context={'endpoint': 'organization'},
+            )
 
         return [
             account for entry in entries
@@ -312,13 +316,22 @@ class Qonto(BankConnector):
                     'Qonto transactions payload lacks transactions/meta',
                     context={'endpoint': 'transactions', 'keys': sorted(data)},
                 ) from e
+            if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+                raise BankSchemaDrift('Qonto transactions is not a list of objects')
+            if next_page is not None and (
+                    isinstance(next_page, bool) or
+                    not isinstance(next_page, int) or
+                    next_page <= params['page'] or
+                    len(rows) == 0
+            ):
+                raise BankSchemaDrift('Qonto returned invalid transaction pagination')
 
             transactions.extend(
                 transaction for row in rows
                 if (transaction := self._deserialize_transaction(row, account)) is not None
             )
 
-            if next_page is None or len(rows) == 0:
+            if next_page is None:
                 break
             params['page'] = next_page
 
