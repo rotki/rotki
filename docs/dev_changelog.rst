@@ -7,6 +7,28 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Frontend Settings Moved To Their Own Resource
+---------------------------------------------
+
+``frontend_settings`` is a free-form bag of client preferences that ``PUT /settings`` could only replace in full. A client that writes the whole blob back deletes every key its own schema does not declare, which is what happened whenever an older rotki was opened after a newer one. It is now read and written on its own resource, as JSON, and only ever merged.
+
+* **New Endpoint**: ``GET /api/(version)/settings/frontend``
+
+  - Returns the frontend settings as a JSON object rather than as the opaque string ``GET /settings`` used to carry. A stored blob that is absent, empty, or not a JSON object reads as ``{}``.
+
+* **New Endpoint**: ``PATCH /api/(version)/settings/frontend``
+
+  - Takes ``patch`` (keys to merge) and ``remove`` (keys to delete) and applies them to the stored blob server-side, leaving every key neither names untouched. A key is replaced wholesale, never merged into recursively, matching what a whole-blob write did: patching ``explorers`` with one chain replaces the whole ``explorers`` object. Key names must match ``[A-Za-z_][A-Za-z0-9_]*``.
+  - Answers ``true`` rather than echoing the merged blob. Read it back with the GET above.
+
+* **Changed Endpoint**: ``GET /api/(version)/settings``
+
+  - ``frontend_settings`` is **no longer part of the response**. The same applies to the settings carried by ``PUT /settings``, by login and by account creation. Callers must read it from ``GET /settings/frontend``.
+
+* **Changed Endpoint**: ``PUT /api/(version)/settings``
+
+  - ``frontend_settings`` is **no longer accepted** and is rejected as an unknown field. ``PATCH /settings/frontend`` is the only way to write it.
+
 Asset Search NFT Handling
 -------------------------
 

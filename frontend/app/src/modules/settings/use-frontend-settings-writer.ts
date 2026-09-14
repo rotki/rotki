@@ -1,7 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { assert } from '@rotki/common';
-import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
@@ -14,12 +13,11 @@ export interface UseFrontendSettingsWriterReturn {
 /**
  * Serialises every frontend-settings write, app-wide.
  *
- * The wire format is the whole settings blob, rebuilt from the repo, and the repo is only updated
- * once the request resolves. Two writes in flight at the same time would therefore both build the
- * blob from the pre-update repo, each carrying the other's stale value, and the later response
- * would win. That needs no unusual timing: any two settings changed within one round trip hit it,
- * including from different components, and it leaves the merged local repo looking correct while
- * the backend holds the loser.
+ * The wire format is a patch merged by the backend, so two writes to *different* keys no longer
+ * clobber each other the way rebuilding the whole blob from the repo did. What the queue still
+ * buys is ordering: the repo is only updated once a request resolves, so two writes to the *same*
+ * key that resolve out of order would leave the local repo holding the value the backend did not
+ * keep. Serialising makes the local and the persisted order the same one.
  *
  * Module scope on purpose - the callers are separate composable instances and the queue has to be
  * shared by all of them.
@@ -43,20 +41,25 @@ export function useFrontendSettingsWriter(): UseFrontendSettingsWriterReturn {
    * Persists a patch over the frontend settings blob.
    *
    * @remarks
-   * The repo is read inside the queued turn, so a write builds on whatever the previous one
-   * persisted rather than on a snapshot taken before it ran. Only the patch goes back to the repo:
-   * it runs the registry's post-persist effects and mirror syncs for the keys that actually changed.
+   * Only the changed keys go over the wire, and the backend merges them into the stored blob, so a
+   * key this version's schema does not declare - one a newer rotki wrote - is left alone instead of
+   * being deleted by a write rebuilt from the repo's already-parsed view.
    *
-   * @param payload - the keys to change, which are merged over the whole stored blob
+   * The repo is then merged from that same payload rather than re-read from the backend. An unknown
+   * key cannot live in a parsed FrontendSettings either way, so re-reading would buy nothing, and it
+   * would run the registry's post-persist effects (BigNumber format, mirror syncs) over every key
+   * instead of over the ones that actually changed.
+   *
+   * Nothing is added to the payload, the schema version included. Migrations key off the shape of
+   * the data rather than off a declared version, so a blob that never records one is not a problem,
+   * and stamping it here would write a version this client believes over one a newer rotki wrote.
+   *
+   * @param payload - the keys to change, which the backend merges into the stored blob
    * @returns whether the write reached the backend, carrying its message when it did not
    */
   async function write(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     try {
-      const updatedSettings = { ...repo.frontend, ...payload };
-      await api.setSettings({
-        frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
-      });
-
+      await api.patchFrontendSettings(payload);
       repo.updateFrontend(payload);
 
       return {

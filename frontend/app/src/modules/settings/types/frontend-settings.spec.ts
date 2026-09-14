@@ -1,89 +1,89 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { FRONTEND_SETTINGS_SCHEMA_VERSION, getDefaultFrontendSettings, parseFrontendSettings } from '@/modules/settings/types/frontend-settings';
+import { getDefaultFrontendSettings, parseFrontendSettings } from '@/modules/settings/types/frontend-settings';
+import { FRONTEND_SETTINGS_SCHEMA_VERSION } from '@/modules/settings/types/frontend-settings-migrations';
 
 vi.hoisted(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(2026, 0, 1));
 });
 
+// The blob arrives from GET /settings/frontend already parsed and camelCased by the response layer
 describe('frontendSettings', () => {
   afterAll(() => {
     vi.useRealTimers();
   });
 
-  it('should return defaults for empty string', () => {
-    expect(parseFrontendSettings('')).toEqual(getDefaultFrontendSettings());
-  });
-
-  it('should return defaults for empty object', () => {
-    expect(parseFrontendSettings('{}')).toEqual(getDefaultFrontendSettings());
+  it('should return defaults for an empty blob', () => {
+    expect(parseFrontendSettings({})).toEqual(getDefaultFrontendSettings());
   });
 
   it('should parse valid settings', () => {
-    const settings = JSON.stringify({
-      schema_version: FRONTEND_SETTINGS_SCHEMA_VERSION,
-      items_per_page: 25,
-      graph_zero_based: true,
+    const result = parseFrontendSettings({
+      graphZeroBased: true,
+      itemsPerPage: 25,
+      schemaVersion: FRONTEND_SETTINGS_SCHEMA_VERSION,
     });
 
-    const result = parseFrontendSettings(settings);
     expect(result.itemsPerPage).toBe(25);
     expect(result.graphZeroBased).toBe(true);
     expect(result.schemaVersion).toBe(FRONTEND_SETTINGS_SCHEMA_VERSION);
   });
 
-  it('should recover from invalid schemaVersion preserving valid fields', () => {
-    const settings = JSON.stringify({
-      schema_version: 999,
-      items_per_page: 50,
-      abbreviate_number: true,
+  // Migrations key off shape, so a version this build has never heard of is data, not a parse error
+  it('should keep a schemaVersion newer than its own, preserving valid fields', () => {
+    const result = parseFrontendSettings({
+      abbreviateNumber: true,
+      itemsPerPage: 50,
+      schemaVersion: 999,
     });
 
-    const result = parseFrontendSettings(settings);
-    expect(result.schemaVersion).toBe(FRONTEND_SETTINGS_SCHEMA_VERSION);
+    expect(result.schemaVersion).toBe(999);
     expect(result.itemsPerPage).toBe(50);
     expect(result.abbreviateNumber).toBe(true);
   });
 
   it('should recover from missing schemaVersion preserving valid fields', () => {
-    const settings = JSON.stringify({
-      items_per_page: 30,
-      defi_setup_done: true,
-    });
+    const result = parseFrontendSettings({ defiSetupDone: true, itemsPerPage: 30 });
 
-    const result = parseFrontendSettings(settings);
     expect(result.schemaVersion).toBe(FRONTEND_SETTINGS_SCHEMA_VERSION);
     expect(result.itemsPerPage).toBe(30);
     expect(result.defiSetupDone).toBe(true);
   });
 
-  it('should strip invalid fields and use defaults for them while keeping valid ones', () => {
-    const settings = JSON.stringify({
-      schema_version: FRONTEND_SETTINGS_SCHEMA_VERSION,
-      items_per_page: 'not_a_number',
-      abbreviate_number: true,
-      defi_setup_done: true,
+  // Correctness does not wait on the write-back: an old blob has to read right on the way in
+  it('should read a legacy shape without it having been migrated first', () => {
+    const result = parseFrontendSettings({
+      balanceUsdValueThreshold: { BLOCKCHAIN: '15', MANUAL: '0' },
+      itemsPerPage: 30,
     });
 
-    const result = parseFrontendSettings(settings);
-    const defaults = getDefaultFrontendSettings();
-    expect(result.itemsPerPage).toBe(defaults.itemsPerPage);
+    expect(result.balanceValueThreshold).toStrictEqual({ BLOCKCHAIN: '15' });
+    expect(result.itemsPerPage).toBe(30);
+  });
+
+  it('should strip invalid fields and use defaults for them while keeping valid ones', () => {
+    const result = parseFrontendSettings({
+      abbreviateNumber: true,
+      defiSetupDone: true,
+      itemsPerPage: 'not_a_number',
+      schemaVersion: FRONTEND_SETTINGS_SCHEMA_VERSION,
+    });
+
+    expect(result.itemsPerPage).toBe(getDefaultFrontendSettings().itemsPerPage);
     expect(result.abbreviateNumber).toBe(true);
     expect(result.defiSetupDone).toBe(true);
   });
 
   it('should recover from multiple invalid fields', () => {
-    const settings = JSON.stringify({
-      schema_version: 'invalid',
-      items_per_page: 'invalid',
-      graph_zero_based: true,
-      nfts_in_net_value: false,
+    const result = parseFrontendSettings({
+      graphZeroBased: true,
+      itemsPerPage: 'invalid',
+      nftsInNetValue: false,
+      schemaVersion: 'invalid',
     });
 
-    const result = parseFrontendSettings(settings);
-    const defaults = getDefaultFrontendSettings();
     expect(result.schemaVersion).toBe(FRONTEND_SETTINGS_SCHEMA_VERSION);
-    expect(result.itemsPerPage).toBe(defaults.itemsPerPage);
+    expect(result.itemsPerPage).toBe(getDefaultFrontendSettings().itemsPerPage);
     expect(result.graphZeroBased).toBe(true);
     expect(result.nftsInNetValue).toBe(false);
   });

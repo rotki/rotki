@@ -1157,6 +1157,103 @@ Getting or modifying settings
    :statuscode 409: Tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
+Getting the frontend settings
+============================================
+
+.. http:get:: /api/(version)/settings/frontend
+
+   Returns the frontend settings as JSON.
+
+   ``frontend_settings`` is a free-form bag of client preferences. It is **not** part of the
+   ``GET /settings`` response and cannot be set through ``PUT /settings``: that endpoint can only
+   replace the whole blob, which deletes every key the writing client's schema does not declare, and
+   that is exactly what happens when an older rotki is opened after a newer one. It lives on its own
+   resource instead, read here and written with the PATCH below.
+
+   A stored blob that is absent, empty, or not a JSON object reads as ``{}``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/settings/frontend HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "date_display_format": "%d/%m/%Y",
+              "explorers": {"eth": {"transaction": "https://myexplorer.eth/"}}
+          },
+          "message": ""
+      }
+
+   :resjson object result: The stored frontend settings. Keys are whatever the clients have written.
+
+   :statuscode 200: Reading the frontend settings was successful
+   :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
+
+Partially modifying the frontend settings
+============================================
+
+.. http:patch:: /api/(version)/settings/frontend
+
+   Merges the given keys into the stored blob server-side, leaving every other key untouched. This
+   is the only way to write the frontend settings; see the GET above for why replacing them wholesale
+   is not offered.
+
+   A key is replaced wholesale, never merged into recursively, which matches what a whole-blob write
+   does today: patching ``explorers`` with one chain replaces the whole ``explorers`` object.
+
+   Key names must match ``[A-Za-z_][A-Za-z0-9_]*``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/settings/frontend HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "patch": {
+              "date_display_format": "%d/%m/%Y",
+              "explorers": {"eth": {"transaction": "https://myexplorer.eth/"}}
+          },
+          "remove": ["some_retired_key"]
+      }
+
+   :reqjson object[optional] patch: Mapping of frontend settings keys to their new values. Each value is stored verbatim, replacing whatever the key held.
+   :reqjson list[optional] remove: List of frontend settings keys to delete from the blob. Removing a key that is not there is not an error.
+
+   Both members are optional; sending neither is a no-op.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: ``true`` if the merge was persisted. The merged blob is not returned; read it back with ``GET /settings`` if you need it.
+
+   :statuscode 200: Modifying the frontend settings was successful
+   :statuscode 400: Provided JSON is in some way malformed, or a key is not a valid identifier.
+   :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
+
 Getting or modifying backend arguments
 =========================================
 

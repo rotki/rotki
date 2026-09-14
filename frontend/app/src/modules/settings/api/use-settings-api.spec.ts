@@ -38,7 +38,6 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       date_display_format: '%d/%m/%Y %H:%M:%S %Z',
       submit_usage_analytics: true,
       active_modules: [],
-      frontend_settings: '{}',
       btc_derivation_gap_limit: 20,
       calculate_past_cost_basis: true,
       display_date_in_localtime: true,
@@ -267,6 +266,37 @@ describe('composables/api/settings/settings-api', () => {
       await expect(setSettings({ mainCurrency: 'EUR' }))
         .rejects
         .toThrow('Internal server error');
+    });
+  });
+
+  describe('patchFrontendSettings', () => {
+    async function capturePatchBody(call: (api: ReturnType<typeof useSettingsApi>) => Promise<void>): Promise<unknown> {
+      let capturedBody: unknown = null;
+      server.use(
+        http.patch(`${backendUrl}/api/1/settings/frontend`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: true });
+        }),
+      );
+
+      await call(useSettingsApi());
+      return capturedBody;
+    }
+
+    it('should send only the patch when nothing is being removed', async () => {
+      expect(await capturePatchBody(async api => api.patchFrontendSettings({ decimalSeparator: ';' })))
+        .toEqual({ patch: { decimal_separator: ';' } });
+    });
+
+    // The shared transformer renames object keys, and `remove` holds keys as array values
+    it('should snake_case the keys being removed, not just the patch', async () => {
+      expect(await capturePatchBody(async api => api.patchFrontendSettings(
+        { balanceValueThreshold: {} },
+        ['balanceUsdValueThreshold'],
+      ))).toEqual({
+        patch: { balance_value_threshold: {} },
+        remove: ['balance_usd_value_threshold'],
+      });
     });
   });
 

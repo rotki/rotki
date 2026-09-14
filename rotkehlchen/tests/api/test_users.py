@@ -59,6 +59,10 @@ def check_proper_unlock_result(
     assert isinstance(response_data['exchanges'], list)
     assert response_data['settings']['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in dataclasses.fields(DBSettings):
+        # the frontend settings blob is its own resource, served as JSON by GET /settings/frontend
+        if setting.name == 'frontend_settings':
+            assert setting.name not in response_data['settings']
+            continue
         assert setting.name in response_data['settings']
     assert DBCacheStatic.LAST_DATA_UPLOAD_TS.value in response_data['settings']
     assert DBCacheStatic.LAST_BALANCE_SAVE.value in response_data['settings']
