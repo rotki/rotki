@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useLocationStore } from '@/modules/core/common/use-location-store';
 
 describe('useExchangeData', () => {
   const mockBalances = createMockExchangeBalances();
@@ -33,6 +34,18 @@ describe('useExchangeData', () => {
     }];
 
     expect(get(exchanges)).toMatchObject(expectedResult);
+  });
+
+  it('should leave bank locations out of the exchange list', () => {
+    useLocationStore().$patch({ allLocations: { qonto: { image: 'qonto.svg', isBank: true } } });
+    set(storeToRefs(store).exchangeBalances, {
+      ...mockBalances,
+      qonto: { EUR: createTestBalance(500, 500) },
+    });
+
+    const { exchanges } = useExchangeData();
+
+    expect(get(exchanges).map(exchange => exchange.location)).toEqual(['coinbase', 'kraken']);
   });
 
   it('should show the per asset balances', () => {
