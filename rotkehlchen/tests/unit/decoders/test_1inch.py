@@ -838,9 +838,8 @@ def test_1inch_v5_swap_with_extra_receive(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str := '0.003995508153908601'),
+            amount=FVal('0.003995508153908601'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -862,9 +861,8 @@ def test_1inch_v5_swap_with_extra_receive(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=a_asusd,
-            amount=FVal(approve_str := '7.112589963311288738'),
+            amount=FVal('7.112589963311288738'),
             location_label=user_address,
-            notes=f'Set aSUSD spending approval of {user_address} by {ONEINCH_V5_ROUTER} to {approve_str}',  # noqa: E501
             address=ONEINCH_V5_ROUTER,
         ), EvmSwapEvent(
             tx_ref=tx_hash,

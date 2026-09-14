@@ -696,9 +696,8 @@ def test_safenet_rewards_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas := '0.000005389112828244'),
+            amount=FVal('0.000005389112828244'),
             location_label=(user_address := ethereum_accounts[0]),
-            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

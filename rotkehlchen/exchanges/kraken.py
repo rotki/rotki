@@ -1570,7 +1570,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_futures_api_method(
             self,
-            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts', 'account-log'],  # noqa: E501
+            method: KrakenApiMethod,
             req: dict | None = None,
     ) -> dict | str:
         """API queries that require a valid key/secret pair.

@@ -229,7 +229,6 @@ def test_across_bridge_deposit_to_solana(
             asset=A_ETH,
             amount=FVal('0.0000008075'),
             location_label=(user_address := arbitrum_one_accounts[0]),
-            notes='Burn 0.0000008075 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,

@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Final
 from unittest.mock import patch
 
 import pytest
+from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -22,6 +23,7 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WETH,
+    A_WETH_ROBINHOOD,
 )
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
@@ -36,6 +38,7 @@ from rotkehlchen.tests.utils.ethereum import (
     PRUNED_AND_NOT_ARCHIVED_NODE,
     get_decoded_events_of_transaction,
 )
+from rotkehlchen.tests.utils.robinhood import ROBINHOOD_MAINNET_NODE
 from rotkehlchen.types import (
     ChainID,
     Location,
@@ -1855,6 +1858,7 @@ def test_base_settler_zerox_swap_runner_to_usdc(base_inquirer, base_accounts) ->
     (ChainID.BASE, '0x7747F8D2a76BD6345Cc29622a946A929647F2359'),
     (ChainID.BINANCE_SC, '0x4675748248a1182819E5eA6819e41bE0B2ad3A7d'),
     (ChainID.MONAD, '0x4f83A6D66e89aE4B040cc7B9d89b1FB14e730314'),
+    (ChainID.ROBINHOOD, '0x39b38686A19836Ac10162c490E4558e120CbBE5f'),
 ])
 def test_generate_settler_addresses(chain_id: ChainID, settler_address: str) -> None:
     """Check that the computed settler addresses match settlers actually deployed on-chain"""
@@ -1877,9 +1881,8 @@ def test_swap_via_new_settler_ethereum(ethereum_inquirer, ethereum_accounts) -> 
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=(gas_amount := FVal('0.00002297152')),
+        amount=FVal('0.00002297152'),
         location_label=(user := ethereum_accounts[0]),
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -1903,6 +1906,91 @@ def test_swap_via_new_settler_ethereum(ethereum_inquirer, ethereum_accounts) -> 
         amount=(in_amount := FVal('0.242457579914299359')),
         location_label=user,
         notes=f'Receive {in_amount} WETH as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=settler,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('robinhood_manager_connect_at_start', [(ROBINHOOD_MAINNET_NODE,)])
+@pytest.mark.parametrize(('robinhood_accounts', 'tx_hash', 'timestamp', 'gas', 'send_asset', 'send_amount', 'send_symbol', 'receive_asset', 'receive_amount', 'receive_symbol'), [  # noqa: E501
+    pytest.param(
+        ['0xc37b40ABdB939635068d3c5f13E7faF686F03B65'],
+        '0x1008a3b24835f43ddd312a36062a6b04caf5bd5e6cd6b39adff6752fc0d4c801',
+        1786982612000, '0.000003870519072',
+        A_ETH, '0.02', 'ETH',
+        Asset('eip155:4663/erc20:0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168'), '38.157953', 'USDG',
+        id='native-to-token',
+    ), pytest.param(
+        ['0xDD0CDF8D98d9Ad3ADfaa49AaECD444Bfa01d9C9a'],
+        '0x4c841802bb3124dcbdd9b70f1c7f5213fbe6f4d6fe0f172aeeefb1f26f316fdc',
+        1786981911000, '0.000003308665344',
+        Asset('eip155:4663/erc20:0xe934e36A439C94017B64a3FecE66AF12099aBF50'),
+        '350', 'STONKBROKER',
+        A_ETH, '0.004472116459201028', 'ETH',
+        id='token-to-native',
+    ), pytest.param(
+        ['0x04A9c71faFF1f6b1FBD8844D83450f8C04CEee09'],
+        '0x7c5d4f8141c26b95f2ffb353155511a0c7377d0eb20080f35c541db94788a605',
+        1786982601000, '0.000009141979224',
+        Asset('eip155:4663/erc20:0x2E8c31162b855A2ffa90F6F8634643Ad6F111e18'), '20000', 'AI',
+        A_WETH_ROBINHOOD, '0.060276368408341501', 'WETH',
+        id='token-to-token-multiple-routes',
+    ),
+])
+def test_robinhood_settler_swaps(
+        robinhood_inquirer,
+        robinhood_accounts,
+        tx_hash,
+        timestamp,
+        gas,
+        send_asset,
+        send_amount,
+        send_symbol,
+        receive_asset,
+        receive_amount,
+        receive_symbol,
+) -> None:
+    """Decode RobinHoodSettler (0x taker-submitted deployment 6), including native payouts
+    from internal transactions and split token swaps with anonymous pool logs.
+    """
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=robinhood_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(tx_hash)),
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(timestamp),
+        location=Location.ROBINHOOD,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas),
+        location_label=(user := robinhood_accounts[0]),
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(timestamp),
+        location=Location.ROBINHOOD,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=send_asset,
+        amount=FVal(send_amount),
+        location_label=user,
+        notes=f'Swap {send_amount} {send_symbol} via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=(settler := to_checksum_address('0x39b38686A19836Ac10162c490E4558e120CbBE5f')),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(timestamp),
+        location=Location.ROBINHOOD,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=receive_asset,
+        amount=FVal(receive_amount),
+        location_label=user,
+        notes=f'Receive {receive_amount} {receive_symbol} as the result of a swap via the 0x protocol',  # noqa: E501
         counterparty=CPT_ZEROX,
         address=settler,
     )]
