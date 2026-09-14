@@ -105,9 +105,10 @@ export function useBanks(): UseBanksReturn {
   const removeBank = async (connection: BankConnectionIdentity): Promise<boolean> => {
     try {
       const success = await api.removeBank(connection);
-      if (success)
+      if (success) {
         await refreshBankConnections();
-      startPromise(fetchBankBalances());
+        startPromise(fetchBankBalances());
+      }
       return success;
     }
     catch (error: unknown) {
