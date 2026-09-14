@@ -166,6 +166,10 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
             assert cursor.execute(
                 "SELECT COUNT(*) FROM used_query_ranges WHERE name='qonto_history_events_Qonto main'",  # noqa: E501
             ).fetchone()[0] == 1
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM history_events WHERE location=? AND location_label=?',
+                (Location.QONTO.serialize_for_db(), 'Qonto main'),
+            ).fetchone()[0] == 28
 
         # a failed sync is reported in the status. The range bookkeeping only queries new
         # time, so move the clock forward or nothing would be asked of the bank at all

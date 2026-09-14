@@ -21,7 +21,12 @@ from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.banks import BANK_KITS, BankConnectorKit, patch_bank_transport
+from rotkehlchen.tests.utils.banks import (
+    BANK_KITS,
+    BankConnectorKit,
+    QontoFixtureTransport,
+    patch_bank_transport,
+)
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -163,6 +168,18 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
         third = _db_events(database)
         assert [e.serialize() for e in third] == [e.serialize() for e in first]
 
+        assert isinstance(transport, QontoFixtureTransport)
+        transaction = transport.transactions[0]
+        transaction['label'] = 'Updated counterparty'
+        queue = HistoryEventQueue(
+            database=database,
+            location_string=f'{kit.location!s}_history_events_{connector.name}',
+            query_start_ts=Timestamp(0),
+        )
+        connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
+        queue.flush()
+        assert any('Updated counterparty' in (event.notes or '') for event in _db_events(database))
+
         # pagination must not change the outcome either
         for _, params in transport.requests:
             if kit.per_page_param in params:
@@ -184,6 +201,7 @@ def test_pagination_converges(kit: BankConnectorKit, database, function_scope_me
         events, _ = connector.query_online_history_events(Timestamp(0), ts_now())
     pages = [p for path, p in transport.requests if kit.per_page_param in p]
     assert len(pages) > 1
+    assert all(kit.page_param in page for page in pages)
     assert len(events) == kit.expected_event_count
     assert len({event.group_identifier for event in events}) == len(events)
 

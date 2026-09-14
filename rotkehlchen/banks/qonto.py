@@ -9,7 +9,7 @@ rotki issue #13052:
 - ``/v2/organization`` embeds the bank accounts with settled (``balance``) and authorized
   balances, in ``_cents`` integers next to floats. The cents are the source of truth.
 - ``/v2/transactions`` needs a ``bank_account_id`` selector, paginates with
-  ``current_page``/``per_page`` (capped at 100 silently) and a ``meta.next_page`` that is
+  ``page``/``per_page`` (capped at 100 silently) and a ``meta.next_page`` that is
   null on the last page. Unknown query parameter names are silently ignored, unknown
   ``status[]``/``sort_by`` values are HTTP 400.
 - ``amount`` is always positive, direction is ``side`` (credit/debit). ``settled_balance``
@@ -105,8 +105,7 @@ class Qonto(BankConnector):
         })
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        changed = super().edit_exchange_credentials(credentials)
-        if changed:
+        if (changed := super().edit_exchange_credentials(credentials)):
             self._set_auth_header()
         return changed
 
@@ -119,6 +118,7 @@ class Qonto(BankConnector):
         """
         url = f'{QONTO_API_URL}/{endpoint}'
         retries_left = CachedSettings().get_query_retry_limit()
+        retry_delay = 1.0
         timeout = CachedSettings().get_timeout_tuple()
         while True:
             log.debug('Qonto API query', endpoint=endpoint, params=params)
@@ -131,16 +131,20 @@ class Qonto(BankConnector):
                 break
 
             retry_after_header = response.headers.get('Retry-After')
-            retry_after = float(retry_after_header) if retry_after_header else None
+            try:
+                retry_after = float(retry_after_header) if retry_after_header is not None else None
+            except ValueError:
+                retry_after = None
             retries_left -= 1
             if retries_left <= 0:
                 raise BankRateLimited(
                     f'Qonto rate limited the {endpoint} query',
                     retry_after=retry_after,
                 )
-            wait = retry_after if retry_after is not None else 2.0 ** (3 - retries_left)
+            wait = retry_after if retry_after is not None else retry_delay
             log.debug('Got a 429 from Qonto %s. Backing off for %s seconds', endpoint, wait)
             cancellable_sleep(wait)
+            retry_delay *= 2
 
         if response.status_code in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
             raise BankAuthExpired(
@@ -187,8 +191,7 @@ class Qonto(BankConnector):
 
     def _deserialize_account(self, entry: dict[str, Any]) -> BankAccount | None:
         try:
-            asset = self._resolve_fiat(entry['currency'])
-            if asset is None:
+            if (asset := self._resolve_fiat(entry['currency'])) is None:
                 return None
             return BankAccount(
                 identifier=entry['id'],
@@ -293,7 +296,7 @@ class Qonto(BankConnector):
             'status[]': FINAL_STATUS,
             'sort_by': 'updated_at:asc',
             'per_page': PER_PAGE,
-            'current_page': 1,
+            'page': 1,
         }
         if updated_since is not None:
             params['updated_at_from'] = datetime.fromtimestamp(updated_since, tz=UTC).strftime('%Y-%m-%dT%H:%M:%SZ')  # noqa: E501
@@ -317,6 +320,6 @@ class Qonto(BankConnector):
 
             if next_page is None or len(rows) == 0:
                 break
-            params['current_page'] = next_page
+            params['page'] = next_page
 
         return transactions

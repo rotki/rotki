@@ -79,11 +79,11 @@ def content_hash_id(*parts: Any) -> str:
     return hashlib.sha256('|'.join(str(part) for part in parts).encode()).hexdigest()
 
 
-def bank_transaction_to_events(
+def bank_transaction_to_event(
         transaction: BankTransaction,
         location: Location,
         location_label: str,
-) -> list[BankTransactionEvent]:
+) -> BankTransactionEvent:
     """Map a normalized bank transaction onto rotki history events.
 
     The group identifier is derived from the location and the source id so that
@@ -113,7 +113,7 @@ def bank_transaction_to_events(
     if transaction.reference is not None:
         extra_data['reference'] = transaction.reference
 
-    return [BankTransactionEvent(
+    return BankTransactionEvent(
         group_identifier=create_group_identifier_from_unique_id(
             location=location,
             unique_id=transaction.source_id,
@@ -128,4 +128,4 @@ def bank_transaction_to_events(
         amount=transaction.amount,
         notes=notes,
         extra_data=extra_data,
-    )]
+    )

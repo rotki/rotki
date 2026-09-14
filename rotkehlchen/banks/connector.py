@@ -11,13 +11,14 @@ generic.
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from rotkehlchen.banks.errors import BankAuthExpired, BankError
 from rotkehlchen.banks.normalization import (
     BankAccount,
     BankTransaction,
-    bank_transaction_to_events,
+    bank_transaction_to_event,
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -31,7 +32,7 @@ from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.banks.manifest import BankManifest
@@ -194,7 +195,7 @@ class BankConnector(ExchangeInterface, ABC):
         events: list[HistoryBaseEntry] = []
         newest: Timestamp | None = None
         for transaction in self.query_transactions(account=account, updated_since=updated_since):
-            events.extend(bank_transaction_to_events(
+            events.append(bank_transaction_to_event(
                 transaction=transaction,
                 location=self.location,
                 location_label=self.name,
@@ -255,14 +256,14 @@ class BankConnector(ExchangeInterface, ABC):
 
             event_queue.flush(
                 events=events,
-                cursor_update=self._cursor_updater(account_id=account.identifier, value=newest),
+                cursor_update=partial(
+                    self.set_cursor,
+                    account_id=account.identifier,
+                    value=newest,
+                ),
+                update_existing=True,
             )
         return end_ts
-
-    def _cursor_updater(self, account_id: str, value: Timestamp) -> Callable[[DBCursor], None]:
-        def update(write_cursor: DBCursor) -> None:
-            self.set_cursor(write_cursor=write_cursor, account_id=account_id, value=value)
-        return update
 
     def query_online_history_events_into_queue(
             self,

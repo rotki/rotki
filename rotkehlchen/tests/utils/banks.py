@@ -88,7 +88,7 @@ class QontoFixtureTransport(FixtureTransport):
         rows.sort(key=lambda t: t[sort_field] or '', reverse=direction == 'desc')
 
         per_page = min(int(params.get('per_page', 100)), 100)
-        page = int(params.get('current_page', 1))
+        page = int(params.get('page', 1))
         total_pages = max(1, -(-len(rows) // per_page))
         start = (page - 1) * per_page
         return MockResponse(200, json.dumps({
@@ -113,6 +113,7 @@ class BankConnectorKit:
     expected_event_count: int  # final transactions in the fixtures
     cursor_param: str  # the request parameter an incremental sync must carry
     per_page_param: str = 'per_page'
+    page_param: str = 'page'
     small_page_size: int = 5  # a page size that forces pagination over the fixtures
     extra_ctor_kwargs: dict[str, Any] = field(default_factory=dict)
 

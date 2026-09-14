@@ -2883,6 +2883,13 @@ class DBHandler:
                 "WHERE name LIKE ? ESCAPE '\\'",
                 (f'{location!s}_{new_name}_', len(old_prefix) + 1, f'{escaped_prefix}%'),
             )
+            DBHistoryEvents(database=self).update_events_and_track(
+                write_cursor=write_cursor,
+                where_clause='WHERE location=? AND location_label=?',
+                where_bindings=(location.serialize_for_db(), name),
+                set_clause='SET location_label=?',
+                set_bindings=(new_name,),
+            )
 
     def get_exchange_credentials(
             self,
