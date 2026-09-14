@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { EChartsOption, LineSeriesOption } from 'echarts';
-import type { SparklinePoint } from '@/modules/history/balances/use-accounting-overlay';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import VChart from 'vue-echarts';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display';
+import { injectAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
+import { useAccountingOverlaySparkline } from '@/modules/history/balances/use-accounting-overlay-sparkline';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useGraph } from '@/modules/statistics/use-graph';
 
-const { points } = defineProps<{ points: SparklinePoint[] }>();
+const { event, balance } = defineProps<{ event: HistoryEventEntry; balance: BigNumber }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
+const context = injectAccountingOverlay();
 // Graphs are a premium capability; non-premium tiers simply don't get the sparkline.
 const { allowed } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 // Respect privacy mode — a balance trend would otherwise leak shape while amounts are hidden.
@@ -17,10 +21,18 @@ const { shouldShowAmount } = useAmountDisplaySettings();
 // baseColor/gradient match the app's other charts; useGraph also provides the echarts theme.
 const { baseColor, gradient } = useGraph();
 
-const visible = computed<boolean>(() => get(allowed) && get(shouldShowAmount) && points.length >= 2);
+const eligible = computed<boolean>(() => !!context && get(allowed) && get(shouldShowAmount));
+
+const { loading, points } = useAccountingOverlaySparkline(() => event, () => balance, {
+  enabled: eligible,
+  seriesFor: async (locationLabel, asset) => context?.series.seriesFor(locationLabel, asset),
+});
+
+/** Shown while loading too, so the chart's space is held and the breakdown does not jump when it lands. */
+const visible = computed<boolean>(() => get(eligible) && (get(loading) || get(points).length >= 2));
 
 const option = computed<EChartsOption>(() => {
-  const data = points.map<[number, number]>(point => [point.time * 1000, point.value]);
+  const data = get(points).map<[number, number]>(point => [point.time * 1000, point.value]);
   const lastIndex = data.length - 1;
 
   const series: LineSeriesOption = {
@@ -60,7 +72,13 @@ const option = computed<EChartsOption>(() => {
     <div class="text-xs font-medium uppercase tracking-wide opacity-60">
       {{ t('accounting_overlay.over_time') }}
     </div>
+    <RuiSkeletonLoader
+      v-if="loading"
+      class="w-full h-12"
+      data-testid="overlay-sparkline-loading"
+    />
     <VChart
+      v-else
       :option="option"
       autoresize
       class="w-full h-12"

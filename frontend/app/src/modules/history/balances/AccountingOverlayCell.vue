@@ -6,7 +6,6 @@ import AccountingOverlayBuckets from '@/modules/history/balances/AccountingOverl
 import AccountingOverlaySparkline from '@/modules/history/balances/AccountingOverlaySparkline.vue';
 import { type AccountingOverlayBucket, PairOverlayStatus } from '@/modules/history/balances/use-accounting-overlay';
 import { injectAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
-import { useAccountingOverlaySparkline } from '@/modules/history/balances/use-accounting-overlay-sparkline';
 import { type EventDirection, getEventDirectionIcon, getEventDirectionTextClass } from '@/modules/history/events/event-direction';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
@@ -57,8 +56,6 @@ const buckets = computed<AccountingOverlayBucket[]>(() => {
     return [];
   return context.overlay.bucketsAt(event.identifier);
 });
-
-const series = useAccountingOverlaySparkline(() => event, () => get(enabled) && get(modelBreakdownOpen), balance);
 
 watch([enabled, account, () => event.identifier], ([isEnabled, acct, identifier]) => {
   if (context && isEnabled && acct)
@@ -189,7 +186,11 @@ const placeholder = computed<string | undefined>(() => {
           </RuiButton>
         </template>
         <div class="p-3 flex flex-col gap-2">
-          <AccountingOverlaySparkline :points="series" />
+          <AccountingOverlaySparkline
+            v-if="modelBreakdownOpen"
+            :event="event"
+            :balance="balance"
+          />
           <AccountingOverlayBuckets
             :buckets="buckets"
             :asset="event.asset"

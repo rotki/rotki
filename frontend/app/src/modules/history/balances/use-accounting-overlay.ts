@@ -1,20 +1,14 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { HistoricalBalancesAtEventsResponse } from '@/modules/history/balances/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
+import { logger } from '@/modules/core/common/logging/logging';
 import { PairOverlayStatus } from '@/modules/history/balances/accounting-overlay-helpers';
 
 export { PairOverlayStatus };
 
-export const AccountingOverlayState = {
-  DISABLED: 'disabled',
-  LOADING: 'loading',
-  READY: 'ready',
-} as const;
-
-export type AccountingOverlayState = typeof AccountingOverlayState[keyof typeof AccountingOverlayState];
-
+/** The overlay column toggle: `none` hides it, `balance` shows balance-after-event. */
 export const OverlayMode = {
   BALANCE: 'balance',
   NONE: 'none',
@@ -28,6 +22,7 @@ export interface AccountingOverlayBucket {
   balance: BigNumber;
 }
 
+/** A single point on the balance-over-time sparkline: unix seconds + total balance as a number. */
 export interface SparklinePoint {
   time: number;
   value: number;
@@ -55,7 +50,6 @@ interface AccountingOverlayParams {
 }
 
 export interface UseAccountingOverlayReturn {
-  state: ComputedRef<AccountingOverlayState>;
   statusFor: (identifier: number) => PairOverlayStatus;
   balanceAfter: (identifier: number) => BigNumber | undefined;
   bucketsAt: (identifier: number) => AccountingOverlayBucket[];
@@ -76,20 +70,25 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     ? [...new Set([...toValue(eventIdentifiers), ...get(registered).keys()])]
     : []);
 
-  const state = computed<AccountingOverlayState>(() => {
-    if (!toValue(enabled))
-      return AccountingOverlayState.DISABLED;
-    const active = get(activeIdentifiers);
-    return active.length > 0 && active.every(id => statusFor(id) === PairOverlayStatus.LOADING)
-      ? AccountingOverlayState.LOADING
-      : AccountingOverlayState.READY;
-  });
+  /** Whether an event still lacks a usable snapshot, which includes one whose fetch failed. */
+  function needsFetch(identifier: number): boolean {
+    const status = get(cache).get(identifier)?.status;
+    return status === undefined || status === PairOverlayStatus.ERROR;
+  }
 
+  /**
+   * Fetches a snapshot for every active event that lacks one, 500 identifiers per request.
+   *
+   * @remarks
+   * The endpoint rejects a whole batch when any identifier is unknown, e.g. an event redecoded since
+   * the page loaded. A failure is shown but not kept for good: the next change to the active events
+   * retries it, instead of leaving every row of the batch on an error until the next sync.
+   */
   async function fetchMissing(): Promise<void> {
     if (disposed)
       return;
     const currentGeneration = generation;
-    const missing = get(activeIdentifiers).filter(id => !get(cache).has(id));
+    const missing = get(activeIdentifiers).filter(needsFetch);
     const next = new Map(get(cache));
     for (const id of missing)
       next.set(id, { status: PairOverlayStatus.LOADING, buckets: [] });
@@ -110,7 +109,8 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
         }
         set(cache, updated);
       }
-      catch {
+      catch (error: unknown) {
+        logger.error(error);
         if (currentGeneration !== generation)
           return;
         const updated = new Map(get(cache));
@@ -168,5 +168,5 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     generation++;
   });
 
-  return { state, statusFor, balanceAfter, bucketsAt, registerEvent, refresh };
+  return { statusFor, balanceAfter, bucketsAt, registerEvent, refresh };
 }

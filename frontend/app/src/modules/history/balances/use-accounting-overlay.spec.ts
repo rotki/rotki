@@ -121,6 +121,18 @@ describe('useAccountingOverlay event batches', () => {
     expect(overlay.statusFor(2)).toBe('error');
   });
 
+  it('should retry events from a failed batch once the active events change', async () => {
+    fetchSnapshots.mockRejectedValueOnce(new Error('Unknown history event identifiers: [2]'));
+    const { overlay, eventIdentifiers } = create([1, 2]);
+    await vi.advanceTimersByTimeAsync(60);
+    expect(overlay.statusFor(1)).toBe('error');
+
+    set(eventIdentifiers, [1, 3]);
+    await vi.advanceTimersByTimeAsync(60);
+    expect(fetchSnapshots).toHaveBeenLastCalledWith([1, 3]);
+    expect(overlay.statusFor(1)).toBe('ready');
+  });
+
   it('should discard a late result from before a refresh', async () => {
     let resolvePending: (result: HistoricalBalancesAtEventsResponse) => void = () => {};
     fetchSnapshots.mockReturnValueOnce(new Promise<HistoricalBalancesAtEventsResponse>((resolve) => {
@@ -136,10 +148,9 @@ describe('useAccountingOverlay event batches', () => {
   });
 
   it('should stay idle while disabled and fetch when enabled', async () => {
-    const { overlay, enabled } = create([1], false);
+    const { enabled } = create([1], false);
     await vi.advanceTimersByTimeAsync(60);
     expect(fetchSnapshots).not.toHaveBeenCalled();
-    expect(get(overlay.state)).toBe('disabled');
     set(enabled, true);
     await vi.advanceTimersByTimeAsync(60);
     expect(fetchSnapshots).toHaveBeenCalledExactlyOnceWith([1]);

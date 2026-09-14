@@ -1,88 +1,74 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { SparklinePoint } from '@/modules/history/balances/use-accounting-overlay';
+import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balances/use-accounting-overlay-series';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type BigNumber, Zero } from '@rotki/common';
-import { isErr } from 'plainfp/result';
-import { useAmountDisplaySettings } from '@/modules/assets/amount-display';
-import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
-import { mergeSameScopeBuckets, valueAt } from '@/modules/history/balances/accounting-overlay-helpers';
+import { type PreparedBucket, valueAt } from '@/modules/history/balances/accounting-overlay-helpers';
 import { downsample, SPARKLINE_MAX_POINTS } from '@/modules/history/balances/sparkline';
-import { HistoricalBalanceSeriesResponse } from '@/modules/history/balances/types';
-import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
-/** Load a breakdown chart only while open and visible, keeping its endpoint at the exact snapshot. */
+interface AccountingOverlaySparklineOptions {
+  /** Whether the chart may load at all: premium graphs are allowed and amounts are visible. */
+  enabled: MaybeRefOrGetter<boolean>;
+  seriesFor: UseAccountingOverlaySeriesReturn['seriesFor'];
+}
+
+interface UseAccountingOverlaySparklineReturn {
+  points: ComputedRef<SparklinePoint[]>;
+  loading: ComputedRef<boolean>;
+}
+
+/**
+ * The breakdown chart for one event: its account's balance trajectory, ending on the event's snapshot.
+ *
+ * @remarks
+ * The trajectory comes from the series shared by every row of the account and asset. Its last point
+ * is the event's own snapshot total rather than a series lookup, because events sharing a timestamp
+ * can hold different balances.
+ */
 export function useAccountingOverlaySparkline(
   event: MaybeRefOrGetter<HistoryEventEntry>,
-  open: MaybeRefOrGetter<boolean>,
   balance: MaybeRefOrGetter<BigNumber | undefined>,
-): ComputedRef<SparklinePoint[]> {
-  const { t } = useI18n({ useScope: 'global' });
-  const { allowed } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
-  const { shouldShowAmount } = useAmountDisplaySettings();
-  const { fetchHistoricalBalanceSeries } = useHistoricalBalancesApi();
-  const { submitTask } = useNativeTask();
-  const points = shallowRef<SparklinePoint[]>([]);
-  let cachedKey: string | undefined;
+  { enabled, seriesFor }: AccountingOverlaySparklineOptions,
+): UseAccountingOverlaySparklineReturn {
+  const series = shallowRef<PreparedBucket[]>();
+  const loading = shallowRef<boolean>(false);
 
-  const queryKey = computed<string | undefined>(() => {
-    const entry = toValue(event);
+  const points = computed<SparklinePoint[]>(() => {
+    const buckets = get(series);
     const total = toValue(balance);
-    if (!toValue(open) || !get(allowed) || !get(shouldShowAmount) || !entry.locationLabel || total === undefined)
-      return undefined;
-    return JSON.stringify([entry.identifier, entry.locationLabel, entry.asset, entry.timestamp, total.toString()]);
+    if (!buckets || total === undefined)
+      return [];
+
+    const end = Math.floor(toValue(event).timestamp / 1000);
+    const times = [...new Set(buckets.flatMap(bucket => bucket.times).filter(time => time < end))].sort((a, b) => a - b);
+    return downsample([...times, end], SPARKLINE_MAX_POINTS).map(time => ({
+      time,
+      value: time === end ? total.toNumber() : buckets.reduce((sum, bucket) => sum.plus(valueAt(bucket, time)), Zero).toNumber(),
+    }));
   });
 
-  async function load(key: string | undefined): Promise<void> {
-    if (!key || key === cachedKey)
-      return;
+  async function loadSeries([isEnabled, locationLabel, asset]: [boolean, string | null | undefined, string]): Promise<void> {
     let stale = false;
     onWatcherCleanup(() => {
       stale = true;
     });
-    cachedKey = undefined;
-    set(points, []);
-    const entry = toValue(event);
-    const total = toValue(balance);
-    const locationLabel = entry.locationLabel;
-    if (!locationLabel || total === undefined)
+    set(series, undefined);
+    set(loading, isEnabled && !!locationLabel);
+    if (!isEnabled || !locationLabel)
       return;
-    const end = Math.floor(entry.timestamp / 1000);
-    try {
-      const outcome = await submitTask<HistoricalBalanceSeriesResponse>({
-        id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.SERIES, key),
-        kind: ActivityKind.HISTORICAL_BALANCES,
-        rerunnable: false,
-        title: t('task_center.group.historical_balances'),
-        run: async ({ runTask }) => runTask<HistoricalBalanceSeriesResponse>(async () => fetchHistoricalBalanceSeries({
-          asset: entry.asset,
-          locationLabel,
-          toTimestamp: end,
-        })),
-      });
-      if (stale || isErr(outcome))
-        return;
-      const response = HistoricalBalanceSeriesResponse.parse(outcome.value);
-      const buckets = mergeSameScopeBuckets(response.entries.map(bucket => ({
-        location: bucket.location,
-        protocol: bucket.protocol ?? null,
-        times: bucket.times,
-        values: bucket.values,
-      })));
-      const times = [...new Set(buckets.flatMap(bucket => bucket.times).filter(time => time < end))].sort((a, b) => a - b);
-      const sampled = downsample([...times, end], SPARKLINE_MAX_POINTS);
-      set(points, sampled.map(time => ({
-        time,
-        value: time === end ? total.toNumber() : buckets.reduce((sum, bucket) => sum.plus(valueAt(bucket, time)), Zero).toNumber(),
-      })));
-      cachedKey = key;
-    }
-    catch {
-      if (!stale)
-        set(points, []);
-    }
+
+    const loaded = await seriesFor(locationLabel, asset);
+    if (stale)
+      return;
+    set(series, loaded);
+    set(loading, false);
   }
 
-  watch(queryKey, load, { immediate: true });
-  return computed<SparklinePoint[]>(() => get(points));
+  watch([
+    (): boolean => toValue(enabled),
+    (): string | null | undefined => toValue(event).locationLabel,
+    (): string => toValue(event).asset,
+  ], loadSeries, { immediate: true });
+
+  return { loading: computed<boolean>(() => get(loading)), points };
 }

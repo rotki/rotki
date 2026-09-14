@@ -1,5 +1,6 @@
 import type { InjectionKey, Ref } from 'vue';
 import type { UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
+import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balances/use-accounting-overlay-series';
 
 /**
  * Context shared from the history events view down to the (deeply nested, virtualized)
@@ -8,6 +9,8 @@ import type { UseAccountingOverlayReturn } from '@/modules/history/balances/use-
 export interface AccountingOverlayContext {
   enabled: Ref<boolean>;
   overlay: UseAccountingOverlayReturn;
+  /** Breakdown chart series, shared by every row of an account and asset. */
+  series: UseAccountingOverlaySeriesReturn;
 }
 
 const AccountingOverlayKey: InjectionKey<AccountingOverlayContext> = Symbol('accounting-overlay');

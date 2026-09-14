@@ -3,15 +3,10 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, defineComponent, h, type VNode } from 'vue';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { type AccountingOverlayContext, provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
-import { useAccountingOverlaySparkline } from '@/modules/history/balances/use-accounting-overlay-sparkline';
-
-vi.mock('@/modules/history/balances/use-accounting-overlay-sparkline', () => ({
-  useAccountingOverlaySparkline: vi.fn(() => computed(() => [])),
-}));
 
 let mockDirectionArrow: 'in' | 'out' | 'neutral' = 'neutral';
 
@@ -65,11 +60,14 @@ function mountCell(opts: {
     bucketsAt: () => [],
     registerEvent: () => () => {},
     refresh: async () => {},
-    state: computed(() => 'ready'),
     statusFor: () => opts.status ?? 'ready',
     ...opts.overlay,
   };
-  const context: AccountingOverlayContext = { enabled: ref(opts.enabled), overlay };
+  const context: AccountingOverlayContext = {
+    enabled: ref(opts.enabled),
+    overlay,
+    series: { reset: () => {}, seriesFor: async () => undefined },
+  };
 
   const host = defineComponent({
     setup() {
@@ -86,18 +84,16 @@ describe('accountingOverlayCell.vue', () => {
     vi.clearAllMocks();
   });
 
-  it('should look up and register the event ID, release it on unmount and enable charts only on opening', async () => {
+  it('should look up and register the event ID, release it on unmount and mount the chart only once opened', async () => {
     const cleanup = vi.fn<() => void>();
     const registerEvent = vi.fn<(id: number) => () => void>(() => cleanup);
     const balanceAfter = vi.fn<(id: number) => ReturnType<UseAccountingOverlayReturn['balanceAfter']>>(() => bigNumberify('5'));
     const wrapper = mountCell({ enabled: true, overlay: { balanceAfter, registerEvent } });
     expect(registerEvent).toHaveBeenCalledExactlyOnceWith(123);
     expect(balanceAfter).toHaveBeenCalledWith(123);
-    const call = vi.mocked(useAccountingOverlaySparkline).mock.calls.at(-1);
-    assert(call);
-    expect(toValue(call[1])).toBe(false);
+    expect(wrapper.find('.sparkline').exists()).toBe(false);
     await wrapper.get('[data-testid=open-breakdown]').trigger('click');
-    expect(toValue(call[1])).toBe(true);
+    expect(wrapper.find('.sparkline').exists()).toBe(true);
     wrapper.unmount();
     expect(cleanup).toHaveBeenCalledOnce();
   });

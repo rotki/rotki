@@ -4,6 +4,7 @@ import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { OverlayMode, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
+import { useAccountingOverlaySeries } from '@/modules/history/balances/use-accounting-overlay-series';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 interface UseHistoryEventsOverlayReturn {
@@ -15,7 +16,7 @@ interface UseHistoryEventsOverlayReturn {
 /**
  * The accounting overlay: the known balance after each event.
  *
- * Fetches bucket snapshots by event identifier. Gated by
+ * Fetches bucket snapshots by event identifier, for events that carry an account. Gated by
  * VITE_ACCOUNTING_UPDATE (from the backend's ROTKI_ACCOUNTING_UPDATE, see vite.config.ts), so it
  * only appears where the backend serves it.
  *
@@ -24,7 +25,7 @@ interface UseHistoryEventsOverlayReturn {
  * 'none', back restores it from the history entry. Only the main page syncs.
  *
  * A completed history sync lands new events whose historical balances may have shifted, so the
- * whole overlay is refreshed then; a hidden overlay stays idle.
+ * breakdown series are dropped and a visible overlay is refreshed then; a hidden overlay stays idle.
  */
 export function useHistoryEventsOverlay(
   mode: MaybeRefOrGetter<OverlayMode>,
@@ -34,17 +35,20 @@ export function useHistoryEventsOverlay(
 
   const enabled = computed<boolean>(() => available && toValue(mode) === OverlayMode.BALANCE);
 
-  const eventIdentifiers = computed<number[]>(() => {
-    const events = toValue(groups).data.flatMap(row => Array.isArray(row) ? row : [row]);
-    return events.map(event => event.identifier);
-  });
+  const eventIdentifiers = computed<number[]>(() => toValue(groups)
+    .data
+    .flatMap(row => Array.isArray(row) ? row : [row])
+    .filter(event => !!event.locationLabel)
+    .map(event => event.identifier));
 
   const overlay = useAccountingOverlay({ enabled, eventIdentifiers });
+  const series = useAccountingOverlaySeries();
 
-  provideAccountingOverlay({ enabled, overlay });
+  provideAccountingOverlay({ enabled, overlay, series });
 
   const { syncCompleted } = useSyncCompleted();
   watch(syncCompleted, async () => {
+    series.reset();
     if (get(enabled))
       await overlay.refresh();
   });
