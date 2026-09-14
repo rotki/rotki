@@ -1,4 +1,4 @@
-import { expect, type Locator } from '@playwright/test';
+import { type APIRequestContext, expect, type Locator } from '@playwright/test';
 import {
   assetMovementEventFixture,
   ethBlockEventFixture,
@@ -14,7 +14,7 @@ import {
   TEST_EVENT_TIMESTAMP,
   TEST_PRICE_ENTRIES,
 } from '../../fixtures/history-events';
-import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
+import { cleanupContext, createLoggedInContext, type LoginOptions, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { apiAddBlockchainAccount } from '../../helpers/blockchain-accounts-api';
 import { TIMEOUT_MEDIUM } from '../../helpers/constants';
@@ -33,6 +33,30 @@ function assetMovementRow(ctx: SharedTestContext): Locator {
   return ctx.sharedPage
     .locator(`${EVENT_ROW}, ${MOVEMENT_ROW}`)
     .filter({ hasText: assetMovementEventFixture.notes });
+}
+
+/**
+ * Keeps the suite off real networks.
+ *
+ * @remarks
+ * A tracked account pulls in the NFT query, which retries against opensea for as long as the suite
+ * lasts, and a balance query that would otherwise reach real nodes.
+ */
+const LOGIN_OPTIONS = {
+  disableModules: true,
+  rpcMockCassette: 'history-events',
+} satisfies LoginOptions;
+
+/**
+ * Tracks the address the withdrawal fixture pays out to, which its row needs to reach the table.
+ *
+ * @remarks
+ * The events query drops an eth withdrawal event whose withdrawal address is not a tracked ethereum
+ * account. The address is added after login, not seeded: an address the fetch lane sees at login is
+ * one it queries transactions for, and that outlives the test timeout.
+ */
+async function trackWithdrawalAddress(request: APIRequestContext): Promise<void> {
+  await apiAddBlockchainAccount(request, ethWithdrawalEventFixture.withdrawalAddress);
 }
 
 test.describe.serial('history events', () => {
@@ -57,18 +81,8 @@ test.describe.serial('history events', () => {
 
   test.beforeAll(async ({ browser, request }) => {
     seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
-    ctx = await createLoggedInContext(browser, request, {
-      // A tracked account pulls in the NFT query, which retries against opensea for as long as the
-      // suite lasts, and a balance query that would otherwise reach real nodes.
-      disableModules: true,
-      rpcMockCassette: 'history-events',
-    });
-
-    // The events query drops an eth withdrawal event whose withdrawal address is not a tracked
-    // ethereum account, so the withdrawal this block adds only reaches the table if the address it
-    // pays out to is tracked. It is added after login, not seeded: an address the fetch lane sees
-    // at login is one it queries transactions for, and that outlives the test timeout.
-    await apiAddBlockchainAccount(request, ethWithdrawalEventFixture.withdrawalAddress);
+    ctx = await createLoggedInContext(browser, request, LOGIN_OPTIONS);
+    await trackWithdrawalAddress(request);
 
     page = new HistoryEventsPage(ctx.sharedPage);
   });
