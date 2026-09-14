@@ -1,10 +1,12 @@
-import type { BankFormData } from '@/modules/banks/types';
+import type { BankFormData, BankManifest } from '@/modules/banks/types';
+import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import '@test/i18n';
 
@@ -103,7 +105,17 @@ describe('bankConnectionFormDialog', () => {
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-      description: 'bank_settings.errors.setup_message::qonto, Qonto rejected the credentials',
+      description: 'bank_settings.errors.setup_message::Qonto, Qonto rejected the credentials',
+    }));
+  });
+
+  it('should name the bank by its display name once its manifest is loaded', async () => {
+    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
+    setupBank.mockRejectedValue(new Error('Qonto rejected the credentials'));
+    wrapper = createWrapper(createForm());
+    await confirm();
+    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
+      description: 'bank_settings.errors.setup_message::Qonto Business, Qonto rejected the credentials',
     }));
   });
 });

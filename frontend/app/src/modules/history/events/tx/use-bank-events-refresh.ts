@@ -1,8 +1,8 @@
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
-import { toSentenceCase } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -31,9 +31,11 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { markLocationCancelled } = useEventsQueryStatusStore();
   const { syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
+  const { bankNameFor } = useBankConnectionsStore();
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     const { location, name } = bank;
+    const bankName = bankNameFor(location);
     logger.debug(`querying bank events for ${location} (${name})`);
     const outcome = await submitTask({
       id: bankEventsActivity.id(bank),
@@ -45,7 +47,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
         await runTask<boolean>(async () => syncBanks({ location, name })),
         () => {},
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.bank'), { account: name, bank: toSentenceCase(location) }),
+      subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.bank'), { account: name, bank: bankName }),
       title: t('task_center.group.bank_events'),
     });
 
@@ -57,7 +59,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
         logger.error(outcome.error);
         notifyError(
           t('actions.bank_events.error.title'),
-          t('actions.bank_events.error.description', { error: outcome.error.message, location, name }),
+          t('actions.bank_events.error.description', { error: outcome.error.message, location: bankName, name }),
         );
       }
     }
