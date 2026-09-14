@@ -1,8 +1,15 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { BankBalancesByLocation, type BankConnectionIdentity, type BankFormData, type BankSyncPayload } from '@/modules/banks/types';
+import {
+  BankBalancesByLocation,
+  type BankConnectionIdentity,
+  type BankFormData,
+  type BankSetupError,
+  type BankSyncPayload,
+} from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -18,8 +25,8 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 interface UseBanksReturn {
   refreshSupportedBanks: () => Promise<void>;
   refreshBankConnections: () => Promise<void>;
-  /** Adds or edits a connection. Throws so the dialog can map api validation errors onto fields. */
-  setupBank: (form: BankFormData) => Promise<boolean>;
+  /** Adds or edits a connection, refreshing the connections and balances once the backend accepts it. */
+  setupBank: (form: BankFormData) => ResultAsync<boolean, BankSetupError>;
   removeBank: (connection: BankConnectionIdentity) => Promise<boolean>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
@@ -90,16 +97,20 @@ export function useBanks(): UseBanksReturn {
     });
   };
 
-  const setupBank = async (form: BankFormData): Promise<boolean> => {
+  /** A blank credential in an edit means "keep the stored one", which the backend only accepts as an absent slot. */
+  const filledCredentials = (credentials: Record<string, string>): Record<string, string> =>
+    Object.fromEntries(Object.entries(credentials).filter(([, value]) => value.trim() !== ''));
+
+  const setupBank = async (form: BankFormData): ResultAsync<boolean, BankSetupError> => {
     const { credentials, location, mode, name, newName } = form;
-    const success = mode === 'edit'
-      ? await api.editBank({ credentials, location, name, newName: newName === name ? undefined : newName })
+    const outcome = mode === 'edit'
+      ? await api.editBank({ credentials: filledCredentials(credentials), location, name, newName: newName === name ? undefined : newName })
       : await api.addBank({ credentials, location, name });
-    if (success) {
+    if (outcome.ok && outcome.value) {
       await refreshBankConnections();
       startPromise(fetchBankBalances());
     }
-    return success;
+    return outcome;
   };
 
   const removeBank = async (connection: BankConnectionIdentity): Promise<boolean> => {

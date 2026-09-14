@@ -1,20 +1,59 @@
+import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
   type BankConnectionEditPayload,
   type BankConnectionIdentity,
   type BankConnectionPayload,
   BankConnections,
   BankManifests,
+  type BankSetupError,
   type BankSyncPayload,
 } from '@/modules/banks/types';
 import { api } from '@/modules/core/api/rotki-api';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
+
+/** Credential slots are snake_case on the wire; the api error keys arrive camelCased. */
+function toCamelCase(slot: string): string {
+  return slot.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+}
+
+/**
+ * Classifies a failed add or edit into a {@link BankSetupError}.
+ *
+ * @remarks
+ * A `400` arrives as an {@link ApiValidationError} with camelCased keys, so a credential error is
+ * keyed back to its slot. A validation error naming no field of the payload, and every other
+ * failure, is a message for the whole request.
+ *
+ * @param cause - the value thrown by the failed request
+ * @param payload - what was sent, which decides whether an error key names one of its fields
+ * @returns the error the dialog branches on
+ */
+function toBankSetupError(cause: unknown, payload: BankConnectionPayload): BankSetupError {
+  if (!(cause instanceof ApiValidationError))
+    return { message: getErrorMessage(cause), type: 'rejected' };
+
+  const slotsByKey = new Map<string, string>(Object.keys(payload.credentials).map(slot => [toCamelCase(slot), slot]));
+  const errors = cause.getValidationErrors({
+    ...payload,
+    ...Object.fromEntries(Object.entries(payload.credentials).map(([slot, value]) => [toCamelCase(slot), value])),
+  });
+  if (typeof errors === 'string')
+    return { message: errors, type: 'rejected' };
+
+  return {
+    errors: Object.fromEntries(Object.entries(errors).map(([key, value]) => [slotsByKey.get(key) ?? key, value])),
+    type: 'fields',
+  };
+}
 
 interface UseBanksApiReturn {
   getSupportedBanks: () => Promise<BankManifests>;
   getBanks: () => Promise<BankConnections>;
-  addBank: (payload: BankConnectionPayload) => Promise<boolean>;
-  editBank: (payload: BankConnectionEditPayload) => Promise<boolean>;
+  addBank: (payload: BankConnectionPayload) => ResultAsync<boolean, BankSetupError>;
+  editBank: (payload: BankConnectionEditPayload) => ResultAsync<boolean, BankSetupError>;
   removeBank: (payload: BankConnectionIdentity) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
@@ -37,11 +76,14 @@ export function useBanksApi(): UseBanksApiReturn {
     return BankConnections.parse(data);
   };
 
-  const addBank = async (payload: BankConnectionPayload): Promise<boolean> =>
-    api.put<boolean>('/banks', payload);
+  const addBank = async (payload: BankConnectionPayload): ResultAsync<boolean, BankSetupError> =>
+    fromAsync(async () => api.put<boolean>('/banks', payload), cause => toBankSetupError(cause, payload));
 
-  const editBank = async (payload: BankConnectionEditPayload): Promise<boolean> =>
-    api.patch<boolean>('/banks', payload, { filterEmptyProperties: { removeEmptyString: true } });
+  const editBank = async (payload: BankConnectionEditPayload): ResultAsync<boolean, BankSetupError> =>
+    fromAsync(
+      async () => api.patch<boolean>('/banks', payload, { filterEmptyProperties: { removeEmptyString: true } }),
+      cause => toBankSetupError(cause, payload),
+    );
 
   const removeBank = async ({ location, name }: BankConnectionIdentity): Promise<boolean> =>
     api.delete<boolean>('/banks', { body: { location, name } });

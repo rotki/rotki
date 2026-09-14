@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { BankConnectionIdentity, BankFormData } from '@/modules/banks/types';
+import type { BankConnectionIdentity, BankFormData, BankSetupError } from '@/modules/banks/types';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
@@ -34,22 +33,22 @@ const title = computed<string>(() => {
     : t('bank_settings.dialog.add.title');
 });
 
-/** Credential slots are snake_case on the wire; the api error keys arrive camelCased. */
-function toCamelCase(slot: string): string {
-  return slot.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+/** The api keys credential errors by slot; the form binds them at `credentials.<slot>`. */
+function toFieldErrors(errors: ValidationErrors, form: BankFormData): ValidationErrors {
+  return Object.fromEntries(
+    Object.entries(errors).map(([key, value]) => [Object.hasOwn(form.credentials, key) ? `credentials.${key}` : key, value]),
+  );
 }
 
-/** The api reports credential errors under the slot; the form binds them at `credentials.<slot>`. */
-function toFieldErrors(errors: ValidationErrors, form: BankFormData): ValidationErrors {
-  const slotsByKey = new Map<string, string>(
-    Object.keys(form.credentials).flatMap(slot => [[slot, slot], [toCamelCase(slot), slot]]),
-  );
-  const mapped: ValidationErrors = {};
-  for (const [key, value] of Object.entries(errors)) {
-    const slot = slotsByKey.get(key);
-    mapped[slot === undefined ? key : `credentials.${slot}`] = value;
+function showSetupError(error: BankSetupError, payload: BankFormData): void {
+  if (error.type === 'fields') {
+    set(errorMessages, toFieldErrors(error.errors, payload));
+    return;
   }
-  return mapped;
+  setMessage({
+    description: t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.location), error: error.message }),
+    title: t('bank_settings.errors.setup_title'),
+  });
 }
 
 async function save(): Promise<void> {
@@ -60,33 +59,15 @@ async function save(): Promise<void> {
   set(submitting, true);
   set(errorMessages, {});
   const payload = get(modelValue);
-
-  let success = false;
-  try {
-    success = await setupBank(payload);
-  }
-  catch (error: unknown) {
-    let errors: string | ValidationErrors = getErrorMessage(error);
-    if (error instanceof ApiValidationError) {
-      errors = error.getValidationErrors({
-        ...payload,
-        ...Object.fromEntries(Object.entries(payload.credentials).map(([slot, value]) => [toCamelCase(slot), value])),
-      });
-    }
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.location), error: errors }),
-        title: t('bank_settings.errors.setup_title'),
-      });
-    }
-    else {
-      set(errorMessages, toFieldErrors(errors, payload));
-    }
-  }
-
+  const outcome = await setupBank(payload);
   set(submitting, false);
-  if (success) {
+
+  if (!outcome.ok) {
+    showSetupError(outcome.error, payload);
+    return;
+  }
+
+  if (outcome.value) {
     if (payload.mode !== 'edit')
       emit('added', { location: payload.location, name: payload.name });
     set(modelValue, undefined);
